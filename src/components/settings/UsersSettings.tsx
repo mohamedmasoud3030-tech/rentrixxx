@@ -1,0 +1,107 @@
+import React, { useState, useEffect } from 'react';
+import { useApp } from '../../contexts/AppContext';
+import { User } from '../../types';
+import Modal from '../ui/Modal';
+import { toast } from 'react-hot-toast';
+import { KeyRound, Edit } from 'lucide-react';
+
+const UsersSettings: React.FC = () => {
+    const { db, auth } = useApp();
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [editingUser, setEditingUser] = useState<User | null>(null);
+
+    const handleOpenModal = (user: User | null = null) => {
+        setEditingUser(user);
+        setIsModalOpen(true);
+    };
+
+    return (
+        <div className="space-y-6">
+             <div className="flex justify-between items-center">
+                <h2 className="text-2xl font-bold">إدارة المستخدمين والصلاحيات</h2>
+                <button onClick={() => handleOpenModal()} className="btn btn-primary">إضافة مستخدم</button>
+            </div>
+            <div className="overflow-x-auto bg-background rounded-lg border border-border">
+                <table className="w-full text-right">
+                    <thead>
+                        <tr className="border-b border-border"><th className="p-4">اسم المستخدم</th><th className="p-4">الدور</th><th className="p-4">تاريخ الإنشاء</th><th className="p-4">إجراءات</th></tr>
+                    </thead>
+                    <tbody>
+                        {db.auth.users.map(u => (
+                            <tr key={u.id} className="border-t border-border">
+                                <td className="p-4 font-bold">{u.username}</td>
+                                <td className="p-4">{u.role === 'ADMIN' ? 'مدير' : 'مستخدم'}</td>
+                                <td className="p-4 text-sm text-text-muted">{new Date(u.createdAt).toLocaleDateString('ar-EG')}</td>
+                                <td className="p-4">
+                                    <div className="flex gap-4">
+                                        <button onClick={()=>handleOpenModal(u)} className="text-primary text-xs flex items-center gap-1 hover:underline"><Edit size={12}/> تعديل</button>
+                                        <button onClick={()=>auth.forcePasswordReset(u.id)} className="text-yellow-600 text-xs flex items-center gap-1 hover:underline"><KeyRound size={12}/> تصفير كلمة المرور</button>
+                                    </div>
+                                </td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            </div>
+            {isModalOpen && <UserForm isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} user={editingUser} />}
+        </div>
+    );
+};
+
+const UserForm: React.FC<{ isOpen: boolean, onClose: () => void, user: User | null }> = ({ isOpen, onClose, user }) => {
+    const { auth } = useApp();
+    const [username, setUsername] = useState('');
+    const [password, setPassword] = useState('');
+    const [role, setRole] = useState<'USER' | 'ADMIN'>('USER');
+
+    useEffect(() => {
+        if (user) {
+            setUsername(user.username);
+            setRole(user.role);
+            setPassword('');
+        } else {
+            setUsername('');
+            setRole('USER');
+            setPassword('');
+        }
+    }, [user, isOpen]);
+
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (user) { // Update
+            await auth.updateUser(user.id, { username, role });
+            toast.success("تم تحديث المستخدم.");
+        } else { // Create
+            if (!password) {
+                toast.error("كلمة المرور مطلوبة عند إنشاء مستخدم جديد.");
+                return;
+            }
+            const result = await auth.addUser({ username, role, mustChange: true }, password);
+            if(result.ok) {
+                toast.success("تم إنشاء المستخدم بنجاح.");
+            } else {
+                toast.error(result.msg);
+            }
+        }
+        onClose();
+    };
+
+    return (
+        <Modal isOpen={isOpen} onClose={onClose} title={user ? "تعديل مستخدم" : "إضافة مستخدم جديد"}>
+            <form onSubmit={handleSubmit} className="space-y-4">
+                <input value={username} onChange={e => setUsername(e.target.value)} placeholder="اسم المستخدم" required />
+                <select value={role} onChange={e => setRole(e.target.value as any)}>
+                    <option value="USER">مستخدم</option>
+                    <option value="ADMIN">مدير</option>
+                </select>
+                <input type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder={user ? "اتركه فارغاً لعدم التغيير" : "كلمة المرور المؤقتة"} required={!user} />
+                <div className="flex justify-end gap-2 pt-4 border-t">
+                    <button type="button" onClick={onClose} className="btn btn-ghost">إلغاء</button>
+                    <button type="submit" className="btn btn-primary">حفظ</button>
+                </div>
+            </form>
+        </Modal>
+    );
+};
+
+export default UsersSettings;
