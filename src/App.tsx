@@ -17,7 +17,7 @@ import Contracts from './pages/Contracts';
 import Finance from './pages/Finance';
 import Reports from './pages/Reports';
 // FIX: Changed import path to correct file
-import Settings from './pages/Settings';
+import Settings from './pages/System';
 import Leads from './pages/Leads';
 import CommunicationHub from './pages/CommunicationHub';
 import LandsAndCommissions from './pages/LandsAndCommissions';

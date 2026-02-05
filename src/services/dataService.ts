@@ -1,8 +1,9 @@
+
 import Dexie, { Transaction } from 'dexie';
 import { toast } from 'react-hot-toast';
 import { dbEngine } from './db';
 import { postJournalEntry } from './financeService';
-import { Database, Serials, User, Receipt, Expense, OwnerSettlement, Invoice } from '../types';
+import { Database, Serials, User, Receipt, Expense, OwnerSettlement } from '../types';
 
 const STATIC_ID = 1;
 
@@ -26,25 +27,24 @@ export const add = async <T extends keyof Omit<Database, 'settings' | 'auth' | '
     const serialKeyMap: Partial<Record<keyof Database, keyof Serials>> = {
         receipts: 'receipt', expenses: 'expense', invoices: 'invoice',
         ownerSettlements: 'ownerSettlement', maintenanceRecords: 'maintenance',
-        leads: 'lead', missions: 'mission', contracts: 'contract'
+        leads: 'lead', missions: 'mission'
     };
     const serialKey = serialKeyMap[table as keyof Database];
     const finalEntry: { [key: string]: any } = { ...entry, id, createdAt: now };
 
+    // FIX: Cast dbEngine to Dexie to access the .tables property for the transaction.
     await (dbEngine as Dexie).transaction('rw', (dbEngine as Dexie).tables, async (tx) => {
         if (serialKey) {
-            const docSettings = settings.operational.documentNumbering;
-            const prefix = (docSettings as any)[`${serialKey}Prefix`] || '';
             await tx.table('serials').where({id: STATIC_ID}).modify(s => {
                 (s as any)[serialKey]++;
-                finalEntry.no = `${prefix}${(s as any)[serialKey]}`;
+                finalEntry.no = String((s as any)[serialKey]);
             });
         }
         
-        // FIX: Explicitly convert 'table' to a string for Dexie's table() method, preventing runtime errors when 'table' is a symbol.
-        await tx.table(String(table)).add(finalEntry);
+        await tx.table(table as string).add(finalEntry);
         await audit(user, 'CREATE', String(table), id);
         
+        // FIX: Corrected access to accountMappings.
         const mappings = settings.accounting.accountMappings;
         if (table === 'receipts') {
             const r = finalEntry as Receipt;
@@ -53,7 +53,7 @@ export const add = async <T extends keyof Omit<Database, 'settings' | 'auth' | '
             const e = finalEntry as Expense;
             const cashAccount = mappings.paymentMethods.CASH;
             if (e.chargedTo === 'OWNER') {
-                await postJournalEntry(tx, { dr: mappings.ownersPayable, cr: cashAccount, amount: e.amount, ref: e.id });
+                await postJournalEntry(tx, { dr: '2121', cr: cashAccount, amount: e.amount, ref: e.id });
             } else {
                 const expenseAccount = mappings.expenseCategories[e.category] || mappings.expenseCategories.default;
                 await postJournalEntry(tx, { dr: expenseAccount, cr: cashAccount, amount: e.amount, ref: e.id });
@@ -61,7 +61,7 @@ export const add = async <T extends keyof Omit<Database, 'settings' | 'auth' | '
         } else if (table === 'ownerSettlements') {
             const s = finalEntry as OwnerSettlement;
             const cashAccount = mappings.paymentMethods[s.method === 'CASH' ? 'CASH' : 'BANK'];
-            await postJournalEntry(tx, { dr: mappings.ownersPayable, cr: cashAccount, amount: s.amount, ref: s.id });
+            await postJournalEntry(tx, { dr: '2121', cr: cashAccount, amount: s.amount, ref: s.id });
         }
     });
     
