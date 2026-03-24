@@ -35,7 +35,7 @@ const navGroups = [
   {
     title: 'التسويق والتطوير',
     links: [
-      { path: '/leads', label: 'العملاء المحتملين', icon: UserPlus },
+      { path: '/leads', label: 'العملاء المحتملون', icon: UserPlus },
       { path: '/lands', label: 'الأراضي والعمولات', icon: MapIcon },
       { path: '/communication', label: 'مركز التواصل', icon: MessageSquare },
     ],
@@ -69,45 +69,84 @@ const Sidebar: React.FC<SidebarProps> = ({ sidebarOpen, setSidebarOpen }) => {
     return pathname.startsWith(path);
   };
 
+  const companyName = settings.general?.company?.name ?? 'Rentrix';
+
   return (
     <aside
       ref={sidebar}
-      className={`absolute right-0 top-0 z-50 flex h-screen w-72 flex-col overflow-y-hidden bg-card border-l border-border duration-300 ease-linear lg:static lg:translate-x-0 ${
+      className={`absolute right-0 top-0 z-50 flex h-screen w-72 flex-col overflow-y-hidden bg-sidebar-bg border-l border-border duration-300 ease-in-out lg:static lg:translate-x-0 ${
         sidebarOpen ? 'translate-x-0' : 'translate-x-full'
       }`}
+      style={{ boxShadow: 'var(--shadow-sidebar)' }}
     >
-      <div className="flex items-center justify-center gap-2 px-6 py-8 border-b border-border bg-background/50">
-          <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center text-white font-black text-xl shadow-lg shadow-primary/20">
-            {settings.general.company.name.charAt(0)}
-          </div>
-          <span className="text-xl font-black text-text truncate">{settings.general.company.name}</span>
+      {/* Logo / Brand */}
+      <div className="flex items-center gap-3 px-6 py-6 border-b border-border">
+        <div
+          className="w-10 h-10 rounded-xl flex items-center justify-center text-white font-black text-xl flex-shrink-0"
+          style={{
+            background: 'linear-gradient(135deg, hsl(var(--color-primary)), hsl(var(--color-primary) / 0.7))',
+            boxShadow: '0 4px 12px hsl(var(--color-primary) / 0.35)',
+          }}
+        >
+          {companyName.charAt(0)}
+        </div>
+        <div className="min-w-0">
+          <span className="block text-base font-black text-text truncate">{companyName}</span>
+          <span className="block text-xs text-text-muted">نظام Rentrix</span>
+        </div>
       </div>
 
-      <div className="flex flex-col overflow-y-auto duration-300 ease-linear flex-1 scrollbar-hide">
-        <nav className="mt-5 py-4 px-4 lg:px-6">
+      {/* Navigation */}
+      <div className="flex flex-col overflow-y-auto flex-1 py-4 px-3 scrollbar-hide">
+        <nav>
           {navGroups.map(group => {
             const visibleLinks = group.links.filter(link => !link.adminOnly || auth.currentUser?.role === 'ADMIN');
             if (visibleLinks.length === 0) return null;
 
             return (
-              <div key={group.title} className="mb-6">
-                <h3 className="mb-4 ml-4 text-[10px] font-black text-text-muted uppercase tracking-[0.2em] opacity-50">{group.title}</h3>
-                <ul className="flex flex-col gap-1.5">
-                  {visibleLinks.map(link => (
-                    <li key={link.path}>
-                      <NavLink
-                        to={link.path}
-                        className={`group relative flex items-center gap-3 rounded-xl px-4 py-3 font-bold text-sm transition-all ${
-                            isLinkActive(link.path)
-                              ? 'bg-primary text-white shadow-md shadow-primary/20' 
-                              : 'text-text-muted hover:bg-background hover:text-primary'
+              <div key={group.title} className="mb-5">
+                <h3 className="mb-2 px-3 text-[10px] font-black text-text-muted uppercase tracking-[0.18em] opacity-60">
+                  {group.title}
+                </h3>
+                <ul className="flex flex-col gap-0.5">
+                  {visibleLinks.map(link => {
+                    const active = isLinkActive(link.path);
+                    return (
+                      <li key={link.path}>
+                        <NavLink
+                          to={link.path}
+                          className={`group flex items-center gap-3 rounded-xl px-3 py-2.5 font-bold text-sm transition-all duration-200 ${
+                            active
+                              ? 'text-sidebar-active-text'
+                              : 'text-sidebar-text hover:text-text'
                           }`}
-                      >
-                        <link.icon size={18} />
-                        {link.label}
-                      </NavLink>
-                    </li>
-                  ))}
+                          style={active ? {
+                            background: 'hsl(var(--color-sidebar-active-bg))',
+                            boxShadow: '0 2px 8px hsl(var(--color-primary) / 0.25)',
+                          } : undefined}
+                          onMouseEnter={(e) => {
+                            if (!active) {
+                              (e.currentTarget as HTMLElement).style.background = 'hsl(var(--color-sidebar-hover-bg))';
+                            }
+                          }}
+                          onMouseLeave={(e) => {
+                            if (!active) {
+                              (e.currentTarget as HTMLElement).style.background = '';
+                            }
+                          }}
+                        >
+                          <link.icon
+                            size={17}
+                            className={`flex-shrink-0 transition-transform duration-200 group-hover:scale-110 ${active ? 'text-sidebar-active-text' : ''}`}
+                          />
+                          <span>{link.label}</span>
+                          {active && (
+                            <span className="mr-auto w-1.5 h-1.5 rounded-full bg-current opacity-80" />
+                          )}
+                        </NavLink>
+                      </li>
+                    );
+                  })}
                 </ul>
               </div>
             );

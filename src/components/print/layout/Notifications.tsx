@@ -1,25 +1,54 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useApp } from '../../../contexts/AppContext';
-import { Bell, FileText, AlertTriangle } from 'lucide-react';
+import { Bell, FileText, AlertTriangle, CheckCheck } from 'lucide-react';
 import { toArabicDigits, formatDate, formatCurrency } from '../../../utils/helpers';
 import { Link } from 'react-router-dom';
 
 const Notifications: React.FC = () => {
     const { db, settings } = useApp();
     const [isOpen, setIsOpen] = useState(false);
+    const [readLog, setReadLog] = useState<Record<string, number>>(() => {
+        try {
+            const parsed = JSON.parse(localStorage.getItem('notif_read_log') || '{}');
+            return typeof parsed === 'object' && parsed !== null ? parsed : {};
+        } catch {
+            return {};
+        }
+    });
     const wrapperRef = useRef<HTMLDivElement>(null);
+
+    const currency = settings.operational?.currency ?? 'OMR';
+    const alertDays = settings.operational?.contractAlertDays ?? 30;
 
     const expiringContracts = db.contracts.filter(c => {
         if (c.status !== 'ACTIVE') return false;
         const endDate = new Date(c.end);
         const alertDate = new Date();
-        alertDate.setDate(alertDate.getDate() + settings.operational.contractAlertDays);
+        alertDate.setDate(alertDate.getDate() + alertDays);
         return endDate <= alertDate && endDate > new Date();
     });
 
     const overdueInvoices = db.invoices.filter(inv => inv.status === 'OVERDUE');
 
-    const notificationCount = expiringContracts.length + overdueInvoices.length;
+    const allItems = [
+        ...overdueInvoices.map(inv => ({ id: `inv-${inv.id}`, type: 'overdue' as const, inv })),
+        ...expiringContracts.map(c => ({ id: `ctr-${c.id}`, type: 'expiring' as const, c })),
+    ];
+
+    const unreadCount = allItems.filter(item => !(item.id in readLog)).length;
+
+    const markAllRead = () => {
+        const now = Date.now();
+        const newLog = { ...readLog, ...Object.fromEntries(allItems.map(i => [i.id, now])) };
+        setReadLog(newLog);
+        localStorage.setItem('notif_read_log', JSON.stringify(newLog));
+    };
+
+    const markOneRead = (id: string) => {
+        const newLog = { ...readLog, [id]: Date.now() };
+        setReadLog(newLog);
+        localStorage.setItem('notif_read_log', JSON.stringify(newLog));
+    };
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
@@ -27,63 +56,125 @@ const Notifications: React.FC = () => {
                 setIsOpen(false);
             }
         };
-        document.addEventListener("mousedown", handleClickOutside);
-        return () => document.removeEventListener("mousedown", handleClickOutside);
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
 
     return (
         <div className="relative" ref={wrapperRef}>
-            <button onClick={() => setIsOpen(!isOpen)} className="relative flex items-center justify-center h-10 w-10 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700">
-                <Bell className="w-5 h-5 text-slate-500 dark:text-slate-400" />
-                {notificationCount > 0 && (
-                    <span className="absolute top-0 right-0 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-red-100 transform translate-x-1/2 -translate-y-1/2 bg-red-600 rounded-full">
-                        {toArabicDigits(notificationCount)}
+            <button
+                onClick={() => setIsOpen(!isOpen)}
+                className="relative flex items-center justify-center h-9 w-9 rounded-lg hover:bg-background transition-colors"
+                title="التنبيهات"
+            >
+                <Bell className="w-4.5 h-4.5 text-text-muted" />
+                {unreadCount > 0 && (
+                    <span className="absolute top-0 right-0 inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 text-[10px] font-black leading-none text-white transform translate-x-1/2 -translate-y-1/2 bg-red-500 rounded-full">
+                        {toArabicDigits(unreadCount > 9 ? '9+' : unreadCount)}
                     </span>
                 )}
             </button>
+
             {isOpen && (
-                <div className="absolute left-0 mt-2 w-80 rounded-lg shadow-lg bg-white dark:bg-slate-800 border dark:border-slate-700 z-50">
-                    <div className="p-3 font-bold border-b dark:border-slate-700">التنبيهات</div>
+                <div
+                    className="absolute left-0 mt-2 w-84 rounded-xl bg-card border border-border z-50"
+                    style={{ boxShadow: 'var(--shadow-card-hover)', minWidth: '320px' }}
+                >
+                    {/* Header */}
+                    <div className="flex items-center justify-between p-4 border-b border-border">
+                        <span className="font-black text-text">التنبيهات</span>
+                        {unreadCount > 0 && (
+                            <button
+                                onClick={markAllRead}
+                                className="flex items-center gap-1 text-xs text-text-muted hover:text-primary transition-colors font-bold"
+                            >
+                                <CheckCheck size={13} />
+                                تعليم الكل كمقروء
+                            </button>
+                        )}
+                    </div>
+
+                    {/* Notification List */}
                     <div className="max-h-96 overflow-y-auto">
-                        {notificationCount === 0 ? (
-                            <p className="text-sm text-slate-500 p-4 text-center">لا توجد تنبيهات جديدة.</p>
+                        {allItems.length === 0 ? (
+                            <div className="flex flex-col items-center justify-center py-10 gap-2">
+                                <Bell className="w-8 h-8 text-text-muted opacity-40" />
+                                <p className="text-sm text-text-muted">لا توجد تنبيهات جديدة</p>
+                            </div>
                         ) : (
                             <>
                                 {overdueInvoices.length > 0 && (
                                     <div>
-                                        <h4 className="text-xs font-bold uppercase text-slate-400 px-3 pt-3 pb-1">فواتير متأخرة</h4>
+                                        <h4 className="text-[10px] font-black uppercase text-text-muted px-4 pt-3 pb-1 tracking-widest opacity-70">
+                                            فواتير متأخرة
+                                        </h4>
                                         {overdueInvoices.map(inv => {
-                                             const contract = db.contracts.find(c => c.id === inv.contractId);
-                                             const tenant = contract ? db.tenants.find(t => t.id === contract.tenantId) : { name: 'غير معروف'};
+                                            const contract = db.contracts.find(c => c.id === inv.contractId);
+                                            const tenant = contract ? db.tenants.find(t => t.id === contract.tenantId) : { name: 'غير معروف' };
+                                            const itemId = `inv-${inv.id}`;
+                                            const isRead = itemId in readLog;
                                             return (
-                                            <Link to="/invoices" onClick={() => setIsOpen(false)} key={inv.id} className="block px-3 py-2 text-sm hover:bg-slate-50 dark:hover:bg-slate-700">
-                                                <div className="flex items-start gap-2">
-                                                    <AlertTriangle className="w-4 h-4 text-red-500 mt-0.5" />
-                                                    <div>
-                                                        <p>فاتورة للمستأجر <strong>{tenant.name}</strong> متأخرة.</p>
-                                                        <p className="text-xs text-slate-500">{formatCurrency(inv.amount - inv.paidAmount, settings.operational.currency)}</p>
+                                                <Link
+                                                    to="/finance/invoices?filter=overdue"
+                                                    onClick={() => { setIsOpen(false); markOneRead(itemId); }}
+                                                    key={inv.id}
+                                                    className={`flex items-start gap-3 px-4 py-3 text-sm border-b border-border/50 last:border-0 transition-colors ${isRead ? 'opacity-60' : 'bg-danger-bg/20 hover:bg-danger-bg/40'}`}
+                                                >
+                                                    <AlertTriangle className="w-4 h-4 text-danger-text mt-0.5 flex-shrink-0" />
+                                                    <div className="min-w-0">
+                                                        <p className="font-bold text-text truncate">
+                                                            فاتورة متأخرة — <span className="text-danger-text">{tenant?.name}</span>
+                                                        </p>
+                                                        <p className="text-xs text-text-muted mt-0.5">
+                                                            المبلغ المتبقي: {formatCurrency(inv.amount - inv.paidAmount, currency)}
+                                                        </p>
+                                                        {isRead && readLog[itemId] && (
+                                                            <p className="text-[10px] text-text-muted mt-0.5 opacity-60">
+                                                                قُرئ: {new Date(readLog[itemId]).toLocaleString('ar')}
+                                                            </p>
+                                                        )}
                                                     </div>
-                                                </div>
-                                            </Link>
-                                        )})}
+                                                    {!isRead && <span className="w-2 h-2 rounded-full bg-red-500 flex-shrink-0 mt-1.5" />}
+                                                </Link>
+                                            );
+                                        })}
                                     </div>
                                 )}
+
                                 {expiringContracts.length > 0 && (
                                     <div>
-                                        <h4 className="text-xs font-bold uppercase text-slate-400 px-3 pt-3 pb-1">عقود على وشك الانتهاء</h4>
+                                        <h4 className="text-[10px] font-black uppercase text-text-muted px-4 pt-3 pb-1 tracking-widest opacity-70">
+                                            عقود تنتهي قريباً
+                                        </h4>
                                         {expiringContracts.map(c => {
                                             const tenant = db.tenants.find(t => t.id === c.tenantId);
-                                            return(
-                                            <Link to="/contracts" onClick={() => setIsOpen(false)} key={c.id} className="block px-3 py-2 text-sm hover:bg-slate-50 dark:hover:bg-slate-700">
-                                                <div className="flex items-start gap-2">
-                                                    <FileText className="w-4 h-4 text-yellow-500 mt-0.5" />
-                                                    <div>
-                                                        <p>عقد المستأجر <strong>{tenant?.name}</strong> ينتهي قريباً.</p>
-                                                        <p className="text-xs text-slate-500">تاريخ الانتهاء: {formatDate(c.end)}</p>
+                                            const itemId = `ctr-${c.id}`;
+                                            const isRead = itemId in readLog;
+                                            return (
+                                                <Link
+                                                    to="/contracts"
+                                                    onClick={() => { setIsOpen(false); markOneRead(itemId); }}
+                                                    key={c.id}
+                                                    className={`flex items-start gap-3 px-4 py-3 text-sm border-b border-border/50 last:border-0 transition-colors ${isRead ? 'opacity-60' : 'bg-warning-bg/20 hover:bg-warning-bg/40'}`}
+                                                >
+                                                    <FileText className="w-4 h-4 text-warning-text mt-0.5 flex-shrink-0" />
+                                                    <div className="min-w-0">
+                                                        <p className="font-bold text-text truncate">
+                                                            عقد ينتهي قريباً — <span className="text-warning-text">{tenant?.name}</span>
+                                                        </p>
+                                                        <p className="text-xs text-text-muted mt-0.5">
+                                                            تاريخ الانتهاء: {formatDate(c.end)}
+                                                        </p>
+                                                        {isRead && readLog[itemId] && (
+                                                            <p className="text-[10px] text-text-muted mt-0.5 opacity-60">
+                                                                قُرئ: {new Date(readLog[itemId]).toLocaleString('ar')}
+                                                            </p>
+                                                        )}
                                                     </div>
-                                                </div>
-                                            </Link>
-                                        )})}
+                                                    {!isRead && <span className="w-2 h-2 rounded-full bg-yellow-500 flex-shrink-0 mt-1.5" />}
+                                                </Link>
+                                            );
+                                        })}
                                     </div>
                                 )}
                             </>

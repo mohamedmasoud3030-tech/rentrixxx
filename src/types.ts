@@ -113,6 +113,24 @@ export interface Settings {
   };
 }
 
+export interface LegacySettings {
+  company?: CompanyInfo;
+  currency?: 'OMR' | 'SAR' | 'EGP';
+  taxRate?: number;
+  contractAlertDays?: number;
+  lateFee?: Settings['operational']['lateFee'];
+  documentNumbering?: DocumentNumberingSettings;
+  maintenance?: MaintenanceSettings;
+  accountMappings?: Settings['accounting']['accountMappings'];
+  theme?: 'light' | 'dark';
+  geminiApiKey?: string;
+  googleClientId?: string;
+  googleDriveSync?: { isEnabled: boolean; lastSync?: string };
+  autoBackup?: AutoBackupSettings;
+  security?: SecuritySettings;
+  appearance?: { theme: 'light' | 'dark'; primaryColor: string; logoDataUrl?: string };
+}
+
 export interface Owner {
   id: string;
   name: string;

@@ -1,6 +1,6 @@
 
 import React, { useEffect, Suspense } from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { useApp } from './contexts/AppContext';
 import Layout from './components/print/layout/Layout';
 import Login from './pages/Login';
@@ -52,18 +52,55 @@ const PageLoader: React.FC = () => (
     </div>
 );
 
+const ROUTE_META: Record<string, { title: string; description: string }> = {
+    '/': { title: 'لوحة التحكم', description: 'نظرة شاملة على أداء المحفظة العقارية والمؤشرات الرئيسية' },
+    '/properties': { title: 'العقارات والوحدات', description: 'إدارة العقارات والوحدات والوحدات الفرعية المؤجرة' },
+    '/people': { title: 'المستأجرون والملاك', description: 'إدارة بيانات المستأجرين والملاك والتواصل معهم' },
+    '/contracts': { title: 'العقود', description: 'عرض وإدارة عقود الإيجار النشطة والمنتهية' },
+    '/finance/invoices': { title: 'الفواتير', description: 'إدارة الفواتير الشهرية ومتابعة المدفوعات المتأخرة' },
+    '/finance/receipts': { title: 'سندات القبض', description: 'سندات قبض المبالغ المدفوعة وتوزيعها على الفواتير' },
+    '/finance/expenses': { title: 'المصروفات', description: 'تتبع وتصنيف مصروفات العقارات والوحدات' },
+    '/finance/settlements': { title: 'التسويات', description: 'تسويات الملاك ومطابقة الحسابات' },
+    '/finance/deposits': { title: 'الودائع', description: 'إدارة ودائع الضمان وتتبع حالتها' },
+    '/finance/ledger': { title: 'دفتر الأستاذ', description: 'القيود المحاسبية والسجل المالي التفصيلي' },
+    '/reports': { title: 'التقارير والتحليلات', description: 'تقارير الأداء المالي والإشغال والتحليلات الذكية' },
+    '/leads': { title: 'العملاء المحتملون', description: 'إدارة العملاء المحتملين ومتابعة خط الفرص العقارية' },
+    '/communication': { title: 'مركز التواصل', description: 'قوالب الرسائل والإشعارات للمستأجرين والملاك' },
+    '/lands': { title: 'الأراضي والعمولات', description: 'إدارة صفقات الأراضي وعمولات الوسطاء العقاريين' },
+    '/settings': { title: 'الإعدادات', description: 'إعدادات النظام والمظهر والمستخدمين والتكاملات' },
+};
+
 const App: React.FC = () => {
   const { settings, auth } = useApp();
+  const location = useLocation();
 
   useEffect(() => {
     if (settings) {
-        document.documentElement.setAttribute('data-theme', settings.appearance.theme);
-        document.title = settings.general.company.name || 'Rentrix';
-        if (settings.appearance?.primaryColor) {
-            document.documentElement.style.setProperty('--color-primary', hexToHsl(settings.appearance.primaryColor));
+        const theme = settings.appearance?.theme ?? 'light';
+        const companyName = settings.general?.company?.name ?? 'Rentrix';
+        const primaryColor = settings.appearance?.primaryColor;
+        document.documentElement.setAttribute('data-theme', theme);
+        const matchedKey = ROUTE_META[location.pathname]
+            ? location.pathname
+            : Object.keys(ROUTE_META).find(k => k !== '/' && location.pathname.startsWith(k)) || '/';
+        const routeMeta = ROUTE_META[matchedKey];
+        document.title = routeMeta ? `${routeMeta.title} — ${companyName}` : companyName;
+        const descEl = document.querySelector('meta[name="description"]');
+        if (descEl && routeMeta) descEl.setAttribute('content', routeMeta.description);
+        const ogTitleEl = document.querySelector('meta[property="og:title"]');
+        if (ogTitleEl && routeMeta) ogTitleEl.setAttribute('content', `${routeMeta.title} — ${companyName}`);
+        const ogDescEl = document.querySelector('meta[property="og:description"]');
+        if (ogDescEl && routeMeta) ogDescEl.setAttribute('content', routeMeta.description);
+        const canonicalUrl = `${window.location.origin}${location.pathname}`;
+        const canonicalEl = document.getElementById('canonical-link') as HTMLLinkElement | null;
+        if (canonicalEl) canonicalEl.href = canonicalUrl;
+        const ogUrlEl = document.getElementById('og-url') as HTMLMetaElement | null;
+        if (ogUrlEl) ogUrlEl.content = canonicalUrl;
+        if (primaryColor) {
+            document.documentElement.style.setProperty('--color-primary', hexToHsl(primaryColor));
         }
     }
-  }, [settings]);
+  }, [settings, location.pathname]);
 
   if (settings === undefined || auth.currentUser === undefined) {
     return <PageLoader />;

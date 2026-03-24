@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useMemo, useCallback, ReactNode } from 'react';
 // FIX: Added Attachment to import
-import { Database, User, Settings, Owner, Property, Unit, Tenant, Contract, Receipt, Expense, MaintenanceRecord, DepositTx, AuditLogEntry, Governance, Serials, Snapshot, Invoice, ReceiptAllocation, Account, JournalEntry, NotificationTemplate, OutgoingNotification, AppContextType, PerformanceMetrics, OperationType, ContractBalance, TenantBalance, OwnerSettlement, DerivedData, AppNotification, Lead, Attachment, OwnerBalance } from '../types';
+import { Database, User, Settings, LegacySettings, Owner, Property, Unit, Tenant, Contract, Receipt, Expense, MaintenanceRecord, DepositTx, AuditLogEntry, Governance, Serials, Snapshot, Invoice, ReceiptAllocation, Account, JournalEntry, NotificationTemplate, OutgoingNotification, AppContextType, PerformanceMetrics, OperationType, ContractBalance, TenantBalance, OwnerSettlement, DerivedData, AppNotification, Lead, Attachment, OwnerBalance } from '../types';
 // FIX: Aliased import to prevent naming collision and implemented the correct function call.
 // FIX: Import postJournalEntry from financialEngine
 import { rebuildSnapshotsFromJournal as rebuildSnapshots, postJournalEntry } from '../services/financialEngine';
@@ -134,20 +134,33 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         if (await dbEngine.settings.count() === 0) {
             const data = {
                 settings: {
-                    theme: 'light' as 'light' | 'dark',
-                    appearance: { primaryColor: '#1e3a8a' },
-                    currency: 'OMR' as 'OMR', contractAlertDays: 30,
-                    company: { name: 'مشاريع جودة الانطلاقة', address: 'مسقط، سلطنة عمان', phone: '91928186', crNumber: '', taxNumber: '' },
-                    maintenance: { defaultChargedTo: 'OWNER' as 'OWNER' }, geminiApiKey: '',
-                    lateFee: { isEnabled: false, type: 'FIXED_AMOUNT' as 'FIXED_AMOUNT', value: 10, graceDays: 5 },
-                    autoBackup: { isEnabled: true, passphraseIsSet: false, lastBackupTime: null, lastBackupStatus: null, operationCounter: 0, operationsThreshold: 25 },
-                    googleDriveSync: { isEnabled: false },
-                    taxRate: 5,
-                    accountMappings: {
-                        paymentMethods: { CASH: '1111', BANK: '1112', POS: '1112', OTHER: '1111' },
-                        expenseCategories: { 'صيانة': '5110', 'عمولات موظفين': '5102', default: '5120' },
-                        revenue: { RENT: '4110', OFFICE_COMMISSION: '4120' },
-                        accountsReceivable: '1201', vatPayable: '2130', vatReceivable: '1130', ownersPayable: '2121',
+                    general: {
+                        company: { name: 'مشاريع جودة الانطلاقة', address: 'مسقط، سلطنة عمان', phone: '91928186', crNumber: '', taxNumber: '' },
+                    },
+                    operational: {
+                        currency: 'OMR' as 'OMR',
+                        taxRate: 5,
+                        contractAlertDays: 30,
+                        lateFee: { isEnabled: false, type: 'FIXED_AMOUNT' as 'FIXED_AMOUNT', value: 10, graceDays: 5 },
+                        documentNumbering: { invoicePrefix: 'INV', receiptPrefix: 'REC', expensePrefix: 'EXP', contractPrefix: 'CTR' },
+                        maintenance: { defaultChargedTo: 'OWNER' as 'OWNER' },
+                    },
+                    accounting: {
+                        accountMappings: {
+                            paymentMethods: { CASH: '1111', BANK: '1112', POS: '1112', OTHER: '1111' },
+                            expenseCategories: { 'صيانة': '5110', 'عمولات موظفين': '5102', default: '5120' },
+                            revenue: { RENT: '4110', OFFICE_COMMISSION: '4120' },
+                            accountsReceivable: '1201', vatPayable: '2130', vatReceivable: '1130', ownersPayable: '2121',
+                        },
+                    },
+                    appearance: { theme: 'light' as 'light' | 'dark', primaryColor: '#1e3a8a' },
+                    backup: {
+                        autoBackup: { isEnabled: true, passphraseIsSet: false, lastBackupTime: null, lastBackupStatus: null, operationCounter: 0, operationsThreshold: 25 },
+                    },
+                    security: { sessionTimeout: 0 },
+                    integrations: {
+                        geminiApiKey: '',
+                        googleDriveSync: { isEnabled: false },
                     },
                 },
                 governance: { readOnly: false, lockedPeriods: [] },
@@ -161,6 +174,32 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             await dbEngine.accounts.bulkPut(data.accounts);
             await dbEngine.notificationTemplates.bulkPut(data.notificationTemplates);
         }
+        // Migration: Upgrade old flat settings to new nested structure
+        const rawSettings = await dbEngine.settings.get(STATIC_ID);
+        if (rawSettings && !(rawSettings as Settings & { id: number }).general) {
+            const legacy = rawSettings as unknown as LegacySettings;
+            const defaultAccountMappings: Settings['accounting']['accountMappings'] = { paymentMethods: { CASH: '1111', BANK: '1112', POS: '1112', OTHER: '1111' }, expenseCategories: { 'صيانة': '5110', 'عمولات موظفين': '5102', default: '5120' }, revenue: { RENT: '4110', OFFICE_COMMISSION: '4120' }, accountsReceivable: '1201', vatPayable: '2130', vatReceivable: '1130', ownersPayable: '2121' };
+            const migrated: Settings & { id: number } = {
+                id: STATIC_ID,
+                general: { company: legacy.company ?? { name: 'Rentrix', address: '', phone: '', crNumber: '', taxNumber: '' } },
+                operational: {
+                    currency: legacy.currency ?? 'OMR',
+                    taxRate: legacy.taxRate ?? 5,
+                    contractAlertDays: legacy.contractAlertDays ?? 30,
+                    lateFee: legacy.lateFee ?? { isEnabled: false, type: 'FIXED_AMOUNT', value: 10, graceDays: 5 },
+                    documentNumbering: legacy.documentNumbering ?? { invoicePrefix: 'INV', receiptPrefix: 'REC', expensePrefix: 'EXP', contractPrefix: 'CTR' },
+                    maintenance: legacy.maintenance ?? { defaultChargedTo: 'OWNER' },
+                },
+                accounting: { accountMappings: legacy.accountMappings ?? defaultAccountMappings },
+                appearance: legacy.appearance ?? { theme: legacy.theme ?? 'light', primaryColor: '#1e3a8a' },
+                backup: { autoBackup: legacy.autoBackup ?? { isEnabled: true, passphraseIsSet: false, lastBackupTime: null, lastBackupStatus: null, operationCounter: 0, operationsThreshold: 25 } },
+                security: legacy.security ?? { sessionTimeout: 0 },
+                integrations: { geminiApiKey: legacy.geminiApiKey ?? '', googleClientId: legacy.googleClientId, googleDriveSync: legacy.googleDriveSync ?? { isEnabled: false } },
+            };
+            await dbEngine.settings.put(migrated);
+            console.log('Settings migrated to new nested structure.');
+        }
+
         if (await dbEngine.users.count() === 0) {
             console.log("No users found, creating default admin user...");
             const salt = randSalt(); const hash = await sha256('123' + salt);
@@ -217,27 +256,28 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           leads: 'lead', missions: 'mission'
       };
       const serialKey = serialKeyMap[table as keyof Database];
-      const finalEntry: { [key: string]: any } = { ...entry, id, createdAt: now };
+      const mutableEntry: Record<string, unknown> = { ...entry, id, createdAt: now };
 
-      const tablesToLock = [dbEngine.serials, (dbEngine as any)[table], dbEngine.journalEntries, dbEngine.auditLog];
+      const dbRecord = dbEngine as unknown as Record<string, Dexie.Table>;
+      const tablesToLock = [dbEngine.serials, dbRecord[table as string], dbEngine.journalEntries, dbEngine.auditLog];
 
       await (dbEngine as Dexie).transaction('rw', tablesToLock, async (tx) => {
           if (serialKey) {
-              await tx.table('serials').where({id: STATIC_ID}).modify(s => {
-                  (s as any)[serialKey]++;
-                  finalEntry.no = String((s as any)[serialKey]);
+              await tx.table('serials').where({id: STATIC_ID}).modify((s: Record<string, number>) => {
+                  s[serialKey]++;
+                  mutableEntry['no'] = String(s[serialKey]);
               });
           }
           
-          await tx.table(table as string).add(finalEntry);
+          await tx.table(table as string).add(mutableEntry);
           await audit('CREATE', String(table), id);
           
-          const mappings = settings.accountMappings;
+          const mappings = settings.accounting?.accountMappings;
           if (table === 'receipts') {
-              const r = finalEntry as Receipt;
+              const r = mutableEntry as unknown as Receipt;
               await postJournalEntry(tx, { dr: mappings.paymentMethods[r.channel], cr: mappings.accountsReceivable, amount: r.amount, ref: r.id });
           } else if (table === 'expenses') {
-              const e = finalEntry as Expense;
+              const e = mutableEntry as unknown as Expense;
               const cashAccount = mappings.paymentMethods.CASH;
               if (e.chargedTo === 'OWNER') {
                   await postJournalEntry(tx, { dr: '2121', cr: cashAccount, amount: e.amount, ref: e.id });
@@ -246,14 +286,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
                   await postJournalEntry(tx, { dr: expenseAccount, cr: cashAccount, amount: e.amount, ref: e.id });
               }
           } else if (table === 'ownerSettlements') {
-              const s = finalEntry as OwnerSettlement;
+              const s = mutableEntry as unknown as OwnerSettlement;
               const cashAccount = mappings.paymentMethods[s.method === 'CASH' ? 'CASH' : 'BANK'];
               await postJournalEntry(tx, { dr: '2121', cr: cashAccount, amount: s.amount, ref: s.id });
           }
       });
       
       toast.success('تمت الإضافة بنجاح!');
-      return finalEntry as any;
+      return mutableEntry as unknown as Database[typeof table][number];
   }, [isReadOnly, settings, audit]);
 
   // FIX: Change signature to match AppContextType
@@ -276,7 +316,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             invoice.status = (invoice.paidAmount >= (invoice.amount + (invoice.taxAmount || 0)) - 0.001) ? 'PAID' : 'PARTIALLY_PAID';
         }
         await dbEngine.invoices.bulkPut(invoicesToUpdate as Invoice[]);
-        const mappings = settings.accountMappings;
+        const mappings = settings.accounting?.accountMappings;
         await postJournalEntry(tx, { dr: mappings.paymentMethods[newReceipt.channel], cr: mappings.accountsReceivable, amount: newReceipt.amount, ref: newReceipt.id });
         await audit('CREATE', 'receipts', newReceipt.id, `Created receipt ${newReceipt.no} with ${allocations.length} allocations.`);
     });
@@ -309,7 +349,8 @@ const addManualJournalVoucher: AppContextType['financeService']['addManualJourna
 
   // FIX: Change signature to match AppContextType
   const update: AppContextType['dataService']['update'] = useCallback(async (table, id, updates) => {
-      await (dbEngine as any)[table].update(id, { ...updates, updatedAt: Date.now() });
+      const dbRec = dbEngine as unknown as Record<string, Dexie.Table>;
+      await dbRec[table as string].update(id, { ...updates, updatedAt: Date.now() });
       await audit('UPDATE', String(table), id);
       if (FINANCIAL_TABLES.includes(table as keyof Database)) setIsDataStale(true);
       toast.success('تم التحديث بنجاح!');
@@ -319,14 +360,16 @@ const addManualJournalVoucher: AppContextType['financeService']['addManualJourna
   const remove: AppContextType['dataService']['remove'] = useCallback(async (table, id) => {
       if (window.confirm('هل أنت متأكد من الحذف؟ لا يمكن التراجع عن هذا الإجراء.')) {
         try {
-            await (dbEngine as any)[table].delete(id);
+            const dbRec = dbEngine as unknown as Record<string, Dexie.Table>;
+            await dbRec[table as string].delete(id);
             await audit('DELETE', String(table), id);
             if (FINANCIAL_TABLES.includes(table as keyof Database)) setIsDataStale(true);
             toast.success('تم الحذف بنجاح 🗑️');
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error("Delete error:", error);
-            if (error.name === 'ConstraintError') toast.error('لا يمكن الحذف لوجود بيانات أخرى مرتبطة بهذا السجل.');
-            else toast.error(error.message || 'حدث خطأ أثناء محاولة الحذف.');
+            const err = error as { name?: string; message?: string };
+            if (err.name === 'ConstraintError') toast.error('لا يمكن الحذف لوجود بيانات أخرى مرتبطة بهذا السجل.');
+            else toast.error(err.message || 'حدث خطأ أثناء محاولة الحذف.');
         }
       }
   }, [audit]);
@@ -391,11 +434,12 @@ const addManualJournalVoucher: AppContextType['financeService']['addManualJourna
     const currentMonthInvoices = await dbEngine.invoices.where('dueDate').startsWith(currentMonthYm).toArray();
     let count = 0;
     
+    const taxRate = settings.operational?.taxRate ?? 0;
     const newInvoices: Omit<Invoice, 'id'|'createdAt'|'no'>[] = [];
     for (const c of activeContracts) {
         const hasInvoice = currentMonthInvoices.some(i => i.contractId === c.id && i.type === 'RENT');
         if (!hasInvoice) {
-            const taxAmount = (c.rent * (settings.taxRate || 0)) / 100;
+            const taxAmount = (c.rent * taxRate) / 100;
             newInvoices.push({ contractId: c.id, dueDate: `${currentMonthYm}-${String(c.dueDay).padStart(2, '0')}`, amount: c.rent, taxAmount: taxAmount > 0 ? taxAmount : undefined, paidAmount: 0, status: 'UNPAID', type: 'RENT', notes: `فاتورة إيجار شهر ${today.toLocaleString('ar-EG', { month: 'long' })}` });
         }
     }
@@ -486,7 +530,34 @@ const addManualJournalVoucher: AppContextType['financeService']['addManualJourna
     voidExpense,
     generateMonthlyInvoices,
     payoutCommission,
-    generateLateFees: async () => 0, // Placeholder as per original
+    generateLateFees: async () => {
+      if (!settings) return 0;
+      const lateFeeSettings = settings.operational?.lateFee;
+      if (!lateFeeSettings?.isEnabled) return 0;
+      const today = new Date();
+      const overdueInvoices = await dbEngine.invoices.where('status').equals('OVERDUE').toArray();
+      const existingLateFees = await dbEngine.invoices.where('type').equals('LATE_FEE').toArray();
+      const lateFeeSrcIds = new Set<string>(existingLateFees.flatMap(i => i.relatedInvoiceId ? [i.relatedInvoiceId] : []));
+      let count = 0;
+      for (const inv of overdueInvoices) {
+          const existingLateFee = lateFeeSrcIds.has(inv.id);
+          if (existingLateFee) continue;
+          const dueDate = new Date(inv.dueDate);
+          const daysLate = Math.floor((today.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24));
+          const graceDays = lateFeeSettings.graceDays || 0;
+          if (daysLate <= graceDays) continue;
+          const feeAmount = lateFeeSettings.type === 'PERCENTAGE_OF_RENT'
+            ? (inv.amount * lateFeeSettings.value) / 100
+            : lateFeeSettings.value;
+          await add('invoices', {
+            contractId: inv.contractId, dueDate: today.toISOString().slice(0, 10),
+            amount: feeAmount, paidAmount: 0, status: 'UNPAID', type: 'LATE_FEE',
+            notes: `رسوم تأخير على الفاتورة رقم ${inv.no}`, relatedInvoiceId: inv.id,
+          });
+          count++;
+      }
+      return count;
+    },
   };
 
   return (
@@ -499,13 +570,37 @@ const addManualJournalVoucher: AppContextType['financeService']['addManualJourna
       // FIX: Provide services instead of individual functions
       dataService,
       financeService,
-      generateNotifications: async () => 0,
+      generateNotifications: async () => {
+        if (!settings) return 0;
+        const alertDays = settings.operational?.contractAlertDays ?? 30;
+        const thresholds = [alertDays, 7, 1];
+        const now = Date.now();
+        const activeContracts = await dbEngine.contracts.where('status').equals('ACTIVE').toArray();
+        const existingNotifs = await dbEngine.appNotifications.toArray();
+        let count = 0;
+        for (const c of activeContracts) {
+          const endDate = new Date(c.end).getTime();
+          const daysLeft = Math.ceil((endDate - now) / (1000 * 60 * 60 * 24));
+          for (const threshold of thresholds) {
+            if (daysLeft <= threshold && daysLeft > 0) {
+              const key = `CONTRACT_EXPIRING-${c.id}-${threshold}`;
+              const alreadyExists = existingNotifs.some(n => n.link === `/contracts?contractId=${c.id}` && n.title.includes(String(threshold)));
+              if (!alreadyExists) {
+                await dbEngine.appNotifications.add({ id: crypto.randomUUID(), createdAt: now, isRead: false, role: 'ADMIN', type: 'CONTRACT_EXPIRING', title: `عقد ينتهي خلال ${threshold} يوم`, message: `عقد المستأجر سينتهي خلال ${daysLeft} يوم`, link: `/contracts?contractId=${c.id}` });
+                count++;
+              }
+              break;
+            }
+          }
+        }
+        return count;
+      },
       updateNotificationTemplate, lockPeriod, unlockPeriod,
       setReadOnly: async (ro) => { await dbEngine.governance.update(STATIC_ID, { readOnly: ro }); await audit(ro ? 'SET_READ_ONLY' : 'UNSET_READ_ONLY', 'governance', 'main'); },
-      createBackup: async () => JSON.stringify(await dbEngine.getAllData()), restoreBackup: async (s) => { await (dbEngine as Dexie).delete(); await (dbEngine as Dexie).open(); (dbEngine as any).on('populate').fire(JSON.parse(s)); window.location.reload(); }, 
+      createBackup: async () => JSON.stringify(await dbEngine.getAllData()), restoreBackup: async (s) => { await (dbEngine as Dexie).delete(); await (dbEngine as Dexie).open(); (dbEngine as unknown as Dexie).on('populate').fire(JSON.parse(s)); window.location.reload(); }, 
       generateOwnerPortalLink,
       canAccess,
-      isDataStale, performanceMetrics, logOperationTime, ownerBalances: ownerBalances as any, contractBalances: contractBalances as any, tenantBalances: tenantBalances as any,
+      isDataStale, performanceMetrics, logOperationTime, ownerBalances, contractBalances, tenantBalances,
       createSnapshot: async (note) => { await dbEngine.snapshots.add({ id: crypto.randomUUID(), ts: Date.now(), note, data: await dbEngine.getAllData() }); toast.success("تم إنشاء نقطة الاستعادة بنجاح.") },
       // FIX: Implement or provide placeholders for missing context methods
       sendWhatsApp: (phone: string, message: string) => IntegrationService.sendWhatsApp(phone, message),

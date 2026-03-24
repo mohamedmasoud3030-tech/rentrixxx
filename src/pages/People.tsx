@@ -5,9 +5,9 @@ import Card from '../components/ui/Card';
 import Modal from '../components/ui/Modal';
 import ActionsMenu, { EditAction, DeleteAction } from '../components/shared/ActionsMenu';
 import AttachmentsManager from '../components/shared/AttachmentsManager';
-import { MessageCircle, Users, BookOpen, Link as LinkIcon } from 'lucide-react';
+import { MessageCircle, Users, BookOpen, Link as LinkIcon, Download } from 'lucide-react';
 import { WhatsAppComposerModal } from '../components/shared/WhatsAppComposerModal';
-import { formatDate } from '../utils/helpers';
+import { formatDate, exportToCsv, TENANT_STATUS_AR } from '../utils/helpers';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 import { useLiveQuery } from 'dexie-react-hooks';
@@ -88,7 +88,13 @@ const TenantsView: React.FC = () => {
         <div>
             <div className="flex justify-between items-center mb-4">
                 <h2 className="text-xl font-bold">قائمة المستأجرين</h2>
-                <button onClick={() => handleOpenModal()} className="btn btn-primary">إضافة مستأجر</button>
+                <div className="flex gap-2">
+                    <button onClick={() => exportToCsv('مستأجرون_rentrix', tenants.map(t => ({ 'الاسم': t.name, 'الهاتف': t.phone, 'رقم الهوية': t.idNo, 'الجنسية': t.nationality || '', 'الحالة': TENANT_STATUS_AR[t.status] || t.status, 'تاريخ الإضافة': new Date(t.createdAt).toLocaleDateString('ar') })))} className="btn btn-secondary">
+                        <Download size={14} />
+                        تصدير CSV
+                    </button>
+                    <button onClick={() => handleOpenModal()} className="btn btn-primary">إضافة مستأجر</button>
+                </div>
             </div>
             {tenants.length === 0 ? (
                  <div className="text-center py-12">

@@ -16,7 +16,7 @@ const fileToBase64 = (file: File): Promise<string> => {
 
 const AppearanceSettings: React.FC = () => {
     const { settings, updateSettings } = useApp();
-    const [appearance, setAppearance] = useState<Appearance>(settings.appearance);
+    const [appearance, setAppearance] = useState<Appearance>(settings.appearance || { theme: 'light', primaryColor: '#B8860B' });
 
     useEffect(() => {
         setAppearance(settings.appearance);
