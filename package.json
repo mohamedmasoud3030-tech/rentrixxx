@@ -9,7 +9,7 @@
     "build": "vite build",
     "dist": "npm run build && electron-builder"
   },
-  "author": "يعقوب فضل الخصيبي",
+  "author": "Mohamed Masoud",
   "license": "UNLICENSED",
   "dependencies": {
     "@google/genai": "^1.40.0",
