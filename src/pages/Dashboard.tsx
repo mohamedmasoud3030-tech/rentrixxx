@@ -89,11 +89,11 @@ const Dashboard: React.FC = () => {
             activeContracts: contracts.filter((c: any) => c.status === 'ACTIVE').length || 0,
             expiringSoon: contracts.filter((c: any) => {
                 const diff = new Date(c.end).getTime() - Date.now();
-                const alertDays = settings.operational.contractAlertDays || 30;
+                const alertDays = settings.operational?.contractAlertDays ?? 30;
                 return c.status === 'ACTIVE' && diff > 0 && diff < (alertDays * 24 * 60 * 60 * 1000);
             }).length || 0
         };
-    }, [contracts, receipts, expenses, settings.operational.contractAlertDays]);
+    }, [contracts, receipts, expenses, settings.operational?.contractAlertDays]);
 
     const latestReceiptsData = useLiveQuery(async () => {
         const latest = await dbEngine.receipts.orderBy('dateTime').reverse().limit(5).toArray();
@@ -124,7 +124,7 @@ const Dashboard: React.FC = () => {
             <header className="flex justify-between items-center">
                 <div>
                     <h1 className="text-2xl font-bold text-text">لوحة التحكم الذكية</h1>
-                    <p className="text-text-muted mt-1">مرحباً بك في {settings?.general.company.name}</p>
+                    <p className="text-text-muted mt-1">مرحباً بك في {settings?.general?.company?.name ?? 'Rentrix'}</p>
                 </div>
                 <div className="p-2 bg-card rounded-lg shadow-sm border border-border">
                     <span className="text-text-muted text-sm">الحالة: </span>
@@ -140,7 +140,7 @@ const Dashboard: React.FC = () => {
                 {/* كارت إجمالي الدخل - سحر الألوان المندمجة */}
                 <div className="bg-gradient-to-br from-blue-700 to-blue-500 p-6 rounded-2xl text-white shadow-lg shadow-blue-500/20">
                     <p className="opacity-80 text-sm mb-2">إجمالي التحصيل المالي</p>
-                    <h2 className="text-3xl font-bold mb-3" dir="ltr">{formatCurrency(stats.totalCollected, settings.operational.currency)}</h2>
+                    <h2 className="text-3xl font-bold mb-3" dir="ltr">{formatCurrency(stats.totalCollected, settings.operational?.currency ?? 'OMR')}</h2>
                     <p className="text-xs bg-white/20 px-2 py-1 rounded-full inline-block">
                         {tafneeta(stats.totalCollected)}
                     </p>
@@ -153,7 +153,7 @@ const Dashboard: React.FC = () => {
                         <span className="text-2xl">💰</span>
                     </div>
                     <h2 className="text-3xl font-bold my-2" dir="ltr">
-                        {formatCurrency(stats.totalCollected - stats.officeExpenses, settings.operational.currency)}
+                        {formatCurrency(stats.totalCollected - stats.officeExpenses, settings.operational?.currency ?? 'OMR')}
                     </h2>
                     <div className="text-xs bg-black/10 px-2 py-1 rounded-full">
                         جاهز للتوريد أو الصرف للملاك
@@ -194,7 +194,7 @@ const Dashboard: React.FC = () => {
                             <tr key={r.id} className="border-b border-border last:border-0 text-sm">
                                 <td className="py-3 font-mono">{r.no}</td>
                                 <td className="py-3">{r.tenantName}</td>
-                                <td className="py-3 font-bold" dir="ltr">{formatCurrency(r.amount, settings.operational.currency)}</td>
+                                <td className="py-3 font-bold" dir="ltr">{formatCurrency(r.amount, settings.operational?.currency ?? 'OMR')}</td>
                                 <td className="py-3">
                                     <span className="px-3 py-1 text-xs rounded-full bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300">مكتمل</span>
                                 </td>

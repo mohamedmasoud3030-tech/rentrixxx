@@ -57,15 +57,15 @@ const OwnerView: React.FC = () => {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
                 <div className="p-5 bg-card rounded-lg shadow-md border-t-4 border-blue-500">
                     <p className="text-sm text-text-muted">إجمالي التحصيلات</p>
-                    <p className="text-2xl font-bold text-blue-700 dark:text-blue-400 mt-2">{formatCurrency(ownerStats.collections, settings.operational.currency)}</p>
+                    <p className="text-2xl font-bold text-blue-700 dark:text-blue-400 mt-2">{formatCurrency(ownerStats.collections, settings.operational?.currency ?? 'OMR')}</p>
                 </div>
                 <div className="p-5 bg-card rounded-lg shadow-md border-t-4 border-red-500">
                     <p className="text-sm text-text-muted">إجمالي المصاريف والعمولة</p>
-                    <p className="text-2xl font-bold text-red-700 dark:text-red-400 mt-2">{formatCurrency(ownerStats.expenses + ownerStats.officeShare, settings.operational.currency)}</p>
+                    <p className="text-2xl font-bold text-red-700 dark:text-red-400 mt-2">{formatCurrency(ownerStats.expenses + ownerStats.officeShare, settings.operational?.currency ?? 'OMR')}</p>
                 </div>
                 <div className="p-5 bg-card rounded-lg shadow-md border-t-4 border-green-500">
                     <p className="text-sm text-text-muted">صافي المستحق لك</p>
-                    <p className="text-2xl font-bold text-green-700 dark:text-green-400 mt-2">{formatCurrency(ownerStats.net, settings.operational.currency)}</p>
+                    <p className="text-2xl font-bold text-green-700 dark:text-green-400 mt-2">{formatCurrency(ownerStats.net, settings.operational?.currency ?? 'OMR')}</p>
                 </div>
             </div>
             

@@ -82,5 +82,52 @@ export function sanitizePhoneNumber(phone: string): string {
   return phone.replace(/[\s+()-]/g, '');
 }
 
-// FIX: Add missing safeLabel helper function
 export const safeLabel = (map: {[key: string]: string}, key: string, fallback: string) => map[key] || fallback;
+
+export function exportToCsv(filename: string, rows: Record<string, string | number | null | undefined>[]): void {
+    if (!rows.length) return;
+    const headers = Object.keys(rows[0]);
+    const csvContent = [
+        headers.join(','),
+        ...rows.map(row => headers.map(h => {
+            const val = row[h];
+            const str = val == null ? '' : String(val);
+            return `"${str.replace(/"/g, '""')}"`;
+        }).join(','))
+    ].join('\n');
+    const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${filename}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+}
+
+export const INVOICE_STATUS_AR: Record<string, string> = {
+    PAID: 'مدفوعة', UNPAID: 'غير مدفوعة', PARTIALLY_PAID: 'مدفوعة جزئياً', OVERDUE: 'متأخرة'
+};
+
+export const INVOICE_TYPE_AR: Record<string, string> = {
+    RENT: 'إيجار', MAINTENANCE: 'صيانة', UTILITY: 'خدمات', LATE_FEE: 'رسوم تأخير'
+};
+
+export const CONTRACT_STATUS_AR: Record<string, string> = {
+    ACTIVE: 'نشط', ENDED: 'منتهي', SUSPENDED: 'معلق'
+};
+
+export const TENANT_STATUS_AR: Record<string, string> = {
+    ACTIVE: 'نشط', INACTIVE: 'غير نشط', BLACKLIST: 'قائمة سوداء'
+};
+
+export const USER_ROLE_AR: Record<string, string> = {
+    ADMIN: 'مدير', USER: 'مستخدم'
+};
+
+export const RECEIPT_STATUS_AR: Record<string, string> = {
+    POSTED: 'مرحّل', VOID: 'ملغى'
+};
+
+export const UNIT_STATUS_AR: Record<string, string> = {
+    AVAILABLE: 'شاغرة', RENTED: 'مؤجرة', MAINTENANCE: 'صيانة'
+};

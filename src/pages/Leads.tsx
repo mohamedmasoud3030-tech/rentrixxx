@@ -176,11 +176,11 @@ const LeadForm: React.FC<{ isOpen: boolean, onClose: () => void, lead: Lead | nu
                         <input type="text" value={desiredUnitType} onChange={e => setDesiredUnitType(e.target.value)} placeholder="مثال: شقة غرفتين"/>
                     </div>
                     <div>
-                        <label className="block text-sm font-medium mb-1">أقل ميزانية ({settings.operational.currency})</label>
+                        <label className="block text-sm font-medium mb-1">أقل ميزانية ({settings.operational?.currency ?? 'OMR'})</label>
                         <input type="number" value={minBudget || ''} onChange={e => setMinBudget(Number(e.target.value) || undefined)} />
                     </div>
                      <div>
-                        <label className="block text-sm font-medium mb-1">أعلى ميزانية ({settings.operational.currency})</label>
+                        <label className="block text-sm font-medium mb-1">أعلى ميزانية ({settings.operational?.currency ?? 'OMR'})</label>
                         <input type="number" value={maxBudget || ''} onChange={e => setMaxBudget(Number(e.target.value) || undefined)} />
                     </div>
                 </div>

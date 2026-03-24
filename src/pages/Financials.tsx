@@ -5,11 +5,11 @@ import { Receipt, Expense, DepositTx, OwnerSettlement, Tenant } from '../types';
 import Card from '../components/ui/Card';
 import Modal from '../components/ui/Modal';
 import ActionsMenu, { EditAction, VoidAction, DeleteAction, PrintAction } from '../components/shared/ActionsMenu';
-import { formatCurrency, formatDateTime, getStatusBadgeClass, formatDate } from '../utils/helpers';
+import { formatCurrency, formatDateTime, getStatusBadgeClass, formatDate, exportToCsv, RECEIPT_STATUS_AR } from '../utils/helpers';
 import HardGateBanner from '../components/shared/HardGateBanner';
 import AttachmentsManager from '../components/shared/AttachmentsManager';
 import SearchFilterBar from '../components/shared/SearchFilterBar';
-import { Receipt as ReceiptIcon, CreditCard, Landmark, PiggyBank, MessageCircle } from 'lucide-react';
+import { Receipt as ReceiptIcon, CreditCard, Landmark, PiggyBank, MessageCircle, Download } from 'lucide-react';
 import PrintPreviewModal from '../components/shared/PrintPreviewModal';
 import { WhatsAppComposerModal } from '../components/shared/WhatsAppComposerModal';
 import { ReceiptPrint } from '../components/print/PrintTemplate';
@@ -104,11 +104,34 @@ const ReceiptsView: React.FC = () => {
         };
     }, [printingReceipt, db]);
 
+    const handleExportReceiptsCsv = () => {
+        const rows = filteredReceipts.map(r => {
+            const contract = db.contracts.find(c => c.id === r.contractId);
+            const tenant = contract ? db.tenants.find(t => t.id === contract.tenantId) : null;
+            return {
+                'رقم السند': r.no,
+                'التاريخ': formatDateTime(r.dateTime),
+                'المستأجر': tenant?.name || '',
+                'المبلغ': r.amount,
+                'طريقة الدفع': r.channel,
+                'الحالة': RECEIPT_STATUS_AR[r.status as keyof typeof RECEIPT_STATUS_AR] || r.status,
+                'ملاحظات': r.notes || '',
+            };
+        });
+        exportToCsv('سندات_قبض_rentrix', rows);
+    };
+
     return (
         <div>
             <div className="flex justify-between items-center mb-4">
                 <h2 className="text-xl font-bold">قائمة سندات القبض</h2>
-                <button onClick={() => setIsModalOpen(true)} className="btn btn-primary">إضافة سند قبض</button>
+                <div className="flex gap-2">
+                    <button onClick={handleExportReceiptsCsv} className="btn btn-secondary flex items-center gap-1">
+                        <Download size={14} />
+                        تصدير CSV
+                    </button>
+                    <button onClick={() => setIsModalOpen(true)} className="btn btn-primary">إضافة سند قبض</button>
+                </div>
             </div>
             <SearchFilterBar searchTerm={searchTerm} onSearchChange={setSearchTerm} placeholder="بحث برقم السند أو اسم المستأجر..." />
             <div className="overflow-x-auto">

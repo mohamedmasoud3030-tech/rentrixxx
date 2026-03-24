@@ -1,56 +1,64 @@
 import React, { useEffect, useRef } from 'react';
+import { X } from 'lucide-react';
 
 interface ModalProps {
   isOpen: boolean;
   onClose: () => void;
   title: string;
   children: React.ReactNode;
+  size?: 'sm' | 'md' | 'lg' | 'xl';
 }
 
-const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children }) => {
+const sizeMap = {
+  sm: 'max-w-lg',
+  md: 'max-w-2xl',
+  lg: 'max-w-3xl',
+  xl: 'max-w-5xl',
+};
+
+const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children, size = 'lg' }) => {
   const modalRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
-        onClose();
-      }
+      if (event.key === 'Escape') onClose();
     };
-
     if (isOpen) {
       document.addEventListener('keydown', handleKeyDown);
+      document.body.style.overflow = 'hidden';
     }
-
     return () => {
       document.removeEventListener('keydown', handleKeyDown);
+      document.body.style.overflow = '';
     };
   }, [isOpen, onClose]);
 
-  if (!isOpen) {
-    return null;
-  }
+  if (!isOpen) return null;
 
   return (
     <div
-      className="fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-center items-center p-4"
+      className="fixed inset-0 z-50 flex justify-center items-center p-4"
+      style={{ background: 'rgba(0, 0, 0, 0.55)', backdropFilter: 'blur(4px)' }}
+      onClick={onClose}
     >
       <div
         ref={modalRef}
-        className="bg-card text-text rounded-lg shadow-xl w-full max-w-3xl max-h-[90vh] flex flex-col"
+        className={`bg-card text-text rounded-2xl w-full ${sizeMap[size]} max-h-[92vh] flex flex-col`}
+        style={{ boxShadow: '0 24px 64px -12px rgba(0,0,0,0.3), 0 0 0 1px hsl(var(--color-border))' }}
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex justify-between items-center p-4 border-b border-border">
-          <h3 className="text-lg font-bold">{title}</h3>
+        {/* Header */}
+        <div className="flex justify-between items-center px-6 py-4 border-b border-border flex-shrink-0">
+          <h3 className="text-lg font-black text-text">{title}</h3>
           <button
             onClick={onClose}
-            className="text-text-muted hover:text-text"
+            className="flex items-center justify-center w-8 h-8 rounded-lg hover:bg-background text-text-muted hover:text-text transition-colors"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
+            <X size={18} />
           </button>
         </div>
-        <div className="p-5 overflow-y-auto">
+        {/* Body */}
+        <div className="p-6 overflow-y-auto flex-1">
           {children}
         </div>
       </div>

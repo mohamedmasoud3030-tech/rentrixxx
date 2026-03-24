@@ -10,9 +10,14 @@ module.exports = {
         lg: 'var(--radius)',
         md: 'calc(var(--radius) - 2px)',
         sm: 'calc(var(--radius) - 4px)',
+        xl: 'calc(var(--radius) + 4px)',
+        '2xl': 'calc(var(--radius) + 8px)',
       },
       colors: {
-        primary: 'hsl(var(--color-primary))',
+        primary: {
+          DEFAULT: 'hsl(var(--color-primary))',
+          fg: 'hsl(var(--color-primary-fg))',
+        },
         'primary-fg': 'hsl(var(--color-primary-fg))',
         background: 'hsl(var(--color-bg))',
         card: 'hsl(var(--color-card))',
@@ -32,6 +37,15 @@ module.exports = {
         warning: { text: 'hsl(var(--color-warning-text))', bg: 'hsl(var(--color-warning-bg))' },
         danger: { text: 'hsl(var(--color-danger-text))', bg: 'hsl(var(--color-danger-bg))' },
         info: { text: 'hsl(var(--color-info-text))', bg: 'hsl(var(--color-info-bg))' },
+      },
+      boxShadow: {
+        card: 'var(--shadow-card)',
+        'card-hover': 'var(--shadow-card-hover)',
+        sidebar: 'var(--shadow-sidebar)',
+      },
+      transitionDuration: {
+        '250': '250ms',
+        '300': '300ms',
       }
     }
   },

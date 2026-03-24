@@ -4,14 +4,14 @@ import { useApp } from '../contexts/AppContext';
 import { Invoice, Unit } from '../types';
 import Card from '../components/ui/Card';
 import Modal from '../components/ui/Modal';
-import { formatCurrency, formatDate, getStatusBadgeClass } from '../utils/helpers';
-import { ReceiptText, RefreshCw } from 'lucide-react';
+import { formatCurrency, formatDate, getStatusBadgeClass, exportToCsv, INVOICE_STATUS_AR, INVOICE_TYPE_AR } from '../utils/helpers';
+import { ReceiptText, RefreshCw, Download, CheckSquare, Square, CheckCircle, MessageCircle } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 
 const Invoices: React.FC = () => {
     // FIX: Use financeService for financial operations
-    const { db, financeService, settings } = useApp();
+    const { db, financeService, settings, dataService } = useApp();
     const location = useLocation();
     const navigate = useNavigate();
 
@@ -19,6 +19,7 @@ const Invoices: React.FC = () => {
     const [isLateFeeLoading, setIsLateFeeLoading] = useState(false);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingInvoice, setEditingInvoice] = useState<Invoice | null>(null);
+    const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
     const filters = [
         { key: 'all', label: 'الكل' },
@@ -67,6 +68,74 @@ const Invoices: React.FC = () => {
         setIsModalOpen(false);
     };
 
+    const toggleSelect = (id: string) => {
+        setSelectedIds(prev => {
+            const next = new Set(prev);
+            next.has(id) ? next.delete(id) : next.add(id);
+            return next;
+        });
+    };
+
+    const toggleSelectAll = () => {
+        if (selectedIds.size === invoicesWithDetails.length) {
+            setSelectedIds(new Set());
+        } else {
+            setSelectedIds(new Set(invoicesWithDetails.map(i => i.id)));
+        }
+    };
+
+    const handleBulkMarkOverdue = async () => {
+        if (selectedIds.size === 0) { toast.error('لم يتم اختيار أي فاتورة.'); return; }
+        const toMark = invoicesWithDetails.filter(i => selectedIds.has(i.id) && (i.status === 'UNPAID' || i.status === 'PARTIALLY_PAID'));
+        if (toMark.length === 0) { toast.error('الفواتير المختارة لا تقبل التحديث.'); return; }
+        for (const inv of toMark) {
+            await dataService.update('invoices', inv.id, { status: 'OVERDUE' as Invoice['status'] });
+        }
+        toast.success(`تم تعليم ${toMark.length} فاتورة كمتأخرة.`);
+        setSelectedIds(new Set());
+    };
+
+    const handleBulkExport = () => {
+        const selected = invoicesWithDetails.filter(i => selectedIds.has(i.id));
+        const rows = selected.map(inv => ({
+            'رقم الفاتورة': inv.no,
+            'المستأجر': inv.tenant?.name || '',
+            'الوحدة': inv.unit?.name || '',
+            'النوع': getInvoiceTypeLabel(inv.type),
+            'تاريخ الاستحقاق': inv.dueDate,
+            'المبلغ': inv.amount,
+            'المدفوع': inv.paidAmount,
+            'الرصيد': inv.amount - inv.paidAmount,
+            'الحالة': getInvoiceStatusLabel(inv.status),
+        }));
+        exportToCsv('فواتير_مختارة_rentrix', rows);
+        toast.success(`تم تصدير ${rows.length} فاتورة.`);
+    };
+
+    const handleBulkSendWhatsApp = () => {
+        const selected = invoicesWithDetails.filter(i => selectedIds.has(i.id));
+        if (selected.length === 0) { toast.error('لم يتم اختيار أي فاتورة.'); return; }
+        let sent = 0;
+        for (const inv of selected) {
+            const phone = (inv.tenant as any)?.phone;
+            if (!phone) continue;
+            const currency = settings.operational?.currency ?? 'OMR';
+            const balance = formatCurrency(inv.amount - inv.paidAmount, currency);
+            const msg = encodeURIComponent(
+                `مرحباً ${inv.tenant?.name}،\nهذا تذكير بفاتورتك رقم ${inv.no} بمبلغ ${balance} مستحقة بتاريخ ${formatDate(inv.dueDate)}.\nيُرجى سداد المبلغ في أقرب وقت.\nشكراً — نظام Rentrix`
+            );
+            const cleanPhone = phone.replace(/\D/g, '');
+            window.open(`https://wa.me/${cleanPhone}?text=${msg}`, '_blank');
+            sent++;
+        }
+        if (sent > 0) {
+            toast.success(`تم فتح واتساب لـ ${sent} مستأجر.`);
+        } else {
+            toast.error('لا تتوفر أرقام هاتف للمستأجرين المختارين.');
+        }
+        setSelectedIds(new Set());
+    };
+
     const invoicesWithDetails = useMemo(() => {
         let filteredInvoices = db.invoices;
         if (activeFilter !== 'all') {
@@ -86,14 +155,24 @@ const Invoices: React.FC = () => {
         }).sort((a, b) => new Date(b.dueDate).getTime() - new Date(a.dueDate).getTime());
     }, [db.invoices, db.contracts, db.tenants, db.units, activeFilter]);
 
-    const getInvoiceStatusLabel = (status: Invoice['status']) => {
-        const map = { 'PAID': 'مدفوعة', 'UNPAID': 'غير مدفوعة', 'PARTIALLY_PAID': 'مدفوعة جزئياً', 'OVERDUE': 'متأخرة' };
-        return map[status] || status;
-    };
+    const getInvoiceStatusLabel = (status: Invoice['status']) => INVOICE_STATUS_AR[status] || status;
+    const getInvoiceTypeLabel = (type: Invoice['type']) => INVOICE_TYPE_AR[type] || type;
 
-    const getInvoiceTypeLabel = (type: Invoice['type']) => {
-        const map = { 'RENT': 'إيجار', 'MAINTENANCE': 'صيانة', 'UTILITY': 'خدمات', 'LATE_FEE': 'رسوم تأخير' };
-        return map[type] || type;
+    const currency = settings.operational?.currency ?? 'OMR';
+
+    const handleExportCsv = () => {
+        const rows = invoicesWithDetails.map(inv => ({
+            'رقم الفاتورة': inv.no,
+            'المستأجر': inv.tenant?.name || '',
+            'الوحدة': inv.unit?.name || '',
+            'النوع': getInvoiceTypeLabel(inv.type),
+            'تاريخ الاستحقاق': inv.dueDate,
+            'المبلغ': inv.amount,
+            'المدفوع': inv.paidAmount,
+            'الرصيد': inv.amount - inv.paidAmount,
+            'الحالة': getInvoiceStatusLabel(inv.status),
+        }));
+        exportToCsv('فواتير_rentrix', rows);
     };
     
     return (
@@ -107,12 +186,15 @@ const Invoices: React.FC = () => {
                     <button onClick={() => handleOpenModal()} className="btn btn-secondary">
                         إضافة فاتورة يدوية
                     </button>
-                    {/* FIX: Corrected path to lateFee settings */}
-                    {settings.operational.lateFee.isEnabled && (
+                    {settings.operational?.lateFee?.isEnabled && (
                          <button onClick={handleGenerateLateFees} disabled={isLateFeeLoading} className="btn btn-warning">
                             {isLateFeeLoading ? 'جاري...' : 'توليد رسوم التأخير'}
                         </button>
                     )}
+                    <button onClick={handleExportCsv} className="btn btn-secondary">
+                        <Download size={15} />
+                        تصدير CSV
+                    </button>
                     <button onClick={handleGenerateInvoices} disabled={isMonthlyLoading} className="btn btn-primary flex items-center gap-2">
                         {isMonthlyLoading && <RefreshCw size={16} className="animate-spin" />}
                         {isMonthlyLoading ? 'جاري الإصدار...' : 'إصدار فواتير الإيجار'}
@@ -132,10 +214,38 @@ const Invoices: React.FC = () => {
                     ))}
                 </nav>
             </div>
+            {selectedIds.size > 0 && (
+                <div className="flex items-center gap-3 mb-3 p-3 bg-primary/10 border border-primary/30 rounded-lg flex-wrap">
+                    <span className="text-sm font-medium text-primary">تم اختيار {selectedIds.size} فاتورة</span>
+                    <button onClick={handleBulkMarkOverdue} className="btn btn-warning text-xs flex items-center gap-1">
+                        <CheckCircle size={13} />
+                        تعليم كمتأخرة
+                    </button>
+                    <button onClick={handleBulkSendWhatsApp} className="btn btn-success text-xs flex items-center gap-1">
+                        <MessageCircle size={13} />
+                        إرسال واتساب
+                    </button>
+                    <button onClick={handleBulkExport} className="btn btn-secondary text-xs flex items-center gap-1">
+                        <Download size={13} />
+                        تصدير CSV
+                    </button>
+                    <button onClick={() => setSelectedIds(new Set())} className="btn btn-secondary text-xs">
+                        إلغاء التحديد
+                    </button>
+                </div>
+            )}
             <div className="overflow-x-auto">
                 <table className="w-full text-sm text-right border-collapse border border-border">
                     <thead className="text-xs uppercase bg-background text-text">
                         <tr>
+                            <th scope="col" className="px-3 py-3 border border-border w-10">
+                                <button onClick={toggleSelectAll} className="flex items-center justify-center w-full">
+                                    {selectedIds.size === invoicesWithDetails.length && invoicesWithDetails.length > 0
+                                        ? <CheckSquare size={16} className="text-primary" />
+                                        : <Square size={16} className="text-text-muted" />
+                                    }
+                                </button>
+                            </th>
                             <th scope="col" className="px-6 py-3 border border-border">رقم الفاتورة</th>
                             <th scope="col" className="px-6 py-3 border border-border">المستأجر / الوحدة</th>
                             <th scope="col" className="px-6 py-3 border border-border">النوع</th>
@@ -147,16 +257,22 @@ const Invoices: React.FC = () => {
                     </thead>
                     <tbody>
                         {invoicesWithDetails.map(inv => (
-                            <tr key={inv.id} onClick={() => handleOpenModal(inv)} className="bg-card hover:bg-background cursor-pointer">
-                                <td className="px-6 py-4 font-mono border border-border">{inv.no}</td>
-                                <td className="px-6 py-4 border border-border">{inv.tenant?.name} / {inv.unit?.name}</td>
-                                <td className="px-6 py-4 border border-border">{getInvoiceTypeLabel(inv.type)}</td>
-                                <td className="px-6 py-4 border border-border">{formatDate(inv.dueDate)}</td>
-                                {/* FIX: Corrected path to currency settings */}
-                                <td className="px-6 py-4 border border-border">{formatCurrency(inv.amount, db.settings.operational.currency)}</td>
-                                {/* FIX: Corrected path to currency settings */}
-                                <td className="px-6 py-4 font-bold text-red-500 border border-border">{formatCurrency(inv.amount - inv.paidAmount, db.settings.operational.currency)}</td>
-                                <td className="px-6 py-4 border border-border">
+                            <tr key={inv.id} className={`hover:bg-background cursor-pointer ${selectedIds.has(inv.id) ? 'bg-primary/5' : 'bg-card'}`}>
+                                <td className="px-3 py-4 border border-border" onClick={() => toggleSelect(inv.id)}>
+                                    <div className="flex items-center justify-center">
+                                        {selectedIds.has(inv.id)
+                                            ? <CheckSquare size={16} className="text-primary" />
+                                            : <Square size={16} className="text-text-muted" />
+                                        }
+                                    </div>
+                                </td>
+                                <td className="px-6 py-4 font-mono border border-border" onClick={() => handleOpenModal(inv)}>{inv.no}</td>
+                                <td className="px-6 py-4 border border-border" onClick={() => handleOpenModal(inv)}>{inv.tenant?.name} / {inv.unit?.name}</td>
+                                <td className="px-6 py-4 border border-border" onClick={() => handleOpenModal(inv)}>{getInvoiceTypeLabel(inv.type)}</td>
+                                <td className="px-6 py-4 border border-border" onClick={() => handleOpenModal(inv)}>{formatDate(inv.dueDate)}</td>
+                                <td className="px-6 py-4 border border-border" onClick={() => handleOpenModal(inv)}>{formatCurrency(inv.amount, currency)}</td>
+                                <td className="px-6 py-4 font-bold text-red-500 border border-border" onClick={() => handleOpenModal(inv)}>{formatCurrency(inv.amount - inv.paidAmount, currency)}</td>
+                                <td className="px-6 py-4 border border-border" onClick={() => handleOpenModal(inv)}>
                                     <span className={`px-2 py-1 text-xs rounded-full ${getStatusBadgeClass(inv.status)}`}>
                                         {getInvoiceStatusLabel(inv.status)}
                                     </span>

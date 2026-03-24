@@ -30,27 +30,27 @@ export const add = async <T extends keyof Omit<Database, 'settings' | 'auth' | '
         leads: 'lead', missions: 'mission'
     };
     const serialKey = serialKeyMap[table as keyof Database];
-    const finalEntry: { [key: string]: any } = { ...entry, id, createdAt: now };
+    const mutableEntry: Record<string, unknown> = { ...entry, id, createdAt: now };
 
     // FIX: Cast dbEngine to Dexie to access the .tables property for the transaction.
     await (dbEngine as Dexie).transaction('rw', (dbEngine as Dexie).tables, async (tx) => {
         if (serialKey) {
-            await tx.table('serials').where({id: STATIC_ID}).modify(s => {
-                (s as any)[serialKey]++;
-                finalEntry.no = String((s as any)[serialKey]);
+            await tx.table('serials').where({id: STATIC_ID}).modify((s: Record<string, number>) => {
+                s[serialKey]++;
+                mutableEntry['no'] = String(s[serialKey]);
             });
         }
         
-        await tx.table(table as string).add(finalEntry);
+        await tx.table(table as string).add(mutableEntry);
         await audit(user, 'CREATE', String(table), id);
         
         // FIX: Corrected access to accountMappings.
         const mappings = settings.accounting.accountMappings;
         if (table === 'receipts') {
-            const r = finalEntry as Receipt;
+            const r = mutableEntry as unknown as Receipt;
             await postJournalEntry(tx, { dr: mappings.paymentMethods[r.channel], cr: mappings.accountsReceivable, amount: r.amount, ref: r.id });
         } else if (table === 'expenses') {
-            const e = finalEntry as Expense;
+            const e = mutableEntry as unknown as Expense;
             const cashAccount = mappings.paymentMethods.CASH;
             if (e.chargedTo === 'OWNER') {
                 await postJournalEntry(tx, { dr: '2121', cr: cashAccount, amount: e.amount, ref: e.id });
@@ -59,18 +59,19 @@ export const add = async <T extends keyof Omit<Database, 'settings' | 'auth' | '
                 await postJournalEntry(tx, { dr: expenseAccount, cr: cashAccount, amount: e.amount, ref: e.id });
             }
         } else if (table === 'ownerSettlements') {
-            const s = finalEntry as OwnerSettlement;
+            const s = mutableEntry as unknown as OwnerSettlement;
             const cashAccount = mappings.paymentMethods[s.method === 'CASH' ? 'CASH' : 'BANK'];
             await postJournalEntry(tx, { dr: '2121', cr: cashAccount, amount: s.amount, ref: s.id });
         }
     });
     
     toast.success('تمت الإضافة بنجاح!');
-    return finalEntry as any;
+    return mutableEntry as unknown as Database[T][number];
 };
 
-export const update = async <T extends keyof Database | 'users'>(table: T, id: string, updates: Partial<any>, user: User | null): Promise<void> => {
-    await (dbEngine as any)[table].update(id, { ...updates, updatedAt: Date.now() });
+export const update = async <T extends keyof Database | 'users'>(table: T, id: string, updates: Partial<Database[keyof Database][number]>, user: User | null): Promise<void> => {
+    const dbRec = dbEngine as unknown as Record<string, Dexie.Table>;
+    await dbRec[table as string].update(id, { ...updates, updatedAt: Date.now() });
     await audit(user, 'UPDATE', String(table), id);
     toast.success('تم التحديث بنجاح!');
 };
@@ -78,13 +79,15 @@ export const update = async <T extends keyof Database | 'users'>(table: T, id: s
 export const remove = async <T extends keyof Database | 'users'>(table: T, id: string, user: User | null): Promise<void> => {
     if (window.confirm('هل أنت متأكد من الحذف؟ لا يمكن التراجع عن هذا الإجراء.')) {
         try {
-            await (dbEngine as any)[table].delete(id);
+            const dbRec = dbEngine as unknown as Record<string, Dexie.Table>;
+            await dbRec[table as string].delete(id);
             await audit(user, 'DELETE', String(table), id);
             toast.success('تم الحذف بنجاح 🗑️');
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error("Delete error:", error);
-            if (error.name === 'ConstraintError') toast.error('لا يمكن الحذف لوجود بيانات أخرى مرتبطة بهذا السجل.');
-            else toast.error(error.message || 'حدث خطأ أثناء محاولة الحذف.');
+            const err = error as { name?: string; message?: string };
+            if (err.name === 'ConstraintError') toast.error('لا يمكن الحذف لوجود بيانات أخرى مرتبطة بهذا السجل.');
+            else toast.error(err.message || 'حدث خطأ أثناء محاولة الحذف.');
         }
     }
 };

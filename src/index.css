@@ -3,68 +3,146 @@
 @tailwind utilities;
 
 @layer components {
-    /* Buttons */
-    .btn { @apply px-4 py-2 rounded-md font-semibold text-sm focus:outline-none focus:ring-2 focus:ring-offset-2; transition: all 0.15s ease-in-out; }
-    .btn-primary { @apply bg-primary text-white hover:opacity-90 focus:ring-primary disabled:opacity-50 disabled:cursor-not-allowed; }
-    .btn-secondary { @apply bg-card border border-border text-text hover:bg-border/50 focus:ring-primary; }
-    .btn-ghost { @apply bg-transparent text-text-muted hover:bg-background hover:text-text; }
-    .btn-danger { @apply bg-danger-bg text-danger-text hover:bg-danger-bg/80 border border-danger-text/20; }
-    .btn-warning { @apply bg-warning-bg text-warning-text hover:bg-warning-bg/80 border border-warning-text/20; }
-    
-    /* Tables */
+    /* === BUTTONS === */
+    .btn {
+        @apply px-4 py-2 rounded-lg font-bold text-sm focus:outline-none focus:ring-2 focus:ring-offset-2 inline-flex items-center gap-2;
+        transition: all 0.2s ease;
+    }
+    .btn-primary {
+        background: hsl(var(--color-primary));
+        color: hsl(var(--color-primary-fg));
+        @apply shadow-md hover:opacity-90 focus:ring-2 disabled:opacity-50 disabled:cursor-not-allowed;
+        box-shadow: 0 2px 8px -1px hsl(var(--color-primary) / 0.35);
+    }
+    .btn-primary:hover {
+        box-shadow: 0 4px 14px -2px hsl(var(--color-primary) / 0.45);
+        transform: translateY(-1px);
+    }
+    .btn-secondary {
+        @apply bg-card border border-border text-text hover:bg-border/40 focus:ring-primary;
+        box-shadow: var(--shadow-card);
+    }
+    .btn-ghost {
+        @apply bg-transparent text-text-muted hover:bg-background hover:text-text rounded-lg;
+    }
+    .btn-danger {
+        @apply bg-danger-bg text-danger-text hover:opacity-90 border border-danger-text/20;
+    }
+    .btn-warning {
+        @apply bg-warning-bg text-warning-text hover:opacity-90 border border-warning-text/20;
+    }
+    .btn-success {
+        @apply bg-success-bg text-success-text hover:opacity-90 border border-success-text/20;
+    }
+
+    /* === TABLES === */
     table { @apply w-full text-sm text-right; }
-    thead { @apply bg-border/30; }
-    th { @apply px-6 py-3 border-b border-border text-text-muted uppercase tracking-wider font-semibold text-xs; text-align: right;}
-    td { @apply px-6 py-4 border-b border-border text-text; }
-    tbody tr:hover { @apply bg-border/20; }
-    
+    thead { background: hsl(var(--color-border) / 0.4); }
+    th {
+        @apply px-5 py-3 border-b border-border text-text-muted tracking-wide font-bold text-xs;
+        text-align: right;
+        letter-spacing: 0.04em;
+    }
+    td { @apply px-5 py-3.5 border-b border-border text-text; }
+    tbody tr:nth-child(even) { background: hsl(var(--color-border) / 0.15); }
+    tbody tr:hover {
+        background: hsl(var(--color-primary) / 0.06) !important;
+        transition: background 0.15s ease;
+    }
+
     .action-cell { position: relative !important; overflow: visible !important; }
     .dropdown-menu {
-      position: absolute; left: 0; top: 100%; /* Changed to left for LTR dropdowns on RTL page */
-      background: hsl(var(--color-card));
-      border: 1px solid hsl(var(--color-border));
-      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-      z-index: 100; min-width: 150px; border-radius: var(--radius);
+        position: absolute;
+        left: 0;
+        top: 100%;
+        background: hsl(var(--color-card));
+        border: 1px solid hsl(var(--color-border));
+        box-shadow: var(--shadow-card-hover);
+        z-index: 100;
+        min-width: 160px;
+        border-radius: var(--radius);
     }
-    
-    /* Status Badges */
-    .status-badge { @apply px-2 py-1 text-xs rounded-full font-bold; }
+
+    /* === STATUS BADGES === */
+    .status-badge {
+        @apply px-2.5 py-0.5 text-xs rounded-full font-bold inline-flex items-center gap-1;
+        letter-spacing: 0.03em;
+    }
     .status-success { background-color: var(--color-success-bg); color: var(--color-success-text); }
     .status-warning { background-color: var(--color-warning-bg); color: var(--color-warning-text); }
     .status-danger { background-color: var(--color-danger-bg); color: var(--color-danger-text); }
     .status-info { background-color: var(--color-info-bg); color: var(--color-info-text); }
     .status-default { background-color: var(--color-default-bg); color: var(--color-default-text); }
+
+    /* === KPI CARDS === */
+    .kpi-card {
+        @apply bg-card rounded-xl p-5 border border-border;
+        box-shadow: var(--shadow-card);
+        transition: all 0.25s ease;
+    }
+    .kpi-card:hover {
+        box-shadow: var(--shadow-card-hover);
+        transform: translateY(-2px);
+    }
+
+    /* === CARDS === */
+    .card-luxury {
+        @apply bg-card rounded-xl border border-border;
+        box-shadow: var(--shadow-card);
+        transition: box-shadow 0.25s ease, transform 0.25s ease;
+    }
+    .card-luxury:hover {
+        box-shadow: var(--shadow-card-hover);
+    }
 }
 
-/* Form Elements */
+/* === FORM ELEMENTS === */
 input, select, textarea {
-  width: 100%;
-  border-radius: var(--radius);
-  border: 1px solid hsl(var(--color-border));
-  background-color: hsl(var(--color-bg));
-  padding: 0.5rem 0.75rem;
-  color: hsl(var(--color-text-primary));
-  transition: all 0.2s ease-in-out;
+    width: 100%;
+    border-radius: var(--radius);
+    border: 1.5px solid hsl(var(--color-border));
+    background-color: hsl(var(--color-bg));
+    padding: 0.5rem 0.75rem;
+    color: hsl(var(--color-text-primary));
+    transition: all 0.2s ease-in-out;
+    font-family: 'Cairo', sans-serif;
 }
+
 input::placeholder, textarea::placeholder {
-  color: hsl(var(--color-text-muted));
+    color: hsl(var(--color-text-muted));
 }
+
 select {
-  -webkit-appearance: none;
-  -moz-appearance: none;
-  appearance: none;
-  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
-  background-position: left 0.5rem center;
-  background-repeat: no-repeat;
-  background-size: 1.5em 1.5em;
-  padding-left: 2.5rem;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+    background-position: left 0.5rem center;
+    background-repeat: no-repeat;
+    background-size: 1.5em 1.5em;
+    padding-left: 2.5rem;
 }
+
 [data-theme="dark"] select {
-  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%239ca3af' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%239ca3af' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
 }
+
 input:focus, select:focus, textarea:focus {
-  outline: none;
-  border-color: hsl(var(--color-primary));
-  background-color: hsl(var(--color-card));
-  box-shadow: 0 0 0 1px hsl(var(--color-primary));
+    outline: none;
+    border-color: hsl(var(--color-primary));
+    background-color: hsl(var(--color-card));
+    box-shadow: 0 0 0 3px hsl(var(--color-primary) / 0.12);
+}
+
+/* === SCROLLBAR === */
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: hsl(var(--color-border)); border-radius: 10px; }
+::-webkit-scrollbar-thumb:hover { background: hsl(var(--color-text-muted)); }
+
+/* === TRANSITIONS === */
+.page-enter { animation: fadeSlideIn 0.25s ease forwards; }
+@keyframes fadeSlideIn {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: translateY(0); }
 }

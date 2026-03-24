@@ -35,7 +35,7 @@ const PropertyMap: React.FC = () => {
             const contractData = contractBalances[activeContract.id];
             const tenant = db.tenants.find(t => t.id === activeContract.tenantId);
             const alertDate = new Date();
-            alertDate.setDate(alertDate.getDate() + settings.operational.contractAlertDays);
+            alertDate.setDate(alertDate.getDate() + (settings.operational?.contractAlertDays ?? 30));
             const isExpiring = new Date(activeContract.end) <= alertDate;
 
             let status: UnitStatus = 'occupied';
@@ -58,7 +58,7 @@ const PropertyMap: React.FC = () => {
             units: unitsWithDetails.filter(u => u.propertyId === prop.id),
         })).sort((a,b) => a.name.localeCompare(b.name));
 
-    }, [db, contractBalances, settings.operational.contractAlertDays]);
+    }, [db, contractBalances, settings.operational?.contractAlertDays ?? 30]);
     
     const filteredProperties = useMemo(() => {
         if (filter === 'all') return propertiesWithUnits;
