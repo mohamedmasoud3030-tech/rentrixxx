@@ -1,4 +1,4 @@
-
+﻿
 import React, { useState, useMemo, useEffect } from 'react';
 import { useApp } from '../contexts/AppContext';
 import { Receipt, Expense, DepositTx, OwnerSettlement, Tenant } from '../types';
@@ -14,6 +14,7 @@ import PrintPreviewModal from '../components/shared/PrintPreviewModal';
 import { WhatsAppComposerModal } from '../components/shared/WhatsAppComposerModal';
 import { ReceiptPrint } from '../components/print/PrintTemplate';
 import { toast } from 'react-hot-toast';
+import { useLocation } from 'react-router-dom';
 
 const safeText = (v: unknown) => String(v ?? '');
 const matches = (value: unknown, term: string) => safeText(value).toLowerCase().includes(term.toLowerCase());
@@ -29,30 +30,49 @@ const ExpensePrintable: React.FC<{ expense: Expense }> = ({ expense }) => {
                 <div className="text-right">
                     <h1 className="text-2xl font-bold">{company.name}</h1>
                     <p className="text-sm">{company.address}</p>
-                    <p className="text-sm">هاتف: {company.phone}</p>
+                    <p className="text-sm">Ù‡Ø§ØªÙ: {company.phone}</p>
                 </div>
                 <div className="text-left">
-                    <h2 className="text-3xl font-bold text-red-600">سند صرف</h2>
-                    <p className="mt-2">رقم السند: <span className="font-mono">{expense.no}</span></p>
-                    <p>التاريخ: <span className="font-mono">{formatDateTime(expense.dateTime)}</span></p>
+                    <h2 className="text-3xl font-bold text-red-600">Ø³Ù†Ø¯ ØµØ±Ù</h2>
+                    <p className="mt-2">Ø±Ù‚Ù… Ø§Ù„Ø³Ù†Ø¯: <span className="font-mono">{expense.no}</span></p>
+                    <p>Ø§Ù„ØªØ§Ø±ÙŠØ®: <span className="font-mono">{formatDateTime(expense.dateTime)}</span></p>
                 </div>
             </header>
             <main className="mt-8 text-lg flex-grow">
-                <div className="flex items-center mb-5"><span className="w-48 font-bold">صرف إلى السيد/ة:</span><span>{expense.payee || expense.ref || 'غير محدد'}</span></div>
+                <div className="flex items-center mb-5"><span className="w-48 font-bold">ØµØ±Ù Ø¥Ù„Ù‰ Ø§Ù„Ø³ÙŠØ¯/Ø©:</span><span>{expense.payee || expense.ref || 'ØºÙŠØ± Ù…Ø­Ø¯Ø¯'}</span></div>
                 {/* FIX: Corrected path to currency settings */}
-                <div className="flex items-center mb-5"><span className="w-48 font-bold">مبلغاً وقدره:</span><span className="font-bold text-xl px-4 py-2 border-2 border-border rounded-md bg-background">{formatCurrency(expense.amount, db.settings.operational.currency)}</span></div>
-                <div className="flex items-start mb-5"><span className="w-48 font-bold">وذلك عن:</span><span className="flex-1">{expensePurpose}</span></div>
+                <div className="flex items-center mb-5"><span className="w-48 font-bold">Ù…Ø¨Ù„ØºØ§Ù‹ ÙˆÙ‚Ø¯Ø±Ù‡:</span><span className="font-bold text-xl px-4 py-2 border-2 border-border rounded-md bg-background">{formatCurrency(expense.amount, db.settings.operational.currency)}</span></div>
+                <div className="flex items-start mb-5"><span className="w-48 font-bold">ÙˆØ°Ù„Ùƒ Ø¹Ù†:</span><span className="flex-1">{expensePurpose}</span></div>
             </main>
             <footer className="mt-8 pt-8 flex justify-around text-center">
-                <div><p className="font-bold">توقيع المحاسب</p><p className="mt-12">.........................</p></div>
-                <div><p className="font-bold">توقيع المستلم</p><p className="mt-12">.........................</p></div>
+                <div><p className="font-bold">ØªÙˆÙ‚ÙŠØ¹ Ø§Ù„Ù…Ø­Ø§Ø³Ø¨</p><p className="mt-12">.........................</p></div>
+                <div><p className="font-bold">ØªÙˆÙ‚ÙŠØ¹ Ø§Ù„Ù…Ø³ØªÙ„Ù…</p><p className="mt-12">.........................</p></div>
             </footer>
         </div>
     );
 };
 
 const Financials: React.FC = () => {
+    const { db } = useApp();
+    const location = useLocation();
     const [activeTab, setActiveTab] = useState<'receipts' | 'expenses' | 'deposits' | 'settlements'>('receipts');
+
+    useEffect(() => {
+        const path = location.pathname.toLowerCase();
+        if (path.includes('/receipts')) setActiveTab('receipts');
+        else if (path.includes('/expenses')) setActiveTab('expenses');
+        else if (path.includes('/deposits')) setActiveTab('deposits');
+        else if (path.includes('/settlements')) setActiveTab('settlements');
+    }, [location.pathname]);
+
+    const summary = useMemo(() => {
+        const receiptsTotal = db.receipts.filter(r => r.status === 'POSTED').reduce((s, r) => s + (r.amount || 0), 0);
+        const expensesTotal = db.expenses.filter(e => e.status === 'POSTED').reduce((s, e) => s + (e.amount || 0), 0);
+        const depositsTotal = db.depositTxs.reduce((s, tx) => s + (tx.type === 'DEPOSIT_IN' ? tx.amount : -tx.amount), 0);
+        const settlementsTotal = db.ownerSettlements.reduce((s, o) => s + (o.amount || 0), 0);
+        return { receiptsTotal, expensesTotal, depositsTotal, settlementsTotal };
+    }, [db]);
+
     return (
         <div className="space-y-6">
             <HardGateBanner />
@@ -65,6 +85,24 @@ const Financials: React.FC = () => {
                         <button onClick={() => setActiveTab('settlements')} className={`${activeTab === 'settlements' ? 'border-primary text-primary' : 'border-transparent text-text-muted'} whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}>تسويات الملاك</button>
                     </nav>
                 </div>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 pt-4">
+                    <div className="p-3 rounded-lg border border-border bg-background">
+                        <p className="text-xs text-text-muted">إجمالي المقبوضات</p>
+                        <p className="font-bold">{formatCurrency(summary.receiptsTotal, db.settings.operational.currency)}</p>
+                    </div>
+                    <div className="p-3 rounded-lg border border-border bg-background">
+                        <p className="text-xs text-text-muted">إجمالي المصروفات</p>
+                        <p className="font-bold">{formatCurrency(summary.expensesTotal, db.settings.operational.currency)}</p>
+                    </div>
+                    <div className="p-3 rounded-lg border border-border bg-background">
+                        <p className="text-xs text-text-muted">صافي الودائع</p>
+                        <p className="font-bold">{formatCurrency(summary.depositsTotal, db.settings.operational.currency)}</p>
+                    </div>
+                    <div className="p-3 rounded-lg border border-border bg-background">
+                        <p className="text-xs text-text-muted">تسويات الملاك</p>
+                        <p className="font-bold">{formatCurrency(summary.settlementsTotal, db.settings.operational.currency)}</p>
+                    </div>
+                </div>
                 <div className="pt-6">
                     {activeTab === 'receipts' && <ReceiptsView />}
                     {activeTab === 'expenses' && <ExpensesView />}
@@ -75,7 +113,6 @@ const Financials: React.FC = () => {
         </div>
     );
 };
-
 const ReceiptsView: React.FC = () => {
     // FIX: Use financeService for financial operations
     const { db, financeService } = useApp();
@@ -102,10 +139,10 @@ const ReceiptsView: React.FC = () => {
         return {
             no: printingReceipt.no,
             date: formatDateTime(printingReceipt.dateTime),
-            tenantName: tenant?.name || 'غير معروف',
+            tenantName: tenant?.name || 'ØºÙŠØ± Ù…Ø¹Ø±ÙˆÙ',
             // FIX: Corrected path to currency settings
             amount: formatCurrency(printingReceipt.amount, db.settings.operational.currency),
-            description: printingReceipt.notes || `دفعة إيجار للوحدة ${unit?.name || ''}`
+            description: printingReceipt.notes || `Ø¯ÙØ¹Ø© Ø¥ÙŠØ¬Ø§Ø± Ù„Ù„ÙˆØ­Ø¯Ø© ${unit?.name || ''}`
         };
     }, [printingReceipt, db]);
 
@@ -114,42 +151,42 @@ const ReceiptsView: React.FC = () => {
             const contract = db.contracts.find(c => c.id === r.contractId);
             const tenant = contract ? db.tenants.find(t => t.id === contract.tenantId) : null;
             return {
-                'رقم السند': r.no,
-                'التاريخ': formatDateTime(r.dateTime),
-                'المستأجر': tenant?.name || '',
-                'المبلغ': r.amount,
-                'طريقة الدفع': CHANNEL_AR[r.channel as keyof typeof CHANNEL_AR] || r.channel,
-                'الحالة': RECEIPT_STATUS_AR[r.status as keyof typeof RECEIPT_STATUS_AR] || r.status,
-                'ملاحظات': r.notes || '',
+                'Ø±Ù‚Ù… Ø§Ù„Ø³Ù†Ø¯': r.no,
+                'Ø§Ù„ØªØ§Ø±ÙŠØ®': formatDateTime(r.dateTime),
+                'Ø§Ù„Ù…Ø³ØªØ£Ø¬Ø±': tenant?.name || '',
+                'Ø§Ù„Ù…Ø¨Ù„Øº': r.amount,
+                'Ø·Ø±ÙŠÙ‚Ø© Ø§Ù„Ø¯ÙØ¹': CHANNEL_AR[r.channel as keyof typeof CHANNEL_AR] || r.channel,
+                'Ø§Ù„Ø­Ø§Ù„Ø©': RECEIPT_STATUS_AR[r.status as keyof typeof RECEIPT_STATUS_AR] || r.status,
+                'Ù…Ù„Ø§Ø­Ø¸Ø§Øª': r.notes || '',
             };
         });
-        exportToCsv('سندات_قبض_rentrix', rows);
+        exportToCsv('Ø³Ù†Ø¯Ø§Øª_Ù‚Ø¨Ø¶_rentrix', rows);
     };
 
     return (
         <div>
             <div className="flex justify-between items-center mb-4">
-                <h2 className="text-xl font-bold">قائمة سندات القبض</h2>
+                <h2 className="text-xl font-bold">Ù‚Ø§Ø¦Ù…Ø© Ø³Ù†Ø¯Ø§Øª Ø§Ù„Ù‚Ø¨Ø¶</h2>
                 <div className="flex gap-2">
                     <button onClick={handleExportReceiptsCsv} className="btn btn-secondary flex items-center gap-1">
                         <Download size={14} />
-                        تصدير CSV
+                        ØªØµØ¯ÙŠØ± CSV
                     </button>
-                    <button onClick={() => setIsModalOpen(true)} className="btn btn-primary">إضافة سند قبض</button>
+                    <button onClick={() => setIsModalOpen(true)} className="btn btn-primary">Ø¥Ø¶Ø§ÙØ© Ø³Ù†Ø¯ Ù‚Ø¨Ø¶</button>
                 </div>
             </div>
-            <SearchFilterBar searchTerm={searchTerm} onSearchChange={setSearchTerm} placeholder="بحث برقم السند أو اسم المستأجر..." />
+            <SearchFilterBar searchTerm={searchTerm} onSearchChange={setSearchTerm} placeholder="Ø¨Ø­Ø« Ø¨Ø±Ù‚Ù… Ø§Ù„Ø³Ù†Ø¯ Ø£Ùˆ Ø§Ø³Ù… Ø§Ù„Ù…Ø³ØªØ£Ø¬Ø±..." />
             <div className="overflow-x-auto">
                 <table className="w-full text-sm text-right border-collapse border border-border">
                     <thead className="bg-background text-text uppercase text-xs">
                         <tr>
-                            <th className="px-6 py-3 border border-border">رقم السند</th>
-                            <th className="px-6 py-3 border border-border">التاريخ</th>
-                            <th className="px-6 py-3 border border-border">المستأجر</th>
-                            <th className="px-6 py-3 border border-border">المبلغ</th>
-                            <th className="px-6 py-3 border border-border">طريقة الدفع</th>
-                            <th className="px-6 py-3 border border-border">الحالة</th>
-                            <th className="px-6 py-3 border border-border">إجراءات</th>
+                            <th className="px-6 py-3 border border-border">Ø±Ù‚Ù… Ø§Ù„Ø³Ù†Ø¯</th>
+                            <th className="px-6 py-3 border border-border">Ø§Ù„ØªØ§Ø±ÙŠØ®</th>
+                            <th className="px-6 py-3 border border-border">Ø§Ù„Ù…Ø³ØªØ£Ø¬Ø±</th>
+                            <th className="px-6 py-3 border border-border">Ø§Ù„Ù…Ø¨Ù„Øº</th>
+                            <th className="px-6 py-3 border border-border">Ø·Ø±ÙŠÙ‚Ø© Ø§Ù„Ø¯ÙØ¹</th>
+                            <th className="px-6 py-3 border border-border">Ø§Ù„Ø­Ø§Ù„Ø©</th>
+                            <th className="px-6 py-3 border border-border">Ø¥Ø¬Ø±Ø§Ø¡Ø§Øª</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -166,7 +203,7 @@ const ReceiptsView: React.FC = () => {
                                         <span className="text-xs">{CHANNEL_AR[r.channel as keyof typeof CHANNEL_AR] || r.channel}</span>
                                         {r.channel === 'CHECK' && r.checkNumber && (
                                             <div className="text-[10px] text-text-muted mt-0.5">
-                                                شيك #{r.checkNumber} {r.checkBank && `- ${r.checkBank}`}
+                                                Ø´ÙŠÙƒ #{r.checkNumber} {r.checkBank && `- ${r.checkBank}`}
                                                 {r.checkStatus && <span className={`mr-1 px-1 py-0.5 rounded ${r.checkStatus === 'CLEARED' ? 'bg-green-100 text-green-700' : r.checkStatus === 'BOUNCED' ? 'bg-red-100 text-red-700' : 'bg-yellow-100 text-yellow-700'}`}>{CHECK_STATUS_AR[r.checkStatus]}</span>}
                                             </div>
                                         )}
@@ -176,7 +213,7 @@ const ReceiptsView: React.FC = () => {
                                         <ActionsMenu items={[
                                             EditAction(() => { setEditingReceipt(r); setIsModalOpen(true); }),
                                             PrintAction(() => setPrintingReceipt(r)),
-                                            { label: 'إرسال واتساب', icon: <MessageCircle size={16} />, onClick: () => setWhatsAppContext({ recipient: tenant, type: 'receipt', data: { receipt: r } }) },
+                                            { label: 'Ø¥Ø±Ø³Ø§Ù„ ÙˆØ§ØªØ³Ø§Ø¨', icon: <MessageCircle size={16} />, onClick: () => setWhatsAppContext({ recipient: tenant, type: 'receipt', data: { receipt: r } }) },
                                             // FIX: Use financeService for financial operations
                                             VoidAction(() => financeService.voidReceipt(r.id))
                                         ]} />
@@ -184,12 +221,19 @@ const ReceiptsView: React.FC = () => {
                                 </tr>
                             );
                         })}
+                        {filteredReceipts.length === 0 && (
+                            <tr>
+                                <td colSpan={7} className="px-6 py-6 text-center text-text-muted border border-border">
+                                    لا توجد سندات قبض مطابقة.
+                                </td>
+                            </tr>
+                        )}
                     </tbody>
                 </table>
             </div>
             {isModalOpen && <ReceiptForm isOpen={isModalOpen} onClose={() => { setIsModalOpen(false); setEditingReceipt(null); }} receipt={editingReceipt} />}
             {printingReceipt && receiptDataForPrint && (
-                <PrintPreviewModal isOpen={!!printingReceipt} onClose={() => setPrintingReceipt(null)} title="طباعة سند قبض">
+                <PrintPreviewModal isOpen={!!printingReceipt} onClose={() => setPrintingReceipt(null)} title="Ø·Ø¨Ø§Ø¹Ø© Ø³Ù†Ø¯ Ù‚Ø¨Ø¶">
                     <ReceiptPrint data={receiptDataForPrint} settings={db.settings} />
                 </PrintPreviewModal>
             )}
@@ -216,39 +260,39 @@ const ExpensesView: React.FC = () => {
 
     const handleExportExpensesCsv = () => {
         const rows = filteredExpenses.map(e => ({
-            'رقم السند': e.no,
-            'التاريخ': formatDateTime(e.dateTime),
-            'التصنيف': e.category,
-            'المبلغ': e.amount,
-            'الحالة': EXPENSE_STATUS_AR[e.status as keyof typeof EXPENSE_STATUS_AR] || e.status,
-            'ملاحظات': e.notes || '',
+            'Ø±Ù‚Ù… Ø§Ù„Ø³Ù†Ø¯': e.no,
+            'Ø§Ù„ØªØ§Ø±ÙŠØ®': formatDateTime(e.dateTime),
+            'Ø§Ù„ØªØµÙ†ÙŠÙ': e.category,
+            'Ø§Ù„Ù…Ø¨Ù„Øº': e.amount,
+            'Ø§Ù„Ø­Ø§Ù„Ø©': EXPENSE_STATUS_AR[e.status as keyof typeof EXPENSE_STATUS_AR] || e.status,
+            'Ù…Ù„Ø§Ø­Ø¸Ø§Øª': e.notes || '',
         }));
-        exportToCsv('مصروفات_rentrix', rows);
+        exportToCsv('Ù…ØµØ±ÙˆÙØ§Øª_rentrix', rows);
     };
 
     return (
         <div>
             <div className="flex justify-between items-center mb-4">
-                <h2 className="text-xl font-bold">قائمة المصروفات</h2>
+                <h2 className="text-xl font-bold">Ù‚Ø§Ø¦Ù…Ø© Ø§Ù„Ù…ØµØ±ÙˆÙØ§Øª</h2>
                 <div className="flex gap-2">
                     <button onClick={handleExportExpensesCsv} className="btn btn-secondary flex items-center gap-1">
                         <Download size={14} />
-                        تصدير CSV
+                        ØªØµØ¯ÙŠØ± CSV
                     </button>
-                    <button onClick={() => setIsModalOpen(true)} className="btn btn-primary">إضافة مصروف</button>
+                    <button onClick={() => setIsModalOpen(true)} className="btn btn-primary">Ø¥Ø¶Ø§ÙØ© Ù…ØµØ±ÙˆÙ</button>
                 </div>
             </div>
-            <SearchFilterBar searchTerm={searchTerm} onSearchChange={setSearchTerm} placeholder="بحث بالمصروف..." />
+            <SearchFilterBar searchTerm={searchTerm} onSearchChange={setSearchTerm} placeholder="Ø¨Ø­Ø« Ø¨Ø§Ù„Ù…ØµØ±ÙˆÙ..." />
             <div className="overflow-x-auto">
                 <table className="w-full text-sm text-right border-collapse border border-border">
                     <thead className="bg-background text-text uppercase text-xs">
                         <tr>
-                            <th className="px-6 py-3 border border-border">رقم السند</th>
-                            <th className="px-6 py-3 border border-border">التاريخ</th>
-                            <th className="px-6 py-3 border border-border">التصنيف</th>
-                            <th className="px-6 py-3 border border-border">المبلغ</th>
-                            <th className="px-6 py-3 border border-border">الحالة</th>
-                            <th className="px-6 py-3 border border-border">إجراءات</th>
+                            <th className="px-6 py-3 border border-border">Ø±Ù‚Ù… Ø§Ù„Ø³Ù†Ø¯</th>
+                            <th className="px-6 py-3 border border-border">Ø§Ù„ØªØ§Ø±ÙŠØ®</th>
+                            <th className="px-6 py-3 border border-border">Ø§Ù„ØªØµÙ†ÙŠÙ</th>
+                            <th className="px-6 py-3 border border-border">Ø§Ù„Ù…Ø¨Ù„Øº</th>
+                            <th className="px-6 py-3 border border-border">Ø§Ù„Ø­Ø§Ù„Ø©</th>
+                            <th className="px-6 py-3 border border-border">Ø¥Ø¬Ø±Ø§Ø¡Ø§Øª</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -270,12 +314,19 @@ const ExpensesView: React.FC = () => {
                                 </td>
                             </tr>
                         ))}
+                        {filteredExpenses.length === 0 && (
+                            <tr>
+                                <td colSpan={6} className="px-6 py-6 text-center text-text-muted border border-border">
+                                    لا توجد مصروفات مطابقة.
+                                </td>
+                            </tr>
+                        )}
                     </tbody>
                 </table>
             </div>
             {isModalOpen && <ExpenseForm isOpen={isModalOpen} onClose={() => { setIsModalOpen(false); setEditingExpense(null); }} expense={editingExpense} />}
             {printingExpense && (
-                <PrintPreviewModal isOpen={!!printingExpense} onClose={() => setPrintingExpense(null)} title="طباعة سند صرف">
+                <PrintPreviewModal isOpen={!!printingExpense} onClose={() => setPrintingExpense(null)} title="Ø·Ø¨Ø§Ø¹Ø© Ø³Ù†Ø¯ ØµØ±Ù">
                     <ExpensePrintable expense={printingExpense} />
                 </PrintPreviewModal>
             )}
@@ -290,25 +341,25 @@ const DepositsView: React.FC = () => {
     return (
         <div>
             <div className="flex justify-between items-center mb-4">
-                <h2 className="text-xl font-bold">حركات الودائع</h2>
-                <button onClick={() => setIsModalOpen(true)} className="btn btn-primary">إضافة حركة</button>
+                <h2 className="text-xl font-bold">Ø­Ø±ÙƒØ§Øª Ø§Ù„ÙˆØ¯Ø§Ø¦Ø¹</h2>
+                <button onClick={() => setIsModalOpen(true)} className="btn btn-primary">Ø¥Ø¶Ø§ÙØ© Ø­Ø±ÙƒØ©</button>
             </div>
             <div className="overflow-x-auto">
                 <table className="w-full text-sm text-right border-collapse border border-border">
                     <thead className="bg-background text-text uppercase text-xs">
                         <tr>
-                            <th className="px-6 py-3 border border-border">التاريخ</th>
-                            <th className="px-6 py-3 border border-border">العقد</th>
-                            <th className="px-6 py-3 border border-border">النوع</th>
-                            <th className="px-6 py-3 border border-border">المبلغ</th>
-                            <th className="px-6 py-3 border border-border">إجراءات</th>
+                            <th className="px-6 py-3 border border-border">Ø§Ù„ØªØ§Ø±ÙŠØ®</th>
+                            <th className="px-6 py-3 border border-border">Ø§Ù„Ø¹Ù‚Ø¯</th>
+                            <th className="px-6 py-3 border border-border">Ø§Ù„Ù†ÙˆØ¹</th>
+                            <th className="px-6 py-3 border border-border">Ø§Ù„Ù…Ø¨Ù„Øº</th>
+                            <th className="px-6 py-3 border border-border">Ø¥Ø¬Ø±Ø§Ø¡Ø§Øª</th>
                         </tr>
                     </thead>
                     <tbody>
                         {db.depositTxs.map(tx => {
                             const contract = db.contracts.find(c => c.id === tx.contractId);
                             const tenant = contract ? db.tenants.find(t => t.id === contract.tenantId) : null;
-                            const typeMap = {'DEPOSIT_IN': 'إيداع', 'DEPOSIT_DEDUCT': 'خصم', 'DEPOSIT_RETURN': 'إرجاع'};
+                            const typeMap = {'DEPOSIT_IN': 'Ø¥ÙŠØ¯Ø§Ø¹', 'DEPOSIT_DEDUCT': 'Ø®ØµÙ…', 'DEPOSIT_RETURN': 'Ø¥Ø±Ø¬Ø§Ø¹'};
                             return (
                                 <tr key={tx.id} className="bg-card">
                                     <td className="px-6 py-4 border border-border">{formatDate(tx.date)}</td>
@@ -321,6 +372,13 @@ const DepositsView: React.FC = () => {
                                 </tr>
                             );
                         })}
+                        {db.depositTxs.length === 0 && (
+                            <tr>
+                                <td colSpan={5} className="px-6 py-6 text-center text-text-muted border border-border">
+                                    لا توجد حركات ودائع.
+                                </td>
+                            </tr>
+                        )}
                     </tbody>
                 </table>
             </div>
@@ -347,19 +405,19 @@ const OwnerSettlementsView: React.FC = () => {
     return (
         <div>
             <div className="flex justify-between items-center mb-4">
-                <h2 className="text-xl font-bold">تسويات الملاك</h2>
-                <button onClick={() => setIsModalOpen(true)} className="btn btn-primary">إضافة تسوية</button>
+                <h2 className="text-xl font-bold">ØªØ³ÙˆÙŠØ§Øª Ø§Ù„Ù…Ù„Ø§Ùƒ</h2>
+                <button onClick={() => setIsModalOpen(true)} className="btn btn-primary">Ø¥Ø¶Ø§ÙØ© ØªØ³ÙˆÙŠØ©</button>
             </div>
-            <SearchFilterBar searchTerm={searchTerm} onSearchChange={setSearchTerm} placeholder="بحث بالتسويات..." />
+            <SearchFilterBar searchTerm={searchTerm} onSearchChange={setSearchTerm} placeholder="Ø¨Ø­Ø« Ø¨Ø§Ù„ØªØ³ÙˆÙŠØ§Øª..." />
             <div className="overflow-x-auto">
                 <table className="w-full text-sm text-right border-collapse border border-border">
                     <thead className="bg-background text-text uppercase text-xs">
                         <tr>
-                            <th className="px-6 py-3 border border-border">الرقم</th>
-                            <th className="px-6 py-3 border border-border">التاريخ</th>
-                            <th className="px-6 py-3 border border-border">المالك</th>
-                            <th className="px-6 py-3 border border-border">المبلغ</th>
-                            <th className="px-6 py-3 border border-border">إجراءات</th>
+                            <th className="px-6 py-3 border border-border">Ø§Ù„Ø±Ù‚Ù…</th>
+                            <th className="px-6 py-3 border border-border">Ø§Ù„ØªØ§Ø±ÙŠØ®</th>
+                            <th className="px-6 py-3 border border-border">Ø§Ù„Ù…Ø§Ù„Ùƒ</th>
+                            <th className="px-6 py-3 border border-border">Ø§Ù„Ù…Ø¨Ù„Øº</th>
+                            <th className="px-6 py-3 border border-border">Ø¥Ø¬Ø±Ø§Ø¡Ø§Øª</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -379,6 +437,13 @@ const OwnerSettlementsView: React.FC = () => {
                                 </tr>
                             );
                         })}
+                        {filtered.length === 0 && (
+                            <tr>
+                                <td colSpan={5} className="px-6 py-6 text-center text-text-muted border border-border">
+                                    لا توجد تسويات ملاك مطابقة.
+                                </td>
+                            </tr>
+                        )}
                     </tbody>
                 </table>
             </div>
@@ -387,7 +452,7 @@ const OwnerSettlementsView: React.FC = () => {
     );
 };
 
-const CHECK_STATUS_AR: Record<string, string> = { PENDING: 'معلق', DEPOSITED: 'مودع', CLEARED: 'محصّل', BOUNCED: 'مرتجع' };
+const CHECK_STATUS_AR: Record<string, string> = { PENDING: 'Ù…Ø¹Ù„Ù‚', DEPOSITED: 'Ù…ÙˆØ¯Ø¹', CLEARED: 'Ù…Ø­ØµÙ‘Ù„', BOUNCED: 'Ù…Ø±ØªØ¬Ø¹' };
 
 const ReceiptForm: React.FC<{ isOpen: boolean, onClose: () => void, receipt: Receipt | null }> = ({ isOpen, onClose, receipt }) => {
     const { db, dataService } = useApp();
@@ -414,7 +479,7 @@ const ReceiptForm: React.FC<{ isOpen: boolean, onClose: () => void, receipt: Rec
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (channel === 'CHECK' && !checkNumber) {
-            toast.error('يرجى إدخال رقم الشيك.');
+            toast.error('ÙŠØ±Ø¬Ù‰ Ø¥Ø¯Ø®Ø§Ù„ Ø±Ù‚Ù… Ø§Ù„Ø´ÙŠÙƒ.');
             return;
         }
         const data: any = { contractId, dateTime, channel, amount, ref, notes, status: 'POSTED' as const };
@@ -428,26 +493,26 @@ const ReceiptForm: React.FC<{ isOpen: boolean, onClose: () => void, receipt: Rec
         onClose();
     };
     return (
-        <Modal isOpen={isOpen} onClose={onClose} title={receipt ? 'تعديل سند قبض' : 'إضافة سند قبض'}>
+        <Modal isOpen={isOpen} onClose={onClose} title={receipt ? 'ØªØ¹Ø¯ÙŠÙ„ Ø³Ù†Ø¯ Ù‚Ø¨Ø¶' : 'Ø¥Ø¶Ø§ÙØ© Ø³Ù†Ø¯ Ù‚Ø¨Ø¶'}>
             <form onSubmit={handleSubmit} className="space-y-4">
-                {receipt && <p className="text-xs text-center bg-blue-50 dark:bg-blue-900/30 p-2 rounded-md">لتعديل تاريخ هذه الحركة، قم بتغيير حقل التاريخ واحفظ التغييرات. سيؤثر هذا على التقارير المالية.</p>}
+                {receipt && <p className="text-xs text-center bg-blue-50 dark:bg-blue-900/30 p-2 rounded-md">Ù„ØªØ¹Ø¯ÙŠÙ„ ØªØ§Ø±ÙŠØ® Ù‡Ø°Ù‡ Ø§Ù„Ø­Ø±ÙƒØ©ØŒ Ù‚Ù… Ø¨ØªØºÙŠÙŠØ± Ø­Ù‚Ù„ Ø§Ù„ØªØ§Ø±ÙŠØ® ÙˆØ§Ø­ÙØ¸ Ø§Ù„ØªØºÙŠÙŠØ±Ø§Øª. Ø³ÙŠØ¤Ø«Ø± Ù‡Ø°Ø§ Ø¹Ù„Ù‰ Ø§Ù„ØªÙ‚Ø§Ø±ÙŠØ± Ø§Ù„Ù…Ø§Ù„ÙŠØ©.</p>}
                 <div className="grid grid-cols-2 gap-4">
-                    <div><label className="text-xs">العقد</label><select value={contractId} onChange={e=>setContractId(e.target.value)} required>{db.contracts.map(c=><option key={c.id} value={c.id}>{db.tenants.find(t=>t.id===c.tenantId)?.name} - {db.units.find(u=>u.id===c.unitId)?.name}</option>)}</select></div>
-                    <div><label className="text-xs">التاريخ</label><input type="datetime-local" value={dateTime} onChange={e=>setDateTime(e.target.value)} required /></div>
-                    <div><label className="text-xs">المبلغ</label><input type="number" value={amount} onChange={e=>setAmount(Number(e.target.value))} required /></div>
-                    <div><label className="text-xs">طريقة الدفع</label><select value={channel} onChange={e=>setChannel(e.target.value as any)}><option value="CASH">نقدي</option><option value="BANK">تحويل بنكي</option><option value="POS">شبكة</option><option value="CHECK">شيك</option><option value="OTHER">أخرى</option></select></div>
+                    <div><label className="text-xs">Ø§Ù„Ø¹Ù‚Ø¯</label><select value={contractId} onChange={e=>setContractId(e.target.value)} required>{db.contracts.map(c=><option key={c.id} value={c.id}>{db.tenants.find(t=>t.id===c.tenantId)?.name} - {db.units.find(u=>u.id===c.unitId)?.name}</option>)}</select></div>
+                    <div><label className="text-xs">Ø§Ù„ØªØ§Ø±ÙŠØ®</label><input type="datetime-local" value={dateTime} onChange={e=>setDateTime(e.target.value)} required /></div>
+                    <div><label className="text-xs">Ø§Ù„Ù…Ø¨Ù„Øº</label><input type="number" value={amount} onChange={e=>setAmount(Number(e.target.value))} required /></div>
+                    <div><label className="text-xs">Ø·Ø±ÙŠÙ‚Ø© Ø§Ù„Ø¯ÙØ¹</label><select value={channel} onChange={e=>setChannel(e.target.value as any)}><option value="CASH">Ù†Ù‚Ø¯ÙŠ</option><option value="BANK">ØªØ­ÙˆÙŠÙ„ Ø¨Ù†ÙƒÙŠ</option><option value="POS">Ø´Ø¨ÙƒØ©</option><option value="CHECK">Ø´ÙŠÙƒ</option><option value="OTHER">Ø£Ø®Ø±Ù‰</option></select></div>
                 </div>
                 {channel === 'CHECK' && (
                     <div className="grid grid-cols-2 gap-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
-                        <div><label className="text-xs font-bold text-blue-700 dark:text-blue-300">رقم الشيك *</label><input value={checkNumber} onChange={e=>setCheckNumber(e.target.value)} required placeholder="رقم الشيك" /></div>
-                        <div><label className="text-xs font-bold text-blue-700 dark:text-blue-300">البنك</label><input value={checkBank} onChange={e=>setCheckBank(e.target.value)} placeholder="اسم البنك" /></div>
-                        <div><label className="text-xs font-bold text-blue-700 dark:text-blue-300">تاريخ الاستحقاق</label><input type="date" value={checkDate} onChange={e=>setCheckDate(e.target.value)} /></div>
-                        <div><label className="text-xs font-bold text-blue-700 dark:text-blue-300">حالة الشيك</label><select value={checkStatus} onChange={e=>setCheckStatus(e.target.value as any)}><option value="PENDING">معلق</option><option value="DEPOSITED">مودع</option><option value="CLEARED">محصّل</option><option value="BOUNCED">مرتجع</option></select></div>
+                        <div><label className="text-xs font-bold text-blue-700 dark:text-blue-300">Ø±Ù‚Ù… Ø§Ù„Ø´ÙŠÙƒ *</label><input value={checkNumber} onChange={e=>setCheckNumber(e.target.value)} required placeholder="Ø±Ù‚Ù… Ø§Ù„Ø´ÙŠÙƒ" /></div>
+                        <div><label className="text-xs font-bold text-blue-700 dark:text-blue-300">Ø§Ù„Ø¨Ù†Ùƒ</label><input value={checkBank} onChange={e=>setCheckBank(e.target.value)} placeholder="Ø§Ø³Ù… Ø§Ù„Ø¨Ù†Ùƒ" /></div>
+                        <div><label className="text-xs font-bold text-blue-700 dark:text-blue-300">ØªØ§Ø±ÙŠØ® Ø§Ù„Ø§Ø³ØªØ­Ù‚Ø§Ù‚</label><input type="date" value={checkDate} onChange={e=>setCheckDate(e.target.value)} /></div>
+                        <div><label className="text-xs font-bold text-blue-700 dark:text-blue-300">Ø­Ø§Ù„Ø© Ø§Ù„Ø´ÙŠÙƒ</label><select value={checkStatus} onChange={e=>setCheckStatus(e.target.value as any)}><option value="PENDING">Ù…Ø¹Ù„Ù‚</option><option value="DEPOSITED">Ù…ÙˆØ¯Ø¹</option><option value="CLEARED">Ù…Ø­ØµÙ‘Ù„</option><option value="BOUNCED">Ù…Ø±ØªØ¬Ø¹</option></select></div>
                     </div>
                 )}
-                <input placeholder="مرجع / رقم الحوالة" value={ref} onChange={e=>setRef(e.target.value)} />
-                <textarea placeholder="ملاحظات" value={notes} onChange={e=>setNotes(e.target.value)} rows={2} />
-                <div className="flex justify-end gap-2 pt-4 border-t"><button type="button" onClick={onClose} className="btn btn-ghost">إلغاء</button><button type="submit" className="btn btn-primary">حفظ</button></div>
+                <input placeholder="Ù…Ø±Ø¬Ø¹ / Ø±Ù‚Ù… Ø§Ù„Ø­ÙˆØ§Ù„Ø©" value={ref} onChange={e=>setRef(e.target.value)} />
+                <textarea placeholder="Ù…Ù„Ø§Ø­Ø¸Ø§Øª" value={notes} onChange={e=>setNotes(e.target.value)} rows={2} />
+                <div className="flex justify-end gap-2 pt-4 border-t"><button type="button" onClick={onClose} className="btn btn-ghost">Ø¥Ù„ØºØ§Ø¡</button><button type="submit" className="btn btn-primary">Ø­ÙØ¸</button></div>
             </form>
         </Modal>
     );
@@ -457,7 +522,7 @@ const ExpenseForm: React.FC<{ isOpen: boolean, onClose: () => void, expense: Exp
     // FIX: Use dataService for data manipulation
     const { db, dataService } = useApp();
     const [contractId, setContractId] = useState<string | null>(null);
-    const [category, setCategory] = useState('صيانة');
+    const [category, setCategory] = useState('ØµÙŠØ§Ù†Ø©');
     const [amount, setAmount] = useState(0);
     const [chargedTo, setChargedTo] = useState<Expense['chargedTo']>('OWNER');
     const [dateTime, setDateTime] = useState(new Date().toISOString().slice(0, 16));
@@ -477,17 +542,17 @@ const ExpenseForm: React.FC<{ isOpen: boolean, onClose: () => void, expense: Exp
     };
 
     return (
-        <Modal isOpen={isOpen} onClose={onClose} title={expense ? 'تعديل مصروف' : 'إضافة مصروف'}>
+        <Modal isOpen={isOpen} onClose={onClose} title={expense ? 'ØªØ¹Ø¯ÙŠÙ„ Ù…ØµØ±ÙˆÙ' : 'Ø¥Ø¶Ø§ÙØ© Ù…ØµØ±ÙˆÙ'}>
             <form onSubmit={handleSubmit} className="space-y-4">
-                 {expense && <p className="text-xs text-center bg-blue-50 dark:bg-blue-900/30 p-2 rounded-md">لتعديل تاريخ هذه الحركة، قم بتغيير حقل التاريخ واحفظ التغييرات. سيؤثر هذا على التقارير المالية.</p>}
+                 {expense && <p className="text-xs text-center bg-blue-50 dark:bg-blue-900/30 p-2 rounded-md">Ù„ØªØ¹Ø¯ÙŠÙ„ ØªØ§Ø±ÙŠØ® Ù‡Ø°Ù‡ Ø§Ù„Ø­Ø±ÙƒØ©ØŒ Ù‚Ù… Ø¨ØªØºÙŠÙŠØ± Ø­Ù‚Ù„ Ø§Ù„ØªØ§Ø±ÙŠØ® ÙˆØ§Ø­ÙØ¸ Ø§Ù„ØªØºÙŠÙŠØ±Ø§Øª. Ø³ÙŠØ¤Ø«Ø± Ù‡Ø°Ø§ Ø¹Ù„Ù‰ Ø§Ù„ØªÙ‚Ø§Ø±ÙŠØ± Ø§Ù„Ù…Ø§Ù„ÙŠØ©.</p>}
                 <div className="grid grid-cols-2 gap-4">
-                    <div><label className="text-xs">التصنيف</label><input value={category} onChange={e=>setCategory(e.target.value)} required /></div>
-                    <div><label className="text-xs">المبلغ</label><input type="number" value={amount} onChange={e=>setAmount(Number(e.target.value))} required /></div>
-                    <div><label className="text-xs">يخصم من</label><select value={chargedTo} onChange={e=>setChargedTo(e.target.value as any)}><option value="OWNER">المالك</option><option value="OFFICE">المكتب</option><option value="TENANT">المستأجر</option></select></div>
-                    <div><label className="text-xs">العقد المرتبط</label><select value={contractId || ''} onChange={e=>setContractId(e.target.value || null)}><option value="">-- مصروف مكتب عام --</option>{db.contracts.map(c=><option key={c.id} value={c.id}>{db.tenants.find(t=>t.id===c.tenantId)?.name}</option>)}</select></div>
-                    <div><label className="text-xs">التاريخ</label><input type="datetime-local" value={dateTime} onChange={e=>setDateTime(e.target.value)} required /></div>
+                    <div><label className="text-xs">Ø§Ù„ØªØµÙ†ÙŠÙ</label><input value={category} onChange={e=>setCategory(e.target.value)} required /></div>
+                    <div><label className="text-xs">Ø§Ù„Ù…Ø¨Ù„Øº</label><input type="number" value={amount} onChange={e=>setAmount(Number(e.target.value))} required /></div>
+                    <div><label className="text-xs">ÙŠØ®ØµÙ… Ù…Ù†</label><select value={chargedTo} onChange={e=>setChargedTo(e.target.value as any)}><option value="OWNER">Ø§Ù„Ù…Ø§Ù„Ùƒ</option><option value="OFFICE">Ø§Ù„Ù…ÙƒØªØ¨</option><option value="TENANT">Ø§Ù„Ù…Ø³ØªØ£Ø¬Ø±</option></select></div>
+                    <div><label className="text-xs">Ø§Ù„Ø¹Ù‚Ø¯ Ø§Ù„Ù…Ø±ØªØ¨Ø·</label><select value={contractId || ''} onChange={e=>setContractId(e.target.value || null)}><option value="">-- Ù…ØµØ±ÙˆÙ Ù…ÙƒØªØ¨ Ø¹Ø§Ù… --</option>{db.contracts.map(c=><option key={c.id} value={c.id}>{db.tenants.find(t=>t.id===c.tenantId)?.name}</option>)}</select></div>
+                    <div><label className="text-xs">Ø§Ù„ØªØ§Ø±ÙŠØ®</label><input type="datetime-local" value={dateTime} onChange={e=>setDateTime(e.target.value)} required /></div>
                 </div>
-                <div className="flex justify-end gap-2 pt-4 border-t"><button type="button" onClick={onClose} className="btn btn-ghost">إلغاء</button><button type="submit" className="btn btn-primary">حفظ</button></div>
+                <div className="flex justify-end gap-2 pt-4 border-t"><button type="button" onClick={onClose} className="btn btn-ghost">Ø¥Ù„ØºØ§Ø¡</button><button type="submit" className="btn btn-primary">Ø­ÙØ¸</button></div>
             </form>
         </Modal>
     );
@@ -505,12 +570,12 @@ const DepositTxForm: React.FC<{ isOpen: boolean, onClose: () => void }> = ({ isO
         onClose();
     };
     return (
-        <Modal isOpen={isOpen} onClose={onClose} title="حركة وديعة">
+        <Modal isOpen={isOpen} onClose={onClose} title="Ø­Ø±ÙƒØ© ÙˆØ¯ÙŠØ¹Ø©">
             <form onSubmit={handleSubmit} className="space-y-4">
                 <select value={contractId} onChange={e=>setContractId(e.target.value)} required>{db.contracts.map(c=><option key={c.id} value={c.id}>{db.tenants.find(t=>t.id===c.tenantId)?.name}</option>)}</select>
-                <select value={type} onChange={e=>setType(e.target.value as any)}><option value="DEPOSIT_IN">إيداع جديد</option><option value="DEPOSIT_RETURN">إرجاع للمستأجر</option><option value="DEPOSIT_DEDUCT">خصم إصلاحات</option></select>
-                <input type="number" value={amount} onChange={e=>setAmount(Number(e.target.value))} required placeholder="المبلغ" />
-                <button type="submit" className="btn btn-primary w-full">حفظ الحركة</button>
+                <select value={type} onChange={e=>setType(e.target.value as any)}><option value="DEPOSIT_IN">Ø¥ÙŠØ¯Ø§Ø¹ Ø¬Ø¯ÙŠØ¯</option><option value="DEPOSIT_RETURN">Ø¥Ø±Ø¬Ø§Ø¹ Ù„Ù„Ù…Ø³ØªØ£Ø¬Ø±</option><option value="DEPOSIT_DEDUCT">Ø®ØµÙ… Ø¥ØµÙ„Ø§Ø­Ø§Øª</option></select>
+                <input type="number" value={amount} onChange={e=>setAmount(Number(e.target.value))} required placeholder="Ø§Ù„Ù…Ø¨Ù„Øº" />
+                <button type="submit" className="btn btn-primary w-full">Ø­ÙØ¸ Ø§Ù„Ø­Ø±ÙƒØ©</button>
             </form>
         </Modal>
     );
@@ -532,16 +597,17 @@ const OwnerSettlementForm: React.FC<{ isOpen: boolean, onClose: () => void, sett
         onClose();
     };
     return (
-        <Modal isOpen={isOpen} onClose={onClose} title={settlement ? "تعديل تسوية مالية" : "تسوية مالية للمالك"}>
+        <Modal isOpen={isOpen} onClose={onClose} title={settlement ? "ØªØ¹Ø¯ÙŠÙ„ ØªØ³ÙˆÙŠØ© Ù…Ø§Ù„ÙŠØ©" : "ØªØ³ÙˆÙŠØ© Ù…Ø§Ù„ÙŠØ© Ù„Ù„Ù…Ø§Ù„Ùƒ"}>
             <form onSubmit={handleSubmit} className="space-y-4">
-                 {settlement && <p className="text-xs text-center bg-blue-50 dark:bg-blue-900/30 p-2 rounded-md">لتعديل تاريخ هذه الحركة، قم بتغيير حقل التاريخ واحفظ التغييرات. سيؤثر هذا على التقارير المالية.</p>}
+                 {settlement && <p className="text-xs text-center bg-blue-50 dark:bg-blue-900/30 p-2 rounded-md">Ù„ØªØ¹Ø¯ÙŠÙ„ ØªØ§Ø±ÙŠØ® Ù‡Ø°Ù‡ Ø§Ù„Ø­Ø±ÙƒØ©ØŒ Ù‚Ù… Ø¨ØªØºÙŠÙŠØ± Ø­Ù‚Ù„ Ø§Ù„ØªØ§Ø±ÙŠØ® ÙˆØ§Ø­ÙØ¸ Ø§Ù„ØªØºÙŠÙŠØ±Ø§Øª. Ø³ÙŠØ¤Ø«Ø± Ù‡Ø°Ø§ Ø¹Ù„Ù‰ Ø§Ù„ØªÙ‚Ø§Ø±ÙŠØ± Ø§Ù„Ù…Ø§Ù„ÙŠØ©.</p>}
                 <select value={ownerId} onChange={e=>setOwnerId(e.target.value)} required>{db.owners.map(o=><option key={o.id} value={o.id}>{o.name}</option>)}</select>
                 <input type="date" value={date} onChange={e=>setDate(e.target.value)} required />
-                <input type="number" value={amount} onChange={e=>setAmount(Number(e.target.value))} required placeholder="المبلغ المحول" />
-                <button type="submit" className="btn btn-primary w-full">تأكيد التسوية</button>
+                <input type="number" value={amount} onChange={e=>setAmount(Number(e.target.value))} required placeholder="Ø§Ù„Ù…Ø¨Ù„Øº Ø§Ù„Ù…Ø­ÙˆÙ„" />
+                <button type="submit" className="btn btn-primary w-full">ØªØ£ÙƒÙŠØ¯ Ø§Ù„ØªØ³ÙˆÙŠØ©</button>
             </form>
         </Modal>
     );
 };
 
 export default Financials;
+

@@ -53,6 +53,13 @@ const GeneralLedger: React.FC = () => {
                                 </td>
                             </tr>
                         ))}
+                        {journalEntries.length === 0 && (
+                            <tr>
+                                <td colSpan={6} className="px-6 py-8 text-center text-text-muted border border-border">
+                                    لا توجد قيود يومية حتى الآن.
+                                </td>
+                            </tr>
+                        )}
                     </tbody>
                 </table>
             </div>
