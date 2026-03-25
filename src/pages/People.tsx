@@ -75,13 +75,12 @@ const TenantsView: React.FC = () => {
         setWhatsAppContext(null);
     };
 
-    const handleDelete = (id: string) => {
+    const handleDelete = async (id: string) => {
         if (contracts.some(c => c.tenantId === id)) {
             toast.error("لا يمكن حذف المستأجر لأنه مرتبط بعقود. يرجى حذف العقود أولاً.");
             return;
         }
-        // FIX: Use dataService for data manipulation
-        dataService.remove('tenants', id);
+        await dataService.remove('tenants', id);
     };
     
     return (
@@ -168,13 +167,12 @@ const OwnersView: React.FC = () => {
         setIsModalOpen(false);
     };
     
-    const handleDelete = (id: string) => {
+    const handleDelete = async (id: string) => {
         if (properties.some(p => p.ownerId === id)) {
             toast.error("لا يمكن حذف المالك لأنه يمتلك عقارات مسجلة. يرجى تغيير ملكية العقارات أولاً.");
             return;
         }
-        // FIX: Use dataService for data manipulation
-        dataService.remove('owners', id);
+        await dataService.remove('owners', id);
     };
 
     return (
@@ -261,17 +259,15 @@ const TenantForm: React.FC<{ isOpen: boolean, onClose: () => void, tenant: Tenan
         }
     }, [tenant, isOpen]);
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!name) { toast.error("اسم المستأجر مطلوب"); return; }
 
         const data = { name, phone, idNo, status, notes };
         if (tenant) {
-            // FIX: Use dataService for data manipulation
-            dataService.update('tenants', tenant.id, data);
+            await dataService.update('tenants', tenant.id, data);
         } else {
-            // FIX: Use dataService for data manipulation
-            dataService.add('tenants', data);
+            await dataService.add('tenants', data);
         }
         onClose();
     };
@@ -357,17 +353,15 @@ const OwnerForm: React.FC<{ isOpen: boolean, onClose: () => void, owner: Owner |
         }
     }, [owner, isOpen]);
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!name) { toast.error("اسم المالك مطلوب"); return; }
 
         const data = { name, phone, address, managementContractDate, bankName, bankAccountNumber, notes, commissionType, commissionValue };
         if (owner) {
-            // FIX: Use dataService for data manipulation
-            dataService.update('owners', owner.id, data);
+            await dataService.update('owners', owner.id, data);
         } else {
-            // FIX: Use dataService for data manipulation
-            dataService.add('owners', data as any);
+            await dataService.add('owners', data as any);
         }
         onClose();
     };

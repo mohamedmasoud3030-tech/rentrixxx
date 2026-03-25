@@ -134,13 +134,12 @@ const Contracts: React.FC = () => {
         setDefaultUnitId(undefined);
     };
 
-    const handleDelete = (id: string) => {
+    const handleDelete = async (id: string) => {
         if (db.receipts.some(r => r.contractId === id) || db.expenses.some(e => e.contractId === id)) {
             toast.error("لا يمكن حذف العقد لوجود حركات مالية مرتبطة به.");
             return;
         }
-        // FIX: Use dataService for data manipulation
-        dataService.remove('contracts', id);
+        await dataService.remove('contracts', id);
     };
     
     const handlePrint = (id: string) => {
@@ -328,12 +327,12 @@ const ContractForm: React.FC<{ isOpen: boolean, onClose: () => void, contract: C
     const handleStartDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const newStart = e.target.value;
         setStart(newStart);
-        // Auto-update end date to be one year after the new start date
         try {
             const startDate = new Date(newStart);
             if(!isNaN(startDate.getTime())) {
                 const endDate = new Date(startDate);
                 endDate.setFullYear(startDate.getFullYear() + 1);
+                endDate.setDate(endDate.getDate() - 1);
                 setEnd(endDate.toISOString().slice(0, 10));
             }
         } catch (error) {
