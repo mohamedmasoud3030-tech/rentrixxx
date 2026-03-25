@@ -1,4 +1,4 @@
-  #!/bin/bash
+  هل #!/bin/bash
 set -e
 
 echo "==> Running post-merge setup for Rentrix..."
