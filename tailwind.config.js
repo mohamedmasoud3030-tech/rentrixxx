@@ -46,7 +46,10 @@ module.exports = {
       transitionDuration: {
         '250': '250ms',
         '300': '300ms',
-      }
+      },
+      backdropBlur: {
+        xs: '2px',
+      },
     }
   },
   plugins: [],

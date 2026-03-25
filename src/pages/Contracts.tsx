@@ -4,10 +4,10 @@ import { Contract, Receipt, Expense } from '../types';
 import Card from '../components/ui/Card';
 import Modal from '../components/ui/Modal';
 import ActionsMenu, { EditAction, DeleteAction, PrintAction } from '../components/shared/ActionsMenu';
-import { formatCurrency, toArabicDigits, getStatusBadgeClass, formatDateTime, formatDate, CONTRACT_STATUS_AR } from '../utils/helpers';
+import { formatCurrency, toArabicDigits, getStatusBadgeClass, formatDateTime, formatDate, exportToCsv, CONTRACT_STATUS_AR } from '../utils/helpers';
 import HardGateBanner from '../components/shared/HardGateBanner';
 import AttachmentsManager from '../components/shared/AttachmentsManager';
-import { FileText } from 'lucide-react';
+import { FileText, Download } from 'lucide-react';
 import PrintPreviewModal from '../components/shared/PrintPreviewModal';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { exportContractToPdf } from '../services/pdfService';
@@ -154,13 +154,39 @@ const Contracts: React.FC = () => {
         exportContractToPdf(contract, db);
     };
 
+    const handleExportCsv = () => {
+        const rows = db.contracts.map(c => {
+            const unit = db.units.find(u => u.id === c.unitId);
+            const property = unit ? db.properties.find(p => p.id === unit.propertyId) : null;
+            const tenant = db.tenants.find(t => t.id === c.tenantId);
+            const balance = contractBalances[c.id]?.balance || 0;
+            return {
+                'الوحدة': unit?.name || '',
+                'العقار': property?.name || '',
+                'المستأجر': tenant?.name || '',
+                'الإيجار الشهري': c.rent,
+                'تاريخ البداية': c.start,
+                'تاريخ الانتهاء': c.end,
+                'الرصيد المستحق': balance,
+                'الحالة': CONTRACT_STATUS_AR[c.status] || c.status,
+            };
+        });
+        exportToCsv('عقود_rentrix', rows);
+    };
+
     return (
         <div className="space-y-6">
             <HardGateBanner />
             <Card>
                 <div className="flex justify-between items-center mb-4">
                     <h2 className="text-xl font-bold">قائمة العقود</h2>
-                    <button onClick={() => handleOpenModal()} className="btn btn-primary">إضافة عقد</button>
+                    <div className="flex gap-2">
+                        <button onClick={handleExportCsv} className="btn btn-secondary">
+                            <Download size={14} />
+                            تصدير CSV
+                        </button>
+                        <button onClick={() => handleOpenModal()} className="btn btn-primary">إضافة عقد</button>
+                    </div>
                 </div>
                 {db.contracts.length === 0 ? (
                     <div className="text-center py-12">

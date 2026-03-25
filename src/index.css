@@ -146,3 +146,39 @@ input:focus, select:focus, textarea:focus {
     from { opacity: 0; transform: translateY(6px); }
     to { opacity: 1; transform: translateY(0); }
 }
+
+/* === GLASS MORPHISM === */
+.glass-card {
+    background: hsl(var(--color-card) / 0.75);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid hsl(var(--color-border) / 0.6);
+    box-shadow: var(--shadow-card);
+}
+
+[data-theme="dark"] .glass-card {
+    background: hsl(var(--color-card) / 0.6);
+    border: 1px solid hsl(var(--color-primary) / 0.15);
+    box-shadow: 0 4px 24px -4px rgba(0,0,0,0.5), 0 0 0 1px hsl(var(--color-primary) / 0.08);
+}
+
+/* === GOLDEN GLOW === */
+.golden-glow {
+    box-shadow: 0 0 20px hsl(var(--color-primary) / 0.2), 0 4px 12px hsl(var(--color-primary) / 0.1);
+}
+
+.golden-glow:hover {
+    box-shadow: 0 0 32px hsl(var(--color-primary) / 0.3), 0 8px 20px hsl(var(--color-primary) / 0.15);
+}
+
+/* === SMOOTH CARD === */
+.smooth-card {
+    @apply bg-card border border-border rounded-xl;
+    box-shadow: var(--shadow-card);
+    transition: box-shadow 0.3s ease, transform 0.3s ease;
+}
+
+.smooth-card:hover {
+    box-shadow: var(--shadow-card-hover);
+    transform: translateY(-2px);
+}
