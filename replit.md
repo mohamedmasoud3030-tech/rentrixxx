@@ -104,14 +104,29 @@ Preferred communication style: Simple, everyday language.
 - **Aged Receivables**: Aging distribution BarChart with color-coded severity
 - **date-fns with Arabic locale**: Used for Arabic month names in chart labels
 
-### Reports Page (Complete Rebuild)
-- 8-tab navigation: Overview, Income Statement, Balance Sheet, Trial Balance, Rent Roll, Owner Ledger, Tenant Statement, Aged Receivables
+### Reports Page (13 tabs)
+- 13-tab navigation: Overview, Income Statement, Balance Sheet, Trial Balance, Rent Roll, Owner Ledger, Tenant Statement, Aged Receivables, Property Report, Daily Collection, Maintenance Report, Deposits Report, Expenses Report
 - Each report has MiniKpi summary cards at top
-- ActionBar with Print and PDF Export buttons
+- ActionBar with Print button (PDF Export only on reports with pdfService support)
 - Revenue/expense trend charts in Overview
 - Pie charts for income/expense distribution in Income Statement
 - Aging bar chart in Aged Receivables
+- Property Report: per-property unit breakdown with occupancy, rent, deposits, maintenance costs
+- Daily Collection: date-filtered receipt summary with cash/bank/check breakdown
+- Maintenance Report: date + property filtered maintenance log with cost allocation (owner/tenant/office)
+- Deposits Report: active contract deposits/insurance summary
+- Expenses Report: date-filtered expenses with category breakdown
 - Clean table styling with borders, hover states, and color-coded values
+
+### Tenant Detail View
+- Clickable tenant name in People page opens full tenant profile
+- 3 financial KPI cards: total invoiced, total paid, remaining balance
+- Personal info card with phone, email, ID, nationality, address, company details
+- Active unit & contract card with rent, dates, deposit info
+- Contracts history table with status badges
+- Recent payments table with payment method
+- Related maintenance requests table
+- Attachments manager for tenant documents
 
 ### Smart Features
 - **Sidebar notification badges**: Red badge counts on Contracts (expiring), Finance (overdue invoices), Leads (new), Communication (pending notifications)
