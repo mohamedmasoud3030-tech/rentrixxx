@@ -13,6 +13,7 @@ import { Receipt as ReceiptIcon, CreditCard, Landmark, PiggyBank, MessageCircle,
 import PrintPreviewModal from '../components/shared/PrintPreviewModal';
 import { WhatsAppComposerModal } from '../components/shared/WhatsAppComposerModal';
 import { ReceiptPrint } from '../components/print/PrintTemplate';
+import { toast } from 'react-hot-toast';
 
 const ExpensePrintable: React.FC<{ expense: Expense }> = ({ expense }) => {
     const { db } = useApp();
@@ -142,6 +143,7 @@ const ReceiptsView: React.FC = () => {
                             <th className="px-6 py-3 border border-border">التاريخ</th>
                             <th className="px-6 py-3 border border-border">المستأجر</th>
                             <th className="px-6 py-3 border border-border">المبلغ</th>
+                            <th className="px-6 py-3 border border-border">طريقة الدفع</th>
                             <th className="px-6 py-3 border border-border">الحالة</th>
                             <th className="px-6 py-3 border border-border">إجراءات</th>
                         </tr>
@@ -155,8 +157,16 @@ const ReceiptsView: React.FC = () => {
                                     <td className="px-6 py-4 font-mono border border-border">{r.no}</td>
                                     <td className="px-6 py-4 border border-border">{formatDateTime(r.dateTime)}</td>
                                     <td className="px-6 py-4 border border-border">{tenant?.name || '—'}</td>
-                                    {/* FIX: Corrected path to currency settings */}
                                     <td className="px-6 py-4 font-bold border border-border">{formatCurrency(r.amount, db.settings.operational.currency)}</td>
+                                    <td className="px-6 py-4 border border-border">
+                                        <span className="text-xs">{CHANNEL_AR[r.channel as keyof typeof CHANNEL_AR] || r.channel}</span>
+                                        {r.channel === 'CHECK' && r.checkNumber && (
+                                            <div className="text-[10px] text-text-muted mt-0.5">
+                                                شيك #{r.checkNumber} {r.checkBank && `- ${r.checkBank}`}
+                                                {r.checkStatus && <span className={`mr-1 px-1 py-0.5 rounded ${r.checkStatus === 'CLEARED' ? 'bg-green-100 text-green-700' : r.checkStatus === 'BOUNCED' ? 'bg-red-100 text-red-700' : 'bg-yellow-100 text-yellow-700'}`}>{CHECK_STATUS_AR[r.checkStatus]}</span>}
+                                            </div>
+                                        )}
+                                    </td>
                                     <td className="px-6 py-4 border border-border"><span className={`status-badge ${r.status === 'POSTED' ? 'status-success' : 'status-danger'}`}>{RECEIPT_STATUS_AR[r.status as keyof typeof RECEIPT_STATUS_AR] || r.status}</span></td>
                                     <td className="px-6 py-4 border border-border">
                                         <ActionsMenu items={[
@@ -367,8 +377,9 @@ const OwnerSettlementsView: React.FC = () => {
     );
 };
 
+const CHECK_STATUS_AR: Record<string, string> = { PENDING: 'معلق', DEPOSITED: 'مودع', CLEARED: 'محصّل', BOUNCED: 'مرتجع' };
+
 const ReceiptForm: React.FC<{ isOpen: boolean, onClose: () => void, receipt: Receipt | null }> = ({ isOpen, onClose, receipt }) => {
-    // FIX: Use dataService for data manipulation
     const { db, dataService } = useApp();
     const [contractId, setContractId] = useState('');
     const [dateTime, setDateTime] = useState(new Date().toISOString().slice(0, 16));
@@ -376,17 +387,33 @@ const ReceiptForm: React.FC<{ isOpen: boolean, onClose: () => void, receipt: Rec
     const [amount, setAmount] = useState(0);
     const [ref, setRef] = useState('');
     const [notes, setNotes] = useState('');
+    const [checkNumber, setCheckNumber] = useState('');
+    const [checkBank, setCheckBank] = useState('');
+    const [checkDate, setCheckDate] = useState('');
+    const [checkStatus, setCheckStatus] = useState<Receipt['checkStatus']>('PENDING');
     
     useEffect(() => {
         if (receipt) {
             setContractId(receipt.contractId); setDateTime(receipt.dateTime.slice(0, 16)); setChannel(receipt.channel);
             setAmount(receipt.amount); setRef(receipt.ref); setNotes(receipt.notes);
+            setCheckNumber(receipt.checkNumber || ''); setCheckBank(receipt.checkBank || '');
+            setCheckDate(receipt.checkDate || ''); setCheckStatus(receipt.checkStatus || 'PENDING');
         }
     }, [receipt]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        const data = { contractId, dateTime, channel, amount, ref, notes, status: 'POSTED' as const };
+        if (channel === 'CHECK' && !checkNumber) {
+            toast.error('يرجى إدخال رقم الشيك.');
+            return;
+        }
+        const data: any = { contractId, dateTime, channel, amount, ref, notes, status: 'POSTED' as const };
+        if (channel === 'CHECK') {
+            data.checkNumber = checkNumber;
+            data.checkBank = checkBank;
+            data.checkDate = checkDate;
+            data.checkStatus = checkStatus;
+        }
         if (receipt) await dataService.update('receipts', receipt.id, data); else await dataService.add('receipts', data);
         onClose();
     };
@@ -398,8 +425,16 @@ const ReceiptForm: React.FC<{ isOpen: boolean, onClose: () => void, receipt: Rec
                     <div><label className="text-xs">العقد</label><select value={contractId} onChange={e=>setContractId(e.target.value)} required>{db.contracts.map(c=><option key={c.id} value={c.id}>{db.tenants.find(t=>t.id===c.tenantId)?.name} - {db.units.find(u=>u.id===c.unitId)?.name}</option>)}</select></div>
                     <div><label className="text-xs">التاريخ</label><input type="datetime-local" value={dateTime} onChange={e=>setDateTime(e.target.value)} required /></div>
                     <div><label className="text-xs">المبلغ</label><input type="number" value={amount} onChange={e=>setAmount(Number(e.target.value))} required /></div>
-                    <div><label className="text-xs">الطريقة</label><select value={channel} onChange={e=>setChannel(e.target.value as any)}><option value="CASH">نقدي</option><option value="BANK">تحويل</option><option value="POS">شبكة</option></select></div>
+                    <div><label className="text-xs">طريقة الدفع</label><select value={channel} onChange={e=>setChannel(e.target.value as any)}><option value="CASH">نقدي</option><option value="BANK">تحويل بنكي</option><option value="POS">شبكة</option><option value="CHECK">شيك</option><option value="OTHER">أخرى</option></select></div>
                 </div>
+                {channel === 'CHECK' && (
+                    <div className="grid grid-cols-2 gap-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                        <div><label className="text-xs font-bold text-blue-700 dark:text-blue-300">رقم الشيك *</label><input value={checkNumber} onChange={e=>setCheckNumber(e.target.value)} required placeholder="رقم الشيك" /></div>
+                        <div><label className="text-xs font-bold text-blue-700 dark:text-blue-300">البنك</label><input value={checkBank} onChange={e=>setCheckBank(e.target.value)} placeholder="اسم البنك" /></div>
+                        <div><label className="text-xs font-bold text-blue-700 dark:text-blue-300">تاريخ الاستحقاق</label><input type="date" value={checkDate} onChange={e=>setCheckDate(e.target.value)} /></div>
+                        <div><label className="text-xs font-bold text-blue-700 dark:text-blue-300">حالة الشيك</label><select value={checkStatus} onChange={e=>setCheckStatus(e.target.value as any)}><option value="PENDING">معلق</option><option value="DEPOSITED">مودع</option><option value="CLEARED">محصّل</option><option value="BOUNCED">مرتجع</option></select></div>
+                    </div>
+                )}
                 <input placeholder="مرجع / رقم الحوالة" value={ref} onChange={e=>setRef(e.target.value)} />
                 <textarea placeholder="ملاحظات" value={notes} onChange={e=>setNotes(e.target.value)} rows={2} />
                 <div className="flex justify-end gap-2 pt-4 border-t"><button type="button" onClick={onClose} className="btn btn-ghost">إلغاء</button><button type="submit" className="btn btn-primary">حفظ</button></div>

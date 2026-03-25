@@ -82,6 +82,7 @@ export interface Settings {
             CASH: string;
             BANK: string;
             POS: string;
+            CHECK: string;
             OTHER: string;
         },
         expenseCategories: {
@@ -240,11 +241,15 @@ export interface Receipt {
   no: string;
   contractId: string;
   dateTime: string; // ISO format
-  channel: 'CASH' | 'BANK' | 'POS' | 'OTHER';
+  channel: 'CASH' | 'BANK' | 'POS' | 'CHECK' | 'OTHER';
   amount: number;
   ref: string;
   notes: string;
   status: 'POSTED' | 'VOID';
+  checkNumber?: string;
+  checkBank?: string;
+  checkDate?: string;
+  checkStatus?: 'PENDING' | 'DEPOSITED' | 'CLEARED' | 'BOUNCED';
   createdAt: number;
   updatedAt?: number;
   voidedAt?: number;

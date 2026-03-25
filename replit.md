@@ -153,6 +153,13 @@ Preferred communication style: Simple, everyday language.
 - **Async/await consistency**: All `dataService.add/update/remove` calls across all pages (Contracts, Properties, CommunicationHub, Maintenance, Leads, LandsAndCommissions, People, Invoices, Financials) now properly await async operations
 - **SQL schema v2**: All IDs use UUID type (was TEXT causing FK conflicts); removed problematic foreign key constraints
 
+### Financial Automation & Enhancements (v4)
+- **Auto WhatsApp Invoice Notifications**: When monthly invoices are generated, the system automatically creates WhatsApp notification entries for each tenant with invoice details (amount, due date, unit name). Notifications appear in CommunicationHub with one-click WhatsApp send.
+- **Check/Electronic Payment Management**: Receipts now support CHECK payment channel with dedicated fields: check number, bank name, due date, and check status (Pending/Deposited/Cleared/Bounced). Check details display in receipts table with color-coded status badges.
+- **Contract Renewal Workflow**: Active contracts have a "Renew" action button that automatically: ends the current contract, creates a new ACTIVE contract with same terms for the next year, preserving tenant, unit, rent, deposit, and sponsor information.
+- **Maintenance KPI Dashboard**: 5 stat cards at top of Maintenance page showing: total requests, new requests, in-progress, completed, and total costs.
+- **Enhanced Receipt Form**: Payment method dropdown includes Cash, Bank Transfer, POS, Check, and Other options. Check selection reveals dedicated check tracking form.
+
 ### External Services (Optional)
 - **Google OAuth**: For Google Drive backup sync (optional, requires Client ID configuration)
-- **WhatsApp Web API**: Direct messaging links for tenant/owner communication
+- **WhatsApp Web API**: Direct messaging links for tenant/owner communication and automated invoice notifications
