@@ -139,7 +139,7 @@ Preferred communication style: Simple, everyday language.
 ### Settings Page (10 sections)
 - General (company info, operational settings, late fees, document numbering)
 - Financial (account mappings for payment methods, revenue, receivables, expenses)
-- Appearance (theme, primary color, logo upload)
+- Appearance (theme, primary color, logo upload, company stamp upload)
 - Users (Supabase-backed user management, role assignment)
 - Notifications (template management with toggle enable/disable)
 - Security (data integrity audit + audit log)
@@ -152,6 +152,14 @@ Preferred communication style: Simple, everyday language.
 - **Contract date logic**: End date auto-calculates as start + 1 year - 1 day (was start + 1 year exactly)
 - **Async/await consistency**: All `dataService.add/update/remove` calls across all pages (Contracts, Properties, CommunicationHub, Maintenance, Leads, LandsAndCommissions, People, Invoices, Financials) now properly await async operations
 - **SQL schema v2**: All IDs use UUID type (was TEXT causing FK conflicts); removed problematic foreign key constraints
+
+### Unit & Tenant Enhancements (v5)
+- **Expanded Unit Form**: Full property management fields — type (apartment/shop/office/studio/villa/warehouse/other), floor selection (ground through 5th + roof/basement), status (available/rented/maintenance/on-hold), area, bedrooms, bathrooms, kitchens, living rooms, water meter number, electricity meter number, additional features
+- **Floor-Based Unit Grouping**: Units view groups units by floor with per-floor counts when floors are assigned; shows flat grid when no floors set
+- **Unit KPI Cards**: 4 stat cards (total units, rented, available, on-hold) at top of units view
+- **Unit Status Badges**: Color-coded status badges (green=available, blue=rented, yellow=maintenance, gray=on-hold) on each unit card
+- **Expanded Tenant Form**: Type (individual/company), email, nationality, commercial register (shown for companies), address, postal code, PO box — in addition to existing name, phone, ID, status, notes, attachments
+- **Company Stamp**: Upload stamp image in Appearance settings; stamp appears in printed receipts and documents (replaces empty circle placeholder)
 
 ### Financial Automation & Enhancements (v4)
 - **Auto WhatsApp Invoice Notifications**: When monthly invoices are generated, the system automatically creates WhatsApp notification entries for each tenant with invoice details (amount, due date, unit name). Notifications appear in CommunicationHub with one-click WhatsApp send.

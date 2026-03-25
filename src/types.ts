@@ -103,6 +103,7 @@ export interface Settings {
     theme: 'light' | 'dark';
     primaryColor: string;
     logoDataUrl?: string;
+    stampDataUrl?: string;
   };
   backup: {
     autoBackup: AutoBackupSettings;
@@ -174,11 +175,17 @@ export interface Unit {
   propertyId: string;
   name: string;
   type: string;
-  status: 'AVAILABLE' | 'RENTED' | 'MAINTENANCE';
+  floor?: string;
+  status: 'AVAILABLE' | 'RENTED' | 'MAINTENANCE' | 'ON_HOLD';
   rentDefault: number;
   area?: number;
   bedrooms?: number;
   bathrooms?: number;
+  kitchens?: number;
+  livingRooms?: number;
+  waterMeter?: string;
+  electricityMeter?: string;
+  features?: string;
   notes: string;
   createdAt: number;
   updatedAt?: number;
@@ -192,6 +199,11 @@ export interface Tenant {
   email?: string;
   nationality?: string;
   idNo: string;
+  tenantType?: 'INDIVIDUAL' | 'COMPANY';
+  crNumber?: string;
+  address?: string;
+  postalCode?: string;
+  poBox?: string;
   status: 'ACTIVE' | 'INACTIVE' | 'BLACKLIST';
   notes: string;
   createdAt: number;

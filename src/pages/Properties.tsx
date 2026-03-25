@@ -112,12 +112,25 @@ const PropertiesListView: React.FC = () => {
     );
 };
 
+const UNIT_STATUS_MAP: Record<string, { label: string; color: string }> = {
+    AVAILABLE: { label: 'شاغرة', color: 'bg-green-100 text-green-800' },
+    RENTED: { label: 'مؤجرة', color: 'bg-blue-100 text-blue-800' },
+    MAINTENANCE: { label: 'صيانة', color: 'bg-yellow-100 text-yellow-800' },
+    ON_HOLD: { label: 'معلقة', color: 'bg-gray-100 text-gray-800' },
+};
+
 const UnitsView: React.FC<{ property: Property, onBack: () => void }> = ({ property, onBack }) => {
-    // FIX: Use dataService for data manipulation
     const { db, dataService } = useApp();
     const [isUnitModalOpen, setIsUnitModalOpen] = useState(false);
     const [editingUnit, setEditingUnit] = useState<Unit | null>(null);
     const units = db.units.filter(u => u.propertyId === property.id);
+
+    const floors = [...new Set(units.map(u => u.floor || 'بدون دور'))];
+    const hasFloors = units.some(u => u.floor);
+
+    const rented = units.filter(u => u.status === 'RENTED').length;
+    const available = units.filter(u => u.status === 'AVAILABLE').length;
+    const onHold = units.filter(u => u.status === 'ON_HOLD').length;
 
     return (
         <div className="space-y-6">
@@ -128,18 +141,64 @@ const UnitsView: React.FC<{ property: Property, onBack: () => void }> = ({ prope
                 </div>
                 <button onClick={() => { setEditingUnit(null); setIsUnitModalOpen(true); }} className="btn btn-primary">إضافة وحدة</button>
             </div>
-            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
-                {units.map(u => (
-                    <div key={u.id} className="p-4 bg-background border border-border rounded-lg relative">
-                        {/* FIX: Use dataService for data manipulation */}
-                        <div className="absolute top-2 left-2"><ActionsMenu items={[ EditAction(()=> {setEditingUnit(u); setIsUnitModalOpen(true);}), DeleteAction(async ()=> await dataService.remove('units', u.id)) ]} /></div>
-                        <p className="font-bold mb-1">{u.name}</p>
-                        <p className="text-xs text-text-muted">{u.type}</p>
-                        <p className="text-sm font-bold mt-2 text-primary">{formatCurrency(u.rentDefault)}</p>
-                    </div>
-                ))}
+
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="bg-background border border-border rounded-lg p-4 text-center">
+                    <p className="text-2xl font-bold text-primary">{toArabicDigits(units.length)}</p>
+                    <p className="text-xs text-text-muted">إجمالي الوحدات</p>
+                </div>
+                <div className="bg-background border border-border rounded-lg p-4 text-center">
+                    <p className="text-2xl font-bold text-blue-600">{toArabicDigits(rented)}</p>
+                    <p className="text-xs text-text-muted">مؤجرة</p>
+                </div>
+                <div className="bg-background border border-border rounded-lg p-4 text-center">
+                    <p className="text-2xl font-bold text-green-600">{toArabicDigits(available)}</p>
+                    <p className="text-xs text-text-muted">شاغرة</p>
+                </div>
+                <div className="bg-background border border-border rounded-lg p-4 text-center">
+                    <p className="text-2xl font-bold text-gray-600">{toArabicDigits(onHold)}</p>
+                    <p className="text-xs text-text-muted">معلقة</p>
+                </div>
             </div>
+
+            {hasFloors ? (
+                floors.map(fl => {
+                    const floorUnits = units.filter(u => (u.floor || 'بدون دور') === fl);
+                    return (
+                        <div key={fl} className="space-y-3">
+                            <h3 className="font-bold text-lg border-b border-border pb-2">{fl === 'بدون دور' ? fl : `الدور ${fl}`} <span className="text-sm text-text-muted font-normal">({toArabicDigits(floorUnits.length)} وحدات)</span></h3>
+                            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                                {floorUnits.map(u => <UnitCard key={u.id} u={u} onEdit={() => { setEditingUnit(u); setIsUnitModalOpen(true); }} onDelete={async () => await dataService.remove('units', u.id)} />)}
+                            </div>
+                        </div>
+                    );
+                })
+            ) : (
+                <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                    {units.map(u => <UnitCard key={u.id} u={u} onEdit={() => { setEditingUnit(u); setIsUnitModalOpen(true); }} onDelete={async () => await dataService.remove('units', u.id)} />)}
+                </div>
+            )}
             {isUnitModalOpen && <UnitForm isOpen={isUnitModalOpen} onClose={() => setIsUnitModalOpen(false)} unit={editingUnit} propertyId={property.id} />}
+        </div>
+    );
+};
+
+const UnitCard: React.FC<{ u: Unit; onEdit: () => void; onDelete: () => void }> = ({ u, onEdit, onDelete }) => {
+    const st = UNIT_STATUS_MAP[u.status] || UNIT_STATUS_MAP.AVAILABLE;
+    const featuresList: string[] = [];
+    if (u.bedrooms) featuresList.push(`${u.bedrooms} غرف`);
+    if (u.bathrooms) featuresList.push(`${u.bathrooms} حمام`);
+    if (u.kitchens) featuresList.push(`${u.kitchens} مطبخ`);
+    if (u.livingRooms) featuresList.push(`${u.livingRooms} صالة`);
+
+    return (
+        <div className="p-4 bg-background border border-border rounded-lg relative">
+            <div className="absolute top-2 left-2"><ActionsMenu items={[EditAction(onEdit), DeleteAction(onDelete)]} /></div>
+            <p className="font-bold mb-1">{u.name}</p>
+            <span className={`text-xs px-2 py-0.5 rounded-full ${st.color}`}>{st.label}</span>
+            <p className="text-xs text-text-muted mt-1">{u.type}{u.area ? ` • ${u.area} م²` : ''}</p>
+            {featuresList.length > 0 && <p className="text-xs text-text-muted mt-1">{featuresList.join(' • ')}</p>}
+            <p className="text-sm font-bold mt-2 text-primary">{formatCurrency(u.rentDefault)}</p>
         </div>
     );
 };
@@ -169,23 +228,154 @@ const PropertyForm: React.FC<{ isOpen: boolean, onClose: () => void, property: P
     );
 };
 
+const UNIT_TYPES = [
+    { value: 'شقة', label: 'شقة' },
+    { value: 'محل', label: 'محل تجاري' },
+    { value: 'مكتب', label: 'مكتب' },
+    { value: 'استوديو', label: 'استوديو' },
+    { value: 'فيلا', label: 'فيلا' },
+    { value: 'مستودع', label: 'مستودع' },
+    { value: 'أخرى', label: 'أخرى' },
+];
+
+const FLOOR_OPTIONS = [
+    { value: 'أرضي', label: 'الدور الأرضي' },
+    { value: 'أول', label: 'الدور الأول' },
+    { value: 'ثاني', label: 'الدور الثاني' },
+    { value: 'ثالث', label: 'الدور الثالث' },
+    { value: 'رابع', label: 'الدور الرابع' },
+    { value: 'خامس', label: 'الدور الخامس' },
+    { value: 'سطح', label: 'السطح' },
+    { value: 'بدروم', label: 'البدروم' },
+];
+
 const UnitForm: React.FC<{ isOpen: boolean, onClose: () => void, unit: Unit | null, propertyId: string }> = ({ isOpen, onClose, unit, propertyId }) => {
-    // FIX: Use dataService for data manipulation
     const { dataService } = useApp();
     const [name, setName] = useState(unit?.name || '');
+    const [type, setType] = useState(unit?.type || 'شقة');
+    const [floor, setFloor] = useState(unit?.floor || '');
+    const [status, setStatus] = useState<Unit['status']>(unit?.status || 'AVAILABLE');
     const [rent, setRent] = useState(unit?.rentDefault || 0);
+    const [area, setArea] = useState(unit?.area || 0);
+    const [bedrooms, setBedrooms] = useState(unit?.bedrooms || 0);
+    const [bathrooms, setBathrooms] = useState(unit?.bathrooms || 0);
+    const [kitchens, setKitchens] = useState(unit?.kitchens || 0);
+    const [livingRooms, setLivingRooms] = useState(unit?.livingRooms || 0);
+    const [waterMeter, setWaterMeter] = useState(unit?.waterMeter || '');
+    const [electricityMeter, setElectricityMeter] = useState(unit?.electricityMeter || '');
+    const [features, setFeatures] = useState(unit?.features || '');
+    const [notes, setNotes] = useState(unit?.notes || '');
+
+    React.useEffect(() => {
+        if (unit) {
+            setName(unit.name); setType(unit.type || 'شقة'); setFloor(unit.floor || '');
+            setStatus(unit.status); setRent(unit.rentDefault); setArea(unit.area || 0);
+            setBedrooms(unit.bedrooms || 0); setBathrooms(unit.bathrooms || 0);
+            setKitchens(unit.kitchens || 0); setLivingRooms(unit.livingRooms || 0);
+            setWaterMeter(unit.waterMeter || ''); setElectricityMeter(unit.electricityMeter || '');
+            setFeatures(unit.features || ''); setNotes(unit.notes || '');
+        }
+    }, [unit, isOpen]);
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        const data = { name, rentDefault: rent, propertyId, type: 'Apartment', status: 'AVAILABLE' as const, notes: '' };
+        const data = {
+            name, type, floor, status, rentDefault: rent, area: area || undefined,
+            bedrooms: bedrooms || undefined, bathrooms: bathrooms || undefined,
+            kitchens: kitchens || undefined, livingRooms: livingRooms || undefined,
+            waterMeter: waterMeter || undefined, electricityMeter: electricityMeter || undefined,
+            features: features || undefined, notes, propertyId,
+        };
         if (unit) await dataService.update('units', unit.id, data as any); else await dataService.add('units', data as any);
         onClose();
     };
+
     return (
-        <Modal isOpen={isOpen} onClose={onClose} title="بيانات الوحدة">
-            <form onSubmit={handleSubmit} className="space-y-4">
-                <input placeholder="رقم/اسم الوحدة" value={name} onChange={e=>setName(e.target.value)} required />
-                <input type="number" placeholder="الإيجار الافتراضي" value={rent} onChange={e=>setRent(Number(e.target.value))} required />
-                <button type="submit" className="btn btn-primary w-full">حفظ الوحدة</button>
+        <Modal isOpen={isOpen} onClose={onClose} title={unit ? 'تعديل الوحدة' : 'إضافة وحدة جديدة'}>
+            <form onSubmit={handleSubmit}>
+                <div className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label className="block text-sm font-medium mb-1">رقم/اسم الوحدة</label>
+                            <input type="text" value={name} onChange={e => setName(e.target.value)} required />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium mb-1">نوع الوحدة</label>
+                            <select value={type} onChange={e => setType(e.target.value)}>
+                                {UNIT_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
+                            </select>
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium mb-1">الدور</label>
+                            <select value={floor} onChange={e => setFloor(e.target.value)}>
+                                <option value="">-- اختر الدور --</option>
+                                {FLOOR_OPTIONS.map(f => <option key={f.value} value={f.value}>{f.label}</option>)}
+                            </select>
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium mb-1">الحالة</label>
+                            <select value={status} onChange={e => setStatus(e.target.value as Unit['status'])}>
+                                <option value="AVAILABLE">شاغرة</option>
+                                <option value="RENTED">مؤجرة</option>
+                                <option value="MAINTENANCE">صيانة</option>
+                                <option value="ON_HOLD">معلقة</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium mb-1">الإيجار الافتراضي</label>
+                            <input type="number" value={rent} onChange={e => setRent(Number(e.target.value))} required />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium mb-1">المساحة (م²)</label>
+                            <input type="number" value={area} onChange={e => setArea(Number(e.target.value))} />
+                        </div>
+                    </div>
+
+                    <h4 className="font-bold text-sm text-text-muted pt-2 border-t border-border">خصائص الوحدة</h4>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <div>
+                            <label className="block text-sm font-medium mb-1">غرف النوم</label>
+                            <input type="number" min="0" value={bedrooms} onChange={e => setBedrooms(Number(e.target.value))} />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium mb-1">الحمامات</label>
+                            <input type="number" min="0" value={bathrooms} onChange={e => setBathrooms(Number(e.target.value))} />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium mb-1">المطابخ</label>
+                            <input type="number" min="0" value={kitchens} onChange={e => setKitchens(Number(e.target.value))} />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium mb-1">الصالات</label>
+                            <input type="number" min="0" value={livingRooms} onChange={e => setLivingRooms(Number(e.target.value))} />
+                        </div>
+                    </div>
+
+                    <h4 className="font-bold text-sm text-text-muted pt-2 border-t border-border">العدادات</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label className="block text-sm font-medium mb-1">رقم عداد المياه</label>
+                            <input type="text" value={waterMeter} onChange={e => setWaterMeter(e.target.value)} />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium mb-1">رقم عداد الكهرباء</label>
+                            <input type="text" value={electricityMeter} onChange={e => setElectricityMeter(e.target.value)} />
+                        </div>
+                    </div>
+
+                    <div>
+                        <label className="block text-sm font-medium mb-1">مميزات إضافية</label>
+                        <input type="text" value={features} onChange={e => setFeatures(e.target.value)} placeholder="مثال: مكيف مركزي، موقف سيارة، بلكونة" />
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium mb-1">ملاحظات</label>
+                        <textarea value={notes} onChange={e => setNotes(e.target.value)} />
+                    </div>
+                </div>
+                <div className="flex justify-end gap-3 pt-4 mt-4 border-t border-border">
+                    <button type="button" onClick={onClose} className="btn btn-ghost">إلغاء</button>
+                    <button type="submit" className="btn btn-primary">حفظ الوحدة</button>
+                </div>
             </form>
         </Modal>
     );

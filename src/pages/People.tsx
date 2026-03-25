@@ -232,27 +232,31 @@ const OwnersView: React.FC = () => {
 
 // Forms
 const TenantForm: React.FC<{ isOpen: boolean, onClose: () => void, tenant: Tenant | null }> = ({ isOpen, onClose, tenant }) => {
-    // FIX: Use dataService for data manipulation
     const { dataService } = useApp();
     const [name, setName] = useState('');
     const [phone, setPhone] = useState('');
+    const [email, setEmail] = useState('');
     const [idNo, setIdNo] = useState('');
+    const [tenantType, setTenantType] = useState<'INDIVIDUAL' | 'COMPANY'>('INDIVIDUAL');
+    const [crNumber, setCrNumber] = useState('');
+    const [address, setAddress] = useState('');
+    const [postalCode, setPostalCode] = useState('');
+    const [poBox, setPoBox] = useState('');
+    const [nationality, setNationality] = useState('');
     const [status, setStatus] = useState<Tenant['status']>('ACTIVE');
     const [notes, setNotes] = useState('');
 
     React.useEffect(() => {
         if (tenant) {
-            setName(tenant.name);
-            setPhone(tenant.phone);
-            setIdNo(tenant.idNo);
-            setStatus(tenant.status);
-            setNotes(tenant.notes);
+            setName(tenant.name); setPhone(tenant.phone); setEmail(tenant.email || '');
+            setIdNo(tenant.idNo); setTenantType(tenant.tenantType || 'INDIVIDUAL');
+            setCrNumber(tenant.crNumber || ''); setAddress(tenant.address || '');
+            setPostalCode(tenant.postalCode || ''); setPoBox(tenant.poBox || '');
+            setNationality(tenant.nationality || ''); setStatus(tenant.status); setNotes(tenant.notes);
         } else {
-            setName('');
-            setPhone('');
-            setIdNo('');
-            setStatus('ACTIVE');
-            setNotes('');
+            setName(''); setPhone(''); setEmail(''); setIdNo(''); setTenantType('INDIVIDUAL');
+            setCrNumber(''); setAddress(''); setPostalCode(''); setPoBox('');
+            setNationality(''); setStatus('ACTIVE'); setNotes('');
         }
     }, [tenant, isOpen]);
 
@@ -260,7 +264,12 @@ const TenantForm: React.FC<{ isOpen: boolean, onClose: () => void, tenant: Tenan
         e.preventDefault();
         if (!name) { toast.error("اسم المستأجر مطلوب"); return; }
 
-        const data = { name, phone, idNo, status, notes };
+        const data = {
+            name, phone, email: email || undefined, idNo, tenantType,
+            crNumber: crNumber || undefined, address: address || undefined,
+            postalCode: postalCode || undefined, poBox: poBox || undefined,
+            nationality: nationality || undefined, status, notes,
+        };
         if (tenant) {
             await dataService.update('tenants', tenant.id, data);
         } else {
@@ -279,13 +288,34 @@ const TenantForm: React.FC<{ isOpen: boolean, onClose: () => void, tenant: Tenan
                             <input type="text" value={name} onChange={e => setName(e.target.value)} required />
                         </div>
                         <div>
+                            <label className="block text-sm font-medium mb-1">نوع المستأجر</label>
+                            <select value={tenantType} onChange={e => setTenantType(e.target.value as 'INDIVIDUAL' | 'COMPANY')}>
+                                <option value="INDIVIDUAL">شخص</option>
+                                <option value="COMPANY">شركة</option>
+                            </select>
+                        </div>
+                        <div>
                             <label className="block text-sm font-medium mb-1">الهاتف</label>
                             <input type="text" value={phone} onChange={e => setPhone(e.target.value)} />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium mb-1">البريد الإلكتروني</label>
+                            <input type="email" value={email} onChange={e => setEmail(e.target.value)} />
                         </div>
                         <div>
                             <label className="block text-sm font-medium mb-1">رقم الهوية</label>
                             <input type="text" value={idNo} onChange={e => setIdNo(e.target.value)} />
                         </div>
+                        <div>
+                            <label className="block text-sm font-medium mb-1">الجنسية</label>
+                            <input type="text" value={nationality} onChange={e => setNationality(e.target.value)} />
+                        </div>
+                        {tenantType === 'COMPANY' && (
+                            <div>
+                                <label className="block text-sm font-medium mb-1">رقم السجل التجاري</label>
+                                <input type="text" value={crNumber} onChange={e => setCrNumber(e.target.value)} />
+                            </div>
+                        )}
                         <div>
                             <label className="block text-sm font-medium mb-1">الحالة</label>
                             <select value={status} onChange={e => setStatus(e.target.value as Tenant['status'])}>
@@ -295,6 +325,23 @@ const TenantForm: React.FC<{ isOpen: boolean, onClose: () => void, tenant: Tenan
                             </select>
                         </div>
                     </div>
+
+                    <h4 className="font-bold text-sm text-text-muted pt-2 border-t border-border">العنوان</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div className="md:col-span-3">
+                            <label className="block text-sm font-medium mb-1">العنوان</label>
+                            <input type="text" value={address} onChange={e => setAddress(e.target.value)} />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium mb-1">الرمز البريدي</label>
+                            <input type="text" value={postalCode} onChange={e => setPostalCode(e.target.value)} />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium mb-1">صندوق البريد</label>
+                            <input type="text" value={poBox} onChange={e => setPoBox(e.target.value)} />
+                        </div>
+                    </div>
+
                     <div>
                         <label className="block text-sm font-medium mb-1">ملاحظات</label>
                         <textarea value={notes} onChange={e => setNotes(e.target.value)} />

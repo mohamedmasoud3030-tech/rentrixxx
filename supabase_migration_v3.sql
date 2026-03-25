@@ -24,10 +24,25 @@ ALTER TABLE public.properties ADD COLUMN IF NOT EXISTS updated_at BIGINT;
 ALTER TABLE public.units ADD COLUMN IF NOT EXISTS rent_default NUMERIC DEFAULT 0;
 ALTER TABLE public.units ADD COLUMN IF NOT EXISTS bedrooms INT;
 ALTER TABLE public.units ADD COLUMN IF NOT EXISTS bathrooms INT;
+ALTER TABLE public.units ADD COLUMN IF NOT EXISTS kitchens INT;
+ALTER TABLE public.units ADD COLUMN IF NOT EXISTS living_rooms INT;
+ALTER TABLE public.units ADD COLUMN IF NOT EXISTS water_meter TEXT;
+ALTER TABLE public.units ADD COLUMN IF NOT EXISTS electricity_meter TEXT;
+ALTER TABLE public.units ADD COLUMN IF NOT EXISTS features TEXT;
 ALTER TABLE public.units ADD COLUMN IF NOT EXISTS updated_at BIGINT;
+
+-- Backfill rent_default from legacy rent column where rent_default is 0 or null
+UPDATE public.units SET rent_default = rent WHERE (rent_default IS NULL OR rent_default = 0) AND rent IS NOT NULL AND rent > 0;
 
 -- TENANTS: add missing fields
 ALTER TABLE public.tenants ADD COLUMN IF NOT EXISTS status TEXT DEFAULT 'ACTIVE';
+ALTER TABLE public.tenants ADD COLUMN IF NOT EXISTS email TEXT;
+ALTER TABLE public.tenants ADD COLUMN IF NOT EXISTS nationality TEXT;
+ALTER TABLE public.tenants ADD COLUMN IF NOT EXISTS tenant_type TEXT DEFAULT 'INDIVIDUAL';
+ALTER TABLE public.tenants ADD COLUMN IF NOT EXISTS cr_number TEXT;
+ALTER TABLE public.tenants ADD COLUMN IF NOT EXISTS address TEXT;
+ALTER TABLE public.tenants ADD COLUMN IF NOT EXISTS postal_code TEXT;
+ALTER TABLE public.tenants ADD COLUMN IF NOT EXISTS po_box TEXT;
 ALTER TABLE public.tenants ADD COLUMN IF NOT EXISTS updated_at BIGINT;
 
 -- CONTRACTS: add missing fields
