@@ -1,9 +1,9 @@
-
 import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useApp } from '../../contexts/AppContext';
 import { formatCurrency, formatDate, toArabicDigits } from '../../utils/helpers';
 import { Printer, ArrowRight } from 'lucide-react';
+import DocumentHeader from '../../components/shared/DocumentHeader';
 
 const PrintContract: React.FC = () => {
     const { id } = useParams<{ id: string }>();
@@ -16,7 +16,6 @@ const PrintContract: React.FC = () => {
     const tenant = db.tenants.find(t => t.id === contract.tenantId);
     const unit = db.units.find(u => u.id === contract.unitId);
     const property = unit ? db.properties.find(p => p.id === unit.propertyId) : null;
-    // FIX: Corrected path to company settings
     const company = db.settings.general.company;
 
     return (
@@ -36,9 +35,7 @@ const PrintContract: React.FC = () => {
             </div>
             <div className="p-4">
                 <div className="bg-white text-black w-[210mm] min-h-[297mm] mx-auto p-10 border border-black text-sm leading-relaxed shadow-lg">
-                    <header className="text-center mb-8">
-                        <h1 className="text-2xl font-bold underline">عقد إيجار</h1>
-                    </header>
+                    <DocumentHeader docTitle="عقد إيجار" />
 
                     <main>
                         <p className="mb-4">
@@ -75,13 +72,11 @@ const PrintContract: React.FC = () => {
 
                         <h2 className="text-lg font-bold mt-6 mb-4 border-b border-black pb-1">البند الثالث: القيمة الإيجارية</h2>
                         <p>
-                            {/* FIX: Corrected path to currency settings */}
                             تم هذا الإيجار بقيمة إيجارية شهرية قدرها <span className="font-bold">{formatCurrency(contract.rent, db.settings.operational.currency)}</span>، ويتعهد الطرف الثاني بسداد الإيجار في موعد أقصاه يوم {toArabicDigits(contract.dueDay)} من كل شهر ميلادي.
                         </p>
                         
                         <h2 className="text-lg font-bold mt-6 mb-4 border-b border-black pb-1">البند الرابع: التأمين</h2>
                          <p>
-                            {/* FIX: Corrected path to currency settings */}
                             دفع الطرف الثاني للطرف الأول مبلغاً وقدره <span className="font-bold">{formatCurrency(contract.deposit, db.settings.operational.currency)}</span> كتأمين، لا يرد إلا عند انتهاء العقد وتسليم العين المؤجرة بالحالة التي كانت عليها.
                         </p>
 
