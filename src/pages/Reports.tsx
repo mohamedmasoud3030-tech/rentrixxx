@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import PrintPreviewModal from '../components/shared/PrintPreviewModal';
+import { DocumentHeaderInline } from '../components/shared/DocumentHeader';
 import {
   exportRentRollToPdf, exportOwnerLedgerToPdf, exportTenantStatementToPdf,
   exportIncomeStatementToPdf, exportTrialBalanceToPdf, exportBalanceSheetToPdf,
@@ -29,15 +30,11 @@ const CHART_COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#0
 
 const ReportPrintableContent: React.FC<{ title: string; date: string; children: React.ReactNode }> = ({ title, date, children }) => {
   const { settings } = useApp();
-  const { company } = settings.general;
+  const company = settings.general.company;
+  const logo = settings.appearance?.logoDataUrl;
   return (
     <div>
-      <div className="text-center mb-6">
-        <h1 className="text-xl font-bold">{company.name}</h1>
-        <p className="text-xs text-text-muted">{company.address} - {company.phone}</p>
-      </div>
-      <h2 className="text-2xl font-bold text-center mb-2">{title}</h2>
-      <p className="text-center text-sm text-text-muted mb-6">{date}</p>
+      <DocumentHeaderInline company={company} logoUrl={logo} docTitle={title} docDate={date} />
       {children}
     </div>
   );

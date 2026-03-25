@@ -123,6 +123,13 @@ Preferred communication style: Simple, everyday language.
 - Overdue invoices table with days-overdue severity badges
 - Recent receipts feed with status badges
 
+### Unified Document Letterhead
+- **DocumentHeader component** (`src/components/shared/DocumentHeader.tsx`): Shared header for all printed documents
+- **Layout**: Company name centered, contact info (address/phone/CR/tax/postal) on the right, logo on the left (RTL)
+- **Used in**: PrintReceipt, PrintContract, Reports printable content, PrintTemplate
+- **DocumentHeaderInline**: Variant for use without AppContext (accepts company/logo as props)
+- **CompanyInfo fields**: name, address, phone, phone2, email, postalCode, crNumber, taxNumber
+
 ### Settings Page (10 sections)
 - General (company info, operational settings, late fees, document numbering)
 - Financial (account mappings for payment methods, revenue, receivables, expenses)

@@ -1,9 +1,9 @@
-
 import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useApp } from '../../contexts/AppContext';
 import { formatCurrency, formatDateTime } from '../../utils/helpers';
 import { Printer, ArrowRight } from 'lucide-react';
+import DocumentHeader from '../../components/shared/DocumentHeader';
 
 const PrintReceipt: React.FC = () => {
     const { id } = useParams<{ id: string }>();
@@ -17,8 +17,6 @@ const PrintReceipt: React.FC = () => {
     const tenant = contract ? db.tenants.find(t => t.id === contract.tenantId) : null;
     const unit = contract ? db.units.find(u => u.id === contract.unitId) : null;
     const property = unit ? db.properties.find(p => p.id === unit.propertyId) : null;
-    // FIX: Corrected path to company settings
-    const company = db.settings.general.company;
 
     const receiptPurpose = `وذلك عن دفعة إيجار للوحدة ${unit?.name || ''} بالعقار ${property?.name || ''}`;
 
@@ -39,20 +37,13 @@ const PrintReceipt: React.FC = () => {
             </div>
             <div className="p-4 font-['Cairo']" dir="rtl">
                 <div className="bg-white text-black w-[210mm] h-[148mm] mx-auto p-10 border-2 border-black flex flex-col shadow-lg">
-                    <header className="flex justify-between items-start pb-4 border-b-2 border-black">
-                        <div className="text-right">
-                            <h1 className="text-2xl font-bold">{company.name}</h1>
-                            <p className="text-sm">{company.address}</p>
-                            <p className="text-sm">هاتف: {company.phone}</p>
-                        </div>
-                        <div className="text-left">
-                            <h2 className="text-3xl font-bold">سند قبض</h2>
-                            <p className="mt-2">رقم السند: <span className="font-mono">{receipt.no}</span></p>
-                            <p>التاريخ: <span className="font-mono">{formatDateTime(receipt.dateTime)}</span></p>
-                        </div>
-                    </header>
+                    <DocumentHeader
+                        docTitle="سند قبض"
+                        docNo={receipt.no}
+                        docDate={formatDateTime(receipt.dateTime)}
+                    />
 
-                    <main className="mt-8 text-lg flex-grow">
+                    <main className="mt-4 text-lg flex-grow">
                         <div className="flex items-center mb-5">
                             <span className="w-48 font-bold">استلمنا من السيد/السادة:</span>
                             <span>{tenant?.name || 'غير معروف'}</span>
@@ -60,7 +51,6 @@ const PrintReceipt: React.FC = () => {
                         <div className="flex items-center mb-5">
                             <span className="w-48 font-bold">مبلغاً وقدره:</span>
                             <span className="font-bold text-xl px-4 py-2 border-2 border-black rounded-md bg-gray-100">
-                                {/* FIX: Corrected path to currency settings */}
                                 {formatCurrency(receipt.amount, db.settings.operational.currency)}
                             </span>
                         </div>

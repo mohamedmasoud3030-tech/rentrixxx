@@ -27,6 +27,9 @@ export interface CompanyInfo {
   name: string;
   address: string;
   phone: string;
+  phone2?: string;
+  email?: string;
+  postalCode?: string;
   crNumber?: string;
   taxNumber?: string;
 }
