@@ -24,7 +24,7 @@ import {
   LineChart, Line
 } from 'recharts';
 
-type ReportTab = 'overview' | 'rent_roll' | 'owner' | 'tenant' | 'income_statement' | 'balance_sheet' | 'trial_balance' | 'aged_receivables';
+type ReportTab = 'overview' | 'rent_roll' | 'owner' | 'tenant' | 'income_statement' | 'balance_sheet' | 'trial_balance' | 'aged_receivables' | 'property_report' | 'daily_collection' | 'maintenance_report' | 'deposits_report' | 'expenses_report';
 
 const CHART_COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4', '#ec4899', '#14b8a6'];
 
@@ -57,12 +57,12 @@ const SectionHeader: React.FC<{ title: string; icon: React.ReactNode; children?:
   </div>
 );
 
-const ActionBar: React.FC<{ onPrint: () => void; onExport: () => void; children?: React.ReactNode }> = ({ onPrint, onExport, children }) => (
+const ActionBar: React.FC<{ onPrint: () => void; onExport?: () => void; children?: React.ReactNode }> = ({ onPrint, onExport, children }) => (
   <div className="flex flex-wrap gap-3 items-end mb-6">
     {children}
     <div className="flex gap-2 mr-auto">
       <button onClick={onPrint} className="btn btn-primary flex items-center gap-2 text-sm"><Printer size={15} /> طباعة</button>
-      <button onClick={onExport} className="btn btn-secondary flex items-center gap-2 text-sm"><Download size={15} /> PDF</button>
+      {onExport && <button onClick={onExport} className="btn btn-secondary flex items-center gap-2 text-sm"><Download size={15} /> PDF</button>}
     </div>
   </div>
 );
@@ -89,6 +89,11 @@ const Reports: React.FC = () => {
     { id: 'owner', label: 'كشف حساب المالك', icon: <Users size={16} /> },
     { id: 'tenant', label: 'كشف حساب المستأجر', icon: <Users size={16} /> },
     { id: 'aged_receivables', label: 'أعمار الديون', icon: <CalendarRange size={16} /> },
+    { id: 'property_report', label: 'تقرير عقار', icon: <Building2 size={16} /> },
+    { id: 'daily_collection', label: 'كشف التحصيل اليومي', icon: <Banknote size={16} /> },
+    { id: 'maintenance_report', label: 'تقرير الصيانة', icon: <Filter size={16} /> },
+    { id: 'deposits_report', label: 'تقرير التأمينات', icon: <Wallet size={16} /> },
+    { id: 'expenses_report', label: 'تقرير المصروفات', icon: <TrendingDown size={16} /> },
   ];
 
   const renderContent = () => {
@@ -101,6 +106,11 @@ const Reports: React.FC = () => {
       case 'balance_sheet': return <BalanceSheet />;
       case 'trial_balance': return <TrialBalance />;
       case 'aged_receivables': return <AgedReceivables />;
+      case 'property_report': return <PropertyReport />;
+      case 'daily_collection': return <DailyCollectionReport />;
+      case 'maintenance_report': return <MaintenanceReport />;
+      case 'deposits_report': return <DepositsReport />;
+      case 'expenses_report': return <ExpensesReport />;
       default: return <ReportsOverview currency={currency} />;
     }
   };
@@ -980,6 +990,368 @@ const AgedReceivables: React.FC = () => {
       </ActionBar>
       <ReportPrintableContent title="تقرير أعمار الديون" date={`كما في تاريخ ${formatDate(asOfDate)}`}>{reportContent}</ReportPrintableContent>
       {isPrinting && <PrintPreviewModal isOpen={isPrinting} onClose={() => setIsPrinting(false)} title="تقرير أعمار الديون"><ReportPrintableContent title="تقرير أعمار الديون" date={`كما في تاريخ ${formatDate(asOfDate)}`}>{reportContent}</ReportPrintableContent></PrintPreviewModal>}
+    </Card>
+  );
+};
+
+const PropertyReport: React.FC = () => {
+  const { db, settings } = useApp();
+  const cur = settings.operational?.currency ?? 'OMR';
+  const [selectedPropertyId, setSelectedPropertyId] = useState(db.properties[0]?.id || '');
+  const [isPrinting, setIsPrinting] = useState(false);
+
+  useEffect(() => {
+    if (!selectedPropertyId && db.properties.length > 0) setSelectedPropertyId(db.properties[0].id);
+  }, [db.properties]);
+
+  const property = db.properties.find(p => p.id === selectedPropertyId);
+  const owner = property ? db.owners.find(o => o.id === property.ownerId) : null;
+  const units = db.units.filter(u => u.propertyId === selectedPropertyId);
+  const rented = units.filter(u => u.status === 'RENTED').length;
+  const available = units.filter(u => u.status === 'AVAILABLE').length;
+  const totalRent = units.filter(u => u.status === 'RENTED').reduce((s, u) => {
+    const c = db.contracts.find(c => c.unitId === u.id && c.status === 'ACTIVE');
+    return s + (c?.rent || 0);
+  }, 0);
+  const annualIncome = totalRent * 12;
+  const maintenanceCost = db.maintenanceRecords.filter(m => units.some(u => u.id === m.unitId)).reduce((s, m) => s + (m.cost || 0), 0);
+
+  const reportContent = (
+    <div>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+        <MiniKpi label="إجمالي الوحدات" value={String(units.length)} icon={<Building2 size={18} />} color="bg-blue-100 text-blue-700" />
+        <MiniKpi label="مؤجرة" value={String(rented)} icon={<Users size={18} />} color="bg-green-100 text-green-700" />
+        <MiniKpi label="شاغرة" value={String(available)} icon={<Building2 size={18} />} color="bg-yellow-100 text-yellow-700" />
+        <MiniKpi label="الدخل الشهري" value={formatCurrency(totalRent, cur)} icon={<Banknote size={18} />} color="bg-emerald-100 text-emerald-700" />
+      </div>
+      <div className="grid grid-cols-2 gap-4 mb-6">
+        <MiniKpi label="الدخل السنوي المتوقع" value={formatCurrency(annualIncome, cur)} icon={<TrendingUp size={18} />} color="bg-purple-100 text-purple-700" />
+        <MiniKpi label="إجمالي تكاليف الصيانة" value={formatCurrency(maintenanceCost, cur)} icon={<TrendingDown size={18} />} color="bg-red-100 text-red-700" />
+      </div>
+      {property && <div className="mb-4 text-sm"><p>المالك: <span className="font-bold">{owner?.name || '-'}</span></p><p>الموقع: {property.location || '-'}</p></div>}
+      <table className="w-full text-sm border-collapse border border-border">
+        <thead><tr className="bg-background text-xs">
+          <th className="px-3 py-2 border border-border">الوحدة</th>
+          <th className="px-3 py-2 border border-border">النوع</th>
+          <th className="px-3 py-2 border border-border">الحالة</th>
+          <th className="px-3 py-2 border border-border">المستأجر</th>
+          <th className="px-3 py-2 border border-border">الإيجار</th>
+          <th className="px-3 py-2 border border-border">التأمين</th>
+        </tr></thead>
+        <tbody>{units.map(u => {
+          const contract = db.contracts.find(c => c.unitId === u.id && c.status === 'ACTIVE');
+          const tenant = contract ? db.tenants.find(t => t.id === contract.tenantId) : null;
+          return (
+            <tr key={u.id} className="hover:bg-background">
+              <td className="px-3 py-2 border border-border font-medium">{u.name}</td>
+              <td className="px-3 py-2 border border-border">{u.type}</td>
+              <td className="px-3 py-2 border border-border"><span className={`px-2 py-0.5 text-xs rounded-full ${u.status === 'RENTED' ? 'bg-blue-100 text-blue-800' : u.status === 'AVAILABLE' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>{u.status === 'RENTED' ? 'مؤجرة' : u.status === 'AVAILABLE' ? 'شاغرة' : u.status === 'ON_HOLD' ? 'معلقة' : 'صيانة'}</span></td>
+              <td className="px-3 py-2 border border-border">{tenant?.name || '-'}</td>
+              <td className="px-3 py-2 border border-border">{contract ? formatCurrency(contract.rent, cur) : '-'}</td>
+              <td className="px-3 py-2 border border-border">{contract ? formatCurrency(contract.deposit || 0, cur) : '-'}</td>
+            </tr>
+          );
+        })}</tbody>
+      </table>
+    </div>
+  );
+
+  return (
+    <Card className="p-6">
+      <SectionHeader title="تقرير عقار" icon={<Building2 size={20} />} />
+      <ActionBar onPrint={() => setIsPrinting(true)}>
+        <div>
+          <label className="block text-xs font-medium text-text-muted mb-1">العقار</label>
+          <select value={selectedPropertyId} onChange={e => setSelectedPropertyId(e.target.value)} className="text-sm">
+            {db.properties.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+          </select>
+        </div>
+      </ActionBar>
+      <ReportPrintableContent title={`تقرير عقار: ${property?.name || ''}`} date={formatDate(new Date().toISOString())}>{reportContent}</ReportPrintableContent>
+      {isPrinting && <PrintPreviewModal isOpen={isPrinting} onClose={() => setIsPrinting(false)} title="تقرير عقار"><ReportPrintableContent title={`تقرير عقار: ${property?.name || ''}`} date={formatDate(new Date().toISOString())}>{reportContent}</ReportPrintableContent></PrintPreviewModal>}
+    </Card>
+  );
+};
+
+const DailyCollectionReport: React.FC = () => {
+  const { db, settings } = useApp();
+  const cur = settings.operational?.currency ?? 'OMR';
+  const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
+  const [isPrinting, setIsPrinting] = useState(false);
+
+  const dayReceipts = useMemo(() => {
+    return db.receipts.filter(r => r.status !== 'VOID' && r.dateTime && r.dateTime.slice(0, 10) === date);
+  }, [db.receipts, date]);
+
+  const totalCash = dayReceipts.filter(r => r.channel === 'CASH').reduce((s, r) => s + r.amount, 0);
+  const totalBank = dayReceipts.filter(r => r.channel === 'BANK' || r.channel === 'POS').reduce((s, r) => s + r.amount, 0);
+  const totalCheck = dayReceipts.filter(r => r.channel === 'CHECK').reduce((s, r) => s + r.amount, 0);
+  const totalAll = dayReceipts.reduce((s, r) => s + r.amount, 0);
+
+  const reportContent = (
+    <div>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+        <MiniKpi label="إجمالي التحصيل" value={formatCurrency(totalAll, cur)} icon={<Banknote size={18} />} color="bg-blue-100 text-blue-700" />
+        <MiniKpi label="نقدي" value={formatCurrency(totalCash, cur)} icon={<Banknote size={18} />} color="bg-green-100 text-green-700" />
+        <MiniKpi label="تحويل/شبكة" value={formatCurrency(totalBank, cur)} icon={<Banknote size={18} />} color="bg-purple-100 text-purple-700" />
+        <MiniKpi label="شيكات" value={formatCurrency(totalCheck, cur)} icon={<Banknote size={18} />} color="bg-yellow-100 text-yellow-700" />
+      </div>
+      <table className="w-full text-sm border-collapse border border-border">
+        <thead><tr className="bg-background text-xs">
+          <th className="px-3 py-2 border border-border">رقم السند</th>
+          <th className="px-3 py-2 border border-border">المستأجر</th>
+          <th className="px-3 py-2 border border-border">المبلغ</th>
+          <th className="px-3 py-2 border border-border">طريقة الدفع</th>
+          <th className="px-3 py-2 border border-border">ملاحظات</th>
+        </tr></thead>
+        <tbody>{dayReceipts.map(r => {
+          const contract = db.contracts.find(c => c.id === r.contractId);
+          const tenant = contract ? db.tenants.find(t => t.id === contract.tenantId) : null;
+          return (
+            <tr key={r.id} className="hover:bg-background">
+              <td className="px-3 py-2 border border-border">{r.no}</td>
+              <td className="px-3 py-2 border border-border">{tenant?.name || '-'}</td>
+              <td className="px-3 py-2 border border-border font-bold">{formatCurrency(r.amount, cur)}</td>
+              <td className="px-3 py-2 border border-border">{r.channel === 'CASH' ? 'نقدي' : r.channel === 'BANK' ? 'تحويل' : r.channel === 'POS' ? 'شبكة' : r.channel === 'CHECK' ? 'شيك' : 'أخرى'}</td>
+              <td className="px-3 py-2 border border-border">{r.ref || '-'}</td>
+            </tr>
+          );
+        })}</tbody>
+        <tfoot><tr className="bg-background font-bold">
+          <td colSpan={2} className="px-3 py-2 border border-border">الإجمالي</td>
+          <td className="px-3 py-2 border border-border">{formatCurrency(totalAll, cur)}</td>
+          <td colSpan={2} className="px-3 py-2 border border-border"></td>
+        </tr></tfoot>
+      </table>
+    </div>
+  );
+
+  return (
+    <Card className="p-6">
+      <SectionHeader title="كشف التحصيل اليومي" icon={<Banknote size={20} />} />
+      <ActionBar onPrint={() => setIsPrinting(true)}>
+        <div>
+          <label className="block text-xs font-medium text-text-muted mb-1">التاريخ</label>
+          <input type="date" value={date} onChange={e => setDate(e.target.value)} className="text-sm" />
+        </div>
+      </ActionBar>
+      <ReportPrintableContent title="كشف التحصيل اليومي" date={formatDate(date)}>{reportContent}</ReportPrintableContent>
+      {isPrinting && <PrintPreviewModal isOpen={isPrinting} onClose={() => setIsPrinting(false)} title="كشف التحصيل اليومي"><ReportPrintableContent title="كشف التحصيل اليومي" date={formatDate(date)}>{reportContent}</ReportPrintableContent></PrintPreviewModal>}
+    </Card>
+  );
+};
+
+const MaintenanceReport: React.FC = () => {
+  const { db, settings } = useApp();
+  const cur = settings.operational?.currency ?? 'OMR';
+  const [isPrinting, setIsPrinting] = useState(false);
+  const [fromDate, setFromDate] = useState(startOfYear(new Date()).toISOString().slice(0, 10));
+  const [toDate, setToDate] = useState(new Date().toISOString().slice(0, 10));
+  const [filterPropertyId, setFilterPropertyId] = useState('all');
+
+  const records = useMemo(() => {
+    return db.maintenanceRecords.filter(m => {
+      if (m.requestDate < fromDate || m.requestDate > toDate) return false;
+      if (filterPropertyId !== 'all') {
+        const unit = db.units.find(u => u.id === m.unitId);
+        if (unit?.propertyId !== filterPropertyId) return false;
+      }
+      return true;
+    });
+  }, [db.maintenanceRecords, db.units, fromDate, toDate, filterPropertyId]);
+
+  const totalCost = records.reduce((s, m) => s + (m.cost || 0), 0);
+  const ownerCost = records.filter(m => m.chargedTo === 'OWNER').reduce((s, m) => s + (m.cost || 0), 0);
+  const tenantCost = records.filter(m => m.chargedTo === 'TENANT').reduce((s, m) => s + (m.cost || 0), 0);
+  const officeCost = records.filter(m => m.chargedTo === 'OFFICE').reduce((s, m) => s + (m.cost || 0), 0);
+
+  const reportContent = (
+    <div>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+        <MiniKpi label="إجمالي التكاليف" value={formatCurrency(totalCost, cur)} icon={<TrendingDown size={18} />} color="bg-red-100 text-red-700" />
+        <MiniKpi label="على المالك" value={formatCurrency(ownerCost, cur)} icon={<Users size={18} />} color="bg-blue-100 text-blue-700" />
+        <MiniKpi label="على المستأجر" value={formatCurrency(tenantCost, cur)} icon={<Users size={18} />} color="bg-yellow-100 text-yellow-700" />
+        <MiniKpi label="على المكتب" value={formatCurrency(officeCost, cur)} icon={<Users size={18} />} color="bg-gray-100 text-gray-700" />
+      </div>
+      <table className="w-full text-sm border-collapse border border-border">
+        <thead><tr className="bg-background text-xs">
+          <th className="px-3 py-2 border border-border">التاريخ</th>
+          <th className="px-3 py-2 border border-border">الوحدة</th>
+          <th className="px-3 py-2 border border-border">الوصف</th>
+          <th className="px-3 py-2 border border-border">على حساب</th>
+          <th className="px-3 py-2 border border-border">التكلفة</th>
+          <th className="px-3 py-2 border border-border">الحالة</th>
+        </tr></thead>
+        <tbody>{records.map(m => {
+          const unit = db.units.find(u => u.id === m.unitId);
+          return (
+            <tr key={m.id} className="hover:bg-background">
+              <td className="px-3 py-2 border border-border">{m.requestDate}</td>
+              <td className="px-3 py-2 border border-border">{unit?.name || '-'}</td>
+              <td className="px-3 py-2 border border-border">{m.description}</td>
+              <td className="px-3 py-2 border border-border">{m.chargedTo === 'OWNER' ? 'المالك' : m.chargedTo === 'TENANT' ? 'المستأجر' : 'المكتب'}</td>
+              <td className="px-3 py-2 border border-border font-bold">{formatCurrency(m.cost || 0, cur)}</td>
+              <td className="px-3 py-2 border border-border">{m.status === 'COMPLETED' ? 'مكتمل' : m.status === 'IN_PROGRESS' ? 'جاري' : m.status === 'NEW' ? 'جديد' : m.status}</td>
+            </tr>
+          );
+        })}</tbody>
+        <tfoot><tr className="bg-background font-bold">
+          <td colSpan={4} className="px-3 py-2 border border-border">الإجمالي</td>
+          <td className="px-3 py-2 border border-border">{formatCurrency(totalCost, cur)}</td>
+          <td className="px-3 py-2 border border-border"></td>
+        </tr></tfoot>
+      </table>
+    </div>
+  );
+
+  return (
+    <Card className="p-6">
+      <SectionHeader title="تقرير الصيانة" icon={<Filter size={20} />} />
+      <ActionBar onPrint={() => setIsPrinting(true)}>
+        <div><label className="block text-xs font-medium text-text-muted mb-1">من</label><input type="date" value={fromDate} onChange={e => setFromDate(e.target.value)} className="text-sm" /></div>
+        <div><label className="block text-xs font-medium text-text-muted mb-1">إلى</label><input type="date" value={toDate} onChange={e => setToDate(e.target.value)} className="text-sm" /></div>
+        <div><label className="block text-xs font-medium text-text-muted mb-1">العقار</label>
+          <select value={filterPropertyId} onChange={e => setFilterPropertyId(e.target.value)} className="text-sm">
+            <option value="all">الكل</option>
+            {db.properties.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+          </select>
+        </div>
+      </ActionBar>
+      <ReportPrintableContent title="تقرير الصيانة" date={`${formatDate(fromDate)} - ${formatDate(toDate)}`}>{reportContent}</ReportPrintableContent>
+      {isPrinting && <PrintPreviewModal isOpen={isPrinting} onClose={() => setIsPrinting(false)} title="تقرير الصيانة"><ReportPrintableContent title="تقرير الصيانة" date={`${formatDate(fromDate)} - ${formatDate(toDate)}`}>{reportContent}</ReportPrintableContent></PrintPreviewModal>}
+    </Card>
+  );
+};
+
+const DepositsReport: React.FC = () => {
+  const { db, settings } = useApp();
+  const cur = settings.operational?.currency ?? 'OMR';
+  const [isPrinting, setIsPrinting] = useState(false);
+
+  const activeContracts = db.contracts.filter(c => c.status === 'ACTIVE' && (c.deposit || 0) > 0);
+  const totalDeposits = activeContracts.reduce((s, c) => s + (c.deposit || 0), 0);
+
+  const reportContent = (
+    <div>
+      <div className="grid grid-cols-2 gap-4 mb-6">
+        <MiniKpi label="إجمالي التأمينات" value={formatCurrency(totalDeposits, cur)} icon={<Wallet size={18} />} color="bg-blue-100 text-blue-700" />
+        <MiniKpi label="عدد العقود" value={String(activeContracts.length)} icon={<FileText size={18} />} color="bg-green-100 text-green-700" />
+      </div>
+      <table className="w-full text-sm border-collapse border border-border">
+        <thead><tr className="bg-background text-xs">
+          <th className="px-3 py-2 border border-border">المستأجر</th>
+          <th className="px-3 py-2 border border-border">الوحدة</th>
+          <th className="px-3 py-2 border border-border">العقار</th>
+          <th className="px-3 py-2 border border-border">مبلغ التأمين</th>
+          <th className="px-3 py-2 border border-border">بداية العقد</th>
+          <th className="px-3 py-2 border border-border">نهاية العقد</th>
+        </tr></thead>
+        <tbody>{activeContracts.map(c => {
+          const tenant = db.tenants.find(t => t.id === c.tenantId);
+          const unit = db.units.find(u => u.id === c.unitId);
+          const property = unit ? db.properties.find(p => p.id === unit.propertyId) : null;
+          return (
+            <tr key={c.id} className="hover:bg-background">
+              <td className="px-3 py-2 border border-border">{tenant?.name || '-'}</td>
+              <td className="px-3 py-2 border border-border">{unit?.name || '-'}</td>
+              <td className="px-3 py-2 border border-border">{property?.name || '-'}</td>
+              <td className="px-3 py-2 border border-border font-bold">{formatCurrency(c.deposit || 0, cur)}</td>
+              <td className="px-3 py-2 border border-border">{formatDate(c.start)}</td>
+              <td className="px-3 py-2 border border-border">{formatDate(c.end)}</td>
+            </tr>
+          );
+        })}</tbody>
+        <tfoot><tr className="bg-background font-bold">
+          <td colSpan={3} className="px-3 py-2 border border-border">الإجمالي</td>
+          <td className="px-3 py-2 border border-border">{formatCurrency(totalDeposits, cur)}</td>
+          <td colSpan={2} className="px-3 py-2 border border-border"></td>
+        </tr></tfoot>
+      </table>
+    </div>
+  );
+
+  return (
+    <Card className="p-6">
+      <SectionHeader title="تقرير التأمينات (الودائع)" icon={<Wallet size={20} />} />
+      <ActionBar onPrint={() => setIsPrinting(true)} />
+      <ReportPrintableContent title="تقرير التأمينات" date={formatDate(new Date().toISOString())}>{reportContent}</ReportPrintableContent>
+      {isPrinting && <PrintPreviewModal isOpen={isPrinting} onClose={() => setIsPrinting(false)} title="تقرير التأمينات"><ReportPrintableContent title="تقرير التأمينات" date={formatDate(new Date().toISOString())}>{reportContent}</ReportPrintableContent></PrintPreviewModal>}
+    </Card>
+  );
+};
+
+const ExpensesReport: React.FC = () => {
+  const { db, settings } = useApp();
+  const cur = settings.operational?.currency ?? 'OMR';
+  const [isPrinting, setIsPrinting] = useState(false);
+  const [fromDate, setFromDate] = useState(startOfYear(new Date()).toISOString().slice(0, 10));
+  const [toDate, setToDate] = useState(new Date().toISOString().slice(0, 10));
+
+  const expenses = useMemo(() => {
+    return db.expenses.filter(e => e.status !== 'VOID' && e.dateTime.slice(0, 10) >= fromDate && e.dateTime.slice(0, 10) <= toDate);
+  }, [db.expenses, fromDate, toDate]);
+
+  const totalExpenses = expenses.reduce((s, e) => s + e.amount, 0);
+  const byCategory = useMemo(() => {
+    const map: Record<string, number> = {};
+    expenses.forEach(e => { map[e.category] = (map[e.category] || 0) + e.amount; });
+    return Object.entries(map).sort((a, b) => b[1] - a[1]);
+  }, [expenses]);
+
+  const reportContent = (
+    <div>
+      <div className="grid grid-cols-2 gap-4 mb-6">
+        <MiniKpi label="إجمالي المصروفات" value={formatCurrency(totalExpenses, cur)} icon={<TrendingDown size={18} />} color="bg-red-100 text-red-700" />
+        <MiniKpi label="عدد المصروفات" value={String(expenses.length)} icon={<FileText size={18} />} color="bg-gray-100 text-gray-700" />
+      </div>
+      {byCategory.length > 0 && (
+        <div className="mb-6">
+          <h4 className="text-sm font-bold mb-3">توزيع المصروفات حسب الفئة</h4>
+          <div className="space-y-2">{byCategory.map(([cat, amt]) => (
+            <div key={cat} className="flex justify-between items-center p-2 bg-background rounded">
+              <span className="text-sm">{cat}</span>
+              <span className="font-bold text-sm">{formatCurrency(amt, cur)}</span>
+            </div>
+          ))}</div>
+        </div>
+      )}
+      <table className="w-full text-sm border-collapse border border-border">
+        <thead><tr className="bg-background text-xs">
+          <th className="px-3 py-2 border border-border">الرقم</th>
+          <th className="px-3 py-2 border border-border">التاريخ</th>
+          <th className="px-3 py-2 border border-border">الفئة</th>
+          <th className="px-3 py-2 border border-border">المستفيد</th>
+          <th className="px-3 py-2 border border-border">المبلغ</th>
+          <th className="px-3 py-2 border border-border">ملاحظات</th>
+        </tr></thead>
+        <tbody>{expenses.map(e => (
+          <tr key={e.id} className="hover:bg-background">
+            <td className="px-3 py-2 border border-border">{e.no}</td>
+            <td className="px-3 py-2 border border-border">{formatDate(e.dateTime)}</td>
+            <td className="px-3 py-2 border border-border">{e.category}</td>
+            <td className="px-3 py-2 border border-border">{e.payee || '-'}</td>
+            <td className="px-3 py-2 border border-border font-bold">{formatCurrency(e.amount, cur)}</td>
+            <td className="px-3 py-2 border border-border">{e.notes || '-'}</td>
+          </tr>
+        ))}</tbody>
+        <tfoot><tr className="bg-background font-bold">
+          <td colSpan={4} className="px-3 py-2 border border-border">الإجمالي</td>
+          <td className="px-3 py-2 border border-border">{formatCurrency(totalExpenses, cur)}</td>
+          <td className="px-3 py-2 border border-border"></td>
+        </tr></tfoot>
+      </table>
+    </div>
+  );
+
+  return (
+    <Card className="p-6">
+      <SectionHeader title="تقرير المصروفات" icon={<TrendingDown size={20} />} />
+      <ActionBar onPrint={() => setIsPrinting(true)}>
+        <div><label className="block text-xs font-medium text-text-muted mb-1">من</label><input type="date" value={fromDate} onChange={e => setFromDate(e.target.value)} className="text-sm" /></div>
+        <div><label className="block text-xs font-medium text-text-muted mb-1">إلى</label><input type="date" value={toDate} onChange={e => setToDate(e.target.value)} className="text-sm" /></div>
+      </ActionBar>
+      <ReportPrintableContent title="تقرير المصروفات" date={`${formatDate(fromDate)} - ${formatDate(toDate)}`}>{reportContent}</ReportPrintableContent>
+      {isPrinting && <PrintPreviewModal isOpen={isPrinting} onClose={() => setIsPrinting(false)} title="تقرير المصروفات"><ReportPrintableContent title="تقرير المصروفات" date={`${formatDate(fromDate)} - ${formatDate(toDate)}`}>{reportContent}</ReportPrintableContent></PrintPreviewModal>}
     </Card>
   );
 };

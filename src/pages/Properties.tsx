@@ -4,6 +4,7 @@ import { Property, Unit } from '../types';
 import Card from '../components/ui/Card';
 import Modal from '../components/ui/Modal';
 import ActionsMenu, { EditAction, DeleteAction } from '../components/shared/ActionsMenu';
+import AttachmentsManager from '../components/shared/AttachmentsManager';
 import { formatCurrency, toArabicDigits, formatDate } from '../utils/helpers';
 import { Building, Home, ArrowRight, User, Map, AlertCircle, Clock, FileText, Wrench, Phone, Percent, TrendingUp } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -222,6 +223,7 @@ const PropertyForm: React.FC<{ isOpen: boolean, onClose: () => void, property: P
                 <input placeholder="اسم العقار" value={name} onChange={e=>setName(e.target.value)} required />
                 <select value={ownerId} onChange={e=>setOwnerId(e.target.value)}>{db.owners.map(o=><option key={o.id} value={o.id}>{o.name}</option>)}</select>
                 <input placeholder="الموقع" value={location} onChange={e=>setLocation(e.target.value)} />
+                {property && <AttachmentsManager entityType="PROPERTY" entityId={property.id} />}
                 <button type="submit" className="btn btn-primary w-full">حفظ العقار</button>
             </form>
         </Modal>
