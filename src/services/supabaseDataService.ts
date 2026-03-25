@@ -31,6 +31,7 @@ const TABLE_MAP: Record<string, string> = {
   missions: 'missions',
   budgets: 'budgets',
   attachments: 'attachments',
+  utilityRecords: 'utility_records',
   users: 'profiles',
 };
 
@@ -223,7 +224,7 @@ export const supabaseData = {
       'maintenanceRecords', 'depositTxs', 'auditLog', 'ownerSettlements',
       'accounts', 'journalEntries', 'notificationTemplates',
       'outgoingNotifications', 'appNotifications', 'leads', 'lands',
-      'commissions', 'missions', 'budgets', 'attachments', 'snapshots',
+      'commissions', 'missions', 'budgets', 'attachments', 'snapshots', 'utilityRecords',
     ];
 
     const results = await Promise.all(tables.map(t => this.fetchAll(t)));
@@ -283,6 +284,7 @@ export const supabaseData = {
       missions: dataMap.missions || [],
       budgets: dataMap.budgets || [],
       attachments: dataMap.attachments || [],
+      utilityRecords: dataMap.utilityRecords || [],
     };
   },
 

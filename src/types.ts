@@ -1,13 +1,49 @@
 // FIX: Add Attachment interface
 export interface Attachment {
   id: string;
-  entityType: 'TENANT' | 'CONTRACT' | 'RECEIPT' | 'EXPENSE' | 'OWNER' | 'PROPERTY' | 'UNIT';
+  entityType: 'TENANT' | 'CONTRACT' | 'RECEIPT' | 'EXPENSE' | 'OWNER' | 'PROPERTY' | 'UNIT' | 'UTILITY';
   entityId: string;
   name: string;
   mime: string;
   size: number;
   dataUrl: string; // base64
   createdAt: number;
+}
+
+export type UtilityType = 'WATER' | 'ELECTRICITY' | 'GAS' | 'INTERNET' | 'OTHER';
+
+export const UTILITY_TYPE_AR: Record<UtilityType, string> = {
+  WATER: 'مياه',
+  ELECTRICITY: 'كهرباء',
+  GAS: 'غاز',
+  INTERNET: 'إنترنت',
+  OTHER: 'أخرى',
+};
+
+export const UTILITY_ICON: Record<UtilityType, string> = {
+  WATER: '💧',
+  ELECTRICITY: '⚡',
+  GAS: '🔥',
+  INTERNET: '🌐',
+  OTHER: '🔧',
+};
+
+export interface UtilityRecord {
+  id: string;
+  unitId: string;
+  propertyId: string;
+  type: UtilityType;
+  month: string; // YYYY-MM
+  previousReading: number;
+  currentReading: number;
+  unitPrice: number;
+  amount: number; // calculated: consumption * unitPrice
+  paidBy: 'TENANT' | 'OWNER' | 'OFFICE';
+  billImageUrl?: string; // base64 image of bill
+  billImageMime?: string;
+  notes?: string;
+  createdAt: number;
+  updatedAt?: number;
 }
 
 
@@ -617,6 +653,8 @@ export interface Database {
   budgets: Budget[];
   // FIX: Added attachments table
   attachments: Attachment[];
+  // Utilities & Services
+  utilityRecords: UtilityRecord[];
 }
 
 export type OperationType = 'addReceipt' | 'addExpense' | 'voidReceipt' | 'voidExpense' | 'generateInvoices' | 'addManualJournalVoucher';

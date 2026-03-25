@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useMemo, useCallback, ReactNode, useRef } from 'react';
-import { Database, User, Settings, Owner, Property, Unit, Tenant, Contract, Receipt, Expense, MaintenanceRecord, DepositTx, AuditLogEntry, Governance, Serials, Snapshot, Invoice, ReceiptAllocation, Account, JournalEntry, NotificationTemplate, OutgoingNotification, AppContextType, PerformanceMetrics, OperationType, ContractBalance, TenantBalance, OwnerSettlement, DerivedData, AppNotification, Lead, Attachment, OwnerBalance } from '../types';
+import { Database, User, Settings, Owner, Property, Unit, Tenant, Contract, Receipt, Expense, MaintenanceRecord, DepositTx, AuditLogEntry, Governance, Serials, Snapshot, Invoice, ReceiptAllocation, Account, JournalEntry, NotificationTemplate, OutgoingNotification, AppContextType, PerformanceMetrics, OperationType, ContractBalance, TenantBalance, OwnerSettlement, DerivedData, AppNotification, Lead, Attachment, OwnerBalance, UtilityRecord } from '../types';
 import { supabaseData } from '../services/supabaseDataService';
 import { IntegrationService } from '../services/integrationService';
 import { supabase } from '../services/supabase';
@@ -548,7 +548,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     autoBackups: [], ownerBalances: [], accountBalances: [], kpiSnapshots: [],
     contractBalances: [], tenantBalances: [], notificationTemplates: [],
     outgoingNotifications: [], appNotifications: [], leads: [], lands: [],
-    commissions: [], missions: [], budgets: [], attachments: [],
+    commissions: [], missions: [], budgets: [], attachments: [], utilityRecords: [],
   };
 
   const activeDb = db || emptyDb;

@@ -104,8 +104,17 @@ Preferred communication style: Simple, everyday language.
 - **Aged Receivables**: Aging distribution BarChart with color-coded severity
 - **date-fns with Arabic locale**: Used for Arabic month names in chart labels
 
-### Reports Page (13 tabs)
-- 13-tab navigation: Overview, Income Statement, Balance Sheet, Trial Balance, Rent Roll, Owner Ledger, Tenant Statement, Aged Receivables, Property Report, Daily Collection, Maintenance Report, Deposits Report, Expenses Report
+### Utilities & Services System (v6)
+- **UtilityRecord type**: Full type definition with fields: id, unitId, propertyId, type (WATER/ELECTRICITY/GAS/INTERNET/OTHER), month, previousReading, currentReading, unitPrice, amount, paidBy (TENANT/OWNER/OFFICE), billImageUrl, billImageMime, notes
+- **UTILITY_TYPE_AR / UTILITY_ICON**: Arabic labels and emoji icons for all utility types
+- **UnitDetailView** (in Properties.tsx): 3-level navigation (properties→units→unit detail), shows unit info, linked contract+tenant, meter numbers, and full utility records management
+- **UtilityRecordForm**: Form for adding/editing utility readings with bill image upload (base64), auto-calculated consumption and amount, month selector, paidBy selector
+- **UtilitiesReport** (Reports.tsx tab 14): Date range filter, property/type filter, MiniKpi cards (total/tenant/owner/office), PieChart by type, summary list, and full detail table with bill image links
+- **Database**: `utility_records` table added to supabase_migration_v3.sql with UUID PK, RLS enabled, and authenticated user policy
+- **TABLE_MAP / getAllData / AppContext**: All updated to include `utilityRecords` collection
+
+### Reports Page (14 tabs)
+- 14-tab navigation: Overview, Income Statement, Balance Sheet, Trial Balance, Rent Roll, Owner Ledger, Tenant Statement, Aged Receivables, Property Report, Daily Collection, Maintenance Report, Deposits Report, Expenses Report, Utilities Report
 - Each report has MiniKpi summary cards at top
 - ActionBar with Print button (PDF Export only on reports with pdfService support)
 - Revenue/expense trend charts in Overview

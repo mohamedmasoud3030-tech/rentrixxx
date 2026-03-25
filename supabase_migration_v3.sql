@@ -127,5 +127,37 @@ ALTER TABLE public.app_notifications ADD COLUMN IF NOT EXISTS recipient_phone TE
 ALTER TABLE public.app_notifications ADD COLUMN IF NOT EXISTS whatsapp_url TEXT;
 
 -- ============================================================
+-- UTILITY RECORDS: New table for tracking utility bills & meter readings
+-- ============================================================
+CREATE TABLE IF NOT EXISTS public.utility_records (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  unit_id UUID NOT NULL,
+  property_id UUID NOT NULL,
+  type TEXT NOT NULL DEFAULT 'ELECTRICITY',
+  month TEXT NOT NULL,
+  previous_reading NUMERIC DEFAULT 0,
+  current_reading NUMERIC DEFAULT 0,
+  unit_price NUMERIC DEFAULT 0,
+  amount NUMERIC DEFAULT 0,
+  paid_by TEXT DEFAULT 'TENANT',
+  bill_image_url TEXT,
+  bill_image_mime TEXT,
+  notes TEXT,
+  created_at BIGINT NOT NULL DEFAULT EXTRACT(EPOCH FROM now()) * 1000,
+  updated_at BIGINT
+);
+
+-- Enable Row Level Security
+ALTER TABLE public.utility_records ENABLE ROW LEVEL SECURITY;
+
+-- Policy: allow authenticated users full access
+CREATE POLICY IF NOT EXISTS "Authenticated users can manage utility records"
+  ON public.utility_records
+  FOR ALL
+  TO authenticated
+  USING (true)
+  WITH CHECK (true);
+
+-- ============================================================
 -- DONE – paste into Supabase SQL Editor and click Run
 -- ============================================================
