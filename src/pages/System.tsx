@@ -1,7 +1,7 @@
 import React from 'react';
 import { Routes, Route, NavLink, Navigate, useLocation } from 'react-router-dom';
 import Card from '../components/ui/Card';
-import { Settings as SettingsIcon, ShieldCheck, Database, FileSearch, Users, Bell, Palette, Zap, Calculator } from 'lucide-react';
+import { Settings as SettingsIcon, ShieldCheck, Database, FileSearch, Users, Bell, Palette, Zap, Bot, SearchCheck, Calculator } from 'lucide-react';
 import GeneralSettings from '../components/settings/GeneralSettings';
 import AppearanceSettings from '../components/settings/AppearanceSettings';
 import UsersSettings from '../components/settings/UsersSettings';
@@ -10,6 +10,8 @@ import SecuritySettings from '../components/settings/SecuritySettings';
 import BackupSettings from '../components/settings/BackupSettings';
 import IntegrationsSettings from '../components/settings/IntegrationsSettings';
 import FinancialSettings from '../components/settings/FinancialSettings';
+import AutomationSettings from '../components/settings/AutomationSettings';
+import DataIntegrityAudit from './DataIntegrityAudit';
 
 
 const settingsSections = [
@@ -21,6 +23,8 @@ const settingsSections = [
     { id: 'security', label: 'الأمان والتحكم', icon: ShieldCheck, path: '/settings/security' },
     { id: 'backup', label: 'النسخ الاحتياطي', icon: Database, path: '/settings/backup' },
     { id: 'integrations', label: 'التكاملات والربط', icon: Zap, path: '/settings/integrations' },
+    { id: 'automation', label: 'الأتمتة', icon: Bot, path: '/settings/automation' },
+    { id: 'integrity', label: 'سلامة البيانات', icon: SearchCheck, path: '/settings/integrity' },
 ];
 
 const Settings: React.FC = () => {
@@ -60,6 +64,8 @@ const Settings: React.FC = () => {
                         <Route path="security" element={<SecuritySettings />} />
                         <Route path="backup" element={<BackupSettings />} />
                         <Route path="integrations" element={<IntegrationsSettings />} />
+                        <Route path="automation" element={<AutomationSettings />} />
+                        <Route path="integrity" element={<DataIntegrityAudit />} />
                         <Route index element={<Navigate to="general" replace />} />
                     </Routes>
                 </main>

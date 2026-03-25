@@ -5,8 +5,9 @@ import Invoices from './Invoices';
 import Financials from './Financials';
 import Maintenance from './Maintenance';
 import Card from '../components/ui/Card';
-import { Wallet, ReceiptText, Wrench, Calculator } from 'lucide-react';
+import { Wallet, ReceiptText, Wrench, Calculator, BookOpen } from 'lucide-react';
 import GeneralLedger from './GeneralLedger';
+import Accounting from './Accounting';
 
 const FinanceTab: React.FC<{ to: string, icon: React.ReactNode, label: string }> = ({ to, icon, label }) => (
     <NavLink
@@ -32,6 +33,7 @@ const Finance: React.FC = () => {
                     <FinanceTab to="financials" icon={<Wallet size={18}/>} label="السندات والمصروفات" />
                     <FinanceTab to="maintenance" icon={<Wrench size={18}/>} label="الصيانة" />
                     <FinanceTab to="gl" icon={<Calculator size={18}/>} label="دفتر الأستاذ العام" />
+                    <FinanceTab to="accounting" icon={<BookOpen size={18}/>} label="المحاسبة" />
                 </nav>
             </Card>
 
@@ -41,6 +43,7 @@ const Finance: React.FC = () => {
                     <Route path="financials" element={<Financials />} />
                     <Route path="maintenance" element={<Maintenance />} />
                     <Route path="gl" element={<GeneralLedger />} />
+                    <Route path="accounting" element={<Accounting />} />
                     <Route index element={<Navigate to="invoices" replace />} />
                 </Routes>
             </div>

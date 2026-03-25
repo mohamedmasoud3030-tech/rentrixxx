@@ -5,6 +5,7 @@ import { Database, User, Settings, LegacySettings, Owner, Property, Unit, Tenant
 // FIX: Import postJournalEntry from financialEngine
 import { rebuildSnapshotsFromJournal as rebuildSnapshots, postJournalEntry } from '../services/financialEngine';
 import { dbEngine, SettingsWithId, SerialsWithId, GovernanceWithId } from '../services/db';
+import { runDailyAutomation, runManualAutomation, AutomationRunResult } from '../services/automationService';
 import { useLiveQuery } from 'dexie-react-hooks';
 import Dexie, { Transaction } from 'dexie';
 import { toast } from 'react-hot-toast';
@@ -211,6 +212,26 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     };
     seed();
   }, [currentUser]);
+
+  useEffect(() => {
+    if (!db || !settings || !currentUser) return;
+    runDailyAutomation(db, settings).then(result => {
+        if (!result) return;
+        const total = result.invoicesCreated + result.lateFeesApplied + result.notificationsCreated;
+        if (total > 0) {
+            const parts: string[] = [];
+            if (result.invoicesCreated > 0) parts.push(`${result.invoicesCreated} فاتورة جديدة`);
+            if (result.lateFeesApplied > 0) parts.push(`${result.lateFeesApplied} غرامة تأخير`);
+            if (result.notificationsCreated > 0) parts.push(`${result.notificationsCreated} إشعار`);
+            toast.success(`تم تلقائياً: ${parts.join('، ')}`, { duration: 6000 });
+        }
+    });
+  }, [db, settings, currentUser]);
+
+  const triggerManualAutomation = useCallback(async (): Promise<AutomationRunResult> => {
+    if (!db || !settings) throw new Error("البيانات غير محملة.");
+    return runManualAutomation(db, settings);
+  }, [db, settings]);
 
   const login = useCallback(async (username: string, password: string) => {
     const user = users?.find(u => u.username === username);
@@ -570,6 +591,7 @@ const addManualJournalVoucher: AppContextType['financeService']['addManualJourna
       // FIX: Provide services instead of individual functions
       dataService,
       financeService,
+      runManualAutomation: triggerManualAutomation,
       generateNotifications: async () => {
         if (!settings) return 0;
         const alertDays = settings.operational?.contractAlertDays ?? 30;
