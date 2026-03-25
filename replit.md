@@ -85,7 +85,25 @@ Preferred communication style: Simple, everyday language.
 ### Cloud Backend
 - **@supabase/supabase-js**: Supabase client for Auth + SQL database
 - **Supabase URL**: `https://nnggcnpcuomwfuupupwg.supabase.co`
-- **SQL Schema**: `supabase_schema.sql` — run in Supabase SQL Editor to create all 31 tables
+- **SQL Schema**: `supabase_schema.sql` — all 31 tables with UUID primary keys; run in Supabase SQL Editor
+- **Drop Script**: `supabase_drop_all.sql` — run first if re-creating tables from an older schema version
+
+## Recent Audit & Polish (v2)
+
+### Dashboard Overhaul
+- Complete redesign with 6 mini KPIs (properties, units, vacant, contracts, tenants, occupancy rate)
+- 4 financial KPI cards (monthly revenue, expenses, net, treasury balance)
+- 3 alert cards (overdue invoices, expiring contracts, pending maintenance)
+- Receivables & payables summary panel
+- Quick action buttons (new receipt, new contract, generate invoices, reports)
+- Expiring contracts table with days-left badges
+- Overdue invoices table with days-overdue severity badges
+- Recent receipts feed with status badges
+
+### Bug Fixes
+- **Contract date logic**: End date auto-calculates as start + 1 year - 1 day (was start + 1 year exactly)
+- **Async/await consistency**: All `dataService.add/update/remove` calls across People, Invoices, Financials, Leads, LandsAndCommissions, and Contracts now properly await async operations
+- **SQL schema v2**: All IDs use UUID type (was TEXT causing FK conflicts); removed problematic foreign key constraints
 
 ### External Services (Optional)
 - **Google OAuth**: For Google Drive backup sync (optional, requires Client ID configuration)

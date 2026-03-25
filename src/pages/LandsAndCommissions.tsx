@@ -59,7 +59,7 @@ const LandSalesManager = () => {
               </span>
                <div className="relative" onClick={(e) => e.stopPropagation()}>
                     {/* FIX: Use dataService for data manipulation */}
-                    <ActionsMenu items={[ EditAction(() => handleOpenModal(land)), DeleteAction(() => dataService.remove('lands', land.id)) ]} />
+                    <ActionsMenu items={[ EditAction(() => handleOpenModal(land)), DeleteAction(async () => await dataService.remove('lands', land.id)) ]} />
                 </div>
             </div>
             
@@ -198,15 +198,13 @@ const CommissionForm: React.FC<{ isOpen: boolean, onClose: () => void, commissio
         return data.amount || 0;
     }, [data.dealValue, data.percentage, data.amount]);
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         const finalData = { ...data, amount: calculatedAmount };
         if(commission) {
-            // FIX: Use dataService for data manipulation
-            dataService.update('commissions', commission.id, finalData);
+            await dataService.update('commissions', commission.id, finalData);
         } else {
-            // FIX: Use dataService for data manipulation
-            dataService.add('commissions', finalData as any);
+            await dataService.add('commissions', finalData as any);
         }
         onClose();
     };

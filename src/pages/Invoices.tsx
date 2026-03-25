@@ -330,7 +330,7 @@ const InvoiceForm: React.FC<{ isOpen: boolean, onClose: () => void, invoice: Inv
         }
     }, [isOpen, invoice, unitsWithProperties, db.contracts]);
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (isReadOnly) return;
         if (!unitId || amount <= 0) {
@@ -353,11 +353,9 @@ const InvoiceForm: React.FC<{ isOpen: boolean, onClose: () => void, invoice: Inv
         };
 
         if (invoice) {
-            // FIX: Use dataService for data manipulation
-            dataService.update('invoices', invoice.id, data);
+            await dataService.update('invoices', invoice.id, data);
         } else {
-            // FIX: Use dataService for data manipulation
-            dataService.add('invoices', data);
+            await dataService.add('invoices', data);
         }
         onClose();
     };

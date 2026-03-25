@@ -300,7 +300,7 @@ const DepositsView: React.FC = () => {
                                     {/* FIX: Corrected path to currency settings */}
                                     <td className="px-6 py-4 font-mono border border-border">{formatCurrency(tx.amount, db.settings.operational.currency)}</td>
                                     {/* FIX: Use dataService for data manipulation */}
-                                    <td className="px-6 py-4 border border-border"><ActionsMenu items={[DeleteAction(() => dataService.remove('depositTxs', tx.id))]}/></td>
+                                    <td className="px-6 py-4 border border-border"><ActionsMenu items={[DeleteAction(async () => await dataService.remove('depositTxs', tx.id))]}/></td>
                                 </tr>
                             );
                         })}
@@ -354,7 +354,7 @@ const OwnerSettlementsView: React.FC = () => {
                                     <td className="px-6 py-4 font-bold border border-border text-green-600">{formatCurrency(s.amount, db.settings.operational.currency)}</td>
                                     <td className="px-6 py-4 border border-border">
                                         {/* FIX: Use dataService for data manipulation */}
-                                        <ActionsMenu items={[ EditAction(() => { setEditingSettlement(s); setIsModalOpen(true); }), DeleteAction(() => dataService.remove('ownerSettlements', s.id)) ]} />
+                                        <ActionsMenu items={[ EditAction(() => { setEditingSettlement(s); setIsModalOpen(true); }), DeleteAction(async () => await dataService.remove('ownerSettlements', s.id)) ]} />
                                     </td>
                                 </tr>
                             );
@@ -384,11 +384,10 @@ const ReceiptForm: React.FC<{ isOpen: boolean, onClose: () => void, receipt: Rec
         }
     }, [receipt]);
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         const data = { contractId, dateTime, channel, amount, ref, notes, status: 'POSTED' as const };
-        // FIX: Use dataService for data manipulation
-        if (receipt) dataService.update('receipts', receipt.id, data); else dataService.add('receipts', data);
+        if (receipt) await dataService.update('receipts', receipt.id, data); else await dataService.add('receipts', data);
         onClose();
     };
     return (
@@ -425,11 +424,10 @@ const ExpenseForm: React.FC<{ isOpen: boolean, onClose: () => void, expense: Exp
         }
     }, [expense]);
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         const data = { contractId, dateTime, category, amount, status: 'POSTED' as const, chargedTo, ref: '', notes: '' };
-        // FIX: Use dataService for data manipulation
-        if (expense) dataService.update('expenses', expense.id, data); else dataService.add('expenses', data);
+        if (expense) await dataService.update('expenses', expense.id, data); else await dataService.add('expenses', data);
         onClose();
     };
 
@@ -456,10 +454,9 @@ const DepositTxForm: React.FC<{ isOpen: boolean, onClose: () => void }> = ({ isO
     const [contractId, setContractId] = useState(db.contracts[0]?.id || '');
     const [type, setType] = useState<DepositTx['type']>('DEPOSIT_IN');
     const [amount, setAmount] = useState(0);
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        // FIX: Use dataService for data manipulation
-        dataService.add('depositTxs', { contractId, type, amount, date: new Date().toISOString().slice(0, 10), note: '' });
+        await dataService.add('depositTxs', { contractId, type, amount, date: new Date().toISOString().slice(0, 10), note: '' });
         onClose();
     };
     return (
@@ -483,11 +480,10 @@ const OwnerSettlementForm: React.FC<{ isOpen: boolean, onClose: () => void, sett
 
     useEffect(() => { if (settlement) { setOwnerId(settlement.ownerId); setAmount(settlement.amount); setDate(settlement.date); } }, [settlement]);
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         const data = { ownerId, amount, date, method: 'BANK' as const, ref: '', notes: '' };
-        // FIX: Use dataService for data manipulation
-        if (settlement) dataService.update('ownerSettlements', settlement.id, data); else dataService.add('ownerSettlements', data);
+        if (settlement) await dataService.update('ownerSettlements', settlement.id, data); else await dataService.add('ownerSettlements', data);
         onClose();
     };
     return (

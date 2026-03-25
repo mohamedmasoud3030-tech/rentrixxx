@@ -79,7 +79,7 @@ const Leads: React.FC = () => {
                                         EditAction(() => handleOpenFormModal(lead)),
                                         { label: 'مراسلة واتساب', icon: <MessageCircle size={16} />, onClick: () => handleOpenWhatsAppModal(lead) },
                                         // FIX: Use dataService for data manipulation
-                                        DeleteAction(() => dataService.remove('leads', lead.id)),
+                                        DeleteAction(async () => await dataService.remove('leads', lead.id)),
                                     ]} />
                                 </td>
                             </tr>
@@ -137,7 +137,7 @@ const LeadForm: React.FC<{ isOpen: boolean, onClose: () => void, lead: Lead | nu
         }
     }, [lead, isOpen]);
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!name || !phone) {
             toast.error("الاسم والهاتف مطلوبان.");
@@ -146,11 +146,9 @@ const LeadForm: React.FC<{ isOpen: boolean, onClose: () => void, lead: Lead | nu
 
         const data = { name, phone, email, desiredUnitType, minBudget, maxBudget, status, notes };
         if (lead) {
-            // FIX: Use dataService for data manipulation
-            dataService.update('leads', lead.id, data);
+            await dataService.update('leads', lead.id, data);
         } else {
-            // FIX: Use dataService for data manipulation
-            dataService.add('leads', data as any);
+            await dataService.add('leads', data as any);
         }
         onClose();
     };

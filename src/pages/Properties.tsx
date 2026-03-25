@@ -58,7 +58,7 @@ const PropertiesListView: React.FC = () => {
                             <h3 className="font-bold text-lg">{p.name}</h3>
                             <div onClick={(e) => e.stopPropagation()}>
                                 {/* FIX: Use dataService for data manipulation */}
-                                <ActionsMenu items={[ EditAction(() => { setEditingProp(p); setIsPropModalOpen(true); }), DeleteAction(() => dataService.remove('properties', p.id)) ]} />
+                                <ActionsMenu items={[ EditAction(() => { setEditingProp(p); setIsPropModalOpen(true); }), DeleteAction(async () => await dataService.remove('properties', p.id)) ]} />
                             </div>
                         </div>
                         <p className="text-sm text-text-muted mb-4">{p.location}</p>
@@ -94,7 +94,7 @@ const UnitsView: React.FC<{ property: Property, onBack: () => void }> = ({ prope
                 {units.map(u => (
                     <div key={u.id} className="p-4 bg-background border border-border rounded-lg relative">
                         {/* FIX: Use dataService for data manipulation */}
-                        <div className="absolute top-2 left-2"><ActionsMenu items={[ EditAction(()=> {setEditingUnit(u); setIsUnitModalOpen(true);}), DeleteAction(()=>dataService.remove('units', u.id)) ]} /></div>
+                        <div className="absolute top-2 left-2"><ActionsMenu items={[ EditAction(()=> {setEditingUnit(u); setIsUnitModalOpen(true);}), DeleteAction(async ()=> await dataService.remove('units', u.id)) ]} /></div>
                         <p className="font-bold mb-1">{u.name}</p>
                         <p className="text-xs text-text-muted">{u.type}</p>
                         <p className="text-sm font-bold mt-2 text-primary">{formatCurrency(u.rentDefault)}</p>
