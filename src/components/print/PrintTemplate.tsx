@@ -4,6 +4,7 @@ import { DocumentHeaderInline } from '../shared/DocumentHeader';
 export const ReceiptPrint = ({ data, settings }: any) => {
   const company = settings.general?.company || settings.company || {};
   const logo = settings.appearance?.logoDataUrl;
+  const stamp = settings.appearance?.stampDataUrl;
 
   return (
     <div id="receipt-print-area" className="print-only" style={{
@@ -33,8 +34,12 @@ export const ReceiptPrint = ({ data, settings }: any) => {
         </div>
         <div style={{ textAlign: 'center' }}>
           <p>ختم المؤسسة:</p>
-          <br/><br/>
-          <div style={{ width: '100px', height: '100px', border: '2px solid #edf2f7', borderRadius: '50%', margin: '0 auto' }}></div>
+          <br/>
+          {stamp ? (
+            <img src={stamp} alt="ختم المؤسسة" style={{ width: '120px', height: 'auto', margin: '0 auto' }} />
+          ) : (
+            <div style={{ width: '100px', height: '100px', border: '2px solid #edf2f7', borderRadius: '50%', margin: '0 auto' }}></div>
+          )}
         </div>
       </div>
     </div>

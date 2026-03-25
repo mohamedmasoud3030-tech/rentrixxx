@@ -29,12 +29,24 @@ const AppearanceSettings: React.FC = () => {
     const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (file) {
-            if (file.size > 500 * 1024) { // 500 KB limit
+            if (file.size > 500 * 1024) {
                 toast.error("حجم الشعار كبير جداً. يرجى اختيار ملف أصغر من 500 كيلوبايت.");
                 return;
             }
             const logoDataUrl = await fileToBase64(file);
             setAppearance(prev => ({...prev, logoDataUrl}));
+        }
+    };
+
+    const handleStampUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            if (file.size > 500 * 1024) {
+                toast.error("حجم الختم كبير جداً. يرجى اختيار ملف أصغر من 500 كيلوبايت.");
+                return;
+            }
+            const stampDataUrl = await fileToBase64(file);
+            setAppearance(prev => ({...prev, stampDataUrl}));
         }
     };
 
@@ -73,6 +85,17 @@ const AppearanceSettings: React.FC = () => {
                         <img src={appearance.logoDataUrl} alt="شعار المؤسسة" className="h-20 w-auto bg-white p-2 rounded-md border border-border"/>
                     )}
                     <input type="file" accept="image/png, image/jpeg" onChange={handleLogoUpload} />
+                </div>
+            </div>
+
+             <div className="bg-background rounded-lg border border-border p-6 space-y-4">
+                <h3 className="text-lg font-bold text-text">ختم المؤسسة</h3>
+                <p className="text-sm text-text-muted">سيظهر هذا الختم في العقود والسندات المطبوعة.</p>
+                <div className="flex items-center gap-6">
+                    {appearance.stampDataUrl && (
+                        <img src={appearance.stampDataUrl} alt="ختم المؤسسة" className="h-24 w-auto bg-white p-2 rounded-md border border-border"/>
+                    )}
+                    <input type="file" accept="image/png, image/jpeg" onChange={handleStampUpload} />
                 </div>
             </div>
 

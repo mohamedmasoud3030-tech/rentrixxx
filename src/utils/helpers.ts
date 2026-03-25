@@ -57,6 +57,7 @@ export function getStatusBadgeClass(status: string): string {
         case 'INACTIVE':
         case 'PENDING':
         case 'IN_PROGRESS':
+        case 'ON_HOLD':
         case 'PARTIALLY_PAID':
             return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300';
         case 'ENDED':
@@ -129,7 +130,7 @@ export const RECEIPT_STATUS_AR: Record<string, string> = {
 };
 
 export const UNIT_STATUS_AR: Record<string, string> = {
-    AVAILABLE: 'شاغرة', RENTED: 'مؤجرة', MAINTENANCE: 'صيانة'
+    AVAILABLE: 'شاغرة', RENTED: 'مؤجرة', MAINTENANCE: 'صيانة', ON_HOLD: 'معلقة'
 };
 
 export const CHANNEL_AR: Record<string, string> = {
