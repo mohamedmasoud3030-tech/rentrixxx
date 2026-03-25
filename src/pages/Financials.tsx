@@ -15,6 +15,9 @@ import { WhatsAppComposerModal } from '../components/shared/WhatsAppComposerModa
 import { ReceiptPrint } from '../components/print/PrintTemplate';
 import { toast } from 'react-hot-toast';
 
+const safeText = (v: unknown) => String(v ?? '');
+const matches = (value: unknown, term: string) => safeText(value).toLowerCase().includes(term.toLowerCase());
+
 const ExpensePrintable: React.FC<{ expense: Expense }> = ({ expense }) => {
     const { db } = useApp();
     // FIX: Corrected path to company settings
@@ -83,10 +86,11 @@ const ReceiptsView: React.FC = () => {
     const [whatsAppContext, setWhatsAppContext] = useState<any | null>(null);
 
     const filteredReceipts = useMemo(() => {
+        const term = searchTerm.trim().toLowerCase();
         return db.receipts.filter(r => {
             const contract = db.contracts.find(c => c.id === r.contractId);
             const tenant = contract ? db.tenants.find(t => t.id === contract.tenantId) : null;
-            return r.no.includes(searchTerm) || tenant?.name.includes(searchTerm);
+            return term === '' || matches(r.no, term) || matches(tenant?.name, term);
         }).sort((a,b) => new Date(b.dateTime).getTime() - new Date(a.dateTime).getTime());
     }, [db.receipts, db.contracts, db.tenants, searchTerm]);
 
@@ -203,7 +207,10 @@ const ExpensesView: React.FC = () => {
     const [searchTerm, setSearchTerm] = useState('');
 
     const filteredExpenses = useMemo(() => {
-        return db.expenses.filter(e => e.no.includes(searchTerm) || e.category.includes(searchTerm) || e.notes.includes(searchTerm))
+        const term = searchTerm.trim().toLowerCase();
+        return db.expenses.filter(e =>
+            term === '' || matches(e.no, term) || matches(e.category, term) || matches(e.notes, term)
+        )
                          .sort((a,b) => new Date(b.dateTime).getTime() - new Date(a.dateTime).getTime());
     }, [db.expenses, searchTerm]);
 
@@ -329,10 +336,13 @@ const OwnerSettlementsView: React.FC = () => {
     const [editingSettlement, setEditingSettlement] = useState<OwnerSettlement | null>(null);
     const [searchTerm, setSearchTerm] = useState('');
 
-    const filtered = useMemo(() => db.ownerSettlements.filter(s => {
-        const owner = db.owners.find(o => o.id === s.ownerId);
-        return s.no.includes(searchTerm) || owner?.name.includes(searchTerm);
-    }), [db.ownerSettlements, db.owners, searchTerm]);
+    const filtered = useMemo(() => {
+        const term = searchTerm.trim().toLowerCase();
+        return db.ownerSettlements.filter(s => {
+            const owner = db.owners.find(o => o.id === s.ownerId);
+            return term === '' || matches(s.no, term) || matches(owner?.name, term);
+        });
+    }, [db.ownerSettlements, db.owners, searchTerm]);
 
     return (
         <div>

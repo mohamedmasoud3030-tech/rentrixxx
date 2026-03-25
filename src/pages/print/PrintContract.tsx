@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useApp } from '../../contexts/AppContext';
 import { formatCurrency, formatDate, toArabicDigits } from '../../utils/helpers';
@@ -12,7 +12,7 @@ const PrintContract: React.FC = () => {
 
     const contract = db.contracts.find(c => c.id === id);
     if (!contract) return <div className="p-10 text-center">العقد غير موجود.</div>;
-    
+
     const tenant = db.tenants.find(t => t.id === contract.tenantId);
     const unit = db.units.find(u => u.id === contract.unitId);
     const property = unit ? db.properties.find(p => p.id === unit.propertyId) : null;
@@ -20,7 +20,7 @@ const PrintContract: React.FC = () => {
 
     return (
         <div className="bg-slate-100 dark:bg-slate-900 min-h-screen">
-             <div className="p-4 bg-card shadow-md print:hidden flex justify-between items-center">
+            <div className="p-4 bg-card shadow-md print:hidden flex justify-between items-center">
                 <h3 className="font-bold text-lg">معاينة طباعة العقد</h3>
                 <div className="flex items-center gap-4">
                     <button onClick={() => window.print()} className="flex items-center gap-2 px-4 py-2 rounded-md bg-primary text-white">
@@ -50,7 +50,7 @@ const PrintContract: React.FC = () => {
                                 العنوان: {company.address}، هاتف: {company.phone}
                             </p>
                         </div>
-                        
+
                         <div className="mb-6 p-3 border border-black">
                             <p>
                                 <span className="font-bold">الطرف الثاني (المستأجر):</span> {tenant?.name}
@@ -74,9 +74,9 @@ const PrintContract: React.FC = () => {
                         <p>
                             تم هذا الإيجار بقيمة إيجارية شهرية قدرها <span className="font-bold">{formatCurrency(contract.rent, db.settings.operational.currency)}</span>، ويتعهد الطرف الثاني بسداد الإيجار في موعد أقصاه يوم {toArabicDigits(contract.dueDay)} من كل شهر ميلادي.
                         </p>
-                        
+
                         <h2 className="text-lg font-bold mt-6 mb-4 border-b border-black pb-1">البند الرابع: التأمين</h2>
-                         <p>
+                        <p>
                             دفع الطرف الثاني للطرف الأول مبلغاً وقدره <span className="font-bold">{formatCurrency(contract.deposit, db.settings.operational.currency)}</span> كتأمين، لا يرد إلا عند انتهاء العقد وتسليم العين المؤجرة بالحالة التي كانت عليها.
                         </p>
 
@@ -92,14 +92,21 @@ const PrintContract: React.FC = () => {
                         </p>
                     </main>
 
-                    <footer className="mt-24 flex justify-around text-center">
+                    <footer className="mt-20 grid grid-cols-3 gap-6 text-center">
                         <div>
                             <p className="font-bold">توقيع الطرف الأول (المؤجر)</p>
-                            <p className="mt-16">.........................</p>
+                            <div className="mt-12 border-b border-black h-8" />
+                            <p className="text-xs mt-1">الاسم</p>
                         </div>
                         <div>
-                            <p className="font-bold">توقيع الطرف الثاني (المستاجر)</p>
-                            <p className="mt-16">.........................</p>
+                            <p className="font-bold">توقيع الطرف الثاني (المستأجر)</p>
+                            <div className="mt-12 border-b border-black h-8" />
+                            <p className="text-xs mt-1">الاسم</p>
+                        </div>
+                        <div>
+                            <p className="font-bold">الشاهد / اعتماد المكتب</p>
+                            <div className="mt-12 border-b border-black h-8" />
+                            <p className="text-xs mt-1">توقيع وختم</p>
                         </div>
                     </footer>
                 </div>
@@ -111,14 +118,14 @@ const PrintContract: React.FC = () => {
                     .p-4 { padding: 0; }
                     .bg-slate-100 { background-color: white !important; }
                     .min-h-screen { min-height: 0; }
-                    .w-\\[210mm\\] { 
-                        width: 100%; 
-                        border: none !important; 
+                    .w-\\[210mm\\] {
+                        width: 100%;
+                        border: none !important;
                         box-shadow: none !important;
                     }
                     .min-h-\\[297mm\\] { min-height: 0; height: auto; }
-                     div, p, h2, footer, main, header, ul, li {
-                       page-break-inside: avoid;
+                    div, p, h2, footer, main, header, ul, li {
+                        page-break-inside: avoid;
                     }
                 }
             `}</style>

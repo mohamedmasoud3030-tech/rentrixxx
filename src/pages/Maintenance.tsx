@@ -12,6 +12,9 @@ import SearchFilterBar from '../components/shared/SearchFilterBar';
 import { toast } from 'react-hot-toast';
 import { Wrench, Clock, Loader2, CheckCircle, DollarSign } from 'lucide-react';
 
+const safeText = (v: unknown) => String(v ?? '');
+const matches = (value: unknown, term: string) => safeText(value).toLowerCase().includes(term.toLowerCase());
+
 const Maintenance: React.FC = () => {
     // FIX: Use dataService for data manipulation
     const { db, dataService } = useApp();
@@ -44,9 +47,10 @@ const Maintenance: React.FC = () => {
 
     const filteredRecords = useMemo(() => {
         if (!db) return [];
+        const term = searchTerm.trim().toLowerCase();
         return db.maintenanceRecords.filter(rec => {
             const unit = db.units.find(u => u.id === rec.unitId);
-            return rec.no.includes(searchTerm) || rec.description.includes(searchTerm) || unit?.name.includes(searchTerm);
+            return term === '' || matches(rec.no, term) || matches(rec.description, term) || matches(unit?.name, term);
         }).sort((a,b) => new Date(b.requestDate).getTime() - new Date(a.requestDate).getTime());
     }, [db, searchTerm]);
     

@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useApp } from '../../contexts/AppContext';
 import { formatCurrency, formatDateTime } from '../../utils/helpers';
@@ -49,12 +49,12 @@ const PrintReceipt: React.FC = () => {
                             <span>{tenant?.name || 'غير معروف'}</span>
                         </div>
                         <div className="flex items-center mb-5">
-                            <span className="w-48 font-bold">مبلغاً وقدره:</span>
+                            <span className="w-48 font-bold">مبلغا وقدره:</span>
                             <span className="font-bold text-xl px-4 py-2 border-2 border-black rounded-md bg-gray-100">
                                 {formatCurrency(receipt.amount, db.settings.operational.currency)}
                             </span>
                         </div>
-                         <div className="flex items-start mb-5">
+                        <div className="flex items-start mb-5">
                             <span className="w-48 font-bold">وذلك عن:</span>
                             <span className="flex-1">{receiptPurpose}</span>
                         </div>
@@ -62,7 +62,7 @@ const PrintReceipt: React.FC = () => {
                             <span className="w-48 font-bold">طريقة الدفع:</span>
                             <span>{receipt.channel === 'CASH' ? 'نقدي' : receipt.channel === 'BANK' ? 'تحويل بنكي' : receipt.channel === 'POS' ? 'شبكة' : 'أخرى'}</span>
                         </div>
-                         {receipt.notes && (
+                        {receipt.notes && (
                             <div className="flex items-start">
                                 <span className="w-48 font-bold">ملاحظات:</span>
                                 <span className="flex-1">{receipt.notes}</span>
@@ -70,32 +70,39 @@ const PrintReceipt: React.FC = () => {
                         )}
                     </main>
 
-                    <footer className="mt-8 flex justify-around text-center">
+                    <footer className="mt-8 grid grid-cols-3 gap-6 text-center">
                         <div>
                             <p className="font-bold">توقيع المستلم</p>
-                            <p className="mt-12">.........................</p>
+                            <div className="mt-10 border-b border-black h-8" />
+                            <p className="text-xs mt-1">الاسم</p>
                         </div>
                         <div>
                             <p className="font-bold">توقيع المستأجر</p>
-                            <p className="mt-12">.........................</p>
+                            <div className="mt-10 border-b border-black h-8" />
+                            <p className="text-xs mt-1">الاسم</p>
+                        </div>
+                        <div>
+                            <p className="font-bold">اعتماد المكتب</p>
+                            <div className="mt-10 border-b border-black h-8" />
+                            <p className="text-xs mt-1">توقيع وختم</p>
                         </div>
                     </footer>
                 </div>
             </div>
-            
+
             <style>{`
                 @media print {
                     @page { size: A5 landscape; }
                     body { -webkit-print-color-adjust: exact; }
-                     .print\\:hidden { display: none; }
-                     .p-4 { padding: 0; }
-                     .bg-slate-100 { background-color: white !important; }
-                     .min-h-screen { min-height: 0; }
-                     .w-\\[210mm\\] { 
+                    .print\\:hidden { display: none; }
+                    .p-4 { padding: 0; }
+                    .bg-slate-100 { background-color: white !important; }
+                    .min-h-screen { min-height: 0; }
+                    .w-\\[210mm\\] {
                         width: 100%;
-                        border: none !important; 
+                        border: none !important;
                         box-shadow: none !important;
-                     }
+                    }
                     .h-\\[148mm\\] { height: 100vh; }
                     div { page-break-inside: avoid; }
                 }

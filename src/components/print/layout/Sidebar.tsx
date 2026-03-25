@@ -73,17 +73,7 @@ const navGroups: { title: string; links: NavLinkItem[] }[] = [
   {
     title: 'الإعدادات',
     links: [
-      { path: '/settings/general', label: 'عام', icon: Settings },
-      { path: '/settings/users', label: 'المستخدمون', icon: Users },
-      { path: '/settings/security', label: 'الأمان', icon: ShieldCheck },
-      { path: '/settings/integrations', label: 'التكاملات', icon: Zap },
-      { path: '/settings/notifications', label: 'الإشعارات', icon: Bell },
-      { path: '/settings/documents', label: 'المستندات', icon: FileText },
-      { path: '/settings/financial', label: 'مالي', icon: Calculator },
-      { path: '/settings/appearance', label: 'المظهر', icon: Palette },
-      { path: '/settings/backup', label: 'النسخ الاحتياطي', icon: Database },
-      { path: '/settings/automation', label: 'الأتمتة', icon: Bot },
-      { path: '/settings/integrity', label: 'سلامة البيانات', icon: SearchCheck },
+      { path: '/settings', label: 'الإعدادات', icon: Settings },
     ],
   },
 ];

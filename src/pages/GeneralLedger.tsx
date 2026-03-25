@@ -48,7 +48,9 @@ const GeneralLedger: React.FC = () => {
                                 <td className="px-6 py-4 border border-border">{accountsMap.get(je.accountId)?.name || je.accountId}</td>
                                 <td className="px-6 py-4 font-mono text-green-600 border border-border">{je.type === 'DEBIT' ? formatCurrency(je.amount) : '-'}</td>
                                 <td className="px-6 py-4 font-mono text-red-600 border border-border">{je.type === 'CREDIT' ? formatCurrency(je.amount) : '-'}</td>
-                                <td className="px-6 py-4 text-xs font-mono border border-border" title={je.sourceId}>{je.sourceId.slice(0, 15)}...</td>
+                                <td className="px-6 py-4 text-xs font-mono border border-border" title={je.sourceId || '-'}>
+                                    {je.sourceId ? `${je.sourceId.slice(0, 15)}...` : '-'}
+                                </td>
                             </tr>
                         ))}
                     </tbody>
