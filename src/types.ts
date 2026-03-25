@@ -153,6 +153,10 @@ export interface Settings {
       lastSync?: string;
     };
   };
+  documentTemplates: {
+    contractClauses: string[];
+    contractFooterNote: string;
+  };
 }
 
 export interface LegacySettings {

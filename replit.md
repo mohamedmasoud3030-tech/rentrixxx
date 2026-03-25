@@ -2,7 +2,7 @@
 
 ## Overview
 
-Rentrix is a comprehensive property management system (نظام إدارة مؤسسات شامل لإدارة العقارات) designed for real estate management. It's an Arabic-first application built as a hybrid desktop/web app using React with Vite for the frontend and Electron for desktop deployment. The system manages properties, units, tenants, contracts, financial transactions, maintenance records, and provides AI-assisted analytics via Google's Gemini API.
+Rentrix is a comprehensive property management system for real estate. It is an Arabic-first hybrid desktop/web application built with React, Vite, and Electron. The system streamlines property, unit, tenant, contract, and financial management, including maintenance records, and offers AI-assisted analytics via Google's Gemini API. It aims to provide a robust solution for real estate management with capabilities like double-entry accounting, automated invoicing, and detailed reporting.
 
 ## User Preferences
 
@@ -10,188 +10,63 @@ Preferred communication style: Simple, everyday language.
 
 ## System Architecture
 
-### Frontend Architecture
-- **Framework**: React 19 with TypeScript
-- **Routing**: React Router DOM v7 for SPA navigation
-- **State Management**: React Context API (`AppContext`) as the central state container
-- **Styling**: Tailwind CSS with a custom design system supporting light/dark themes via CSS custom properties
-- **UI Components**: Custom component library with Cards, Modals, Action Menus, and form elements
-- **Internationalization**: Arabic (RTL) as primary language with Cairo font family
+### Frontend
+- **Framework**: React 19 with TypeScript and Vite.
+- **Routing**: React Router DOM v7 for single-page application navigation.
+- **State Management**: React Context API (`AppContext`) for global state.
+- **Styling**: Tailwind CSS with a custom design system supporting light/dark themes, focusing on Arabic (RTL) internationalization with Cairo font.
+- **UI Components**: Custom reusable components including Cards, Modals, Action Menus, and form elements.
 
 ### Desktop Integration
-- **Electron**: Wraps the React app for desktop deployment with secure IPC communication
-- **Preload Scripts**: Expose limited APIs to renderer (file dialogs, Gemini queries)
-- **Content Security Policy**: Hardened CSP configured for both development and production
+- **Electron**: Used to wrap the React application for desktop deployment, featuring secure IPC communication and a hardened Content Security Policy.
 
-### Data Layer (Supabase — fully migrated from Dexie.js)
-- **Database**: Supabase PostgreSQL as the primary cloud database
-- **Data Service**: `src/services/supabaseDataService.ts` — full CRUD layer with camelCase↔snake_case auto-conversion
-- **Field Mapping**: `SPECIAL_FIELD_MAP` handles contracts (start→start_date, end→end_date, rent→rent_amount) and units (rentDefault→rent_default)
-- **Table Mapping**: JS table names (e.g. `receiptAllocations`) auto-mapped to SQL names (`receipt_allocations`)
-- **Special Tables**: Settings (JSONB single row), Governance, Serials — all have dedicated getter/setter methods
-- **AppContext**: All data is fetched into React state via `refreshData()` and accessed as `db.tableName` from `useApp()`
-- **Audit Trail**: All data mutations are logged with user, timestamp, and action details
-- **Migration SQL**: `supabase_migration_v3.sql` must be run AFTER the base schema to add missing columns
+### Data Layer
+- **Database**: Supabase PostgreSQL is the primary cloud database.
+- **Data Service**: A dedicated service (`supabaseDataService.ts`) handles CRUD operations, including automatic camelCase to snake_case conversion for field and table names.
+- **Data Access**: All data is fetched into React state via `refreshData()` and accessed globally through `useApp()`.
+- **Audit Trail**: All data modifications are logged for auditing purposes.
+- **Schema**: Utilizes a comprehensive SQL schema with 31 tables, UUID primary keys, and RLS enabled.
 
 ### Financial Engine
-- **Double-Entry Accounting**: Journal entries with debit/credit pairs for all financial transactions
-- **Chart of Accounts**: Configurable accounts (assets, liabilities, revenue, expenses)
-- **Automated Invoicing**: Monthly invoice generation with late fee support
-- **Receipt Allocation**: Link payments to specific invoices
-- **Owner Settlements**: Track owner balances and commission calculations
+- **Accounting**: Implements a double-entry accounting system with a configurable Chart of Accounts.
+- **Automation**: Features automated monthly invoice generation with late fee support and receipt allocation.
+- **Reporting**: Supports owner settlements and various financial reports (income statement, balance sheet, trial balance, etc.).
 
-### Service Layer Architecture
-- **supabaseDataService.ts**: Core Supabase CRUD operations with field/table name mapping
-- **accountingService.ts**: Report generation (income statement, balance sheet, trial balance)
-- **auditEngine.ts**: Data integrity validation and issue detection
-- **pdfService.ts**: PDF generation using jsPDF with Arabic font support
-- **integrationService.ts**: WhatsApp messaging and cloud sync utilities
-- **automationService.ts**: Automated invoicing, late fees, notifications — all via Supabase
+### Service Layer
+- **Core Services**: `supabaseDataService.ts` for data operations, `accountingService.ts` for financial reports, `auditEngine.ts` for data integrity, `pdfService.ts` for PDF generation, `integrationService.ts` for external integrations, and `automationService.ts` for automated tasks.
 
-### Authentication & Security (Supabase Auth)
-- **Auth Provider**: Supabase Auth — email + password login only
-- **Session Persistence**: Supabase handles JWT tokens with auto-refresh
-- **User Profiles**: `profiles` table in Supabase stores role (ADMIN/USER) and mustChange flag
-- **Role-Based Access**: ADMIN and USER roles enforced in AppContext and Sidebar
-- **Password Changes**: Via `supabase.auth.updateUser()` — no local hashing
-- **Auth Client**: `src/services/supabase.ts` using `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` env vars
+### Authentication & Security
+- **Authentication**: Supabase Auth manages user authentication (email/password) and session persistence.
+- **User Management**: `profiles` table stores user roles (ADMIN/USER) for role-based access control enforced within the application.
+
+### UI/UX and Features
+- **Theming**: Configurable themes, primary colors, and logo/company stamp uploads.
+- **Internationalization**: Full Arabic (RTL) support throughout the application, including date formatting and chart labels.
+- **Reports**: A comprehensive reports section with 16 tabs including Overview, Income Statement, Rent Roll, Aged Receivables, Utilities Report, Overdue Tenants, and Vacant Units. Each report includes summary KPIs, filtering options, and printable views.
+- **Dashboards**: Redesigned dashboards with key performance indicators (KPIs), financial summaries, alert cards, and quick action buttons.
+- **Detail Views**: Enhanced detail views for units, tenants, and properties, displaying related contracts, payments, maintenance, and utility records.
+- **Document Generation**: Unified `DocumentHeader` component for all printed documents (receipts, contracts, reports) with company information and logo.
+- **Smart Features**: Sidebar notification badges for important alerts (expiring contracts, overdue invoices), and various KPI cards across different modules.
+- **Automation**: Automated WhatsApp invoice notifications, check/electronic payment management, and a contract renewal workflow.
+- **Settings**: A comprehensive settings page with sections for general, financial, appearance, users, notifications, security, backup, integrations, and automation.
 
 ## External Dependencies
 
-### Core Runtime
-- **React/ReactDOM 19**: UI framework
-- **React Router DOM 7**: Client-side routing
-- **@supabase/supabase-js**: Supabase client for Auth + database
-- **Lucide React**: Icon library
-
-### Desktop
-- **Electron 28**: Desktop application wrapper
-- **Electron Builder**: Packaging and distribution
-
-### AI Integration
-- **@google/genai**: Google Gemini API client for smart assistant features
-- API key stored in settings and passed through Electron IPC for security
-
-### PDF Generation
-- **jsPDF**: PDF document generation
-- **jspdf-autotable**: Table plugin for jsPDF
-- Custom Cairo font embedded as base64 for Arabic text rendering
-
-### Utilities
-- **date-fns**: Date manipulation and formatting
-- **react-hot-toast**: Toast notifications
-
-### Build Tools
-- **Vite**: Build tool and dev server
-- **TypeScript**: Type checking
-- **Tailwind CSS**: Utility-first CSS framework
-- **PostCSS/Autoprefixer**: CSS processing
-
-### Cloud Backend (Supabase)
-- **Supabase URL**: `https://nnggcnpcuomwfuupupwg.supabase.co`
-- **SQL Schema**: `supabase_schema.sql` — all 31 tables with UUID primary keys; run in Supabase SQL Editor
-- **Migration v3**: `supabase_migration_v3.sql` — ALTER TABLE statements for missing columns (run AFTER base schema)
-- **Drop Script**: `supabase_drop_all.sql` — run first if re-creating tables from an older schema version
-- **Dexie.js**: DEPRECATED — `src/services/db.ts` and `src/services/financialEngine.ts` remain as dead code but are not imported
-
-## Recent Audit & Polish (v3)
-
-### Charts & Visualization (recharts)
-- **recharts**: Interactive charts library used across Dashboard, Reports, and Properties pages
-- **Dashboard**: 6-month revenue/expense AreaChart trend
-- **Reports Overview**: AreaChart (revenue trend), PieChart (unit occupancy), BarChart (expense categories), net income bar chart, monthly collection LineChart
-- **Income Statement**: Revenue and expense distribution PieCharts
-- **Aged Receivables**: Aging distribution BarChart with color-coded severity
-- **date-fns with Arabic locale**: Used for Arabic month names in chart labels
-
-### Utilities & Services System (v6)
-- **UtilityRecord type**: Full type definition with fields: id, unitId, propertyId, type (WATER/ELECTRICITY/GAS/INTERNET/OTHER), month, previousReading, currentReading, unitPrice, amount, paidBy (TENANT/OWNER/OFFICE), billImageUrl, billImageMime, notes
-- **UTILITY_TYPE_AR / UTILITY_ICON**: Arabic labels and emoji icons for all utility types
-- **UnitDetailView** (in Properties.tsx): 3-level navigation (properties→units→unit detail), shows unit info, linked contract+tenant, meter numbers, and full utility records management
-- **UtilityRecordForm**: Form for adding/editing utility readings with bill image upload (base64), auto-calculated consumption and amount, month selector, paidBy selector
-- **UtilitiesReport** (Reports.tsx tab 14): Date range filter, property/type filter, MiniKpi cards (total/tenant/owner/office), PieChart by type, summary list, and full detail table with bill image links
-- **Database**: `utility_records` table added to supabase_migration_v3.sql with UUID PK, RLS enabled, and authenticated user policy
-- **TABLE_MAP / getAllData / AppContext**: All updated to include `utilityRecords` collection
-
-### Reports Page (14 tabs)
-- 14-tab navigation: Overview, Income Statement, Balance Sheet, Trial Balance, Rent Roll, Owner Ledger, Tenant Statement, Aged Receivables, Property Report, Daily Collection, Maintenance Report, Deposits Report, Expenses Report, Utilities Report
-- Each report has MiniKpi summary cards at top
-- ActionBar with Print button (PDF Export only on reports with pdfService support)
-- Revenue/expense trend charts in Overview
-- Pie charts for income/expense distribution in Income Statement
-- Aging bar chart in Aged Receivables
-- Property Report: per-property unit breakdown with occupancy, rent, deposits, maintenance costs
-- Daily Collection: date-filtered receipt summary with cash/bank/check breakdown
-- Maintenance Report: date + property filtered maintenance log with cost allocation (owner/tenant/office)
-- Deposits Report: active contract deposits/insurance summary
-- Expenses Report: date-filtered expenses with category breakdown
-- Clean table styling with borders, hover states, and color-coded values
-
-### Tenant Detail View
-- Clickable tenant name in People page opens full tenant profile
-- 3 financial KPI cards: total invoiced, total paid, remaining balance
-- Personal info card with phone, email, ID, nationality, address, company details
-- Active unit & contract card with rent, dates, deposit info
-- Contracts history table with status badges
-- Recent payments table with payment method
-- Related maintenance requests table
-- Attachments manager for tenant documents
-
-### Smart Features
-- **Sidebar notification badges**: Red badge counts on Contracts (expiring), Finance (overdue invoices), Leads (new), Communication (pending notifications)
-- **Properties page KPIs**: 5 stat cards (properties count, total units, rented, vacant, occupancy %)
-- **Contracts page KPIs**: 5 stat cards (total, active, expiring, ended, total receivables)
-- **Dashboard revenue chart**: 6-month AreaChart with gradient fills for revenue vs expenses
-
-### Dashboard Overhaul
-- Complete redesign with 6 mini KPIs (properties, units, vacant, contracts, tenants, occupancy rate)
-- 4 financial KPI cards (monthly revenue, expenses, net, treasury balance)
-- 3 alert cards (overdue invoices, expiring contracts, pending maintenance)
-- Receivables & payables summary panel
-- Quick action buttons (new receipt, new contract, generate invoices, reports)
-- Expiring contracts table with days-left badges
-- Overdue invoices table with days-overdue severity badges
-- Recent receipts feed with status badges
-
-### Unified Document Letterhead
-- **DocumentHeader component** (`src/components/shared/DocumentHeader.tsx`): Shared header for all printed documents
-- **Layout**: Company name centered, contact info (address/phone/CR/tax/postal) on the right, logo on the left (RTL)
-- **Used in**: PrintReceipt, PrintContract, Reports printable content, PrintTemplate
-- **DocumentHeaderInline**: Variant for use without AppContext (accepts company/logo as props)
-- **CompanyInfo fields**: name, address, phone, phone2, email, postalCode, crNumber, taxNumber
-
-### Settings Page (10 sections)
-- General (company info, operational settings, late fees, document numbering)
-- Financial (account mappings for payment methods, revenue, receivables, expenses)
-- Appearance (theme, primary color, logo upload, company stamp upload)
-- Users (Supabase-backed user management, role assignment)
-- Notifications (template management with toggle enable/disable)
-- Security (data integrity audit + audit log)
-- Backup (JSON export/import with restore confirmation)
-- Integrations (Gemini API key, Google Drive placeholder)
-- Automation (toggle tasks, manual run, run history log)
-- Data Integrity (separate audit page)
-
-### Bug Fixes
-- **Contract date logic**: End date auto-calculates as start + 1 year - 1 day (was start + 1 year exactly)
-- **Async/await consistency**: All `dataService.add/update/remove` calls across all pages (Contracts, Properties, CommunicationHub, Maintenance, Leads, LandsAndCommissions, People, Invoices, Financials) now properly await async operations
-- **SQL schema v2**: All IDs use UUID type (was TEXT causing FK conflicts); removed problematic foreign key constraints
-
-### Unit & Tenant Enhancements (v5)
-- **Expanded Unit Form**: Full property management fields — type (apartment/shop/office/studio/villa/warehouse/other), floor selection (ground through 5th + roof/basement), status (available/rented/maintenance/on-hold), area, bedrooms, bathrooms, kitchens, living rooms, water meter number, electricity meter number, additional features
-- **Floor-Based Unit Grouping**: Units view groups units by floor with per-floor counts when floors are assigned; shows flat grid when no floors set
-- **Unit KPI Cards**: 4 stat cards (total units, rented, available, on-hold) at top of units view
-- **Unit Status Badges**: Color-coded status badges (green=available, blue=rented, yellow=maintenance, gray=on-hold) on each unit card
-- **Expanded Tenant Form**: Type (individual/company), email, nationality, commercial register (shown for companies), address, postal code, PO box — in addition to existing name, phone, ID, status, notes, attachments
-- **Company Stamp**: Upload stamp image in Appearance settings; stamp appears in printed receipts and documents (replaces empty circle placeholder)
-
-### Financial Automation & Enhancements (v4)
-- **Auto WhatsApp Invoice Notifications**: When monthly invoices are generated, the system automatically creates WhatsApp notification entries for each tenant with invoice details (amount, due date, unit name). Notifications appear in CommunicationHub with one-click WhatsApp send.
-- **Check/Electronic Payment Management**: Receipts now support CHECK payment channel with dedicated fields: check number, bank name, due date, and check status (Pending/Deposited/Cleared/Bounced). Check details display in receipts table with color-coded status badges.
-- **Contract Renewal Workflow**: Active contracts have a "Renew" action button that automatically: ends the current contract, creates a new ACTIVE contract with same terms for the next year, preserving tenant, unit, rent, deposit, and sponsor information.
-- **Maintenance KPI Dashboard**: 5 stat cards at top of Maintenance page showing: total requests, new requests, in-progress, completed, and total costs.
-- **Enhanced Receipt Form**: Payment method dropdown includes Cash, Bank Transfer, POS, Check, and Other options. Check selection reveals dedicated check tracking form.
-
-### External Services (Optional)
-- **Google OAuth**: For Google Drive backup sync (optional, requires Client ID configuration)
-- **WhatsApp Web API**: Direct messaging links for tenant/owner communication and automated invoice notifications
+- **React/ReactDOM 19**: UI development.
+- **React Router DOM 7**: Client-side routing.
+- **@supabase/supabase-js**: Supabase client for authentication and database interaction.
+- **Lucide React**: Icon library.
+- **Electron 28**: Desktop application wrapper.
+- **Electron Builder**: Desktop packaging and distribution.
+- **@google/genai**: Google Gemini API client for AI features.
+- **jsPDF** and **jspdf-autotable**: PDF generation, with custom Arabic font embedding.
+- **date-fns**: Date manipulation and formatting.
+- **react-hot-toast**: Toast notifications.
+- **Vite**: Build tool.
+- **TypeScript**: Language.
+- **Tailwind CSS**: Styling framework.
+- **PostCSS/Autoprefixer**: CSS processing.
+- **Supabase Cloud**: Backend-as-a-Service, including PostgreSQL database and Auth.
+- **recharts**: Interactive charting library for data visualization.
+- **Google OAuth**: For Google Drive backup sync (optional).
+- **WhatsApp Web API**: For direct messaging and automated notifications.

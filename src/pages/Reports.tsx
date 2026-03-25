@@ -25,7 +25,7 @@ import {
   LineChart, Line
 } from 'recharts';
 
-type ReportTab = 'overview' | 'rent_roll' | 'owner' | 'tenant' | 'income_statement' | 'balance_sheet' | 'trial_balance' | 'aged_receivables' | 'property_report' | 'daily_collection' | 'maintenance_report' | 'deposits_report' | 'expenses_report' | 'utilities_report';
+type ReportTab = 'overview' | 'rent_roll' | 'owner' | 'tenant' | 'income_statement' | 'balance_sheet' | 'trial_balance' | 'aged_receivables' | 'property_report' | 'daily_collection' | 'maintenance_report' | 'deposits_report' | 'expenses_report' | 'utilities_report' | 'overdue_tenants' | 'vacant_units';
 
 const CHART_COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4', '#ec4899', '#14b8a6'];
 
@@ -96,6 +96,8 @@ const Reports: React.FC = () => {
     { id: 'deposits_report', label: 'تقرير التأمينات', icon: <Wallet size={16} /> },
     { id: 'expenses_report', label: 'تقرير المصروفات', icon: <TrendingDown size={16} /> },
     { id: 'utilities_report', label: 'تقرير المرافق', icon: <Zap size={16} /> },
+    { id: 'overdue_tenants', label: 'المتأخرون عن الدفع', icon: <TrendingDown size={16} /> },
+    { id: 'vacant_units', label: 'الوحدات الشاغرة', icon: <Building2 size={16} /> },
   ];
 
   const renderContent = () => {
@@ -114,6 +116,8 @@ const Reports: React.FC = () => {
       case 'deposits_report': return <DepositsReport />;
       case 'expenses_report': return <ExpensesReport />;
       case 'utilities_report': return <UtilitiesReport />;
+      case 'overdue_tenants': return <OverdueTenants />;
+      case 'vacant_units': return <VacantUnits />;
       default: return <ReportsOverview currency={currency} />;
     }
   };
@@ -1355,6 +1359,220 @@ const ExpensesReport: React.FC = () => {
       </ActionBar>
       <ReportPrintableContent title="تقرير المصروفات" date={`${formatDate(fromDate)} - ${formatDate(toDate)}`}>{reportContent}</ReportPrintableContent>
       {isPrinting && <PrintPreviewModal isOpen={isPrinting} onClose={() => setIsPrinting(false)} title="تقرير المصروفات"><ReportPrintableContent title="تقرير المصروفات" date={`${formatDate(fromDate)} - ${formatDate(toDate)}`}>{reportContent}</ReportPrintableContent></PrintPreviewModal>}
+    </Card>
+  );
+};
+
+const OverdueTenants: React.FC = () => {
+  const { db, settings } = useApp();
+  const cur = settings.operational?.currency ?? 'OMR';
+  const [isPrinting, setIsPrinting] = useState(false);
+  const [filterPropertyId, setFilterPropertyId] = useState('all');
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+
+  const overdue = useMemo(() => {
+    return db.invoices
+      .filter(inv => {
+        if (inv.status === 'PAID') return false;
+        const due = new Date(inv.dueDate); due.setHours(0, 0, 0, 0);
+        return due < today;
+      })
+      .map(inv => {
+        const contract = db.contracts.find(c => c.id === inv.contractId);
+        const tenant = contract ? db.tenants.find(t => t.id === contract.tenantId) : null;
+        const unit = contract ? db.units.find(u => u.id === contract.unitId) : null;
+        const property = unit ? db.properties.find(p => p.id === unit.propertyId) : null;
+        const dueDate = new Date(inv.dueDate);
+        const daysOverdue = Math.floor((today.getTime() - dueDate.getTime()) / 86400000);
+        const remaining = inv.amount - (inv.paidAmount || 0);
+        return { inv, contract, tenant, unit, property, daysOverdue, remaining };
+      })
+      .filter(r => r.remaining > 0 && (filterPropertyId === 'all' || r.property?.id === filterPropertyId))
+      .sort((a, b) => b.daysOverdue - a.daysOverdue);
+  }, [db, filterPropertyId, today]);
+
+  const totalOverdue = overdue.reduce((s, r) => s + r.remaining, 0);
+  const count30 = overdue.filter(r => r.daysOverdue <= 30).length;
+  const count60 = overdue.filter(r => r.daysOverdue > 30 && r.daysOverdue <= 60).length;
+  const count90plus = overdue.filter(r => r.daysOverdue > 60).length;
+
+  const severityClass = (days: number) =>
+    days > 90 ? 'text-red-700 font-bold' : days > 60 ? 'text-orange-600 font-bold' : days > 30 ? 'text-yellow-600' : 'text-text';
+
+  const reportContent = (
+    <div>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+        <MiniKpi label="إجمالي المتأخرات" value={formatCurrency(totalOverdue, cur)} icon={<TrendingDown size={18} />} color="bg-red-100 text-red-700" />
+        <MiniKpi label="1–30 يوم" value={count30.toString()} icon={<Users size={18} />} color="bg-yellow-100 text-yellow-700" />
+        <MiniKpi label="31–60 يوم" value={count60.toString()} icon={<Users size={18} />} color="bg-orange-100 text-orange-700" />
+        <MiniKpi label="أكثر من 60 يوم" value={count90plus.toString()} icon={<Users size={18} />} color="bg-red-100 text-red-700" />
+      </div>
+      <table className="w-full text-sm border-collapse border border-border">
+        <thead><tr className="bg-background text-xs">
+          <th className="px-3 py-2 border border-border">المستأجر</th>
+          <th className="px-3 py-2 border border-border">الهاتف</th>
+          <th className="px-3 py-2 border border-border">الوحدة</th>
+          <th className="px-3 py-2 border border-border">العقار</th>
+          <th className="px-3 py-2 border border-border">تاريخ الاستحقاق</th>
+          <th className="px-3 py-2 border border-border">أيام التأخير</th>
+          <th className="px-3 py-2 border border-border">المبلغ المستحق</th>
+          <th className="px-3 py-2 border border-border print:hidden">واتساب</th>
+        </tr></thead>
+        <tbody>{overdue.map(r => (
+          <tr key={r.inv.id} className="hover:bg-background">
+            <td className="px-3 py-2 border border-border font-bold">{r.tenant?.name || '-'}</td>
+            <td className="px-3 py-2 border border-border" dir="ltr">{r.tenant?.phone || '-'}</td>
+            <td className="px-3 py-2 border border-border">{r.unit?.name || '-'}</td>
+            <td className="px-3 py-2 border border-border">{r.property?.name || '-'}</td>
+            <td className="px-3 py-2 border border-border">{formatDate(r.inv.dueDate)}</td>
+            <td className={`px-3 py-2 border border-border ${severityClass(r.daysOverdue)}`}>{r.daysOverdue} يوم</td>
+            <td className="px-3 py-2 border border-border font-bold text-red-600">{formatCurrency(r.remaining, cur)}</td>
+            <td className="px-3 py-2 border border-border print:hidden">
+              {r.tenant?.phone && (
+                <a href={`https://wa.me/${r.tenant.phone.replace(/\D/g, '')}?text=${encodeURIComponent(`السيد/ة ${r.tenant.name}، تذكير بالمبلغ المستحق ${formatCurrency(r.remaining, cur)} منذ ${r.daysOverdue} يوم`)}`}
+                  target="_blank" rel="noopener noreferrer"
+                  className="text-green-600 hover:text-green-800 text-xs underline">واتساب</a>
+              )}
+            </td>
+          </tr>
+        ))}</tbody>
+        <tfoot><tr className="bg-background font-bold">
+          <td colSpan={6} className="px-3 py-2 border border-border">الإجمالي</td>
+          <td className="px-3 py-2 border border-border text-red-600">{formatCurrency(totalOverdue, cur)}</td>
+          <td className="border border-border print:hidden"></td>
+        </tr></tfoot>
+      </table>
+    </div>
+  );
+
+  return (
+    <Card className="p-6">
+      <SectionHeader title="تقرير المتأخرين عن الدفع" icon={<TrendingDown size={20} />} />
+      <ActionBar onPrint={() => setIsPrinting(true)}>
+        <div><label className="block text-xs font-medium text-text-muted mb-1">العقار</label>
+          <select value={filterPropertyId} onChange={e => setFilterPropertyId(e.target.value)} className="text-sm">
+            <option value="all">الكل</option>
+            {db.properties.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+          </select>
+        </div>
+      </ActionBar>
+      <ReportPrintableContent title="تقرير المتأخرين عن الدفع" date={`تاريخ التقرير: ${formatDate(new Date().toISOString())}`}>{reportContent}</ReportPrintableContent>
+      {isPrinting && <PrintPreviewModal isOpen={isPrinting} onClose={() => setIsPrinting(false)} title="تقرير المتأخرين"><ReportPrintableContent title="تقرير المتأخرين عن الدفع" date={`تاريخ التقرير: ${formatDate(new Date().toISOString())}`}>{reportContent}</ReportPrintableContent></PrintPreviewModal>}
+    </Card>
+  );
+};
+
+const UNIT_TYPE_AR: Record<string, string> = {
+  apartment: 'شقة', shop: 'محل تجاري', office: 'مكتب', studio: 'استوديو',
+  villa: 'فيلا', warehouse: 'مستودع', other: 'أخرى',
+};
+const FLOOR_AR: Record<string, string> = {
+  ground: 'الأرضي', first: 'الأول', second: 'الثاني', third: 'الثالث',
+  fourth: 'الرابع', fifth: 'الخامس', roof: 'السطح', basement: 'البدروم',
+};
+
+const VacantUnits: React.FC = () => {
+  const { db, settings } = useApp();
+  const cur = settings.operational?.currency ?? 'OMR';
+  const [isPrinting, setIsPrinting] = useState(false);
+  const [filterPropertyId, setFilterPropertyId] = useState('all');
+  const [filterType, setFilterType] = useState('all');
+
+  const vacantUnits = useMemo(() => {
+    const activeContractUnitIds = new Set(
+      db.contracts.filter(c => c.status === 'ACTIVE').map(c => c.unitId)
+    );
+    return db.units
+      .filter(u => {
+        if (u.status === 'RENTED' || activeContractUnitIds.has(u.id)) return false;
+        if (filterPropertyId !== 'all' && u.propertyId !== filterPropertyId) return false;
+        if (filterType !== 'all' && u.type !== filterType) return false;
+        return true;
+      })
+      .map(u => ({
+        unit: u,
+        property: db.properties.find(p => p.id === u.propertyId),
+      }))
+      .sort((a, b) => (a.property?.name || '').localeCompare(b.property?.name || '', 'ar'));
+  }, [db, filterPropertyId, filterType]);
+
+  const totalPotentialRent = vacantUnits.reduce((s, r) => s + (r.unit.rentDefault || 0), 0);
+  const byType = useMemo(() => {
+    const map: Record<string, number> = {};
+    vacantUnits.forEach(r => { map[r.unit.type || 'other'] = (map[r.unit.type || 'other'] || 0) + 1; });
+    return map;
+  }, [vacantUnits]);
+
+  const reportContent = (
+    <div>
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-6">
+        <MiniKpi label="إجمالي الوحدات الشاغرة" value={vacantUnits.length.toString()} icon={<Building2 size={18} />} color="bg-blue-100 text-blue-700" />
+        <MiniKpi label="الإيجار المحتمل الشهري" value={formatCurrency(totalPotentialRent, cur)} icon={<Banknote size={18} />} color="bg-green-100 text-green-700" />
+        <MiniKpi label="أنواع مختلفة" value={Object.keys(byType).length.toString()} icon={<Filter size={18} />} color="bg-purple-100 text-purple-700" />
+      </div>
+
+      {Object.keys(byType).length > 0 && (
+        <div className="flex flex-wrap gap-2 mb-4">
+          {Object.entries(byType).map(([type, count]) => (
+            <span key={type} className="px-3 py-1 bg-background border border-border rounded-full text-xs">
+              {UNIT_TYPE_AR[type] || type}: <strong>{count}</strong>
+            </span>
+          ))}
+        </div>
+      )}
+
+      <table className="w-full text-sm border-collapse border border-border">
+        <thead><tr className="bg-background text-xs">
+          <th className="px-3 py-2 border border-border">العقار</th>
+          <th className="px-3 py-2 border border-border">الوحدة</th>
+          <th className="px-3 py-2 border border-border">النوع</th>
+          <th className="px-3 py-2 border border-border">الطابق</th>
+          <th className="px-3 py-2 border border-border">المساحة</th>
+          <th className="px-3 py-2 border border-border">الغرف</th>
+          <th className="px-3 py-2 border border-border">الحمامات</th>
+          <th className="px-3 py-2 border border-border">الإيجار المقترح</th>
+          <th className="px-3 py-2 border border-border">الحالة</th>
+        </tr></thead>
+        <tbody>{vacantUnits.map(({ unit, property }) => (
+          <tr key={unit.id} className="hover:bg-background">
+            <td className="px-3 py-2 border border-border">{property?.name || '-'}</td>
+            <td className="px-3 py-2 border border-border font-bold">{unit.name}</td>
+            <td className="px-3 py-2 border border-border">{UNIT_TYPE_AR[unit.type] || unit.type || '-'}</td>
+            <td className="px-3 py-2 border border-border">{unit.floor ? (FLOOR_AR[unit.floor] || unit.floor) : '-'}</td>
+            <td className="px-3 py-2 border border-border">{unit.area ? `${unit.area} م²` : '-'}</td>
+            <td className="px-3 py-2 border border-border">{unit.bedrooms ?? '-'}</td>
+            <td className="px-3 py-2 border border-border">{unit.bathrooms ?? '-'}</td>
+            <td className="px-3 py-2 border border-border font-bold">{unit.rentDefault ? formatCurrency(unit.rentDefault, cur) : '-'}</td>
+            <td className="px-3 py-2 border border-border">
+              <span className={`px-2 py-0.5 rounded-full text-xs ${unit.status === 'MAINTENANCE' ? 'bg-yellow-100 text-yellow-700' : unit.status === 'ON_HOLD' ? 'bg-gray-100 text-gray-700' : 'bg-green-100 text-green-700'}`}>
+                {unit.status === 'MAINTENANCE' ? 'صيانة' : unit.status === 'ON_HOLD' ? 'محجوزة' : 'متاحة'}
+              </span>
+            </td>
+          </tr>
+        ))}</tbody>
+      </table>
+    </div>
+  );
+
+  return (
+    <Card className="p-6">
+      <SectionHeader title="تقرير الوحدات الشاغرة" icon={<Building2 size={20} />} />
+      <ActionBar onPrint={() => setIsPrinting(true)}>
+        <div><label className="block text-xs font-medium text-text-muted mb-1">العقار</label>
+          <select value={filterPropertyId} onChange={e => setFilterPropertyId(e.target.value)} className="text-sm">
+            <option value="all">الكل</option>
+            {db.properties.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+          </select>
+        </div>
+        <div><label className="block text-xs font-medium text-text-muted mb-1">نوع الوحدة</label>
+          <select value={filterType} onChange={e => setFilterType(e.target.value)} className="text-sm">
+            <option value="all">الكل</option>
+            {Object.entries(UNIT_TYPE_AR).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+          </select>
+        </div>
+      </ActionBar>
+      <ReportPrintableContent title="تقرير الوحدات الشاغرة" date={`تاريخ التقرير: ${formatDate(new Date().toISOString())}`}>{reportContent}</ReportPrintableContent>
+      {isPrinting && <PrintPreviewModal isOpen={isPrinting} onClose={() => setIsPrinting(false)} title="الوحدات الشاغرة"><ReportPrintableContent title="تقرير الوحدات الشاغرة" date={`تاريخ التقرير: ${formatDate(new Date().toISOString())}`}>{reportContent}</ReportPrintableContent></PrintPreviewModal>}
     </Card>
   );
 };

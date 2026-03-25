@@ -1,7 +1,7 @@
 import React from 'react';
 import { Routes, Route, NavLink, Navigate, useLocation } from 'react-router-dom';
 import Card from '../components/ui/Card';
-import { Settings as SettingsIcon, ShieldCheck, Database, FileSearch, Users, Bell, Palette, Zap, Bot, SearchCheck, Calculator } from 'lucide-react';
+import { Settings as SettingsIcon, ShieldCheck, Database, FileSearch, Users, Bell, Palette, Zap, Bot, SearchCheck, Calculator, FileText } from 'lucide-react';
 import GeneralSettings from '../components/settings/GeneralSettings';
 import AppearanceSettings from '../components/settings/AppearanceSettings';
 import UsersSettings from '../components/settings/UsersSettings';
@@ -12,12 +12,14 @@ import IntegrationsSettings from '../components/settings/IntegrationsSettings';
 import FinancialSettings from '../components/settings/FinancialSettings';
 import AutomationSettings from '../components/settings/AutomationSettings';
 import DataIntegrityAudit from './DataIntegrityAudit';
+import DocumentTemplatesSettings from '../components/settings/DocumentTemplatesSettings';
 
 
 const settingsSections = [
     { id: 'general', label: 'الإعدادات العامة', icon: SettingsIcon, path: '/settings/general' },
     { id: 'financial', label: 'الإعدادات المالية', icon: Calculator, path: '/settings/financial' },
     { id: 'appearance', label: 'المظهر والتخصيص', icon: Palette, path: '/settings/appearance' },
+    { id: 'documents', label: 'قوالب المستندات', icon: FileText, path: '/settings/documents' },
     { id: 'users', label: 'المستخدمون والصلاحيات', icon: Users, path: '/settings/users' },
     { id: 'notifications', label: 'الإشعارات والقوالب', icon: Bell, path: '/settings/notifications' },
     { id: 'security', label: 'الأمان والتحكم', icon: ShieldCheck, path: '/settings/security' },
@@ -59,6 +61,7 @@ const Settings: React.FC = () => {
                         <Route path="general" element={<GeneralSettings />} />
                         <Route path="financial" element={<FinancialSettings />} />
                         <Route path="appearance" element={<AppearanceSettings />} />
+                        <Route path="documents" element={<DocumentTemplatesSettings />} />
                         <Route path="users" element={<UsersSettings />} />
                         <Route path="notifications" element={<NotificationsSettings />} />
                         <Route path="security" element={<SecuritySettings />} />
