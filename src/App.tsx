@@ -88,11 +88,11 @@ const App: React.FC = () => {
             ? location.pathname
             : Object.keys(ROUTE_META).find(k => k !== '/' && location.pathname.startsWith(k)) || '/';
         const routeMeta = ROUTE_META[matchedKey];
-        document.title = routeMeta ? `${routeMeta.title} — ${companyName}` : companyName;
+        document.title = routeMeta ? `${routeMeta.title} - ${companyName}` : companyName;
         const descEl = document.querySelector('meta[name="description"]');
         if (descEl && routeMeta) descEl.setAttribute('content', routeMeta.description);
         const ogTitleEl = document.querySelector('meta[property="og:title"]');
-        if (ogTitleEl && routeMeta) ogTitleEl.setAttribute('content', `${routeMeta.title} — ${companyName}`);
+        if (ogTitleEl && routeMeta) ogTitleEl.setAttribute('content', `${routeMeta.title} - ${companyName}`);
         const ogDescEl = document.querySelector('meta[property="og:description"]');
         if (ogDescEl && routeMeta) ogDescEl.setAttribute('content', routeMeta.description);
         const canonicalUrl = `${window.location.origin}${location.pathname}`;
@@ -146,10 +146,10 @@ const App: React.FC = () => {
               {/* Analytics & Admin Hub */}
               <Route path="/reports" element={<Reports />} />
               <Route path="/smart-assistant" element={<SmartAssistant />} />
+              <Route path="/settings/*" element={<Settings />} />
               {auth.currentUser.role === 'ADMIN' && (
                 <>
                   <Route path="/audit-log" element={<AuditLog />} />
-                  <Route path="/settings/*" element={<Settings />} />
                 </>
               )}
               

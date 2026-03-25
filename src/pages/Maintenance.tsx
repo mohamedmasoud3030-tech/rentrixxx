@@ -129,7 +129,7 @@ const Maintenance: React.FC = () => {
                                             {unit?.name} <span className="text-xs text-text-muted">({property?.name})</span>
                                         </td>
                                         <td className="px-6 py-4 border border-border">{formatDate(rec.requestDate)}</td>
-                                        <td className="px-6 py-4 font-mono text-xs border border-border">{linkedDoc ? (linkedDoc as Invoice | Expense).no : '—'}</td>
+                                        <td className="px-6 py-4 font-mono text-xs border border-border">{linkedDoc ? (linkedDoc as Invoice | Expense).no : '-'}</td>
                                         {/* FIX: Corrected path to currency settings */}
                                         <td className="px-6 py-4 border border-border">{formatCurrency(rec.cost, db.settings.operational.currency)}</td>
                                         <td className="px-6 py-4 border border-border">

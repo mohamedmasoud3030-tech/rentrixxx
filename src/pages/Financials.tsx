@@ -156,7 +156,7 @@ const ReceiptsView: React.FC = () => {
                                 <tr key={r.id} className="bg-card hover:bg-background transition-colors">
                                     <td className="px-6 py-4 font-mono border border-border">{r.no}</td>
                                     <td className="px-6 py-4 border border-border">{formatDateTime(r.dateTime)}</td>
-                                    <td className="px-6 py-4 border border-border">{tenant?.name || '—'}</td>
+                                    <td className="px-6 py-4 border border-border">{tenant?.name || '-'}</td>
                                     <td className="px-6 py-4 font-bold border border-border">{formatCurrency(r.amount, db.settings.operational.currency)}</td>
                                     <td className="px-6 py-4 border border-border">
                                         <span className="text-xs">{CHANNEL_AR[r.channel as keyof typeof CHANNEL_AR] || r.channel}</span>
@@ -305,7 +305,7 @@ const DepositsView: React.FC = () => {
                             return (
                                 <tr key={tx.id} className="bg-card">
                                     <td className="px-6 py-4 border border-border">{formatDate(tx.date)}</td>
-                                    <td className="px-6 py-4 border border-border">{tenant?.name || '—'}</td>
+                                    <td className="px-6 py-4 border border-border">{tenant?.name || '-'}</td>
                                     <td className="px-6 py-4 border border-border font-bold">{typeMap[tx.type]}</td>
                                     {/* FIX: Corrected path to currency settings */}
                                     <td className="px-6 py-4 font-mono border border-border">{formatCurrency(tx.amount, db.settings.operational.currency)}</td>
@@ -359,7 +359,7 @@ const OwnerSettlementsView: React.FC = () => {
                                 <tr key={s.id} className="bg-card">
                                     <td className="px-6 py-4 font-mono border border-border">{s.no}</td>
                                     <td className="px-6 py-4 border border-border">{formatDate(s.date)}</td>
-                                    <td className="px-6 py-4 border border-border">{owner?.name || '—'}</td>
+                                    <td className="px-6 py-4 border border-border">{owner?.name || '-'}</td>
                                     {/* FIX: Corrected path to currency settings */}
                                     <td className="px-6 py-4 font-bold border border-border text-green-600">{formatCurrency(s.amount, db.settings.operational.currency)}</td>
                                     <td className="px-6 py-4 border border-border">

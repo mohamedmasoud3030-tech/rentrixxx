@@ -1,8 +1,25 @@
-import React, { useEffect, useRef, useState, useMemo } from 'react';
+﻿import React, { useEffect, useRef, useMemo } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
-import { 
-    LayoutGrid, Building2, Users, FileText, Banknote, 
-    BarChart2, Settings, UserPlus, MessageSquare, Map as MapIcon, Bot, ClipboardList, ScrollText, Wrench
+import {
+  LayoutGrid,
+  Building2,
+  Users,
+  FileText,
+  Bell,
+  Banknote,
+  BarChart2,
+  Settings,
+  UserPlus,
+  MessageSquare,
+  Map as MapIcon,
+  Bot,
+  ScrollText,
+  ShieldCheck,
+  Database,
+  Palette,
+  Zap,
+  SearchCheck,
+  Calculator,
 } from 'lucide-react';
 import { useApp } from '../../../contexts/AppContext';
 import { getLastRunDate } from '../../../services/automationService';
@@ -23,39 +40,50 @@ interface SidebarProps {
 const navGroups: { title: string; links: NavLinkItem[] }[] = [
   {
     title: 'الرئيسية',
-    links: [
-      { path: '/', label: 'لوحة التحكم', icon: LayoutGrid },
-    ],
+    links: [{ path: '/', label: 'لوحة التحكم', icon: LayoutGrid }],
   },
   {
-    title: 'العمليات التشغيلية',
+    title: 'العمليات',
     links: [
-      { path: '/properties', label: 'إدارة العقارات', icon: Building2 },
+      { path: '/properties', label: 'العقارات', icon: Building2 },
       { path: '/people', label: 'الأشخاص', icon: Users },
       { path: '/contracts', label: 'العقود', icon: FileText, badgeKey: 'expiringContracts' },
     ],
   },
   {
-    title: 'المركز المالي',
-    links: [
-      { path: '/finance', label: 'الحسابات والمالية', icon: Banknote, badgeKey: 'overdueInvoices' },
-    ],
+    title: 'المالية',
+    links: [{ path: '/finance', label: 'المركز المالي', icon: Banknote, badgeKey: 'overdueInvoices' }],
   },
   {
-    title: 'التسويق والتطوير',
+    title: 'التسويق',
     links: [
       { path: '/leads', label: 'العملاء المحتملون', icon: UserPlus, badgeKey: 'newLeads' },
       { path: '/lands', label: 'الأراضي والعمولات', icon: MapIcon },
-      { path: '/communication', label: 'مركز التواصل', icon: MessageSquare, badgeKey: 'pendingNotifications' },
+      { path: '/communication', label: 'التواصل', icon: MessageSquare, badgeKey: 'pendingNotifications' },
     ],
   },
   {
-    title: 'التحليل والإدارة',
+    title: 'التحليل',
     links: [
       { path: '/reports', label: 'التقارير', icon: BarChart2 },
       { path: '/audit-log', label: 'سجل المراجعة', icon: ScrollText, adminOnly: true },
       { path: '/smart-assistant', label: 'المساعد الذكي', icon: Bot },
-      { path: '/settings', label: 'الإعدادات', icon: Settings, adminOnly: true },
+    ],
+  },
+  {
+    title: 'الإعدادات',
+    links: [
+      { path: '/settings/general', label: 'عام', icon: Settings },
+      { path: '/settings/users', label: 'المستخدمون', icon: Users },
+      { path: '/settings/security', label: 'الأمان', icon: ShieldCheck },
+      { path: '/settings/integrations', label: 'التكاملات', icon: Zap },
+      { path: '/settings/notifications', label: 'الإشعارات', icon: Bell },
+      { path: '/settings/documents', label: 'المستندات', icon: FileText },
+      { path: '/settings/financial', label: 'مالي', icon: Calculator },
+      { path: '/settings/appearance', label: 'المظهر', icon: Palette },
+      { path: '/settings/backup', label: 'النسخ الاحتياطي', icon: Database },
+      { path: '/settings/automation', label: 'الأتمتة', icon: Bot },
+      { path: '/settings/integrity', label: 'سلامة البيانات', icon: SearchCheck },
     ],
   },
 ];
@@ -102,7 +130,6 @@ const Sidebar: React.FC<SidebarProps> = ({ sidebarOpen, setSidebarOpen }) => {
       }`}
       style={{ boxShadow: 'var(--shadow-sidebar)' }}
     >
-      {/* Logo / Brand */}
       <div className="flex items-center gap-3 px-6 py-6 border-b border-border">
         <div
           className="w-10 h-10 rounded-xl flex items-center justify-center text-white font-black text-xl flex-shrink-0"
@@ -119,7 +146,6 @@ const Sidebar: React.FC<SidebarProps> = ({ sidebarOpen, setSidebarOpen }) => {
         </div>
       </div>
 
-      {/* Navigation */}
       <div className="flex flex-col overflow-y-auto flex-1 py-4 px-3 scrollbar-hide">
         <nav>
           {navGroups.map(group => {
@@ -128,9 +154,7 @@ const Sidebar: React.FC<SidebarProps> = ({ sidebarOpen, setSidebarOpen }) => {
 
             return (
               <div key={group.title} className="mb-5">
-                <h3 className="mb-2 px-3 text-[10px] font-black text-text-muted uppercase tracking-[0.18em] opacity-60">
-                  {group.title}
-                </h3>
+                <h3 className="mb-2 px-3 text-[10px] font-black text-text-muted uppercase tracking-[0.18em] opacity-60">{group.title}</h3>
                 <ul className="flex flex-col gap-0.5">
                   {visibleLinks.map(link => {
                     const active = isLinkActive(link.path);
@@ -139,20 +163,22 @@ const Sidebar: React.FC<SidebarProps> = ({ sidebarOpen, setSidebarOpen }) => {
                         <NavLink
                           to={link.path}
                           className={`group flex items-center gap-3 rounded-xl px-3 py-2.5 font-bold text-sm transition-all duration-200 ${
-                            active
-                              ? 'text-sidebar-active-text'
-                              : 'text-sidebar-text hover:text-text'
+                            active ? 'text-sidebar-active-text' : 'text-sidebar-text hover:text-text'
                           }`}
-                          style={active ? {
-                            background: 'hsl(var(--color-sidebar-active-bg))',
-                            boxShadow: '0 2px 8px hsl(var(--color-primary) / 0.25)',
-                          } : undefined}
-                          onMouseEnter={(e) => {
+                          style={
+                            active
+                              ? {
+                                  background: 'hsl(var(--color-sidebar-active-bg))',
+                                  boxShadow: '0 2px 8px hsl(var(--color-primary) / 0.25)',
+                                }
+                              : undefined
+                          }
+                          onMouseEnter={e => {
                             if (!active) {
                               (e.currentTarget as HTMLElement).style.background = 'hsl(var(--color-sidebar-hover-bg))';
                             }
                           }}
-                          onMouseLeave={(e) => {
+                          onMouseLeave={e => {
                             if (!active) {
                               (e.currentTarget as HTMLElement).style.background = '';
                             }
@@ -169,9 +195,7 @@ const Sidebar: React.FC<SidebarProps> = ({ sidebarOpen, setSidebarOpen }) => {
                               {badges[link.badgeKey]}
                             </span>
                           )}
-                          {active && !link.badgeKey && (
-                            <span className="mr-auto w-1.5 h-1.5 rounded-full bg-current opacity-80" />
-                          )}
+                          {active && !link.badgeKey && <span className="mr-auto w-1.5 h-1.5 rounded-full bg-current opacity-80" />}
                         </NavLink>
                       </li>
                     );
@@ -183,12 +207,11 @@ const Sidebar: React.FC<SidebarProps> = ({ sidebarOpen, setSidebarOpen }) => {
         </nav>
       </div>
 
-      {/* Automation last run indicator */}
       {lastRunDate && (
         <div className="px-4 py-3 border-t border-border">
           <div className="flex items-center gap-2 text-[10px] text-text-muted">
             <Bot size={12} className="text-primary flex-shrink-0" />
-            <span>آخر تشغيل تلقائي: {lastRunDate}</span>
+            <span>آخر تشغيل للأتمتة: {lastRunDate}</span>
           </div>
         </div>
       )}

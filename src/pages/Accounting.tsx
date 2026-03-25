@@ -184,7 +184,7 @@ const AccountForm: React.FC<{ isOpen: boolean; onClose: () => void; account: Acc
                 </div>
                 {!data.isParent && parentAccounts.length > 0 && (
                     <select name="parentId" value={data.parentId || ''} onChange={handleChange}>
-                        <option value="">— بدون حساب أبوي —</option>
+                        <option value="">- بدون حساب أبوي -</option>
                         {parentAccounts.map(a => (
                             <option key={a.id} value={a.id}>{a.no} - {a.name}</option>
                         ))}
@@ -278,7 +278,7 @@ const ManualVoucher: React.FC = () => {
                                             onChange={e => updateLine(i, 'accountId', e.target.value)}
                                             required
                                         >
-                                            <option value="">— اختر الحساب —</option>
+                                            <option value="">- اختر الحساب -</option>
                                             {accounts.filter(a => !a.isParent).map(a => (
                                                 <option key={a.id} value={a.id}>{a.no} - {a.name}</option>
                                             ))}

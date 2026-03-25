@@ -1403,8 +1403,8 @@ const OverdueTenants: React.FC = () => {
     <div>
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
         <MiniKpi label="إجمالي المتأخرات" value={formatCurrency(totalOverdue, cur)} icon={<TrendingDown size={18} />} color="bg-red-100 text-red-700" />
-        <MiniKpi label="1–30 يوم" value={count30.toString()} icon={<Users size={18} />} color="bg-yellow-100 text-yellow-700" />
-        <MiniKpi label="31–60 يوم" value={count60.toString()} icon={<Users size={18} />} color="bg-orange-100 text-orange-700" />
+        <MiniKpi label="1-30 يوم" value={count30.toString()} icon={<Users size={18} />} color="bg-yellow-100 text-yellow-700" />
+        <MiniKpi label="31-60 يوم" value={count60.toString()} icon={<Users size={18} />} color="bg-orange-100 text-orange-700" />
         <MiniKpi label="أكثر من 60 يوم" value={count90plus.toString()} icon={<Users size={18} />} color="bg-red-100 text-red-700" />
       </div>
       <table className="w-full text-sm border-collapse border border-border">
