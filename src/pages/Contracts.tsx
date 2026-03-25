@@ -7,7 +7,7 @@ import ActionsMenu, { EditAction, DeleteAction, PrintAction } from '../component
 import { formatCurrency, toArabicDigits, getStatusBadgeClass, formatDateTime, formatDate, exportToCsv, CONTRACT_STATUS_AR } from '../utils/helpers';
 import HardGateBanner from '../components/shared/HardGateBanner';
 import AttachmentsManager from '../components/shared/AttachmentsManager';
-import { FileText, Download } from 'lucide-react';
+import { FileText, Download, CheckCircle, AlertTriangle, Clock, Users } from 'lucide-react';
 import PrintPreviewModal from '../components/shared/PrintPreviewModal';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { exportContractToPdf } from '../services/pdfService';
@@ -173,9 +173,49 @@ const Contracts: React.FC = () => {
         exportToCsv('عقود_rentrix', rows);
     };
 
+    const contractStats = useMemo(() => {
+        const now = new Date();
+        const alertDays = db.settings.operational?.contractAlertDays ?? 30;
+        const futureDate = new Date(now.getTime() + alertDays * 86400000);
+        const active = db.contracts.filter(c => c.status === 'ACTIVE').length;
+        const expiring = db.contracts.filter(c => c.status === 'ACTIVE' && new Date(c.end) <= futureDate).length;
+        const expired = db.contracts.filter(c => c.status === 'ENDED').length;
+        const totalBalance = Object.values(contractBalances).reduce((s, b) => s + (b.balance > 0 ? b.balance : 0), 0);
+        return { total: db.contracts.length, active, expiring, expired, totalBalance };
+    }, [db.contracts, contractBalances, db.settings]);
+
     return (
         <div className="space-y-6">
             <HardGateBanner />
+
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+                <div className="bg-card rounded-xl border border-border p-3 text-center">
+                    <FileText size={18} className="mx-auto mb-1 text-blue-500" />
+                    <p className="text-lg font-black">{contractStats.total}</p>
+                    <p className="text-[10px] text-text-muted">إجمالي العقود</p>
+                </div>
+                <div className="bg-card rounded-xl border border-border p-3 text-center">
+                    <CheckCircle size={18} className="mx-auto mb-1 text-emerald-500" />
+                    <p className="text-lg font-black">{contractStats.active}</p>
+                    <p className="text-[10px] text-text-muted">نشطة</p>
+                </div>
+                <div className="bg-card rounded-xl border border-border p-3 text-center">
+                    <AlertTriangle size={18} className="mx-auto mb-1 text-amber-500" />
+                    <p className="text-lg font-black text-amber-600">{contractStats.expiring}</p>
+                    <p className="text-[10px] text-text-muted">قاربت الانتهاء</p>
+                </div>
+                <div className="bg-card rounded-xl border border-border p-3 text-center">
+                    <Clock size={18} className="mx-auto mb-1 text-red-500" />
+                    <p className="text-lg font-black">{contractStats.expired}</p>
+                    <p className="text-[10px] text-text-muted">منتهية</p>
+                </div>
+                <div className="bg-card rounded-xl border border-border p-3 text-center">
+                    <Users size={18} className="mx-auto mb-1 text-purple-500" />
+                    <p className="text-lg font-black text-red-600" dir="ltr">{formatCurrency(contractStats.totalBalance, db.settings.operational.currency)}</p>
+                    <p className="text-[10px] text-text-muted">إجمالي الذمم</p>
+                </div>
+            </div>
+
             <Card>
                 <div className="flex justify-between items-center mb-4">
                     <h2 className="text-xl font-bold">قائمة العقود</h2>
@@ -340,7 +380,7 @@ const ContractForm: React.FC<{ isOpen: boolean, onClose: () => void, contract: C
         }
     };
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!unitId || !tenantId || !start || !end) {
             toast.error("يرجى ملء جميع الحقول المطلوبة (الوحدة، المستأجر، تاريخ البدء والانتهاء).");
@@ -349,11 +389,9 @@ const ContractForm: React.FC<{ isOpen: boolean, onClose: () => void, contract: C
 
         const data = { unitId, tenantId, rent, dueDay, start, end, deposit, status, sponsorName, sponsorId, sponsorPhone };
         if (contract) {
-            // FIX: Use dataService for data manipulation
-            dataService.update('contracts', contract.id, data);
+            await dataService.update('contracts', contract.id, data);
         } else {
-            // FIX: Use dataService for data manipulation
-            dataService.add('contracts', data);
+            await dataService.add('contracts', data);
         }
         onClose();
     };

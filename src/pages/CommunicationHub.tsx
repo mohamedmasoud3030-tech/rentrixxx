@@ -24,9 +24,8 @@ const CommunicationHub: React.FC = () => {
         toast.success('تم نسخ الرسالة.');
     };
 
-    const handleMarkAsSent = (id: string) => {
-        // FIX: Use dataService for data manipulation
-        dataService.update('outgoingNotifications', id, { status: 'SENT' });
+    const handleMarkAsSent = async (id: string) => {
+        await dataService.update('outgoingNotifications', id, { status: 'SENT' });
     };
 
     const handleSendWhatsApp = (notification: OutgoingNotification) => {
@@ -93,8 +92,7 @@ const CommunicationHub: React.FC = () => {
                                 <button onClick={() => handleCopy(n.message)} className="text-xs flex items-center gap-1 bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-300 px-2 py-1 rounded-md">
                                     <Copy size={14} /> نسخ
                                 </button>
-                                {/* FIX: Use dataService for data manipulation */}
-                                <button onClick={() => dataService.remove('outgoingNotifications', n.id)} className="text-xs flex items-center gap-1 text-red-500 hover:text-red-700">
+                                <button onClick={async () => await dataService.remove('outgoingNotifications', n.id)} className="text-xs flex items-center gap-1 text-red-500 hover:text-red-700">
                                      <Trash2 size={14} /> حذف
                                 </button>
                             </div>

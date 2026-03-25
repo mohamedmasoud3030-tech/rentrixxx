@@ -1,18 +1,26 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useMemo } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { 
     LayoutGrid, Building2, Users, FileText, Banknote, 
-    BarChart2, Settings, UserPlus, MessageSquare, Map as MapIcon, Bot, ClipboardList, ScrollText
+    BarChart2, Settings, UserPlus, MessageSquare, Map as MapIcon, Bot, ClipboardList, ScrollText, Wrench
 } from 'lucide-react';
 import { useApp } from '../../../contexts/AppContext';
 import { getLastRunDate } from '../../../services/automationService';
+
+interface NavLinkItem {
+  path: string;
+  label: string;
+  icon: React.FC<any>;
+  adminOnly?: boolean;
+  badgeKey?: string;
+}
 
 interface SidebarProps {
   sidebarOpen: boolean;
   setSidebarOpen: (open: boolean) => void;
 }
 
-const navGroups = [
+const navGroups: { title: string; links: NavLinkItem[] }[] = [
   {
     title: 'الرئيسية',
     links: [
@@ -24,21 +32,21 @@ const navGroups = [
     links: [
       { path: '/properties', label: 'إدارة العقارات', icon: Building2 },
       { path: '/people', label: 'الأشخاص', icon: Users },
-      { path: '/contracts', label: 'العقود', icon: FileText },
+      { path: '/contracts', label: 'العقود', icon: FileText, badgeKey: 'expiringContracts' },
     ],
   },
   {
     title: 'المركز المالي',
     links: [
-      { path: '/finance', label: 'الحسابات والمالية', icon: Banknote },
+      { path: '/finance', label: 'الحسابات والمالية', icon: Banknote, badgeKey: 'overdueInvoices' },
     ],
   },
   {
     title: 'التسويق والتطوير',
     links: [
-      { path: '/leads', label: 'العملاء المحتملون', icon: UserPlus },
+      { path: '/leads', label: 'العملاء المحتملون', icon: UserPlus, badgeKey: 'newLeads' },
       { path: '/lands', label: 'الأراضي والعمولات', icon: MapIcon },
-      { path: '/communication', label: 'مركز التواصل', icon: MessageSquare },
+      { path: '/communication', label: 'مركز التواصل', icon: MessageSquare, badgeKey: 'pendingNotifications' },
     ],
   },
   {
@@ -53,10 +61,21 @@ const navGroups = [
 ];
 
 const Sidebar: React.FC<SidebarProps> = ({ sidebarOpen, setSidebarOpen }) => {
-  const { auth, settings } = useApp();
+  const { auth, settings, db } = useApp();
   const { pathname } = useLocation();
   const sidebar = useRef<HTMLDivElement>(null);
   const lastRunDate = getLastRunDate();
+
+  const badges = useMemo(() => {
+    const now = new Date();
+    const alertDays = settings.operational?.contractAlertDays ?? 30;
+    const futureDate = new Date(now.getTime() + alertDays * 86400000);
+    const expiringContracts = db.contracts.filter(c => c.status === 'ACTIVE' && new Date(c.end) <= futureDate).length;
+    const overdueInvoices = db.invoices.filter(i => i.status === 'OVERDUE' || (i.status === 'UNPAID' && new Date(i.dueDate) < now)).length;
+    const newLeads = db.leads.filter(l => l.status === 'NEW').length;
+    const pendingNotifications = db.outgoingNotifications.filter(n => n.status === 'PENDING').length;
+    return { expiringContracts, overdueInvoices, newLeads, pendingNotifications } as Record<string, number>;
+  }, [db, settings]);
 
   useEffect(() => {
     const clickHandler = ({ target }: MouseEvent) => {
@@ -145,7 +164,12 @@ const Sidebar: React.FC<SidebarProps> = ({ sidebarOpen, setSidebarOpen }) => {
                             className={`flex-shrink-0 transition-transform duration-200 group-hover:scale-110 ${active ? 'text-sidebar-active-text' : ''}`}
                           />
                           <span>{link.label}</span>
-                          {active && (
+                          {link.badgeKey && badges[link.badgeKey] > 0 && (
+                            <span className="mr-auto min-w-[20px] h-5 flex items-center justify-center rounded-full bg-red-500 text-white text-[10px] font-black px-1.5">
+                              {badges[link.badgeKey]}
+                            </span>
+                          )}
+                          {active && !link.badgeKey && (
                             <span className="mr-auto w-1.5 h-1.5 rounded-full bg-current opacity-80" />
                           )}
                         </NavLink>

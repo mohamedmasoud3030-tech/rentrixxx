@@ -88,7 +88,30 @@ Preferred communication style: Simple, everyday language.
 - **SQL Schema**: `supabase_schema.sql` — all 31 tables with UUID primary keys; run in Supabase SQL Editor
 - **Drop Script**: `supabase_drop_all.sql` — run first if re-creating tables from an older schema version
 
-## Recent Audit & Polish (v2)
+## Recent Audit & Polish (v3)
+
+### Charts & Visualization (recharts)
+- **recharts**: Interactive charts library used across Dashboard, Reports, and Properties pages
+- **Dashboard**: 6-month revenue/expense AreaChart trend
+- **Reports Overview**: AreaChart (revenue trend), PieChart (unit occupancy), BarChart (expense categories), net income bar chart, monthly collection LineChart
+- **Income Statement**: Revenue and expense distribution PieCharts
+- **Aged Receivables**: Aging distribution BarChart with color-coded severity
+- **date-fns with Arabic locale**: Used for Arabic month names in chart labels
+
+### Reports Page (Complete Rebuild)
+- 8-tab navigation: Overview, Income Statement, Balance Sheet, Trial Balance, Rent Roll, Owner Ledger, Tenant Statement, Aged Receivables
+- Each report has MiniKpi summary cards at top
+- ActionBar with Print and PDF Export buttons
+- Revenue/expense trend charts in Overview
+- Pie charts for income/expense distribution in Income Statement
+- Aging bar chart in Aged Receivables
+- Clean table styling with borders, hover states, and color-coded values
+
+### Smart Features
+- **Sidebar notification badges**: Red badge counts on Contracts (expiring), Finance (overdue invoices), Leads (new), Communication (pending notifications)
+- **Properties page KPIs**: 5 stat cards (properties count, total units, rented, vacant, occupancy %)
+- **Contracts page KPIs**: 5 stat cards (total, active, expiring, ended, total receivables)
+- **Dashboard revenue chart**: 6-month AreaChart with gradient fills for revenue vs expenses
 
 ### Dashboard Overhaul
 - Complete redesign with 6 mini KPIs (properties, units, vacant, contracts, tenants, occupancy rate)
@@ -100,9 +123,21 @@ Preferred communication style: Simple, everyday language.
 - Overdue invoices table with days-overdue severity badges
 - Recent receipts feed with status badges
 
+### Settings Page (10 sections)
+- General (company info, operational settings, late fees, document numbering)
+- Financial (account mappings for payment methods, revenue, receivables, expenses)
+- Appearance (theme, primary color, logo upload)
+- Users (Supabase-backed user management, role assignment)
+- Notifications (template management with toggle enable/disable)
+- Security (data integrity audit + audit log)
+- Backup (JSON export/import with restore confirmation)
+- Integrations (Gemini API key, Google Drive placeholder)
+- Automation (toggle tasks, manual run, run history log)
+- Data Integrity (separate audit page)
+
 ### Bug Fixes
 - **Contract date logic**: End date auto-calculates as start + 1 year - 1 day (was start + 1 year exactly)
-- **Async/await consistency**: All `dataService.add/update/remove` calls across People, Invoices, Financials, Leads, LandsAndCommissions, and Contracts now properly await async operations
+- **Async/await consistency**: All `dataService.add/update/remove` calls across all pages (Contracts, Properties, CommunicationHub, Maintenance, Leads, LandsAndCommissions, People, Invoices, Financials) now properly await async operations
 - **SQL schema v2**: All IDs use UUID type (was TEXT causing FK conflicts); removed problematic foreign key constraints
 
 ### External Services (Optional)
