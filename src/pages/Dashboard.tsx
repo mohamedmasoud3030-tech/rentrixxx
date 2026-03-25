@@ -10,8 +10,6 @@ import {
   Home, Percent, DollarSign, CalendarClock, Activity,
   Plus, FileInput, Calculator
 } from 'lucide-react';
-import { useLiveQuery } from 'dexie-react-hooks';
-import { dbEngine } from '../services/db';
 import { Contract, Tenant, Unit, Receipt as ReceiptType, Invoice, Expense, MaintenanceRecord } from '../types';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 import { startOfMonth, endOfMonth, subMonths, eachMonthOfInterval, isWithinInterval, format } from 'date-fns';
@@ -20,10 +18,11 @@ import { ar } from 'date-fns/locale';
 const QuickSearch = () => {
     const [query, setQuery] = useState("");
     const navigate = useNavigate();
+    const { db } = useApp();
 
-    const contracts = useLiveQuery(() => dbEngine.contracts.toArray()) || [];
-    const tenants = useLiveQuery(() => dbEngine.tenants.toArray()) || [];
-    const units = useLiveQuery(() => dbEngine.units.toArray()) || [];
+    const contracts = db.contracts || [];
+    const tenants = db.tenants || [];
+    const units = db.units || [];
 
     const results = useMemo(() => {
         if (query.length < 2) return [];
@@ -78,18 +77,18 @@ const QuickSearch = () => {
 
 
 const Dashboard: React.FC = () => {
-    const { settings, contractBalances, ownerBalances } = useApp();
+    const { db, settings, contractBalances, ownerBalances } = useApp();
     const navigate = useNavigate();
     const currency = settings.operational?.currency ?? 'OMR';
 
-    const contracts = useLiveQuery(() => dbEngine.contracts.toArray()) || [];
-    const receipts = useLiveQuery(() => dbEngine.receipts.toArray()) || [];
-    const expenses = useLiveQuery(() => dbEngine.expenses.toArray()) || [];
-    const units = useLiveQuery(() => dbEngine.units.toArray()) || [];
-    const properties = useLiveQuery(() => dbEngine.properties.toArray()) || [];
-    const tenants = useLiveQuery(() => dbEngine.tenants.toArray()) || [];
-    const invoices = useLiveQuery(() => dbEngine.invoices.toArray()) || [];
-    const maintenanceRecords = useLiveQuery(() => dbEngine.maintenanceRecords.toArray()) || [];
+    const contracts = db.contracts || [];
+    const receipts = db.receipts || [];
+    const expenses = db.expenses || [];
+    const units = db.units || [];
+    const properties = db.properties || [];
+    const tenants = db.tenants || [];
+    const invoices = db.invoices || [];
+    const maintenanceRecords = db.maintenanceRecords || [];
 
     const stats = useMemo(() => {
         const now = Date.now();
@@ -146,22 +145,14 @@ const Dashboard: React.FC = () => {
         };
     }, [contracts, receipts, expenses, units, properties, tenants, invoices, maintenanceRecords, settings, contractBalances, ownerBalances]);
 
-    const latestReceiptsData = useLiveQuery(async () => {
-        const latest = await dbEngine.receipts.orderBy('dateTime').reverse().limit(5).toArray();
-        const contractIds = latest.map(r => r.contractId);
-        const relatedContracts = await dbEngine.contracts.where('id').anyOf(contractIds).toArray();
-        const tenantIds = relatedContracts.map(c => c.tenantId);
-        const relatedTenants = await dbEngine.tenants.where('id').anyOf(tenantIds).toArray();
-
-        const tenantsMap = new Map<string, Tenant>(relatedTenants.map(t => [t.id, t]));
-        const contractsMap = new Map<string, Contract>(relatedContracts.map(c => [c.id, c]));
-
-        return latest.map((r: ReceiptType) => {
-            const contract = contractsMap.get(r.contractId);
-            const tenant = contract ? tenantsMap.get(contract.tenantId) : null;
+    const latestReceiptsData = useMemo(() => {
+        const sorted = [...receipts].sort((a, b) => (b.dateTime || '').localeCompare(a.dateTime || '')).slice(0, 5);
+        return sorted.map((r: ReceiptType) => {
+            const contract = contracts.find(c => c.id === r.contractId);
+            const tenant = contract ? tenants.find(t => t.id === contract.tenantId) : null;
             return { ...r, tenantName: tenant?.name || 'غير معروف' };
         });
-    }, []) || [];
+    }, [receipts, contracts, tenants]);
 
     const expiringContractsList = useMemo(() => {
         return stats.expiringContracts.map(c => {

@@ -23,11 +23,15 @@ Preferred communication style: Simple, everyday language.
 - **Preload Scripts**: Expose limited APIs to renderer (file dialogs, Gemini queries)
 - **Content Security Policy**: Hardened CSP configured for both development and production
 
-### Data Layer
-- **Database**: Dexie.js (IndexedDB wrapper) for client-side persistent storage
-- **Schema**: Comprehensive schema including users, owners, properties, units, tenants, contracts, invoices, receipts, expenses, journal entries, and more
-- **Live Queries**: `useLiveQuery` hook for reactive data binding
+### Data Layer (Supabase — fully migrated from Dexie.js)
+- **Database**: Supabase PostgreSQL as the primary cloud database
+- **Data Service**: `src/services/supabaseDataService.ts` — full CRUD layer with camelCase↔snake_case auto-conversion
+- **Field Mapping**: `SPECIAL_FIELD_MAP` handles contracts (start→start_date, end→end_date, rent→rent_amount) and units (rentDefault→rent_default)
+- **Table Mapping**: JS table names (e.g. `receiptAllocations`) auto-mapped to SQL names (`receipt_allocations`)
+- **Special Tables**: Settings (JSONB single row), Governance, Serials — all have dedicated getter/setter methods
+- **AppContext**: All data is fetched into React state via `refreshData()` and accessed as `db.tableName` from `useApp()`
 - **Audit Trail**: All data mutations are logged with user, timestamp, and action details
+- **Migration SQL**: `supabase_migration_v3.sql` must be run AFTER the base schema to add missing columns
 
 ### Financial Engine
 - **Double-Entry Accounting**: Journal entries with debit/credit pairs for all financial transactions
@@ -37,11 +41,12 @@ Preferred communication style: Simple, everyday language.
 - **Owner Settlements**: Track owner balances and commission calculations
 
 ### Service Layer Architecture
-- **financialEngine.ts**: Core accounting calculations, journal posting, and snapshot rebuilding
+- **supabaseDataService.ts**: Core Supabase CRUD operations with field/table name mapping
 - **accountingService.ts**: Report generation (income statement, balance sheet, trial balance)
 - **auditEngine.ts**: Data integrity validation and issue detection
 - **pdfService.ts**: PDF generation using jsPDF with Arabic font support
 - **integrationService.ts**: WhatsApp messaging and cloud sync utilities
+- **automationService.ts**: Automated invoicing, late fees, notifications — all via Supabase
 
 ### Authentication & Security (Supabase Auth)
 - **Auth Provider**: Supabase Auth — email + password login only
@@ -56,7 +61,7 @@ Preferred communication style: Simple, everyday language.
 ### Core Runtime
 - **React/ReactDOM 19**: UI framework
 - **React Router DOM 7**: Client-side routing
-- **Dexie 4**: IndexedDB abstraction for local persistence
+- **@supabase/supabase-js**: Supabase client for Auth + database
 - **Lucide React**: Icon library
 
 ### Desktop
@@ -82,11 +87,12 @@ Preferred communication style: Simple, everyday language.
 - **Tailwind CSS**: Utility-first CSS framework
 - **PostCSS/Autoprefixer**: CSS processing
 
-### Cloud Backend
-- **@supabase/supabase-js**: Supabase client for Auth + SQL database
+### Cloud Backend (Supabase)
 - **Supabase URL**: `https://nnggcnpcuomwfuupupwg.supabase.co`
 - **SQL Schema**: `supabase_schema.sql` — all 31 tables with UUID primary keys; run in Supabase SQL Editor
+- **Migration v3**: `supabase_migration_v3.sql` — ALTER TABLE statements for missing columns (run AFTER base schema)
 - **Drop Script**: `supabase_drop_all.sql` — run first if re-creating tables from an older schema version
+- **Dexie.js**: DEPRECATED — `src/services/db.ts` and `src/services/financialEngine.ts` remain as dead code but are not imported
 
 ## Recent Audit & Polish (v3)
 

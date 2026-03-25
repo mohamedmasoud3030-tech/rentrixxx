@@ -1,16 +1,12 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { useApp } from '../contexts/AppContext';
-import { useLiveQuery } from 'dexie-react-hooks';
 import Card from '../components/ui/Card';
 import Modal from '../components/ui/Modal';
 import { Users, Eye, MapPin, PlusCircle, DollarSign } from 'lucide-react';
-import { dbEngine } from '../services/db';
 import { Land, Commission } from '../types';
 import { formatCurrency } from '../utils/helpers';
 import { toast } from 'react-hot-toast';
 import ActionsMenu, { EditAction, DeleteAction } from '../components/shared/ActionsMenu';
-import Dexie from 'dexie';
-import { postJournalEntry } from '../services/financialEngine';
 
 const LandsAndCommissions: React.FC = () => {
   return (
@@ -23,8 +19,8 @@ const LandsAndCommissions: React.FC = () => {
 
 const LandSalesManager = () => {
   // FIX: Use dataService for data manipulation
-  const { dataService } = useApp();
-  const lands = useLiveQuery(() => dbEngine.lands.toArray());
+  const { db, dataService } = useApp();
+  const lands = db.lands || [];
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingLand, setEditingLand] = useState<Land | null>(null);
 
@@ -98,9 +94,8 @@ const LandSalesManager = () => {
 const StaffRewards = () => {
   // FIX: Use financeService for financial operations
   const { db, financeService } = useApp();
-  if (!db) return null;
-  const commissions = useLiveQuery(() => dbEngine.commissions.toArray());
-  const users = useLiveQuery(() => dbEngine.users.toArray());
+  const commissions = db.commissions || [];
+  const users = db.auth?.users || [];
   const [payoutLoading, setPayoutLoading] = useState<string | null>(null);
   
   // FIX: Explicitly type the Map to Map<string, string> to resolve 'unknown' type error in JSX by ensuring the return type of Map.get() is inferred correctly.
@@ -265,13 +260,19 @@ const LandForm: React.FC<{ isOpen: boolean, onClose: () => void, land: Land | nu
                 const cashAccount = mappings?.paymentMethods?.CASH || '1111';
                 const commissionRevenueAccount = mappings?.revenue?.OFFICE_COMMISSION || '4120';
                 const landId = land?.id || 'new-land';
-                await (dbEngine as Dexie).transaction('rw', [dbEngine.journalEntries, dbEngine.serials], async (tx) => {
-                    await postJournalEntry(tx, {
-                        dr: cashAccount,
-                        cr: commissionRevenueAccount,
-                        amount: data.commission!,
-                        ref: `LAND-SALE-${landId}`,
-                    });
+                await dataService.add('journalEntries', {
+                    date: new Date().toISOString().slice(0, 10),
+                    accountId: cashAccount,
+                    amount: data.commission!,
+                    type: 'DEBIT',
+                    sourceId: `LAND-SALE-${landId}`,
+                });
+                await dataService.add('journalEntries', {
+                    date: new Date().toISOString().slice(0, 10),
+                    accountId: commissionRevenueAccount,
+                    amount: data.commission!,
+                    type: 'CREDIT',
+                    sourceId: `LAND-SALE-${landId}`,
                 });
                 toast.success('تم تسجيل قيد إيراد عمولة بيع الأرض.');
             } catch (err) {

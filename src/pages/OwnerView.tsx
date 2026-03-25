@@ -3,16 +3,14 @@ import { useParams, useSearchParams } from 'react-router-dom';
 import { useApp } from '../contexts/AppContext';
 import { formatCurrency } from '../utils/helpers';
 import Card from '../components/ui/Card';
-import { useLiveQuery } from 'dexie-react-hooks';
-import { dbEngine } from '../services/db';
 
 const OwnerView: React.FC = () => {
     const { ownerId } = useParams<{ ownerId: string }>();
     const [searchParams] = useSearchParams();
     const authToken = searchParams.get('auth');
-    const { settings, ownerBalances } = useApp();
+    const { db, settings, ownerBalances } = useApp();
     
-    const owner = useLiveQuery(() => dbEngine.owners.get(ownerId || ''), [ownerId]);
+    const owner = (db.owners || []).find(o => o.id === ownerId);
 
     // --- Authentication and Validation ---
     let isValid = false;

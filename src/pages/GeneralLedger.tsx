@@ -7,17 +7,15 @@ import Card from '../components/ui/Card';
 import Modal from '../components/ui/Modal';
 import { formatCurrency, formatDate } from '../utils/helpers';
 import { Calculator, PlusCircle } from 'lucide-react';
-import { useLiveQuery } from 'dexie-react-hooks';
-import { dbEngine } from '../services/db';
 import { toast } from 'react-hot-toast';
 
 const GeneralLedger: React.FC = () => {
     // FIX: Use financeService for financial operations
-    const { financeService } = useApp();
+    const { db, financeService } = useApp();
     const [isModalOpen, setIsModalOpen] = useState(false);
 
-    const journalEntries = useLiveQuery(() => dbEngine.journalEntries.orderBy('createdAt').reverse().toArray(), []);
-    const accounts = useLiveQuery(() => dbEngine.accounts.toArray(), []);
+    const journalEntries = useMemo(() => [...(db.journalEntries || [])].sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0)), [db.journalEntries]);
+    const accounts = db.accounts || [];
     // FIX: Add explicit type to Map to help TypeScript inference
     const accountsMap = useMemo(() => new Map<string, Account>(accounts?.map(a => [a.id, a])), [accounts]);
 
@@ -69,7 +67,8 @@ interface Line {
 }
 
 const ManualJournalVoucherForm: React.FC<{ isOpen: boolean, onClose: () => void, onSubmit: (data: any) => Promise<void> }> = ({ isOpen, onClose, onSubmit }) => {
-    const accounts = useLiveQuery(() => dbEngine.accounts.toArray(), []);
+    const { db } = useApp();
+    const accounts = db.accounts || [];
     const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
     const [notes, setNotes] = useState('');
     const [lines, setLines] = useState<Line[]>([
