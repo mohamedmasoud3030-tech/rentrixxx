@@ -30,7 +30,7 @@ const DEFAULT_SETTINGS: Settings = {
         documentNumbering: { invoicePrefix: 'INV', receiptPrefix: 'REC', expensePrefix: 'EXP', contractPrefix: 'CTR' },
         maintenance: { defaultChargedTo: 'OWNER' },
     },
-    accounting: { accountMappings: { paymentMethods: { CASH: '1111', BANK: '1112', POS: '1112', OTHER: '1111' }, expenseCategories: { 'صيانة': '5110', 'عمولات موظفين': '5102', default: '5120' }, revenue: { RENT: '4110', OFFICE_COMMISSION: '4120' }, accountsReceivable: '1201', vatPayable: '2130', vatReceivable: '1130', ownersPayable: '2121' } },
+    accounting: { accountMappings: { paymentMethods: { CASH: '1111', BANK: '1112', POS: '1112', CHECK: '1112', OTHER: '1111' }, expenseCategories: { 'صيانة': '5110', 'عمولات موظفين': '5102', default: '5120' }, revenue: { RENT: '4110', OFFICE_COMMISSION: '4120' }, accountsReceivable: '1201', vatPayable: '2130', vatReceivable: '1130', ownersPayable: '2121' } },
     appearance: { theme: 'light', primaryColor: '#1e3a8a' },
     backup: { autoBackup: { isEnabled: true, passphraseIsSet: false, lastBackupTime: null, lastBackupStatus: null, operationCounter: 0, operationsThreshold: 25 } },
     security: { sessionTimeout: 0 },
@@ -417,26 +417,56 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const startTime = performance.now();
     const today = new Date();
     const currentMonthYm = today.toISOString().slice(0, 7);
+    const monthName = today.toLocaleString('ar-EG', { month: 'long' });
 
     const activeContracts = await supabaseData.fetchWhere<Contract>('contracts', 'status', 'ACTIVE');
     const allInvoices = await supabaseData.fetchAll<Invoice>('invoices');
     const currentMonthInvoices = allInvoices.filter(i => i.dueDate.startsWith(currentMonthYm));
+    const allTenants = await supabaseData.fetchAll<Tenant>('tenants');
+    const allUnits = await supabaseData.fetchAll<Unit>('units');
 
     let count = 0;
     const taxRate = settings.operational?.taxRate ?? 0;
+    const invoiceNotifications: Array<{ tenantName: string; tenantPhone: string; unitName: string; amount: number; dueDate: string }> = [];
 
     for (const c of activeContracts) {
       const hasInvoice = currentMonthInvoices.some(i => i.contractId === c.id && i.type === 'RENT');
       if (!hasInvoice) {
         const taxAmount = (c.rent * taxRate) / 100;
+        const dueDate = `${currentMonthYm}-${String(c.dueDay).padStart(2, '0')}`;
         await add('invoices', {
           contractId: c.id,
-          dueDate: `${currentMonthYm}-${String(c.dueDay).padStart(2, '0')}`,
+          dueDate,
           amount: c.rent, taxAmount: taxAmount > 0 ? taxAmount : undefined,
           paidAmount: 0, status: 'UNPAID', type: 'RENT',
-          notes: `فاتورة إيجار شهر ${today.toLocaleString('ar-EG', { month: 'long' })}`,
+          notes: `فاتورة إيجار شهر ${monthName}`,
         });
         count++;
+
+        const tenant = allTenants.find(t => t.id === c.tenantId);
+        const unit = allUnits.find(u => u.id === c.unitId);
+        if (tenant?.phone) {
+          invoiceNotifications.push({
+            tenantName: tenant.name, tenantPhone: tenant.phone,
+            unitName: unit?.name || '', amount: c.rent + (taxAmount > 0 ? taxAmount : 0), dueDate,
+          });
+        }
+      }
+    }
+
+    if (invoiceNotifications.length > 0) {
+      const companyName = settings.general?.company?.name || 'إدارة العقارات';
+      for (const n of invoiceNotifications) {
+        const message = `السلام عليكم ${n.tenantName}،\nنود إبلاغكم بصدور فاتورة إيجار الوحدة (${n.unitName}) لشهر ${monthName} بمبلغ ${n.amount} ر.ع.\nتاريخ الاستحقاق: ${n.dueDate}\nشاكرين تعاونكم.\n${companyName}`;
+        const phone = n.tenantPhone.replace(/\D/g, '');
+        await supabaseData.insert('outgoingNotifications', {
+          id: crypto.randomUUID(),
+          recipientName: n.tenantName,
+          recipientContact: phone,
+          message,
+          status: 'PENDING',
+          createdAt: Date.now(),
+        });
       }
     }
 

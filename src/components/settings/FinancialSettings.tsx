@@ -68,6 +68,7 @@ const FinancialSettings: React.FC = () => {
                     <AccountSelect label="نقدي (صندوق)" value={mappings.paymentMethods.CASH} onChange={v => setPaymentMethod('CASH', v)} />
                     <AccountSelect label="تحويل بنكي" value={mappings.paymentMethods.BANK} onChange={v => setPaymentMethod('BANK', v)} />
                     <AccountSelect label="شبكة (POS)" value={mappings.paymentMethods.POS} onChange={v => setPaymentMethod('POS', v)} />
+                    <AccountSelect label="شيك" value={mappings.paymentMethods.CHECK} onChange={v => setPaymentMethod('CHECK', v)} />
                     <AccountSelect label="أخرى" value={mappings.paymentMethods.OTHER} onChange={v => setPaymentMethod('OTHER', v)} />
                 </div>
             </div>

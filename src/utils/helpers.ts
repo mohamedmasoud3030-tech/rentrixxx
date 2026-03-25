@@ -133,7 +133,7 @@ export const UNIT_STATUS_AR: Record<string, string> = {
 };
 
 export const CHANNEL_AR: Record<string, string> = {
-    CASH: 'نقدي', BANK: 'تحويل بنكي', POS: 'شبكة', OTHER: 'أخرى'
+    CASH: 'نقدي', BANK: 'تحويل بنكي', POS: 'شبكة', CHECK: 'شيك', OTHER: 'أخرى'
 };
 
 export const EXPENSE_STATUS_AR: Record<string, string> = {

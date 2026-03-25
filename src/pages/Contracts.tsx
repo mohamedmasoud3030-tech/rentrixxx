@@ -7,7 +7,7 @@ import ActionsMenu, { EditAction, DeleteAction, PrintAction } from '../component
 import { formatCurrency, toArabicDigits, getStatusBadgeClass, formatDateTime, formatDate, exportToCsv, CONTRACT_STATUS_AR } from '../utils/helpers';
 import HardGateBanner from '../components/shared/HardGateBanner';
 import AttachmentsManager from '../components/shared/AttachmentsManager';
-import { FileText, Download, CheckCircle, AlertTriangle, Clock, Users } from 'lucide-react';
+import { FileText, Download, CheckCircle, AlertTriangle, Clock, Users, RefreshCw } from 'lucide-react';
 import PrintPreviewModal from '../components/shared/PrintPreviewModal';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { exportContractToPdf } from '../services/pdfService';
@@ -153,6 +153,42 @@ const Contracts: React.FC = () => {
         exportContractToPdf(contract, db);
     };
 
+    const handleRenewContract = async (contract: Contract) => {
+        try {
+            const oldEnd = new Date(contract.end);
+            const newStart = new Date(oldEnd);
+            newStart.setDate(newStart.getDate() + 1);
+            const newEnd = new Date(newStart);
+            newEnd.setFullYear(newEnd.getFullYear() + 1);
+            newEnd.setDate(newEnd.getDate() - 1);
+
+            const newContract = await dataService.add('contracts', {
+                unitId: contract.unitId,
+                tenantId: contract.tenantId,
+                rent: contract.rent,
+                dueDay: contract.dueDay,
+                start: newStart.toISOString().slice(0, 10),
+                end: newEnd.toISOString().slice(0, 10),
+                deposit: contract.deposit,
+                status: 'ACTIVE' as const,
+                sponsorName: contract.sponsorName || '',
+                sponsorId: contract.sponsorId || '',
+                sponsorPhone: contract.sponsorPhone || '',
+            });
+
+            if (!newContract) {
+                toast.error('فشل إنشاء العقد الجديد. لم يتم تغيير العقد الحالي.');
+                return;
+            }
+
+            await dataService.update('contracts', contract.id, { status: 'ENDED' as const });
+            toast.success('تم تجديد العقد بنجاح! العقد القديم أصبح منتهياً والعقد الجديد نشط.');
+        } catch (err: any) {
+            console.error('Contract renewal failed:', err);
+            toast.error('حدث خطأ أثناء تجديد العقد: ' + (err?.message || 'خطأ غير معروف'));
+        }
+    };
+
     const handleExportCsv = () => {
         const rows = db.contracts.map(c => {
             const unit = db.units.find(u => u.id === c.unitId);
@@ -276,6 +312,7 @@ const Contracts: React.FC = () => {
                                                     EditAction(() => handleOpenModal(c)),
                                                     PrintAction(() => handlePrint(c.id)),
                                                     { label: 'تصدير PDF', icon: <FileText size={16} />, onClick: () => handleExportPdf(c) },
+                                                    ...(c.status === 'ACTIVE' ? [{ label: 'تجديد العقد', icon: <RefreshCw size={16} />, onClick: () => handleRenewContract(c) }] : []),
                                                     DeleteAction(() => handleDelete(c.id)),
                                                 ]} />
                                             </td>

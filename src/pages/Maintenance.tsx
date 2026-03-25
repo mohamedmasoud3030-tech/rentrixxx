@@ -10,6 +10,7 @@ import { formatCurrency, formatDate, getStatusBadgeClass } from '../utils/helper
 import HardGateBanner from '../components/shared/HardGateBanner';
 import SearchFilterBar from '../components/shared/SearchFilterBar';
 import { toast } from 'react-hot-toast';
+import { Wrench, Clock, Loader2, CheckCircle, DollarSign } from 'lucide-react';
 
 const Maintenance: React.FC = () => {
     // FIX: Use dataService for data manipulation
@@ -49,11 +50,52 @@ const Maintenance: React.FC = () => {
         }).sort((a,b) => new Date(b.requestDate).getTime() - new Date(a.requestDate).getTime());
     }, [db, searchTerm]);
     
+    const maintenanceStats = useMemo(() => {
+        if (!db) return { total: 0, newCount: 0, inProgress: 0, completed: 0, totalCost: 0 };
+        const records = db.maintenanceRecords;
+        return {
+            total: records.length,
+            newCount: records.filter(r => r.status === 'NEW').length,
+            inProgress: records.filter(r => r.status === 'IN_PROGRESS').length,
+            completed: records.filter(r => r.status === 'COMPLETED' || r.status === 'CLOSED').length,
+            totalCost: records.reduce((s, r) => s + (r.cost || 0), 0),
+        };
+    }, [db]);
+
     if (!db) return null;
 
     return (
         <div className="space-y-6">
             <HardGateBanner />
+
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+                <div className="bg-card rounded-xl border border-border p-3 text-center">
+                    <Wrench size={18} className="mx-auto mb-1 text-blue-500" />
+                    <p className="text-lg font-black">{maintenanceStats.total}</p>
+                    <p className="text-[10px] text-text-muted">إجمالي الطلبات</p>
+                </div>
+                <div className="bg-card rounded-xl border border-border p-3 text-center">
+                    <Clock size={18} className="mx-auto mb-1 text-amber-500" />
+                    <p className="text-lg font-black text-amber-600">{maintenanceStats.newCount}</p>
+                    <p className="text-[10px] text-text-muted">طلبات جديدة</p>
+                </div>
+                <div className="bg-card rounded-xl border border-border p-3 text-center">
+                    <Loader2 size={18} className="mx-auto mb-1 text-orange-500" />
+                    <p className="text-lg font-black text-orange-600">{maintenanceStats.inProgress}</p>
+                    <p className="text-[10px] text-text-muted">قيد التنفيذ</p>
+                </div>
+                <div className="bg-card rounded-xl border border-border p-3 text-center">
+                    <CheckCircle size={18} className="mx-auto mb-1 text-emerald-500" />
+                    <p className="text-lg font-black text-emerald-600">{maintenanceStats.completed}</p>
+                    <p className="text-[10px] text-text-muted">مكتملة</p>
+                </div>
+                <div className="bg-card rounded-xl border border-border p-3 text-center">
+                    <DollarSign size={18} className="mx-auto mb-1 text-red-500" />
+                    <p className="text-lg font-black text-red-600" dir="ltr">{formatCurrency(maintenanceStats.totalCost, db.settings.operational.currency)}</p>
+                    <p className="text-[10px] text-text-muted">إجمالي التكاليف</p>
+                </div>
+            </div>
+
             <Card>
                 <div className="flex justify-between items-center mb-4">
                     <h2 className="text-xl font-bold">طلبات الصيانة</h2>

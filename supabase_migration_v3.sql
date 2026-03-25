@@ -101,6 +101,16 @@ ALTER TABLE public.budgets ADD COLUMN IF NOT EXISTS updated_at BIGINT;
 ALTER TABLE public.outgoing_notifications ADD COLUMN IF NOT EXISTS recipient_name TEXT;
 ALTER TABLE public.outgoing_notifications ADD COLUMN IF NOT EXISTS recipient_contact TEXT;
 
+-- RECEIPTS: add check/electronic payment tracking fields
+ALTER TABLE public.receipts ADD COLUMN IF NOT EXISTS check_number TEXT;
+ALTER TABLE public.receipts ADD COLUMN IF NOT EXISTS check_bank TEXT;
+ALTER TABLE public.receipts ADD COLUMN IF NOT EXISTS check_date TEXT;
+ALTER TABLE public.receipts ADD COLUMN IF NOT EXISTS check_status TEXT DEFAULT 'PENDING';
+
+-- APP_NOTIFICATIONS: add WhatsApp invoice notification fields
+ALTER TABLE public.app_notifications ADD COLUMN IF NOT EXISTS recipient_phone TEXT;
+ALTER TABLE public.app_notifications ADD COLUMN IF NOT EXISTS whatsapp_url TEXT;
+
 -- ============================================================
 -- DONE – paste into Supabase SQL Editor and click Run
 -- ============================================================
