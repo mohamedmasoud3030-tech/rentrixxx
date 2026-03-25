@@ -28,15 +28,14 @@ const Maintenance: React.FC = () => {
         setIsModalOpen(false);
     };
 
-    const handleDelete = (id: string) => {
+    const handleDelete = async (id: string) => {
         if (!db) return;
         const record = db.maintenanceRecords.find(r => r.id === id);
         if (record?.expenseId || record?.invoiceId) {
             toast.error("لا يمكن حذف طلب الصيانة هذا لأنه مرتبط بحركة مالية. يرجى إلغاء المصروف أو الفاتورة أولاً.");
             return;
         }
-        // FIX: Use dataService for data manipulation
-        dataService.remove('maintenanceRecords', id);
+        await dataService.remove('maintenanceRecords', id);
     };
 
     const expensesMap = useMemo(() => new Map(db?.expenses.map(e => [e.id, e])), [db?.expenses]);
@@ -206,11 +205,9 @@ const MaintenanceForm: React.FC<{ isOpen: boolean, onClose: () => void, record: 
                     }
                 }
             }
-            // FIX: Use dataService for data manipulation
-            dataService.update('maintenanceRecords', record.id, updates);
-        } else { // This is a new record
-            // FIX: Use dataService for data manipulation
-            dataService.add('maintenanceRecords', { unitId, requestDate, description, status, cost, chargedTo });
+            await dataService.update('maintenanceRecords', record.id, updates);
+        } else {
+            await dataService.add('maintenanceRecords', { unitId, requestDate, description, status, cost, chargedTo });
         }
         onClose();
     };

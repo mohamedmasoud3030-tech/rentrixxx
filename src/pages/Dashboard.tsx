@@ -13,6 +13,9 @@ import {
 import { useLiveQuery } from 'dexie-react-hooks';
 import { dbEngine } from '../services/db';
 import { Contract, Tenant, Unit, Receipt as ReceiptType, Invoice, Expense, MaintenanceRecord } from '../types';
+import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
+import { startOfMonth, endOfMonth, subMonths, eachMonthOfInterval, isWithinInterval, format } from 'date-fns';
+import { ar } from 'date-fns/locale';
 
 const QuickSearch = () => {
     const [query, setQuery] = useState("");
@@ -266,6 +269,8 @@ const Dashboard: React.FC = () => {
                 />
             </div>
 
+            <DashboardRevenueChart receipts={receipts} expenses={expenses} currency={currency} />
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="bg-card p-5 rounded-2xl border border-border shadow-sm">
                     <div className="flex justify-between items-center mb-3">
@@ -412,6 +417,58 @@ const Dashboard: React.FC = () => {
     );
 };
 
+
+const DashboardRevenueChart: React.FC<{ receipts: ReceiptType[]; expenses: Expense[]; currency: string }> = ({ receipts, expenses, currency }) => {
+    const chartData = useMemo(() => {
+        const now = new Date();
+        const months = eachMonthOfInterval({ start: subMonths(startOfMonth(now), 5), end: endOfMonth(now) });
+        return months.map(monthStart => {
+            const monthEnd = endOfMonth(monthStart);
+            const label = format(monthStart, 'MMM', { locale: ar });
+            const revenue = receipts
+                .filter(r => r.status === 'POSTED' && r.dateTime && isWithinInterval(new Date(r.dateTime), { start: monthStart, end: monthEnd }))
+                .reduce((s, r) => s + r.amount, 0);
+            const exp = expenses
+                .filter(e => e.status === 'POSTED' && e.dateTime && isWithinInterval(new Date(e.dateTime), { start: monthStart, end: monthEnd }))
+                .reduce((s, e) => s + e.amount, 0);
+            return { name: label, revenue, expenses: exp };
+        });
+    }, [receipts, expenses]);
+
+    return (
+        <div className="bg-card p-5 rounded-2xl border border-border shadow-sm">
+            <div className="flex justify-between items-center mb-3">
+                <h3 className="font-bold text-text flex items-center gap-2">
+                    <TrendingUp size={18} className="text-emerald-500" />
+                    اتجاه الإيرادات والمصروفات
+                </h3>
+                <span className="text-xs text-text-muted">آخر 6 أشهر</span>
+            </div>
+            <div className="h-52" dir="ltr">
+                <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart data={chartData}>
+                        <defs>
+                            <linearGradient id="dashRevGrad" x1="0" y1="0" x2="0" y2="1">
+                                <stop offset="5%" stopColor="#10b981" stopOpacity={0.3} />
+                                <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
+                            </linearGradient>
+                            <linearGradient id="dashExpGrad" x1="0" y1="0" x2="0" y2="1">
+                                <stop offset="5%" stopColor="#ef4444" stopOpacity={0.3} />
+                                <stop offset="95%" stopColor="#ef4444" stopOpacity={0} />
+                            </linearGradient>
+                        </defs>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                        <XAxis dataKey="name" fontSize={12} />
+                        <YAxis fontSize={11} tickFormatter={(v) => v > 0 ? `${(v / 1000).toFixed(0)}k` : '0'} />
+                        <Tooltip formatter={(value: number) => formatCurrency(value, currency as any)} />
+                        <Area type="monotone" dataKey="revenue" name="الإيرادات" stroke="#10b981" fill="url(#dashRevGrad)" strokeWidth={2} />
+                        <Area type="monotone" dataKey="expenses" name="المصروفات" stroke="#ef4444" fill="url(#dashExpGrad)" strokeWidth={2} />
+                    </AreaChart>
+                </ResponsiveContainer>
+            </div>
+        </div>
+    );
+};
 
 const KpiMini: React.FC<{ label: string; value: string | number; icon: React.ReactNode; color: string; onClick?: () => void }> = ({ label, value, icon, color, onClick }) => {
     const colorMap: Record<string, string> = {

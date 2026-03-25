@@ -1,719 +1,990 @@
-
 import React, { useState, useMemo, useEffect } from 'react';
 import { useApp } from '../contexts/AppContext';
 import Card from '../components/ui/Card';
 import { formatCurrency, formatDate } from '../utils/helpers';
-import { Printer, FileText, BarChart3, TrendingUp, Wallet, TrendingDown, Users, PieChart, ChevronsRight, ArrowUp, ArrowDown, Banknote, Percent } from 'lucide-react';
+import {
+  Printer, FileText, BarChart3, TrendingUp, Wallet, TrendingDown, Users,
+  PieChart, ArrowUp, ArrowDown, Banknote, Percent, ChevronLeft,
+  Building2, CalendarRange, Filter, Download
+} from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import PrintPreviewModal from '../components/shared/PrintPreviewModal';
-import { exportRentRollToPdf, exportOwnerLedgerToPdf, exportTenantStatementToPdf, exportIncomeStatementToPdf, exportTrialBalanceToPdf, exportBalanceSheetToPdf, exportAgedReceivablesToPdf } from '../services/pdfService';
+import {
+  exportRentRollToPdf, exportOwnerLedgerToPdf, exportTenantStatementToPdf,
+  exportIncomeStatementToPdf, exportTrialBalanceToPdf, exportBalanceSheetToPdf,
+  exportAgedReceivablesToPdf
+} from '../services/pdfService';
 import { calculateBalanceSheetData, calculateIncomeStatementData, calculateAgedReceivables } from '../services/accountingService';
-import { startOfMonth, endOfMonth, subMonths, startOfYear, endOfYear, isWithinInterval } from 'date-fns';
+import { startOfMonth, endOfMonth, subMonths, startOfYear, endOfYear, isWithinInterval, format, eachMonthOfInterval } from 'date-fns';
+import { ar } from 'date-fns/locale';
+import {
+  BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid,
+  PieChart as RechartsPie, Pie, Cell, Legend, AreaChart, Area,
+  LineChart, Line
+} from 'recharts';
 
-type ReportTab = 'rent_roll' | 'owner' | 'tenant' | 'income_statement' | 'balance_sheet' | 'trial_balance' | 'aged_receivables';
+type ReportTab = 'overview' | 'rent_roll' | 'owner' | 'tenant' | 'income_statement' | 'balance_sheet' | 'trial_balance' | 'aged_receivables';
 
-const ReportCard: React.FC<{title: string, subtitle: string, icon: React.ReactNode, onClick: () => void}> = ({ title, subtitle, icon, onClick }) => (
-    <div onClick={onClick} className="bg-card border border-border rounded-lg p-5 text-center flex flex-col items-center justify-center cursor-pointer hover:border-primary hover:shadow-lg transition-all">
-        <div className="bg-primary/10 text-primary p-3 rounded-full mb-3">{icon}</div>
-        <h3 className="font-bold text-text">{title}</h3>
-        <p className="text-xs text-text-muted mt-1">{subtitle}</p>
+const CHART_COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4', '#ec4899', '#14b8a6'];
+
+const ReportPrintableContent: React.FC<{ title: string; date: string; children: React.ReactNode }> = ({ title, date, children }) => {
+  const { settings } = useApp();
+  const { company } = settings.general;
+  return (
+    <div>
+      <div className="text-center mb-6">
+        <h1 className="text-xl font-bold">{company.name}</h1>
+        <p className="text-xs text-text-muted">{company.address} - {company.phone}</p>
+      </div>
+      <h2 className="text-2xl font-bold text-center mb-2">{title}</h2>
+      <p className="text-center text-sm text-text-muted mb-6">{date}</p>
+      {children}
     </div>
-);
-
-const KpiDisplayCard: React.FC<{ title: string; value: string; icon: React.ReactNode; colorClass: string; }> = ({ title, value, icon, colorClass }) => (
-    <div className="bg-card border border-border rounded-lg p-5 shadow-sm flex items-start gap-4">
-        <div className={`p-3 rounded-full ${colorClass}`}>
-            {icon}
-        </div>
-        <div>
-            <p className="text-sm text-text-muted">{title}</p>
-            <p className="text-2xl font-bold text-text" dir="ltr">{value}</p>
-        </div>
-    </div>
-);
-
-
-const Reports: React.FC = () => {
-    const navigate = useNavigate();
-    const location = useLocation();
-    const { db, contractBalances, ownerBalances } = useApp();
-    const queryParams = useMemo(() => new URLSearchParams(location.search), [location.search]);
-    
-    const [activeTab, setActiveTab] = useState<ReportTab | null>(queryParams.get('tab') as ReportTab | null);
-    
-    // --- State for KPI date filtering ---
-    const [dateRange, setDateRange] = useState({ 
-        start: startOfMonth(new Date()), 
-        end: endOfMonth(new Date()) 
-    });
-    const [rangeLabel, setRangeLabel] = useState('هذا الشهر');
-
-    const setRange = (label: 'هذا الشهر' | 'الشهر الماضي' | 'هذا العام') => {
-        const now = new Date();
-        let start, end;
-        switch (label) {
-            case 'هذا الشهر':
-                start = startOfMonth(now);
-                end = endOfMonth(now);
-                break;
-            case 'الشهر الماضي':
-                const lastMonth = subMonths(now, 1);
-                start = startOfMonth(lastMonth);
-                end = endOfMonth(lastMonth);
-                break;
-            case 'هذا العام':
-                start = startOfYear(now);
-                end = endOfYear(now);
-                break;
-        }
-        setDateRange({ start, end });
-        setRangeLabel(label);
-    };
-
-    const kpiData = useMemo(() => {
-        if (!db) return null;
-        
-        // Financial KPIs based on date range
-        const revenue = db.receipts
-            .filter(r => r.status === 'POSTED' && isWithinInterval(new Date(r.dateTime), dateRange))
-            .reduce((sum, r) => sum + r.amount, 0);
-
-        const expenses = db.expenses
-            .filter(e => e.status === 'POSTED' && (e.chargedTo === 'OFFICE' || e.chargedTo === 'OWNER') && isWithinInterval(new Date(e.dateTime), dateRange))
-            .reduce((sum, e) => sum + e.amount, 0);
-
-        const netIncome = revenue - expenses;
-
-        // Overall Operational KPIs (not date-range dependent)
-        const activeContracts = db.contracts.filter(c => c.status === 'ACTIVE').length;
-        const totalUnits = db.units.length;
-        const occupancyRate = totalUnits > 0 ? (activeContracts / totalUnits) * 100 : 0;
-
-        const totalReceivables = Object.values(contractBalances).reduce((sum, b) => sum + (b.balance > 0 ? b.balance : 0), 0);
-        const totalOwnerPayables = Object.values(ownerBalances).reduce((sum, b) => sum + (b.net > 0 ? b.net : 0), 0);
-
-        return {
-            revenue,
-            expenses,
-            netIncome,
-            occupancyRate,
-            totalReceivables,
-            totalOwnerPayables,
-        };
-    }, [db, dateRange, contractBalances, ownerBalances]);
-
-    const handleCardClick = (tab: ReportTab) => {
-        setActiveTab(tab);
-        navigate(`/reports?tab=${tab}`);
-    };
-
-    const renderContent = () => {
-        switch (activeTab) {
-            case 'rent_roll': return <RentRoll />;
-            case 'owner': return <OwnerLedger />;
-            case 'tenant': return <TenantStatement />;
-            case 'income_statement': return <IncomeStatement />;
-            case 'balance_sheet': return <BalanceSheet />;
-            case 'trial_balance': return <TrialBalance />;
-            case 'aged_receivables': return <AgedReceivables />;
-            default: return null;
-        }
-    };
-    
-    if (!kpiData) return null;
-
-    return (
-        <div className="space-y-6">
-            {!activeTab ? (
-                <>
-                    <Card>
-                        <div className="flex flex-wrap justify-between items-center mb-4 gap-4">
-                            <h2 className="text-xl font-bold">مؤشرات الأداء الرئيسية (KPIs)</h2>
-                            <div className="flex items-center gap-2 p-1 bg-background rounded-md border border-border">
-                                {['هذا الشهر', 'الشهر الماضي', 'هذا العام'].map((label) => (
-                                    <button key={label} onClick={() => setRange(label as any)} className={`px-3 py-1 text-sm rounded ${rangeLabel === label ? 'bg-primary text-white shadow' : 'text-text-muted hover:bg-border/50'}`}>
-                                        {label}
-                                    </button>
-                                ))}
-                            </div>
-                        </div>
-                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                            <KpiDisplayCard title={`إجمالي الإيرادات (${rangeLabel})`} value={formatCurrency(kpiData.revenue)} icon={<ArrowUp size={24} />} colorClass="bg-green-100 dark:bg-green-900/50 text-green-600" />
-                            <KpiDisplayCard title={`إجمالي المصروفات (${rangeLabel})`} value={formatCurrency(kpiData.expenses)} icon={<ArrowDown size={24} />} colorClass="bg-red-100 dark:bg-red-900/50 text-red-600" />
-                            <KpiDisplayCard title={`صافي الدخل (${rangeLabel})`} value={formatCurrency(kpiData.netIncome)} icon={<Banknote size={24} />} colorClass="bg-blue-100 dark:bg-blue-900/50 text-blue-600" />
-                            <KpiDisplayCard title="نسبة الإشغال الحالية" value={`${kpiData.occupancyRate.toFixed(1)} %`} icon={<Percent size={24} />} colorClass="bg-indigo-100 dark:bg-indigo-900/50 text-indigo-600" />
-                            <KpiDisplayCard title="إجمالي الذمم المدينة" value={formatCurrency(kpiData.totalReceivables)} icon={<Users size={24} />} colorClass="bg-yellow-100 dark:bg-yellow-900/50 text-yellow-600" />
-                            <KpiDisplayCard title="إجمالي مستحقات الملاك" value={formatCurrency(kpiData.totalOwnerPayables)} icon={<Wallet size={24} />} colorClass="bg-purple-100 dark:bg-purple-900/50 text-purple-600" />
-                        </div>
-                    </Card>
-
-                    <div className="space-y-4">
-                        <h2 className="text-xl font-bold">التقارير التفصيلية</h2>
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                            <ReportCard title="التقارير المالية" subtitle="قائمة الدخل، الميزانية، ميزان المراجعة" icon={<BarChart3 />} onClick={() => handleCardClick('income_statement')} />
-                            <ReportCard title="كشوفات الحساب" subtitle="للملاك والمستأجرين" icon={<Users />} onClick={() => handleCardClick('owner')} />
-                            <ReportCard title="تحليل الذمم" subtitle="تقارير أعمار الديون والمتأخرات" icon={<TrendingDown />} onClick={() => handleCardClick('aged_receivables')} />
-                            <ReportCard title="تقارير تشغيلية" subtitle="قائمة الإيجارات الحالية (Rent Roll)" icon={<PieChart />} onClick={() => handleCardClick('rent_roll')} />
-                        </div>
-                    </div>
-                </>
-            ) : (
-                <Card>
-                    <button onClick={() => { setActiveTab(null); navigate('/reports'); }} className="btn btn-ghost mb-4">← العودة إلى قائمة التقارير</button>
-                    {renderContent()}
-                </Card>
-            )}
-        </div>
-    );
+  );
 };
 
-// ... (rest of the report components: RentRoll, TrialBalance, etc. remain the same) ...
+const MiniKpi: React.FC<{ label: string; value: string; icon: React.ReactNode; color: string }> = ({ label, value, icon, color }) => (
+  <div className={`flex items-center gap-3 p-4 rounded-xl border border-border bg-card`}>
+    <div className={`p-2.5 rounded-lg ${color}`}>{icon}</div>
+    <div>
+      <p className="text-xs text-text-muted">{label}</p>
+      <p className="text-lg font-bold text-text" dir="ltr">{value}</p>
+    </div>
+  </div>
+);
 
-const ReportPrintableContent: React.FC<{title: string, date: string, children: React.ReactNode}> = ({title, date, children}) => {
-    const { settings } = useApp();
-    // FIX: Corrected path to company settings
-    const { company } = settings.general;
-    return (
-        <div>
-            <div className="text-center mb-6">
-                 <h1 className="text-xl font-bold">{company.name}</h1>
-                <p className="text-xs text-text-muted">{company.address} - هاتف: {company.phone}</p>
-            </div>
-            <h2 className="text-2xl font-bold text-center mb-2">{title}</h2>
-            <p className="text-center text-sm text-text-muted mb-6">{date}</p>
-            {children}
-        </div>
-    );
+const SectionHeader: React.FC<{ title: string; icon: React.ReactNode; children?: React.ReactNode }> = ({ title, icon, children }) => (
+  <div className="flex flex-wrap justify-between items-center gap-3 mb-4">
+    <h3 className="text-lg font-bold flex items-center gap-2">{icon} {title}</h3>
+    {children}
+  </div>
+);
+
+const ActionBar: React.FC<{ onPrint: () => void; onExport: () => void; children?: React.ReactNode }> = ({ onPrint, onExport, children }) => (
+  <div className="flex flex-wrap gap-3 items-end mb-6">
+    {children}
+    <div className="flex gap-2 mr-auto">
+      <button onClick={onPrint} className="btn btn-primary flex items-center gap-2 text-sm"><Printer size={15} /> طباعة</button>
+      <button onClick={onExport} className="btn btn-secondary flex items-center gap-2 text-sm"><Download size={15} /> PDF</button>
+    </div>
+  </div>
+);
+
+const Reports: React.FC = () => {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { db, contractBalances, ownerBalances, settings } = useApp();
+  const queryParams = useMemo(() => new URLSearchParams(location.search), [location.search]);
+  const [activeTab, setActiveTab] = useState<ReportTab>(queryParams.get('tab') as ReportTab || 'overview');
+  const currency = settings.operational?.currency ?? 'OMR';
+
+  const handleTabChange = (tab: ReportTab) => {
+    setActiveTab(tab);
+    navigate(`/reports?tab=${tab}`, { replace: true });
+  };
+
+  const tabs: { id: ReportTab; label: string; icon: React.ReactNode }[] = [
+    { id: 'overview', label: 'نظرة عامة', icon: <BarChart3 size={16} /> },
+    { id: 'income_statement', label: 'قائمة الدخل', icon: <TrendingUp size={16} /> },
+    { id: 'balance_sheet', label: 'الميزانية', icon: <Wallet size={16} /> },
+    { id: 'trial_balance', label: 'ميزان المراجعة', icon: <Filter size={16} /> },
+    { id: 'rent_roll', label: 'قائمة الإيجارات', icon: <Building2 size={16} /> },
+    { id: 'owner', label: 'كشف حساب المالك', icon: <Users size={16} /> },
+    { id: 'tenant', label: 'كشف حساب المستأجر', icon: <Users size={16} /> },
+    { id: 'aged_receivables', label: 'أعمار الديون', icon: <CalendarRange size={16} /> },
+  ];
+
+  const renderContent = () => {
+    switch (activeTab) {
+      case 'overview': return <ReportsOverview currency={currency} />;
+      case 'rent_roll': return <RentRoll />;
+      case 'owner': return <OwnerLedger />;
+      case 'tenant': return <TenantStatement />;
+      case 'income_statement': return <IncomeStatement />;
+      case 'balance_sheet': return <BalanceSheet />;
+      case 'trial_balance': return <TrialBalance />;
+      case 'aged_receivables': return <AgedReceivables />;
+      default: return <ReportsOverview currency={currency} />;
+    }
+  };
+
+  return (
+    <div className="space-y-4">
+      <Card className="p-2 overflow-hidden">
+        <nav className="flex items-center gap-1 overflow-x-auto whitespace-nowrap">
+          {tabs.map(tab => (
+            <button
+              key={tab.id}
+              onClick={() => handleTabChange(tab.id)}
+              className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold transition-all ${
+                activeTab === tab.id ? 'bg-primary text-white shadow-lg' : 'text-text-muted hover:bg-background'
+              }`}
+            >
+              {tab.icon}
+              {tab.label}
+            </button>
+          ))}
+        </nav>
+      </Card>
+      <div>{renderContent()}</div>
+    </div>
+  );
+};
+
+
+const ReportsOverview: React.FC<{ currency: string }> = ({ currency }) => {
+  const { db, contractBalances, ownerBalances, settings } = useApp();
+
+  const monthlyTrend = useMemo(() => {
+    const now = new Date();
+    const months = eachMonthOfInterval({ start: subMonths(startOfMonth(now), 5), end: endOfMonth(now) });
+    return months.map(monthStart => {
+      const monthEnd = endOfMonth(monthStart);
+      const label = format(monthStart, 'MMM', { locale: ar });
+      const revenue = db.receipts
+        .filter(r => r.status === 'POSTED' && isWithinInterval(new Date(r.dateTime), { start: monthStart, end: monthEnd }))
+        .reduce((s, r) => s + r.amount, 0);
+      const expenses = db.expenses
+        .filter(e => e.status === 'POSTED' && isWithinInterval(new Date(e.dateTime), { start: monthStart, end: monthEnd }))
+        .reduce((s, e) => s + e.amount, 0);
+      return { name: label, revenue, expenses, net: revenue - expenses };
+    });
+  }, [db.receipts, db.expenses]);
+
+  const occupancyData = useMemo(() => {
+    const rented = db.units.filter(u => u.status === 'RENTED').length;
+    const available = db.units.filter(u => u.status === 'AVAILABLE').length;
+    const maintenance = db.units.filter(u => u.status === 'MAINTENANCE').length;
+    return [
+      { name: 'مؤجرة', value: rented },
+      { name: 'شاغرة', value: available },
+      { name: 'صيانة', value: maintenance },
+    ].filter(d => d.value > 0);
+  }, [db.units]);
+
+  const expenseCategories = useMemo(() => {
+    const now = new Date();
+    const start = startOfYear(now);
+    const end = endOfYear(now);
+    const catMap = new Map<string, number>();
+    db.expenses
+      .filter(e => e.status === 'POSTED' && isWithinInterval(new Date(e.dateTime), { start, end }))
+      .forEach(e => {
+        const cat = e.category || 'أخرى';
+        catMap.set(cat, (catMap.get(cat) || 0) + e.amount);
+      });
+    return Array.from(catMap.entries()).map(([name, value]) => ({ name, value })).sort((a, b) => b.value - a.value);
+  }, [db.expenses]);
+
+  const summaryKpis = useMemo(() => {
+    const now = new Date();
+    const monthStart = startOfMonth(now);
+    const monthEnd = endOfMonth(now);
+    const revenue = db.receipts.filter(r => r.status === 'POSTED' && isWithinInterval(new Date(r.dateTime), { start: monthStart, end: monthEnd })).reduce((s, r) => s + r.amount, 0);
+    const expenses = db.expenses.filter(e => e.status === 'POSTED' && isWithinInterval(new Date(e.dateTime), { start: monthStart, end: monthEnd })).reduce((s, e) => s + e.amount, 0);
+    const totalReceivables = Object.values(contractBalances).reduce((sum, b) => sum + (b.balance > 0 ? b.balance : 0), 0);
+    const totalOwnerPayables = Object.values(ownerBalances).reduce((sum, b) => sum + (b.net > 0 ? b.net : 0), 0);
+    const occupancyRate = db.units.length > 0 ? (db.contracts.filter(c => c.status === 'ACTIVE').length / db.units.length) * 100 : 0;
+    return { revenue, expenses, net: revenue - expenses, totalReceivables, totalOwnerPayables, occupancyRate };
+  }, [db, contractBalances, ownerBalances]);
+
+  const cur = settings.operational?.currency ?? 'OMR';
+
+  return (
+    <div className="space-y-6">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+        <MiniKpi label="إيرادات الشهر" value={formatCurrency(summaryKpis.revenue, cur)} icon={<ArrowUp size={18} />} color="bg-emerald-100 dark:bg-emerald-900/40 text-emerald-600" />
+        <MiniKpi label="مصروفات الشهر" value={formatCurrency(summaryKpis.expenses, cur)} icon={<ArrowDown size={18} />} color="bg-red-100 dark:bg-red-900/40 text-red-600" />
+        <MiniKpi label="صافي الشهر" value={formatCurrency(summaryKpis.net, cur)} icon={<Banknote size={18} />} color="bg-blue-100 dark:bg-blue-900/40 text-blue-600" />
+        <MiniKpi label="الذمم المدينة" value={formatCurrency(summaryKpis.totalReceivables, cur)} icon={<Users size={18} />} color="bg-amber-100 dark:bg-amber-900/40 text-amber-600" />
+        <MiniKpi label="مستحقات الملاك" value={formatCurrency(summaryKpis.totalOwnerPayables, cur)} icon={<Wallet size={18} />} color="bg-purple-100 dark:bg-purple-900/40 text-purple-600" />
+        <MiniKpi label="نسبة الإشغال" value={`${summaryKpis.occupancyRate.toFixed(0)}%`} icon={<Percent size={18} />} color="bg-indigo-100 dark:bg-indigo-900/40 text-indigo-600" />
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <Card className="lg:col-span-2 p-5">
+          <SectionHeader title="اتجاه الإيرادات والمصروفات (6 أشهر)" icon={<TrendingUp size={18} className="text-primary" />} />
+          <div className="h-72" dir="ltr">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={monthlyTrend}>
+                <defs>
+                  <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#10b981" stopOpacity={0.3} />
+                    <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
+                  </linearGradient>
+                  <linearGradient id="colorExpenses" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#ef4444" stopOpacity={0.3} />
+                    <stop offset="95%" stopColor="#ef4444" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                <XAxis dataKey="name" fontSize={12} />
+                <YAxis fontSize={11} tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`} />
+                <Tooltip formatter={(value: number) => formatCurrency(value, cur)} />
+                <Area type="monotone" dataKey="revenue" name="الإيرادات" stroke="#10b981" fill="url(#colorRevenue)" strokeWidth={2} />
+                <Area type="monotone" dataKey="expenses" name="المصروفات" stroke="#ef4444" fill="url(#colorExpenses)" strokeWidth={2} />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+        </Card>
+
+        <Card className="p-5">
+          <SectionHeader title="توزيع الوحدات" icon={<PieChart size={18} className="text-primary" />} />
+          <div className="h-72" dir="ltr">
+            <ResponsiveContainer width="100%" height="100%">
+              <RechartsPie>
+                <Pie data={occupancyData} cx="50%" cy="45%" innerRadius={50} outerRadius={80} paddingAngle={4} dataKey="value" label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`} labelLine={false} fontSize={11}>
+                  {occupancyData.map((_, i) => <Cell key={i} fill={['#10b981', '#f59e0b', '#6b7280'][i]} />)}
+                </Pie>
+                <Legend wrapperStyle={{ fontSize: 12 }} />
+              </RechartsPie>
+            </ResponsiveContainer>
+          </div>
+        </Card>
+      </div>
+
+      {expenseCategories.length > 0 && (
+        <Card className="p-5">
+          <SectionHeader title="توزيع المصروفات حسب التصنيف (السنة الحالية)" icon={<BarChart3 size={18} className="text-primary" />} />
+          <div className="h-64" dir="ltr">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={expenseCategories} layout="vertical">
+                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                <XAxis type="number" fontSize={11} tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`} />
+                <YAxis type="category" dataKey="name" fontSize={12} width={100} />
+                <Tooltip formatter={(value: number) => formatCurrency(value, cur)} />
+                <Bar dataKey="value" name="المبلغ" fill="#3b82f6" radius={[0, 4, 4, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </Card>
+      )}
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <Card className="p-5">
+          <SectionHeader title="صافي الدخل الشهري" icon={<Banknote size={18} className="text-primary" />} />
+          <div className="h-56" dir="ltr">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={monthlyTrend}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                <XAxis dataKey="name" fontSize={12} />
+                <YAxis fontSize={11} />
+                <Tooltip formatter={(value: number) => formatCurrency(value, cur)} />
+                <Bar dataKey="net" name="صافي الدخل" radius={[4, 4, 0, 0]}>
+                  {monthlyTrend.map((entry, i) => <Cell key={i} fill={entry.net >= 0 ? '#10b981' : '#ef4444'} />)}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </Card>
+
+        <Card className="p-5">
+          <SectionHeader title="اتجاه التحصيل الشهري" icon={<TrendingUp size={18} className="text-primary" />} />
+          <div className="h-56" dir="ltr">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={monthlyTrend}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                <XAxis dataKey="name" fontSize={12} />
+                <YAxis fontSize={11} />
+                <Tooltip formatter={(value: number) => formatCurrency(value, cur)} />
+                <Line type="monotone" dataKey="revenue" name="التحصيل" stroke="#10b981" strokeWidth={2.5} dot={{ r: 4 }} />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        </Card>
+      </div>
+    </div>
+  );
 };
 
 
 const RentRoll: React.FC = () => {
-    const { db, contractBalances, settings } = useApp();
-    const [isPrinting, setIsPrinting] = useState(false);
+  const { db, contractBalances, settings } = useApp();
+  const [isPrinting, setIsPrinting] = useState(false);
+  const cur = settings.operational?.currency ?? 'OMR';
 
-    const rentRollData = useMemo(() => {
-        const unitsWithDetails = db.units.map(unit => {
-            const property = db.properties.find(p => p.id === unit.propertyId);
-            const activeContract = db.contracts.find(c => c.unitId === unit.id && c.status === 'ACTIVE');
-            
-            if (activeContract) {
-                const tenant = db.tenants.find(t => t.id === activeContract.tenantId);
-                const contractBalance = contractBalances[activeContract.id];
-                return {
-                    property: property?.name || '-', unit: unit.name, tenant: tenant?.name || '-',
-                    startDate: activeContract.start, endDate: activeContract.end, rent: activeContract.rent,
-                    deposit: activeContract.deposit, balance: contractBalance?.balance || 0, status: 'مؤجرة'
-                };
-            } else {
-                return {
-                    property: property?.name || '-', unit: unit.name, tenant: '-', startDate: '-',
-                    endDate: '-', rent: unit.rentDefault, deposit: 0, balance: 0, status: 'شاغرة'
-                };
-            }
-        });
+  const rentRollData = useMemo(() => {
+    const unitsWithDetails = db.units.map(unit => {
+      const property = db.properties.find(p => p.id === unit.propertyId);
+      const activeContract = db.contracts.find(c => c.unitId === unit.id && c.status === 'ACTIVE');
+      if (activeContract) {
+        const tenant = db.tenants.find(t => t.id === activeContract.tenantId);
+        const contractBalance = contractBalances[activeContract.id];
+        return { property: property?.name || '-', unit: unit.name, tenant: tenant?.name || '-', startDate: activeContract.start, endDate: activeContract.end, rent: activeContract.rent, deposit: activeContract.deposit, balance: contractBalance?.balance || 0, status: 'مؤجرة' as const };
+      }
+      return { property: property?.name || '-', unit: unit.name, tenant: '-', startDate: '-', endDate: '-', rent: unit.rentDefault, deposit: 0, balance: 0, status: 'شاغرة' as const };
+    });
+    const totals = unitsWithDetails.reduce((acc, item) => {
+      if (item.status === 'مؤجرة') { acc.totalRent += item.rent; acc.totalBalance += item.balance; }
+      return acc;
+    }, { totalRent: 0, totalBalance: 0 });
+    return { units: unitsWithDetails.sort((a, b) => `${a.property}-${a.unit}`.localeCompare(`${b.property}-${b.unit}`)), totals };
+  }, [db, contractBalances]);
 
-        const totals = unitsWithDetails.reduce((acc, item) => {
-            if(item.status === 'مؤجرة') { acc.totalRent += item.rent; acc.totalBalance += item.balance; }
-            return acc;
-        }, { totalRent: 0, totalBalance: 0 });
+  const handleExportPdf = () => exportRentRollToPdf(rentRollData.units, rentRollData.totals, settings);
 
-        return { units: unitsWithDetails.sort((a,b) => `${a.property}-${a.unit}`.localeCompare(`${b.property}-${b.unit}`)), totals };
-    }, [db, contractBalances]);
+  const kpis = useMemo(() => {
+    const rented = rentRollData.units.filter(u => u.status === 'مؤجرة').length;
+    const vacant = rentRollData.units.filter(u => u.status === 'شاغرة').length;
+    return { total: rentRollData.units.length, rented, vacant, occupancy: rentRollData.units.length > 0 ? ((rented / rentRollData.units.length) * 100) : 0 };
+  }, [rentRollData]);
 
-    const handleExportPdf = () => { exportRentRollToPdf(rentRollData.units, rentRollData.totals, settings); };
+  const reportContent = (
+    <div className="overflow-x-auto">
+      <table className="w-full text-sm text-right border-collapse">
+        <thead>
+          <tr className="bg-background text-text-muted text-xs uppercase">
+            <th className="px-3 py-3 border border-border">العقار</th>
+            <th className="px-3 py-3 border border-border">الوحدة</th>
+            <th className="px-3 py-3 border border-border">الحالة</th>
+            <th className="px-3 py-3 border border-border">المستأجر</th>
+            <th className="px-3 py-3 border border-border">بدء العقد</th>
+            <th className="px-3 py-3 border border-border">انتهاء العقد</th>
+            <th className="px-3 py-3 border border-border">الإيجار</th>
+            <th className="px-3 py-3 border border-border">التأمين</th>
+            <th className="px-3 py-3 border border-border">الرصيد</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rentRollData.units.map((item, i) => (
+            <tr key={i} className="bg-card hover:bg-background/50 transition-colors">
+              <td className="px-3 py-3 border border-border">{item.property}</td>
+              <td className="px-3 py-3 border border-border font-medium">{item.unit}</td>
+              <td className="px-3 py-3 border border-border">
+                <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${item.status === 'مؤجرة' ? 'bg-green-100 text-green-700 dark:bg-green-900/50 dark:text-green-300' : 'bg-amber-100 text-amber-700 dark:bg-amber-900/50 dark:text-amber-300'}`}>{item.status}</span>
+              </td>
+              <td className="px-3 py-3 border border-border">{item.tenant}</td>
+              <td className="px-3 py-3 border border-border">{item.startDate !== '-' ? formatDate(item.startDate) : '-'}</td>
+              <td className="px-3 py-3 border border-border">{item.endDate !== '-' ? formatDate(item.endDate) : '-'}</td>
+              <td className="px-3 py-3 border border-border font-mono">{formatCurrency(item.rent, cur)}</td>
+              <td className="px-3 py-3 border border-border font-mono">{formatCurrency(item.deposit, cur)}</td>
+              <td className={`px-3 py-3 border border-border font-mono font-bold ${item.balance > 0 ? 'text-red-500' : ''}`}>{formatCurrency(item.balance, cur)}</td>
+            </tr>
+          ))}
+        </tbody>
+        <tfoot>
+          <tr className="font-bold bg-primary/5 text-text">
+            <td colSpan={6} className="px-3 py-3 border border-border text-left">الإجمالي (الوحدات المؤجرة)</td>
+            <td className="px-3 py-3 border border-border font-mono">{formatCurrency(rentRollData.totals.totalRent, cur)}</td>
+            <td className="border border-border" />
+            <td className="px-3 py-3 border border-border font-mono">{formatCurrency(rentRollData.totals.totalBalance, cur)}</td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+  );
 
-    const reportContent = (
-        <div className="overflow-x-auto">
-            <table className="w-full text-sm text-right border-collapse border border-border">
-                <thead className="text-xs uppercase bg-background text-text">
-                    <tr>
-                        <th className="px-2 py-3 border border-border">العقار</th><th className="px-2 py-3 border border-border">الوحدة</th>
-                        <th className="px-2 py-3 border border-border">الحالة</th><th className="px-2 py-3 border border-border">المستأجر</th>
-                        <th className="px-2 py-3 border border-border">بدء العقد</th><th className="px-2 py-3 border border-border">انتهاء العقد</th>
-                        <th className="px-2 py-3 border border-border">الإيجار</th><th className="px-2 py-3 border border-border">التأمين</th>
-                        <th className="px-2 py-3 border border-border">الرصيد المستحق</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {rentRollData.units.map((item, i) => (
-                        <tr key={i} className="bg-card">
-                            <td className="px-2 py-4 border border-border">{item.property}</td><td className="px-2 py-4 border border-border">{item.unit}</td>
-                            <td className="px-2 py-4 border border-border">{item.status}</td><td className="px-2 py-4 border border-border">{item.tenant}</td>
-                            <td className="px-2 py-4 border border-border">{item.startDate !== '-' ? formatDate(item.startDate) : '-'}</td>
-                            <td className="px-2 py-4 border border-border">{item.endDate !== '-' ? formatDate(item.endDate) : '-'}</td>
-                            {/* FIX: Corrected path to currency settings */}
-                            <td className="px-2 py-4 border border-border">{formatCurrency(item.rent, settings.operational.currency)}</td>
-                            {/* FIX: Corrected path to currency settings */}
-                            <td className="px-2 py-4 border border-border">{formatCurrency(item.deposit, settings.operational.currency)}</td>
-                            {/* FIX: Corrected path to currency settings */}
-                            <td className={`px-2 py-4 font-bold border border-border ${item.balance > 0 ? 'text-red-500' : ''}`}>{formatCurrency(item.balance, settings.operational.currency)}</td>
-                        </tr>
-                    ))}
-                </tbody>
-                <tfoot>
-                    <tr className="font-bold text-base bg-background text-text">
-                        <td colSpan={6} className="px-2 py-4 text-left border border-border">الإجمالي (للوحدات المؤجرة)</td>
-                        {/* FIX: Corrected path to currency settings */}
-                        <td className="px-2 py-4 border border-border">{formatCurrency(rentRollData.totals.totalRent, settings.operational.currency)}</td>
-                        <td className='border border-border'></td>
-                        {/* FIX: Corrected path to currency settings */}
-                        <td className="px-2 py-4 border border-border">{formatCurrency(rentRollData.totals.totalBalance, settings.operational.currency)}</td>
-                    </tr>
-                </tfoot>
-            </table>
-        </div>
-    );
-
-    return (
-        <div>
-             <h2 className="text-xl font-bold mb-4">قائمة الإيجارات (Rent Roll)</h2>
-            <div className="mb-4 flex gap-4 items-end">
-                <button onClick={() => setIsPrinting(true)} className="btn btn-primary flex items-center gap-2"><Printer size={16} /> طباعة</button>
-                <button onClick={handleExportPdf} className="btn btn-secondary flex items-center gap-2"><FileText size={16} /> تصدير PDF</button>
-            </div>
-            <ReportPrintableContent title="تقرير قائمة الإيجارات (Rent Roll)" date={`تاريخ التقرير: ${formatDate(new Date().toISOString())}`}>
-                {reportContent}
-            </ReportPrintableContent>
-            {isPrinting && (
-                <PrintPreviewModal isOpen={isPrinting} onClose={() => setIsPrinting(false)} title="معاينة طباعة قائمة الإيجارات">
-                     <ReportPrintableContent title="تقرير قائمة الإيجارات (Rent Roll)" date={`تاريخ التقرير: ${formatDate(new Date().toISOString())}`}>{reportContent}</ReportPrintableContent>
-                </PrintPreviewModal>
-            )}
-        </div>
-    );
+  return (
+    <Card className="p-6">
+      <SectionHeader title="قائمة الإيجارات (Rent Roll)" icon={<Building2 size={20} className="text-primary" />} />
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+        <MiniKpi label="إجمالي الوحدات" value={String(kpis.total)} icon={<Building2 size={16} />} color="bg-blue-100 dark:bg-blue-900/40 text-blue-600" />
+        <MiniKpi label="مؤجرة" value={String(kpis.rented)} icon={<Users size={16} />} color="bg-green-100 dark:bg-green-900/40 text-green-600" />
+        <MiniKpi label="شاغرة" value={String(kpis.vacant)} icon={<Building2 size={16} />} color="bg-amber-100 dark:bg-amber-900/40 text-amber-600" />
+        <MiniKpi label="نسبة الإشغال" value={`${kpis.occupancy.toFixed(0)}%`} icon={<Percent size={16} />} color="bg-indigo-100 dark:bg-indigo-900/40 text-indigo-600" />
+      </div>
+      <ActionBar onPrint={() => setIsPrinting(true)} onExport={handleExportPdf} />
+      <ReportPrintableContent title="تقرير قائمة الإيجارات" date={`تاريخ التقرير: ${formatDate(new Date().toISOString())}`}>{reportContent}</ReportPrintableContent>
+      {isPrinting && <PrintPreviewModal isOpen={isPrinting} onClose={() => setIsPrinting(false)} title="قائمة الإيجارات"><ReportPrintableContent title="تقرير قائمة الإيجارات" date={`تاريخ التقرير: ${formatDate(new Date().toISOString())}`}>{reportContent}</ReportPrintableContent></PrintPreviewModal>}
+    </Card>
+  );
 };
 
+
 const TrialBalance: React.FC = () => {
-    const { db, settings } = useApp();
-    const [endDate, setEndDate] = useState(new Date().toISOString().slice(0, 10));
-    const [isPrinting, setIsPrinting] = useState(false);
+  const { db, settings } = useApp();
+  const [endDate, setEndDate] = useState(new Date().toISOString().slice(0, 10));
+  const [isPrinting, setIsPrinting] = useState(false);
+  const cur = settings.operational?.currency ?? 'OMR';
 
-    const trialBalanceData = useMemo(() => {
-        const end = new Date(endDate);
-        const balances = new Map<string, { debit: number, credit: number }>();
+  const trialBalanceData = useMemo(() => {
+    const end = new Date(endDate);
+    const balances = new Map<string, { debit: number; credit: number }>();
+    db.accounts.forEach(acc => balances.set(acc.id, { debit: 0, credit: 0 }));
+    db.journalEntries.filter(je => new Date(je.date) <= end).forEach(je => {
+      const balance = balances.get(je.accountId);
+      if (balance) {
+        if (je.type === 'DEBIT') balance.debit += je.amount;
+        if (je.type === 'CREDIT') balance.credit += je.amount;
+      }
+    });
+    const accountsMap = new Map(db.accounts.map(acc => [acc.id, acc]));
+    let totalDebit = 0, totalCredit = 0;
+    const reportLines = Array.from(balances.entries()).map(([accountId, { debit, credit }]) => {
+      const account = accountsMap.get(accountId)!;
+      const balance = debit - credit;
+      const finalDebit = balance > 0 ? balance : 0;
+      const finalCredit = balance < 0 ? -balance : 0;
+      totalDebit += finalDebit;
+      totalCredit += finalCredit;
+      return { no: account.no, name: account.name, debit: finalDebit, credit: finalCredit };
+    }).filter(line => line.debit > 0 || line.credit > 0).sort((a, b) => a.no.localeCompare(b.no));
+    return { lines: reportLines, totalDebit, totalCredit };
+  }, [db.accounts, db.journalEntries, endDate]);
 
-        db.accounts.forEach(acc => balances.set(acc.id, { debit: 0, credit: 0 }));
+  const handleExportPdf = () => exportTrialBalanceToPdf(trialBalanceData, settings, endDate);
+  const isBalanced = Math.abs(trialBalanceData.totalDebit - trialBalanceData.totalCredit) < 0.01;
 
-        db.journalEntries.filter(je => new Date(je.date) <= end).forEach(je => {
-            const balance = balances.get(je.accountId);
-            if (balance) {
-                if(je.type === 'DEBIT') balance.debit += je.amount;
-                if(je.type === 'CREDIT') balance.credit += je.amount;
-            }
-        });
+  const reportContent = (
+    <div className="overflow-x-auto">
+      <table className="w-full text-sm text-right border-collapse">
+        <thead>
+          <tr className="bg-background text-text-muted text-xs uppercase">
+            <th className="px-4 py-3 border border-border">رقم الحساب</th>
+            <th className="px-4 py-3 border border-border">اسم الحساب</th>
+            <th className="px-4 py-3 border border-border">مدين</th>
+            <th className="px-4 py-3 border border-border">دائن</th>
+          </tr>
+        </thead>
+        <tbody>
+          {trialBalanceData.lines.map(line => (
+            <tr key={line.no} className="bg-card hover:bg-background/50">
+              <td className="px-4 py-3 font-mono border border-border">{line.no}</td>
+              <td className="px-4 py-3 border border-border">{line.name}</td>
+              <td className="px-4 py-3 font-mono border border-border">{line.debit > 0 ? formatCurrency(line.debit, cur) : '-'}</td>
+              <td className="px-4 py-3 font-mono border border-border">{line.credit > 0 ? formatCurrency(line.credit, cur) : '-'}</td>
+            </tr>
+          ))}
+        </tbody>
+        <tfoot>
+          <tr className="font-bold bg-primary/5 text-text">
+            <td colSpan={2} className="px-4 py-3 text-left border border-border">الإجمالي</td>
+            <td className="px-4 py-3 font-mono border border-border">{formatCurrency(trialBalanceData.totalDebit, cur)}</td>
+            <td className="px-4 py-3 font-mono border border-border">{formatCurrency(trialBalanceData.totalCredit, cur)}</td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+  );
 
-        const accountsMap = new Map(db.accounts.map(acc => [acc.id, acc]));
-        let totalDebit = 0; let totalCredit = 0;
-
-        const reportLines = Array.from(balances.entries()).map(([accountId, {debit, credit}]) => {
-            const account = accountsMap.get(accountId)!;
-            const balance = debit - credit;
-            const finalDebit = balance > 0 ? balance : 0;
-            const finalCredit = balance < 0 ? -balance : 0;
-            totalDebit += finalDebit;
-            totalCredit += finalCredit;
-            return { no: account.no, name: account.name, debit: finalDebit, credit: finalCredit };
-        }).filter(line => line.debit > 0 || line.credit > 0).sort((a,b) => a.no.localeCompare(b.no));
-
-        return { lines: reportLines, totalDebit, totalCredit };
-    }, [db.accounts, db.journalEntries, endDate]);
-    
-    const handleExportPdf = () => { exportTrialBalanceToPdf(trialBalanceData, settings, endDate); };
-
-    const reportContent = (
-         <div className="overflow-x-auto">
-            <table className="w-full text-sm text-right border-collapse border border-border">
-                <thead className="text-xs uppercase bg-background text-text">
-                    <tr>
-                        <th className="px-6 py-3 border border-border">رقم الحساب</th><th className="px-6 py-3 border border-border">اسم الحساب</th>
-                        <th className="px-6 py-3 border border-border">مدين</th><th className="px-6 py-3 border border-border">دائن</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {trialBalanceData.lines.map((line: { no: string; name: string; debit: number; credit: number; }) => (
-                        <tr key={line.no} className="bg-card">
-                            <td className="px-6 py-4 font-mono border border-border">{line.no}</td><td className="px-6 py-4 border border-border">{line.name}</td>
-                            {/* FIX: Corrected path to currency settings */}
-                            <td className="px-6 py-4 font-mono border border-border">{line.debit > 0 ? formatCurrency(line.debit, settings.operational.currency) : '-'}</td>
-                            {/* FIX: Corrected path to currency settings */}
-                            <td className="px-6 py-4 font-mono border border-border">{line.credit > 0 ? formatCurrency(line.credit, settings.operational.currency) : '-'}</td>
-                        </tr>
-                    ))}
-                </tbody>
-                    <tfoot>
-                    <tr className="font-bold text-base bg-background text-text">
-                        <td colSpan={2} className="px-6 py-4 text-left border border-border">الإجمالي</td>
-                        {/* FIX: Corrected path to currency settings */}
-                        <td className="px-6 py-4 font-mono border border-border">{formatCurrency(trialBalanceData.totalDebit, settings.operational.currency)}</td>
-                        {/* FIX: Corrected path to currency settings */}
-                        <td className="px-6 py-4 font-mono border border-border">{formatCurrency(trialBalanceData.totalCredit, settings.operational.currency)}</td>
-                    </tr>
-                </tfoot>
-            </table>
-        </div>
-    );
-    
-    return (
+  return (
+    <Card className="p-6">
+      <SectionHeader title="ميزان المراجعة" icon={<Filter size={20} className="text-primary" />} />
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-6">
+        <MiniKpi label="إجمالي المدين" value={formatCurrency(trialBalanceData.totalDebit, cur)} icon={<ArrowUp size={16} />} color="bg-blue-100 dark:bg-blue-900/40 text-blue-600" />
+        <MiniKpi label="إجمالي الدائن" value={formatCurrency(trialBalanceData.totalCredit, cur)} icon={<ArrowDown size={16} />} color="bg-purple-100 dark:bg-purple-900/40 text-purple-600" />
+        <MiniKpi label="حالة التوازن" value={isBalanced ? 'متوازن' : 'غير متوازن'} icon={isBalanced ? <ArrowUp size={16} /> : <ArrowDown size={16} />} color={isBalanced ? 'bg-green-100 dark:bg-green-900/40 text-green-600' : 'bg-red-100 dark:bg-red-900/40 text-red-600'} />
+      </div>
+      <ActionBar onPrint={() => setIsPrinting(true)} onExport={handleExportPdf}>
         <div>
-             <h2 className="text-xl font-bold mb-4">ميزان المراجعة</h2>
-            <div className="mb-4 flex gap-4 items-end">
-                <div>
-                  <label className="block text-sm font-medium mb-1">حتى تاريخ</label>
-                  <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} />
-                </div>
-                <button onClick={() => setIsPrinting(true)} className="btn btn-primary flex items-center gap-2"><Printer size={16} /> طباعة</button>
-                <button onClick={handleExportPdf} className="btn btn-secondary flex items-center gap-2"><FileText size={16} /> تصدير PDF</button>
-            </div>
-            <ReportPrintableContent title="ميزان المراجعة" date={`حتى تاريخ ${formatDate(endDate)}`}>{reportContent}</ReportPrintableContent>
-            {isPrinting && (
-                <PrintPreviewModal isOpen={isPrinting} onClose={() => setIsPrinting(false)} title="معاينة طباعة ميزان المراجعة">
-                    <ReportPrintableContent title="ميزان المراجعة" date={`حتى تاريخ ${formatDate(endDate)}`}>{reportContent}</ReportPrintableContent>
-                </PrintPreviewModal>
-            )}
+          <label className="block text-xs font-medium text-text-muted mb-1">حتى تاريخ</label>
+          <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} className="text-sm" />
         </div>
-    );
+      </ActionBar>
+      <ReportPrintableContent title="ميزان المراجعة" date={`حتى تاريخ ${formatDate(endDate)}`}>{reportContent}</ReportPrintableContent>
+      {isPrinting && <PrintPreviewModal isOpen={isPrinting} onClose={() => setIsPrinting(false)} title="ميزان المراجعة"><ReportPrintableContent title="ميزان المراجعة" date={`حتى تاريخ ${formatDate(endDate)}`}>{reportContent}</ReportPrintableContent></PrintPreviewModal>}
+    </Card>
+  );
 };
 
 
 const OwnerLedger: React.FC = () => {
-    const { db, settings } = useApp(); const location = useLocation();
-    const queryParams = useMemo(() => new URLSearchParams(location.search), [location.search]);
-    const ownerIdFromUrl = queryParams.get('ownerId');
-    const [selectedOwnerId, setSelectedOwnerId] = useState<string>(ownerIdFromUrl || db.owners[0]?.id || '');
-    const today = new Date(); const firstDayOfYear = new Date(today.getFullYear(), 0, 1).toISOString().slice(0, 10);
-    const [startDate, setStartDate] = useState(firstDayOfYear);
-    const [endDate, setEndDate] = useState(today.toISOString().slice(0, 10));
-    const [showCommission, setShowCommission] = useState(true);
-    const [isPrinting, setIsPrinting] = useState(false);
-    
-    useEffect(() => { const ownerIdFromUrl = queryParams.get('ownerId'); if (ownerIdFromUrl) { setSelectedOwnerId(ownerIdFromUrl); } }, [location.search]);
+  const { db, settings } = useApp();
+  const location = useLocation();
+  const queryParams = useMemo(() => new URLSearchParams(location.search), [location.search]);
+  const ownerIdFromUrl = queryParams.get('ownerId');
+  const [selectedOwnerId, setSelectedOwnerId] = useState<string>(ownerIdFromUrl || db.owners[0]?.id || '');
+  const today = new Date();
+  const [startDate, setStartDate] = useState(new Date(today.getFullYear(), 0, 1).toISOString().slice(0, 10));
+  const [endDate, setEndDate] = useState(today.toISOString().slice(0, 10));
+  const [showCommission, setShowCommission] = useState(true);
+  const [isPrinting, setIsPrinting] = useState(false);
+  const cur = settings.operational?.currency ?? 'OMR';
 
-    const ledgerData = useMemo(() => {
-        if (!selectedOwnerId) return null; const owner = db.owners.find(o => o.id === selectedOwnerId); if (!owner) return null;
-        const ownerProperties = db.properties.filter(p => p.ownerId === selectedOwnerId).map(p => p.id);
-        const ownerUnits = db.units.filter(u => ownerProperties.includes(u.propertyId)).map(u => u.id);
-        const ownerContracts = db.contracts.filter(c => ownerUnits.includes(c.unitId)).map(c => c.id);
-        const start = new Date(startDate); const end = new Date(endDate);
-        const transactions: any[] = [];
-        db.receipts.forEach(r => {
-            if (r.status === 'POSTED' && ownerContracts.includes(r.contractId) && new Date(r.dateTime) >= start && new Date(r.dateTime) <= end) {
-                const officeShare = showCommission && owner.commissionType === 'RATE' ? r.amount * (owner.commissionValue / 100) : 0;
-                transactions.push({ date: r.dateTime, details: `تحصيل من عقد ${r.no}`, type: 'receipt', gross: r.amount, officeShare: officeShare, net: r.amount - officeShare });
-            }
-        });
-        db.expenses.forEach(e => {
-            if (e.status === 'POSTED' && e.contractId && ownerContracts.includes(e.contractId) && e.chargedTo === 'OWNER' && new Date(e.dateTime) >= start && new Date(e.dateTime) <= end) {
-                transactions.push({ date: e.dateTime, details: `مصروف صيانة ${e.no}`, type: 'expense', gross: -e.amount, officeShare: 0, net: -e.amount });
-            }
-        });
-        db.ownerSettlements.forEach(s => {
-            if (s.ownerId === selectedOwnerId && new Date(s.date) >= start && new Date(s.date) <= end) {
-                transactions.push({ date: s.date, details: `تسوية مالية - دفعة #${s.no}`, type: 'settlement', gross: -s.amount, officeShare: 0, net: -s.amount });
-            }
-        });
-        if (showCommission && owner.commissionType === 'FIXED_MONTHLY') {
-            const commissionMonths = new Set<string>();
-            transactions.filter(tx => tx.type === 'receipt').forEach(tx => commissionMonths.add(tx.date.slice(0, 7)));
-            commissionMonths.forEach(month => {
-                const lastDayOfMonth = new Date(Number(month.slice(0,4)), Number(month.slice(5,7)), 0).toISOString();
-                transactions.push({ date: lastDayOfMonth, details: `عمولة إدارة ثابتة لشهر ${month}`, type: 'expense', gross: 0, officeShare: owner.commissionValue, net: -owner.commissionValue });
-            });
-        }
-        transactions.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-        const totals = transactions.reduce((acc, tx) => { acc.gross += tx.gross; acc.officeShare += tx.officeShare; acc.net += tx.net; return acc; }, { gross: 0, officeShare: 0, net: 0 });
-        return { transactions, totals };
-    }, [selectedOwnerId, startDate, endDate, db, showCommission]);
-    
-    const handleExportPdf = () => {
-        if (!ledgerData || !selectedOwnerId) return;
-        const ownerName = db.owners.find(o => o.id === selectedOwnerId)?.name || '';
-        const dateRange = `للفترة من ${formatDate(startDate)} إلى ${formatDate(endDate)}`;
-        exportOwnerLedgerToPdf(ledgerData.transactions, ledgerData.totals, settings, ownerName, dateRange, showCommission);
-    };
-    const reportContent = ledgerData && (
-        <div className="overflow-x-auto">
-            <table className="w-full text-sm text-right border-collapse border border-border">
-                <thead className="text-xs uppercase bg-background text-text"><tr><th className="px-6 py-3 border border-border">التاريخ</th><th className="px-6 py-3 border border-border">البيان</th><th className="px-6 py-3 border border-border">إجمالي المبلغ</th>{showCommission && <th className="px-6 py-3 border border-border">حصة المكتب</th>}<th className="px-6 py-3 border border-border">صافي المبلغ للمالك</th></tr></thead>
-                {/* FIX: Corrected path to currency settings */}
-                <tbody>{ledgerData.transactions.map((tx, i) => (<tr key={i} className="bg-card"><td className="px-6 py-4 border border-border">{formatDate(tx.date)}</td><td className="px-6 py-4 border border-border">{tx.details}</td><td className={`px-6 py-4 border border-border ${tx.gross >= 0 ? 'text-green-600' : 'text-red-600'}`}>{formatCurrency(tx.gross, settings.operational.currency)}</td>{showCommission && <td className="px-6 py-4 text-red-600 border border-border">{tx.officeShare > 0 ? formatCurrency(-tx.officeShare, settings.operational.currency) : '-'}</td>}<td className="px-6 py-4 font-bold border border-border">{formatCurrency(tx.net, settings.operational.currency)}</td></tr>))}</tbody>
-                {/* FIX: Corrected path to currency settings */}
-                <tfoot><tr className="font-bold text-base bg-background text-text"><td colSpan={2} className="px-6 py-4 text-left border border-border">الرصيد الختامي للفترة</td><td className="px-6 py-4 border border-border">{formatCurrency(ledgerData.totals.gross, settings.operational.currency)}</td>{showCommission && <td className="px-6 py-4 border border-border">{formatCurrency(-ledgerData.totals.officeShare, settings.operational.currency)}</td>}<td className="px-6 py-4 border border-border">{formatCurrency(ledgerData.totals.net, settings.operational.currency)}</td></tr></tfoot>
-            </table>
+  useEffect(() => {
+    const oid = queryParams.get('ownerId');
+    if (oid) setSelectedOwnerId(oid);
+  }, [location.search]);
+
+  const ledgerData = useMemo(() => {
+    if (!selectedOwnerId) return null;
+    const owner = db.owners.find(o => o.id === selectedOwnerId);
+    if (!owner) return null;
+    const ownerProperties = db.properties.filter(p => p.ownerId === selectedOwnerId).map(p => p.id);
+    const ownerUnits = db.units.filter(u => ownerProperties.includes(u.propertyId)).map(u => u.id);
+    const ownerContracts = db.contracts.filter(c => ownerUnits.includes(c.unitId)).map(c => c.id);
+    const start = new Date(startDate), end = new Date(endDate);
+    const transactions: any[] = [];
+    db.receipts.forEach(r => {
+      if (r.status === 'POSTED' && ownerContracts.includes(r.contractId) && new Date(r.dateTime) >= start && new Date(r.dateTime) <= end) {
+        const officeShare = showCommission && owner.commissionType === 'RATE' ? r.amount * (owner.commissionValue / 100) : 0;
+        transactions.push({ date: r.dateTime, details: `تحصيل من عقد ${r.no}`, type: 'receipt', gross: r.amount, officeShare, net: r.amount - officeShare });
+      }
+    });
+    db.expenses.forEach(e => {
+      if (e.status === 'POSTED' && e.contractId && ownerContracts.includes(e.contractId) && e.chargedTo === 'OWNER' && new Date(e.dateTime) >= start && new Date(e.dateTime) <= end) {
+        transactions.push({ date: e.dateTime, details: `مصروف صيانة ${e.no}`, type: 'expense', gross: -e.amount, officeShare: 0, net: -e.amount });
+      }
+    });
+    db.ownerSettlements.forEach(s => {
+      if (s.ownerId === selectedOwnerId && new Date(s.date) >= start && new Date(s.date) <= end) {
+        transactions.push({ date: s.date, details: `تسوية مالية - دفعة #${s.no}`, type: 'settlement', gross: -s.amount, officeShare: 0, net: -s.amount });
+      }
+    });
+    if (showCommission && owner.commissionType === 'FIXED_MONTHLY') {
+      const commissionMonths = new Set<string>();
+      transactions.filter(tx => tx.type === 'receipt').forEach(tx => commissionMonths.add(tx.date.slice(0, 7)));
+      commissionMonths.forEach(month => {
+        const lastDayOfMonth = new Date(Number(month.slice(0, 4)), Number(month.slice(5, 7)), 0).toISOString();
+        transactions.push({ date: lastDayOfMonth, details: `عمولة إدارة ثابتة لشهر ${month}`, type: 'expense', gross: 0, officeShare: owner.commissionValue, net: -owner.commissionValue });
+      });
+    }
+    transactions.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+    const totals = transactions.reduce((acc, tx) => { acc.gross += tx.gross; acc.officeShare += tx.officeShare; acc.net += tx.net; return acc; }, { gross: 0, officeShare: 0, net: 0 });
+    return { transactions, totals };
+  }, [selectedOwnerId, startDate, endDate, db, showCommission]);
+
+  const handleExportPdf = () => {
+    if (!ledgerData || !selectedOwnerId) return;
+    const ownerName = db.owners.find(o => o.id === selectedOwnerId)?.name || '';
+    exportOwnerLedgerToPdf(ledgerData.transactions, ledgerData.totals, settings, ownerName, `للفترة من ${formatDate(startDate)} إلى ${formatDate(endDate)}`, showCommission);
+  };
+
+  const reportContent = ledgerData && (
+    <div className="overflow-x-auto">
+      <table className="w-full text-sm text-right border-collapse">
+        <thead>
+          <tr className="bg-background text-text-muted text-xs uppercase">
+            <th className="px-4 py-3 border border-border">التاريخ</th>
+            <th className="px-4 py-3 border border-border">البيان</th>
+            <th className="px-4 py-3 border border-border">إجمالي المبلغ</th>
+            {showCommission && <th className="px-4 py-3 border border-border">حصة المكتب</th>}
+            <th className="px-4 py-3 border border-border">صافي المبلغ للمالك</th>
+          </tr>
+        </thead>
+        <tbody>
+          {ledgerData.transactions.map((tx: any, i: number) => (
+            <tr key={i} className="bg-card hover:bg-background/50">
+              <td className="px-4 py-3 border border-border">{formatDate(tx.date)}</td>
+              <td className="px-4 py-3 border border-border">{tx.details}</td>
+              <td className={`px-4 py-3 border border-border font-mono ${tx.gross >= 0 ? 'text-green-600' : 'text-red-600'}`}>{formatCurrency(tx.gross, cur)}</td>
+              {showCommission && <td className="px-4 py-3 text-red-600 border border-border font-mono">{tx.officeShare > 0 ? formatCurrency(-tx.officeShare, cur) : '-'}</td>}
+              <td className="px-4 py-3 font-bold border border-border font-mono">{formatCurrency(tx.net, cur)}</td>
+            </tr>
+          ))}
+        </tbody>
+        <tfoot>
+          <tr className="font-bold bg-primary/5 text-text">
+            <td colSpan={2} className="px-4 py-3 text-left border border-border">الرصيد الختامي</td>
+            <td className="px-4 py-3 border border-border font-mono">{formatCurrency(ledgerData.totals.gross, cur)}</td>
+            {showCommission && <td className="px-4 py-3 border border-border font-mono">{formatCurrency(-ledgerData.totals.officeShare, cur)}</td>}
+            <td className="px-4 py-3 border border-border font-mono">{formatCurrency(ledgerData.totals.net, cur)}</td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+  );
+
+  return (
+    <Card className="p-6">
+      <SectionHeader title="كشف حساب المالك" icon={<Users size={20} className="text-primary" />} />
+      {ledgerData && (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-6">
+          <MiniKpi label="إجمالي التحصيل" value={formatCurrency(ledgerData.totals.gross, cur)} icon={<ArrowUp size={16} />} color="bg-green-100 dark:bg-green-900/40 text-green-600" />
+          <MiniKpi label="حصة المكتب" value={formatCurrency(ledgerData.totals.officeShare, cur)} icon={<Banknote size={16} />} color="bg-amber-100 dark:bg-amber-900/40 text-amber-600" />
+          <MiniKpi label="صافي المالك" value={formatCurrency(ledgerData.totals.net, cur)} icon={<Wallet size={16} />} color="bg-blue-100 dark:bg-blue-900/40 text-blue-600" />
         </div>
-    );
-    return (
+      )}
+      <ActionBar onPrint={() => setIsPrinting(true)} onExport={handleExportPdf}>
         <div>
-             <h2 className="text-xl font-bold mb-4">كشف حساب المالك</h2>
-            <div className="mb-6 flex flex-wrap gap-4 items-end">
-                <div><label className="block text-sm font-medium mb-1">اختر المالك</label><select value={selectedOwnerId} onChange={(e) => setSelectedOwnerId(e.target.value)}><option value="">-- اختر --</option>{db.owners.map(o => <option key={o.id} value={o.id}>{o.name}</option>)}</select></div>
-                <div><label className="block text-sm font-medium mb-1">من تاريخ</label><input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} /></div>
-                <div><label className="block text-sm font-medium mb-1">إلى تاريخ</label><input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} /></div>
-                <div className="flex flex-col"><label className="block text-sm font-medium mb-1">عرض العمولة</label><div className="flex items-center gap-4"><label className="flex items-center gap-2"><input type="radio" name="commission" checked={!showCommission} onChange={() => setShowCommission(false)} /> قبل الخصم</label><label className="flex items-center gap-2"><input type="radio" name="commission" checked={showCommission} onChange={() => setShowCommission(true)} /> بعد الخصم</label></div></div>
-                <button onClick={() => setIsPrinting(true)} className="btn btn-primary flex items-center gap-2"><Printer size={16} /> طباعة</button>
-                <button onClick={handleExportPdf} className="btn btn-secondary flex items-center gap-2"><FileText size={16} /> تصدير PDF</button>
-            </div>
-            {reportContent && (<ReportPrintableContent title={`كشف حساب المالك: ${db.owners.find(o => o.id === selectedOwnerId)?.name}`} date={`للفترة من ${formatDate(startDate)} إلى ${formatDate(endDate)} - ${showCommission ? 'بعد خصم عمولة المكتب' : 'قبل خصم عمولة المكتب'}`}>{reportContent}</ReportPrintableContent>)}
-            {isPrinting && reportContent && (<PrintPreviewModal isOpen={isPrinting} onClose={() => setIsPrinting(false)} title="معاينة طباعة كشف حساب المالك"><ReportPrintableContent title={`كشف حساب المالك: ${db.owners.find(o => o.id === selectedOwnerId)?.name}`} date={`للفترة من ${formatDate(startDate)} إلى ${formatDate(endDate)} - ${showCommission ? 'بعد خصم عمولة المكتب' : 'قبل خصم عمولة المكتب'}`}>{reportContent}</ReportPrintableContent></PrintPreviewModal>)}
+          <label className="block text-xs font-medium text-text-muted mb-1">اختر المالك</label>
+          <select value={selectedOwnerId} onChange={e => setSelectedOwnerId(e.target.value)} className="text-sm">
+            <option value="">-- اختر --</option>
+            {db.owners.map(o => <option key={o.id} value={o.id}>{o.name}</option>)}
+          </select>
         </div>
-    );
+        <div>
+          <label className="block text-xs font-medium text-text-muted mb-1">من</label>
+          <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} className="text-sm" />
+        </div>
+        <div>
+          <label className="block text-xs font-medium text-text-muted mb-1">إلى</label>
+          <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} className="text-sm" />
+        </div>
+        <div className="flex items-end gap-3 pb-1">
+          <label className="flex items-center gap-1.5 text-sm cursor-pointer"><input type="radio" name="commission" checked={!showCommission} onChange={() => setShowCommission(false)} /> قبل الخصم</label>
+          <label className="flex items-center gap-1.5 text-sm cursor-pointer"><input type="radio" name="commission" checked={showCommission} onChange={() => setShowCommission(true)} /> بعد الخصم</label>
+        </div>
+      </ActionBar>
+      {reportContent && <ReportPrintableContent title={`كشف حساب المالك: ${db.owners.find(o => o.id === selectedOwnerId)?.name}`} date={`للفترة من ${formatDate(startDate)} إلى ${formatDate(endDate)}`}>{reportContent}</ReportPrintableContent>}
+      {isPrinting && reportContent && <PrintPreviewModal isOpen={isPrinting} onClose={() => setIsPrinting(false)} title="كشف حساب المالك"><ReportPrintableContent title={`كشف حساب المالك: ${db.owners.find(o => o.id === selectedOwnerId)?.name}`} date={`للفترة من ${formatDate(startDate)} إلى ${formatDate(endDate)}`}>{reportContent}</ReportPrintableContent></PrintPreviewModal>}
+    </Card>
+  );
 };
+
 
 const TenantStatement: React.FC = () => {
-    const { db, settings, contractBalances } = useApp();
-    const [selectedContractId, setSelectedContractId] = useState<string>(db.contracts[0]?.id || '');
-    const [isPrinting, setIsPrinting] = useState(false);
-    const statementData = useMemo(() => {
-        if (!selectedContractId) return null; const contract = db.contracts.find(c => c.id === selectedContractId); if (!contract) return null;
-        const tenant = db.tenants.find(t => t.id === contract.tenantId); const unit = db.units.find(u => u.id === contract.unitId);
-        const property = db.properties.find(p => p.id === unit?.propertyId);
-        const invoices = db.invoices.filter(inv => inv.contractId === contract.id);
-        const receipts = db.receipts.filter(r => r.contractId === contract.id && r.status === 'POSTED');
-        let transactions: { date: string, description: string, debit: number, credit: number }[] = [];
-        invoices.forEach(inv => { transactions.push({ date: inv.dueDate, description: inv.notes || `فاتورة رقم ${inv.no}`, debit: inv.amount, credit: 0 }); });
-        const channelLabels: {[key: string]: string} = { 'CASH': 'نقدي', 'BANK': 'تحويل بنكي', 'POS': 'شبكة', 'OTHER': 'أخرى' };
-        receipts.forEach(r => { transactions.push({ date: r.dateTime, description: `دفعة (${channelLabels[r.channel] || r.channel}) - سند رقم ${r.no}`, debit: 0, credit: r.amount }); });
-        transactions.sort((a,b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-        let balance = 0; const statement = transactions.map(tx => { balance += tx.debit - tx.credit; return { ...tx, balance }; });
-        const finalBalance = contractBalances[contract.id]?.balance || 0;
-        return { contract, tenant, unit, property, statement, finalBalance };
-    }, [selectedContractId, db, contractBalances]);
-    const handleExportPdf = () => { if (!statementData) return; exportTenantStatementToPdf(statementData, settings); };
-    const reportContent = statementData && (
-        <div>
-            <div className="grid grid-cols-2 gap-4 text-sm p-4 border rounded-md border-border mb-6">
-                <div><strong>المستأجر:</strong> {statementData.tenant?.name}</div><div><strong>العقار:</strong> {statementData.property?.name}</div>
-                <div><strong>الهاتف:</strong> {statementData.tenant?.phone}</div><div><strong>الوحدة:</strong> {statementData.unit?.name}</div>
-            </div>
-            {/* FIX: Corrected path to currency settings */}
-            <div className="overflow-x-auto"><table className="w-full text-sm text-right border-collapse border border-border"><thead className="text-xs uppercase bg-background text-text"><tr><th scope="col" className="px-6 py-3 border border-border">التاريخ</th><th scope="col" className="px-6 py-3 border border-border">البيان</th><th scope="col" className="px-6 py-3 border border-border">مدين</th><th scope="col" className="px-6 py-3 border border-border">دائن</th><th scope="col" className="px-6 py-3 border border-border">الرصيد</th></tr></thead><tbody>{statementData.statement.map((tx, i) => (<tr key={i} className="bg-card"><td className="px-6 py-4 border border-border">{formatDate(tx.date)}</td><td className="px-6 py-4 border border-border">{tx.description}</td><td className="px-6 py-4 text-red-500 border border-border">{tx.debit > 0 ? formatCurrency(tx.debit, db.settings.operational.currency) : '-'}</td><td className="px-6 py-4 text-green-500 border border-border">{tx.credit > 0 ? formatCurrency(tx.credit, db.settings.operational.currency) : '-'}</td><td className="px-6 py-4 font-bold border border-border">{formatCurrency(tx.balance, db.settings.operational.currency)}</td></tr>))}</tbody><tfoot><tr className="font-bold text-base bg-background text-text"><td colSpan={4} className="px-6 py-4 text-left border border-border">الرصيد النهائي المستحق</td><td className="px-6 py-4 border border-border">{formatCurrency(statementData.finalBalance, db.settings.operational.currency)}</td></tr></tfoot></table></div>
+  const { db, settings, contractBalances } = useApp();
+  const [selectedContractId, setSelectedContractId] = useState<string>(db.contracts[0]?.id || '');
+  const [isPrinting, setIsPrinting] = useState(false);
+  const cur = settings.operational?.currency ?? 'OMR';
+
+  const statementData = useMemo(() => {
+    if (!selectedContractId) return null;
+    const contract = db.contracts.find(c => c.id === selectedContractId);
+    if (!contract) return null;
+    const tenant = db.tenants.find(t => t.id === contract.tenantId);
+    const unit = db.units.find(u => u.id === contract.unitId);
+    const property = db.properties.find(p => p.id === unit?.propertyId);
+    const invoices = db.invoices.filter(inv => inv.contractId === contract.id);
+    const receipts = db.receipts.filter(r => r.contractId === contract.id && r.status === 'POSTED');
+    let transactions: { date: string; description: string; debit: number; credit: number }[] = [];
+    invoices.forEach(inv => transactions.push({ date: inv.dueDate, description: inv.notes || `فاتورة رقم ${inv.no}`, debit: inv.amount, credit: 0 }));
+    const channelLabels: Record<string, string> = { CASH: 'نقدي', BANK: 'تحويل بنكي', POS: 'شبكة', OTHER: 'أخرى' };
+    receipts.forEach(r => transactions.push({ date: r.dateTime, description: `دفعة (${channelLabels[r.channel] || r.channel}) - سند ${r.no}`, debit: 0, credit: r.amount }));
+    transactions.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+    let balance = 0;
+    const statement = transactions.map(tx => { balance += tx.debit - tx.credit; return { ...tx, balance }; });
+    const finalBalance = contractBalances[contract.id]?.balance || 0;
+    return { contract, tenant, unit, property, statement, finalBalance };
+  }, [selectedContractId, db, contractBalances]);
+
+  const handleExportPdf = () => { if (statementData) exportTenantStatementToPdf(statementData, settings); };
+
+  const reportContent = statementData && (
+    <div>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm p-4 border rounded-lg border-border mb-6 bg-background">
+        <div><span className="text-text-muted text-xs">المستأجر:</span> <span className="font-bold block">{statementData.tenant?.name}</span></div>
+        <div><span className="text-text-muted text-xs">العقار:</span> <span className="font-bold block">{statementData.property?.name}</span></div>
+        <div><span className="text-text-muted text-xs">الهاتف:</span> <span className="font-bold block">{statementData.tenant?.phone}</span></div>
+        <div><span className="text-text-muted text-xs">الوحدة:</span> <span className="font-bold block">{statementData.unit?.name}</span></div>
+      </div>
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm text-right border-collapse">
+          <thead>
+            <tr className="bg-background text-text-muted text-xs uppercase">
+              <th className="px-4 py-3 border border-border">التاريخ</th>
+              <th className="px-4 py-3 border border-border">البيان</th>
+              <th className="px-4 py-3 border border-border">مدين</th>
+              <th className="px-4 py-3 border border-border">دائن</th>
+              <th className="px-4 py-3 border border-border">الرصيد</th>
+            </tr>
+          </thead>
+          <tbody>
+            {statementData.statement.map((tx, i) => (
+              <tr key={i} className="bg-card hover:bg-background/50">
+                <td className="px-4 py-3 border border-border">{formatDate(tx.date)}</td>
+                <td className="px-4 py-3 border border-border">{tx.description}</td>
+                <td className="px-4 py-3 text-red-500 border border-border font-mono">{tx.debit > 0 ? formatCurrency(tx.debit, cur) : '-'}</td>
+                <td className="px-4 py-3 text-green-500 border border-border font-mono">{tx.credit > 0 ? formatCurrency(tx.credit, cur) : '-'}</td>
+                <td className="px-4 py-3 font-bold border border-border font-mono">{formatCurrency(tx.balance, cur)}</td>
+              </tr>
+            ))}
+          </tbody>
+          <tfoot>
+            <tr className="font-bold bg-primary/5 text-text">
+              <td colSpan={4} className="px-4 py-3 text-left border border-border">الرصيد النهائي المستحق</td>
+              <td className="px-4 py-3 border border-border font-mono">{formatCurrency(statementData.finalBalance, cur)}</td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    </div>
+  );
+
+  return (
+    <Card className="p-6">
+      <SectionHeader title="كشف حساب المستأجر" icon={<Users size={20} className="text-primary" />} />
+      {statementData && (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-6">
+          <MiniKpi label="إجمالي الفواتير" value={formatCurrency(statementData.statement.reduce((s, tx) => s + tx.debit, 0), cur)} icon={<FileText size={16} />} color="bg-red-100 dark:bg-red-900/40 text-red-600" />
+          <MiniKpi label="إجمالي المدفوع" value={formatCurrency(statementData.statement.reduce((s, tx) => s + tx.credit, 0), cur)} icon={<ArrowDown size={16} />} color="bg-green-100 dark:bg-green-900/40 text-green-600" />
+          <MiniKpi label="الرصيد المستحق" value={formatCurrency(statementData.finalBalance, cur)} icon={<Wallet size={16} />} color={statementData.finalBalance > 0 ? 'bg-red-100 dark:bg-red-900/40 text-red-600' : 'bg-green-100 dark:bg-green-900/40 text-green-600'} />
         </div>
-    );
-    return (
-        <div>
-             <h2 className="text-xl font-bold mb-4">كشف حساب المستأجر</h2>
-            <div className="mb-4 flex gap-4 items-end">
-                <div className="flex-grow"><label className="block text-sm font-medium mb-1">اختر العقد</label><select value={selectedContractId} onChange={(e) => setSelectedContractId(e.target.value)} className="w-full md:w-1/2"><option value="">-- اختر --</option>{db.contracts.map(c => { const t = db.tenants.find(t => t.id === c.tenantId); const u = db.units.find(u => u.id === c.unitId); return <option key={c.id} value={c.id}>{u?.name} / {t?.name} (يبدأ في {c.start})</option> })}</select></div>
-                <button onClick={() => setIsPrinting(true)} className="btn btn-primary flex items-center gap-2"><Printer size={16} /> طباعة</button>
-                <button onClick={handleExportPdf} className="btn btn-secondary flex items-center gap-2"><FileText size={16} /> تصدير PDF</button>
-            </div>
-            {reportContent && (<ReportPrintableContent title="كشف حساب مستأجر" date={`تاريخ التقرير: ${new Date().toLocaleDateString('ar-EG')}`}>{reportContent}</ReportPrintableContent>)}
-            {isPrinting && reportContent && (<PrintPreviewModal isOpen={isPrinting} onClose={() => setIsPrinting(false)} title="معاينة طباعة كشف حساب المستأجر"><ReportPrintableContent title="كشف حساب مستأجر" date={`تاريخ التقرير: ${new Date().toLocaleDateString('ar-EG')}`}>{reportContent}</ReportPrintableContent></PrintPreviewModal>)}
+      )}
+      <ActionBar onPrint={() => setIsPrinting(true)} onExport={handleExportPdf}>
+        <div className="flex-grow max-w-md">
+          <label className="block text-xs font-medium text-text-muted mb-1">اختر العقد</label>
+          <select value={selectedContractId} onChange={e => setSelectedContractId(e.target.value)} className="w-full text-sm">
+            <option value="">-- اختر --</option>
+            {db.contracts.map(c => { const t = db.tenants.find(t => t.id === c.tenantId); const u = db.units.find(u => u.id === c.unitId); return <option key={c.id} value={c.id}>{u?.name} / {t?.name} (يبدأ في {c.start})</option>; })}
+          </select>
         </div>
-    )
+      </ActionBar>
+      {reportContent && <ReportPrintableContent title="كشف حساب مستأجر" date={`تاريخ التقرير: ${new Date().toLocaleDateString('ar-EG')}`}>{reportContent}</ReportPrintableContent>}
+      {isPrinting && reportContent && <PrintPreviewModal isOpen={isPrinting} onClose={() => setIsPrinting(false)} title="كشف حساب المستأجر"><ReportPrintableContent title="كشف حساب مستأجر" date={`تاريخ التقرير: ${new Date().toLocaleDateString('ar-EG')}`}>{reportContent}</ReportPrintableContent></PrintPreviewModal>}
+    </Card>
+  );
 };
+
 
 const IncomeStatement: React.FC = () => {
-    const { db, settings } = useApp();
-    const today = new Date();
-    const firstDayOfYear = new Date(today.getFullYear(), 0, 1).toISOString().slice(0, 10);
-    const [startDate, setStartDate] = useState(firstDayOfYear);
-    const [endDate, setEndDate] = useState(today.toISOString().slice(0, 10));
-    const [isPrinting, setIsPrinting] = useState(false);
+  const { db, settings } = useApp();
+  const today = new Date();
+  const [startDate, setStartDate] = useState(new Date(today.getFullYear(), 0, 1).toISOString().slice(0, 10));
+  const [endDate, setEndDate] = useState(today.toISOString().slice(0, 10));
+  const [isPrinting, setIsPrinting] = useState(false);
+  const cur = settings.operational?.currency ?? 'OMR';
+  const data = useMemo(() => calculateIncomeStatementData(db, startDate, endDate), [db, startDate, endDate]);
+  const handleExportPdf = () => exportIncomeStatementToPdf(data, settings, `للفترة من ${formatDate(startDate)} إلى ${formatDate(endDate)}`);
 
-    const data = useMemo(() => calculateIncomeStatementData(db, startDate, endDate), [db, startDate, endDate]);
-    
-    const handleExportPdf = () => {
-        const dateRange = `للفترة من ${formatDate(startDate)} إلى ${formatDate(endDate)}`;
-        exportIncomeStatementToPdf(data, settings, dateRange);
-    };
-    
-    const reportContent = (
-         <div className="max-w-2xl mx-auto space-y-6">
-            <div>
-                <h3 className="text-lg font-bold border-b-2 border-primary pb-2 mb-3 flex items-center gap-2"><TrendingUp className="text-green-500" /> الإيرادات</h3>
-                {data.revenues.map(item => (
-                    <div key={item.no} className="flex justify-between text-sm py-1">
-                        <span>{item.name}</span>
-                        {/* FIX: Corrected path to currency settings */}
-                        <span className="font-mono">{formatCurrency(item.balance, settings.operational.currency)}</span>
-                    </div>
-                ))}
-                <div className="flex justify-between text-md font-bold pt-2 border-t mt-2">
-                    <span>إجمالي الإيرادات</span>
-                    {/* FIX: Corrected path to currency settings */}
-                    <span>{formatCurrency(data.totalRevenue, settings.operational.currency)}</span>
-                </div>
-            </div>
-             <div>
-                <h3 className="text-lg font-bold border-b-2 border-primary pb-2 mb-3 flex items-center gap-2"><TrendingDown className="text-red-500" /> المصروفات</h3>
-                {data.expenses.map(item => (
-                    <div key={item.no} className="flex justify-between text-sm py-1">
-                        <span>{item.name}</span>
-                        {/* FIX: Corrected path to currency settings */}
-                        <span className="font-mono">({formatCurrency(item.balance, settings.operational.currency)})</span>
-                    </div>
-                ))}
-                <div className="flex justify-between text-md font-bold pt-2 border-t mt-2">
-                    <span>إجمالي المصروفات</span>
-                    {/* FIX: Corrected path to currency settings */}
-                    <span>({formatCurrency(data.totalExpense, settings.operational.currency)})</span>
-                </div>
-            </div>
-            <div className={`p-4 rounded-md space-y-3 ${data.netIncome >= 0 ? 'bg-green-50 dark:bg-green-900' : 'bg-red-50 dark:bg-red-900'}`}>
-                <div className="flex justify-between text-lg font-black">
-                    <span>صافي الربح / (الخسارة)</span>
-                    {/* FIX: Corrected path to currency settings */}
-                    <span>{formatCurrency(data.netIncome, settings.operational.currency)}</span>
-                </div>
-            </div>
-        </div>
-    );
-    return (
+  const chartData = useMemo(() => {
+    const items = [
+      ...data.revenues.map(r => ({ name: r.name, value: r.balance, type: 'revenue' })),
+      ...data.expenses.map(e => ({ name: e.name, value: e.balance, type: 'expense' })),
+    ];
+    return items;
+  }, [data]);
+
+  const reportContent = (
+    <div className="space-y-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         <div>
-             <h2 className="text-xl font-bold mb-4">قائمة الدخل</h2>
-            <div className="mb-6 flex flex-wrap gap-4 items-end">
-                <div><label className="block text-sm font-medium mb-1">من تاريخ</label><input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} /></div>
-                <div><label className="block text-sm font-medium mb-1">إلى تاريخ</label><input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} /></div>
-                <button onClick={() => setIsPrinting(true)} className="btn btn-primary flex items-center gap-2"><Printer size={16} /> طباعة</button>
-                <button onClick={handleExportPdf} className="btn btn-secondary flex items-center gap-2"><FileText size={16} /> تصدير PDF</button>
+          <h3 className="text-lg font-bold border-b-2 border-emerald-500 pb-2 mb-4 flex items-center gap-2"><TrendingUp className="text-emerald-500" size={20} /> الإيرادات</h3>
+          {data.revenues.map(item => (
+            <div key={item.no} className="flex justify-between items-center text-sm py-2 border-b border-border/50 last:border-0">
+              <span>{item.name}</span>
+              <span className="font-mono font-bold text-emerald-600">{formatCurrency(item.balance, cur)}</span>
             </div>
-            <ReportPrintableContent title="قائمة الدخل" date={`للفترة من ${formatDate(startDate)} إلى ${formatDate(endDate)}`}>{reportContent}</ReportPrintableContent>
-            {isPrinting && (<PrintPreviewModal isOpen={isPrinting} onClose={() => setIsPrinting(false)} title="معاينة طباعة قائمة الدخل"><ReportPrintableContent title="قائمة الدخل" date={`للفترة من ${formatDate(startDate)} إلى ${formatDate(endDate)}`}>{reportContent}</ReportPrintableContent></PrintPreviewModal>)}
+          ))}
+          <div className="flex justify-between text-base font-bold pt-3 mt-2 border-t-2 border-emerald-500">
+            <span>إجمالي الإيرادات</span>
+            <span className="text-emerald-600">{formatCurrency(data.totalRevenue, cur)}</span>
+          </div>
         </div>
-    );
+        <div>
+          <h3 className="text-lg font-bold border-b-2 border-red-500 pb-2 mb-4 flex items-center gap-2"><TrendingDown className="text-red-500" size={20} /> المصروفات</h3>
+          {data.expenses.map(item => (
+            <div key={item.no} className="flex justify-between items-center text-sm py-2 border-b border-border/50 last:border-0">
+              <span>{item.name}</span>
+              <span className="font-mono font-bold text-red-600">({formatCurrency(item.balance, cur)})</span>
+            </div>
+          ))}
+          <div className="flex justify-between text-base font-bold pt-3 mt-2 border-t-2 border-red-500">
+            <span>إجمالي المصروفات</span>
+            <span className="text-red-600">({formatCurrency(data.totalExpense, cur)})</span>
+          </div>
+        </div>
+      </div>
+      <div className={`p-5 rounded-xl text-center ${data.netIncome >= 0 ? 'bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800' : 'bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800'}`}>
+        <p className="text-sm text-text-muted mb-1">صافي الربح / (الخسارة)</p>
+        <p className={`text-3xl font-black ${data.netIncome >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>{formatCurrency(data.netIncome, cur)}</p>
+      </div>
+    </div>
+  );
+
+  return (
+    <Card className="p-6">
+      <SectionHeader title="قائمة الدخل" icon={<TrendingUp size={20} className="text-primary" />} />
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-6">
+        <MiniKpi label="إجمالي الإيرادات" value={formatCurrency(data.totalRevenue, cur)} icon={<ArrowUp size={16} />} color="bg-emerald-100 dark:bg-emerald-900/40 text-emerald-600" />
+        <MiniKpi label="إجمالي المصروفات" value={formatCurrency(data.totalExpense, cur)} icon={<ArrowDown size={16} />} color="bg-red-100 dark:bg-red-900/40 text-red-600" />
+        <MiniKpi label="صافي الدخل" value={formatCurrency(data.netIncome, cur)} icon={<Banknote size={16} />} color={data.netIncome >= 0 ? 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-600' : 'bg-red-100 dark:bg-red-900/40 text-red-600'} />
+      </div>
+
+      {chartData.length > 0 && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+          <div className="bg-background rounded-xl p-4 border border-border">
+            <p className="text-sm font-bold mb-3 text-text-muted">توزيع الإيرادات</p>
+            <div className="h-48" dir="ltr">
+              <ResponsiveContainer width="100%" height="100%">
+                <RechartsPie>
+                  <Pie data={data.revenues} dataKey="balance" nameKey="name" cx="50%" cy="50%" outerRadius={70} label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`} labelLine={false} fontSize={10}>
+                    {data.revenues.map((_, i) => <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />)}
+                  </Pie>
+                  <Tooltip formatter={(v: number) => formatCurrency(v, cur)} />
+                </RechartsPie>
+              </ResponsiveContainer>
+            </div>
+          </div>
+          <div className="bg-background rounded-xl p-4 border border-border">
+            <p className="text-sm font-bold mb-3 text-text-muted">توزيع المصروفات</p>
+            <div className="h-48" dir="ltr">
+              <ResponsiveContainer width="100%" height="100%">
+                <RechartsPie>
+                  <Pie data={data.expenses} dataKey="balance" nameKey="name" cx="50%" cy="50%" outerRadius={70} label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`} labelLine={false} fontSize={10}>
+                    {data.expenses.map((_, i) => <Cell key={i} fill={CHART_COLORS[(i + 3) % CHART_COLORS.length]} />)}
+                  </Pie>
+                  <Tooltip formatter={(v: number) => formatCurrency(v, cur)} />
+                </RechartsPie>
+              </ResponsiveContainer>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <ActionBar onPrint={() => setIsPrinting(true)} onExport={handleExportPdf}>
+        <div>
+          <label className="block text-xs font-medium text-text-muted mb-1">من</label>
+          <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} className="text-sm" />
+        </div>
+        <div>
+          <label className="block text-xs font-medium text-text-muted mb-1">إلى</label>
+          <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} className="text-sm" />
+        </div>
+      </ActionBar>
+      <ReportPrintableContent title="قائمة الدخل" date={`للفترة من ${formatDate(startDate)} إلى ${formatDate(endDate)}`}>{reportContent}</ReportPrintableContent>
+      {isPrinting && <PrintPreviewModal isOpen={isPrinting} onClose={() => setIsPrinting(false)} title="قائمة الدخل"><ReportPrintableContent title="قائمة الدخل" date={`للفترة من ${formatDate(startDate)} إلى ${formatDate(endDate)}`}>{reportContent}</ReportPrintableContent></PrintPreviewModal>}
+    </Card>
+  );
 };
+
 
 const BalanceSheet: React.FC = () => {
-    const { db, settings } = useApp();
-    const [asOfDate, setAsOfDate] = useState(new Date().toISOString().slice(0, 10));
-    const [isPrinting, setIsPrinting] = useState(false);
-    
-    const data = useMemo(() => calculateBalanceSheetData(db, asOfDate), [db, asOfDate]);
+  const { db, settings } = useApp();
+  const [asOfDate, setAsOfDate] = useState(new Date().toISOString().slice(0, 10));
+  const [isPrinting, setIsPrinting] = useState(false);
+  const cur = settings.operational?.currency ?? 'OMR';
+  const data = useMemo(() => calculateBalanceSheetData(db, asOfDate), [db, asOfDate]);
+  const handleExportPdf = () => exportBalanceSheetToPdf(data, settings, asOfDate);
 
-    const handleExportPdf = () => exportBalanceSheetToPdf(data, settings, asOfDate);
+  const renderLines = (lines: any[], indent = 0) => (
+    <>
+      {lines.map(line => (
+        <React.Fragment key={line.no}>
+          <tr className={line.isParent ? 'font-bold bg-background' : 'hover:bg-background/50'}>
+            <td className="p-2.5 border border-border" style={{ paddingRight: `${1 + indent}rem` }}>{line.name}</td>
+            <td className="p-2.5 border border-border font-mono">{line.balance > 0 ? formatCurrency(line.balance, cur) : '-'}</td>
+          </tr>
+          {line.children && renderLines(line.children, indent + 1.5)}
+        </React.Fragment>
+      ))}
+    </>
+  );
 
-    const renderLines = (lines: any[], indent = 0) => (
-        <>
-            {lines.map(line => (
-                <React.Fragment key={line.no}>
-                    <tr className={line.isParent ? 'font-bold bg-background' : ''}>
-                        <td className="p-2 border" style={{ paddingRight: `${1 + indent}rem` }}>{line.name}</td>
-                        {/* FIX: Corrected path to currency settings */}
-                        <td className="p-2 border font-mono">{line.balance > 0 ? formatCurrency(line.balance, settings.operational.currency) : '-'}</td>
-                    </tr>
-                    {line.children && renderLines(line.children, indent + 1.5)}
-                </React.Fragment>
-            ))}
-        </>
-    );
-    
-    const reportContent = (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            <div>
-                <h3 className="text-lg font-bold mb-2 flex items-center gap-2"><Wallet/> الأصول</h3>
-                <table className="w-full text-sm border-collapse border">
-                    <tbody>{renderLines(data.assets)}</tbody>
-                    {/* FIX: Corrected path to currency settings */}
-                    <tfoot><tr className="font-black text-base bg-blue-100 dark:bg-blue-900"><td className="p-2 border">إجمالي الأصول</td><td className="p-2 border font-mono">{formatCurrency(data.totalAssets, settings.operational.currency)}</td></tr></tfoot>
-                </table>
-            </div>
-            <div>
-                 <h3 className="text-lg font-bold mb-2">الالتزامات وحقوق الملكية</h3>
-                 <table className="w-full text-sm border-collapse border">
-                    <tbody>
-                        {renderLines(data.liabilities)}
-                        {/* FIX: Corrected path to currency settings */}
-                        <tr className="font-bold bg-background"><td className="p-2 border">إجمالي الالتزامات</td><td className="p-2 border font-mono">{formatCurrency(data.totalLiabilities, settings.operational.currency)}</td></tr>
-                        {renderLines(data.equity)}
-                        {/* FIX: Corrected path to currency settings */}
-                        <tr className="font-bold bg-background"><td className="p-2 border">إجمالي حقوق الملكية</td><td className="p-2 border font-mono">{formatCurrency(data.totalEquity, settings.operational.currency)}</td></tr>
-                    </tbody>
-                    {/* FIX: Corrected path to currency settings */}
-                    <tfoot><tr className="font-black text-base bg-blue-100 dark:bg-blue-900"><td className="p-2 border">إجمالي الالتزامات وحقوق الملكية</td><td className="p-2 border font-mono">{formatCurrency(data.totalLiabilities + data.totalEquity, settings.operational.currency)}</td></tr></tfoot>
-                </table>
-            </div>
-        </div>
-    );
-    
-    return (
+  const isBalanced = Math.abs(data.totalAssets - (data.totalLiabilities + data.totalEquity)) < 0.01;
+
+  const reportContent = (
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      <div>
+        <h3 className="text-lg font-bold mb-3 flex items-center gap-2"><Wallet size={18} className="text-blue-500" /> الأصول</h3>
+        <table className="w-full text-sm border-collapse border border-border">
+          <tbody>{renderLines(data.assets)}</tbody>
+          <tfoot><tr className="font-black text-base bg-blue-50 dark:bg-blue-900/20"><td className="p-2.5 border border-border">إجمالي الأصول</td><td className="p-2.5 border border-border font-mono">{formatCurrency(data.totalAssets, cur)}</td></tr></tfoot>
+        </table>
+      </div>
+      <div>
+        <h3 className="text-lg font-bold mb-3">الالتزامات وحقوق الملكية</h3>
+        <table className="w-full text-sm border-collapse border border-border">
+          <tbody>
+            {renderLines(data.liabilities)}
+            <tr className="font-bold bg-background"><td className="p-2.5 border border-border">إجمالي الالتزامات</td><td className="p-2.5 border border-border font-mono">{formatCurrency(data.totalLiabilities, cur)}</td></tr>
+            {renderLines(data.equity)}
+            <tr className="font-bold bg-background"><td className="p-2.5 border border-border">إجمالي حقوق الملكية</td><td className="p-2.5 border border-border font-mono">{formatCurrency(data.totalEquity, cur)}</td></tr>
+          </tbody>
+          <tfoot><tr className="font-black text-base bg-blue-50 dark:bg-blue-900/20"><td className="p-2.5 border border-border">إجمالي الالتزامات وحقوق الملكية</td><td className="p-2.5 border border-border font-mono">{formatCurrency(data.totalLiabilities + data.totalEquity, cur)}</td></tr></tfoot>
+        </table>
+      </div>
+    </div>
+  );
+
+  return (
+    <Card className="p-6">
+      <SectionHeader title="الميزانية العمومية" icon={<Wallet size={20} className="text-primary" />} />
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-6">
+        <MiniKpi label="إجمالي الأصول" value={formatCurrency(data.totalAssets, cur)} icon={<ArrowUp size={16} />} color="bg-blue-100 dark:bg-blue-900/40 text-blue-600" />
+        <MiniKpi label="إجمالي الالتزامات" value={formatCurrency(data.totalLiabilities, cur)} icon={<ArrowDown size={16} />} color="bg-red-100 dark:bg-red-900/40 text-red-600" />
+        <MiniKpi label="التوازن" value={isBalanced ? 'متوازنة' : 'غير متوازنة'} icon={isBalanced ? <ArrowUp size={16} /> : <ArrowDown size={16} />} color={isBalanced ? 'bg-green-100 dark:bg-green-900/40 text-green-600' : 'bg-red-100 dark:bg-red-900/40 text-red-600'} />
+      </div>
+      <ActionBar onPrint={() => setIsPrinting(true)} onExport={handleExportPdf}>
         <div>
-             <h2 className="text-xl font-bold mb-4">الميزانية العمومية</h2>
-            <div className="mb-6 flex flex-wrap gap-4 items-end">
-                <div><label className="block text-sm font-medium mb-1">حتى تاريخ</label><input type="date" value={asOfDate} onChange={e => setAsOfDate(e.target.value)} /></div>
-                <button onClick={() => setIsPrinting(true)} className="btn btn-primary flex items-center gap-2"><Printer size={16} /> طباعة</button>
-                <button onClick={handleExportPdf} className="btn btn-secondary flex items-center gap-2"><FileText size={16} /> تصدير PDF</button>
-            </div>
-            <ReportPrintableContent title="الميزانية العمومية" date={`كما في تاريخ ${formatDate(asOfDate)}`}>{reportContent}</ReportPrintableContent>
-             {isPrinting && (<PrintPreviewModal isOpen={isPrinting} onClose={() => setIsPrinting(false)} title="معاينة طباعة الميزانية العمومية"><ReportPrintableContent title="الميزانية العمومية" date={`كما في تاريخ ${formatDate(asOfDate)}`}>{reportContent}</ReportPrintableContent></PrintPreviewModal>)}
+          <label className="block text-xs font-medium text-text-muted mb-1">حتى تاريخ</label>
+          <input type="date" value={asOfDate} onChange={e => setAsOfDate(e.target.value)} className="text-sm" />
         </div>
-    );
+      </ActionBar>
+      <ReportPrintableContent title="الميزانية العمومية" date={`كما في تاريخ ${formatDate(asOfDate)}`}>{reportContent}</ReportPrintableContent>
+      {isPrinting && <PrintPreviewModal isOpen={isPrinting} onClose={() => setIsPrinting(false)} title="الميزانية العمومية"><ReportPrintableContent title="الميزانية العمومية" date={`كما في تاريخ ${formatDate(asOfDate)}`}>{reportContent}</ReportPrintableContent></PrintPreviewModal>}
+    </Card>
+  );
 };
+
 
 const AgedReceivables: React.FC = () => {
-    const { db, settings } = useApp();
-    const [asOfDate, setAsOfDate] = useState(new Date().toISOString().slice(0, 10));
-    const [isPrinting, setIsPrinting] = useState(false);
+  const { db, settings } = useApp();
+  const [asOfDate, setAsOfDate] = useState(new Date().toISOString().slice(0, 10));
+  const [isPrinting, setIsPrinting] = useState(false);
+  const cur = settings.operational?.currency ?? 'OMR';
+  const data = useMemo(() => calculateAgedReceivables(db, asOfDate), [db, asOfDate]);
+  const handleExportPdf = () => exportAgedReceivablesToPdf(data, settings, asOfDate);
 
-    const data = useMemo(() => calculateAgedReceivables(db, asOfDate), [db, asOfDate]);
+  const agingChartData = useMemo(() => [
+    { name: 'حالي', value: data.totals.current },
+    { name: '1-30', value: data.totals['1-30'] },
+    { name: '31-60', value: data.totals['31-60'] },
+    { name: '61-90', value: data.totals['61-90'] },
+    { name: '90+', value: data.totals['90+'] },
+  ].filter(d => d.value > 0), [data]);
 
-    const handleExportPdf = () => {
-        exportAgedReceivablesToPdf(data, settings, asOfDate);
-    };
-    
-    const reportContent = (
-        <div className="overflow-x-auto">
-            <table className="w-full text-sm text-right border-collapse border border-border">
-                <thead className="text-xs uppercase bg-background text-text">
-                    <tr>
-                        <th className="px-4 py-3 border">المستأجر</th>
-                        <th className="px-4 py-3 border">الإجمالي المستحق</th>
-                        <th className="px-4 py-3 border">حالي</th>
-                        <th className="px-4 py-3 border">1-30 يوم</th>
-                        <th className="px-4 py-3 border">31-60 يوم</th>
-                        <th className="px-4 py-3 border">61-90 يوم</th>
-                        <th className="px-4 py-3 border">+90 يوم</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {data.lines.map((line, index) => (
-                        <tr key={index} className="bg-card hover:bg-background">
-                            <td className="px-4 py-2 border font-bold">{line.tenantName}</td>
-                            {/* FIX: Corrected path to currency settings */}
-                            <td className="px-4 py-2 border font-mono font-bold">{formatCurrency(line.total, settings.operational.currency)}</td>
-                            <td className="px-4 py-2 border font-mono">{line.current > 0 ? formatCurrency(line.current, settings.operational.currency) : '-'}</td>
-                            <td className="px-4 py-2 border font-mono">{line['1-30'] > 0 ? formatCurrency(line['1-30'], settings.operational.currency) : '-'}</td>
-                            <td className="px-4 py-2 border font-mono">{line['31-60'] > 0 ? formatCurrency(line['31-60'], settings.operational.currency) : '-'}</td>
-                            <td className="px-4 py-2 border font-mono">{line['61-90'] > 0 ? formatCurrency(line['61-90'], settings.operational.currency) : '-'}</td>
-                            <td className="px-4 py-2 border font-mono">{line['90+'] > 0 ? formatCurrency(line['90+'], settings.operational.currency) : '-'}</td>
-                        </tr>
-                    ))}
-                </tbody>
-                <tfoot>
-                    <tr className="font-bold text-base bg-background text-text">
-                        <td className="px-4 py-3 border text-left">الإجمالي</td>
-                        {/* FIX: Corrected path to currency settings */}
-                        <td className="px-4 py-3 border font-mono">{formatCurrency(data.totals.total, settings.operational.currency)}</td>
-                        <td className="px-4 py-3 border font-mono">{formatCurrency(data.totals.current, settings.operational.currency)}</td>
-                        <td className="px-4 py-3 border font-mono">{formatCurrency(data.totals['1-30'], settings.operational.currency)}</td>
-                        <td className="px-4 py-3 border font-mono">{formatCurrency(data.totals['31-60'], settings.operational.currency)}</td>
-                        <td className="px-4 py-3 border font-mono">{formatCurrency(data.totals['61-90'], settings.operational.currency)}</td>
-                        <td className="px-4 py-3 border font-mono">{formatCurrency(data.totals['90+'], settings.operational.currency)}</td>
-                    </tr>
-                </tfoot>
-            </table>
+  const reportContent = (
+    <div className="overflow-x-auto">
+      <table className="w-full text-sm text-right border-collapse">
+        <thead>
+          <tr className="bg-background text-text-muted text-xs uppercase">
+            <th className="px-3 py-3 border border-border">المستأجر</th>
+            <th className="px-3 py-3 border border-border">الإجمالي</th>
+            <th className="px-3 py-3 border border-border">حالي</th>
+            <th className="px-3 py-3 border border-border">1-30 يوم</th>
+            <th className="px-3 py-3 border border-border">31-60 يوم</th>
+            <th className="px-3 py-3 border border-border">61-90 يوم</th>
+            <th className="px-3 py-3 border border-border">+90 يوم</th>
+          </tr>
+        </thead>
+        <tbody>
+          {data.lines.map((line, i) => (
+            <tr key={i} className="bg-card hover:bg-background/50">
+              <td className="px-3 py-3 border border-border font-medium">{line.tenantName}</td>
+              <td className="px-3 py-3 border border-border font-bold font-mono text-red-600">{formatCurrency(line.total, cur)}</td>
+              <td className="px-3 py-3 border border-border font-mono">{line.current > 0 ? formatCurrency(line.current, cur) : '-'}</td>
+              <td className="px-3 py-3 border border-border font-mono">{line['1-30'] > 0 ? formatCurrency(line['1-30'], cur) : '-'}</td>
+              <td className="px-3 py-3 border border-border font-mono">{line['31-60'] > 0 ? formatCurrency(line['31-60'], cur) : '-'}</td>
+              <td className="px-3 py-3 border border-border font-mono">{line['61-90'] > 0 ? formatCurrency(line['61-90'], cur) : '-'}</td>
+              <td className="px-3 py-3 border border-border font-mono text-red-600">{line['90+'] > 0 ? formatCurrency(line['90+'], cur) : '-'}</td>
+            </tr>
+          ))}
+        </tbody>
+        <tfoot>
+          <tr className="font-bold bg-primary/5 text-text">
+            <td className="px-3 py-3 border border-border">الإجمالي</td>
+            <td className="px-3 py-3 border border-border font-mono">{formatCurrency(data.totals.total, cur)}</td>
+            <td className="px-3 py-3 border border-border font-mono">{formatCurrency(data.totals.current, cur)}</td>
+            <td className="px-3 py-3 border border-border font-mono">{formatCurrency(data.totals['1-30'], cur)}</td>
+            <td className="px-3 py-3 border border-border font-mono">{formatCurrency(data.totals['31-60'], cur)}</td>
+            <td className="px-3 py-3 border border-border font-mono">{formatCurrency(data.totals['61-90'], cur)}</td>
+            <td className="px-3 py-3 border border-border font-mono">{formatCurrency(data.totals['90+'], cur)}</td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+  );
+
+  return (
+    <Card className="p-6">
+      <SectionHeader title="تقرير أعمار الديون" icon={<CalendarRange size={20} className="text-primary" />} />
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-6">
+        <MiniKpi label="إجمالي الذمم" value={formatCurrency(data.totals.total, cur)} icon={<Users size={16} />} color="bg-red-100 dark:bg-red-900/40 text-red-600" />
+        <MiniKpi label="عدد المستأجرين المدينين" value={String(data.lines.length)} icon={<Users size={16} />} color="bg-amber-100 dark:bg-amber-900/40 text-amber-600" />
+        <MiniKpi label="ديون متأخرة +90 يوم" value={formatCurrency(data.totals['90+'], cur)} icon={<ArrowDown size={16} />} color="bg-red-100 dark:bg-red-900/40 text-red-700" />
+      </div>
+
+      {agingChartData.length > 0 && (
+        <div className="bg-background rounded-xl p-4 border border-border mb-6">
+          <p className="text-sm font-bold mb-3 text-text-muted">توزيع الذمم حسب العمر</p>
+          <div className="h-48" dir="ltr">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={agingChartData}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                <XAxis dataKey="name" fontSize={12} />
+                <YAxis fontSize={11} />
+                <Tooltip formatter={(v: number) => formatCurrency(v, cur)} />
+                <Bar dataKey="value" name="المبلغ" radius={[4, 4, 0, 0]}>
+                  {agingChartData.map((_, i) => <Cell key={i} fill={['#10b981', '#3b82f6', '#f59e0b', '#ef4444', '#991b1b'][i]} />)}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
         </div>
-    );
+      )}
 
-    return (
+      <ActionBar onPrint={() => setIsPrinting(true)} onExport={handleExportPdf}>
         <div>
-             <h2 className="text-xl font-bold mb-4">تقرير أعمار الذمم المدينة</h2>
-            <div className="mb-6 flex flex-wrap gap-4 items-end">
-                <div>
-                    <label className="block text-sm font-medium mb-1">التقرير كما في تاريخ</label>
-                    <input type="date" value={asOfDate} onChange={e => setAsOfDate(e.target.value)} />
-                </div>
-                <button onClick={() => setIsPrinting(true)} className="btn btn-primary flex items-center gap-2"><Printer size={16} /> طباعة</button>
-                <button onClick={handleExportPdf} className="btn btn-secondary flex items-center gap-2"><FileText size={16} /> تصدير PDF</button>
-            </div>
-            <ReportPrintableContent title="تقرير أعمار الذمم المدينة" date={`كما في تاريخ ${formatDate(asOfDate)}`}>{reportContent}</ReportPrintableContent>
-             {isPrinting && (
-                <PrintPreviewModal isOpen={isPrinting} onClose={() => setIsPrinting(false)} title="معاينة طباعة تقرير أعمار الذمم">
-                    <ReportPrintableContent title="تقرير أعمار الذمم المدينة" date={`كما في تاريخ ${formatDate(asOfDate)}`}>{reportContent}</ReportPrintableContent>
-                </PrintPreviewModal>
-            )}
+          <label className="block text-xs font-medium text-text-muted mb-1">حتى تاريخ</label>
+          <input type="date" value={asOfDate} onChange={e => setAsOfDate(e.target.value)} className="text-sm" />
         </div>
-    );
+      </ActionBar>
+      <ReportPrintableContent title="تقرير أعمار الديون" date={`كما في تاريخ ${formatDate(asOfDate)}`}>{reportContent}</ReportPrintableContent>
+      {isPrinting && <PrintPreviewModal isOpen={isPrinting} onClose={() => setIsPrinting(false)} title="تقرير أعمار الديون"><ReportPrintableContent title="تقرير أعمار الديون" date={`كما في تاريخ ${formatDate(asOfDate)}`}>{reportContent}</ReportPrintableContent></PrintPreviewModal>}
+    </Card>
+  );
 };
-
 
 export default Reports;
