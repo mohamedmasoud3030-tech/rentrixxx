@@ -9,6 +9,8 @@ import { Land, Commission } from '../types';
 import { formatCurrency } from '../utils/helpers';
 import { toast } from 'react-hot-toast';
 import ActionsMenu, { EditAction, DeleteAction } from '../components/shared/ActionsMenu';
+import Dexie from 'dexie';
+import { postJournalEntry } from '../services/financialEngine';
 
 const LandsAndCommissions: React.FC = () => {
   return (
@@ -235,8 +237,7 @@ const CommissionForm: React.FC<{ isOpen: boolean, onClose: () => void, commissio
 };
 
 const LandForm: React.FC<{ isOpen: boolean, onClose: () => void, land: Land | null }> = ({ isOpen, onClose, land }) => {
-    // FIX: Use dataService for data manipulation
-    const { dataService } = useApp();
+    const { dataService, settings } = useApp();
     const [data, setData] = useState<Partial<Land>>({});
 
     React.useEffect(() => {
@@ -249,14 +250,35 @@ const LandForm: React.FC<{ isOpen: boolean, onClose: () => void, land: Land | nu
         setData(prev => ({ ...prev, [name]: name === 'area' || name === 'ownerPrice' || name === 'commission' ? parseFloat(value) : value }));
     };
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        const wasPreviouslyNotSold = !land || land.status !== 'SOLD';
+        const isNowSold = data.status === 'SOLD';
+
         if (land) {
-            // FIX: Use dataService for data manipulation
-            dataService.update('lands', land.id, data);
+            await dataService.update('lands', land.id, data);
         } else {
-            // FIX: Use dataService for data manipulation
-            dataService.add('lands', data as any);
+            await dataService.add('lands', data as any);
+        }
+
+        if (wasPreviouslyNotSold && isNowSold && data.commission && data.commission > 0) {
+            try {
+                const mappings = settings.accounting?.accountMappings;
+                const cashAccount = mappings?.paymentMethods?.CASH || '1111';
+                const commissionRevenueAccount = mappings?.revenue?.OFFICE_COMMISSION || '4120';
+                const landId = land?.id || 'new-land';
+                await (dbEngine as Dexie).transaction('rw', [dbEngine.journalEntries, dbEngine.serials], async (tx) => {
+                    await postJournalEntry(tx, {
+                        dr: cashAccount,
+                        cr: commissionRevenueAccount,
+                        amount: data.commission!,
+                        ref: `LAND-SALE-${landId}`,
+                    });
+                });
+                toast.success('تم تسجيل قيد إيراد عمولة بيع الأرض.');
+            } catch (err) {
+                console.error('Failed to post land commission journal entry', err);
+            }
         }
         onClose();
     };

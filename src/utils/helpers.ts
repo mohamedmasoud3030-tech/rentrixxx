@@ -131,3 +131,11 @@ export const RECEIPT_STATUS_AR: Record<string, string> = {
 export const UNIT_STATUS_AR: Record<string, string> = {
     AVAILABLE: 'شاغرة', RENTED: 'مؤجرة', MAINTENANCE: 'صيانة'
 };
+
+export const CHANNEL_AR: Record<string, string> = {
+    CASH: 'نقدي', BANK: 'تحويل بنكي', POS: 'شبكة', OTHER: 'أخرى'
+};
+
+export const EXPENSE_STATUS_AR: Record<string, string> = {
+    POSTED: 'مرحّل', VOID: 'ملغى'
+};

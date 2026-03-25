@@ -5,6 +5,7 @@ import { Database, User, Settings, LegacySettings, Owner, Property, Unit, Tenant
 // FIX: Import postJournalEntry from financialEngine
 import { rebuildSnapshotsFromJournal as rebuildSnapshots, postJournalEntry } from '../services/financialEngine';
 import { dbEngine, SettingsWithId, SerialsWithId, GovernanceWithId } from '../services/db';
+import { runDailyAutomation, runManualAutomation, AutomationRunResult } from '../services/automationService';
 import { useLiveQuery } from 'dexie-react-hooks';
 import Dexie, { Transaction } from 'dexie';
 import { toast } from 'react-hot-toast';
@@ -164,7 +165,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
                     },
                 },
                 governance: { readOnly: false, lockedPeriods: [] },
-                serials: { receipt: 1000, expense: 1000, maintenance: 1000, invoice: 1000, lead: 1000, ownerSettlement: 1000, journalEntry: 1000, mission: 1000 },
+                serials: { receipt: 1000, expense: 1000, maintenance: 1000, invoice: 1000, lead: 1000, ownerSettlement: 1000, journalEntry: 1000, mission: 1000, contract: 1000 },
                 accounts: DEFAULT_ACCOUNTS.map(acc => ({...acc, id: acc.no, createdAt: Date.now()})),
                 notificationTemplates: DEFAULT_TEMPLATES,
             };
@@ -211,6 +212,26 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     };
     seed();
   }, [currentUser]);
+
+  useEffect(() => {
+    if (!db || !settings || !currentUser) return;
+    runDailyAutomation(db, settings).then(result => {
+        if (!result) return;
+        const total = result.invoicesCreated + result.lateFeesApplied + result.notificationsCreated;
+        if (total > 0) {
+            const parts: string[] = [];
+            if (result.invoicesCreated > 0) parts.push(`${result.invoicesCreated} فاتورة جديدة`);
+            if (result.lateFeesApplied > 0) parts.push(`${result.lateFeesApplied} غرامة تأخير`);
+            if (result.notificationsCreated > 0) parts.push(`${result.notificationsCreated} إشعار`);
+            toast.success(`تم تلقائياً: ${parts.join('، ')}`, { duration: 6000 });
+        }
+    });
+  }, [db, settings, currentUser]);
+
+  const triggerManualAutomation = useCallback(async (): Promise<AutomationRunResult> => {
+    if (!db || !settings) throw new Error("البيانات غير محملة.");
+    return runManualAutomation(db, settings);
+  }, [db, settings]);
 
   const login = useCallback(async (username: string, password: string) => {
     const user = users?.find(u => u.username === username);
@@ -570,10 +591,11 @@ const addManualJournalVoucher: AppContextType['financeService']['addManualJourna
       // FIX: Provide services instead of individual functions
       dataService,
       financeService,
+      runManualAutomation: triggerManualAutomation,
       generateNotifications: async () => {
         if (!settings) return 0;
         const alertDays = settings.operational?.contractAlertDays ?? 30;
-        const thresholds = [alertDays, 7, 1];
+        const thresholds = [1, 7, alertDays].sort((a, b) => a - b);
         const now = Date.now();
         const activeContracts = await dbEngine.contracts.where('status').equals('ACTIVE').toArray();
         const existingNotifs = await dbEngine.appNotifications.toArray();
@@ -581,16 +603,16 @@ const addManualJournalVoucher: AppContextType['financeService']['addManualJourna
         for (const c of activeContracts) {
           const endDate = new Date(c.end).getTime();
           const daysLeft = Math.ceil((endDate - now) / (1000 * 60 * 60 * 24));
+          if (daysLeft <= 0) continue;
+          const contractLink = `/contracts?contractId=${c.id}`;
           for (const threshold of thresholds) {
-            if (daysLeft <= threshold && daysLeft > 0) {
-              const key = `CONTRACT_EXPIRING-${c.id}-${threshold}`;
-              const alreadyExists = existingNotifs.some(n => n.link === `/contracts?contractId=${c.id}` && n.title.includes(String(threshold)));
-              if (!alreadyExists) {
-                await dbEngine.appNotifications.add({ id: crypto.randomUUID(), createdAt: now, isRead: false, role: 'ADMIN', type: 'CONTRACT_EXPIRING', title: `عقد ينتهي خلال ${threshold} يوم`, message: `عقد المستأجر سينتهي خلال ${daysLeft} يوم`, link: `/contracts?contractId=${c.id}` });
-                count++;
-              }
-              break;
+            if (daysLeft > threshold) continue;
+            const alreadyExists = existingNotifs.some(n => n.link === contractLink && n.title.includes(`${threshold} يوم`));
+            if (!alreadyExists) {
+              await dbEngine.appNotifications.add({ id: crypto.randomUUID(), createdAt: now, isRead: false, role: 'ADMIN', type: 'CONTRACT_EXPIRING', title: `عقد ينتهي خلال ${threshold} يوم`, message: `عقد المستأجر سينتهي خلال ${daysLeft} يوم. تنبيه عتبة ${threshold} يوم.`, link: contractLink });
+              count++;
             }
+            break;
           }
         }
         return count;

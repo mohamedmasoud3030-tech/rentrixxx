@@ -1,10 +1,11 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { 
     LayoutGrid, Building2, Users, FileText, Banknote, 
-    BarChart2, Settings, UserPlus, MessageSquare, Map as MapIcon
+    BarChart2, Settings, UserPlus, MessageSquare, Map as MapIcon, Bot
 } from 'lucide-react';
 import { useApp } from '../../../contexts/AppContext';
+import { getLastRunDate } from '../../../services/automationService';
 
 interface SidebarProps {
   sidebarOpen: boolean;
@@ -53,6 +54,7 @@ const Sidebar: React.FC<SidebarProps> = ({ sidebarOpen, setSidebarOpen }) => {
   const { auth, settings } = useApp();
   const { pathname } = useLocation();
   const sidebar = useRef<HTMLDivElement>(null);
+  const lastRunDate = getLastRunDate();
 
   useEffect(() => {
     const clickHandler = ({ target }: MouseEvent) => {
@@ -153,6 +155,16 @@ const Sidebar: React.FC<SidebarProps> = ({ sidebarOpen, setSidebarOpen }) => {
           })}
         </nav>
       </div>
+
+      {/* Automation last run indicator */}
+      {lastRunDate && (
+        <div className="px-4 py-3 border-t border-border">
+          <div className="flex items-center gap-2 text-[10px] text-text-muted">
+            <Bot size={12} className="text-primary flex-shrink-0" />
+            <span>آخر تشغيل تلقائي: {lastRunDate}</span>
+          </div>
+        </div>
+      )}
     </aside>
   );
 };

@@ -668,4 +668,5 @@ export interface AppContextType {
   
   // FIX: Add missing properties for People and Settings pages
   sendWhatsApp: (phone: string, message: string) => void;
+  runManualAutomation: () => Promise<any>;
 }

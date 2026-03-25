@@ -37,9 +37,7 @@ Preferred communication style: Simple, everyday language.
 - **Owner Settlements**: Track owner balances and commission calculations
 
 ### Service Layer Architecture
-- **dataService.ts**: Generic CRUD operations with audit logging and transaction support
-- **financeService.ts**: Financial operations (receipts, expenses, voids, settlements)
-- **financialEngine.ts**: Core accounting calculations and journal posting
+- **financialEngine.ts**: Core accounting calculations, journal posting, and snapshot rebuilding
 - **accountingService.ts**: Report generation (income statement, balance sheet, trial balance)
 - **auditEngine.ts**: Data integrity validation and issue detection
 - **pdfService.ts**: PDF generation using jsPDF with Arabic font support

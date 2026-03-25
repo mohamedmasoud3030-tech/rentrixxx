@@ -7,6 +7,7 @@ import { Link } from 'react-router-dom';
 const Notifications: React.FC = () => {
     const { db, settings } = useApp();
     const [isOpen, setIsOpen] = useState(false);
+    const [filter, setFilter] = useState<'all' | 'unread' | 'read'>('all');
     const [readLog, setReadLog] = useState<Record<string, number>>(() => {
         try {
             const parsed = JSON.parse(localStorage.getItem('notif_read_log') || '{}');
@@ -36,6 +37,14 @@ const Notifications: React.FC = () => {
     ];
 
     const unreadCount = allItems.filter(item => !(item.id in readLog)).length;
+
+    const filteredItems = allItems.filter(item => {
+        if (filter === 'unread') return !(item.id in readLog);
+        if (filter === 'read') return item.id in readLog;
+        return true;
+    });
+    const filteredOverdueInvoices = filteredItems.filter(i => i.type === 'overdue').map(i => (i as any).inv);
+    const filteredExpiringContracts = filteredItems.filter(i => i.type === 'expiring').map(i => (i as any).c);
 
     const markAllRead = () => {
         const now = Date.now();
@@ -94,21 +103,34 @@ const Notifications: React.FC = () => {
                         )}
                     </div>
 
+                    {/* Filter Tabs */}
+                    <div className="flex border-b border-border">
+                        {([['all', 'الكل'], ['unread', 'غير مقروء'], ['read', 'مقروء']] as const).map(([key, label]) => (
+                            <button
+                                key={key}
+                                onClick={() => setFilter(key)}
+                                className={`flex-1 py-2 text-xs font-bold transition-colors ${filter === key ? 'text-primary border-b-2 border-primary' : 'text-text-muted hover:text-text'}`}
+                            >
+                                {label}
+                            </button>
+                        ))}
+                    </div>
+
                     {/* Notification List */}
                     <div className="max-h-96 overflow-y-auto">
-                        {allItems.length === 0 ? (
+                        {filteredItems.length === 0 ? (
                             <div className="flex flex-col items-center justify-center py-10 gap-2">
                                 <Bell className="w-8 h-8 text-text-muted opacity-40" />
-                                <p className="text-sm text-text-muted">لا توجد تنبيهات جديدة</p>
+                                <p className="text-sm text-text-muted">{filter === 'unread' ? 'لا توجد تنبيهات غير مقروءة' : filter === 'read' ? 'لا توجد تنبيهات مقروءة' : 'لا توجد تنبيهات جديدة'}</p>
                             </div>
                         ) : (
                             <>
-                                {overdueInvoices.length > 0 && (
+                                {filteredOverdueInvoices.length > 0 && (
                                     <div>
                                         <h4 className="text-[10px] font-black uppercase text-text-muted px-4 pt-3 pb-1 tracking-widest opacity-70">
                                             فواتير متأخرة
                                         </h4>
-                                        {overdueInvoices.map(inv => {
+                                        {filteredOverdueInvoices.map(inv => {
                                             const contract = db.contracts.find(c => c.id === inv.contractId);
                                             const tenant = contract ? db.tenants.find(t => t.id === contract.tenantId) : { name: 'غير معروف' };
                                             const itemId = `inv-${inv.id}`;
@@ -141,12 +163,12 @@ const Notifications: React.FC = () => {
                                     </div>
                                 )}
 
-                                {expiringContracts.length > 0 && (
+                                {filteredExpiringContracts.length > 0 && (
                                     <div>
                                         <h4 className="text-[10px] font-black uppercase text-text-muted px-4 pt-3 pb-1 tracking-widest opacity-70">
                                             عقود تنتهي قريباً
                                         </h4>
-                                        {expiringContracts.map(c => {
+                                        {filteredExpiringContracts.map(c => {
                                             const tenant = db.tenants.find(t => t.id === c.tenantId);
                                             const itemId = `ctr-${c.id}`;
                                             const isRead = itemId in readLog;
