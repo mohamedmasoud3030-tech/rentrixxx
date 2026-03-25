@@ -1,12 +1,12 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef } from 'react';
 import { useApp } from '../contexts/AppContext';
-import { Property, Unit } from '../types';
+import { Property, Unit, UtilityRecord, UtilityType, UTILITY_TYPE_AR, UTILITY_ICON } from '../types';
 import Card from '../components/ui/Card';
 import Modal from '../components/ui/Modal';
 import ActionsMenu, { EditAction, DeleteAction } from '../components/shared/ActionsMenu';
 import AttachmentsManager from '../components/shared/AttachmentsManager';
 import { formatCurrency, toArabicDigits, formatDate } from '../utils/helpers';
-import { Building, Home, ArrowRight, User, Map, AlertCircle, Clock, FileText, Wrench, Phone, Percent, TrendingUp } from 'lucide-react';
+import { Building, Home, ArrowRight, User, Map, AlertCircle, Clock, FileText, Wrench, Phone, Percent, TrendingUp, Zap, Droplets, Flame, Wifi, ChevronRight, Plus, Image, Trash2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 import PropertyMapView from './PropertyMap';
@@ -124,7 +124,12 @@ const UnitsView: React.FC<{ property: Property, onBack: () => void }> = ({ prope
     const { db, dataService } = useApp();
     const [isUnitModalOpen, setIsUnitModalOpen] = useState(false);
     const [editingUnit, setEditingUnit] = useState<Unit | null>(null);
+    const [selectedUnit, setSelectedUnit] = useState<Unit | null>(null);
     const units = db.units.filter(u => u.propertyId === property.id);
+
+    if (selectedUnit) {
+        return <UnitDetailView unit={selectedUnit} property={property} onBack={() => setSelectedUnit(null)} />;
+    }
 
     const floors = [...new Set(units.map(u => u.floor || 'بدون دور'))];
     const hasFloors = units.some(u => u.floor);
@@ -169,14 +174,14 @@ const UnitsView: React.FC<{ property: Property, onBack: () => void }> = ({ prope
                         <div key={fl} className="space-y-3">
                             <h3 className="font-bold text-lg border-b border-border pb-2">{fl === 'بدون دور' ? fl : `الدور ${fl}`} <span className="text-sm text-text-muted font-normal">({toArabicDigits(floorUnits.length)} وحدات)</span></h3>
                             <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
-                                {floorUnits.map(u => <UnitCard key={u.id} u={u} onEdit={() => { setEditingUnit(u); setIsUnitModalOpen(true); }} onDelete={async () => await dataService.remove('units', u.id)} />)}
+                                {floorUnits.map(u => <UnitCard key={u.id} u={u} onEdit={() => { setEditingUnit(u); setIsUnitModalOpen(true); }} onDelete={async () => await dataService.remove('units', u.id)} onViewUtilities={() => setSelectedUnit(u)} />)}
                             </div>
                         </div>
                     );
                 })
             ) : (
                 <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
-                    {units.map(u => <UnitCard key={u.id} u={u} onEdit={() => { setEditingUnit(u); setIsUnitModalOpen(true); }} onDelete={async () => await dataService.remove('units', u.id)} />)}
+                    {units.map(u => <UnitCard key={u.id} u={u} onEdit={() => { setEditingUnit(u); setIsUnitModalOpen(true); }} onDelete={async () => await dataService.remove('units', u.id)} onViewUtilities={() => setSelectedUnit(u)} />)}
                 </div>
             )}
             {isUnitModalOpen && <UnitForm isOpen={isUnitModalOpen} onClose={() => setIsUnitModalOpen(false)} unit={editingUnit} propertyId={property.id} />}
@@ -184,22 +189,316 @@ const UnitsView: React.FC<{ property: Property, onBack: () => void }> = ({ prope
     );
 };
 
-const UnitCard: React.FC<{ u: Unit; onEdit: () => void; onDelete: () => void }> = ({ u, onEdit, onDelete }) => {
+const UnitCard: React.FC<{ u: Unit; onEdit: () => void; onDelete: () => void; onViewUtilities: () => void }> = ({ u, onEdit, onDelete, onViewUtilities }) => {
     const st = UNIT_STATUS_MAP[u.status] || UNIT_STATUS_MAP.AVAILABLE;
+    const { db } = useApp();
     const featuresList: string[] = [];
     if (u.bedrooms) featuresList.push(`${u.bedrooms} غرف`);
     if (u.bathrooms) featuresList.push(`${u.bathrooms} حمام`);
     if (u.kitchens) featuresList.push(`${u.kitchens} مطبخ`);
     if (u.livingRooms) featuresList.push(`${u.livingRooms} صالة`);
+    const utilCount = (db.utilityRecords || []).filter(r => r.unitId === u.id).length;
 
     return (
-        <div className="p-4 bg-background border border-border rounded-lg relative">
-            <div className="absolute top-2 left-2"><ActionsMenu items={[EditAction(onEdit), DeleteAction(onDelete)]} /></div>
-            <p className="font-bold mb-1">{u.name}</p>
+        <div className="p-4 bg-background border border-border rounded-lg relative group">
+            <div className="absolute top-2 left-2">
+                <ActionsMenu items={[
+                    { label: 'إدارة المرافق', icon: <Zap size={14} />, onClick: onViewUtilities },
+                    EditAction(onEdit),
+                    DeleteAction(onDelete),
+                ]} />
+            </div>
+            <p className="font-bold mb-1 cursor-pointer hover:text-primary" onClick={onViewUtilities}>{u.name}</p>
             <span className={`text-xs px-2 py-0.5 rounded-full ${st.color}`}>{st.label}</span>
             <p className="text-xs text-text-muted mt-1">{u.type}{u.area ? ` • ${u.area} م²` : ''}</p>
             {featuresList.length > 0 && <p className="text-xs text-text-muted mt-1">{featuresList.join(' • ')}</p>}
-            <p className="text-sm font-bold mt-2 text-primary">{formatCurrency(u.rentDefault)}</p>
+            <div className="flex items-center justify-between mt-2">
+                <p className="text-sm font-bold text-primary">{formatCurrency(u.rentDefault)}</p>
+                {utilCount > 0 && <span className="text-xs bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded-full">{utilCount} مرافق</span>}
+            </div>
+            {(u.waterMeter || u.electricityMeter) && (
+                <p className="text-xs text-text-muted mt-1">
+                    {u.waterMeter && `💧 ${u.waterMeter}`} {u.electricityMeter && `⚡ ${u.electricityMeter}`}
+                </p>
+            )}
+        </div>
+    );
+};
+
+const UTILITY_COLORS: Record<string, string> = {
+    WATER: 'bg-blue-100 text-blue-700 border-blue-200',
+    ELECTRICITY: 'bg-yellow-100 text-yellow-700 border-yellow-200',
+    GAS: 'bg-orange-100 text-orange-700 border-orange-200',
+    INTERNET: 'bg-purple-100 text-purple-700 border-purple-200',
+    OTHER: 'bg-gray-100 text-gray-700 border-gray-200',
+};
+
+const UtilityRecordForm: React.FC<{
+    isOpen: boolean; onClose: () => void;
+    record: UtilityRecord | null; unitId: string; propertyId: string;
+}> = ({ isOpen, onClose, record, unitId, propertyId }) => {
+    const { dataService, settings } = useApp();
+    const currency = settings.operational?.currency ?? 'OMR';
+    const fileRef = useRef<HTMLInputElement>(null);
+
+    const [type, setType] = useState<UtilityType>(record?.type || 'ELECTRICITY');
+    const [month, setMonth] = useState(record?.month || new Date().toISOString().slice(0, 7));
+    const [prevReading, setPrevReading] = useState(record?.previousReading ?? 0);
+    const [currReading, setCurrReading] = useState(record?.currentReading ?? 0);
+    const [unitPrice, setUnitPrice] = useState(record?.unitPrice ?? 0);
+    const [paidBy, setPaidBy] = useState<UtilityRecord['paidBy']>(record?.paidBy || 'TENANT');
+    const [notes, setNotes] = useState(record?.notes || '');
+    const [billImageUrl, setBillImageUrl] = useState(record?.billImageUrl || '');
+    const [billImageMime, setBillImageMime] = useState(record?.billImageMime || '');
+
+    React.useEffect(() => {
+        if (record) {
+            setType(record.type); setMonth(record.month);
+            setPrevReading(record.previousReading); setCurrReading(record.currentReading);
+            setUnitPrice(record.unitPrice); setPaidBy(record.paidBy);
+            setNotes(record.notes || ''); setBillImageUrl(record.billImageUrl || '');
+            setBillImageMime(record.billImageMime || '');
+        } else {
+            setType('ELECTRICITY'); setMonth(new Date().toISOString().slice(0, 7));
+            setPrevReading(0); setCurrReading(0); setUnitPrice(0);
+            setPaidBy('TENANT'); setNotes(''); setBillImageUrl(''); setBillImageMime('');
+        }
+    }, [record, isOpen]);
+
+    const consumption = Math.max(0, currReading - prevReading);
+    const amount = consumption * unitPrice;
+
+    const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        if (file.size > 5 * 1024 * 1024) { toast.error('حجم الصورة يجب أن يكون أقل من 5MB'); return; }
+        const reader = new FileReader();
+        reader.onload = (ev) => { setBillImageUrl(ev.target?.result as string); setBillImageMime(file.type); };
+        reader.readAsDataURL(file);
+    };
+
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (currReading < prevReading) { toast.error('القراءة الحالية يجب أن تكون أكبر من أو تساوي القراءة السابقة'); return; }
+        const data: Omit<UtilityRecord, 'id' | 'createdAt'> = {
+            unitId, propertyId, type, month, previousReading: prevReading,
+            currentReading: currReading, unitPrice, amount, paidBy,
+            notes: notes || undefined, billImageUrl: billImageUrl || undefined,
+            billImageMime: billImageMime || undefined,
+        };
+        if (record) await dataService.update('utilityRecords', record.id, data as any);
+        else await dataService.add('utilityRecords', data as any);
+        onClose();
+    };
+
+    return (
+        <Modal isOpen={isOpen} onClose={onClose} title={record ? 'تعديل سجل مرفق' : 'إضافة سجل مرفق جديد'}>
+            <form onSubmit={handleSubmit} className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                    <div>
+                        <label className="block text-sm font-medium mb-1">نوع المرفق</label>
+                        <select value={type} onChange={e => setType(e.target.value as UtilityType)}>
+                            {(Object.keys(UTILITY_TYPE_AR) as UtilityType[]).map(k => (
+                                <option key={k} value={k}>{UTILITY_ICON[k]} {UTILITY_TYPE_AR[k]}</option>
+                            ))}
+                        </select>
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium mb-1">الشهر</label>
+                        <input type="month" value={month} onChange={e => setMonth(e.target.value)} required />
+                    </div>
+                </div>
+                <div className="grid grid-cols-3 gap-4">
+                    <div>
+                        <label className="block text-sm font-medium mb-1">القراءة السابقة</label>
+                        <input type="number" min="0" value={prevReading} onChange={e => setPrevReading(Number(e.target.value))} required />
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium mb-1">القراءة الحالية</label>
+                        <input type="number" min="0" value={currReading} onChange={e => setCurrReading(Number(e.target.value))} required />
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium mb-1">سعر الوحدة ({currency})</label>
+                        <input type="number" min="0" step="0.001" value={unitPrice} onChange={e => setUnitPrice(Number(e.target.value))} required />
+                    </div>
+                </div>
+                <div className="bg-background border border-border rounded-lg p-3 flex justify-between items-center">
+                    <span className="text-sm">الاستهلاك: <strong>{consumption}</strong> وحدة</span>
+                    <span className="text-sm">المبلغ: <strong className="text-primary">{formatCurrency(amount, currency)}</strong></span>
+                </div>
+                <div>
+                    <label className="block text-sm font-medium mb-1">على حساب</label>
+                    <select value={paidBy} onChange={e => setPaidBy(e.target.value as UtilityRecord['paidBy'])}>
+                        <option value="TENANT">المستأجر</option>
+                        <option value="OWNER">المالك</option>
+                        <option value="OFFICE">المكتب</option>
+                    </select>
+                </div>
+                <div>
+                    <label className="block text-sm font-medium mb-1">صورة الفاتورة</label>
+                    <input type="file" accept="image/*,application/pdf" ref={fileRef} onChange={handleImageUpload} className="hidden" />
+                    {billImageUrl ? (
+                        <div className="border border-border rounded-lg p-2 flex items-center justify-between">
+                            {billImageMime?.startsWith('image/') && <img src={billImageUrl} alt="فاتورة" className="h-16 w-auto rounded object-cover" />}
+                            {billImageMime === 'application/pdf' && <span className="text-sm text-blue-600">📄 PDF مرفق</span>}
+                            <button type="button" onClick={() => { setBillImageUrl(''); setBillImageMime(''); }} className="text-red-500 hover:text-red-700"><Trash2 size={16} /></button>
+                        </div>
+                    ) : (
+                        <button type="button" onClick={() => fileRef.current?.click()} className="btn btn-secondary w-full flex items-center justify-center gap-2">
+                            <Image size={16} /> رفع صورة الفاتورة
+                        </button>
+                    )}
+                </div>
+                <div>
+                    <label className="block text-sm font-medium mb-1">ملاحظات</label>
+                    <textarea value={notes} onChange={e => setNotes(e.target.value)} rows={2} placeholder="أي ملاحظات إضافية..." />
+                </div>
+                <div className="flex gap-3 pt-2">
+                    <button type="button" onClick={onClose} className="btn btn-ghost flex-1">إلغاء</button>
+                    <button type="submit" className="btn btn-primary flex-1">حفظ السجل</button>
+                </div>
+            </form>
+        </Modal>
+    );
+};
+
+const UnitDetailView: React.FC<{ unit: Unit; property: Property; onBack: () => void }> = ({ unit, property, onBack }) => {
+    const { db, dataService, settings } = useApp();
+    const currency = settings.operational?.currency ?? 'OMR';
+    const [isFormOpen, setIsFormOpen] = useState(false);
+    const [editingRecord, setEditingRecord] = useState<UtilityRecord | null>(null);
+    const [activeType, setActiveType] = useState<UtilityType | 'ALL'>('ALL');
+
+    const unitRecords = useMemo(() => (db.utilityRecords || []).filter(r => r.unitId === unit.id), [db.utilityRecords, unit.id]);
+    const filtered = useMemo(() => activeType === 'ALL' ? unitRecords : unitRecords.filter(r => r.type === activeType), [unitRecords, activeType]);
+    const sorted = useMemo(() => [...filtered].sort((a, b) => b.month.localeCompare(a.month)), [filtered]);
+
+    const totals = useMemo(() => {
+        const byType: Record<string, { count: number; amount: number; consumption: number }> = {};
+        unitRecords.forEach(r => {
+            if (!byType[r.type]) byType[r.type] = { count: 0, amount: 0, consumption: 0 };
+            byType[r.type].count++;
+            byType[r.type].amount += r.amount;
+            byType[r.type].consumption += Math.max(0, r.currentReading - r.previousReading);
+        });
+        return byType;
+    }, [unitRecords]);
+
+    const totalAmount = unitRecords.reduce((s, r) => s + r.amount, 0);
+    const activeContract = db.contracts.find(c => c.unitId === unit.id && c.status === 'ACTIVE');
+    const tenant = activeContract ? db.tenants.find(t => t.id === activeContract.tenantId) : null;
+
+    const handleDelete = async (id: string) => {
+        if (!window.confirm('هل أنت متأكد من حذف سجل المرفق هذا؟')) return;
+        await dataService.remove('utilityRecords', id);
+        toast.success('تم حذف السجل');
+    };
+
+    return (
+        <div className="space-y-6">
+            <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 text-sm text-text-muted">
+                    <button onClick={onBack} className="hover:text-primary font-medium">{property.name}</button>
+                    <ChevronRight size={14} />
+                    <span className="text-text font-bold">{unit.name}</span>
+                </div>
+                <button onClick={() => { setEditingRecord(null); setIsFormOpen(true); }} className="btn btn-primary flex items-center gap-2">
+                    <Plus size={16} /> إضافة قراءة مرافق
+                </button>
+            </div>
+
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="bg-background border border-border rounded-lg p-4">
+                    <p className="text-xs text-text-muted mb-1">رقم عداد المياه</p>
+                    <p className="font-bold">{unit.waterMeter || '—'}</p>
+                    <p className="text-2xl mt-1">💧</p>
+                </div>
+                <div className="bg-background border border-border rounded-lg p-4">
+                    <p className="text-xs text-text-muted mb-1">رقم عداد الكهرباء</p>
+                    <p className="font-bold">{unit.electricityMeter || '—'}</p>
+                    <p className="text-2xl mt-1">⚡</p>
+                </div>
+                <div className="bg-background border border-border rounded-lg p-4">
+                    <p className="text-xs text-text-muted mb-1">المستأجر الحالي</p>
+                    <p className="font-bold text-sm">{tenant?.name || 'شاغرة'}</p>
+                    <p className="text-xs text-text-muted mt-1">{tenant ? activeContract?.rent && formatCurrency(activeContract.rent, currency) + '/شهر' : ''}</p>
+                </div>
+                <div className="bg-background border border-border rounded-lg p-4">
+                    <p className="text-xs text-text-muted mb-1">إجمالي فواتير المرافق</p>
+                    <p className="font-bold text-primary">{formatCurrency(totalAmount, currency)}</p>
+                    <p className="text-xs text-text-muted mt-1">{unitRecords.length} سجل</p>
+                </div>
+            </div>
+
+            {Object.keys(totals).length > 0 && (
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    {(Object.keys(UTILITY_TYPE_AR) as UtilityType[]).filter(t => totals[t]).map(t => (
+                        <div key={t} className={`border rounded-lg p-4 cursor-pointer ${activeType === t ? 'ring-2 ring-primary' : ''} ${UTILITY_COLORS[t]}`} onClick={() => setActiveType(activeType === t ? 'ALL' : t)}>
+                            <p className="text-2xl">{UTILITY_ICON[t]}</p>
+                            <p className="font-bold text-sm mt-1">{UTILITY_TYPE_AR[t]}</p>
+                            <p className="text-lg font-bold">{formatCurrency(totals[t].amount, currency)}</p>
+                            <p className="text-xs">{totals[t].count} فاتورة</p>
+                        </div>
+                    ))}
+                </div>
+            )}
+
+            <div className="flex items-center gap-2 flex-wrap">
+                <button onClick={() => setActiveType('ALL')} className={`btn text-sm ${activeType === 'ALL' ? 'btn-primary' : 'btn-ghost'}`}>الكل ({unitRecords.length})</button>
+                {(Object.keys(UTILITY_TYPE_AR) as UtilityType[]).filter(t => totals[t]).map(t => (
+                    <button key={t} onClick={() => setActiveType(activeType === t ? 'ALL' : t)} className={`btn text-sm ${activeType === t ? 'btn-primary' : 'btn-ghost'}`}>
+                        {UTILITY_ICON[t]} {UTILITY_TYPE_AR[t]} ({totals[t]?.count || 0})
+                    </button>
+                ))}
+            </div>
+
+            {sorted.length > 0 ? (
+                <div className="space-y-3">
+                    {sorted.map(r => (
+                        <div key={r.id} className={`border rounded-lg p-4 flex items-start gap-4 ${UTILITY_COLORS[r.type]}`}>
+                            <div className="text-3xl">{UTILITY_ICON[r.type as UtilityType]}</div>
+                            <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2 mb-2">
+                                    <span className="font-bold">{UTILITY_TYPE_AR[r.type as UtilityType]}</span>
+                                    <span className="text-sm">{r.month}</span>
+                                    <span className={`text-xs px-2 py-0.5 rounded-full ${r.paidBy === 'TENANT' ? 'bg-blue-200 text-blue-800' : r.paidBy === 'OWNER' ? 'bg-green-200 text-green-800' : 'bg-gray-200 text-gray-800'}`}>
+                                        {r.paidBy === 'TENANT' ? 'مستأجر' : r.paidBy === 'OWNER' ? 'مالك' : 'مكتب'}
+                                    </span>
+                                </div>
+                                <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-sm">
+                                    <div><span className="text-text-muted">سابق:</span> <strong>{r.previousReading}</strong></div>
+                                    <div><span className="text-text-muted">حالي:</span> <strong>{r.currentReading}</strong></div>
+                                    <div><span className="text-text-muted">استهلاك:</span> <strong>{Math.max(0, r.currentReading - r.previousReading)} وحدة</strong></div>
+                                    <div><span className="text-text-muted">المبلغ:</span> <strong className="text-primary">{formatCurrency(r.amount, currency)}</strong></div>
+                                </div>
+                                {r.notes && <p className="text-xs mt-2 opacity-75">{r.notes}</p>}
+                            </div>
+                            {r.billImageUrl && r.billImageMime?.startsWith('image/') && (
+                                <img src={r.billImageUrl} alt="فاتورة" className="h-16 w-16 object-cover rounded-lg border border-white/50 cursor-pointer" onClick={() => window.open(r.billImageUrl, '_blank')} />
+                            )}
+                            <div className="shrink-0">
+                                <ActionsMenu items={[
+                                    EditAction(() => { setEditingRecord(r); setIsFormOpen(true); }),
+                                    DeleteAction(() => handleDelete(r.id)),
+                                ]} />
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            ) : (
+                <div className="text-center py-12 text-text-muted">
+                    <Zap size={40} className="mx-auto mb-3 opacity-30" />
+                    <p className="font-medium">لا توجد سجلات مرافق لهذه الوحدة</p>
+                    <p className="text-sm mt-1">ابدأ بإضافة قراءات العداد والفواتير</p>
+                    <button onClick={() => { setEditingRecord(null); setIsFormOpen(true); }} className="btn btn-primary mt-4">
+                        <Plus size={16} /> إضافة أول سجل
+                    </button>
+                </div>
+            )}
+
+            <AttachmentsManager entityType="UNIT" entityId={unit.id} />
+
+            {isFormOpen && <UtilityRecordForm isOpen={isFormOpen} onClose={() => setIsFormOpen(false)} record={editingRecord} unitId={unit.id} propertyId={property.id} />}
         </div>
     );
 };
