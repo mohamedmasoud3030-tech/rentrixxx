@@ -2,14 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { useApp } from '../../contexts/AppContext';
 import { toast } from 'react-hot-toast';
 import { Settings } from '../../types';
-import { useLiveQuery } from 'dexie-react-hooks';
-import { dbEngine } from '../../services/db';
 
 type AccountMappings = Settings['accounting']['accountMappings'];
 
 const FinancialSettings: React.FC = () => {
-    const { settings, updateSettings } = useApp();
-    const accounts = useLiveQuery(() => dbEngine.accounts.toArray()) || [];
+    const { db, settings, updateSettings } = useApp();
+    const accounts = db.accounts || [];
 
     const [mappings, setMappings] = useState<AccountMappings>(
         settings.accounting.accountMappings

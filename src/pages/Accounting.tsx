@@ -1,7 +1,5 @@
 import React, { useState, useMemo } from 'react';
 import { useApp } from '../contexts/AppContext';
-import { useLiveQuery } from 'dexie-react-hooks';
-import { dbEngine } from '../services/db';
 import Card from '../components/ui/Card';
 import Modal from '../components/ui/Modal';
 import { Account } from '../types';
@@ -20,9 +18,9 @@ const ACCOUNT_TYPE_LABELS: Record<string, string> = {
 };
 
 const ChartOfAccounts: React.FC = () => {
-    const { dataService } = useApp();
-    const accounts = useLiveQuery(() => dbEngine.accounts.toArray()) || [];
-    const accountBalances = useLiveQuery(() => dbEngine.accountBalances.toArray()) || [];
+    const { db, dataService } = useApp();
+    const accounts = db.accounts || [];
+    const accountBalances = db.accountBalances || [];
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingAccount, setEditingAccount] = useState<Account | null>(null);
     const [expandedTypes, setExpandedTypes] = useState<Set<string>>(new Set(['ASSET', 'LIABILITY', 'EQUITY', 'REVENUE', 'EXPENSE']));
@@ -208,8 +206,8 @@ interface VoucherLine {
 }
 
 const ManualVoucher: React.FC = () => {
-    const { financeService } = useApp();
-    const accounts = useLiveQuery(() => dbEngine.accounts.toArray()) || [];
+    const { db, financeService } = useApp();
+    const accounts = db.accounts || [];
     const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
     const [notes, setNotes] = useState('');
     const [lines, setLines] = useState<VoucherLine[]>([
@@ -355,8 +353,9 @@ const ManualVoucher: React.FC = () => {
 };
 
 const TrialBalance: React.FC = () => {
-    const accounts = useLiveQuery(() => dbEngine.accounts.toArray()) || [];
-    const accountBalances = useLiveQuery(() => dbEngine.accountBalances.toArray()) || [];
+    const { db } = useApp();
+    const accounts = db.accounts || [];
+    const accountBalances = db.accountBalances || [];
 
     const accountsMap = useMemo(() => new Map(accounts.map(a => [a.id, a])), [accounts]);
 

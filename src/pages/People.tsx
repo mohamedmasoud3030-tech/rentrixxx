@@ -10,8 +10,6 @@ import { WhatsAppComposerModal } from '../components/shared/WhatsAppComposerModa
 import { formatDate, exportToCsv, TENANT_STATUS_AR } from '../utils/helpers';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
-import { useLiveQuery } from 'dexie-react-hooks';
-import { dbEngine } from '../services/db';
 
 const People: React.FC = () => {
     const [activeTab, setActiveTab] = useState<'tenants' | 'owners'>('tenants');
@@ -45,13 +43,13 @@ const People: React.FC = () => {
 // Tenants Component
 const TenantsView: React.FC = () => {
     // FIX: Use dataService for data manipulation
-    const { dataService } = useApp();
+    const { db, dataService } = useApp();
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingTenant, setEditingTenant] = useState<Tenant | null>(null);
     const [whatsAppContext, setWhatsAppContext] = useState<any | null>(null);
 
-    const tenants = useLiveQuery(() => dbEngine.tenants.toArray()) || [];
-    const contracts = useLiveQuery(() => dbEngine.contracts.toArray()) || [];
+    const tenants = db.tenants || [];
+    const contracts = db.contracts || [];
 
     const handleOpenModal = (tenant: Tenant | null = null) => {
         setEditingTenant(tenant);
@@ -150,13 +148,12 @@ const TenantsView: React.FC = () => {
 const OwnersView: React.FC = () => {
     const app = useApp();
     const navigate = useNavigate();
-    // FIX: Use dataService for data manipulation
-    const { dataService, generateOwnerPortalLink } = app;
+    const { db, dataService, generateOwnerPortalLink } = app;
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingOwner, setEditingOwner] = useState<Owner | null>(null);
 
-    const owners = useLiveQuery(() => dbEngine.owners.toArray()) || [];
-    const properties = useLiveQuery(() => dbEngine.properties.toArray()) || [];
+    const owners = db.owners || [];
+    const properties = db.properties || [];
 
     const handleOpenModal = (owner: Owner | null = null) => {
         setEditingOwner(owner);

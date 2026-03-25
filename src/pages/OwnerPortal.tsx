@@ -1,17 +1,13 @@
 import React from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 import { useApp } from '../contexts/AppContext';
-import { useLiveQuery } from 'dexie-react-hooks';
-import { dbEngine } from '../services/db';
 
 const OwnerPortal: React.FC = () => {
     const { ownerId } = useParams();
     const [searchParams] = useSearchParams();
-    const { settings, ownerBalances } = useApp();
+    const { db, settings, ownerBalances } = useApp();
     
-    const owner = useLiveQuery(() => 
-        dbEngine.owners.where('id').equals(ownerId || '').first()
-    , [ownerId]);
+    const owner = (db.owners || []).find(o => o.id === ownerId);
 
     if (!owner || owner.portalToken !== searchParams.get('auth')) {
         return <div className="p-10 text-center">عذراً، الرابط غير صالح أو منتهي الصلاحية.</div>;

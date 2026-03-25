@@ -3,8 +3,6 @@ import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { useApp } from '../../contexts/AppContext';
 import { Sparkles, Bot, User, X, Send } from 'lucide-react';
 import { queryAssistant } from '../../services/geminiService';
-import { useLiveQuery } from 'dexie-react-hooks';
-import { dbEngine } from '../../services/db';
 
 interface Message {
     sender: 'user' | 'ai' | 'error';
@@ -35,7 +33,7 @@ const SmartAssistant: React.FC = () => {
 };
 
 const AssistantModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
-    const { settings, ownerBalances, contractBalances } = useApp();
+    const { db, settings, ownerBalances, contractBalances } = useApp();
     const [messages, setMessages] = useState<Message[]>([
         { sender: 'ai', text: 'أهلاً بك! أنا مساعدك الذكي. كيف يمكنني مساعدتك في تحليل بياناتك اليوم؟' }
     ]);
@@ -43,14 +41,13 @@ const AssistantModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
     const [isLoading, setIsLoading] = useState(false);
     const messagesEndRef = useRef<HTMLDivElement>(null);
     
-    // Fetch data required for context directly
-    const tenants = useLiveQuery(() => dbEngine.tenants.toArray());
-    const units = useLiveQuery(() => dbEngine.units.toArray());
-    const contracts = useLiveQuery(() => dbEngine.contracts.toArray());
-    const owners = useLiveQuery(() => dbEngine.owners.toArray());
-    const receipts = useLiveQuery(() => dbEngine.receipts.toArray());
-    const expenses = useLiveQuery(() => dbEngine.expenses.toArray());
-    const properties = useLiveQuery(() => dbEngine.properties.toArray());
+    const tenants = db.tenants || [];
+    const units = db.units || [];
+    const contracts = db.contracts || [];
+    const owners = db.owners || [];
+    const receipts = db.receipts || [];
+    const expenses = db.expenses || [];
+    const properties = db.properties || [];
 
     const scrollToBottom = () => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });

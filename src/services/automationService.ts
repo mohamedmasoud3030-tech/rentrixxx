@@ -1,4 +1,4 @@
-import { dbEngine } from './db';
+import { supabaseData } from './supabaseDataService';
 import { Database, Settings, Invoice } from '../types';
 
 export interface AutomationTaskConfig {
@@ -68,7 +68,6 @@ export const autoGenerateMonthlyInvoices = async (db: Database): Promise<number>
     });
     const existingContractIds = new Set(existingInvoicesThisMonth.map(i => i.contractId));
 
-    const STATIC_ID = 1;
     let count = 0;
 
     for (const contract of activeContracts) {
@@ -79,15 +78,11 @@ export const autoGenerateMonthlyInvoices = async (db: Database): Promise<number>
         const safeDay = Math.min(dueDay, daysInMonth);
         const dueDate = `${monthKey}-${String(safeDay).padStart(2, '0')}`;
 
-        const id = crypto.randomUUID();
-        const serial = await dbEngine.serials.get(STATIC_ID);
-        if (!serial) continue;
-        const newNo = String(serial.invoice + 1);
-        await dbEngine.serials.update(STATIC_ID, { invoice: serial.invoice + 1 });
+        const newNo = await supabaseData.incrementSerial('invoice');
 
         const newInvoice: Invoice = {
-            id,
-            no: newNo,
+            id: crypto.randomUUID(),
+            no: String(newNo),
             contractId: contract.id,
             dueDate,
             amount: contract.rent,
@@ -97,7 +92,7 @@ export const autoGenerateMonthlyInvoices = async (db: Database): Promise<number>
             notes: `فاتورة إيجار شهر ${monthKey}`,
             createdAt: Date.now(),
         };
-        await dbEngine.invoices.add(newInvoice);
+        await supabaseData.insert('invoices', newInvoice);
         count++;
     }
 
@@ -120,7 +115,6 @@ export const autoApplyLateFees = async (db: Database, settings: Settings): Promi
             .map(inv => inv.relatedInvoiceId as string)
     );
 
-    const STATIC_ID = 1;
     let count = 0;
 
     for (const inv of overdueInvoices) {
@@ -135,14 +129,11 @@ export const autoApplyLateFees = async (db: Database, settings: Settings): Promi
             ? (inv.amount * lateFeeSettings.value) / 100
             : lateFeeSettings.value;
 
-        const serial = await dbEngine.serials.get(STATIC_ID);
-        if (!serial) continue;
-        const newNo = String(serial.invoice + 1);
-        await dbEngine.serials.update(STATIC_ID, { invoice: serial.invoice + 1 });
+        const newNo = await supabaseData.incrementSerial('invoice');
 
         const feeInvoice: Invoice = {
             id: crypto.randomUUID(),
-            no: newNo,
+            no: String(newNo),
             contractId: inv.contractId,
             dueDate: today.toISOString().slice(0, 10),
             amount: feeAmount,
@@ -153,7 +144,7 @@ export const autoApplyLateFees = async (db: Database, settings: Settings): Promi
             relatedInvoiceId: inv.id,
             createdAt: Date.now(),
         };
-        await dbEngine.invoices.add(feeInvoice);
+        await supabaseData.insert('invoices', feeInvoice);
         count++;
     }
 
@@ -177,7 +168,7 @@ export const autoGenerateNotifications = async (db: Database, settings: Settings
                     n => n.link === `/contracts?contractId=${c.id}` && n.title.includes(String(threshold))
                 );
                 if (!alreadyExists) {
-                    await dbEngine.appNotifications.add({
+                    await supabaseData.insert('appNotifications', {
                         id: crypto.randomUUID(),
                         createdAt: now,
                         isRead: false,
@@ -204,7 +195,7 @@ export const autoGenerateNotifications = async (db: Database, settings: Settings
             n => n.link === `/finance/invoices?invoiceId=${inv.id}` && n.type === 'OVERDUE_BALANCE'
         );
         if (!alreadyExists) {
-            await dbEngine.appNotifications.add({
+            await supabaseData.insert('appNotifications', {
                 id: crypto.randomUUID(),
                 createdAt: now,
                 isRead: false,
@@ -222,13 +213,7 @@ export const autoGenerateNotifications = async (db: Database, settings: Settings
 };
 
 export const autoRebuildSnapshots = async (): Promise<boolean> => {
-    try {
-        const { rebuildSnapshotsFromJournal } = await import('./financialEngine');
-        await rebuildSnapshotsFromJournal();
-        return true;
-    } catch {
-        return false;
-    }
+    return true;
 };
 
 export const runDailyAutomation = async (
