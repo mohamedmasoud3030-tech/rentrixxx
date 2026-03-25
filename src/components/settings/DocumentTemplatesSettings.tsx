@@ -6,7 +6,7 @@ import { Plus, Trash2, GripVertical, FileText, Save, RotateCcw } from 'lucide-re
 
 const DocumentTemplatesSettings: React.FC = () => {
     const { settings, updateSettings } = useApp();
-    const templates = settings.documentTemplates;
+    const templates = settings?.documentTemplates;
 
     const [clauses, setClauses] = useState<string[]>(templates?.contractClauses || []);
     const [footerNote, setFooterNote] = useState(templates?.contractFooterNote || '');
