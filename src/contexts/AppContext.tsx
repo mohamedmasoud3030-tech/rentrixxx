@@ -11,18 +11,9 @@ import Dexie, { Transaction } from 'dexie';
 import { toast } from 'react-hot-toast';
 // FIX: Import IntegrationService for sendWhatsApp functionality
 import { IntegrationService } from '../services/integrationService';
+import { supabase } from '../services/supabase';
 
 
-async function sha256(msg: string): Promise<string> {
-  const enc = new TextEncoder().encode(msg);
-  const buf = await crypto.subtle.digest('SHA-256', enc);
-  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
-}
-
-function randSalt(): string {
-  const a = crypto.getRandomValues(new Uint8Array(16));
-  return Array.from(a).map(b => b.toString(16).padStart(2, '0')).join('');
-}
 
 const DEFAULT_ACCOUNTS: Omit<Account, 'id'|'createdAt'>[] = [
     { no: '1000', name: 'الأصول', type: 'ASSET', isParent: true, parentId: null },
@@ -120,15 +111,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return action === 'VIEW_FINANCIALS';
   }, [currentUser]);
 
-  const addUser: AppContextType['auth']['addUser'] = useCallback(async (user, pass) => {
-      const existing = await dbEngine.users.where('username').equals(user.username).first();
-      if (existing) return { ok: false, msg: 'اسم المستخدم موجود بالفعل' };
-      const salt = randSalt(); const hash = await sha256(pass + salt); const id = crypto.randomUUID(); const now = Date.now();
-      const newUser: User = { ...user, id, createdAt: now, salt, hash, mustChange: false };
-      await dbEngine.users.add(newUser);
-      await audit('CREATE', 'users', id, `Created user ${user.username}`);
-      return { ok: true, msg: 'User created' };
-  }, [audit]);
 
   useEffect(() => {
     const seed = async () => {
@@ -201,17 +183,46 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             console.log('Settings migrated to new nested structure.');
         }
 
-        if (await dbEngine.users.count() === 0) {
-            console.log("No users found, creating default admin user...");
-            const salt = randSalt(); const hash = await sha256('123' + salt);
-            const newUser: User = { id: crypto.randomUUID(), username: 'admin', role: 'ADMIN', mustChange: true, createdAt: Date.now(), salt, hash };
-            await dbEngine.users.add(newUser);
-            toast.success('تم إنشاء حساب المدير الافتراضي. استخدم admin / 123 للدخول.');
-        }
-        if (currentUser === undefined) { setCurrentUser(null); }
     };
     seed();
-  }, [currentUser]);
+  }, []);
+
+  // Supabase session initialisation – runs once on mount
+  useEffect(() => {
+    const initAuth = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', session.user.id)
+          .single();
+        if (profile) {
+          setCurrentUser({
+            id: session.user.id,
+            username: profile.username || session.user.email!.split('@')[0],
+            email: session.user.email || '',
+            hash: '', salt: '',
+            role: (profile.role as 'ADMIN' | 'USER') || 'USER',
+            mustChange: profile.must_change_password || false,
+            createdAt: profile.created_at || Date.now(),
+          });
+        } else {
+          setCurrentUser(null);
+        }
+      } else {
+        setCurrentUser(null);
+      }
+    };
+    initAuth();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (event === 'SIGNED_OUT' || !session) {
+        setCurrentUser(null);
+      }
+    });
+    return () => subscription.unsubscribe();
+  }, []);
 
   useEffect(() => {
     if (!db || !settings || !currentUser) return;
@@ -233,36 +244,106 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return runManualAutomation(db, settings);
   }, [db, settings]);
 
-  const login = useCallback(async (username: string, password: string) => {
-    const user = users?.find(u => u.username === username);
-    if (!user || await sha256(password + user.salt) !== user.hash) return { ok: false, msg: 'بيانات غير صحيحة' };
-    setCurrentUser(user); audit('LOGIN', 'SESSION', user.id);
-    return { ok: true, msg: 'Ok', mustChange: user.mustChange };
-  }, [users, audit]);
+  // ── Supabase Auth: login via email ─────────────────────────
+  const login = useCallback(async (email: string, password: string) => {
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error || !data.user) return { ok: false, msg: 'البريد الإلكتروني أو كلمة المرور غير صحيحة' };
+
+      let { data: profile } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', data.user.id)
+        .single();
+
+      if (!profile) {
+        const newProfile = {
+          id: data.user.id,
+          username: data.user.email!.split('@')[0],
+          role: 'USER',
+          must_change_password: false,
+          created_at: Date.now(),
+        };
+        await supabase.from('profiles').insert(newProfile);
+        profile = newProfile;
+      }
+
+      const user: User = {
+        id: data.user.id,
+        username: profile.username || data.user.email!.split('@')[0],
+        email: data.user.email || '',
+        hash: '', salt: '',
+        role: (profile.role as 'ADMIN' | 'USER') || 'USER',
+        mustChange: profile.must_change_password || false,
+        createdAt: profile.created_at || Date.now(),
+      };
+
+      setCurrentUser(user);
+      await audit('LOGIN', 'SESSION', user.id);
+      return { ok: true, msg: 'Ok', mustChange: user.mustChange };
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : 'حدث خطأ';
+      return { ok: false, msg };
+    }
+  }, [audit]);
 
   const logout = useCallback(async () => {
-        if (currentUser) { await audit('LOGOUT', 'SESSION', currentUser.id); }
-        setCurrentUser(null);
+    if (currentUser) { await audit('LOGOUT', 'SESSION', currentUser.id); }
+    await supabase.auth.signOut();
+    setCurrentUser(null);
   }, [currentUser, audit]);
 
   const changePassword: AppContextType['auth']['changePassword'] = useCallback(async (userId, newPass) => {
-    const salt = randSalt(); const hash = await sha256(newPass + salt);
-    await dbEngine.users.update(userId, { hash, salt, mustChange: false });
+    const { error } = await supabase.auth.updateUser({ password: newPass });
+    if (error) return { ok: false, msg: error.message };
+    await supabase.from('profiles').update({ must_change_password: false }).eq('id', userId);
+    try { await dbEngine.users.update(userId, { mustChange: false }); } catch {}
     setCurrentUser(prev => prev ? { ...prev, mustChange: false } : null);
     await audit('UPDATE', 'users', userId, 'Password changed');
     return { ok: true };
   }, [audit]);
 
+  const addUser: AppContextType['auth']['addUser'] = useCallback(async (user, pass) => {
+    const email = (user as User).email || `${user.username}@rentrix.local`;
+    const { data, error } = await supabase.auth.signUp({ email, password: pass });
+    if (error || !data.user) return { ok: false, msg: error?.message || 'فشل إنشاء المستخدم' };
+
+    const profile = {
+      id: data.user.id,
+      username: user.username,
+      role: user.role,
+      must_change_password: true,
+      created_at: Date.now(),
+    };
+    await supabase.from('profiles').insert(profile);
+
+    const newUser: User = {
+      ...user,
+      id: data.user.id,
+      email,
+      hash: '', salt: '',
+      mustChange: true,
+      createdAt: Date.now(),
+    };
+    try { await dbEngine.users.add(newUser); } catch {}
+    await audit('CREATE', 'users', data.user.id, `Created user ${user.username}`);
+    return { ok: true, msg: 'تم إنشاء المستخدم. سيتلقى المستخدم رسالة تأكيد بالبريد الإلكتروني.' };
+  }, [audit]);
+
   const updateUser: AppContextType['auth']['updateUser'] = useCallback(async (id, updates) => {
-        await dbEngine.users.update(id, updates);
-        await audit('UPDATE', 'users', id, `Updated user details for ${updates.username || id}`);
+    await dbEngine.users.update(id, updates);
+    if (updates.username) {
+      await supabase.from('profiles').update({ username: updates.username }).eq('id', id);
+    }
+    await audit('UPDATE', 'users', id, `Updated user details for ${updates.username || id}`);
   }, [audit]);
 
   const forcePasswordReset = useCallback(async (userId: string) => {
     if (window.confirm('هل أنت متأكد من رغبتك في فرض إعادة تعيين كلمة المرور لهذا المستخدم؟ سيُطلب منه تغييرها عند تسجيل الدخول التالي.')) {
-        await dbEngine.users.update(userId, { mustChange: true });
-        await audit('FORCE_RESET_PASSWORD', 'users', userId);
-        toast.success('تم فرض إعادة تعيين كلمة المرور بنجاح.');
+      await supabase.from('profiles').update({ must_change_password: true }).eq('id', userId);
+      await dbEngine.users.update(userId, { mustChange: true });
+      await audit('FORCE_RESET_PASSWORD', 'users', userId);
+      toast.success('تم فرض إعادة تعيين كلمة المرور بنجاح.');
     }
   }, [audit]);
 

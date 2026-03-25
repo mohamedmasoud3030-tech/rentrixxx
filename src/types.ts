@@ -14,6 +14,7 @@ export interface Attachment {
 export interface User {
   id: string;
   username: string;
+  email: string;
   hash: string;
   salt: string;
   role: 'ADMIN' | 'USER';

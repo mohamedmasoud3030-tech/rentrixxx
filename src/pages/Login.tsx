@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { useApp } from '../contexts/AppContext';
-import { User, Lock } from 'lucide-react';
+import { Mail, Lock } from 'lucide-react';
 
 const Login: React.FC = () => {
-  const [username, setUsername] = useState('admin');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -13,7 +13,7 @@ const Login: React.FC = () => {
     e.preventDefault();
     setIsLoading(true);
     setError('');
-    const res = await auth.login(username, password);
+    const res = await auth.login(email, password);
     if (!res.ok) {
       setError(res.msg);
       setIsLoading(false);
@@ -30,15 +30,17 @@ const Login: React.FC = () => {
 
             <form onSubmit={handleLogin} className="space-y-6">
                 <div className="relative">
-                    <User className="absolute right-3 top-1/2 -translate-y-1/2 h-5 w-5 text-text-muted" />
+                    <Mail className="absolute right-3 top-1/2 -translate-y-1/2 h-5 w-5 text-text-muted" />
                     <input
-                        id="username"
-                        type="text"
-                        value={username}
-                        onChange={(e) => setUsername(e.target.value)}
-                        placeholder="اسم المستخدم"
+                        id="email"
+                        type="email"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        placeholder="البريد الإلكتروني"
                         className="pr-10"
                         required
+                        autoComplete="email"
+                        dir="ltr"
                     />
                 </div>
                 <div className="relative">
@@ -51,6 +53,7 @@ const Login: React.FC = () => {
                         placeholder="كلمة المرور"
                         className="pr-10"
                         required
+                        autoComplete="current-password"
                     />
                 </div>
                 

@@ -43,11 +43,13 @@ Preferred communication style: Simple, everyday language.
 - **pdfService.ts**: PDF generation using jsPDF with Arabic font support
 - **integrationService.ts**: WhatsApp messaging and cloud sync utilities
 
-### Authentication & Security
-- **Password Hashing**: SHA-256 with random salt stored per user
-- **Role-Based Access**: ADMIN and USER roles with different permissions
-- **Session Management**: In-memory authentication state via Context
-- **First-Login Password Change**: Enforced for default credentials
+### Authentication & Security (Supabase Auth)
+- **Auth Provider**: Supabase Auth — email + password login only
+- **Session Persistence**: Supabase handles JWT tokens with auto-refresh
+- **User Profiles**: `profiles` table in Supabase stores role (ADMIN/USER) and mustChange flag
+- **Role-Based Access**: ADMIN and USER roles enforced in AppContext and Sidebar
+- **Password Changes**: Via `supabase.auth.updateUser()` — no local hashing
+- **Auth Client**: `src/services/supabase.ts` using `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` env vars
 
 ## External Dependencies
 
@@ -79,6 +81,11 @@ Preferred communication style: Simple, everyday language.
 - **TypeScript**: Type checking
 - **Tailwind CSS**: Utility-first CSS framework
 - **PostCSS/Autoprefixer**: CSS processing
+
+### Cloud Backend
+- **@supabase/supabase-js**: Supabase client for Auth + SQL database
+- **Supabase URL**: `https://nnggcnpcuomwfuupupwg.supabase.co`
+- **SQL Schema**: `supabase_schema.sql` — run in Supabase SQL Editor to create all 31 tables
 
 ### External Services (Optional)
 - **Google OAuth**: For Google Drive backup sync (optional, requires Client ID configuration)
