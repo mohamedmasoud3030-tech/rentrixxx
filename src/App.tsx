@@ -21,6 +21,8 @@ import Settings from './pages/System';
 import Leads from './pages/Leads';
 import CommunicationHub from './pages/CommunicationHub';
 import LandsAndCommissions from './pages/LandsAndCommissions';
+import AuditLog from './pages/AuditLog';
+import SmartAssistant from './pages/SmartAssistant';
 
 const hexToHsl = (hex: string): string => {
     hex = hex.replace('#', '');
@@ -68,6 +70,8 @@ const ROUTE_META: Record<string, { title: string; description: string }> = {
     '/communication': { title: 'مركز التواصل', description: 'قوالب الرسائل والإشعارات للمستأجرين والملاك' },
     '/lands': { title: 'الأراضي والعمولات', description: 'إدارة صفقات الأراضي وعمولات الوسطاء العقاريين' },
     '/settings': { title: 'الإعدادات', description: 'إعدادات النظام والمظهر والمستخدمين والتكاملات' },
+    '/audit-log': { title: 'سجل المراجعة', description: 'سجل شامل لجميع العمليات والأحداث في النظام' },
+    '/smart-assistant': { title: 'المساعد الذكي', description: 'مساعد ذكاء اصطناعي لتحليل البيانات والإجابة على استفساراتك' },
 };
 
 const App: React.FC = () => {
@@ -141,8 +145,12 @@ const App: React.FC = () => {
               
               {/* Analytics & Admin Hub */}
               <Route path="/reports" element={<Reports />} />
+              <Route path="/smart-assistant" element={<SmartAssistant />} />
               {auth.currentUser.role === 'ADMIN' && (
-                <Route path="/settings/*" element={<Settings />} />
+                <>
+                  <Route path="/audit-log" element={<AuditLog />} />
+                  <Route path="/settings/*" element={<Settings />} />
+                </>
               )}
               
               <Route path="*" element={<Navigate to="/" replace />} />

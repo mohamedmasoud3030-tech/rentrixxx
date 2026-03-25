@@ -32,7 +32,7 @@ export const useAuth = () => {
                 console.log("No users found, creating default admin user...");
                 const salt = randSalt();
                 const hash = await sha256('123' + salt);
-                const newUser: User = { id: crypto.randomUUID(), username: 'admin', role: 'ADMIN', mustChange: true, createdAt: Date.now(), salt, hash };
+                const newUser: User = { id: crypto.randomUUID(), username: 'admin', email: '', role: 'ADMIN', mustChange: true, createdAt: Date.now(), salt, hash };
                 await dbEngine.users.add(newUser);
                 toast.success('تم إنشاء حساب المدير الافتراضي. استخدم admin / 123 للدخول.');
             }
@@ -73,7 +73,7 @@ export const useAuth = () => {
       const existing = await dbEngine.users.where('username').equals(user.username).first();
       if (existing) return { ok: false, msg: 'اسم المستخدم موجود بالفعل' };
       const salt = randSalt(); const hash = await sha256(pass + salt); const id = crypto.randomUUID(); const now = Date.now();
-      const newUser: User = { ...user, id, createdAt: now, salt, hash, mustChange: false };
+      const newUser: User = { ...user, email: (user as User).email || '', id, createdAt: now, salt, hash, mustChange: false };
       await dbEngine.users.add(newUser);
       await audit(currentUser, 'CREATE', 'users', id, `Created user ${user.username}`);
       return { ok: true, msg: 'User created' };

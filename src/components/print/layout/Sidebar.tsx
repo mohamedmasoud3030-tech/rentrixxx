@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { 
     LayoutGrid, Building2, Users, FileText, Banknote, 
-    BarChart2, Settings, UserPlus, MessageSquare, Map as MapIcon, Bot
+    BarChart2, Settings, UserPlus, MessageSquare, Map as MapIcon, Bot, ClipboardList, ScrollText
 } from 'lucide-react';
 import { useApp } from '../../../contexts/AppContext';
 import { getLastRunDate } from '../../../services/automationService';
@@ -45,6 +45,8 @@ const navGroups = [
     title: 'التحليل والإدارة',
     links: [
       { path: '/reports', label: 'التقارير', icon: BarChart2 },
+      { path: '/audit-log', label: 'سجل المراجعة', icon: ScrollText, adminOnly: true },
+      { path: '/smart-assistant', label: 'المساعد الذكي', icon: Bot },
       { path: '/settings', label: 'الإعدادات', icon: Settings, adminOnly: true },
     ],
   },
@@ -136,6 +138,7 @@ const Sidebar: React.FC<SidebarProps> = ({ sidebarOpen, setSidebarOpen }) => {
                               (e.currentTarget as HTMLElement).style.background = '';
                             }
                           }}
+                          onClick={() => setSidebarOpen(false)}
                         >
                           <link.icon
                             size={17}
