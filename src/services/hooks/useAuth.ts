@@ -1,8 +1,8 @@
 
 import { useState, useCallback, useEffect } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { dbEngine } from '../services/db';
-import { User } from '../types';
+import { dbEngine } from '../db';
+import { User } from '../../types';
 import { toast } from 'react-hot-toast';
 
 async function sha256(msg: string): Promise<string> {

@@ -1,7 +1,7 @@
 import React from 'react';
 import { Routes, Route, NavLink, Navigate, useLocation } from 'react-router-dom';
 import Card from '../components/ui/Card';
-import { Settings as SettingsIcon, ShieldCheck, Database, FileSearch, Users, Bell, Palette, Zap } from 'lucide-react';
+import { Settings as SettingsIcon, ShieldCheck, Database, FileSearch, Users, Bell, Palette, Zap, Calculator } from 'lucide-react';
 import GeneralSettings from '../components/settings/GeneralSettings';
 import AppearanceSettings from '../components/settings/AppearanceSettings';
 import UsersSettings from '../components/settings/UsersSettings';
@@ -9,10 +9,12 @@ import NotificationsSettings from '../components/settings/NotificationsSettings'
 import SecuritySettings from '../components/settings/SecuritySettings';
 import BackupSettings from '../components/settings/BackupSettings';
 import IntegrationsSettings from '../components/settings/IntegrationsSettings';
+import FinancialSettings from '../components/settings/FinancialSettings';
 
 
 const settingsSections = [
     { id: 'general', label: 'الإعدادات العامة', icon: SettingsIcon, path: '/settings/general' },
+    { id: 'financial', label: 'الإعدادات المالية', icon: Calculator, path: '/settings/financial' },
     { id: 'appearance', label: 'المظهر والتخصيص', icon: Palette, path: '/settings/appearance' },
     { id: 'users', label: 'المستخدمون والصلاحيات', icon: Users, path: '/settings/users' },
     { id: 'notifications', label: 'الإشعارات والقوالب', icon: Bell, path: '/settings/notifications' },
@@ -51,6 +53,7 @@ const Settings: React.FC = () => {
                 <main className="flex-1 min-w-0">
                     <Routes>
                         <Route path="general" element={<GeneralSettings />} />
+                        <Route path="financial" element={<FinancialSettings />} />
                         <Route path="appearance" element={<AppearanceSettings />} />
                         <Route path="users" element={<UsersSettings />} />
                         <Route path="notifications" element={<NotificationsSettings />} />

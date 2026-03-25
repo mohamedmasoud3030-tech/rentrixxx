@@ -5,7 +5,7 @@ import { Receipt, Expense, DepositTx, OwnerSettlement, Tenant } from '../types';
 import Card from '../components/ui/Card';
 import Modal from '../components/ui/Modal';
 import ActionsMenu, { EditAction, VoidAction, DeleteAction, PrintAction } from '../components/shared/ActionsMenu';
-import { formatCurrency, formatDateTime, getStatusBadgeClass, formatDate, exportToCsv, RECEIPT_STATUS_AR } from '../utils/helpers';
+import { formatCurrency, formatDateTime, getStatusBadgeClass, formatDate, exportToCsv, RECEIPT_STATUS_AR, CHANNEL_AR, EXPENSE_STATUS_AR } from '../utils/helpers';
 import HardGateBanner from '../components/shared/HardGateBanner';
 import AttachmentsManager from '../components/shared/AttachmentsManager';
 import SearchFilterBar from '../components/shared/SearchFilterBar';
@@ -113,7 +113,7 @@ const ReceiptsView: React.FC = () => {
                 'التاريخ': formatDateTime(r.dateTime),
                 'المستأجر': tenant?.name || '',
                 'المبلغ': r.amount,
-                'طريقة الدفع': r.channel,
+                'طريقة الدفع': CHANNEL_AR[r.channel as keyof typeof CHANNEL_AR] || r.channel,
                 'الحالة': RECEIPT_STATUS_AR[r.status as keyof typeof RECEIPT_STATUS_AR] || r.status,
                 'ملاحظات': r.notes || '',
             };
@@ -157,7 +157,7 @@ const ReceiptsView: React.FC = () => {
                                     <td className="px-6 py-4 border border-border">{tenant?.name || '—'}</td>
                                     {/* FIX: Corrected path to currency settings */}
                                     <td className="px-6 py-4 font-bold border border-border">{formatCurrency(r.amount, db.settings.operational.currency)}</td>
-                                    <td className="px-6 py-4 border border-border"><span className={`status-badge ${r.status === 'POSTED' ? 'status-success' : 'status-danger'}`}>{r.status === 'POSTED' ? 'مرحّل' : 'ملغي'}</span></td>
+                                    <td className="px-6 py-4 border border-border"><span className={`status-badge ${r.status === 'POSTED' ? 'status-success' : 'status-danger'}`}>{RECEIPT_STATUS_AR[r.status as keyof typeof RECEIPT_STATUS_AR] || r.status}</span></td>
                                     <td className="px-6 py-4 border border-border">
                                         <ActionsMenu items={[
                                             EditAction(() => { setEditingReceipt(r); setIsModalOpen(true); }),
@@ -197,11 +197,29 @@ const ExpensesView: React.FC = () => {
                          .sort((a,b) => new Date(b.dateTime).getTime() - new Date(a.dateTime).getTime());
     }, [db.expenses, searchTerm]);
 
+    const handleExportExpensesCsv = () => {
+        const rows = filteredExpenses.map(e => ({
+            'رقم السند': e.no,
+            'التاريخ': formatDateTime(e.dateTime),
+            'التصنيف': e.category,
+            'المبلغ': e.amount,
+            'الحالة': EXPENSE_STATUS_AR[e.status as keyof typeof EXPENSE_STATUS_AR] || e.status,
+            'ملاحظات': e.notes || '',
+        }));
+        exportToCsv('مصروفات_rentrix', rows);
+    };
+
     return (
         <div>
             <div className="flex justify-between items-center mb-4">
                 <h2 className="text-xl font-bold">قائمة المصروفات</h2>
-                <button onClick={() => setIsModalOpen(true)} className="btn btn-primary">إضافة مصروف</button>
+                <div className="flex gap-2">
+                    <button onClick={handleExportExpensesCsv} className="btn btn-secondary flex items-center gap-1">
+                        <Download size={14} />
+                        تصدير CSV
+                    </button>
+                    <button onClick={() => setIsModalOpen(true)} className="btn btn-primary">إضافة مصروف</button>
+                </div>
             </div>
             <SearchFilterBar searchTerm={searchTerm} onSearchChange={setSearchTerm} placeholder="بحث بالمصروف..." />
             <div className="overflow-x-auto">
@@ -224,7 +242,7 @@ const ExpensesView: React.FC = () => {
                                 <td className="px-6 py-4 border border-border">{e.category}</td>
                                 {/* FIX: Corrected path to currency settings */}
                                 <td className="px-6 py-4 font-bold border border-border">{formatCurrency(e.amount, db.settings.operational.currency)}</td>
-                                <td className="px-6 py-4 border border-border"><span className={`status-badge ${e.status === 'POSTED' ? 'status-info' : 'status-danger'}`}>{e.status === 'POSTED' ? 'مرحّل' : 'ملغي'}</span></td>
+                                <td className="px-6 py-4 border border-border"><span className={`status-badge ${e.status === 'POSTED' ? 'status-info' : 'status-danger'}`}>{EXPENSE_STATUS_AR[e.status as keyof typeof EXPENSE_STATUS_AR] || e.status}</span></td>
                                 <td className="px-6 py-4 border border-border">
                                     <ActionsMenu items={[
                                         EditAction(() => { setEditingExpense(e); setIsModalOpen(true); }),

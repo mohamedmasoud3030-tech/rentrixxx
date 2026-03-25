@@ -125,7 +125,7 @@ const TenantsView: React.FC = () => {
                                     <td className="px-6 py-4 border border-border">{t.idNo}</td>
                                     <td className="px-6 py-4 border border-border">
                                         <span className={`px-2 py-1 text-xs rounded-full ${t.status === 'ACTIVE' ? 'bg-green-100 text-green-800 dark:bg-green-900/50' : 'bg-red-100 text-red-800 dark:bg-red-900/50'}`}>
-                                            {t.status === 'ACTIVE' ? 'نشط' : (t.status === 'BLACKLIST' ? 'قائمة سوداء' : 'غير نشط')}
+                                            {TENANT_STATUS_AR[t.status] || t.status}
                                         </span>
                                     </td>
                                     <td className="px-6 py-4 border border-border">

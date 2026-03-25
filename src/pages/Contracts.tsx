@@ -4,7 +4,7 @@ import { Contract, Receipt, Expense } from '../types';
 import Card from '../components/ui/Card';
 import Modal from '../components/ui/Modal';
 import ActionsMenu, { EditAction, DeleteAction, PrintAction } from '../components/shared/ActionsMenu';
-import { formatCurrency, toArabicDigits, getStatusBadgeClass, formatDateTime, formatDate } from '../utils/helpers';
+import { formatCurrency, toArabicDigits, getStatusBadgeClass, formatDateTime, formatDate, CONTRACT_STATUS_AR } from '../utils/helpers';
 import HardGateBanner from '../components/shared/HardGateBanner';
 import AttachmentsManager from '../components/shared/AttachmentsManager';
 import { FileText } from 'lucide-react';
@@ -203,7 +203,7 @@ const Contracts: React.FC = () => {
                                             <td className={`px-6 py-4 font-bold border border-border ${balance > 0 ? 'text-red-500' : ''}`}>{formatCurrency(balance, db.settings.operational.currency)}</td>
                                             <td className="px-6 py-4 border border-border">
                                                 <span className={`px-2 py-1 text-xs rounded-full ${getStatusBadgeClass(c.status)}`}>
-                                                    {c.status === 'ACTIVE' ? 'نشط' : (c.status === 'ENDED' ? 'منتهي' : 'معلق')}
+                                                    {CONTRACT_STATUS_AR[c.status] || c.status}
                                                 </span>
                                             </td>
                                             <td className="px-6 py-4 border border-border">

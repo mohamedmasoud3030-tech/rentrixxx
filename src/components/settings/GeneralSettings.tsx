@@ -80,6 +80,53 @@ const GeneralSettings: React.FC = () => {
                 </div>
             </SettingsSection>
 
+            <SettingsSection title="إعدادات غرامات التأخير">
+                <div className="flex items-center gap-3 mb-3">
+                    <input
+                        type="checkbox"
+                        id="lateFeeEnabled"
+                        checked={operational.lateFee.isEnabled}
+                        onChange={e => setOperational(prev => ({ ...prev, lateFee: { ...prev.lateFee, isEnabled: e.target.checked } }))}
+                        className="w-4 h-4"
+                    />
+                    <label htmlFor="lateFeeEnabled" className="text-sm font-medium">تفعيل غرامات التأخير تلقائياً</label>
+                </div>
+                {operational.lateFee.isEnabled && (
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                            <label className="text-xs font-medium text-text-muted">نوع الغرامة</label>
+                            <select
+                                value={operational.lateFee.type}
+                                onChange={e => setOperational(prev => ({ ...prev, lateFee: { ...prev.lateFee, type: e.target.value as Settings['operational']['lateFee']['type'] } }))}
+                            >
+                                <option value="FIXED_AMOUNT">مبلغ ثابت</option>
+                                <option value="PERCENTAGE_OF_RENT">نسبة من الإيجار (%)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label className="text-xs font-medium text-text-muted">
+                                {operational.lateFee.type === 'FIXED_AMOUNT' ? 'قيمة الغرامة' : 'نسبة الغرامة (%)'}
+                            </label>
+                            <input
+                                type="number"
+                                value={operational.lateFee.value}
+                                onChange={e => setOperational(prev => ({ ...prev, lateFee: { ...prev.lateFee, value: Number(e.target.value) } }))}
+                                min="0"
+                            />
+                        </div>
+                        <div>
+                            <label className="text-xs font-medium text-text-muted">أيام السماح قبل تطبيق الغرامة</label>
+                            <input
+                                type="number"
+                                value={operational.lateFee.graceDays}
+                                onChange={e => setOperational(prev => ({ ...prev, lateFee: { ...prev.lateFee, graceDays: Number(e.target.value) } }))}
+                                min="0"
+                            />
+                        </div>
+                    </div>
+                )}
+            </SettingsSection>
+
              <SettingsSection title="ترقيم المستندات">
                 <p className="text-sm text-text-muted">أضف بادئة (Prefix) مميزة لكل نوع من المستندات لتسهيل تمييزها.</p>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
