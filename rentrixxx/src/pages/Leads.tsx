@@ -68,7 +68,7 @@ const Leads: React.FC = () => {
                             <tr key={lead.id} className="bg-card hover:bg-background">
                                 <td className="px-6 py-4 font-medium text-text border border-border">{lead.name}</td>
                                 <td className="px-6 py-4 border border-border">{lead.phone}</td>
-                                <td className="px-6 py-4 border border-border">{lead.email || '-'}</td>
+                                <td className="px-6 py-4 border border-border">{lead.email || '—'}</td>
                                 <td className="px-6 py-4 border border-border">
                                     <span className={`px-2 py-1 text-xs rounded-full ${getStatusBadgeClass(lead.status)}`}>
                                         {getStatusLabel(lead.status)}

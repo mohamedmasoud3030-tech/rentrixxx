@@ -8,6 +8,7 @@ type AccountMappings = Settings['accounting']['accountMappings'];
 const FinancialSettings: React.FC = () => {
     const { db, settings, updateSettings } = useApp();
     const accounts = db.accounts || [];
+    const [isSaving, setIsSaving] = useState(false);
 
     const [mappings, setMappings] = useState<AccountMappings>(
         settings.accounting.accountMappings
@@ -36,8 +37,14 @@ const FinancialSettings: React.FC = () => {
     };
 
     const handleSave = async () => {
-        await updateSettings({ accounting: { accountMappings: mappings } });
-        toast.success('تم حفظ إعدادات الحسابات.');
+        if (isSaving) return;
+        setIsSaving(true);
+        try {
+            await updateSettings({ accounting: { accountMappings: mappings } });
+            toast.success('تم حفظ إعدادات الحسابات.');
+        } finally {
+            setIsSaving(false);
+        }
     };
 
     const AccountSelect: React.FC<{ label: string; value: string; onChange: (v: string) => void }> = ({ label, value, onChange }) => (
@@ -102,7 +109,9 @@ const FinancialSettings: React.FC = () => {
             </div>
 
             <div className="pt-4 flex justify-end">
-                <button onClick={handleSave} className="btn btn-primary">حفظ إعدادات الحسابات</button>
+                <button onClick={handleSave} disabled={isSaving} className="btn btn-primary disabled:opacity-50 disabled:cursor-not-allowed">
+                    {isSaving ? 'جاري الحفظ...' : 'حفظ إعدادات الحسابات'}
+                </button>
             </div>
         </div>
     );

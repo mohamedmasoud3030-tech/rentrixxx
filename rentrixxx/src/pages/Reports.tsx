@@ -1,4 +1,4 @@
-﻿import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useApp } from '../contexts/AppContext';
 import Card from '../components/ui/Card';
 import { formatCurrency, formatDate } from '../utils/helpers';
@@ -62,7 +62,7 @@ const ActionBar: React.FC<{ onPrint: () => void; onExport?: () => void; children
   <div className="flex flex-wrap gap-3 items-end mb-6">
     {children}
     <div className="flex gap-2 mr-auto">
-      <button onClick={onPrint} className="btn btn-primary flex items-center gap-2 text-sm"><Printer size={15} /> Ø·Ø¨Ø§Ø¹Ø©</button>
+      <button onClick={onPrint} className="btn btn-primary flex items-center gap-2 text-sm"><Printer size={15} /> طباعة</button>
       {onExport && <button onClick={onExport} className="btn btn-secondary flex items-center gap-2 text-sm"><Download size={15} /> PDF</button>}
     </div>
   </div>
@@ -82,22 +82,22 @@ const Reports: React.FC = () => {
   };
 
   const tabs: { id: ReportTab; label: string; icon: React.ReactNode }[] = [
-    { id: 'overview', label: 'Ù†Ø¸Ø±Ø© Ø¹Ø§Ù…Ø©', icon: <BarChart3 size={16} /> },
-    { id: 'income_statement', label: 'Ù‚Ø§Ø¦Ù…Ø© Ø§Ù„Ø¯Ø®Ù„', icon: <TrendingUp size={16} /> },
-    { id: 'balance_sheet', label: 'Ø§Ù„Ù…ÙŠØ²Ø§Ù†ÙŠØ©', icon: <Wallet size={16} /> },
-    { id: 'trial_balance', label: 'Ù…ÙŠØ²Ø§Ù† Ø§Ù„Ù…Ø±Ø§Ø¬Ø¹Ø©', icon: <Filter size={16} /> },
-    { id: 'rent_roll', label: 'Ù‚Ø§Ø¦Ù…Ø© Ø§Ù„Ø¥ÙŠØ¬Ø§Ø±Ø§Øª', icon: <Building2 size={16} /> },
-    { id: 'owner', label: 'ÙƒØ´Ù Ø­Ø³Ø§Ø¨ Ø§Ù„Ù…Ø§Ù„Ùƒ', icon: <Users size={16} /> },
-    { id: 'tenant', label: 'ÙƒØ´Ù Ø­Ø³Ø§Ø¨ Ø§Ù„Ù…Ø³ØªØ£Ø¬Ø±', icon: <Users size={16} /> },
-    { id: 'aged_receivables', label: 'Ø£Ø¹Ù…Ø§Ø± Ø§Ù„Ø¯ÙŠÙˆÙ†', icon: <CalendarRange size={16} /> },
-    { id: 'property_report', label: 'ØªÙ‚Ø±ÙŠØ± Ø¹Ù‚Ø§Ø±', icon: <Building2 size={16} /> },
-    { id: 'daily_collection', label: 'ÙƒØ´Ù Ø§Ù„ØªØ­ØµÙŠÙ„ Ø§Ù„ÙŠÙˆÙ…ÙŠ', icon: <Banknote size={16} /> },
-    { id: 'maintenance_report', label: 'ØªÙ‚Ø±ÙŠØ± Ø§Ù„ØµÙŠØ§Ù†Ø©', icon: <Filter size={16} /> },
-    { id: 'deposits_report', label: 'ØªÙ‚Ø±ÙŠØ± Ø§Ù„ØªØ£Ù…ÙŠÙ†Ø§Øª', icon: <Wallet size={16} /> },
-    { id: 'expenses_report', label: 'ØªÙ‚Ø±ÙŠØ± Ø§Ù„Ù…ØµØ±ÙˆÙØ§Øª', icon: <TrendingDown size={16} /> },
-    { id: 'utilities_report', label: 'ØªÙ‚Ø±ÙŠØ± Ø§Ù„Ù…Ø±Ø§ÙÙ‚', icon: <Zap size={16} /> },
-    { id: 'overdue_tenants', label: 'Ø§Ù„Ù…ØªØ£Ø®Ø±ÙˆÙ† Ø¹Ù† Ø§Ù„Ø¯ÙØ¹', icon: <TrendingDown size={16} /> },
-    { id: 'vacant_units', label: 'Ø§Ù„ÙˆØ­Ø¯Ø§Øª Ø§Ù„Ø´Ø§ØºØ±Ø©', icon: <Building2 size={16} /> },
+    { id: 'overview', label: 'نظرة عامة', icon: <BarChart3 size={16} /> },
+    { id: 'income_statement', label: 'قائمة الدخل', icon: <TrendingUp size={16} /> },
+    { id: 'balance_sheet', label: 'الميزانية', icon: <Wallet size={16} /> },
+    { id: 'trial_balance', label: 'ميزان المراجعة', icon: <Filter size={16} /> },
+    { id: 'rent_roll', label: 'قائمة الإيجارات', icon: <Building2 size={16} /> },
+    { id: 'owner', label: 'كشف حساب المالك', icon: <Users size={16} /> },
+    { id: 'tenant', label: 'كشف حساب المستأجر', icon: <Users size={16} /> },
+    { id: 'aged_receivables', label: 'أعمار الديون', icon: <CalendarRange size={16} /> },
+    { id: 'property_report', label: 'تقرير عقار', icon: <Building2 size={16} /> },
+    { id: 'daily_collection', label: 'كشف التحصيل اليومي', icon: <Banknote size={16} /> },
+    { id: 'maintenance_report', label: 'تقرير الصيانة', icon: <Filter size={16} /> },
+    { id: 'deposits_report', label: 'تقرير التأمينات', icon: <Wallet size={16} /> },
+    { id: 'expenses_report', label: 'تقرير المصروفات', icon: <TrendingDown size={16} /> },
+    { id: 'utilities_report', label: 'تقرير المرافق', icon: <Zap size={16} /> },
+    { id: 'overdue_tenants', label: 'المتأخرون عن الدفع', icon: <TrendingDown size={16} /> },
+    { id: 'vacant_units', label: 'الوحدات الشاغرة', icon: <Building2 size={16} /> },
   ];
 
   const renderContent = () => {
@@ -170,9 +170,9 @@ const ReportsOverview: React.FC<{ currency: string }> = ({ currency }) => {
     const available = db.units.filter(u => u.status === 'AVAILABLE').length;
     const maintenance = db.units.filter(u => u.status === 'MAINTENANCE').length;
     return [
-      { name: 'Ù…Ø¤Ø¬Ø±Ø©', value: rented },
-      { name: 'Ø´Ø§ØºØ±Ø©', value: available },
-      { name: 'ØµÙŠØ§Ù†Ø©', value: maintenance },
+      { name: 'مؤجرة', value: rented },
+      { name: 'شاغرة', value: available },
+      { name: 'صيانة', value: maintenance },
     ].filter(d => d.value > 0);
   }, [db.units]);
 
@@ -184,7 +184,7 @@ const ReportsOverview: React.FC<{ currency: string }> = ({ currency }) => {
     db.expenses
       .filter(e => e.status === 'POSTED' && isWithinInterval(new Date(e.dateTime), { start, end }))
       .forEach(e => {
-        const cat = e.category || 'Ø£Ø®Ø±Ù‰';
+        const cat = e.category || 'أخرى';
         catMap.set(cat, (catMap.get(cat) || 0) + e.amount);
       });
     return Array.from(catMap.entries()).map(([name, value]) => ({ name, value })).sort((a, b) => b.value - a.value);
@@ -207,18 +207,18 @@ const ReportsOverview: React.FC<{ currency: string }> = ({ currency }) => {
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
-        <MiniKpi label="Ø¥ÙŠØ±Ø§Ø¯Ø§Øª Ø§Ù„Ø´Ù‡Ø±" value={formatCurrency(summaryKpis.revenue, cur)} icon={<ArrowUp size={18} />} color="bg-emerald-100 dark:bg-emerald-900/40 text-emerald-600" />
-        <MiniKpi label="Ù…ØµØ±ÙˆÙØ§Øª Ø§Ù„Ø´Ù‡Ø±" value={formatCurrency(summaryKpis.expenses, cur)} icon={<ArrowDown size={18} />} color="bg-red-100 dark:bg-red-900/40 text-red-600" />
-        <MiniKpi label="ØµØ§ÙÙŠ Ø§Ù„Ø´Ù‡Ø±" value={formatCurrency(summaryKpis.net, cur)} icon={<Banknote size={18} />} color="bg-blue-100 dark:bg-blue-900/40 text-blue-600" />
-        <MiniKpi label="Ø§Ù„Ø°Ù…Ù… Ø§Ù„Ù…Ø¯ÙŠÙ†Ø©" value={formatCurrency(summaryKpis.totalReceivables, cur)} icon={<Users size={18} />} color="bg-amber-100 dark:bg-amber-900/40 text-amber-600" />
-        <MiniKpi label="Ù…Ø³ØªØ­Ù‚Ø§Øª Ø§Ù„Ù…Ù„Ø§Ùƒ" value={formatCurrency(summaryKpis.totalOwnerPayables, cur)} icon={<Wallet size={18} />} color="bg-purple-100 dark:bg-purple-900/40 text-purple-600" />
-        <MiniKpi label="Ù†Ø³Ø¨Ø© Ø§Ù„Ø¥Ø´ØºØ§Ù„" value={`${summaryKpis.occupancyRate.toFixed(0)}%`} icon={<Percent size={18} />} color="bg-indigo-100 dark:bg-indigo-900/40 text-indigo-600" />
+        <MiniKpi label="إيرادات الشهر" value={formatCurrency(summaryKpis.revenue, cur)} icon={<ArrowUp size={18} />} color="bg-emerald-100 dark:bg-emerald-900/40 text-emerald-600" />
+        <MiniKpi label="مصروفات الشهر" value={formatCurrency(summaryKpis.expenses, cur)} icon={<ArrowDown size={18} />} color="bg-red-100 dark:bg-red-900/40 text-red-600" />
+        <MiniKpi label="صافي الشهر" value={formatCurrency(summaryKpis.net, cur)} icon={<Banknote size={18} />} color="bg-blue-100 dark:bg-blue-900/40 text-blue-600" />
+        <MiniKpi label="الذمم المدينة" value={formatCurrency(summaryKpis.totalReceivables, cur)} icon={<Users size={18} />} color="bg-amber-100 dark:bg-amber-900/40 text-amber-600" />
+        <MiniKpi label="مستحقات الملاك" value={formatCurrency(summaryKpis.totalOwnerPayables, cur)} icon={<Wallet size={18} />} color="bg-purple-100 dark:bg-purple-900/40 text-purple-600" />
+        <MiniKpi label="نسبة الإشغال" value={`${summaryKpis.occupancyRate.toFixed(0)}%`} icon={<Percent size={18} />} color="bg-indigo-100 dark:bg-indigo-900/40 text-indigo-600" />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <Card className="lg:col-span-2 p-5">
-          <SectionHeader title="Ø§ØªØ¬Ø§Ù‡ Ø§Ù„Ø¥ÙŠØ±Ø§Ø¯Ø§Øª ÙˆØ§Ù„Ù…ØµØ±ÙˆÙØ§Øª (6 Ø£Ø´Ù‡Ø±)" icon={<TrendingUp size={18} className="text-primary" />} />
-          <div className="h-72" dir="ltr">
+          <SectionHeader title="اتجاه الإيرادات والمصروفات (6 أشهر)" icon={<TrendingUp size={18} className="text-primary" />} />
+          <div className="h-72 overflow-hidden" dir="ltr">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={monthlyTrend}>
                 <defs>
@@ -235,16 +235,16 @@ const ReportsOverview: React.FC<{ currency: string }> = ({ currency }) => {
                 <XAxis dataKey="name" fontSize={12} />
                 <YAxis fontSize={11} tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`} />
                 <Tooltip formatter={(value: number) => formatCurrency(value, cur)} />
-                <Area type="monotone" dataKey="revenue" name="Ø§Ù„Ø¥ÙŠØ±Ø§Ø¯Ø§Øª" stroke="#10b981" fill="url(#colorRevenue)" strokeWidth={2} />
-                <Area type="monotone" dataKey="expenses" name="Ø§Ù„Ù…ØµØ±ÙˆÙØ§Øª" stroke="#ef4444" fill="url(#colorExpenses)" strokeWidth={2} />
+                <Area type="monotone" dataKey="revenue" name="الإيرادات" stroke="#10b981" fill="url(#colorRevenue)" strokeWidth={2} />
+                <Area type="monotone" dataKey="expenses" name="المصروفات" stroke="#ef4444" fill="url(#colorExpenses)" strokeWidth={2} />
               </AreaChart>
             </ResponsiveContainer>
           </div>
         </Card>
 
         <Card className="p-5">
-          <SectionHeader title="ØªÙˆØ²ÙŠØ¹ Ø§Ù„ÙˆØ­Ø¯Ø§Øª" icon={<PieChart size={18} className="text-primary" />} />
-          <div className="h-72" dir="ltr">
+          <SectionHeader title="توزيع الوحدات" icon={<PieChart size={18} className="text-primary" />} />
+          <div className="h-72 overflow-hidden" dir="ltr">
             <ResponsiveContainer width="100%" height="100%">
               <RechartsPie>
                 <Pie data={occupancyData} cx="50%" cy="45%" innerRadius={50} outerRadius={80} paddingAngle={4} dataKey="value" label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`} labelLine={false} fontSize={11}>
@@ -259,15 +259,15 @@ const ReportsOverview: React.FC<{ currency: string }> = ({ currency }) => {
 
       {expenseCategories.length > 0 && (
         <Card className="p-5">
-          <SectionHeader title="ØªÙˆØ²ÙŠØ¹ Ø§Ù„Ù…ØµØ±ÙˆÙØ§Øª Ø­Ø³Ø¨ Ø§Ù„ØªØµÙ†ÙŠÙ (Ø§Ù„Ø³Ù†Ø© Ø§Ù„Ø­Ø§Ù„ÙŠØ©)" icon={<BarChart3 size={18} className="text-primary" />} />
-          <div className="h-64" dir="ltr">
+          <SectionHeader title="توزيع المصروفات حسب التصنيف (السنة الحالية)" icon={<BarChart3 size={18} className="text-primary" />} />
+          <div className="h-64 overflow-hidden" dir="ltr">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={expenseCategories} layout="vertical">
                 <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
                 <XAxis type="number" fontSize={11} tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`} />
                 <YAxis type="category" dataKey="name" fontSize={12} width={100} />
                 <Tooltip formatter={(value: number) => formatCurrency(value, cur)} />
-                <Bar dataKey="value" name="Ø§Ù„Ù…Ø¨Ù„Øº" fill="#3b82f6" radius={[0, 4, 4, 0]} />
+                <Bar dataKey="value" name="المبلغ" fill="#3b82f6" radius={[0, 4, 4, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -276,15 +276,15 @@ const ReportsOverview: React.FC<{ currency: string }> = ({ currency }) => {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card className="p-5">
-          <SectionHeader title="ØµØ§ÙÙŠ Ø§Ù„Ø¯Ø®Ù„ Ø§Ù„Ø´Ù‡Ø±ÙŠ" icon={<Banknote size={18} className="text-primary" />} />
-          <div className="h-56" dir="ltr">
+          <SectionHeader title="صافي الدخل الشهري" icon={<Banknote size={18} className="text-primary" />} />
+          <div className="h-56 overflow-hidden" dir="ltr">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={monthlyTrend}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
                 <XAxis dataKey="name" fontSize={12} />
                 <YAxis fontSize={11} />
                 <Tooltip formatter={(value: number) => formatCurrency(value, cur)} />
-                <Bar dataKey="net" name="ØµØ§ÙÙŠ Ø§Ù„Ø¯Ø®Ù„" radius={[4, 4, 0, 0]}>
+                <Bar dataKey="net" name="صافي الدخل" radius={[4, 4, 0, 0]}>
                   {monthlyTrend.map((entry, i) => <Cell key={i} fill={entry.net >= 0 ? '#10b981' : '#ef4444'} />)}
                 </Bar>
               </BarChart>
@@ -293,15 +293,15 @@ const ReportsOverview: React.FC<{ currency: string }> = ({ currency }) => {
         </Card>
 
         <Card className="p-5">
-          <SectionHeader title="Ø§ØªØ¬Ø§Ù‡ Ø§Ù„ØªØ­ØµÙŠÙ„ Ø§Ù„Ø´Ù‡Ø±ÙŠ" icon={<TrendingUp size={18} className="text-primary" />} />
-          <div className="h-56" dir="ltr">
+          <SectionHeader title="اتجاه التحصيل الشهري" icon={<TrendingUp size={18} className="text-primary" />} />
+          <div className="h-56 overflow-hidden" dir="ltr">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={monthlyTrend}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
                 <XAxis dataKey="name" fontSize={12} />
                 <YAxis fontSize={11} />
                 <Tooltip formatter={(value: number) => formatCurrency(value, cur)} />
-                <Line type="monotone" dataKey="revenue" name="Ø§Ù„ØªØ­ØµÙŠÙ„" stroke="#10b981" strokeWidth={2.5} dot={{ r: 4 }} />
+                <Line type="monotone" dataKey="revenue" name="التحصيل" stroke="#10b981" strokeWidth={2.5} dot={{ r: 4 }} />
               </LineChart>
             </ResponsiveContainer>
           </div>
@@ -324,12 +324,12 @@ const RentRoll: React.FC = () => {
       if (activeContract) {
         const tenant = db.tenants.find(t => t.id === activeContract.tenantId);
         const contractBalance = contractBalances[activeContract.id];
-        return { property: property?.name || '-', unit: unit.name, tenant: tenant?.name || '-', startDate: activeContract.start, endDate: activeContract.end, rent: activeContract.rent, deposit: activeContract.deposit, balance: contractBalance?.balance || 0, status: 'Ù…Ø¤Ø¬Ø±Ø©' as const };
+        return { property: property?.name || '-', unit: unit.name, tenant: tenant?.name || '-', startDate: activeContract.start, endDate: activeContract.end, rent: activeContract.rent, deposit: activeContract.deposit, balance: contractBalance?.balance || 0, status: 'مؤجرة' as const };
       }
-      return { property: property?.name || '-', unit: unit.name, tenant: '-', startDate: '-', endDate: '-', rent: unit.rentDefault, deposit: 0, balance: 0, status: 'Ø´Ø§ØºØ±Ø©' as const };
+      return { property: property?.name || '-', unit: unit.name, tenant: '-', startDate: '-', endDate: '-', rent: unit.rentDefault, deposit: 0, balance: 0, status: 'شاغرة' as const };
     });
     const totals = unitsWithDetails.reduce((acc, item) => {
-      if (item.status === 'Ù…Ø¤Ø¬Ø±Ø©') { acc.totalRent += item.rent; acc.totalBalance += item.balance; }
+      if (item.status === 'مؤجرة') { acc.totalRent += item.rent; acc.totalBalance += item.balance; }
       return acc;
     }, { totalRent: 0, totalBalance: 0 });
     return { units: unitsWithDetails.sort((a, b) => `${a.property}-${a.unit}`.localeCompare(`${b.property}-${b.unit}`)), totals };
@@ -338,8 +338,8 @@ const RentRoll: React.FC = () => {
   const handleExportPdf = () => exportRentRollToPdf(rentRollData.units, rentRollData.totals, settings);
 
   const kpis = useMemo(() => {
-    const rented = rentRollData.units.filter(u => u.status === 'Ù…Ø¤Ø¬Ø±Ø©').length;
-    const vacant = rentRollData.units.filter(u => u.status === 'Ø´Ø§ØºØ±Ø©').length;
+    const rented = rentRollData.units.filter(u => u.status === 'مؤجرة').length;
+    const vacant = rentRollData.units.filter(u => u.status === 'شاغرة').length;
     return { total: rentRollData.units.length, rented, vacant, occupancy: rentRollData.units.length > 0 ? ((rented / rentRollData.units.length) * 100) : 0 };
   }, [rentRollData]);
 
@@ -348,15 +348,15 @@ const RentRoll: React.FC = () => {
       <table className="w-full text-sm text-right border-collapse">
         <thead>
           <tr className="bg-background text-text-muted text-xs uppercase">
-            <th className="px-3 py-3 border border-border">Ø§Ù„Ø¹Ù‚Ø§Ø±</th>
-            <th className="px-3 py-3 border border-border">Ø§Ù„ÙˆØ­Ø¯Ø©</th>
-            <th className="px-3 py-3 border border-border">Ø§Ù„Ø­Ø§Ù„Ø©</th>
-            <th className="px-3 py-3 border border-border">Ø§Ù„Ù…Ø³ØªØ£Ø¬Ø±</th>
-            <th className="px-3 py-3 border border-border">Ø¨Ø¯Ø¡ Ø§Ù„Ø¹Ù‚Ø¯</th>
-            <th className="px-3 py-3 border border-border">Ø§Ù†ØªÙ‡Ø§Ø¡ Ø§Ù„Ø¹Ù‚Ø¯</th>
-            <th className="px-3 py-3 border border-border">Ø§Ù„Ø¥ÙŠØ¬Ø§Ø±</th>
-            <th className="px-3 py-3 border border-border">Ø§Ù„ØªØ£Ù…ÙŠÙ†</th>
-            <th className="px-3 py-3 border border-border">Ø§Ù„Ø±ØµÙŠØ¯</th>
+            <th className="px-3 py-3 border border-border">العقار</th>
+            <th className="px-3 py-3 border border-border">الوحدة</th>
+            <th className="px-3 py-3 border border-border">الحالة</th>
+            <th className="px-3 py-3 border border-border">المستأجر</th>
+            <th className="px-3 py-3 border border-border">بدء العقد</th>
+            <th className="px-3 py-3 border border-border">انتهاء العقد</th>
+            <th className="px-3 py-3 border border-border">الإيجار</th>
+            <th className="px-3 py-3 border border-border">التأمين</th>
+            <th className="px-3 py-3 border border-border">الرصيد</th>
           </tr>
         </thead>
         <tbody>
@@ -365,7 +365,7 @@ const RentRoll: React.FC = () => {
               <td className="px-3 py-3 border border-border">{item.property}</td>
               <td className="px-3 py-3 border border-border font-medium">{item.unit}</td>
               <td className="px-3 py-3 border border-border">
-                <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${item.status === 'Ù…Ø¤Ø¬Ø±Ø©' ? 'bg-green-100 text-green-700 dark:bg-green-900/50 dark:text-green-300' : 'bg-amber-100 text-amber-700 dark:bg-amber-900/50 dark:text-amber-300'}`}>{item.status}</span>
+                <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${item.status === 'مؤجرة' ? 'bg-green-100 text-green-700 dark:bg-green-900/50 dark:text-green-300' : 'bg-amber-100 text-amber-700 dark:bg-amber-900/50 dark:text-amber-300'}`}>{item.status}</span>
               </td>
               <td className="px-3 py-3 border border-border">{item.tenant}</td>
               <td className="px-3 py-3 border border-border">{item.startDate !== '-' ? formatDate(item.startDate) : '-'}</td>
@@ -378,7 +378,7 @@ const RentRoll: React.FC = () => {
         </tbody>
         <tfoot>
           <tr className="font-bold bg-primary/5 text-text">
-            <td colSpan={6} className="px-3 py-3 border border-border text-left">Ø§Ù„Ø¥Ø¬Ù…Ø§Ù„ÙŠ (Ø§Ù„ÙˆØ­Ø¯Ø§Øª Ø§Ù„Ù…Ø¤Ø¬Ø±Ø©)</td>
+            <td colSpan={6} className="px-3 py-3 border border-border text-left">الإجمالي (الوحدات المؤجرة)</td>
             <td className="px-3 py-3 border border-border font-mono">{formatCurrency(rentRollData.totals.totalRent, cur)}</td>
             <td className="border border-border" />
             <td className="px-3 py-3 border border-border font-mono">{formatCurrency(rentRollData.totals.totalBalance, cur)}</td>
@@ -390,16 +390,16 @@ const RentRoll: React.FC = () => {
 
   return (
     <Card className="p-6">
-      <SectionHeader title="Ù‚Ø§Ø¦Ù…Ø© Ø§Ù„Ø¥ÙŠØ¬Ø§Ø±Ø§Øª (Rent Roll)" icon={<Building2 size={20} className="text-primary" />} />
+      <SectionHeader title="قائمة الإيجارات (Rent Roll)" icon={<Building2 size={20} className="text-primary" />} />
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
-        <MiniKpi label="Ø¥Ø¬Ù…Ø§Ù„ÙŠ Ø§Ù„ÙˆØ­Ø¯Ø§Øª" value={String(kpis.total)} icon={<Building2 size={16} />} color="bg-blue-100 dark:bg-blue-900/40 text-blue-600" />
-        <MiniKpi label="Ù…Ø¤Ø¬Ø±Ø©" value={String(kpis.rented)} icon={<Users size={16} />} color="bg-green-100 dark:bg-green-900/40 text-green-600" />
-        <MiniKpi label="Ø´Ø§ØºØ±Ø©" value={String(kpis.vacant)} icon={<Building2 size={16} />} color="bg-amber-100 dark:bg-amber-900/40 text-amber-600" />
-        <MiniKpi label="Ù†Ø³Ø¨Ø© Ø§Ù„Ø¥Ø´ØºØ§Ù„" value={`${kpis.occupancy.toFixed(0)}%`} icon={<Percent size={16} />} color="bg-indigo-100 dark:bg-indigo-900/40 text-indigo-600" />
+        <MiniKpi label="إجمالي الوحدات" value={String(kpis.total)} icon={<Building2 size={16} />} color="bg-blue-100 dark:bg-blue-900/40 text-blue-600" />
+        <MiniKpi label="مؤجرة" value={String(kpis.rented)} icon={<Users size={16} />} color="bg-green-100 dark:bg-green-900/40 text-green-600" />
+        <MiniKpi label="شاغرة" value={String(kpis.vacant)} icon={<Building2 size={16} />} color="bg-amber-100 dark:bg-amber-900/40 text-amber-600" />
+        <MiniKpi label="نسبة الإشغال" value={`${kpis.occupancy.toFixed(0)}%`} icon={<Percent size={16} />} color="bg-indigo-100 dark:bg-indigo-900/40 text-indigo-600" />
       </div>
       <ActionBar onPrint={() => setIsPrinting(true)} onExport={handleExportPdf} />
-      <ReportPrintableContent title="ØªÙ‚Ø±ÙŠØ± Ù‚Ø§Ø¦Ù…Ø© Ø§Ù„Ø¥ÙŠØ¬Ø§Ø±Ø§Øª" date={`ØªØ§Ø±ÙŠØ® Ø§Ù„ØªÙ‚Ø±ÙŠØ±: ${formatDate(new Date().toISOString())}`}>{reportContent}</ReportPrintableContent>
-      {isPrinting && <PrintPreviewModal isOpen={isPrinting} onClose={() => setIsPrinting(false)} title="Ù‚Ø§Ø¦Ù…Ø© Ø§Ù„Ø¥ÙŠØ¬Ø§Ø±Ø§Øª"><ReportPrintableContent title="ØªÙ‚Ø±ÙŠØ± Ù‚Ø§Ø¦Ù…Ø© Ø§Ù„Ø¥ÙŠØ¬Ø§Ø±Ø§Øª" date={`ØªØ§Ø±ÙŠØ® Ø§Ù„ØªÙ‚Ø±ÙŠØ±: ${formatDate(new Date().toISOString())}`}>{reportContent}</ReportPrintableContent></PrintPreviewModal>}
+      <ReportPrintableContent title="تقرير قائمة الإيجارات" date={`تاريخ التقرير: ${formatDate(new Date().toISOString())}`}>{reportContent}</ReportPrintableContent>
+      {isPrinting && <PrintPreviewModal isOpen={isPrinting} onClose={() => setIsPrinting(false)} title="قائمة الإيجارات"><ReportPrintableContent title="تقرير قائمة الإيجارات" date={`تاريخ التقرير: ${formatDate(new Date().toISOString())}`}>{reportContent}</ReportPrintableContent></PrintPreviewModal>}
     </Card>
   );
 };
@@ -444,10 +444,10 @@ const TrialBalance: React.FC = () => {
       <table className="w-full text-sm text-right border-collapse">
         <thead>
           <tr className="bg-background text-text-muted text-xs uppercase">
-            <th className="px-4 py-3 border border-border">Ø±Ù‚Ù… Ø§Ù„Ø­Ø³Ø§Ø¨</th>
-            <th className="px-4 py-3 border border-border">Ø§Ø³Ù… Ø§Ù„Ø­Ø³Ø§Ø¨</th>
-            <th className="px-4 py-3 border border-border">Ù…Ø¯ÙŠÙ†</th>
-            <th className="px-4 py-3 border border-border">Ø¯Ø§Ø¦Ù†</th>
+            <th className="px-4 py-3 border border-border">رقم الحساب</th>
+            <th className="px-4 py-3 border border-border">اسم الحساب</th>
+            <th className="px-4 py-3 border border-border">مدين</th>
+            <th className="px-4 py-3 border border-border">دائن</th>
           </tr>
         </thead>
         <tbody>
@@ -462,7 +462,7 @@ const TrialBalance: React.FC = () => {
         </tbody>
         <tfoot>
           <tr className="font-bold bg-primary/5 text-text">
-            <td colSpan={2} className="px-4 py-3 text-left border border-border">Ø§Ù„Ø¥Ø¬Ù…Ø§Ù„ÙŠ</td>
+            <td colSpan={2} className="px-4 py-3 text-left border border-border">الإجمالي</td>
             <td className="px-4 py-3 font-mono border border-border">{formatCurrency(trialBalanceData.totalDebit, cur)}</td>
             <td className="px-4 py-3 font-mono border border-border">{formatCurrency(trialBalanceData.totalCredit, cur)}</td>
           </tr>
@@ -473,20 +473,20 @@ const TrialBalance: React.FC = () => {
 
   return (
     <Card className="p-6">
-      <SectionHeader title="Ù…ÙŠØ²Ø§Ù† Ø§Ù„Ù…Ø±Ø§Ø¬Ø¹Ø©" icon={<Filter size={20} className="text-primary" />} />
+      <SectionHeader title="ميزان المراجعة" icon={<Filter size={20} className="text-primary" />} />
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-6">
-        <MiniKpi label="Ø¥Ø¬Ù…Ø§Ù„ÙŠ Ø§Ù„Ù…Ø¯ÙŠÙ†" value={formatCurrency(trialBalanceData.totalDebit, cur)} icon={<ArrowUp size={16} />} color="bg-blue-100 dark:bg-blue-900/40 text-blue-600" />
-        <MiniKpi label="Ø¥Ø¬Ù…Ø§Ù„ÙŠ Ø§Ù„Ø¯Ø§Ø¦Ù†" value={formatCurrency(trialBalanceData.totalCredit, cur)} icon={<ArrowDown size={16} />} color="bg-purple-100 dark:bg-purple-900/40 text-purple-600" />
-        <MiniKpi label="Ø­Ø§Ù„Ø© Ø§Ù„ØªÙˆØ§Ø²Ù†" value={isBalanced ? 'Ù…ØªÙˆØ§Ø²Ù†' : 'ØºÙŠØ± Ù…ØªÙˆØ§Ø²Ù†'} icon={isBalanced ? <ArrowUp size={16} /> : <ArrowDown size={16} />} color={isBalanced ? 'bg-green-100 dark:bg-green-900/40 text-green-600' : 'bg-red-100 dark:bg-red-900/40 text-red-600'} />
+        <MiniKpi label="إجمالي المدين" value={formatCurrency(trialBalanceData.totalDebit, cur)} icon={<ArrowUp size={16} />} color="bg-blue-100 dark:bg-blue-900/40 text-blue-600" />
+        <MiniKpi label="إجمالي الدائن" value={formatCurrency(trialBalanceData.totalCredit, cur)} icon={<ArrowDown size={16} />} color="bg-purple-100 dark:bg-purple-900/40 text-purple-600" />
+        <MiniKpi label="حالة التوازن" value={isBalanced ? 'متوازن' : 'غير متوازن'} icon={isBalanced ? <ArrowUp size={16} /> : <ArrowDown size={16} />} color={isBalanced ? 'bg-green-100 dark:bg-green-900/40 text-green-600' : 'bg-red-100 dark:bg-red-900/40 text-red-600'} />
       </div>
       <ActionBar onPrint={() => setIsPrinting(true)} onExport={handleExportPdf}>
         <div>
-          <label className="block text-xs font-medium text-text-muted mb-1">Ø­ØªÙ‰ ØªØ§Ø±ÙŠØ®</label>
+          <label className="block text-xs font-medium text-text-muted mb-1">حتى تاريخ</label>
           <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} className="text-sm" />
         </div>
       </ActionBar>
-      <ReportPrintableContent title="Ù…ÙŠØ²Ø§Ù† Ø§Ù„Ù…Ø±Ø§Ø¬Ø¹Ø©" date={`Ø­ØªÙ‰ ØªØ§Ø±ÙŠØ® ${formatDate(endDate)}`}>{reportContent}</ReportPrintableContent>
-      {isPrinting && <PrintPreviewModal isOpen={isPrinting} onClose={() => setIsPrinting(false)} title="Ù…ÙŠØ²Ø§Ù† Ø§Ù„Ù…Ø±Ø§Ø¬Ø¹Ø©"><ReportPrintableContent title="Ù…ÙŠØ²Ø§Ù† Ø§Ù„Ù…Ø±Ø§Ø¬Ø¹Ø©" date={`Ø­ØªÙ‰ ØªØ§Ø±ÙŠØ® ${formatDate(endDate)}`}>{reportContent}</ReportPrintableContent></PrintPreviewModal>}
+      <ReportPrintableContent title="ميزان المراجعة" date={`حتى تاريخ ${formatDate(endDate)}`}>{reportContent}</ReportPrintableContent>
+      {isPrinting && <PrintPreviewModal isOpen={isPrinting} onClose={() => setIsPrinting(false)} title="ميزان المراجعة"><ReportPrintableContent title="ميزان المراجعة" date={`حتى تاريخ ${formatDate(endDate)}`}>{reportContent}</ReportPrintableContent></PrintPreviewModal>}
     </Card>
   );
 };
@@ -508,346 +508,84 @@ const OwnerLedger: React.FC = () => {
   useEffect(() => {
     const oid = queryParams.get('ownerId');
     if (oid) setSelectedOwnerId(oid);
-  }, [location.search, queryParams]);
+  }, [location.search]);
 
   const ledgerData = useMemo(() => {
     if (!selectedOwnerId) return null;
     const owner = db.owners.find(o => o.id === selectedOwnerId);
     if (!owner) return null;
-
-    const start = new Date(`${startDate}T00:00:00`);
-    const end = new Date(`${endDate}T23:59:59`);
-    const inRange = (value?: string) => {
-      if (!value) return false;
-      const d = new Date(value);
-      return d >= start && d <= end;
-    };
-
-    const ownerProperties = db.properties.filter(p => p.ownerId === selectedOwnerId);
-    const ownerPropertyIds = new Set(ownerProperties.map(p => p.id));
-    const ownerUnits = db.units.filter(u => ownerPropertyIds.has(u.propertyId));
-    const ownerUnitIds = new Set(ownerUnits.map(u => u.id));
-    const ownerContracts = db.contracts.filter(c => ownerUnitIds.has(c.unitId));
-    const ownerContractIds = new Set(ownerContracts.map(c => c.id));
-
-    const receiptRows = db.receipts
-      .filter(r => r.status === 'POSTED' && ownerContractIds.has(r.contractId) && inRange(r.dateTime))
-      .map(r => {
-        const contract = db.contracts.find(c => c.id === r.contractId);
-        const tenant = contract ? db.tenants.find(t => t.id === contract.tenantId) : null;
-        const unit = contract ? db.units.find(u => u.id === contract.unitId) : null;
-        const property = unit ? db.properties.find(p => p.id === unit.propertyId) : null;
-        return { ...r, tenantName: tenant?.name || '-', unitName: unit?.name || '-', propertyName: property?.name || '-' };
-      });
-
-    const expenseRows = db.expenses
-      .filter(e => e.status === 'POSTED' && e.chargedTo === 'OWNER' && e.contractId && ownerContractIds.has(e.contractId) && inRange(e.dateTime))
-      .map(e => {
-        const contract = e.contractId ? db.contracts.find(c => c.id === e.contractId) : null;
-        const unit = contract ? db.units.find(u => u.id === contract.unitId) : null;
-        const property = unit ? db.properties.find(p => p.id === unit.propertyId) : null;
-        return { ...e, unitName: unit?.name || '-', propertyName: property?.name || '-' };
-      });
-
-    const maintenanceRows = db.maintenanceRecords
-      .filter(m => ownerUnitIds.has(m.unitId) && inRange(m.requestDate))
-      .map(m => {
-        const unit = db.units.find(u => u.id === m.unitId);
-        const property = unit ? db.properties.find(p => p.id === unit.propertyId) : null;
-        return { ...m, unitName: unit?.name || '-', propertyName: property?.name || '-' };
-      });
-
-    const utilityRows = (db.utilityRecords || [])
-      .filter(u => ownerPropertyIds.has(u.propertyId) && inRange(`${u.month}-01`))
-      .map(u => {
-        const unit = db.units.find(x => x.id === u.unitId);
-        const property = db.properties.find(p => p.id === u.propertyId);
-        return { ...u, unitName: unit?.name || '-', propertyName: property?.name || '-' };
-      });
-
-    const settlementRows = db.ownerSettlements.filter(s => s.ownerId === selectedOwnerId && inRange(s.date));
-
-    const transactions: Array<{ date: string; details: string; type: string; gross: number; officeShare: number; net: number }> = [];
-
-    receiptRows.forEach(r => {
-      const officeShare = showCommission && owner.commissionType === 'RATE' ? r.amount * ((owner.commissionValue || 0) / 100) : 0;
-      transactions.push({
-        date: r.dateTime,
-        details: `تحصيل سند ${r.no} - ${r.tenantName}`,
-        type: 'receipt',
-        gross: r.amount,
-        officeShare,
-        net: r.amount - officeShare,
-      });
+    const ownerProperties = db.properties.filter(p => p.ownerId === selectedOwnerId).map(p => p.id);
+    const ownerUnits = db.units.filter(u => ownerProperties.includes(u.propertyId)).map(u => u.id);
+    const ownerContracts = db.contracts.filter(c => ownerUnits.includes(c.unitId)).map(c => c.id);
+    const start = new Date(startDate), end = new Date(endDate);
+    const transactions: any[] = [];
+    db.receipts.forEach(r => {
+      if (r.status === 'POSTED' && ownerContracts.includes(r.contractId) && new Date(r.dateTime) >= start && new Date(r.dateTime) <= end) {
+        const officeShare = showCommission && owner.commissionType === 'RATE' ? r.amount * (owner.commissionValue / 100) : 0;
+        transactions.push({ date: r.dateTime, details: `تحصيل من عقد ${r.no}`, type: 'receipt', gross: r.amount, officeShare, net: r.amount - officeShare });
+      }
     });
-
-    expenseRows.forEach(e => {
-      transactions.push({
-        date: e.dateTime,
-        details: `مصروف ${e.no} - ${e.category}`,
-        type: 'expense',
-        gross: -e.amount,
-        officeShare: 0,
-        net: -e.amount,
-      });
+    db.expenses.forEach(e => {
+      if (e.status === 'POSTED' && e.contractId && ownerContracts.includes(e.contractId) && e.chargedTo === 'OWNER' && new Date(e.dateTime) >= start && new Date(e.dateTime) <= end) {
+        transactions.push({ date: e.dateTime, details: `مصروف صيانة ${e.no}`, type: 'expense', gross: -e.amount, officeShare: 0, net: -e.amount });
+      }
     });
-
-    utilityRows.forEach(u => {
-      if (u.paidBy !== 'OWNER') return;
-      transactions.push({
-        date: `${u.month}-01`,
-        details: `مرافق ${u.type} - ${u.unitName}`,
-        type: 'utility',
-        gross: -u.amount,
-        officeShare: 0,
-        net: -u.amount,
-      });
+    db.ownerSettlements.forEach(s => {
+      if (s.ownerId === selectedOwnerId && new Date(s.date) >= start && new Date(s.date) <= end) {
+        transactions.push({ date: s.date, details: `تسوية مالية - دفعة #${s.no}`, type: 'settlement', gross: -s.amount, officeShare: 0, net: -s.amount });
+      }
     });
-
-    settlementRows.forEach(s => {
-      transactions.push({
-        date: s.date,
-        details: `تسوية مالية ${s.no}`,
-        type: 'settlement',
-        gross: -s.amount,
-        officeShare: 0,
-        net: -s.amount,
-      });
-    });
-
     if (showCommission && owner.commissionType === 'FIXED_MONTHLY') {
       const commissionMonths = new Set<string>();
-      receiptRows.forEach(r => commissionMonths.add((r.dateTime || '').slice(0, 7)));
+      transactions.filter(tx => tx.type === 'receipt').forEach(tx => commissionMonths.add(tx.date.slice(0, 7)));
       commissionMonths.forEach(month => {
-        if (!month) return;
-        transactions.push({
-          date: `${month}-28`,
-          details: `عمولة إدارة ثابتة لشهر ${month}`,
-          type: 'commission',
-          gross: 0,
-          officeShare: owner.commissionValue || 0,
-          net: -(owner.commissionValue || 0),
-        });
+        const lastDayOfMonth = new Date(Number(month.slice(0, 4)), Number(month.slice(5, 7)), 0).toISOString();
+        transactions.push({ date: lastDayOfMonth, details: `عمولة إدارة ثابتة لشهر ${month}`, type: 'expense', gross: 0, officeShare: owner.commissionValue, net: -owner.commissionValue });
       });
     }
-
     transactions.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-    const totals = transactions.reduce(
-      (acc, tx) => {
-        acc.gross += tx.gross;
-        acc.officeShare += tx.officeShare;
-        acc.net += tx.net;
-        return acc;
-      },
-      { gross: 0, officeShare: 0, net: 0 }
-    );
-
-    const sectionsTotals = {
-      receipts: receiptRows.reduce((s, r) => s + r.amount, 0),
-      expenses: expenseRows.reduce((s, e) => s + e.amount, 0),
-      maintenance: maintenanceRows.reduce((s, m) => s + (m.cost || 0), 0),
-      utilities: utilityRows.reduce((s, u) => s + (u.amount || 0), 0),
-      settlements: settlementRows.reduce((s, s2) => s + s2.amount, 0),
-    };
-
-    return { owner, transactions, totals, sectionsTotals, receiptRows, expenseRows, maintenanceRows, utilityRows, settlementRows };
+    const totals = transactions.reduce((acc, tx) => { acc.gross += tx.gross; acc.officeShare += tx.officeShare; acc.net += tx.net; return acc; }, { gross: 0, officeShare: 0, net: 0 });
+    return { transactions, totals };
   }, [selectedOwnerId, startDate, endDate, db, showCommission]);
 
   const handleExportPdf = () => {
     if (!ledgerData || !selectedOwnerId) return;
     const ownerName = db.owners.find(o => o.id === selectedOwnerId)?.name || '';
-    exportOwnerLedgerToPdf(
-      ledgerData.transactions,
-      ledgerData.totals,
-      settings,
-      ownerName,
-      `للفترة من ${formatDate(startDate)} إلى ${formatDate(endDate)}`,
-      showCommission
-    );
+    exportOwnerLedgerToPdf(ledgerData.transactions, ledgerData.totals, settings, ownerName, `للفترة من ${formatDate(startDate)} إلى ${formatDate(endDate)}`, showCommission);
   };
 
   const reportContent = ledgerData && (
-    <div className="space-y-6">
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-        <MiniKpi label="التحصيلات" value={formatCurrency(ledgerData.sectionsTotals.receipts, cur)} icon={<ArrowUp size={16} />} color="bg-green-100 dark:bg-green-900/40 text-green-600" />
-        <MiniKpi label="المصروفات" value={formatCurrency(ledgerData.sectionsTotals.expenses, cur)} icon={<TrendingDown size={16} />} color="bg-red-100 dark:bg-red-900/40 text-red-600" />
-        <MiniKpi label="الصيانة" value={formatCurrency(ledgerData.sectionsTotals.maintenance, cur)} icon={<Filter size={16} />} color="bg-amber-100 dark:bg-amber-900/40 text-amber-600" />
-        <MiniKpi label="المرافق" value={formatCurrency(ledgerData.sectionsTotals.utilities, cur)} icon={<Zap size={16} />} color="bg-purple-100 dark:bg-purple-900/40 text-purple-600" />
-        <MiniKpi label="صافي المالك" value={formatCurrency(ledgerData.totals.net, cur)} icon={<Wallet size={16} />} color="bg-blue-100 dark:bg-blue-900/40 text-blue-600" />
-      </div>
-
-      <div className="overflow-x-auto">
-        <h4 className="text-base font-bold mb-2">الحركة المالية المجمعة</h4>
-        <table className="w-full text-sm text-right border-collapse">
-          <thead>
-            <tr className="bg-background text-text-muted text-xs uppercase">
-              <th className="px-4 py-3 border border-border">التاريخ</th>
-              <th className="px-4 py-3 border border-border">البيان</th>
-              <th className="px-4 py-3 border border-border">إجمالي المبلغ</th>
-              {showCommission && <th className="px-4 py-3 border border-border">حصة المكتب</th>}
-              <th className="px-4 py-3 border border-border">صافي المبلغ للمالك</th>
+    <div className="overflow-x-auto">
+      <table className="w-full text-sm text-right border-collapse">
+        <thead>
+          <tr className="bg-background text-text-muted text-xs uppercase">
+            <th className="px-4 py-3 border border-border">التاريخ</th>
+            <th className="px-4 py-3 border border-border">البيان</th>
+            <th className="px-4 py-3 border border-border">إجمالي المبلغ</th>
+            {showCommission && <th className="px-4 py-3 border border-border">حصة المكتب</th>}
+            <th className="px-4 py-3 border border-border">صافي المبلغ للمالك</th>
+          </tr>
+        </thead>
+        <tbody>
+          {ledgerData.transactions.map((tx: any, i: number) => (
+            <tr key={i} className="bg-card hover:bg-background/50">
+              <td className="px-4 py-3 border border-border">{formatDate(tx.date)}</td>
+              <td className="px-4 py-3 border border-border">{tx.details}</td>
+              <td className={`px-4 py-3 border border-border font-mono ${tx.gross >= 0 ? 'text-green-600' : 'text-red-600'}`}>{formatCurrency(tx.gross, cur)}</td>
+              {showCommission && <td className="px-4 py-3 text-red-600 border border-border font-mono">{tx.officeShare > 0 ? formatCurrency(-tx.officeShare, cur) : '-'}</td>}
+              <td className="px-4 py-3 font-bold border border-border font-mono">{formatCurrency(tx.net, cur)}</td>
             </tr>
-          </thead>
-          <tbody>
-            {ledgerData.transactions.map((tx, i) => (
-              <tr key={i} className="bg-card hover:bg-background/50">
-                <td className="px-4 py-3 border border-border">{formatDate(tx.date)}</td>
-                <td className="px-4 py-3 border border-border">{tx.details}</td>
-                <td className={`px-4 py-3 border border-border font-mono ${tx.gross >= 0 ? 'text-green-600' : 'text-red-600'}`}>{formatCurrency(tx.gross, cur)}</td>
-                {showCommission && <td className="px-4 py-3 text-red-600 border border-border font-mono">{tx.officeShare > 0 ? formatCurrency(-tx.officeShare, cur) : '-'}</td>}
-                <td className="px-4 py-3 font-bold border border-border font-mono">{formatCurrency(tx.net, cur)}</td>
-              </tr>
-            ))}
-          </tbody>
-          <tfoot>
-            <tr className="font-bold bg-primary/5 text-text">
-              <td colSpan={2} className="px-4 py-3 text-left border border-border">الرصيد الختامي</td>
-              <td className="px-4 py-3 border border-border font-mono">{formatCurrency(ledgerData.totals.gross, cur)}</td>
-              {showCommission && <td className="px-4 py-3 border border-border font-mono">{formatCurrency(-ledgerData.totals.officeShare, cur)}</td>}
-              <td className="px-4 py-3 border border-border font-mono">{formatCurrency(ledgerData.totals.net, cur)}</td>
-            </tr>
-          </tfoot>
-        </table>
-      </div>
-
-      <div className="overflow-x-auto">
-        <h4 className="text-base font-bold mb-2">جدول التحصيلات</h4>
-        <table className="w-full text-sm text-right border-collapse border border-border">
-          <thead className="bg-background text-xs">
-            <tr>
-              <th className="px-3 py-2 border border-border">التاريخ</th>
-              <th className="px-3 py-2 border border-border">السند</th>
-              <th className="px-3 py-2 border border-border">المستأجر</th>
-              <th className="px-3 py-2 border border-border">الوحدة</th>
-              <th className="px-3 py-2 border border-border">العقار</th>
-              <th className="px-3 py-2 border border-border">المبلغ</th>
-            </tr>
-          </thead>
-          <tbody>
-            {ledgerData.receiptRows.length === 0 && <tr><td colSpan={6} className="px-3 py-3 text-center border border-border text-text-muted">لا توجد بيانات</td></tr>}
-            {ledgerData.receiptRows.map(r => (
-              <tr key={r.id}>
-                <td className="px-3 py-2 border border-border">{formatDate(r.dateTime)}</td>
-                <td className="px-3 py-2 border border-border font-mono">{r.no}</td>
-                <td className="px-3 py-2 border border-border">{r.tenantName}</td>
-                <td className="px-3 py-2 border border-border">{r.unitName}</td>
-                <td className="px-3 py-2 border border-border">{r.propertyName}</td>
-                <td className="px-3 py-2 border border-border font-mono">{formatCurrency(r.amount, cur)}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-
-      <div className="overflow-x-auto">
-        <h4 className="text-base font-bold mb-2">جدول المصروفات</h4>
-        <table className="w-full text-sm text-right border-collapse border border-border">
-          <thead className="bg-background text-xs">
-            <tr>
-              <th className="px-3 py-2 border border-border">التاريخ</th>
-              <th className="px-3 py-2 border border-border">السند</th>
-              <th className="px-3 py-2 border border-border">التصنيف</th>
-              <th className="px-3 py-2 border border-border">الوحدة</th>
-              <th className="px-3 py-2 border border-border">العقار</th>
-              <th className="px-3 py-2 border border-border">المبلغ</th>
-            </tr>
-          </thead>
-          <tbody>
-            {ledgerData.expenseRows.length === 0 && <tr><td colSpan={6} className="px-3 py-3 text-center border border-border text-text-muted">لا توجد بيانات</td></tr>}
-            {ledgerData.expenseRows.map(e => (
-              <tr key={e.id}>
-                <td className="px-3 py-2 border border-border">{formatDate(e.dateTime)}</td>
-                <td className="px-3 py-2 border border-border font-mono">{e.no}</td>
-                <td className="px-3 py-2 border border-border">{e.category}</td>
-                <td className="px-3 py-2 border border-border">{e.unitName}</td>
-                <td className="px-3 py-2 border border-border">{e.propertyName}</td>
-                <td className="px-3 py-2 border border-border font-mono">{formatCurrency(e.amount, cur)}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-
-      <div className="overflow-x-auto">
-        <h4 className="text-base font-bold mb-2">جدول الصيانة</h4>
-        <table className="w-full text-sm text-right border-collapse border border-border">
-          <thead className="bg-background text-xs">
-            <tr>
-              <th className="px-3 py-2 border border-border">التاريخ</th>
-              <th className="px-3 py-2 border border-border">الطلب</th>
-              <th className="px-3 py-2 border border-border">الوصف</th>
-              <th className="px-3 py-2 border border-border">الوحدة</th>
-              <th className="px-3 py-2 border border-border">العقار</th>
-              <th className="px-3 py-2 border border-border">التكلفة</th>
-            </tr>
-          </thead>
-          <tbody>
-            {ledgerData.maintenanceRows.length === 0 && <tr><td colSpan={6} className="px-3 py-3 text-center border border-border text-text-muted">لا توجد بيانات</td></tr>}
-            {ledgerData.maintenanceRows.map(m => (
-              <tr key={m.id}>
-                <td className="px-3 py-2 border border-border">{formatDate(m.requestDate)}</td>
-                <td className="px-3 py-2 border border-border font-mono">{m.no}</td>
-                <td className="px-3 py-2 border border-border">{m.description}</td>
-                <td className="px-3 py-2 border border-border">{m.unitName}</td>
-                <td className="px-3 py-2 border border-border">{m.propertyName}</td>
-                <td className="px-3 py-2 border border-border font-mono">{formatCurrency(m.cost || 0, cur)}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-
-      <div className="overflow-x-auto">
-        <h4 className="text-base font-bold mb-2">جدول المرافق</h4>
-        <table className="w-full text-sm text-right border-collapse border border-border">
-          <thead className="bg-background text-xs">
-            <tr>
-              <th className="px-3 py-2 border border-border">الشهر</th>
-              <th className="px-3 py-2 border border-border">النوع</th>
-              <th className="px-3 py-2 border border-border">الوحدة</th>
-              <th className="px-3 py-2 border border-border">العقار</th>
-              <th className="px-3 py-2 border border-border">على حساب</th>
-              <th className="px-3 py-2 border border-border">المبلغ</th>
-            </tr>
-          </thead>
-          <tbody>
-            {ledgerData.utilityRows.length === 0 && <tr><td colSpan={6} className="px-3 py-3 text-center border border-border text-text-muted">لا توجد بيانات</td></tr>}
-            {ledgerData.utilityRows.map(u => (
-              <tr key={u.id}>
-                <td className="px-3 py-2 border border-border">{u.month}</td>
-                <td className="px-3 py-2 border border-border">{u.type}</td>
-                <td className="px-3 py-2 border border-border">{u.unitName}</td>
-                <td className="px-3 py-2 border border-border">{u.propertyName}</td>
-                <td className="px-3 py-2 border border-border">{u.paidBy === 'OWNER' ? 'المالك' : u.paidBy === 'TENANT' ? 'المستأجر' : 'المكتب'}</td>
-                <td className="px-3 py-2 border border-border font-mono">{formatCurrency(u.amount || 0, cur)}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-
-      <div className="overflow-x-auto">
-        <h4 className="text-base font-bold mb-2">جدول التسويات</h4>
-        <table className="w-full text-sm text-right border-collapse border border-border">
-          <thead className="bg-background text-xs">
-            <tr>
-              <th className="px-3 py-2 border border-border">التاريخ</th>
-              <th className="px-3 py-2 border border-border">رقم التسوية</th>
-              <th className="px-3 py-2 border border-border">المبلغ</th>
-            </tr>
-          </thead>
-          <tbody>
-            {ledgerData.settlementRows.length === 0 && <tr><td colSpan={3} className="px-3 py-3 text-center border border-border text-text-muted">لا توجد بيانات</td></tr>}
-            {ledgerData.settlementRows.map(s => (
-              <tr key={s.id}>
-                <td className="px-3 py-2 border border-border">{formatDate(s.date)}</td>
-                <td className="px-3 py-2 border border-border font-mono">{s.no}</td>
-                <td className="px-3 py-2 border border-border font-mono">{formatCurrency(s.amount, cur)}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+          ))}
+        </tbody>
+        <tfoot>
+          <tr className="font-bold bg-primary/5 text-text">
+            <td colSpan={2} className="px-4 py-3 text-left border border-border">الرصيد الختامي</td>
+            <td className="px-4 py-3 border border-border font-mono">{formatCurrency(ledgerData.totals.gross, cur)}</td>
+            {showCommission && <td className="px-4 py-3 border border-border font-mono">{formatCurrency(-ledgerData.totals.officeShare, cur)}</td>}
+            <td className="px-4 py-3 border border-border font-mono">{formatCurrency(ledgerData.totals.net, cur)}</td>
+          </tr>
+        </tfoot>
+      </table>
     </div>
   );
 
@@ -882,11 +620,13 @@ const OwnerLedger: React.FC = () => {
           <label className="flex items-center gap-1.5 text-sm cursor-pointer"><input type="radio" name="commission" checked={showCommission} onChange={() => setShowCommission(true)} /> بعد الخصم</label>
         </div>
       </ActionBar>
-      {reportContent && <ReportPrintableContent title={`كشف حساب المالك: ${db.owners.find(o => o.id === selectedOwnerId)?.name || ''}`} date={`للفترة من ${formatDate(startDate)} إلى ${formatDate(endDate)}`}>{reportContent}</ReportPrintableContent>}
-      {isPrinting && reportContent && <PrintPreviewModal isOpen={isPrinting} onClose={() => setIsPrinting(false)} title="كشف حساب المالك"><ReportPrintableContent title={`كشف حساب المالك: ${db.owners.find(o => o.id === selectedOwnerId)?.name || ''}`} date={`للفترة من ${formatDate(startDate)} إلى ${formatDate(endDate)}`}>{reportContent}</ReportPrintableContent></PrintPreviewModal>}
+      {reportContent && <ReportPrintableContent title={`كشف حساب المالك: ${db.owners.find(o => o.id === selectedOwnerId)?.name}`} date={`للفترة من ${formatDate(startDate)} إلى ${formatDate(endDate)}`}>{reportContent}</ReportPrintableContent>}
+      {isPrinting && reportContent && <PrintPreviewModal isOpen={isPrinting} onClose={() => setIsPrinting(false)} title="كشف حساب المالك"><ReportPrintableContent title={`كشف حساب المالك: ${db.owners.find(o => o.id === selectedOwnerId)?.name}`} date={`للفترة من ${formatDate(startDate)} إلى ${formatDate(endDate)}`}>{reportContent}</ReportPrintableContent></PrintPreviewModal>}
     </Card>
   );
 };
+
+
 const TenantStatement: React.FC = () => {
   const { db, settings, contractBalances } = useApp();
   const [selectedContractId, setSelectedContractId] = useState<string>(db.contracts[0]?.id || '');
@@ -903,9 +643,9 @@ const TenantStatement: React.FC = () => {
     const invoices = db.invoices.filter(inv => inv.contractId === contract.id);
     const receipts = db.receipts.filter(r => r.contractId === contract.id && r.status === 'POSTED');
     let transactions: { date: string; description: string; debit: number; credit: number }[] = [];
-    invoices.forEach(inv => transactions.push({ date: inv.dueDate, description: inv.notes || `ÙØ§ØªÙˆØ±Ø© Ø±Ù‚Ù… ${inv.no}`, debit: inv.amount, credit: 0 }));
-    const channelLabels: Record<string, string> = { CASH: 'Ù†Ù‚Ø¯ÙŠ', BANK: 'ØªØ­ÙˆÙŠÙ„ Ø¨Ù†ÙƒÙŠ', POS: 'Ø´Ø¨ÙƒØ©', OTHER: 'Ø£Ø®Ø±Ù‰' };
-    receipts.forEach(r => transactions.push({ date: r.dateTime, description: `Ø¯ÙØ¹Ø© (${channelLabels[r.channel] || r.channel}) - Ø³Ù†Ø¯ ${r.no}`, debit: 0, credit: r.amount }));
+    invoices.forEach(inv => transactions.push({ date: inv.dueDate, description: inv.notes || `فاتورة رقم ${inv.no}`, debit: inv.amount, credit: 0 }));
+    const channelLabels: Record<string, string> = { CASH: 'نقدي', BANK: 'تحويل بنكي', POS: 'شبكة', OTHER: 'أخرى' };
+    receipts.forEach(r => transactions.push({ date: r.dateTime, description: `دفعة (${channelLabels[r.channel] || r.channel}) - سند ${r.no}`, debit: 0, credit: r.amount }));
     transactions.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
     let balance = 0;
     const statement = transactions.map(tx => { balance += tx.debit - tx.credit; return { ...tx, balance }; });
@@ -918,20 +658,20 @@ const TenantStatement: React.FC = () => {
   const reportContent = statementData && (
     <div>
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm p-4 border rounded-lg border-border mb-6 bg-background">
-        <div><span className="text-text-muted text-xs">Ø§Ù„Ù…Ø³ØªØ£Ø¬Ø±:</span> <span className="font-bold block">{statementData.tenant?.name}</span></div>
-        <div><span className="text-text-muted text-xs">Ø§Ù„Ø¹Ù‚Ø§Ø±:</span> <span className="font-bold block">{statementData.property?.name}</span></div>
-        <div><span className="text-text-muted text-xs">Ø§Ù„Ù‡Ø§ØªÙ:</span> <span className="font-bold block">{statementData.tenant?.phone}</span></div>
-        <div><span className="text-text-muted text-xs">Ø§Ù„ÙˆØ­Ø¯Ø©:</span> <span className="font-bold block">{statementData.unit?.name}</span></div>
+        <div><span className="text-text-muted text-xs">المستأجر:</span> <span className="font-bold block">{statementData.tenant?.name}</span></div>
+        <div><span className="text-text-muted text-xs">العقار:</span> <span className="font-bold block">{statementData.property?.name}</span></div>
+        <div><span className="text-text-muted text-xs">الهاتف:</span> <span className="font-bold block">{statementData.tenant?.phone}</span></div>
+        <div><span className="text-text-muted text-xs">الوحدة:</span> <span className="font-bold block">{statementData.unit?.name}</span></div>
       </div>
       <div className="overflow-x-auto">
         <table className="w-full text-sm text-right border-collapse">
           <thead>
             <tr className="bg-background text-text-muted text-xs uppercase">
-              <th className="px-4 py-3 border border-border">Ø§Ù„ØªØ§Ø±ÙŠØ®</th>
-              <th className="px-4 py-3 border border-border">Ø§Ù„Ø¨ÙŠØ§Ù†</th>
-              <th className="px-4 py-3 border border-border">Ù…Ø¯ÙŠÙ†</th>
-              <th className="px-4 py-3 border border-border">Ø¯Ø§Ø¦Ù†</th>
-              <th className="px-4 py-3 border border-border">Ø§Ù„Ø±ØµÙŠØ¯</th>
+              <th className="px-4 py-3 border border-border">التاريخ</th>
+              <th className="px-4 py-3 border border-border">البيان</th>
+              <th className="px-4 py-3 border border-border">مدين</th>
+              <th className="px-4 py-3 border border-border">دائن</th>
+              <th className="px-4 py-3 border border-border">الرصيد</th>
             </tr>
           </thead>
           <tbody>
@@ -947,7 +687,7 @@ const TenantStatement: React.FC = () => {
           </tbody>
           <tfoot>
             <tr className="font-bold bg-primary/5 text-text">
-              <td colSpan={4} className="px-4 py-3 text-left border border-border">Ø§Ù„Ø±ØµÙŠØ¯ Ø§Ù„Ù†Ù‡Ø§Ø¦ÙŠ Ø§Ù„Ù…Ø³ØªØ­Ù‚</td>
+              <td colSpan={4} className="px-4 py-3 text-left border border-border">الرصيد النهائي المستحق</td>
               <td className="px-4 py-3 border border-border font-mono">{formatCurrency(statementData.finalBalance, cur)}</td>
             </tr>
           </tfoot>
@@ -958,25 +698,25 @@ const TenantStatement: React.FC = () => {
 
   return (
     <Card className="p-6">
-      <SectionHeader title="ÙƒØ´Ù Ø­Ø³Ø§Ø¨ Ø§Ù„Ù…Ø³ØªØ£Ø¬Ø±" icon={<Users size={20} className="text-primary" />} />
+      <SectionHeader title="كشف حساب المستأجر" icon={<Users size={20} className="text-primary" />} />
       {statementData && (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-6">
-          <MiniKpi label="Ø¥Ø¬Ù…Ø§Ù„ÙŠ Ø§Ù„ÙÙˆØ§ØªÙŠØ±" value={formatCurrency(statementData.statement.reduce((s, tx) => s + tx.debit, 0), cur)} icon={<FileText size={16} />} color="bg-red-100 dark:bg-red-900/40 text-red-600" />
-          <MiniKpi label="Ø¥Ø¬Ù…Ø§Ù„ÙŠ Ø§Ù„Ù…Ø¯ÙÙˆØ¹" value={formatCurrency(statementData.statement.reduce((s, tx) => s + tx.credit, 0), cur)} icon={<ArrowDown size={16} />} color="bg-green-100 dark:bg-green-900/40 text-green-600" />
-          <MiniKpi label="Ø§Ù„Ø±ØµÙŠØ¯ Ø§Ù„Ù…Ø³ØªØ­Ù‚" value={formatCurrency(statementData.finalBalance, cur)} icon={<Wallet size={16} />} color={statementData.finalBalance > 0 ? 'bg-red-100 dark:bg-red-900/40 text-red-600' : 'bg-green-100 dark:bg-green-900/40 text-green-600'} />
+          <MiniKpi label="إجمالي الفواتير" value={formatCurrency(statementData.statement.reduce((s, tx) => s + tx.debit, 0), cur)} icon={<FileText size={16} />} color="bg-red-100 dark:bg-red-900/40 text-red-600" />
+          <MiniKpi label="إجمالي المدفوع" value={formatCurrency(statementData.statement.reduce((s, tx) => s + tx.credit, 0), cur)} icon={<ArrowDown size={16} />} color="bg-green-100 dark:bg-green-900/40 text-green-600" />
+          <MiniKpi label="الرصيد المستحق" value={formatCurrency(statementData.finalBalance, cur)} icon={<Wallet size={16} />} color={statementData.finalBalance > 0 ? 'bg-red-100 dark:bg-red-900/40 text-red-600' : 'bg-green-100 dark:bg-green-900/40 text-green-600'} />
         </div>
       )}
       <ActionBar onPrint={() => setIsPrinting(true)} onExport={handleExportPdf}>
         <div className="flex-grow max-w-md">
-          <label className="block text-xs font-medium text-text-muted mb-1">Ø§Ø®ØªØ± Ø§Ù„Ø¹Ù‚Ø¯</label>
+          <label className="block text-xs font-medium text-text-muted mb-1">اختر العقد</label>
           <select value={selectedContractId} onChange={e => setSelectedContractId(e.target.value)} className="w-full text-sm">
-            <option value="">-- Ø§Ø®ØªØ± --</option>
-            {db.contracts.map(c => { const t = db.tenants.find(t => t.id === c.tenantId); const u = db.units.find(u => u.id === c.unitId); return <option key={c.id} value={c.id}>{u?.name} / {t?.name} (ÙŠØ¨Ø¯Ø£ ÙÙŠ {c.start})</option>; })}
+            <option value="">-- اختر --</option>
+            {db.contracts.map(c => { const t = db.tenants.find(t => t.id === c.tenantId); const u = db.units.find(u => u.id === c.unitId); return <option key={c.id} value={c.id}>{u?.name} / {t?.name} (يبدأ في {c.start})</option>; })}
           </select>
         </div>
       </ActionBar>
-      {reportContent && <ReportPrintableContent title="ÙƒØ´Ù Ø­Ø³Ø§Ø¨ Ù…Ø³ØªØ£Ø¬Ø±" date={`ØªØ§Ø±ÙŠØ® Ø§Ù„ØªÙ‚Ø±ÙŠØ±: ${new Date().toLocaleDateString('ar-EG')}`}>{reportContent}</ReportPrintableContent>}
-      {isPrinting && reportContent && <PrintPreviewModal isOpen={isPrinting} onClose={() => setIsPrinting(false)} title="ÙƒØ´Ù Ø­Ø³Ø§Ø¨ Ø§Ù„Ù…Ø³ØªØ£Ø¬Ø±"><ReportPrintableContent title="ÙƒØ´Ù Ø­Ø³Ø§Ø¨ Ù…Ø³ØªØ£Ø¬Ø±" date={`ØªØ§Ø±ÙŠØ® Ø§Ù„ØªÙ‚Ø±ÙŠØ±: ${new Date().toLocaleDateString('ar-EG')}`}>{reportContent}</ReportPrintableContent></PrintPreviewModal>}
+      {reportContent && <ReportPrintableContent title="كشف حساب مستأجر" date={`تاريخ التقرير: ${new Date().toLocaleDateString('ar-EG')}`}>{reportContent}</ReportPrintableContent>}
+      {isPrinting && reportContent && <PrintPreviewModal isOpen={isPrinting} onClose={() => setIsPrinting(false)} title="كشف حساب المستأجر"><ReportPrintableContent title="كشف حساب مستأجر" date={`تاريخ التقرير: ${new Date().toLocaleDateString('ar-EG')}`}>{reportContent}</ReportPrintableContent></PrintPreviewModal>}
     </Card>
   );
 };
@@ -990,7 +730,7 @@ const IncomeStatement: React.FC = () => {
   const [isPrinting, setIsPrinting] = useState(false);
   const cur = settings.operational?.currency ?? 'OMR';
   const data = useMemo(() => calculateIncomeStatementData(db, startDate, endDate), [db, startDate, endDate]);
-  const handleExportPdf = () => exportIncomeStatementToPdf(data, settings, `Ù„Ù„ÙØªØ±Ø© Ù…Ù† ${formatDate(startDate)} Ø¥Ù„Ù‰ ${formatDate(endDate)}`);
+  const handleExportPdf = () => exportIncomeStatementToPdf(data, settings, `للفترة من ${formatDate(startDate)} إلى ${formatDate(endDate)}`);
 
   const chartData = useMemo(() => {
     const items = [
@@ -1004,7 +744,7 @@ const IncomeStatement: React.FC = () => {
     <div className="space-y-6">
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         <div>
-          <h3 className="text-lg font-bold border-b-2 border-emerald-500 pb-2 mb-4 flex items-center gap-2"><TrendingUp className="text-emerald-500" size={20} /> Ø§Ù„Ø¥ÙŠØ±Ø§Ø¯Ø§Øª</h3>
+          <h3 className="text-lg font-bold border-b-2 border-emerald-500 pb-2 mb-4 flex items-center gap-2"><TrendingUp className="text-emerald-500" size={20} /> الإيرادات</h3>
           {data.revenues.map(item => (
             <div key={item.no} className="flex justify-between items-center text-sm py-2 border-b border-border/50 last:border-0">
               <span>{item.name}</span>
@@ -1012,12 +752,12 @@ const IncomeStatement: React.FC = () => {
             </div>
           ))}
           <div className="flex justify-between text-base font-bold pt-3 mt-2 border-t-2 border-emerald-500">
-            <span>Ø¥Ø¬Ù…Ø§Ù„ÙŠ Ø§Ù„Ø¥ÙŠØ±Ø§Ø¯Ø§Øª</span>
+            <span>إجمالي الإيرادات</span>
             <span className="text-emerald-600">{formatCurrency(data.totalRevenue, cur)}</span>
           </div>
         </div>
         <div>
-          <h3 className="text-lg font-bold border-b-2 border-red-500 pb-2 mb-4 flex items-center gap-2"><TrendingDown className="text-red-500" size={20} /> Ø§Ù„Ù…ØµØ±ÙˆÙØ§Øª</h3>
+          <h3 className="text-lg font-bold border-b-2 border-red-500 pb-2 mb-4 flex items-center gap-2"><TrendingDown className="text-red-500" size={20} /> المصروفات</h3>
           {data.expenses.map(item => (
             <div key={item.no} className="flex justify-between items-center text-sm py-2 border-b border-border/50 last:border-0">
               <span>{item.name}</span>
@@ -1025,13 +765,13 @@ const IncomeStatement: React.FC = () => {
             </div>
           ))}
           <div className="flex justify-between text-base font-bold pt-3 mt-2 border-t-2 border-red-500">
-            <span>Ø¥Ø¬Ù…Ø§Ù„ÙŠ Ø§Ù„Ù…ØµØ±ÙˆÙØ§Øª</span>
+            <span>إجمالي المصروفات</span>
             <span className="text-red-600">({formatCurrency(data.totalExpense, cur)})</span>
           </div>
         </div>
       </div>
       <div className={`p-5 rounded-xl text-center ${data.netIncome >= 0 ? 'bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800' : 'bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800'}`}>
-        <p className="text-sm text-text-muted mb-1">ØµØ§ÙÙŠ Ø§Ù„Ø±Ø¨Ø­ / (Ø§Ù„Ø®Ø³Ø§Ø±Ø©)</p>
+        <p className="text-sm text-text-muted mb-1">صافي الربح / (الخسارة)</p>
         <p className={`text-3xl font-black ${data.netIncome >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>{formatCurrency(data.netIncome, cur)}</p>
       </div>
     </div>
@@ -1039,18 +779,18 @@ const IncomeStatement: React.FC = () => {
 
   return (
     <Card className="p-6">
-      <SectionHeader title="Ù‚Ø§Ø¦Ù…Ø© Ø§Ù„Ø¯Ø®Ù„" icon={<TrendingUp size={20} className="text-primary" />} />
+      <SectionHeader title="قائمة الدخل" icon={<TrendingUp size={20} className="text-primary" />} />
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-6">
-        <MiniKpi label="Ø¥Ø¬Ù…Ø§Ù„ÙŠ Ø§Ù„Ø¥ÙŠØ±Ø§Ø¯Ø§Øª" value={formatCurrency(data.totalRevenue, cur)} icon={<ArrowUp size={16} />} color="bg-emerald-100 dark:bg-emerald-900/40 text-emerald-600" />
-        <MiniKpi label="Ø¥Ø¬Ù…Ø§Ù„ÙŠ Ø§Ù„Ù…ØµØ±ÙˆÙØ§Øª" value={formatCurrency(data.totalExpense, cur)} icon={<ArrowDown size={16} />} color="bg-red-100 dark:bg-red-900/40 text-red-600" />
-        <MiniKpi label="ØµØ§ÙÙŠ Ø§Ù„Ø¯Ø®Ù„" value={formatCurrency(data.netIncome, cur)} icon={<Banknote size={16} />} color={data.netIncome >= 0 ? 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-600' : 'bg-red-100 dark:bg-red-900/40 text-red-600'} />
+        <MiniKpi label="إجمالي الإيرادات" value={formatCurrency(data.totalRevenue, cur)} icon={<ArrowUp size={16} />} color="bg-emerald-100 dark:bg-emerald-900/40 text-emerald-600" />
+        <MiniKpi label="إجمالي المصروفات" value={formatCurrency(data.totalExpense, cur)} icon={<ArrowDown size={16} />} color="bg-red-100 dark:bg-red-900/40 text-red-600" />
+        <MiniKpi label="صافي الدخل" value={formatCurrency(data.netIncome, cur)} icon={<Banknote size={16} />} color={data.netIncome >= 0 ? 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-600' : 'bg-red-100 dark:bg-red-900/40 text-red-600'} />
       </div>
 
       {chartData.length > 0 && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
           <div className="bg-background rounded-xl p-4 border border-border">
-            <p className="text-sm font-bold mb-3 text-text-muted">ØªÙˆØ²ÙŠØ¹ Ø§Ù„Ø¥ÙŠØ±Ø§Ø¯Ø§Øª</p>
-            <div className="h-48" dir="ltr">
+            <p className="text-sm font-bold mb-3 text-text-muted">توزيع الإيرادات</p>
+            <div className="h-48 overflow-hidden" dir="ltr">
               <ResponsiveContainer width="100%" height="100%">
                 <RechartsPie>
                   <Pie data={data.revenues} dataKey="balance" nameKey="name" cx="50%" cy="50%" outerRadius={70} label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`} labelLine={false} fontSize={10}>
@@ -1062,8 +802,8 @@ const IncomeStatement: React.FC = () => {
             </div>
           </div>
           <div className="bg-background rounded-xl p-4 border border-border">
-            <p className="text-sm font-bold mb-3 text-text-muted">ØªÙˆØ²ÙŠØ¹ Ø§Ù„Ù…ØµØ±ÙˆÙØ§Øª</p>
-            <div className="h-48" dir="ltr">
+            <p className="text-sm font-bold mb-3 text-text-muted">توزيع المصروفات</p>
+            <div className="h-48 overflow-hidden" dir="ltr">
               <ResponsiveContainer width="100%" height="100%">
                 <RechartsPie>
                   <Pie data={data.expenses} dataKey="balance" nameKey="name" cx="50%" cy="50%" outerRadius={70} label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`} labelLine={false} fontSize={10}>
@@ -1079,16 +819,16 @@ const IncomeStatement: React.FC = () => {
 
       <ActionBar onPrint={() => setIsPrinting(true)} onExport={handleExportPdf}>
         <div>
-          <label className="block text-xs font-medium text-text-muted mb-1">Ù…Ù†</label>
+          <label className="block text-xs font-medium text-text-muted mb-1">من</label>
           <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} className="text-sm" />
         </div>
         <div>
-          <label className="block text-xs font-medium text-text-muted mb-1">Ø¥Ù„Ù‰</label>
+          <label className="block text-xs font-medium text-text-muted mb-1">إلى</label>
           <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} className="text-sm" />
         </div>
       </ActionBar>
-      <ReportPrintableContent title="Ù‚Ø§Ø¦Ù…Ø© Ø§Ù„Ø¯Ø®Ù„" date={`Ù„Ù„ÙØªØ±Ø© Ù…Ù† ${formatDate(startDate)} Ø¥Ù„Ù‰ ${formatDate(endDate)}`}>{reportContent}</ReportPrintableContent>
-      {isPrinting && <PrintPreviewModal isOpen={isPrinting} onClose={() => setIsPrinting(false)} title="Ù‚Ø§Ø¦Ù…Ø© Ø§Ù„Ø¯Ø®Ù„"><ReportPrintableContent title="Ù‚Ø§Ø¦Ù…Ø© Ø§Ù„Ø¯Ø®Ù„" date={`Ù„Ù„ÙØªØ±Ø© Ù…Ù† ${formatDate(startDate)} Ø¥Ù„Ù‰ ${formatDate(endDate)}`}>{reportContent}</ReportPrintableContent></PrintPreviewModal>}
+      <ReportPrintableContent title="قائمة الدخل" date={`للفترة من ${formatDate(startDate)} إلى ${formatDate(endDate)}`}>{reportContent}</ReportPrintableContent>
+      {isPrinting && <PrintPreviewModal isOpen={isPrinting} onClose={() => setIsPrinting(false)} title="قائمة الدخل"><ReportPrintableContent title="قائمة الدخل" date={`للفترة من ${formatDate(startDate)} إلى ${formatDate(endDate)}`}>{reportContent}</ReportPrintableContent></PrintPreviewModal>}
     </Card>
   );
 };
@@ -1121,22 +861,22 @@ const BalanceSheet: React.FC = () => {
   const reportContent = (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
       <div>
-        <h3 className="text-lg font-bold mb-3 flex items-center gap-2"><Wallet size={18} className="text-blue-500" /> Ø§Ù„Ø£ØµÙˆÙ„</h3>
+        <h3 className="text-lg font-bold mb-3 flex items-center gap-2"><Wallet size={18} className="text-blue-500" /> الأصول</h3>
         <table className="w-full text-sm border-collapse border border-border">
           <tbody>{renderLines(data.assets)}</tbody>
-          <tfoot><tr className="font-black text-base bg-blue-50 dark:bg-blue-900/20"><td className="p-2.5 border border-border">Ø¥Ø¬Ù…Ø§Ù„ÙŠ Ø§Ù„Ø£ØµÙˆÙ„</td><td className="p-2.5 border border-border font-mono">{formatCurrency(data.totalAssets, cur)}</td></tr></tfoot>
+          <tfoot><tr className="font-black text-base bg-blue-50 dark:bg-blue-900/20"><td className="p-2.5 border border-border">إجمالي الأصول</td><td className="p-2.5 border border-border font-mono">{formatCurrency(data.totalAssets, cur)}</td></tr></tfoot>
         </table>
       </div>
       <div>
-        <h3 className="text-lg font-bold mb-3">Ø§Ù„Ø§Ù„ØªØ²Ø§Ù…Ø§Øª ÙˆØ­Ù‚ÙˆÙ‚ Ø§Ù„Ù…Ù„ÙƒÙŠØ©</h3>
+        <h3 className="text-lg font-bold mb-3">الالتزامات وحقوق الملكية</h3>
         <table className="w-full text-sm border-collapse border border-border">
           <tbody>
             {renderLines(data.liabilities)}
-            <tr className="font-bold bg-background"><td className="p-2.5 border border-border">Ø¥Ø¬Ù…Ø§Ù„ÙŠ Ø§Ù„Ø§Ù„ØªØ²Ø§Ù…Ø§Øª</td><td className="p-2.5 border border-border font-mono">{formatCurrency(data.totalLiabilities, cur)}</td></tr>
+            <tr className="font-bold bg-background"><td className="p-2.5 border border-border">إجمالي الالتزامات</td><td className="p-2.5 border border-border font-mono">{formatCurrency(data.totalLiabilities, cur)}</td></tr>
             {renderLines(data.equity)}
-            <tr className="font-bold bg-background"><td className="p-2.5 border border-border">Ø¥Ø¬Ù…Ø§Ù„ÙŠ Ø­Ù‚ÙˆÙ‚ Ø§Ù„Ù…Ù„ÙƒÙŠØ©</td><td className="p-2.5 border border-border font-mono">{formatCurrency(data.totalEquity, cur)}</td></tr>
+            <tr className="font-bold bg-background"><td className="p-2.5 border border-border">إجمالي حقوق الملكية</td><td className="p-2.5 border border-border font-mono">{formatCurrency(data.totalEquity, cur)}</td></tr>
           </tbody>
-          <tfoot><tr className="font-black text-base bg-blue-50 dark:bg-blue-900/20"><td className="p-2.5 border border-border">Ø¥Ø¬Ù…Ø§Ù„ÙŠ Ø§Ù„Ø§Ù„ØªØ²Ø§Ù…Ø§Øª ÙˆØ­Ù‚ÙˆÙ‚ Ø§Ù„Ù…Ù„ÙƒÙŠØ©</td><td className="p-2.5 border border-border font-mono">{formatCurrency(data.totalLiabilities + data.totalEquity, cur)}</td></tr></tfoot>
+          <tfoot><tr className="font-black text-base bg-blue-50 dark:bg-blue-900/20"><td className="p-2.5 border border-border">إجمالي الالتزامات وحقوق الملكية</td><td className="p-2.5 border border-border font-mono">{formatCurrency(data.totalLiabilities + data.totalEquity, cur)}</td></tr></tfoot>
         </table>
       </div>
     </div>
@@ -1144,20 +884,20 @@ const BalanceSheet: React.FC = () => {
 
   return (
     <Card className="p-6">
-      <SectionHeader title="Ø§Ù„Ù…ÙŠØ²Ø§Ù†ÙŠØ© Ø§Ù„Ø¹Ù…ÙˆÙ…ÙŠØ©" icon={<Wallet size={20} className="text-primary" />} />
+      <SectionHeader title="الميزانية العمومية" icon={<Wallet size={20} className="text-primary" />} />
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-6">
-        <MiniKpi label="Ø¥Ø¬Ù…Ø§Ù„ÙŠ Ø§Ù„Ø£ØµÙˆÙ„" value={formatCurrency(data.totalAssets, cur)} icon={<ArrowUp size={16} />} color="bg-blue-100 dark:bg-blue-900/40 text-blue-600" />
-        <MiniKpi label="Ø¥Ø¬Ù…Ø§Ù„ÙŠ Ø§Ù„Ø§Ù„ØªØ²Ø§Ù…Ø§Øª" value={formatCurrency(data.totalLiabilities, cur)} icon={<ArrowDown size={16} />} color="bg-red-100 dark:bg-red-900/40 text-red-600" />
-        <MiniKpi label="Ø§Ù„ØªÙˆØ§Ø²Ù†" value={isBalanced ? 'Ù…ØªÙˆØ§Ø²Ù†Ø©' : 'ØºÙŠØ± Ù…ØªÙˆØ§Ø²Ù†Ø©'} icon={isBalanced ? <ArrowUp size={16} /> : <ArrowDown size={16} />} color={isBalanced ? 'bg-green-100 dark:bg-green-900/40 text-green-600' : 'bg-red-100 dark:bg-red-900/40 text-red-600'} />
+        <MiniKpi label="إجمالي الأصول" value={formatCurrency(data.totalAssets, cur)} icon={<ArrowUp size={16} />} color="bg-blue-100 dark:bg-blue-900/40 text-blue-600" />
+        <MiniKpi label="إجمالي الالتزامات" value={formatCurrency(data.totalLiabilities, cur)} icon={<ArrowDown size={16} />} color="bg-red-100 dark:bg-red-900/40 text-red-600" />
+        <MiniKpi label="التوازن" value={isBalanced ? 'متوازنة' : 'غير متوازنة'} icon={isBalanced ? <ArrowUp size={16} /> : <ArrowDown size={16} />} color={isBalanced ? 'bg-green-100 dark:bg-green-900/40 text-green-600' : 'bg-red-100 dark:bg-red-900/40 text-red-600'} />
       </div>
       <ActionBar onPrint={() => setIsPrinting(true)} onExport={handleExportPdf}>
         <div>
-          <label className="block text-xs font-medium text-text-muted mb-1">Ø­ØªÙ‰ ØªØ§Ø±ÙŠØ®</label>
+          <label className="block text-xs font-medium text-text-muted mb-1">حتى تاريخ</label>
           <input type="date" value={asOfDate} onChange={e => setAsOfDate(e.target.value)} className="text-sm" />
         </div>
       </ActionBar>
-      <ReportPrintableContent title="Ø§Ù„Ù…ÙŠØ²Ø§Ù†ÙŠØ© Ø§Ù„Ø¹Ù…ÙˆÙ…ÙŠØ©" date={`ÙƒÙ…Ø§ ÙÙŠ ØªØ§Ø±ÙŠØ® ${formatDate(asOfDate)}`}>{reportContent}</ReportPrintableContent>
-      {isPrinting && <PrintPreviewModal isOpen={isPrinting} onClose={() => setIsPrinting(false)} title="Ø§Ù„Ù…ÙŠØ²Ø§Ù†ÙŠØ© Ø§Ù„Ø¹Ù…ÙˆÙ…ÙŠØ©"><ReportPrintableContent title="Ø§Ù„Ù…ÙŠØ²Ø§Ù†ÙŠØ© Ø§Ù„Ø¹Ù…ÙˆÙ…ÙŠØ©" date={`ÙƒÙ…Ø§ ÙÙŠ ØªØ§Ø±ÙŠØ® ${formatDate(asOfDate)}`}>{reportContent}</ReportPrintableContent></PrintPreviewModal>}
+      <ReportPrintableContent title="الميزانية العمومية" date={`كما في تاريخ ${formatDate(asOfDate)}`}>{reportContent}</ReportPrintableContent>
+      {isPrinting && <PrintPreviewModal isOpen={isPrinting} onClose={() => setIsPrinting(false)} title="الميزانية العمومية"><ReportPrintableContent title="الميزانية العمومية" date={`كما في تاريخ ${formatDate(asOfDate)}`}>{reportContent}</ReportPrintableContent></PrintPreviewModal>}
     </Card>
   );
 };
@@ -1172,7 +912,7 @@ const AgedReceivables: React.FC = () => {
   const handleExportPdf = () => exportAgedReceivablesToPdf(data, settings, asOfDate);
 
   const agingChartData = useMemo(() => [
-    { name: 'Ø­Ø§Ù„ÙŠ', value: data.totals.current },
+    { name: 'حالي', value: data.totals.current },
     { name: '1-30', value: data.totals['1-30'] },
     { name: '31-60', value: data.totals['31-60'] },
     { name: '61-90', value: data.totals['61-90'] },
@@ -1184,13 +924,13 @@ const AgedReceivables: React.FC = () => {
       <table className="w-full text-sm text-right border-collapse">
         <thead>
           <tr className="bg-background text-text-muted text-xs uppercase">
-            <th className="px-3 py-3 border border-border">Ø§Ù„Ù…Ø³ØªØ£Ø¬Ø±</th>
-            <th className="px-3 py-3 border border-border">Ø§Ù„Ø¥Ø¬Ù…Ø§Ù„ÙŠ</th>
-            <th className="px-3 py-3 border border-border">Ø­Ø§Ù„ÙŠ</th>
-            <th className="px-3 py-3 border border-border">1-30 ÙŠÙˆÙ…</th>
-            <th className="px-3 py-3 border border-border">31-60 ÙŠÙˆÙ…</th>
-            <th className="px-3 py-3 border border-border">61-90 ÙŠÙˆÙ…</th>
-            <th className="px-3 py-3 border border-border">+90 ÙŠÙˆÙ…</th>
+            <th className="px-3 py-3 border border-border">المستأجر</th>
+            <th className="px-3 py-3 border border-border">الإجمالي</th>
+            <th className="px-3 py-3 border border-border">حالي</th>
+            <th className="px-3 py-3 border border-border">1-30 يوم</th>
+            <th className="px-3 py-3 border border-border">31-60 يوم</th>
+            <th className="px-3 py-3 border border-border">61-90 يوم</th>
+            <th className="px-3 py-3 border border-border">+90 يوم</th>
           </tr>
         </thead>
         <tbody>
@@ -1208,7 +948,7 @@ const AgedReceivables: React.FC = () => {
         </tbody>
         <tfoot>
           <tr className="font-bold bg-primary/5 text-text">
-            <td className="px-3 py-3 border border-border">Ø§Ù„Ø¥Ø¬Ù…Ø§Ù„ÙŠ</td>
+            <td className="px-3 py-3 border border-border">الإجمالي</td>
             <td className="px-3 py-3 border border-border font-mono">{formatCurrency(data.totals.total, cur)}</td>
             <td className="px-3 py-3 border border-border font-mono">{formatCurrency(data.totals.current, cur)}</td>
             <td className="px-3 py-3 border border-border font-mono">{formatCurrency(data.totals['1-30'], cur)}</td>
@@ -1223,24 +963,24 @@ const AgedReceivables: React.FC = () => {
 
   return (
     <Card className="p-6">
-      <SectionHeader title="ØªÙ‚Ø±ÙŠØ± Ø£Ø¹Ù…Ø§Ø± Ø§Ù„Ø¯ÙŠÙˆÙ†" icon={<CalendarRange size={20} className="text-primary" />} />
+      <SectionHeader title="تقرير أعمار الديون" icon={<CalendarRange size={20} className="text-primary" />} />
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-6">
-        <MiniKpi label="Ø¥Ø¬Ù…Ø§Ù„ÙŠ Ø§Ù„Ø°Ù…Ù…" value={formatCurrency(data.totals.total, cur)} icon={<Users size={16} />} color="bg-red-100 dark:bg-red-900/40 text-red-600" />
-        <MiniKpi label="Ø¹Ø¯Ø¯ Ø§Ù„Ù…Ø³ØªØ£Ø¬Ø±ÙŠÙ† Ø§Ù„Ù…Ø¯ÙŠÙ†ÙŠÙ†" value={String(data.lines.length)} icon={<Users size={16} />} color="bg-amber-100 dark:bg-amber-900/40 text-amber-600" />
-        <MiniKpi label="Ø¯ÙŠÙˆÙ† Ù…ØªØ£Ø®Ø±Ø© +90 ÙŠÙˆÙ…" value={formatCurrency(data.totals['90+'], cur)} icon={<ArrowDown size={16} />} color="bg-red-100 dark:bg-red-900/40 text-red-700" />
+        <MiniKpi label="إجمالي الذمم" value={formatCurrency(data.totals.total, cur)} icon={<Users size={16} />} color="bg-red-100 dark:bg-red-900/40 text-red-600" />
+        <MiniKpi label="عدد المستأجرين المدينين" value={String(data.lines.length)} icon={<Users size={16} />} color="bg-amber-100 dark:bg-amber-900/40 text-amber-600" />
+        <MiniKpi label="ديون متأخرة +90 يوم" value={formatCurrency(data.totals['90+'], cur)} icon={<ArrowDown size={16} />} color="bg-red-100 dark:bg-red-900/40 text-red-700" />
       </div>
 
       {agingChartData.length > 0 && (
         <div className="bg-background rounded-xl p-4 border border-border mb-6">
-          <p className="text-sm font-bold mb-3 text-text-muted">ØªÙˆØ²ÙŠØ¹ Ø§Ù„Ø°Ù…Ù… Ø­Ø³Ø¨ Ø§Ù„Ø¹Ù…Ø±</p>
-          <div className="h-48" dir="ltr">
+          <p className="text-sm font-bold mb-3 text-text-muted">توزيع الذمم حسب العمر</p>
+          <div className="h-48 overflow-hidden" dir="ltr">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={agingChartData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
                 <XAxis dataKey="name" fontSize={12} />
                 <YAxis fontSize={11} />
                 <Tooltip formatter={(v: number) => formatCurrency(v, cur)} />
-                <Bar dataKey="value" name="Ø§Ù„Ù…Ø¨Ù„Øº" radius={[4, 4, 0, 0]}>
+                <Bar dataKey="value" name="المبلغ" radius={[4, 4, 0, 0]}>
                   {agingChartData.map((_, i) => <Cell key={i} fill={['#10b981', '#3b82f6', '#f59e0b', '#ef4444', '#991b1b'][i]} />)}
                 </Bar>
               </BarChart>
@@ -1251,12 +991,12 @@ const AgedReceivables: React.FC = () => {
 
       <ActionBar onPrint={() => setIsPrinting(true)} onExport={handleExportPdf}>
         <div>
-          <label className="block text-xs font-medium text-text-muted mb-1">Ø­ØªÙ‰ ØªØ§Ø±ÙŠØ®</label>
+          <label className="block text-xs font-medium text-text-muted mb-1">حتى تاريخ</label>
           <input type="date" value={asOfDate} onChange={e => setAsOfDate(e.target.value)} className="text-sm" />
         </div>
       </ActionBar>
-      <ReportPrintableContent title="ØªÙ‚Ø±ÙŠØ± Ø£Ø¹Ù…Ø§Ø± Ø§Ù„Ø¯ÙŠÙˆÙ†" date={`ÙƒÙ…Ø§ ÙÙŠ ØªØ§Ø±ÙŠØ® ${formatDate(asOfDate)}`}>{reportContent}</ReportPrintableContent>
-      {isPrinting && <PrintPreviewModal isOpen={isPrinting} onClose={() => setIsPrinting(false)} title="ØªÙ‚Ø±ÙŠØ± Ø£Ø¹Ù…Ø§Ø± Ø§Ù„Ø¯ÙŠÙˆÙ†"><ReportPrintableContent title="ØªÙ‚Ø±ÙŠØ± Ø£Ø¹Ù…Ø§Ø± Ø§Ù„Ø¯ÙŠÙˆÙ†" date={`ÙƒÙ…Ø§ ÙÙŠ ØªØ§Ø±ÙŠØ® ${formatDate(asOfDate)}`}>{reportContent}</ReportPrintableContent></PrintPreviewModal>}
+      <ReportPrintableContent title="تقرير أعمار الديون" date={`كما في تاريخ ${formatDate(asOfDate)}`}>{reportContent}</ReportPrintableContent>
+      {isPrinting && <PrintPreviewModal isOpen={isPrinting} onClose={() => setIsPrinting(false)} title="تقرير أعمار الديون"><ReportPrintableContent title="تقرير أعمار الديون" date={`كما في تاريخ ${formatDate(asOfDate)}`}>{reportContent}</ReportPrintableContent></PrintPreviewModal>}
     </Card>
   );
 };
@@ -1286,24 +1026,24 @@ const PropertyReport: React.FC = () => {
   const reportContent = (
     <div>
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-        <MiniKpi label="Ø¥Ø¬Ù…Ø§Ù„ÙŠ Ø§Ù„ÙˆØ­Ø¯Ø§Øª" value={String(units.length)} icon={<Building2 size={18} />} color="bg-blue-100 text-blue-700" />
-        <MiniKpi label="Ù…Ø¤Ø¬Ø±Ø©" value={String(rented)} icon={<Users size={18} />} color="bg-green-100 text-green-700" />
-        <MiniKpi label="Ø´Ø§ØºØ±Ø©" value={String(available)} icon={<Building2 size={18} />} color="bg-yellow-100 text-yellow-700" />
-        <MiniKpi label="Ø§Ù„Ø¯Ø®Ù„ Ø§Ù„Ø´Ù‡Ø±ÙŠ" value={formatCurrency(totalRent, cur)} icon={<Banknote size={18} />} color="bg-emerald-100 text-emerald-700" />
+        <MiniKpi label="إجمالي الوحدات" value={String(units.length)} icon={<Building2 size={18} />} color="bg-blue-100 text-blue-700" />
+        <MiniKpi label="مؤجرة" value={String(rented)} icon={<Users size={18} />} color="bg-green-100 text-green-700" />
+        <MiniKpi label="شاغرة" value={String(available)} icon={<Building2 size={18} />} color="bg-yellow-100 text-yellow-700" />
+        <MiniKpi label="الدخل الشهري" value={formatCurrency(totalRent, cur)} icon={<Banknote size={18} />} color="bg-emerald-100 text-emerald-700" />
       </div>
       <div className="grid grid-cols-2 gap-4 mb-6">
-        <MiniKpi label="Ø§Ù„Ø¯Ø®Ù„ Ø§Ù„Ø³Ù†ÙˆÙŠ Ø§Ù„Ù…ØªÙˆÙ‚Ø¹" value={formatCurrency(annualIncome, cur)} icon={<TrendingUp size={18} />} color="bg-purple-100 text-purple-700" />
-        <MiniKpi label="Ø¥Ø¬Ù…Ø§Ù„ÙŠ ØªÙƒØ§Ù„ÙŠÙ Ø§Ù„ØµÙŠØ§Ù†Ø©" value={formatCurrency(maintenanceCost, cur)} icon={<TrendingDown size={18} />} color="bg-red-100 text-red-700" />
+        <MiniKpi label="الدخل السنوي المتوقع" value={formatCurrency(annualIncome, cur)} icon={<TrendingUp size={18} />} color="bg-purple-100 text-purple-700" />
+        <MiniKpi label="إجمالي تكاليف الصيانة" value={formatCurrency(maintenanceCost, cur)} icon={<TrendingDown size={18} />} color="bg-red-100 text-red-700" />
       </div>
-      {property && <div className="mb-4 text-sm"><p>Ø§Ù„Ù…Ø§Ù„Ùƒ: <span className="font-bold">{owner?.name || '-'}</span></p><p>Ø§Ù„Ù…ÙˆÙ‚Ø¹: {property.location || '-'}</p></div>}
+      {property && <div className="mb-4 text-sm"><p>المالك: <span className="font-bold">{owner?.name || '-'}</span></p><p>الموقع: {property.location || '-'}</p></div>}
       <table className="w-full text-sm border-collapse border border-border">
         <thead><tr className="bg-background text-xs">
-          <th className="px-3 py-2 border border-border">Ø§Ù„ÙˆØ­Ø¯Ø©</th>
-          <th className="px-3 py-2 border border-border">Ø§Ù„Ù†ÙˆØ¹</th>
-          <th className="px-3 py-2 border border-border">Ø§Ù„Ø­Ø§Ù„Ø©</th>
-          <th className="px-3 py-2 border border-border">Ø§Ù„Ù…Ø³ØªØ£Ø¬Ø±</th>
-          <th className="px-3 py-2 border border-border">Ø§Ù„Ø¥ÙŠØ¬Ø§Ø±</th>
-          <th className="px-3 py-2 border border-border">Ø§Ù„ØªØ£Ù…ÙŠÙ†</th>
+          <th className="px-3 py-2 border border-border">الوحدة</th>
+          <th className="px-3 py-2 border border-border">النوع</th>
+          <th className="px-3 py-2 border border-border">الحالة</th>
+          <th className="px-3 py-2 border border-border">المستأجر</th>
+          <th className="px-3 py-2 border border-border">الإيجار</th>
+          <th className="px-3 py-2 border border-border">التأمين</th>
         </tr></thead>
         <tbody>{units.map(u => {
           const contract = db.contracts.find(c => c.unitId === u.id && c.status === 'ACTIVE');
@@ -1312,7 +1052,7 @@ const PropertyReport: React.FC = () => {
             <tr key={u.id} className="hover:bg-background">
               <td className="px-3 py-2 border border-border font-medium">{u.name}</td>
               <td className="px-3 py-2 border border-border">{u.type}</td>
-              <td className="px-3 py-2 border border-border"><span className={`px-2 py-0.5 text-xs rounded-full ${u.status === 'RENTED' ? 'bg-blue-100 text-blue-800' : u.status === 'AVAILABLE' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>{u.status === 'RENTED' ? 'Ù…Ø¤Ø¬Ø±Ø©' : u.status === 'AVAILABLE' ? 'Ø´Ø§ØºØ±Ø©' : u.status === 'ON_HOLD' ? 'Ù…Ø¹Ù„Ù‚Ø©' : 'ØµÙŠØ§Ù†Ø©'}</span></td>
+              <td className="px-3 py-2 border border-border"><span className={`px-2 py-0.5 text-xs rounded-full ${u.status === 'RENTED' ? 'bg-blue-100 text-blue-800' : u.status === 'AVAILABLE' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>{u.status === 'RENTED' ? 'مؤجرة' : u.status === 'AVAILABLE' ? 'شاغرة' : u.status === 'ON_HOLD' ? 'معلقة' : 'صيانة'}</span></td>
               <td className="px-3 py-2 border border-border">{tenant?.name || '-'}</td>
               <td className="px-3 py-2 border border-border">{contract ? formatCurrency(contract.rent, cur) : '-'}</td>
               <td className="px-3 py-2 border border-border">{contract ? formatCurrency(contract.deposit || 0, cur) : '-'}</td>
@@ -1325,17 +1065,17 @@ const PropertyReport: React.FC = () => {
 
   return (
     <Card className="p-6">
-      <SectionHeader title="ØªÙ‚Ø±ÙŠØ± Ø¹Ù‚Ø§Ø±" icon={<Building2 size={20} />} />
+      <SectionHeader title="تقرير عقار" icon={<Building2 size={20} />} />
       <ActionBar onPrint={() => setIsPrinting(true)}>
         <div>
-          <label className="block text-xs font-medium text-text-muted mb-1">Ø§Ù„Ø¹Ù‚Ø§Ø±</label>
+          <label className="block text-xs font-medium text-text-muted mb-1">العقار</label>
           <select value={selectedPropertyId} onChange={e => setSelectedPropertyId(e.target.value)} className="text-sm">
             {db.properties.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
           </select>
         </div>
       </ActionBar>
-      <ReportPrintableContent title={`ØªÙ‚Ø±ÙŠØ± Ø¹Ù‚Ø§Ø±: ${property?.name || ''}`} date={formatDate(new Date().toISOString())}>{reportContent}</ReportPrintableContent>
-      {isPrinting && <PrintPreviewModal isOpen={isPrinting} onClose={() => setIsPrinting(false)} title="ØªÙ‚Ø±ÙŠØ± Ø¹Ù‚Ø§Ø±"><ReportPrintableContent title={`ØªÙ‚Ø±ÙŠØ± Ø¹Ù‚Ø§Ø±: ${property?.name || ''}`} date={formatDate(new Date().toISOString())}>{reportContent}</ReportPrintableContent></PrintPreviewModal>}
+      <ReportPrintableContent title={`تقرير عقار: ${property?.name || ''}`} date={formatDate(new Date().toISOString())}>{reportContent}</ReportPrintableContent>
+      {isPrinting && <PrintPreviewModal isOpen={isPrinting} onClose={() => setIsPrinting(false)} title="تقرير عقار"><ReportPrintableContent title={`تقرير عقار: ${property?.name || ''}`} date={formatDate(new Date().toISOString())}>{reportContent}</ReportPrintableContent></PrintPreviewModal>}
     </Card>
   );
 };
@@ -1358,18 +1098,18 @@ const DailyCollectionReport: React.FC = () => {
   const reportContent = (
     <div>
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-        <MiniKpi label="Ø¥Ø¬Ù…Ø§Ù„ÙŠ Ø§Ù„ØªØ­ØµÙŠÙ„" value={formatCurrency(totalAll, cur)} icon={<Banknote size={18} />} color="bg-blue-100 text-blue-700" />
-        <MiniKpi label="Ù†Ù‚Ø¯ÙŠ" value={formatCurrency(totalCash, cur)} icon={<Banknote size={18} />} color="bg-green-100 text-green-700" />
-        <MiniKpi label="ØªØ­ÙˆÙŠÙ„/Ø´Ø¨ÙƒØ©" value={formatCurrency(totalBank, cur)} icon={<Banknote size={18} />} color="bg-purple-100 text-purple-700" />
-        <MiniKpi label="Ø´ÙŠÙƒØ§Øª" value={formatCurrency(totalCheck, cur)} icon={<Banknote size={18} />} color="bg-yellow-100 text-yellow-700" />
+        <MiniKpi label="إجمالي التحصيل" value={formatCurrency(totalAll, cur)} icon={<Banknote size={18} />} color="bg-blue-100 text-blue-700" />
+        <MiniKpi label="نقدي" value={formatCurrency(totalCash, cur)} icon={<Banknote size={18} />} color="bg-green-100 text-green-700" />
+        <MiniKpi label="تحويل/شبكة" value={formatCurrency(totalBank, cur)} icon={<Banknote size={18} />} color="bg-purple-100 text-purple-700" />
+        <MiniKpi label="شيكات" value={formatCurrency(totalCheck, cur)} icon={<Banknote size={18} />} color="bg-yellow-100 text-yellow-700" />
       </div>
       <table className="w-full text-sm border-collapse border border-border">
         <thead><tr className="bg-background text-xs">
-          <th className="px-3 py-2 border border-border">Ø±Ù‚Ù… Ø§Ù„Ø³Ù†Ø¯</th>
-          <th className="px-3 py-2 border border-border">Ø§Ù„Ù…Ø³ØªØ£Ø¬Ø±</th>
-          <th className="px-3 py-2 border border-border">Ø§Ù„Ù…Ø¨Ù„Øº</th>
-          <th className="px-3 py-2 border border-border">Ø·Ø±ÙŠÙ‚Ø© Ø§Ù„Ø¯ÙØ¹</th>
-          <th className="px-3 py-2 border border-border">Ù…Ù„Ø§Ø­Ø¸Ø§Øª</th>
+          <th className="px-3 py-2 border border-border">رقم السند</th>
+          <th className="px-3 py-2 border border-border">المستأجر</th>
+          <th className="px-3 py-2 border border-border">المبلغ</th>
+          <th className="px-3 py-2 border border-border">طريقة الدفع</th>
+          <th className="px-3 py-2 border border-border">ملاحظات</th>
         </tr></thead>
         <tbody>{dayReceipts.map(r => {
           const contract = db.contracts.find(c => c.id === r.contractId);
@@ -1379,13 +1119,13 @@ const DailyCollectionReport: React.FC = () => {
               <td className="px-3 py-2 border border-border">{r.no}</td>
               <td className="px-3 py-2 border border-border">{tenant?.name || '-'}</td>
               <td className="px-3 py-2 border border-border font-bold">{formatCurrency(r.amount, cur)}</td>
-              <td className="px-3 py-2 border border-border">{r.channel === 'CASH' ? 'Ù†Ù‚Ø¯ÙŠ' : r.channel === 'BANK' ? 'ØªØ­ÙˆÙŠÙ„' : r.channel === 'POS' ? 'Ø´Ø¨ÙƒØ©' : r.channel === 'CHECK' ? 'Ø´ÙŠÙƒ' : 'Ø£Ø®Ø±Ù‰'}</td>
+              <td className="px-3 py-2 border border-border">{r.channel === 'CASH' ? 'نقدي' : r.channel === 'BANK' ? 'تحويل' : r.channel === 'POS' ? 'شبكة' : r.channel === 'CHECK' ? 'شيك' : 'أخرى'}</td>
               <td className="px-3 py-2 border border-border">{r.ref || '-'}</td>
             </tr>
           );
         })}</tbody>
         <tfoot><tr className="bg-background font-bold">
-          <td colSpan={2} className="px-3 py-2 border border-border">Ø§Ù„Ø¥Ø¬Ù…Ø§Ù„ÙŠ</td>
+          <td colSpan={2} className="px-3 py-2 border border-border">الإجمالي</td>
           <td className="px-3 py-2 border border-border">{formatCurrency(totalAll, cur)}</td>
           <td colSpan={2} className="px-3 py-2 border border-border"></td>
         </tr></tfoot>
@@ -1395,15 +1135,15 @@ const DailyCollectionReport: React.FC = () => {
 
   return (
     <Card className="p-6">
-      <SectionHeader title="ÙƒØ´Ù Ø§Ù„ØªØ­ØµÙŠÙ„ Ø§Ù„ÙŠÙˆÙ…ÙŠ" icon={<Banknote size={20} />} />
+      <SectionHeader title="كشف التحصيل اليومي" icon={<Banknote size={20} />} />
       <ActionBar onPrint={() => setIsPrinting(true)}>
         <div>
-          <label className="block text-xs font-medium text-text-muted mb-1">Ø§Ù„ØªØ§Ø±ÙŠØ®</label>
+          <label className="block text-xs font-medium text-text-muted mb-1">التاريخ</label>
           <input type="date" value={date} onChange={e => setDate(e.target.value)} className="text-sm" />
         </div>
       </ActionBar>
-      <ReportPrintableContent title="ÙƒØ´Ù Ø§Ù„ØªØ­ØµÙŠÙ„ Ø§Ù„ÙŠÙˆÙ…ÙŠ" date={formatDate(date)}>{reportContent}</ReportPrintableContent>
-      {isPrinting && <PrintPreviewModal isOpen={isPrinting} onClose={() => setIsPrinting(false)} title="ÙƒØ´Ù Ø§Ù„ØªØ­ØµÙŠÙ„ Ø§Ù„ÙŠÙˆÙ…ÙŠ"><ReportPrintableContent title="ÙƒØ´Ù Ø§Ù„ØªØ­ØµÙŠÙ„ Ø§Ù„ÙŠÙˆÙ…ÙŠ" date={formatDate(date)}>{reportContent}</ReportPrintableContent></PrintPreviewModal>}
+      <ReportPrintableContent title="كشف التحصيل اليومي" date={formatDate(date)}>{reportContent}</ReportPrintableContent>
+      {isPrinting && <PrintPreviewModal isOpen={isPrinting} onClose={() => setIsPrinting(false)} title="كشف التحصيل اليومي"><ReportPrintableContent title="كشف التحصيل اليومي" date={formatDate(date)}>{reportContent}</ReportPrintableContent></PrintPreviewModal>}
     </Card>
   );
 };
@@ -1435,19 +1175,19 @@ const MaintenanceReport: React.FC = () => {
   const reportContent = (
     <div>
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-        <MiniKpi label="Ø¥Ø¬Ù…Ø§Ù„ÙŠ Ø§Ù„ØªÙƒØ§Ù„ÙŠÙ" value={formatCurrency(totalCost, cur)} icon={<TrendingDown size={18} />} color="bg-red-100 text-red-700" />
-        <MiniKpi label="Ø¹Ù„Ù‰ Ø§Ù„Ù…Ø§Ù„Ùƒ" value={formatCurrency(ownerCost, cur)} icon={<Users size={18} />} color="bg-blue-100 text-blue-700" />
-        <MiniKpi label="Ø¹Ù„Ù‰ Ø§Ù„Ù…Ø³ØªØ£Ø¬Ø±" value={formatCurrency(tenantCost, cur)} icon={<Users size={18} />} color="bg-yellow-100 text-yellow-700" />
-        <MiniKpi label="Ø¹Ù„Ù‰ Ø§Ù„Ù…ÙƒØªØ¨" value={formatCurrency(officeCost, cur)} icon={<Users size={18} />} color="bg-gray-100 text-gray-700" />
+        <MiniKpi label="إجمالي التكاليف" value={formatCurrency(totalCost, cur)} icon={<TrendingDown size={18} />} color="bg-red-100 text-red-700" />
+        <MiniKpi label="على المالك" value={formatCurrency(ownerCost, cur)} icon={<Users size={18} />} color="bg-blue-100 text-blue-700" />
+        <MiniKpi label="على المستأجر" value={formatCurrency(tenantCost, cur)} icon={<Users size={18} />} color="bg-yellow-100 text-yellow-700" />
+        <MiniKpi label="على المكتب" value={formatCurrency(officeCost, cur)} icon={<Users size={18} />} color="bg-gray-100 text-gray-700" />
       </div>
       <table className="w-full text-sm border-collapse border border-border">
         <thead><tr className="bg-background text-xs">
-          <th className="px-3 py-2 border border-border">Ø§Ù„ØªØ§Ø±ÙŠØ®</th>
-          <th className="px-3 py-2 border border-border">Ø§Ù„ÙˆØ­Ø¯Ø©</th>
-          <th className="px-3 py-2 border border-border">Ø§Ù„ÙˆØµÙ</th>
-          <th className="px-3 py-2 border border-border">Ø¹Ù„Ù‰ Ø­Ø³Ø§Ø¨</th>
-          <th className="px-3 py-2 border border-border">Ø§Ù„ØªÙƒÙ„ÙØ©</th>
-          <th className="px-3 py-2 border border-border">Ø§Ù„Ø­Ø§Ù„Ø©</th>
+          <th className="px-3 py-2 border border-border">التاريخ</th>
+          <th className="px-3 py-2 border border-border">الوحدة</th>
+          <th className="px-3 py-2 border border-border">الوصف</th>
+          <th className="px-3 py-2 border border-border">على حساب</th>
+          <th className="px-3 py-2 border border-border">التكلفة</th>
+          <th className="px-3 py-2 border border-border">الحالة</th>
         </tr></thead>
         <tbody>{records.map(m => {
           const unit = db.units.find(u => u.id === m.unitId);
@@ -1456,14 +1196,14 @@ const MaintenanceReport: React.FC = () => {
               <td className="px-3 py-2 border border-border">{m.requestDate}</td>
               <td className="px-3 py-2 border border-border">{unit?.name || '-'}</td>
               <td className="px-3 py-2 border border-border">{m.description}</td>
-              <td className="px-3 py-2 border border-border">{m.chargedTo === 'OWNER' ? 'Ø§Ù„Ù…Ø§Ù„Ùƒ' : m.chargedTo === 'TENANT' ? 'Ø§Ù„Ù…Ø³ØªØ£Ø¬Ø±' : 'Ø§Ù„Ù…ÙƒØªØ¨'}</td>
+              <td className="px-3 py-2 border border-border">{m.chargedTo === 'OWNER' ? 'المالك' : m.chargedTo === 'TENANT' ? 'المستأجر' : 'المكتب'}</td>
               <td className="px-3 py-2 border border-border font-bold">{formatCurrency(m.cost || 0, cur)}</td>
-              <td className="px-3 py-2 border border-border">{m.status === 'COMPLETED' ? 'Ù…ÙƒØªÙ…Ù„' : m.status === 'IN_PROGRESS' ? 'Ø¬Ø§Ø±ÙŠ' : m.status === 'NEW' ? 'Ø¬Ø¯ÙŠØ¯' : m.status}</td>
+              <td className="px-3 py-2 border border-border">{m.status === 'COMPLETED' ? 'مكتمل' : m.status === 'IN_PROGRESS' ? 'جاري' : m.status === 'NEW' ? 'جديد' : m.status}</td>
             </tr>
           );
         })}</tbody>
         <tfoot><tr className="bg-background font-bold">
-          <td colSpan={4} className="px-3 py-2 border border-border">Ø§Ù„Ø¥Ø¬Ù…Ø§Ù„ÙŠ</td>
+          <td colSpan={4} className="px-3 py-2 border border-border">الإجمالي</td>
           <td className="px-3 py-2 border border-border">{formatCurrency(totalCost, cur)}</td>
           <td className="px-3 py-2 border border-border"></td>
         </tr></tfoot>
@@ -1473,19 +1213,19 @@ const MaintenanceReport: React.FC = () => {
 
   return (
     <Card className="p-6">
-      <SectionHeader title="ØªÙ‚Ø±ÙŠØ± Ø§Ù„ØµÙŠØ§Ù†Ø©" icon={<Filter size={20} />} />
+      <SectionHeader title="تقرير الصيانة" icon={<Filter size={20} />} />
       <ActionBar onPrint={() => setIsPrinting(true)}>
-        <div><label className="block text-xs font-medium text-text-muted mb-1">Ù…Ù†</label><input type="date" value={fromDate} onChange={e => setFromDate(e.target.value)} className="text-sm" /></div>
-        <div><label className="block text-xs font-medium text-text-muted mb-1">Ø¥Ù„Ù‰</label><input type="date" value={toDate} onChange={e => setToDate(e.target.value)} className="text-sm" /></div>
-        <div><label className="block text-xs font-medium text-text-muted mb-1">Ø§Ù„Ø¹Ù‚Ø§Ø±</label>
+        <div><label className="block text-xs font-medium text-text-muted mb-1">من</label><input type="date" value={fromDate} onChange={e => setFromDate(e.target.value)} className="text-sm" /></div>
+        <div><label className="block text-xs font-medium text-text-muted mb-1">إلى</label><input type="date" value={toDate} onChange={e => setToDate(e.target.value)} className="text-sm" /></div>
+        <div><label className="block text-xs font-medium text-text-muted mb-1">العقار</label>
           <select value={filterPropertyId} onChange={e => setFilterPropertyId(e.target.value)} className="text-sm">
-            <option value="all">Ø§Ù„ÙƒÙ„</option>
+            <option value="all">الكل</option>
             {db.properties.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
           </select>
         </div>
       </ActionBar>
-      <ReportPrintableContent title="ØªÙ‚Ø±ÙŠØ± Ø§Ù„ØµÙŠØ§Ù†Ø©" date={`${formatDate(fromDate)} - ${formatDate(toDate)}`}>{reportContent}</ReportPrintableContent>
-      {isPrinting && <PrintPreviewModal isOpen={isPrinting} onClose={() => setIsPrinting(false)} title="ØªÙ‚Ø±ÙŠØ± Ø§Ù„ØµÙŠØ§Ù†Ø©"><ReportPrintableContent title="ØªÙ‚Ø±ÙŠØ± Ø§Ù„ØµÙŠØ§Ù†Ø©" date={`${formatDate(fromDate)} - ${formatDate(toDate)}`}>{reportContent}</ReportPrintableContent></PrintPreviewModal>}
+      <ReportPrintableContent title="تقرير الصيانة" date={`${formatDate(fromDate)} - ${formatDate(toDate)}`}>{reportContent}</ReportPrintableContent>
+      {isPrinting && <PrintPreviewModal isOpen={isPrinting} onClose={() => setIsPrinting(false)} title="تقرير الصيانة"><ReportPrintableContent title="تقرير الصيانة" date={`${formatDate(fromDate)} - ${formatDate(toDate)}`}>{reportContent}</ReportPrintableContent></PrintPreviewModal>}
     </Card>
   );
 };
@@ -1501,17 +1241,17 @@ const DepositsReport: React.FC = () => {
   const reportContent = (
     <div>
       <div className="grid grid-cols-2 gap-4 mb-6">
-        <MiniKpi label="Ø¥Ø¬Ù…Ø§Ù„ÙŠ Ø§Ù„ØªØ£Ù…ÙŠÙ†Ø§Øª" value={formatCurrency(totalDeposits, cur)} icon={<Wallet size={18} />} color="bg-blue-100 text-blue-700" />
-        <MiniKpi label="Ø¹Ø¯Ø¯ Ø§Ù„Ø¹Ù‚ÙˆØ¯" value={String(activeContracts.length)} icon={<FileText size={18} />} color="bg-green-100 text-green-700" />
+        <MiniKpi label="إجمالي التأمينات" value={formatCurrency(totalDeposits, cur)} icon={<Wallet size={18} />} color="bg-blue-100 text-blue-700" />
+        <MiniKpi label="عدد العقود" value={String(activeContracts.length)} icon={<FileText size={18} />} color="bg-green-100 text-green-700" />
       </div>
       <table className="w-full text-sm border-collapse border border-border">
         <thead><tr className="bg-background text-xs">
-          <th className="px-3 py-2 border border-border">Ø§Ù„Ù…Ø³ØªØ£Ø¬Ø±</th>
-          <th className="px-3 py-2 border border-border">Ø§Ù„ÙˆØ­Ø¯Ø©</th>
-          <th className="px-3 py-2 border border-border">Ø§Ù„Ø¹Ù‚Ø§Ø±</th>
-          <th className="px-3 py-2 border border-border">Ù…Ø¨Ù„Øº Ø§Ù„ØªØ£Ù…ÙŠÙ†</th>
-          <th className="px-3 py-2 border border-border">Ø¨Ø¯Ø§ÙŠØ© Ø§Ù„Ø¹Ù‚Ø¯</th>
-          <th className="px-3 py-2 border border-border">Ù†Ù‡Ø§ÙŠØ© Ø§Ù„Ø¹Ù‚Ø¯</th>
+          <th className="px-3 py-2 border border-border">المستأجر</th>
+          <th className="px-3 py-2 border border-border">الوحدة</th>
+          <th className="px-3 py-2 border border-border">العقار</th>
+          <th className="px-3 py-2 border border-border">مبلغ التأمين</th>
+          <th className="px-3 py-2 border border-border">بداية العقد</th>
+          <th className="px-3 py-2 border border-border">نهاية العقد</th>
         </tr></thead>
         <tbody>{activeContracts.map(c => {
           const tenant = db.tenants.find(t => t.id === c.tenantId);
@@ -1529,7 +1269,7 @@ const DepositsReport: React.FC = () => {
           );
         })}</tbody>
         <tfoot><tr className="bg-background font-bold">
-          <td colSpan={3} className="px-3 py-2 border border-border">Ø§Ù„Ø¥Ø¬Ù…Ø§Ù„ÙŠ</td>
+          <td colSpan={3} className="px-3 py-2 border border-border">الإجمالي</td>
           <td className="px-3 py-2 border border-border">{formatCurrency(totalDeposits, cur)}</td>
           <td colSpan={2} className="px-3 py-2 border border-border"></td>
         </tr></tfoot>
@@ -1539,10 +1279,10 @@ const DepositsReport: React.FC = () => {
 
   return (
     <Card className="p-6">
-      <SectionHeader title="ØªÙ‚Ø±ÙŠØ± Ø§Ù„ØªØ£Ù…ÙŠÙ†Ø§Øª (Ø§Ù„ÙˆØ¯Ø§Ø¦Ø¹)" icon={<Wallet size={20} />} />
+      <SectionHeader title="تقرير التأمينات (الودائع)" icon={<Wallet size={20} />} />
       <ActionBar onPrint={() => setIsPrinting(true)} />
-      <ReportPrintableContent title="ØªÙ‚Ø±ÙŠØ± Ø§Ù„ØªØ£Ù…ÙŠÙ†Ø§Øª" date={formatDate(new Date().toISOString())}>{reportContent}</ReportPrintableContent>
-      {isPrinting && <PrintPreviewModal isOpen={isPrinting} onClose={() => setIsPrinting(false)} title="ØªÙ‚Ø±ÙŠØ± Ø§Ù„ØªØ£Ù…ÙŠÙ†Ø§Øª"><ReportPrintableContent title="ØªÙ‚Ø±ÙŠØ± Ø§Ù„ØªØ£Ù…ÙŠÙ†Ø§Øª" date={formatDate(new Date().toISOString())}>{reportContent}</ReportPrintableContent></PrintPreviewModal>}
+      <ReportPrintableContent title="تقرير التأمينات" date={formatDate(new Date().toISOString())}>{reportContent}</ReportPrintableContent>
+      {isPrinting && <PrintPreviewModal isOpen={isPrinting} onClose={() => setIsPrinting(false)} title="تقرير التأمينات"><ReportPrintableContent title="تقرير التأمينات" date={formatDate(new Date().toISOString())}>{reportContent}</ReportPrintableContent></PrintPreviewModal>}
     </Card>
   );
 };
@@ -1568,12 +1308,12 @@ const ExpensesReport: React.FC = () => {
   const reportContent = (
     <div>
       <div className="grid grid-cols-2 gap-4 mb-6">
-        <MiniKpi label="Ø¥Ø¬Ù…Ø§Ù„ÙŠ Ø§Ù„Ù…ØµØ±ÙˆÙØ§Øª" value={formatCurrency(totalExpenses, cur)} icon={<TrendingDown size={18} />} color="bg-red-100 text-red-700" />
-        <MiniKpi label="Ø¹Ø¯Ø¯ Ø§Ù„Ù…ØµØ±ÙˆÙØ§Øª" value={String(expenses.length)} icon={<FileText size={18} />} color="bg-gray-100 text-gray-700" />
+        <MiniKpi label="إجمالي المصروفات" value={formatCurrency(totalExpenses, cur)} icon={<TrendingDown size={18} />} color="bg-red-100 text-red-700" />
+        <MiniKpi label="عدد المصروفات" value={String(expenses.length)} icon={<FileText size={18} />} color="bg-gray-100 text-gray-700" />
       </div>
       {byCategory.length > 0 && (
         <div className="mb-6">
-          <h4 className="text-sm font-bold mb-3">ØªÙˆØ²ÙŠØ¹ Ø§Ù„Ù…ØµØ±ÙˆÙØ§Øª Ø­Ø³Ø¨ Ø§Ù„ÙØ¦Ø©</h4>
+          <h4 className="text-sm font-bold mb-3">توزيع المصروفات حسب الفئة</h4>
           <div className="space-y-2">{byCategory.map(([cat, amt]) => (
             <div key={cat} className="flex justify-between items-center p-2 bg-background rounded">
               <span className="text-sm">{cat}</span>
@@ -1584,12 +1324,12 @@ const ExpensesReport: React.FC = () => {
       )}
       <table className="w-full text-sm border-collapse border border-border">
         <thead><tr className="bg-background text-xs">
-          <th className="px-3 py-2 border border-border">Ø§Ù„Ø±Ù‚Ù…</th>
-          <th className="px-3 py-2 border border-border">Ø§Ù„ØªØ§Ø±ÙŠØ®</th>
-          <th className="px-3 py-2 border border-border">Ø§Ù„ÙØ¦Ø©</th>
-          <th className="px-3 py-2 border border-border">Ø§Ù„Ù…Ø³ØªÙÙŠØ¯</th>
-          <th className="px-3 py-2 border border-border">Ø§Ù„Ù…Ø¨Ù„Øº</th>
-          <th className="px-3 py-2 border border-border">Ù…Ù„Ø§Ø­Ø¸Ø§Øª</th>
+          <th className="px-3 py-2 border border-border">الرقم</th>
+          <th className="px-3 py-2 border border-border">التاريخ</th>
+          <th className="px-3 py-2 border border-border">الفئة</th>
+          <th className="px-3 py-2 border border-border">المستفيد</th>
+          <th className="px-3 py-2 border border-border">المبلغ</th>
+          <th className="px-3 py-2 border border-border">ملاحظات</th>
         </tr></thead>
         <tbody>{expenses.map(e => (
           <tr key={e.id} className="hover:bg-background">
@@ -1602,7 +1342,7 @@ const ExpensesReport: React.FC = () => {
           </tr>
         ))}</tbody>
         <tfoot><tr className="bg-background font-bold">
-          <td colSpan={4} className="px-3 py-2 border border-border">Ø§Ù„Ø¥Ø¬Ù…Ø§Ù„ÙŠ</td>
+          <td colSpan={4} className="px-3 py-2 border border-border">الإجمالي</td>
           <td className="px-3 py-2 border border-border">{formatCurrency(totalExpenses, cur)}</td>
           <td className="px-3 py-2 border border-border"></td>
         </tr></tfoot>
@@ -1612,13 +1352,13 @@ const ExpensesReport: React.FC = () => {
 
   return (
     <Card className="p-6">
-      <SectionHeader title="ØªÙ‚Ø±ÙŠØ± Ø§Ù„Ù…ØµØ±ÙˆÙØ§Øª" icon={<TrendingDown size={20} />} />
+      <SectionHeader title="تقرير المصروفات" icon={<TrendingDown size={20} />} />
       <ActionBar onPrint={() => setIsPrinting(true)}>
-        <div><label className="block text-xs font-medium text-text-muted mb-1">Ù…Ù†</label><input type="date" value={fromDate} onChange={e => setFromDate(e.target.value)} className="text-sm" /></div>
-        <div><label className="block text-xs font-medium text-text-muted mb-1">Ø¥Ù„Ù‰</label><input type="date" value={toDate} onChange={e => setToDate(e.target.value)} className="text-sm" /></div>
+        <div><label className="block text-xs font-medium text-text-muted mb-1">من</label><input type="date" value={fromDate} onChange={e => setFromDate(e.target.value)} className="text-sm" /></div>
+        <div><label className="block text-xs font-medium text-text-muted mb-1">إلى</label><input type="date" value={toDate} onChange={e => setToDate(e.target.value)} className="text-sm" /></div>
       </ActionBar>
-      <ReportPrintableContent title="ØªÙ‚Ø±ÙŠØ± Ø§Ù„Ù…ØµØ±ÙˆÙØ§Øª" date={`${formatDate(fromDate)} - ${formatDate(toDate)}`}>{reportContent}</ReportPrintableContent>
-      {isPrinting && <PrintPreviewModal isOpen={isPrinting} onClose={() => setIsPrinting(false)} title="ØªÙ‚Ø±ÙŠØ± Ø§Ù„Ù…ØµØ±ÙˆÙØ§Øª"><ReportPrintableContent title="ØªÙ‚Ø±ÙŠØ± Ø§Ù„Ù…ØµØ±ÙˆÙØ§Øª" date={`${formatDate(fromDate)} - ${formatDate(toDate)}`}>{reportContent}</ReportPrintableContent></PrintPreviewModal>}
+      <ReportPrintableContent title="تقرير المصروفات" date={`${formatDate(fromDate)} - ${formatDate(toDate)}`}>{reportContent}</ReportPrintableContent>
+      {isPrinting && <PrintPreviewModal isOpen={isPrinting} onClose={() => setIsPrinting(false)} title="تقرير المصروفات"><ReportPrintableContent title="تقرير المصروفات" date={`${formatDate(fromDate)} - ${formatDate(toDate)}`}>{reportContent}</ReportPrintableContent></PrintPreviewModal>}
     </Card>
   );
 };
@@ -1662,21 +1402,21 @@ const OverdueTenants: React.FC = () => {
   const reportContent = (
     <div>
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-        <MiniKpi label="Ø¥Ø¬Ù…Ø§Ù„ÙŠ Ø§Ù„Ù…ØªØ£Ø®Ø±Ø§Øª" value={formatCurrency(totalOverdue, cur)} icon={<TrendingDown size={18} />} color="bg-red-100 text-red-700" />
-        <MiniKpi label="1-30 ÙŠÙˆÙ…" value={count30.toString()} icon={<Users size={18} />} color="bg-yellow-100 text-yellow-700" />
-        <MiniKpi label="31-60 ÙŠÙˆÙ…" value={count60.toString()} icon={<Users size={18} />} color="bg-orange-100 text-orange-700" />
-        <MiniKpi label="Ø£ÙƒØ«Ø± Ù…Ù† 60 ÙŠÙˆÙ…" value={count90plus.toString()} icon={<Users size={18} />} color="bg-red-100 text-red-700" />
+        <MiniKpi label="إجمالي المتأخرات" value={formatCurrency(totalOverdue, cur)} icon={<TrendingDown size={18} />} color="bg-red-100 text-red-700" />
+        <MiniKpi label="1–30 يوم" value={count30.toString()} icon={<Users size={18} />} color="bg-yellow-100 text-yellow-700" />
+        <MiniKpi label="31–60 يوم" value={count60.toString()} icon={<Users size={18} />} color="bg-orange-100 text-orange-700" />
+        <MiniKpi label="أكثر من 60 يوم" value={count90plus.toString()} icon={<Users size={18} />} color="bg-red-100 text-red-700" />
       </div>
       <table className="w-full text-sm border-collapse border border-border">
         <thead><tr className="bg-background text-xs">
-          <th className="px-3 py-2 border border-border">Ø§Ù„Ù…Ø³ØªØ£Ø¬Ø±</th>
-          <th className="px-3 py-2 border border-border">Ø§Ù„Ù‡Ø§ØªÙ</th>
-          <th className="px-3 py-2 border border-border">Ø§Ù„ÙˆØ­Ø¯Ø©</th>
-          <th className="px-3 py-2 border border-border">Ø§Ù„Ø¹Ù‚Ø§Ø±</th>
-          <th className="px-3 py-2 border border-border">ØªØ§Ø±ÙŠØ® Ø§Ù„Ø§Ø³ØªØ­Ù‚Ø§Ù‚</th>
-          <th className="px-3 py-2 border border-border">Ø£ÙŠØ§Ù… Ø§Ù„ØªØ£Ø®ÙŠØ±</th>
-          <th className="px-3 py-2 border border-border">Ø§Ù„Ù…Ø¨Ù„Øº Ø§Ù„Ù…Ø³ØªØ­Ù‚</th>
-          <th className="px-3 py-2 border border-border print:hidden">ÙˆØ§ØªØ³Ø§Ø¨</th>
+          <th className="px-3 py-2 border border-border">المستأجر</th>
+          <th className="px-3 py-2 border border-border">الهاتف</th>
+          <th className="px-3 py-2 border border-border">الوحدة</th>
+          <th className="px-3 py-2 border border-border">العقار</th>
+          <th className="px-3 py-2 border border-border">تاريخ الاستحقاق</th>
+          <th className="px-3 py-2 border border-border">أيام التأخير</th>
+          <th className="px-3 py-2 border border-border">المبلغ المستحق</th>
+          <th className="px-3 py-2 border border-border print:hidden">واتساب</th>
         </tr></thead>
         <tbody>{overdue.map(r => (
           <tr key={r.inv.id} className="hover:bg-background">
@@ -1685,19 +1425,19 @@ const OverdueTenants: React.FC = () => {
             <td className="px-3 py-2 border border-border">{r.unit?.name || '-'}</td>
             <td className="px-3 py-2 border border-border">{r.property?.name || '-'}</td>
             <td className="px-3 py-2 border border-border">{formatDate(r.inv.dueDate)}</td>
-            <td className={`px-3 py-2 border border-border ${severityClass(r.daysOverdue)}`}>{r.daysOverdue} ÙŠÙˆÙ…</td>
+            <td className={`px-3 py-2 border border-border ${severityClass(r.daysOverdue)}`}>{r.daysOverdue} يوم</td>
             <td className="px-3 py-2 border border-border font-bold text-red-600">{formatCurrency(r.remaining, cur)}</td>
             <td className="px-3 py-2 border border-border print:hidden">
               {r.tenant?.phone && (
-                <a href={`https://wa.me/${r.tenant.phone.replace(/\D/g, '')}?text=${encodeURIComponent(`Ø§Ù„Ø³ÙŠØ¯/Ø© ${r.tenant.name}ØŒ ØªØ°ÙƒÙŠØ± Ø¨Ø§Ù„Ù…Ø¨Ù„Øº Ø§Ù„Ù…Ø³ØªØ­Ù‚ ${formatCurrency(r.remaining, cur)} Ù…Ù†Ø° ${r.daysOverdue} ÙŠÙˆÙ…`)}`}
+                <a href={`https://wa.me/${r.tenant.phone.replace(/\D/g, '')}?text=${encodeURIComponent(`السيد/ة ${r.tenant.name}، تذكير بالمبلغ المستحق ${formatCurrency(r.remaining, cur)} منذ ${r.daysOverdue} يوم`)}`}
                   target="_blank" rel="noopener noreferrer"
-                  className="text-green-600 hover:text-green-800 text-xs underline">ÙˆØ§ØªØ³Ø§Ø¨</a>
+                  className="text-green-600 hover:text-green-800 text-xs underline">واتساب</a>
               )}
             </td>
           </tr>
         ))}</tbody>
         <tfoot><tr className="bg-background font-bold">
-          <td colSpan={6} className="px-3 py-2 border border-border">Ø§Ù„Ø¥Ø¬Ù…Ø§Ù„ÙŠ</td>
+          <td colSpan={6} className="px-3 py-2 border border-border">الإجمالي</td>
           <td className="px-3 py-2 border border-border text-red-600">{formatCurrency(totalOverdue, cur)}</td>
           <td className="border border-border print:hidden"></td>
         </tr></tfoot>
@@ -1707,28 +1447,28 @@ const OverdueTenants: React.FC = () => {
 
   return (
     <Card className="p-6">
-      <SectionHeader title="ØªÙ‚Ø±ÙŠØ± Ø§Ù„Ù…ØªØ£Ø®Ø±ÙŠÙ† Ø¹Ù† Ø§Ù„Ø¯ÙØ¹" icon={<TrendingDown size={20} />} />
+      <SectionHeader title="تقرير المتأخرين عن الدفع" icon={<TrendingDown size={20} />} />
       <ActionBar onPrint={() => setIsPrinting(true)}>
-        <div><label className="block text-xs font-medium text-text-muted mb-1">Ø§Ù„Ø¹Ù‚Ø§Ø±</label>
+        <div><label className="block text-xs font-medium text-text-muted mb-1">العقار</label>
           <select value={filterPropertyId} onChange={e => setFilterPropertyId(e.target.value)} className="text-sm">
-            <option value="all">Ø§Ù„ÙƒÙ„</option>
+            <option value="all">الكل</option>
             {db.properties.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
           </select>
         </div>
       </ActionBar>
-      <ReportPrintableContent title="ØªÙ‚Ø±ÙŠØ± Ø§Ù„Ù…ØªØ£Ø®Ø±ÙŠÙ† Ø¹Ù† Ø§Ù„Ø¯ÙØ¹" date={`ØªØ§Ø±ÙŠØ® Ø§Ù„ØªÙ‚Ø±ÙŠØ±: ${formatDate(new Date().toISOString())}`}>{reportContent}</ReportPrintableContent>
-      {isPrinting && <PrintPreviewModal isOpen={isPrinting} onClose={() => setIsPrinting(false)} title="ØªÙ‚Ø±ÙŠØ± Ø§Ù„Ù…ØªØ£Ø®Ø±ÙŠÙ†"><ReportPrintableContent title="ØªÙ‚Ø±ÙŠØ± Ø§Ù„Ù…ØªØ£Ø®Ø±ÙŠÙ† Ø¹Ù† Ø§Ù„Ø¯ÙØ¹" date={`ØªØ§Ø±ÙŠØ® Ø§Ù„ØªÙ‚Ø±ÙŠØ±: ${formatDate(new Date().toISOString())}`}>{reportContent}</ReportPrintableContent></PrintPreviewModal>}
+      <ReportPrintableContent title="تقرير المتأخرين عن الدفع" date={`تاريخ التقرير: ${formatDate(new Date().toISOString())}`}>{reportContent}</ReportPrintableContent>
+      {isPrinting && <PrintPreviewModal isOpen={isPrinting} onClose={() => setIsPrinting(false)} title="تقرير المتأخرين"><ReportPrintableContent title="تقرير المتأخرين عن الدفع" date={`تاريخ التقرير: ${formatDate(new Date().toISOString())}`}>{reportContent}</ReportPrintableContent></PrintPreviewModal>}
     </Card>
   );
 };
 
 const UNIT_TYPE_AR: Record<string, string> = {
-  apartment: 'Ø´Ù‚Ø©', shop: 'Ù…Ø­Ù„ ØªØ¬Ø§Ø±ÙŠ', office: 'Ù…ÙƒØªØ¨', studio: 'Ø§Ø³ØªÙˆØ¯ÙŠÙˆ',
-  villa: 'ÙÙŠÙ„Ø§', warehouse: 'Ù…Ø³ØªÙˆØ¯Ø¹', other: 'Ø£Ø®Ø±Ù‰',
+  apartment: 'شقة', shop: 'محل تجاري', office: 'مكتب', studio: 'استوديو',
+  villa: 'فيلا', warehouse: 'مستودع', other: 'أخرى',
 };
 const FLOOR_AR: Record<string, string> = {
-  ground: 'Ø§Ù„Ø£Ø±Ø¶ÙŠ', first: 'Ø§Ù„Ø£ÙˆÙ„', second: 'Ø§Ù„Ø«Ø§Ù†ÙŠ', third: 'Ø§Ù„Ø«Ø§Ù„Ø«',
-  fourth: 'Ø§Ù„Ø±Ø§Ø¨Ø¹', fifth: 'Ø§Ù„Ø®Ø§Ù…Ø³', roof: 'Ø§Ù„Ø³Ø·Ø­', basement: 'Ø§Ù„Ø¨Ø¯Ø±ÙˆÙ…',
+  ground: 'الأرضي', first: 'الأول', second: 'الثاني', third: 'الثالث',
+  fourth: 'الرابع', fifth: 'الخامس', roof: 'السطح', basement: 'البدروم',
 };
 
 const VacantUnits: React.FC = () => {
@@ -1766,9 +1506,9 @@ const VacantUnits: React.FC = () => {
   const reportContent = (
     <div>
       <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-6">
-        <MiniKpi label="Ø¥Ø¬Ù…Ø§Ù„ÙŠ Ø§Ù„ÙˆØ­Ø¯Ø§Øª Ø§Ù„Ø´Ø§ØºØ±Ø©" value={vacantUnits.length.toString()} icon={<Building2 size={18} />} color="bg-blue-100 text-blue-700" />
-        <MiniKpi label="Ø§Ù„Ø¥ÙŠØ¬Ø§Ø± Ø§Ù„Ù…Ø­ØªÙ…Ù„ Ø§Ù„Ø´Ù‡Ø±ÙŠ" value={formatCurrency(totalPotentialRent, cur)} icon={<Banknote size={18} />} color="bg-green-100 text-green-700" />
-        <MiniKpi label="Ø£Ù†ÙˆØ§Ø¹ Ù…Ø®ØªÙ„ÙØ©" value={Object.keys(byType).length.toString()} icon={<Filter size={18} />} color="bg-purple-100 text-purple-700" />
+        <MiniKpi label="إجمالي الوحدات الشاغرة" value={vacantUnits.length.toString()} icon={<Building2 size={18} />} color="bg-blue-100 text-blue-700" />
+        <MiniKpi label="الإيجار المحتمل الشهري" value={formatCurrency(totalPotentialRent, cur)} icon={<Banknote size={18} />} color="bg-green-100 text-green-700" />
+        <MiniKpi label="أنواع مختلفة" value={Object.keys(byType).length.toString()} icon={<Filter size={18} />} color="bg-purple-100 text-purple-700" />
       </div>
 
       {Object.keys(byType).length > 0 && (
@@ -1783,15 +1523,15 @@ const VacantUnits: React.FC = () => {
 
       <table className="w-full text-sm border-collapse border border-border">
         <thead><tr className="bg-background text-xs">
-          <th className="px-3 py-2 border border-border">Ø§Ù„Ø¹Ù‚Ø§Ø±</th>
-          <th className="px-3 py-2 border border-border">Ø§Ù„ÙˆØ­Ø¯Ø©</th>
-          <th className="px-3 py-2 border border-border">Ø§Ù„Ù†ÙˆØ¹</th>
-          <th className="px-3 py-2 border border-border">Ø§Ù„Ø·Ø§Ø¨Ù‚</th>
-          <th className="px-3 py-2 border border-border">Ø§Ù„Ù…Ø³Ø§Ø­Ø©</th>
-          <th className="px-3 py-2 border border-border">Ø§Ù„ØºØ±Ù</th>
-          <th className="px-3 py-2 border border-border">Ø§Ù„Ø­Ù…Ø§Ù…Ø§Øª</th>
-          <th className="px-3 py-2 border border-border">Ø§Ù„Ø¥ÙŠØ¬Ø§Ø± Ø§Ù„Ù…Ù‚ØªØ±Ø­</th>
-          <th className="px-3 py-2 border border-border">Ø§Ù„Ø­Ø§Ù„Ø©</th>
+          <th className="px-3 py-2 border border-border">العقار</th>
+          <th className="px-3 py-2 border border-border">الوحدة</th>
+          <th className="px-3 py-2 border border-border">النوع</th>
+          <th className="px-3 py-2 border border-border">الطابق</th>
+          <th className="px-3 py-2 border border-border">المساحة</th>
+          <th className="px-3 py-2 border border-border">الغرف</th>
+          <th className="px-3 py-2 border border-border">الحمامات</th>
+          <th className="px-3 py-2 border border-border">الإيجار المقترح</th>
+          <th className="px-3 py-2 border border-border">الحالة</th>
         </tr></thead>
         <tbody>{vacantUnits.map(({ unit, property }) => (
           <tr key={unit.id} className="hover:bg-background">
@@ -1799,13 +1539,13 @@ const VacantUnits: React.FC = () => {
             <td className="px-3 py-2 border border-border font-bold">{unit.name}</td>
             <td className="px-3 py-2 border border-border">{UNIT_TYPE_AR[unit.type] || unit.type || '-'}</td>
             <td className="px-3 py-2 border border-border">{unit.floor ? (FLOOR_AR[unit.floor] || unit.floor) : '-'}</td>
-            <td className="px-3 py-2 border border-border">{unit.area ? `${unit.area} Ù…Â²` : '-'}</td>
+            <td className="px-3 py-2 border border-border">{unit.area ? `${unit.area} م²` : '-'}</td>
             <td className="px-3 py-2 border border-border">{unit.bedrooms ?? '-'}</td>
             <td className="px-3 py-2 border border-border">{unit.bathrooms ?? '-'}</td>
             <td className="px-3 py-2 border border-border font-bold">{unit.rentDefault ? formatCurrency(unit.rentDefault, cur) : '-'}</td>
             <td className="px-3 py-2 border border-border">
               <span className={`px-2 py-0.5 rounded-full text-xs ${unit.status === 'MAINTENANCE' ? 'bg-yellow-100 text-yellow-700' : unit.status === 'ON_HOLD' ? 'bg-gray-100 text-gray-700' : 'bg-green-100 text-green-700'}`}>
-                {unit.status === 'MAINTENANCE' ? 'ØµÙŠØ§Ù†Ø©' : unit.status === 'ON_HOLD' ? 'Ù…Ø­Ø¬ÙˆØ²Ø©' : 'Ù…ØªØ§Ø­Ø©'}
+                {unit.status === 'MAINTENANCE' ? 'صيانة' : unit.status === 'ON_HOLD' ? 'محجوزة' : 'متاحة'}
               </span>
             </td>
           </tr>
@@ -1816,23 +1556,23 @@ const VacantUnits: React.FC = () => {
 
   return (
     <Card className="p-6">
-      <SectionHeader title="ØªÙ‚Ø±ÙŠØ± Ø§Ù„ÙˆØ­Ø¯Ø§Øª Ø§Ù„Ø´Ø§ØºØ±Ø©" icon={<Building2 size={20} />} />
+      <SectionHeader title="تقرير الوحدات الشاغرة" icon={<Building2 size={20} />} />
       <ActionBar onPrint={() => setIsPrinting(true)}>
-        <div><label className="block text-xs font-medium text-text-muted mb-1">Ø§Ù„Ø¹Ù‚Ø§Ø±</label>
+        <div><label className="block text-xs font-medium text-text-muted mb-1">العقار</label>
           <select value={filterPropertyId} onChange={e => setFilterPropertyId(e.target.value)} className="text-sm">
-            <option value="all">Ø§Ù„ÙƒÙ„</option>
+            <option value="all">الكل</option>
             {db.properties.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
           </select>
         </div>
-        <div><label className="block text-xs font-medium text-text-muted mb-1">Ù†ÙˆØ¹ Ø§Ù„ÙˆØ­Ø¯Ø©</label>
+        <div><label className="block text-xs font-medium text-text-muted mb-1">نوع الوحدة</label>
           <select value={filterType} onChange={e => setFilterType(e.target.value)} className="text-sm">
-            <option value="all">Ø§Ù„ÙƒÙ„</option>
+            <option value="all">الكل</option>
             {Object.entries(UNIT_TYPE_AR).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
           </select>
         </div>
       </ActionBar>
-      <ReportPrintableContent title="ØªÙ‚Ø±ÙŠØ± Ø§Ù„ÙˆØ­Ø¯Ø§Øª Ø§Ù„Ø´Ø§ØºØ±Ø©" date={`ØªØ§Ø±ÙŠØ® Ø§Ù„ØªÙ‚Ø±ÙŠØ±: ${formatDate(new Date().toISOString())}`}>{reportContent}</ReportPrintableContent>
-      {isPrinting && <PrintPreviewModal isOpen={isPrinting} onClose={() => setIsPrinting(false)} title="Ø§Ù„ÙˆØ­Ø¯Ø§Øª Ø§Ù„Ø´Ø§ØºØ±Ø©"><ReportPrintableContent title="ØªÙ‚Ø±ÙŠØ± Ø§Ù„ÙˆØ­Ø¯Ø§Øª Ø§Ù„Ø´Ø§ØºØ±Ø©" date={`ØªØ§Ø±ÙŠØ® Ø§Ù„ØªÙ‚Ø±ÙŠØ±: ${formatDate(new Date().toISOString())}`}>{reportContent}</ReportPrintableContent></PrintPreviewModal>}
+      <ReportPrintableContent title="تقرير الوحدات الشاغرة" date={`تاريخ التقرير: ${formatDate(new Date().toISOString())}`}>{reportContent}</ReportPrintableContent>
+      {isPrinting && <PrintPreviewModal isOpen={isPrinting} onClose={() => setIsPrinting(false)} title="الوحدات الشاغرة"><ReportPrintableContent title="تقرير الوحدات الشاغرة" date={`تاريخ التقرير: ${formatDate(new Date().toISOString())}`}>{reportContent}</ReportPrintableContent></PrintPreviewModal>}
     </Card>
   );
 };
@@ -1887,16 +1627,16 @@ const UtilitiesReport: React.FC = () => {
   const reportContent = (
     <div>
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-        <MiniKpi label="Ø¥Ø¬Ù…Ø§Ù„ÙŠ ÙÙˆØ§ØªÙŠØ± Ø§Ù„Ù…Ø±Ø§ÙÙ‚" value={formatCurrency(totalAmount, cur)} icon={<Zap size={18} />} color="bg-blue-100 text-blue-700" />
-        <MiniKpi label="Ø¹Ù„Ù‰ Ø§Ù„Ù…Ø³ØªØ£Ø¬Ø±ÙŠÙ†" value={formatCurrency(byPaidBy.tenant, cur)} icon={<Users size={18} />} color="bg-green-100 text-green-700" />
-        <MiniKpi label="Ø¹Ù„Ù‰ Ø§Ù„Ù…Ù„Ø§Ùƒ" value={formatCurrency(byPaidBy.owner, cur)} icon={<Users size={18} />} color="bg-purple-100 text-purple-700" />
-        <MiniKpi label="Ø¹Ù„Ù‰ Ø§Ù„Ù…ÙƒØªØ¨" value={formatCurrency(byPaidBy.office, cur)} icon={<Users size={18} />} color="bg-gray-100 text-gray-700" />
+        <MiniKpi label="إجمالي فواتير المرافق" value={formatCurrency(totalAmount, cur)} icon={<Zap size={18} />} color="bg-blue-100 text-blue-700" />
+        <MiniKpi label="على المستأجرين" value={formatCurrency(byPaidBy.tenant, cur)} icon={<Users size={18} />} color="bg-green-100 text-green-700" />
+        <MiniKpi label="على الملاك" value={formatCurrency(byPaidBy.owner, cur)} icon={<Users size={18} />} color="bg-purple-100 text-purple-700" />
+        <MiniKpi label="على المكتب" value={formatCurrency(byPaidBy.office, cur)} icon={<Users size={18} />} color="bg-gray-100 text-gray-700" />
       </div>
 
       {chartData.length > 0 && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
           <div>
-            <h4 className="text-sm font-bold mb-3">ØªÙˆØ²ÙŠØ¹ Ø­Ø³Ø¨ Ù†ÙˆØ¹ Ø§Ù„Ù…Ø±ÙÙ‚</h4>
+            <h4 className="text-sm font-bold mb-3">توزيع حسب نوع المرفق</h4>
             <div className="h-48">
               <ResponsiveContainer width="100%" height="100%">
                 <RechartsPie><Pie data={chartData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={70} label={({ name, percent }) => `${name} ${(percent*100).toFixed(0)}%`}>
@@ -1906,13 +1646,13 @@ const UtilitiesReport: React.FC = () => {
             </div>
           </div>
           <div>
-            <h4 className="text-sm font-bold mb-3">Ù…Ù„Ø®Øµ Ø­Ø³Ø¨ Ù†ÙˆØ¹ Ø§Ù„Ù…Ø±ÙÙ‚</h4>
+            <h4 className="text-sm font-bold mb-3">ملخص حسب نوع المرفق</h4>
             <div className="space-y-2">{(Object.keys(UTILITY_TYPE_AR) as UtilityType[]).filter(t => byType[t]).map(t => (
               <div key={t} className="flex justify-between items-center p-2 bg-background rounded border border-border">
                 <span className="text-sm">{UTILITY_ICON[t]} {UTILITY_TYPE_AR[t]}</span>
                 <div className="text-left">
                   <span className="font-bold text-sm">{formatCurrency(byType[t].amount, cur)}</span>
-                  <span className="text-xs text-text-muted mr-2">({byType[t].count} Ø³Ø¬Ù„)</span>
+                  <span className="text-xs text-text-muted mr-2">({byType[t].count} سجل)</span>
                 </div>
               </div>
             ))}</div>
@@ -1922,15 +1662,15 @@ const UtilitiesReport: React.FC = () => {
 
       <table className="w-full text-sm border-collapse border border-border">
         <thead><tr className="bg-background text-xs">
-          <th className="px-3 py-2 border border-border">Ø§Ù„Ø´Ù‡Ø±</th>
-          <th className="px-3 py-2 border border-border">Ø§Ù„ÙˆØ­Ø¯Ø©</th>
-          <th className="px-3 py-2 border border-border">Ø§Ù„Ø¹Ù‚Ø§Ø±</th>
-          <th className="px-3 py-2 border border-border">Ø§Ù„Ù…Ø±ÙÙ‚</th>
-          <th className="px-3 py-2 border border-border">Ø§Ù„Ø§Ø³ØªÙ‡Ù„Ø§Ùƒ</th>
-          <th className="px-3 py-2 border border-border">Ø³Ø¹Ø± Ø§Ù„ÙˆØ­Ø¯Ø©</th>
-          <th className="px-3 py-2 border border-border">Ø§Ù„Ù…Ø¨Ù„Øº</th>
-          <th className="px-3 py-2 border border-border">Ø¹Ù„Ù‰ Ø­Ø³Ø§Ø¨</th>
-          <th className="px-3 py-2 border border-border">ØµÙˆØ±Ø©</th>
+          <th className="px-3 py-2 border border-border">الشهر</th>
+          <th className="px-3 py-2 border border-border">الوحدة</th>
+          <th className="px-3 py-2 border border-border">العقار</th>
+          <th className="px-3 py-2 border border-border">المرفق</th>
+          <th className="px-3 py-2 border border-border">الاستهلاك</th>
+          <th className="px-3 py-2 border border-border">سعر الوحدة</th>
+          <th className="px-3 py-2 border border-border">المبلغ</th>
+          <th className="px-3 py-2 border border-border">على حساب</th>
+          <th className="px-3 py-2 border border-border">صورة</th>
         </tr></thead>
         <tbody>{records.sort((a, b) => b.month.localeCompare(a.month)).map(r => {
           const unit = db.units.find(u => u.id === r.unitId);
@@ -1942,18 +1682,18 @@ const UtilitiesReport: React.FC = () => {
               <td className="px-3 py-2 border border-border">{unit?.name || '-'}</td>
               <td className="px-3 py-2 border border-border">{property?.name || '-'}</td>
               <td className="px-3 py-2 border border-border">{UTILITY_ICON[r.type as UtilityType]} {UTILITY_TYPE_AR[r.type as UtilityType]}</td>
-              <td className="px-3 py-2 border border-border">{consumption} ÙˆØ­Ø¯Ø©</td>
+              <td className="px-3 py-2 border border-border">{consumption} وحدة</td>
               <td className="px-3 py-2 border border-border">{formatCurrency(r.unitPrice, cur)}</td>
               <td className="px-3 py-2 border border-border font-bold">{formatCurrency(r.amount, cur)}</td>
-              <td className="px-3 py-2 border border-border">{r.paidBy === 'TENANT' ? 'Ù…Ø³ØªØ£Ø¬Ø±' : r.paidBy === 'OWNER' ? 'Ù…Ø§Ù„Ùƒ' : 'Ù…ÙƒØªØ¨'}</td>
+              <td className="px-3 py-2 border border-border">{r.paidBy === 'TENANT' ? 'مستأجر' : r.paidBy === 'OWNER' ? 'مالك' : 'مكتب'}</td>
               <td className="px-3 py-2 border border-border text-center">
-                {r.billImageUrl ? <a href={r.billImageUrl} target="_blank" rel="noopener noreferrer" className="text-blue-600 text-xs underline">Ø¹Ø±Ø¶</a> : '-'}
+                {r.billImageUrl ? <a href={r.billImageUrl} target="_blank" rel="noopener noreferrer" className="text-blue-600 text-xs underline">عرض</a> : '-'}
               </td>
             </tr>
           );
         })}</tbody>
         <tfoot><tr className="bg-background font-bold">
-          <td colSpan={6} className="px-3 py-2 border border-border">Ø§Ù„Ø¥Ø¬Ù…Ø§Ù„ÙŠ</td>
+          <td colSpan={6} className="px-3 py-2 border border-border">الإجمالي</td>
           <td className="px-3 py-2 border border-border">{formatCurrency(totalAmount, cur)}</td>
           <td colSpan={2} className="px-3 py-2 border border-border"></td>
         </tr></tfoot>
@@ -1963,28 +1703,27 @@ const UtilitiesReport: React.FC = () => {
 
   return (
     <Card className="p-6">
-      <SectionHeader title="ØªÙ‚Ø±ÙŠØ± Ø§Ù„Ù…Ø±Ø§ÙÙ‚ ÙˆØ§Ù„Ø®Ø¯Ù…Ø§Øª" icon={<Zap size={20} />} />
+      <SectionHeader title="تقرير المرافق والخدمات" icon={<Zap size={20} />} />
       <ActionBar onPrint={() => setIsPrinting(true)}>
-        <div><label className="block text-xs font-medium text-text-muted mb-1">Ù…Ù† Ø´Ù‡Ø±</label><input type="month" value={fromMonth} onChange={e => setFromMonth(e.target.value)} className="text-sm" /></div>
-        <div><label className="block text-xs font-medium text-text-muted mb-1">Ø¥Ù„Ù‰ Ø´Ù‡Ø±</label><input type="month" value={toMonth} onChange={e => setToMonth(e.target.value)} className="text-sm" /></div>
-        <div><label className="block text-xs font-medium text-text-muted mb-1">Ù†ÙˆØ¹ Ø§Ù„Ù…Ø±ÙÙ‚</label>
+        <div><label className="block text-xs font-medium text-text-muted mb-1">من شهر</label><input type="month" value={fromMonth} onChange={e => setFromMonth(e.target.value)} className="text-sm" /></div>
+        <div><label className="block text-xs font-medium text-text-muted mb-1">إلى شهر</label><input type="month" value={toMonth} onChange={e => setToMonth(e.target.value)} className="text-sm" /></div>
+        <div><label className="block text-xs font-medium text-text-muted mb-1">نوع المرفق</label>
           <select value={filterType} onChange={e => setFilterType(e.target.value as any)} className="text-sm">
-            <option value="ALL">Ø§Ù„ÙƒÙ„</option>
+            <option value="ALL">الكل</option>
             {(Object.keys(UTILITY_TYPE_AR) as UtilityType[]).map(t => <option key={t} value={t}>{UTILITY_ICON[t]} {UTILITY_TYPE_AR[t]}</option>)}
           </select>
         </div>
-        <div><label className="block text-xs font-medium text-text-muted mb-1">Ø§Ù„Ø¹Ù‚Ø§Ø±</label>
+        <div><label className="block text-xs font-medium text-text-muted mb-1">العقار</label>
           <select value={filterPropertyId} onChange={e => setFilterPropertyId(e.target.value)} className="text-sm">
-            <option value="all">Ø§Ù„ÙƒÙ„</option>
+            <option value="all">الكل</option>
             {db.properties.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
           </select>
         </div>
       </ActionBar>
-      <ReportPrintableContent title="ØªÙ‚Ø±ÙŠØ± Ø§Ù„Ù…Ø±Ø§ÙÙ‚ ÙˆØ§Ù„Ø®Ø¯Ù…Ø§Øª" date={`${fromMonth} - ${toMonth}`}>{reportContent}</ReportPrintableContent>
-      {isPrinting && <PrintPreviewModal isOpen={isPrinting} onClose={() => setIsPrinting(false)} title="ØªÙ‚Ø±ÙŠØ± Ø§Ù„Ù…Ø±Ø§ÙÙ‚"><ReportPrintableContent title="ØªÙ‚Ø±ÙŠØ± Ø§Ù„Ù…Ø±Ø§ÙÙ‚ ÙˆØ§Ù„Ø®Ø¯Ù…Ø§Øª" date={`${fromMonth} - ${toMonth}`}>{reportContent}</ReportPrintableContent></PrintPreviewModal>}
+      <ReportPrintableContent title="تقرير المرافق والخدمات" date={`${fromMonth} - ${toMonth}`}>{reportContent}</ReportPrintableContent>
+      {isPrinting && <PrintPreviewModal isOpen={isPrinting} onClose={() => setIsPrinting(false)} title="تقرير المرافق"><ReportPrintableContent title="تقرير المرافق والخدمات" date={`${fromMonth} - ${toMonth}`}>{reportContent}</ReportPrintableContent></PrintPreviewModal>}
     </Card>
   );
 };
 
 export default Reports;
-

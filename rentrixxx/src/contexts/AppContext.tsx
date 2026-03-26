@@ -156,6 +156,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   useEffect(() => {
     if (currentUser === undefined || currentUser === null) return;
     const init = async () => {
+      const { count } = await supabase.from('profiles').select('id', { count: 'exact', head: true });
+      if ((count ?? 0) === 1 && currentUser.role !== 'ADMIN') {
+        await supabase.from('profiles').update({ role: 'ADMIN' }).eq('id', currentUser.id);
+        setCurrentUser({ ...currentUser, role: 'ADMIN' });
+      }
       await supabaseData.seedDefaults(
         DEFAULT_SETTINGS,
         DEFAULT_ACCOUNTS.map(acc => ({ ...acc, id: acc.no, createdAt: Date.now() })),
@@ -173,7 +178,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       if (error || !data.user) return { ok: false, msg: 'البريد الإلكتروني أو كلمة المرور غير صحيحة' };
       let { data: profile } = await supabase.from('profiles').select('*').eq('id', data.user.id).single();
       if (!profile) {
-        const newProfile = { id: data.user.id, username: data.user.email!.split('@')[0], role: 'USER', must_change_password: false, created_at: Date.now() };
+        const { count } = await supabase.from('profiles').select('id', { count: 'exact', head: true });
+        const isFirstUser = (count ?? 0) === 0;
+        const newProfile = { id: data.user.id, username: data.user.email!.split('@')[0], role: isFirstUser ? 'ADMIN' : 'USER', must_change_password: false, created_at: Date.now() };
         await supabase.from('profiles').insert(newProfile);
         profile = newProfile;
       }

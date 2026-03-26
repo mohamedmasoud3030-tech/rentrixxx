@@ -43,7 +43,7 @@ const UsersSettings: React.FC = () => {
                         {db.auth.users.map(u => (
                             <tr key={u.id} className="border-t border-border">
                                 <td className="p-4 font-bold">{u.username}</td>
-                                <td className="p-4 text-sm font-mono text-text-muted" dir="ltr">{u.email || '-'}</td>
+                                <td className="p-4 text-sm font-mono text-text-muted" dir="ltr">{u.email || '—'}</td>
                                 <td className="p-4">{USER_ROLE_AR[u.role] || u.role}</td>
                                 <td className="p-4 text-sm text-text-muted">{new Date(u.createdAt).toLocaleDateString('ar-EG')}</td>
                                 <td className="p-4">
@@ -107,9 +107,11 @@ const UserForm: React.FC<{ isOpen: boolean, onClose: () => void, user: User | nu
     return (
         <Modal isOpen={isOpen} onClose={onClose} title={user ? "تعديل مستخدم" : "إضافة مستخدم جديد"}>
             <form onSubmit={handleSubmit} className="space-y-4">
-                <input value={username} onChange={e => setUsername(e.target.value)} placeholder="اسم المستخدم (للعرض)" required />
+                <input id="username" name="username" value={username} onChange={e => setUsername(e.target.value)} placeholder="اسم المستخدم (للعرض)" required />
                 {!user && (
                     <input
+                        id="email"
+                        name="email"
                         type="email"
                         value={email}
                         onChange={e => setEmail(e.target.value)}
@@ -118,12 +120,14 @@ const UserForm: React.FC<{ isOpen: boolean, onClose: () => void, user: User | nu
                         dir="ltr"
                     />
                 )}
-                <select value={role} onChange={e => setRole(e.target.value as User['role'])}>
+                <select id="role" name="role" value={role} onChange={e => setRole(e.target.value as User['role'])}>
                     <option value="USER">مستخدم</option>
                     <option value="ADMIN">مدير</option>
                 </select>
                 {!user && (
                     <input
+                        id="password"
+                        name="password"
                         type="password"
                         value={password}
                         onChange={e => setPassword(e.target.value)}

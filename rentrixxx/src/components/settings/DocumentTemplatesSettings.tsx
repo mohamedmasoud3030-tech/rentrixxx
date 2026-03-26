@@ -12,6 +12,7 @@ const DocumentTemplatesSettings: React.FC = () => {
     const [footerNote, setFooterNote] = useState(templates?.contractFooterNote || '');
     const [dragIdx, setDragIdx] = useState<number | null>(null);
     const [isDirty, setIsDirty] = useState(false);
+    const [isSaving, setIsSaving] = useState(false);
 
     useEffect(() => {
         setClauses(templates?.contractClauses || []);
@@ -52,14 +53,20 @@ const DocumentTemplatesSettings: React.FC = () => {
     const handleDragEnd = () => setDragIdx(null);
 
     const handleSave = async () => {
-        await updateSettings({
-            documentTemplates: {
-                contractClauses: clauses.filter(c => c.trim()),
-                contractFooterNote: footerNote,
-            }
-        });
-        toast.success('تم حفظ قالب العقد بنجاح');
-        setIsDirty(false);
+        if (isSaving) return;
+        setIsSaving(true);
+        try {
+            await updateSettings({
+                documentTemplates: {
+                    contractClauses: clauses.filter(c => c.trim()),
+                    contractFooterNote: footerNote,
+                }
+            });
+            toast.success('تم حفظ قالب العقد بنجاح');
+            setIsDirty(false);
+        } finally {
+            setIsSaving(false);
+        }
     };
 
     const handleReset = () => {
@@ -73,7 +80,7 @@ const DocumentTemplatesSettings: React.FC = () => {
             <div className="flex justify-between items-center">
                 <h3 className="text-lg font-bold flex items-center gap-2">
                     <FileText size={20} />
-                    قالب عقد الإيجار - البنود والشروط
+                    قالب عقد الإيجار — البنود والشروط
                 </h3>
                 <div className="flex gap-2">
                     {isDirty && (
@@ -81,8 +88,8 @@ const DocumentTemplatesSettings: React.FC = () => {
                             <RotateCcw size={15} /> تراجع
                         </button>
                     )}
-                    <button onClick={handleSave} className="btn btn-primary flex items-center gap-2 text-sm">
-                        <Save size={15} /> حفظ التغييرات
+                    <button onClick={handleSave} disabled={isSaving} className="btn btn-primary flex items-center gap-2 text-sm disabled:opacity-50 disabled:cursor-not-allowed">
+                        <Save size={15} /> {isSaving ? 'جاري الحفظ...' : 'حفظ التغييرات'}
                     </button>
                 </div>
             </div>
