@@ -29,11 +29,11 @@ const Finance: React.FC = () => {
         <div className="space-y-6">
             <Card className="p-2 overflow-hidden">
                 <nav className="flex items-center gap-1 overflow-x-auto whitespace-nowrap">
-                    <FinanceTab to="invoices" icon={<ReceiptText size={18}/>} label="الفواتير" />
-                    <FinanceTab to="financials" icon={<Wallet size={18}/>} label="السندات والمصروفات" />
-                    <FinanceTab to="maintenance" icon={<Wrench size={18}/>} label="الصيانة" />
-                    <FinanceTab to="gl" icon={<Calculator size={18}/>} label="دفتر الأستاذ العام" />
-                    <FinanceTab to="accounting" icon={<BookOpen size={18}/>} label="المحاسبة" />
+                    <FinanceTab to="/finance/invoices" icon={<ReceiptText size={18}/>} label="الفواتير" />
+                    <FinanceTab to="/finance/financials" icon={<Wallet size={18}/>} label="السندات والمصروفات" />
+                    <FinanceTab to="/finance/maintenance" icon={<Wrench size={18}/>} label="الصيانة" />
+                    <FinanceTab to="/finance/gl" icon={<Calculator size={18}/>} label="دفتر الأستاذ العام" />
+                    <FinanceTab to="/finance/accounting" icon={<BookOpen size={18}/>} label="المحاسبة" />
                 </nav>
             </Card>
 
@@ -44,7 +44,7 @@ const Finance: React.FC = () => {
                     <Route path="maintenance" element={<Maintenance />} />
                     <Route path="gl" element={<GeneralLedger />} />
                     <Route path="accounting" element={<Accounting />} />
-                    <Route index element={<Navigate to="invoices" replace />} />
+                    <Route index element={<Navigate to="/finance/invoices" replace />} />
                 </Routes>
             </div>
         </div>
