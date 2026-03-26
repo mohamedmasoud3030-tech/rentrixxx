@@ -145,7 +145,7 @@ const Notifications: React.FC = () => {
                                                     <AlertTriangle className="w-4 h-4 text-danger-text mt-0.5 flex-shrink-0" />
                                                     <div className="min-w-0">
                                                         <p className="font-bold text-text truncate">
-                                                            فاتورة متأخرة — <span className="text-danger-text">{tenant?.name}</span>
+                                                            فاتورة متأخرة - <span className="text-danger-text">{tenant?.name}</span>
                                                         </p>
                                                         <p className="text-xs text-text-muted mt-0.5">
                                                             المبلغ المتبقي: {formatCurrency(inv.amount - inv.paidAmount, currency)}
@@ -182,7 +182,7 @@ const Notifications: React.FC = () => {
                                                     <FileText className="w-4 h-4 text-warning-text mt-0.5 flex-shrink-0" />
                                                     <div className="min-w-0">
                                                         <p className="font-bold text-text truncate">
-                                                            عقد ينتهي قريباً — <span className="text-warning-text">{tenant?.name}</span>
+                                                            عقد ينتهي قريباً - <span className="text-warning-text">{tenant?.name}</span>
                                                         </p>
                                                         <p className="text-xs text-text-muted mt-0.5">
                                                             تاريخ الانتهاء: {formatDate(c.end)}

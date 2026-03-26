@@ -453,12 +453,12 @@ const UnitDetailView: React.FC<{ unit: Unit; property: Property; onBack: () => v
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div className="bg-background border border-border rounded-lg p-4">
                     <p className="text-xs text-text-muted mb-1">رقم عداد المياه</p>
-                    <p className="font-bold">{unit.waterMeter || '—'}</p>
+                    <p className="font-bold">{unit.waterMeter || '-'}</p>
                     <p className="text-2xl mt-1">💧</p>
                 </div>
                 <div className="bg-background border border-border rounded-lg p-4">
                     <p className="text-xs text-text-muted mb-1">رقم عداد الكهرباء</p>
-                    <p className="font-bold">{unit.electricityMeter || '—'}</p>
+                    <p className="font-bold">{unit.electricityMeter || '-'}</p>
                     <p className="text-2xl mt-1">⚡</p>
                 </div>
                 <div className="bg-background border border-border rounded-lg p-4">

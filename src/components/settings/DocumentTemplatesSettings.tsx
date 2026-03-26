@@ -80,7 +80,7 @@ const DocumentTemplatesSettings: React.FC = () => {
             <div className="flex justify-between items-center">
                 <h3 className="text-lg font-bold flex items-center gap-2">
                     <FileText size={20} />
-                    قالب عقد الإيجار — البنود والشروط
+                    قالب عقد الإيجار - البنود والشروط
                 </h3>
                 <div className="flex gap-2">
                     {isDirty && (

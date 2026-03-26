@@ -23,7 +23,7 @@ const ResultBadge: React.FC<{ value: number | boolean; label: string }> = ({ val
     const active = isNum ? value > 0 : value;
     return (
         <span className={`px-2 py-1 rounded text-xs font-bold ${active ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
-            {label}: {isNum ? value : (value ? '✓' : '—')}
+            {label}: {isNum ? value : (value ? '✓' : '-')}
         </span>
     );
 };
