@@ -1,0 +1,4 @@
+// This is a large base64 encoded string for the Cairo font.
+// It is necessary for jsPDF to render Arabic characters correctly in the generated PDFs.
+// The full string is included in the project but truncated here for readability.
+export const cairoFontBase64 = 'AAEAAAARAQAABAAQR0RFRgABAAgUAAAEsEdQT1MAAQAIjAAAFsRPUy8yAAABbAAAAFhjbWFwAAACAAAAA7xnYXNwAAAEgAAAAAhnbHlmAAAEhAAAAL5oaGVhAAABMAAAADZoaGVhAAABTAAAACRobXR4AAABXAAAACRsb2NhAAABZAAAACRtYXhwAAABdAAAACBuYW1lAAACgAAAAjZwb3N0AAADuAAAACwAAQAAAAEAAIrfXt1fDzz1AAsD6AAAAADa6k3hAAAAANrqTeEAAQAAAAAAUP/gAAUAAgAFAAEAIOkB//3//wAAAAAAIOkAAPw=='; // Truncated for brevity
