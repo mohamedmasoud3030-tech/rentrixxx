@@ -26,19 +26,24 @@ export const ReceiptPrint = ({ data, settings }: any) => {
         </p>
       </div>
 
-      <div style={{ marginTop: '100px', display: 'flex', justifyContent: 'space-between' }}>
-        <div style={{ textAlign: 'center' }}>
-          <p>توقيع المستلم:</p>
-          <br/><br/>
-          <p>....................</p>
+      <div className="signature-section" style={{ marginTop: '60px', display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '20px', paddingTop: '20px' }}>
+        <div className="signature-block">
+          <div className="signature-label">التاريخ:</div>
+          <div className="signature-line" style={{ minHeight: '30px' }}></div>
+          <div className="signature-date">{data.date}</div>
         </div>
-        <div style={{ textAlign: 'center' }}>
-          <p>ختم المؤسسة:</p>
+        <div className="signature-block">
+          <div className="signature-label">توقيع المستلم:</div>
+          <div className="signature-line"></div>
+          <div style={{ fontSize: '10pt', marginTop: '8px' }}>الاسم: ..................</div>
+        </div>
+        <div className="signature-block">
+          <div className="signature-label">ختم المؤسسة / التوقيع:</div>
           <br/>
           {stamp ? (
-            <img src={stamp} alt="ختم المؤسسة" style={{ width: '120px', height: 'auto', margin: '0 auto' }} />
+            <img src={stamp} alt="ختم المؤسسة" style={{ width: '100px', height: '100px', margin: '0 auto', objectFit: 'contain' }} />
           ) : (
-            <div style={{ width: '100px', height: '100px', border: '2px solid #edf2f7', borderRadius: '50%', margin: '0 auto' }}></div>
+            <div style={{ width: '100px', height: '100px', border: '2px dashed #999', borderRadius: '50%', margin: '0 auto' }}></div>
           )}
         </div>
       </div>
