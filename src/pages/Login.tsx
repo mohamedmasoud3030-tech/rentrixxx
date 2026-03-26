@@ -1,91 +1,201 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useApp } from '../contexts/AppContext';
-import { Mail, Lock } from 'lucide-react';
+import { Mail, Lock, Eye, EyeOff, AlertCircle, CheckCircle2, Zap } from 'lucide-react';
 
 const Login: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const isSubmittingRef = useRef(false);
   const { auth, settings } = useApp();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isSubmittingRef.current) return;
+    
+    isSubmittingRef.current = true;
     setIsLoading(true);
     setError('');
     const res = await auth.login(email, password);
     if (!res.ok) {
       setError(res.msg);
+      isSubmittingRef.current = false;
       setIsLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-4">
-      <div className="w-full max-w-4xl mx-auto bg-card rounded-2xl shadow-2xl grid md:grid-cols-2 overflow-hidden border border-border">
-        
-        {/* Form Side */}
-        <div className="p-8 md:p-12 flex flex-col justify-center">
-            <h1 className="text-3xl font-bold text-text mb-8">مرحباً بعودتك!</h1>
+    <div className="min-h-screen bg-background flex items-center justify-center p-4 overflow-hidden">
+      {/* Animated background elements */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute -top-40 -right-40 w-80 h-80 bg-primary/10 rounded-full blur-3xl animate-pulse"></div>
+        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-primary/5 rounded-full blur-3xl animate-pulse delay-1000"></div>
+      </div>
 
-            <form onSubmit={handleLogin} className="space-y-6">
-                <div className="relative">
-                    <Mail className="absolute right-3 top-1/2 -translate-y-1/2 h-5 w-5 text-text-muted" />
-                    <input
-                        id="email"
-                        type="email"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        placeholder="البريد الإلكتروني"
-                        className="pr-10"
-                        required
-                        autoComplete="email"
-                        dir="ltr"
-                    />
+      <div className="w-full max-w-5xl mx-auto relative z-10">
+        <div className="grid md:grid-cols-2 gap-0 rounded-3xl overflow-hidden shadow-2xl border border-border/50 backdrop-blur-sm bg-card/95">
+          
+          {/* Left Side - Form */}
+          <div className="p-8 md:p-12 lg:p-16 flex flex-col justify-center">
+            {/* Header */}
+            <div className="mb-10">
+              <div className="flex items-center gap-2 mb-4">
+                <div className="p-2 bg-primary/10 rounded-lg">
+                  <Zap className="w-6 h-6 text-primary" />
                 </div>
+                <span className="text-sm font-bold text-primary">Rentrix</span>
+              </div>
+              <h1 className="text-4xl md:text-5xl font-black bg-gradient-to-l from-primary to-primary/70 bg-clip-text text-transparent mb-3">
+                مرحباً بعودتك
+              </h1>
+              <p className="text-text-muted text-lg">سجل الدخول لإدارة عقاراتك بكفاءة</p>
+            </div>
+
+            {/* Form */}
+            <form onSubmit={handleLogin} className="space-y-5">
+              {/* Email Input */}
+              <div className="group">
+                <label className="block text-sm font-semibold text-text mb-2">البريد الإلكتروني</label>
                 <div className="relative">
-                    <Lock className="absolute right-3 top-1/2 -translate-y-1/2 h-5 w-5 text-text-muted" />
-                    <input
-                        id="password"
-                        type="password"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        placeholder="كلمة المرور"
-                        className="pr-10"
-                        required
-                        autoComplete="current-password"
-                    />
-                </div>
-                
-                {error && <p className="text-red-500 text-sm text-center bg-red-100 dark:bg-red-900/30 p-2 rounded-md">{error}</p>}
-                
-                <button
-                    type="submit"
+                  <Mail className="absolute right-4 top-1/2 -translate-y-1/2 h-5 w-5 text-text-muted group-focus-within:text-primary transition-colors" />
+                  <input
+                    id="email"
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="your@email.com"
+                    className="w-full pr-12 pl-4 py-3 bg-background border border-border/50 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all placeholder:text-text-muted/50"
+                    required
+                    autoComplete="email"
+                    dir="ltr"
                     disabled={isLoading}
-                    className="w-full btn btn-primary py-3 text-base"
-                >
-                    {isLoading ? 'جاري الدخول...' : 'تسجيل الدخول'}
-                </button>
-
-                <div className="text-center text-sm text-text-muted mt-8 pt-4 border-t border-border">
-                     <p className="font-bold">تطوير: Mohamed Masoud</p>
-                     <p className="font-mono mt-1" dir="ltr">+968 9192 8186 / +20 121 210 1073</p>
+                  />
                 </div>
-            </form>
-        </div>
+              </div>
 
-        {/* Branding Side */}
-        <div className="hidden md:flex flex-col items-center justify-center p-12 bg-gradient-to-br from-blue-500 to-blue-700 dark:from-yellow-600 dark:to-yellow-800 text-white text-center">
-            <h1 className="text-6xl font-black mb-4">Rentrix</h1>
-            <p className="text-lg font-bold mb-3">{settings.general.company.name || 'Rentrix'}</p>
-            <p className="max-w-sm leading-relaxed opacity-90 text-sm">
-                نظام إدارة مؤسسات شامل لإدارة العقارات، مصمم خصيصا لمؤسسة مشاريع جودة الانطلاقة
-            </p>
-            <p className="mt-2 max-w-sm leading-relaxed opacity-90 text-sm">
-                إدارة السيد \ يعقوب فاضل الخصيبي
-            </p>
+              {/* Password Input */}
+              <div className="group">
+                <label className="block text-sm font-semibold text-text mb-2">كلمة المرور</label>
+                <div className="relative">
+                  <Lock className="absolute right-4 top-1/2 -translate-y-1/2 h-5 w-5 text-text-muted group-focus-within:text-primary transition-colors" />
+                  <input
+                    id="password"
+                    type={showPassword ? 'text' : 'password'}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="••••••••"
+                    className="w-full pr-12 pl-12 py-3 bg-background border border-border/50 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all placeholder:text-text-muted/50"
+                    required
+                    autoComplete="current-password"
+                    disabled={isLoading}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute left-4 top-1/2 -translate-y-1/2 text-text-muted hover:text-primary transition-colors disabled:opacity-50"
+                    disabled={isLoading}
+                  >
+                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                  </button>
+                </div>
+              </div>
+
+              {/* Error Message */}
+              {error && (
+                <div className="flex items-start gap-3 p-4 bg-red-500/10 border border-red-500/30 rounded-xl animate-in fade-in slide-in-from-top-2">
+                  <AlertCircle className="w-5 h-5 text-red-500 mt-0.5 flex-shrink-0" />
+                  <div>
+                    <p className="text-red-600 dark:text-red-400 font-medium text-sm">{error}</p>
+                  </div>
+                </div>
+              )}
+
+              {/* Submit Button */}
+              <button
+                type="submit"
+                disabled={isLoading || !email || !password}
+                className="w-full relative py-3 px-4 bg-gradient-to-r from-primary to-primary/80 hover:from-primary hover:to-primary text-white font-bold rounded-xl transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-lg hover:shadow-primary/30 active:scale-95 flex items-center justify-center gap-2 group"
+              >
+                <span className={`transition-all ${isLoading ? 'opacity-0' : 'opacity-100'}`}>
+                  تسجيل الدخول
+                </span>
+                {isLoading && (
+                  <div className="absolute flex items-center gap-2">
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    <span>جاري الدخول...</span>
+                  </div>
+                )}
+              </button>
+
+              {/* Footer */}
+              <div className="pt-6 border-t border-border/30">
+                <div className="text-center space-y-2">
+                  <p className="text-xs text-text-muted/70">نظام إدارة العقارات المتقدم</p>
+                  <div className="flex items-center justify-center gap-2 text-xs text-text-muted">
+                    <span>🔒 آمن تماماً</span>
+                    <span className="text-border">•</span>
+                    <span>📱 متاح على الويب والسطح</span>
+                  </div>
+                </div>
+              </div>
+            </form>
+          </div>
+
+          {/* Right Side - Branding */}
+          <div className="hidden md:flex flex-col items-center justify-center p-12 lg:p-16 relative overflow-hidden">
+            {/* Background gradient */}
+            <div className="absolute inset-0 bg-gradient-to-br from-primary/90 via-primary/80 to-primary/60 dark:from-yellow-600/90 dark:via-yellow-700/80 dark:to-yellow-800/60"></div>
+            
+            {/* Decorative elements */}
+            <div className="absolute top-10 right-10 w-20 h-20 bg-white/10 rounded-3xl rotate-45 blur-xl"></div>
+            <div className="absolute bottom-20 left-10 w-32 h-32 bg-white/5 rounded-full blur-2xl"></div>
+
+            <div className="relative z-10 text-center space-y-6">
+              {/* Logo area */}
+              <div className="inline-flex items-center justify-center w-20 h-20 bg-white/20 backdrop-blur-xl rounded-2xl mb-4 border border-white/30">
+                <Zap className="w-10 h-10 text-white animate-pulse" />
+              </div>
+
+              <div>
+                <h2 className="text-5xl lg:text-6xl font-black text-white mb-2">Rentrix</h2>
+                <p className="text-lg font-bold text-white/90">{settings.general.company.name || 'Rentrix'}</p>
+              </div>
+
+              {/* Features */}
+              <div className="pt-4 space-y-3">
+                {[
+                  '✨ إدارة عقارات شاملة',
+                  '📊 تقارير مالية متقدمة',
+                  '👥 إدارة المستأجرين',
+                  '💰 نظام محاسبة مزدوج الدخول'
+                ].map((feature, i) => (
+                  <div key={i} className="flex items-center gap-3 text-white/90 justify-center">
+                    <CheckCircle2 size={18} className="text-white/70 flex-shrink-0" />
+                    <span className="text-sm font-medium">{feature}</span>
+                  </div>
+                ))}
+              </div>
+
+              {/* Description */}
+              <div className="pt-6 border-t border-white/20 max-w-xs">
+                <p className="text-sm text-white/80 leading-relaxed mb-3">
+                  نظام إدارة عقارات احترافي متطور، مصمم بعناية لتسهيل إدارة العقارات والمستأجرين والعقود والمالية.
+                </p>
+                <p className="text-xs text-white/70 font-semibold">
+                  تطوير: Mohamed Masoud
+                </p>
+              </div>
+            </div>
+          </div>
+          
         </div>
-        
+      </div>
+
+      {/* Mobile branding info */}
+      <div className="md:hidden fixed bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-primary/20 to-transparent border-t border-border/30 text-center text-xs text-text-muted">
+        <p className="font-semibold">Rentrix - نظام إدارة العقارات المتقدم</p>
       </div>
     </div>
   );
