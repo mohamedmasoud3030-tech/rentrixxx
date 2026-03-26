@@ -136,6 +136,10 @@ const UnitsView: React.FC<{ property: Property, onBack: () => void }> = ({ prope
         return map;
     }, [db.utilityRecords]);
 
+    if (selectedUnit) {
+        return <UnitDetailView unit={selectedUnit} property={property} onBack={() => setSelectedUnit(null)} />;
+    }
+
     const floors = useMemo(() => [...new Set(units.map(u => u.floor || 'بدون دور'))], [units]);
     const hasFloors = useMemo(() => units.some(u => u.floor), [units]);
 
@@ -144,10 +148,6 @@ const UnitsView: React.FC<{ property: Property, onBack: () => void }> = ({ prope
         available: units.filter(u => u.status === 'AVAILABLE').length,
         onHold: units.filter(u => u.status === 'ON_HOLD').length,
     }), [units]);
-
-    if (selectedUnit) {
-        return <UnitDetailView unit={selectedUnit} property={property} onBack={() => setSelectedUnit(null)} />;
-    }
 
     return (
         <div className="space-y-6">
