@@ -180,12 +180,15 @@ const Login: React.FC = () => {
 
               {/* Description */}
               <div className="pt-6 border-t border-white/20 max-w-xs">
-                <p className="text-sm text-white/80 leading-relaxed mb-3">
+                <p className="text-sm text-white/80 leading-relaxed mb-4">
                   نظام إدارة عقارات احترافي متطور، مصمم بعناية لتسهيل إدارة العقارات والمستأجرين والعقود والمالية.
                 </p>
-                <p className="text-xs text-white/70 font-semibold">
-                  تطوير: Mohamed Masoud
-                </p>
+                <div className="space-y-2">
+                  <p className="text-xs text-white/70 font-semibold">Developed by Mohamed Masoud</p>
+                  <p className="text-xs text-white/70" dir="ltr">📧 masoud.dev@outlook.com</p>
+                  <p className="text-xs text-white/70" dir="ltr">🌐 www.rentrix-system.com</p>
+                  <p className="text-xs text-white/70">Version 1.0.0 • 2026</p>
+                </div>
               </div>
             </div>
           </div>
