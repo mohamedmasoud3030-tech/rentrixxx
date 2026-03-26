@@ -3,8 +3,8 @@ import { Outlet } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import Topbar from './Topbar';
 import Footer from './Footer';
-import SmartAssistant from '../../shared/SmartAssistant';
-import { useApp } from '../../../contexts/AppContext';
+import SmartAssistant from '../shared/SmartAssistant';
+import { useApp } from '../../contexts/AppContext';
 import { AlertTriangle } from 'lucide-react';
 
 const ReadOnlyBanner: React.FC = () => {

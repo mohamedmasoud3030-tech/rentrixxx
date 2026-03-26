@@ -4,7 +4,7 @@ import {
     LayoutGrid, Building2, Users, FileText, Banknote, 
     BarChart2, Settings, UserPlus, MessageSquare, Map as MapIcon, Bot, ClipboardList, ScrollText, Wrench
 } from 'lucide-react';
-import { useApp } from '../../../contexts/AppContext';
+import { useApp } from '../../contexts/AppContext';
 import { getLastRunDate } from '../../../services/automationService';
 
 interface NavLinkItem {

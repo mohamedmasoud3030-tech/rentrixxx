@@ -1,5 +1,5 @@
 import React from 'react';
-import { useApp } from '../../../contexts/AppContext';
+import { useApp } from '../../contexts/AppContext';
 import { Sun, Moon, LogOut, Menu } from 'lucide-react';
 import Notifications from './Notifications';
 

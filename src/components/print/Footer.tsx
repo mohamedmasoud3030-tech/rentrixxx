@@ -1,5 +1,5 @@
 import React from 'react';
-import { toArabicDigits } from '../../../utils/helpers';
+import { toArabicDigits } from '../../utils/helpers';
 
 const Footer: React.FC = () => {
     const currentYear = toArabicDigits(new Date().getFullYear());
