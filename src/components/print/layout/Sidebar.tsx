@@ -53,8 +53,13 @@ const navGroups: { title: string; links: NavLinkItem[] }[] = [
     title: 'التحليل والإدارة',
     links: [
       { path: '/reports', label: 'التقارير', icon: BarChart2 },
-      { path: '/audit-log', label: 'سجل المراجعة', icon: ScrollText, adminOnly: true },
       { path: '/smart-assistant', label: 'المساعد الذكي', icon: Bot },
+      { path: '/audit-log', label: 'سجل المراجعة', icon: ScrollText, adminOnly: true },
+    ],
+  },
+  {
+    title: 'الإدارة والنظام',
+    links: [
       { path: '/settings', label: 'الإعدادات', icon: Settings, adminOnly: true },
     ],
   },
