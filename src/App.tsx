@@ -23,6 +23,7 @@ import CommunicationHub from './pages/communication-hub';
 import LandsAndCommissions from './pages/lands-and-commissions';
 import AuditLog from './pages/audit-log';
 import SmartAssistant from './pages/smart-assistant';
+import DataIntegrityAudit from './pages/data-integrity-audit';
 
 const hexToHsl = (hex: string): string => {
     hex = hex.replace('#', '');

@@ -1,6 +1,6 @@
 import React from 'react';
-import AuditLog from '../../pages/AuditLog';
-import DataIntegrityAudit from '../../pages/DataIntegrityAudit';
+import AuditLog from '../../audit-log';
+import DataIntegrityAudit from '../../data-integrity-audit';
 
 const SecuritySettings: React.FC = () => {
     return (
