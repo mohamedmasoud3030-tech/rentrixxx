@@ -156,6 +156,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   useEffect(() => {
     if (currentUser === undefined || currentUser === null) return;
     const init = async () => {
+      const { count } = await supabase.from('profiles').select('id', { count: 'exact', head: true });
+      if ((count ?? 0) === 1 && currentUser.role !== 'ADMIN') {
+        await supabase.from('profiles').update({ role: 'ADMIN' }).eq('id', currentUser.id);
+        setCurrentUser({ ...currentUser, role: 'ADMIN' });
+      }
       await supabaseData.seedDefaults(
         DEFAULT_SETTINGS,
         DEFAULT_ACCOUNTS.map(acc => ({ ...acc, id: acc.no, createdAt: Date.now() })),
