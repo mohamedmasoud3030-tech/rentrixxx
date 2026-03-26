@@ -17,6 +17,7 @@ const fileToBase64 = (file: File): Promise<string> => {
 const AppearanceSettings: React.FC = () => {
     const { settings, updateSettings } = useApp();
     const [appearance, setAppearance] = useState<Appearance>(settings.appearance || { theme: 'light', primaryColor: '#B8860B' });
+    const [isSaving, setIsSaving] = useState(false);
 
     useEffect(() => {
         setAppearance(settings.appearance);
@@ -50,9 +51,15 @@ const AppearanceSettings: React.FC = () => {
         }
     };
 
-    const handleSave = () => {
-        updateSettings({ appearance });
-        toast.success("تم حفظ إعدادات المظهر.");
+    const handleSave = async () => {
+        if (isSaving) return;
+        setIsSaving(true);
+        try {
+            await updateSettings({ appearance });
+            toast.success("تم حفظ إعدادات المظهر.");
+        } finally {
+            setIsSaving(false);
+        }
     };
     
     return (
@@ -100,7 +107,9 @@ const AppearanceSettings: React.FC = () => {
             </div>
 
             <div className="pt-4 flex justify-end">
-                <button onClick={handleSave} className="btn btn-primary">حفظ التغييرات</button>
+                <button onClick={handleSave} disabled={isSaving} className="btn btn-primary disabled:opacity-50 disabled:cursor-not-allowed">
+                    {isSaving ? 'جاري الحفظ...' : 'حفظ التغييرات'}
+                </button>
             </div>
         </div>
     );

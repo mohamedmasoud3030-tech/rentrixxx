@@ -53,6 +53,7 @@ const GeneralSettings: React.FC = () => {
     const { settings, updateSettings } = useApp();
     const [company, setCompany] = useState<GeneralCompany>(settings.general.company);
     const [operational, setOperational] = useState<Operational>(settings.operational);
+    const [isSaving, setIsSaving] = useState(false);
 
     useEffect(() => {
         setCompany(settings.general.company);
@@ -78,16 +79,24 @@ const GeneralSettings: React.FC = () => {
          setOperational(prev => ({ ...prev, documentNumbering: { ...prev.documentNumbering, [name]: value } }));
     };
 
-    const handleSave = () => {
-        updateSettings({ general: { company }, operational });
-        toast.success("تم حفظ الإعدادات العامة.");
+    const handleSave = async () => {
+        if (isSaving) return;
+        setIsSaving(true);
+        try {
+            await updateSettings({ general: { company }, operational });
+            toast.success("تم حفظ الإعدادات العامة.");
+        } finally {
+            setIsSaving(false);
+        }
     };
 
     return (
         <div className="space-y-6">
             <div className="flex items-center justify-between">
                 <h2 className="text-2xl font-bold">الإعدادات العامة</h2>
-                <button onClick={handleSave} className="btn btn-primary">حفظ جميع التغييرات</button>
+                <button onClick={handleSave} disabled={isSaving} className="btn btn-primary disabled:opacity-50 disabled:cursor-not-allowed">
+                    {isSaving ? 'جاري الحفظ...' : 'حفظ جميع التغييرات'}
+                </button>
             </div>
             
             <SettingsSection title="بيانات المؤسسة الأساسية" icon={<Building2 size={20} />} description="اسم المؤسسة والمعلومات التعريفية التي تظهر في ترويسة المستندات المطبوعة">
