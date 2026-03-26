@@ -1,11 +1,11 @@
 import React, { useMemo, useState } from 'react';
-import { useApp } from '../contexts/AppContext';
-import { formatCurrency, formatDate } from '../utils/helpers';
+import { useApp } from '../../contexts/AppContext';
+import { formatCurrency, formatDate } from '../../utils/helpers';
 import {
   Building2, Home, FileText, Wallet,
   ArrowUpRight, ArrowDownRight, AlertCircle, Wrench
 } from 'lucide-react';
-import Card from '../components/ui/Card';
+import Card from '../../components/ui/Card';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 
 const Dashboard: React.FC = () => {

@@ -1,9 +1,9 @@
 import React, { useState, useMemo } from 'react';
-import { useApp } from '../contexts/AppContext';
-import Card from '../components/ui/Card';
-import Modal from '../components/ui/Modal';
-import { Account } from '../types';
-import { formatCurrency } from '../utils/helpers';
+import { useApp } from '../../contexts/AppContext';
+import Card from '../../components/ui/Card';
+import Modal from '../../components/ui/Modal';
+import { Account } from '../../types';
+import { formatCurrency } from '../../utils/helpers';
 import { PlusCircle, Trash2, Edit2, BookOpen, FilePen, Scale } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 

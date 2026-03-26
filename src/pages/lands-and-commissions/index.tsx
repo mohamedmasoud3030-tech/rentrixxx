@@ -1,12 +1,12 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { useApp } from '../contexts/AppContext';
-import Card from '../components/ui/Card';
-import Modal from '../components/ui/Modal';
+import { useApp } from '../../contexts/AppContext';
+import Card from '../../components/ui/Card';
+import Modal from '../../components/ui/Modal';
 import { Users, Eye, MapPin, PlusCircle, DollarSign } from 'lucide-react';
-import { Land, Commission } from '../types';
-import { formatCurrency } from '../utils/helpers';
+import { Land, Commission } from '../../types';
+import { formatCurrency } from '../../utils/helpers';
 import { toast } from 'react-hot-toast';
-import ActionsMenu, { EditAction, DeleteAction } from '../components/shared/ActionsMenu';
+import ActionsMenu, { EditAction, DeleteAction } from '../../components/shared/ActionsMenu';
 
 const LandsAndCommissions: React.FC = () => {
   return (

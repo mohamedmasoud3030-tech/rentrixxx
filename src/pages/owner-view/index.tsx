@@ -1,8 +1,8 @@
 import React from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
-import { useApp } from '../contexts/AppContext';
-import { formatCurrency } from '../utils/helpers';
-import Card from '../components/ui/Card';
+import { useApp } from '../../contexts/AppContext';
+import { formatCurrency } from '../../utils/helpers';
+import Card from '../../components/ui/Card';
 
 const OwnerView: React.FC = () => {
     const { ownerId } = useParams<{ ownerId: string }>();

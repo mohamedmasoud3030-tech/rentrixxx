@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
-import { useApp } from '../contexts/AppContext';
-import { Lead } from '../types';
-import Card from '../components/ui/Card';
-import Modal from '../components/ui/Modal';
-import ActionsMenu, { EditAction, DeleteAction } from '../components/shared/ActionsMenu';
-import { getStatusBadgeClass } from '../utils/helpers';
+import { useApp } from '../../contexts/AppContext';
+import { Lead } from '../../types';
+import Card from '../../components/ui/Card';
+import Modal from '../../components/ui/Modal';
+import ActionsMenu, { EditAction, DeleteAction } from '../../components/shared/ActionsMenu';
+import { getStatusBadgeClass } from '../../utils/helpers';
 import { UserPlus, MessageCircle } from 'lucide-react';
-import WhatsAppModal from '../components/shared/WhatsAppModal';
+import WhatsAppModal from '../../components/shared/WhatsAppModal';
 import { toast } from 'react-hot-toast';
 
 const Leads: React.FC = () => {

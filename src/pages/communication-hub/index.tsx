@@ -1,9 +1,9 @@
 
 import React, { useState, useMemo } from 'react';
-import { useApp } from '../contexts/AppContext';
-import { OutgoingNotification } from '../types';
-import Card from '../components/ui/Card';
-import { getStatusBadgeClass, sanitizePhoneNumber } from '../utils/helpers';
+import { useApp } from '../../contexts/AppContext';
+import { OutgoingNotification } from '../../types';
+import Card from '../../components/ui/Card';
+import { getStatusBadgeClass, sanitizePhoneNumber } from '../../utils/helpers';
 import { Send, MessageSquare, Copy, Check, Trash2 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 

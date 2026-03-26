@@ -4,7 +4,7 @@ import { Routes, Route, NavLink, Navigate } from 'react-router-dom';
 import Invoices from './Invoices';
 import Financials from './Financials';
 import Maintenance from './Maintenance';
-import Card from '../components/ui/Card';
+import Card from '../../components/ui/Card';
 import { Wallet, ReceiptText, Wrench, Calculator, BookOpen } from 'lucide-react';
 import GeneralLedger from './GeneralLedger';
 import Accounting from './Accounting';

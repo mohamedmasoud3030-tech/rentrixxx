@@ -1,13 +1,13 @@
 import React, { useState, useMemo } from 'react';
-import { useApp } from '../contexts/AppContext';
-import { Owner, Tenant } from '../types';
-import Card from '../components/ui/Card';
-import Modal from '../components/ui/Modal';
-import ActionsMenu, { EditAction, DeleteAction } from '../components/shared/ActionsMenu';
-import AttachmentsManager from '../components/shared/AttachmentsManager';
+import { useApp } from '../../contexts/AppContext';
+import { Owner, Tenant } from '../../types';
+import Card from '../../components/ui/Card';
+import Modal from '../../components/ui/Modal';
+import ActionsMenu, { EditAction, DeleteAction } from '../../components/shared/ActionsMenu';
+import AttachmentsManager from '../../components/shared/AttachmentsManager';
 import { MessageCircle, Users, BookOpen, Link as LinkIcon, Download, ArrowRight, FileText, Home, Phone, Mail, MapPin, CreditCard } from 'lucide-react';
-import { WhatsAppComposerModal } from '../components/shared/WhatsAppComposerModal';
-import { formatDate, formatCurrency, exportToCsv, TENANT_STATUS_AR, CHANNEL_AR } from '../utils/helpers';
+import { WhatsAppComposerModal } from '../../components/shared/WhatsAppComposerModal';
+import { formatDate, formatCurrency, exportToCsv, TENANT_STATUS_AR, CHANNEL_AR } from '../../utils/helpers';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 

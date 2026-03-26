@@ -1,22 +1,22 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { useApp } from '../contexts/AppContext';
-import Card from '../components/ui/Card';
-import { formatCurrency, formatDate } from '../utils/helpers';
+import { useApp } from '../../contexts/AppContext';
+import Card from '../../components/ui/Card';
+import { formatCurrency, formatDate } from '../../utils/helpers';
 import {
   Printer, FileText, BarChart3, TrendingUp, Wallet, TrendingDown, Users,
   PieChart, ArrowUp, ArrowDown, Banknote, Percent, ChevronLeft,
   Building2, CalendarRange, Filter, Download, Zap
 } from 'lucide-react';
-import { UtilityRecord, UtilityType, UTILITY_TYPE_AR, UTILITY_ICON } from '../types';
+import { UtilityRecord, UtilityType, UTILITY_TYPE_AR, UTILITY_ICON } from '../../types';
 import { useLocation, useNavigate } from 'react-router-dom';
-import PrintPreviewModal from '../components/shared/PrintPreviewModal';
-import { DocumentHeaderInline } from '../components/shared/DocumentHeader';
+import PrintPreviewModal from '../../components/shared/PrintPreviewModal';
+import { DocumentHeaderInline } from '../../components/shared/DocumentHeader';
 import {
   exportRentRollToPdf, exportOwnerLedgerToPdf, exportTenantStatementToPdf,
   exportIncomeStatementToPdf, exportTrialBalanceToPdf, exportBalanceSheetToPdf,
   exportAgedReceivablesToPdf
-} from '../services/pdfService';
-import { calculateBalanceSheetData, calculateIncomeStatementData, calculateAgedReceivables } from '../services/accountingService';
+} from '../../services/pdfService';
+import { calculateBalanceSheetData, calculateIncomeStatementData, calculateAgedReceivables } from '../../services/accountingService';
 import { startOfMonth, endOfMonth, subMonths, startOfYear, endOfYear, isWithinInterval, format, eachMonthOfInterval } from 'date-fns';
 import { ar } from 'date-fns/locale';
 import {

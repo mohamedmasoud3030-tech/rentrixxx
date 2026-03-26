@@ -1,11 +1,11 @@
 
 import React, { useState, useMemo } from 'react';
-import { useApp } from '../contexts/AppContext';
+import { useApp } from '../../contexts/AppContext';
 // FIX: Import Account type for explicit type annotation
-import { JournalEntry, Account } from '../types';
-import Card from '../components/ui/Card';
-import Modal from '../components/ui/Modal';
-import { formatCurrency, formatDate } from '../utils/helpers';
+import { JournalEntry, Account } from '../../types';
+import Card from '../../components/ui/Card';
+import Modal from '../../components/ui/Modal';
+import { formatCurrency, formatDate } from '../../utils/helpers';
 import { Calculator, PlusCircle } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 

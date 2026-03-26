@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useApp } from '../contexts/AppContext';
+import { useApp } from '../../contexts/AppContext';
 
 const ChangePassword: React.FC = () => {
   const { auth } = useApp();

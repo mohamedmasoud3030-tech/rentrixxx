@@ -1,9 +1,9 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
-import { useApp } from '../contexts/AppContext';
+import { useApp } from '../../contexts/AppContext';
 import { Sparkles, Bot, User, X, Send, AlertCircle, Settings } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { queryAssistant } from '../services/geminiService';
-import Card from '../components/ui/Card';
+import { queryAssistant } from '../../services/geminiService';
+import Card from '../../components/ui/Card';
 
 interface Message {
     sender: 'user' | 'ai' | 'error';

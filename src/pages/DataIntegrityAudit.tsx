@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import { useApp } from '../contexts/AppContext';
-import { AuditIssue } from '../types';
-import { runDataIntegrityAudit } from '../services/auditEngine';
-import Card from '../components/ui/Card';
+import { useApp } from '../../contexts/AppContext';
+import { AuditIssue } from '../../types';
+import { runDataIntegrityAudit } from '../../services/auditEngine';
+import Card from '../../components/ui/Card';
 import { AlertTriangle, AlertCircle, Info, RefreshCw, ChevronsRight, SearchCheck } from 'lucide-react';
 import { Link } from 'react-router-dom';
 

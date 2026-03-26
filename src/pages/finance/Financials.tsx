@@ -1,18 +1,18 @@
 
 import React, { useState, useMemo, useEffect } from 'react';
-import { useApp } from '../contexts/AppContext';
-import { Receipt, Expense, DepositTx, OwnerSettlement, Tenant } from '../types';
-import Card from '../components/ui/Card';
-import Modal from '../components/ui/Modal';
-import ActionsMenu, { EditAction, VoidAction, DeleteAction, PrintAction } from '../components/shared/ActionsMenu';
-import { formatCurrency, formatDateTime, getStatusBadgeClass, formatDate, exportToCsv, RECEIPT_STATUS_AR, CHANNEL_AR, EXPENSE_STATUS_AR } from '../utils/helpers';
-import HardGateBanner from '../components/shared/HardGateBanner';
-import AttachmentsManager from '../components/shared/AttachmentsManager';
-import SearchFilterBar from '../components/shared/SearchFilterBar';
+import { useApp } from '../../contexts/AppContext';
+import { Receipt, Expense, DepositTx, OwnerSettlement, Tenant } from '../../types';
+import Card from '../../components/ui/Card';
+import Modal from '../../components/ui/Modal';
+import ActionsMenu, { EditAction, VoidAction, DeleteAction, PrintAction } from '../../components/shared/ActionsMenu';
+import { formatCurrency, formatDateTime, getStatusBadgeClass, formatDate, exportToCsv, RECEIPT_STATUS_AR, CHANNEL_AR, EXPENSE_STATUS_AR } from '../../utils/helpers';
+import HardGateBanner from '../../components/shared/HardGateBanner';
+import AttachmentsManager from '../../components/shared/AttachmentsManager';
+import SearchFilterBar from '../../components/shared/SearchFilterBar';
 import { Receipt as ReceiptIcon, CreditCard, Landmark, PiggyBank, MessageCircle, Download } from 'lucide-react';
-import PrintPreviewModal from '../components/shared/PrintPreviewModal';
-import { WhatsAppComposerModal } from '../components/shared/WhatsAppComposerModal';
-import { ReceiptPrint } from '../components/print/PrintTemplate';
+import PrintPreviewModal from '../../components/shared/PrintPreviewModal';
+import { WhatsAppComposerModal } from '../../components/shared/WhatsAppComposerModal';
+import { ReceiptPrint } from '../../components/print/PrintTemplate';
 import { toast } from 'react-hot-toast';
 
 const ExpensePrintable: React.FC<{ expense: Expense }> = ({ expense }) => {

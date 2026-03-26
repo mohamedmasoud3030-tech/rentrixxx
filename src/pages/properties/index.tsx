@@ -1,11 +1,11 @@
 import React, { useState, useMemo, useRef, memo, useCallback } from 'react';
-import { useApp } from '../contexts/AppContext';
-import { Property, Unit, UtilityRecord, UtilityType, UTILITY_TYPE_AR, UTILITY_ICON } from '../types';
-import Card from '../components/ui/Card';
-import Modal from '../components/ui/Modal';
-import ActionsMenu, { EditAction, DeleteAction } from '../components/shared/ActionsMenu';
-import AttachmentsManager from '../components/shared/AttachmentsManager';
-import { formatCurrency, toArabicDigits, formatDate } from '../utils/helpers';
+import { useApp } from '../../contexts/AppContext';
+import { Property, Unit, UtilityRecord, UtilityType, UTILITY_TYPE_AR, UTILITY_ICON } from '../../types';
+import Card from '../../components/ui/Card';
+import Modal from '../../components/ui/Modal';
+import ActionsMenu, { EditAction, DeleteAction } from '../../components/shared/ActionsMenu';
+import AttachmentsManager from '../../components/shared/AttachmentsManager';
+import { formatCurrency, toArabicDigits, formatDate } from '../../utils/helpers';
 import { Building, Home, ArrowRight, User, Map as MapIcon, AlertCircle, Clock, FileText, Wrench, Phone, Percent, TrendingUp, Zap, Droplets, Flame, Wifi, ChevronRight, Plus, Image, Trash2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
