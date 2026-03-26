@@ -218,7 +218,7 @@ const ReportsOverview: React.FC<{ currency: string }> = ({ currency }) => {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <Card className="lg:col-span-2 p-5">
           <SectionHeader title="اتجاه الإيرادات والمصروفات (6 أشهر)" icon={<TrendingUp size={18} className="text-primary" />} />
-          <div className="h-72" dir="ltr">
+          <div className="h-72 overflow-hidden" dir="ltr">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={monthlyTrend}>
                 <defs>
@@ -244,7 +244,7 @@ const ReportsOverview: React.FC<{ currency: string }> = ({ currency }) => {
 
         <Card className="p-5">
           <SectionHeader title="توزيع الوحدات" icon={<PieChart size={18} className="text-primary" />} />
-          <div className="h-72" dir="ltr">
+          <div className="h-72 overflow-hidden" dir="ltr">
             <ResponsiveContainer width="100%" height="100%">
               <RechartsPie>
                 <Pie data={occupancyData} cx="50%" cy="45%" innerRadius={50} outerRadius={80} paddingAngle={4} dataKey="value" label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`} labelLine={false} fontSize={11}>
@@ -260,7 +260,7 @@ const ReportsOverview: React.FC<{ currency: string }> = ({ currency }) => {
       {expenseCategories.length > 0 && (
         <Card className="p-5">
           <SectionHeader title="توزيع المصروفات حسب التصنيف (السنة الحالية)" icon={<BarChart3 size={18} className="text-primary" />} />
-          <div className="h-64" dir="ltr">
+          <div className="h-64 overflow-hidden" dir="ltr">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={expenseCategories} layout="vertical">
                 <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
@@ -277,7 +277,7 @@ const ReportsOverview: React.FC<{ currency: string }> = ({ currency }) => {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card className="p-5">
           <SectionHeader title="صافي الدخل الشهري" icon={<Banknote size={18} className="text-primary" />} />
-          <div className="h-56" dir="ltr">
+          <div className="h-56 overflow-hidden" dir="ltr">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={monthlyTrend}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
@@ -294,7 +294,7 @@ const ReportsOverview: React.FC<{ currency: string }> = ({ currency }) => {
 
         <Card className="p-5">
           <SectionHeader title="اتجاه التحصيل الشهري" icon={<TrendingUp size={18} className="text-primary" />} />
-          <div className="h-56" dir="ltr">
+          <div className="h-56 overflow-hidden" dir="ltr">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={monthlyTrend}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
@@ -790,7 +790,7 @@ const IncomeStatement: React.FC = () => {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
           <div className="bg-background rounded-xl p-4 border border-border">
             <p className="text-sm font-bold mb-3 text-text-muted">توزيع الإيرادات</p>
-            <div className="h-48" dir="ltr">
+            <div className="h-48 overflow-hidden" dir="ltr">
               <ResponsiveContainer width="100%" height="100%">
                 <RechartsPie>
                   <Pie data={data.revenues} dataKey="balance" nameKey="name" cx="50%" cy="50%" outerRadius={70} label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`} labelLine={false} fontSize={10}>
@@ -803,7 +803,7 @@ const IncomeStatement: React.FC = () => {
           </div>
           <div className="bg-background rounded-xl p-4 border border-border">
             <p className="text-sm font-bold mb-3 text-text-muted">توزيع المصروفات</p>
-            <div className="h-48" dir="ltr">
+            <div className="h-48 overflow-hidden" dir="ltr">
               <ResponsiveContainer width="100%" height="100%">
                 <RechartsPie>
                   <Pie data={data.expenses} dataKey="balance" nameKey="name" cx="50%" cy="50%" outerRadius={70} label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`} labelLine={false} fontSize={10}>
@@ -973,7 +973,7 @@ const AgedReceivables: React.FC = () => {
       {agingChartData.length > 0 && (
         <div className="bg-background rounded-xl p-4 border border-border mb-6">
           <p className="text-sm font-bold mb-3 text-text-muted">توزيع الذمم حسب العمر</p>
-          <div className="h-48" dir="ltr">
+          <div className="h-48 overflow-hidden" dir="ltr">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={agingChartData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />

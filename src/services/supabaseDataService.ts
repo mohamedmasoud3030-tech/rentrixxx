@@ -31,7 +31,7 @@ const TABLE_MAP: Record<string, string> = {
   missions: 'missions',
   budgets: 'budgets',
   attachments: 'attachments',
-  utilityRecords: 'utility_records',
+  utilityRecords: 'utility_bills',
   users: 'profiles',
 };
 
