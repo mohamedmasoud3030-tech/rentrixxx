@@ -1,4 +1,5 @@
-import { GoogleGenerativeAI } from '@google/genai';
+// Gemini AI service - dynamically imported to avoid ESM issues
+let GoogleGenerativeAI: any = null;
 
 export async function queryAssistant(apiKey: string, query: string, context: string): Promise<string> {
     if (!apiKey) {
@@ -6,8 +7,13 @@ export async function queryAssistant(apiKey: string, query: string, context: str
     }
 
     try {
-        // @ts-ignore - GoogleGenerativeAI export compatibility
-        const client = new (GoogleGenerativeAI as any)(apiKey);
+        // Lazy load the module to avoid ESM compatibility issues
+        if (!GoogleGenerativeAI) {
+            const module = await import('@google/genai');
+            GoogleGenerativeAI = module.GoogleGenerativeAI || (module as any).default;
+        }
+        
+        const client = new GoogleGenerativeAI(apiKey);
         const model = client.getGenerativeModel({ model: 'gemini-1.5-flash' });
         
         const prompt = context 
