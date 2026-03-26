@@ -107,9 +107,11 @@ const UserForm: React.FC<{ isOpen: boolean, onClose: () => void, user: User | nu
     return (
         <Modal isOpen={isOpen} onClose={onClose} title={user ? "تعديل مستخدم" : "إضافة مستخدم جديد"}>
             <form onSubmit={handleSubmit} className="space-y-4">
-                <input value={username} onChange={e => setUsername(e.target.value)} placeholder="اسم المستخدم (للعرض)" required />
+                <input id="username" name="username" value={username} onChange={e => setUsername(e.target.value)} placeholder="اسم المستخدم (للعرض)" required />
                 {!user && (
                     <input
+                        id="email"
+                        name="email"
                         type="email"
                         value={email}
                         onChange={e => setEmail(e.target.value)}
@@ -118,12 +120,14 @@ const UserForm: React.FC<{ isOpen: boolean, onClose: () => void, user: User | nu
                         dir="ltr"
                     />
                 )}
-                <select value={role} onChange={e => setRole(e.target.value as User['role'])}>
+                <select id="role" name="role" value={role} onChange={e => setRole(e.target.value as User['role'])}>
                     <option value="USER">مستخدم</option>
                     <option value="ADMIN">مدير</option>
                 </select>
                 {!user && (
                     <input
+                        id="password"
+                        name="password"
                         type="password"
                         value={password}
                         onChange={e => setPassword(e.target.value)}
