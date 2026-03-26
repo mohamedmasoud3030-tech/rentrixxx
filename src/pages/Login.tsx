@@ -1,11 +1,12 @@
-import React, { useState, useRef } from 'react';
-import { useApp } from '../contexts/AppContext';
-import { Mail, Lock, Eye, EyeOff, AlertCircle, CheckCircle2, Zap } from 'lucide-react';
+import { useState, useRef } from "react";
+import { useApp } from "../contexts/AppContext";
+import { Building2, Mail, Globe, CheckCircle2, Eye, EyeOff, Zap, Lock } from "lucide-react";
+import toast from "react-hot-toast";
 
 const Login: React.FC = () => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const isSubmittingRef = useRef(false);
@@ -17,7 +18,7 @@ const Login: React.FC = () => {
     
     isSubmittingRef.current = true;
     setIsLoading(true);
-    setError('');
+    setError("");
     const res = await auth.login(email, password);
     if (!res.ok) {
       setError(res.msg);
@@ -27,7 +28,7 @@ const Login: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-4 overflow-hidden">
+    <div className="min-h-screen bg-background flex items-center justify-center p-4 overflow-hidden" dir="rtl">
       {/* Animated background elements */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute -top-40 -right-40 w-80 h-80 bg-primary/10 rounded-full blur-3xl animate-pulse"></div>
@@ -41,16 +42,16 @@ const Login: React.FC = () => {
           <div className="p-8 md:p-12 lg:p-16 flex flex-col justify-center">
             {/* Header */}
             <div className="mb-10">
-              <div className="flex items-center gap-2 mb-4">
+              <div className="flex items-center gap-3 mb-4">
                 <div className="p-2 bg-primary/10 rounded-lg">
-                  <Zap className="w-6 h-6 text-primary" />
+                  <Building2 className="w-6 h-6 text-primary" />
                 </div>
                 <span className="text-sm font-bold text-primary">Rentrix</span>
               </div>
               <h1 className="text-4xl md:text-5xl font-black bg-gradient-to-l from-primary to-primary/70 bg-clip-text text-transparent mb-3">
                 مرحباً بعودتك
               </h1>
-              <p className="text-text-muted text-lg">سجل الدخول لإدارة عقاراتك بكفاءة</p>
+              <p className="text-muted-foreground text-lg">سجل الدخول لإدارة عقاراتك بكفاءة</p>
             </div>
 
             {/* Form */}
@@ -61,14 +62,12 @@ const Login: React.FC = () => {
                 <div className="relative">
                   <Mail className="absolute right-4 top-1/2 -translate-y-1/2 h-5 w-5 text-text-muted group-focus-within:text-primary transition-colors" />
                   <input
-                    id="email"
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="your@email.com"
-                    className="w-full pr-12 pl-4 py-3 bg-background border border-border/50 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all placeholder:text-text-muted/50"
+                    className="w-full pr-12 pl-4 py-3 bg-background border border-border/50 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all placeholder:text-text-muted/50 disabled:opacity-50"
                     required
-                    autoComplete="email"
                     dir="ltr"
                     disabled={isLoading}
                   />
@@ -81,14 +80,13 @@ const Login: React.FC = () => {
                 <div className="relative">
                   <Lock className="absolute right-4 top-1/2 -translate-y-1/2 h-5 w-5 text-text-muted group-focus-within:text-primary transition-colors" />
                   <input
-                    id="password"
-                    type={showPassword ? 'text' : 'password'}
+                    type={showPassword ? "text" : "password"}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="••••••••"
-                    className="w-full pr-12 pl-12 py-3 bg-background border border-border/50 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all placeholder:text-text-muted/50"
+                    className="w-full pr-12 pl-12 py-3 bg-background border border-border/50 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all placeholder:text-text-muted/50 disabled:opacity-50"
                     required
-                    autoComplete="current-password"
+                    dir="ltr"
                     disabled={isLoading}
                   />
                   <button
@@ -105,10 +103,7 @@ const Login: React.FC = () => {
               {/* Error Message */}
               {error && (
                 <div className="flex items-start gap-3 p-4 bg-red-500/10 border border-red-500/30 rounded-xl animate-in fade-in slide-in-from-top-2">
-                  <AlertCircle className="w-5 h-5 text-red-500 mt-0.5 flex-shrink-0" />
-                  <div>
-                    <p className="text-red-600 dark:text-red-400 font-medium text-sm">{error}</p>
-                  </div>
+                  <span className="text-red-600 dark:text-red-400 font-medium text-sm">{error}</span>
                 </div>
               )}
 
@@ -116,7 +111,7 @@ const Login: React.FC = () => {
               <button
                 type="submit"
                 disabled={isLoading || !email || !password}
-                className="w-full relative py-3 px-4 bg-gradient-to-r from-primary to-primary/80 hover:from-primary hover:to-primary text-white font-bold rounded-xl transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-lg hover:shadow-primary/30 active:scale-95 flex items-center justify-center gap-2 group"
+                className="w-full relative py-3 px-4 bg-gradient-to-r from-primary to-primary/80 hover:from-primary hover:to-primary text-white font-bold rounded-xl transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-lg hover:shadow-primary/30 active:scale-95 flex items-center justify-center gap-2 group mt-2"
               >
                 <span className={`transition-all ${isLoading ? 'opacity-0' : 'opacity-100'}`}>
                   تسجيل الدخول
@@ -132,8 +127,8 @@ const Login: React.FC = () => {
               {/* Footer */}
               <div className="pt-6 border-t border-border/30">
                 <div className="text-center space-y-2">
-                  <p className="text-xs text-text-muted/70">نظام إدارة العقارات المتقدم</p>
-                  <div className="flex items-center justify-center gap-2 text-xs text-text-muted">
+                  <p className="text-xs text-muted-foreground/70">نظام إدارة العقارات المتقدم</p>
+                  <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
                     <span>🔒 آمن تماماً</span>
                     <span className="text-border">•</span>
                     <span>📱 متاح على الويب والسطح</span>
@@ -146,7 +141,7 @@ const Login: React.FC = () => {
           {/* Right Side - Branding */}
           <div className="hidden md:flex flex-col items-center justify-center p-12 lg:p-16 relative overflow-hidden">
             {/* Background gradient */}
-            <div className="absolute inset-0 bg-gradient-to-br from-primary/90 via-primary/80 to-primary/60 dark:from-yellow-600/90 dark:via-yellow-700/80 dark:to-yellow-800/60"></div>
+            <div className="absolute inset-0 bg-gradient-to-br from-primary/90 via-primary/80 to-primary/60 dark:from-amber-600/90 dark:via-amber-700/80 dark:to-amber-800/60"></div>
             
             {/* Decorative elements */}
             <div className="absolute top-10 right-10 w-20 h-20 bg-white/10 rounded-3xl rotate-45 blur-xl"></div>
@@ -154,13 +149,13 @@ const Login: React.FC = () => {
 
             <div className="relative z-10 text-center space-y-6">
               {/* Logo area */}
-              <div className="inline-flex items-center justify-center w-20 h-20 bg-white/20 backdrop-blur-xl rounded-2xl mb-4 border border-white/30">
-                <Zap className="w-10 h-10 text-white animate-pulse" />
+              <div className="inline-flex items-center justify-center w-20 h-20 bg-white/20 backdrop-blur-xl rounded-2xl border border-white/30">
+                <Building2 className="w-10 h-10 text-white animate-pulse" />
               </div>
 
               <div>
                 <h2 className="text-5xl lg:text-6xl font-black text-white mb-2">Rentrix</h2>
-                <p className="text-lg font-bold text-white/90">{settings.general.company.name || 'Rentrix'}</p>
+                <p className="text-lg font-bold text-white/90">نظام إدارة العقارات</p>
               </div>
 
               {/* Features */}
@@ -181,13 +176,21 @@ const Login: React.FC = () => {
               {/* Description */}
               <div className="pt-6 border-t border-white/20 max-w-xs">
                 <p className="text-sm text-white/80 leading-relaxed mb-4">
-                  نظام إدارة عقارات احترافي متطور، مصمم بعناية لتسهيل إدارة العقارات والمستأجرين والعقود والمالية.
+                  النظام السحابي المتكامل لإدارة الأملاك، الفواتير، العقود، والصيانة في مكان واحد.
                 </p>
-                <div className="space-y-2">
-                  <p className="text-xs text-white/70 font-semibold">Developed by Mohamed Masoud</p>
-                  <p className="text-xs text-white/70" dir="ltr">📧 masoud.dev@outlook.com</p>
-                  <p className="text-xs text-white/70" dir="ltr">🌐 www.rentrix-system.com</p>
-                  <p className="text-xs text-white/70">Version 1.0.0 • 2026</p>
+                
+                {/* Developer Info */}
+                <div className="space-y-2 text-xs text-white/70">
+                  <p className="font-semibold text-white">Developed by Mohamed Masoud</p>
+                  <p className="flex items-center gap-1 justify-center hover:text-white transition-colors">
+                    <Mail size={12} />
+                    masoud.dev@outlook.com
+                  </p>
+                  <p className="flex items-center gap-1 justify-center hover:text-white transition-colors">
+                    <Globe size={12} />
+                    www.rentrix-system.com
+                  </p>
+                  <p>Version 1.0.0 • 2026</p>
                 </div>
               </div>
             </div>
@@ -197,7 +200,7 @@ const Login: React.FC = () => {
       </div>
 
       {/* Mobile branding info */}
-      <div className="md:hidden fixed bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-primary/20 to-transparent border-t border-border/30 text-center text-xs text-text-muted">
+      <div className="md:hidden fixed bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-primary/20 to-transparent border-t border-border/30 text-center text-xs text-muted-foreground">
         <p className="font-semibold">Rentrix - نظام إدارة العقارات المتقدم</p>
       </div>
     </div>
