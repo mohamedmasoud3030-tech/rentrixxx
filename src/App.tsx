@@ -2,28 +2,27 @@
 import React, { useEffect, Suspense } from 'react';
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { useApp } from './contexts/AppContext';
-import Layout from './components/print/Layout';
-import Login from './pages/login';
-import ChangePassword from './pages/change-password';
-import OwnerPortal from './pages/owner-portal';
-import OwnerView from './pages/owner-view';
+import Layout from './components/print/layout/Layout';
+import Login from './pages/Login';
+import ChangePassword from './pages/ChangePassword';
+import OwnerPortal from './pages/OwnerPortal';
+import OwnerView from './pages/OwnerView';
 import { Toaster } from 'react-hot-toast';
 
 // Static imports for stability and to prevent Error #130
-import Dashboard from './pages/dashboard';
-import Properties from './pages/properties';
-import People from './pages/people';
-import Contracts from './pages/contracts';
-import Finance from './pages/finance';
-import Reports from './pages/reports';
+import Dashboard from './pages/Dashboard';
+import Properties from './pages/Properties';
+import People from './pages/People';
+import Contracts from './pages/Contracts';
+import Finance from './pages/Finance';
+import Reports from './pages/Reports';
 // FIX: Changed import path to correct file
-import Settings from './pages/settings';
-import Leads from './pages/leads';
-import CommunicationHub from './pages/communication-hub';
-import LandsAndCommissions from './pages/lands-and-commissions';
-import AuditLog from './pages/audit-log';
-import SmartAssistant from './pages/smart-assistant';
-import DataIntegrityAudit from './pages/data-integrity-audit';
+import Settings from './pages/System';
+import Leads from './pages/Leads';
+import CommunicationHub from './pages/CommunicationHub';
+import LandsAndCommissions from './pages/LandsAndCommissions';
+import AuditLog from './pages/AuditLog';
+import SmartAssistant from './pages/SmartAssistant';
 
 const hexToHsl = (hex: string): string => {
     hex = hex.replace('#', '');
