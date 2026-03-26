@@ -2,7 +2,6 @@
   "name": "rentrix-pwa",
   "version": "1.0.0",
   "description": "نظام ادارة مؤسسات شامل لإدارة العقارات",
-  "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
