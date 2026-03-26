@@ -9,7 +9,7 @@ import { formatCurrency, toArabicDigits, formatDate } from '../../utils/helpers'
 import { Building, Home, ArrowRight, User, Map as MapIcon, AlertCircle, Clock, FileText, Wrench, Phone, Percent, TrendingUp, Zap, Droplets, Flame, Wifi, ChevronRight, Plus, Image, Trash2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
-import PropertyMapView from './PropertyMap';
+import PropertyMapView from './components/PropertyMap';
 import { PieChart as RechartsPie, Pie, Cell, ResponsiveContainer, Legend } from 'recharts';
 
 const Properties: React.FC = () => {

@@ -2,7 +2,7 @@
 import React, { useEffect, Suspense } from 'react';
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { useApp } from './contexts/AppContext';
-import Layout from './components/print/layout/Layout';
+import Layout from './components/print/Layout';
 import Login from './pages/login';
 import ChangePassword from './pages/change-password';
 import OwnerPortal from './pages/owner-portal';
