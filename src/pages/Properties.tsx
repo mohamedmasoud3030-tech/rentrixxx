@@ -6,7 +6,7 @@ import Modal from '../components/ui/Modal';
 import ActionsMenu, { EditAction, DeleteAction } from '../components/shared/ActionsMenu';
 import AttachmentsManager from '../components/shared/AttachmentsManager';
 import { formatCurrency, toArabicDigits, formatDate } from '../utils/helpers';
-import { Building, Home, ArrowRight, User, Map, AlertCircle, Clock, FileText, Wrench, Phone, Percent, TrendingUp, Zap, Droplets, Flame, Wifi, ChevronRight, Plus, Image, Trash2 } from 'lucide-react';
+import { Building, Home, ArrowRight, User, Map as MapIcon, AlertCircle, Clock, FileText, Wrench, Phone, Percent, TrendingUp, Zap, Droplets, Flame, Wifi, ChevronRight, Plus, Image, Trash2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 import PropertyMapView from './PropertyMap';
@@ -23,7 +23,7 @@ const Properties: React.FC = () => {
                             <Building size={16}/> العقارات والوحدات
                         </button>
                         <button onClick={() => setActiveTab('map')} className={`${activeTab === 'map' ? 'border-primary text-primary' : 'border-transparent text-text-muted'} py-4 px-1 border-b-2 font-medium text-sm flex items-center gap-2`}>
-                            <Map size={16}/> الخارطة
+                            <MapIcon size={16}/> الخارطة
                         </button>
                     </nav>
                 </div>
