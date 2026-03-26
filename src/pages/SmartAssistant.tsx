@@ -1,7 +1,9 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { useApp } from '../contexts/AppContext';
-import { Sparkles, Bot, User, X, Send } from 'lucide-react';
+import { Sparkles, Bot, User, X, Send, AlertCircle, Settings } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { queryAssistant } from '../services/geminiService';
+import Card from '../components/ui/Card';
 
 interface Message {
     sender: 'user' | 'ai' | 'error';
@@ -10,10 +12,28 @@ interface Message {
 
 const SmartAssistant: React.FC = () => {
     const { settings } = useApp();
+    const navigate = useNavigate();
     const [isOpen, setIsOpen] = useState(false);
 
     if (!settings.integrations.geminiApiKey) {
-        return null;
+        return (
+            <div className="space-y-6">
+                <Card className="p-8 text-center">
+                    <div className="flex justify-center mb-4">
+                        <AlertCircle size={48} className="text-yellow-500" />
+                    </div>
+                    <h2 className="text-2xl font-bold mb-3">المساعد الذكي غير مفعل</h2>
+                    <p className="text-text-muted mb-6">لاستخدام المساعد الذكي المدعوم بـ Google Gemini، يجب تفعيل مفتاح API أولاً.</p>
+                    <button
+                        onClick={() => navigate('/settings')}
+                        className="flex items-center justify-center gap-2 mx-auto px-6 py-3 bg-primary text-white rounded-lg font-bold hover:bg-opacity-90"
+                    >
+                        <Settings size={18} />
+                        انتقل إلى الإعدادات
+                    </button>
+                </Card>
+            </div>
+        );
     }
 
     return (
