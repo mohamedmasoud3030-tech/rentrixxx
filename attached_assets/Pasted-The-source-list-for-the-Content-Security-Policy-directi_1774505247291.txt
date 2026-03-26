@@ -1,0 +1,649 @@
+The source list for the Content Security Policy directive 'default-src' contains an invalid source: ''unsafe-dynamic''. It will be ignored.
+The source list for the Content Security Policy directive 'default-src' contains an invalid source: ''unsafe-dynamic''. It will be ignored.
+The source list for the Content Security Policy directive 'default-src' contains an invalid source: ''unsafe-dynamic''. It will be ignored.
+The source list for the Content Security Policy directive 'default-src' contains an invalid source: ''unsafe-dynamic''. It will be ignored.
+The source list for the Content Security Policy directive 'default-src' contains an invalid source: ''unsafe-dynamic''. It will be ignored.
+The source list for the Content Security Policy directive 'default-src' contains an invalid source: ''unsafe-dynamic''. It will be ignored.
+The source list for the Content Security Policy directive 'default-src' contains an invalid source: ''unsafe-dynamic''. It will be ignored.
+The source list for the Content Security Policy directive 'default-src' contains an invalid source: ''unsafe-dynamic''. It will be ignored.
+The source list for the Content Security Policy directive 'default-src' contains an invalid source: ''unsafe-dynamic''. It will be ignored.
+The source list for the Content Security Policy directive 'default-src' contains an invalid source: ''unsafe-dynamic''. It will be ignored.
+The source list for the Content Security Policy directive 'default-src' contains an invalid source: ''unsafe-dynamic''. It will be ignored.
+The source list for the Content Security Policy directive 'default-src' contains an invalid source: ''unsafe-dynamic''. It will be ignored.
+The source list for the Content Security Policy directive 'default-src' contains an invalid source: ''unsafe-dynamic''. It will be ignored.
+The source list for the Content Security Policy directive 'default-src' contains an invalid source: ''unsafe-dynamic''. It will be ignored.
+The source list for the Content Security Policy directive 'default-src' contains an invalid source: ''unsafe-dynamic''. It will be ignored.
+The source list for the Content Security Policy directive 'default-src' contains an invalid source: ''unsafe-dynamic''. It will be ignored.
+The Content-Security-Policy directive 'default-src' contains 'report-uri' as a source expression. Did you want to add it as a directive and forget a semicolon?
+The Content-Security-Policy directive 'default-src' contains 'report-uri' as a source expression. Did you want to add it as a directive and forget a semicolon?
+The Content-Security-Policy directive 'default-src' contains 'report-uri' as a source expression. Did you want to add it as a directive and forget a semicolon?
+The Content-Security-Policy directive 'default-src' contains 'report-uri' as a source expression. Did you want to add it as a directive and forget a semicolon?
+The Content-Security-Policy directive 'default-src' contains 'report-uri' as a source expression. Did you want to add it as a directive and forget a semicolon?
+The Content-Security-Policy directive 'default-src' contains 'report-uri' as a source expression. Did you want to add it as a directive and forget a semicolon?
+The Content-Security-Policy directive 'default-src' contains 'report-uri' as a source expression. Did you want to add it as a directive and forget a semicolon?
+The Content-Security-Policy directive 'default-src' contains 'report-uri' as a source expression. Did you want to add it as a directive and forget a semicolon?
+The Content-Security-Policy directive 'default-src' contains 'report-uri' as a source expression. Did you want to add it as a directive and forget a semicolon?
+The Content-Security-Policy directive 'default-src' contains 'report-uri' as a source expression. Did you want to add it as a directive and forget a semicolon?
+The Content-Security-Policy directive 'default-src' contains 'report-uri' as a source expression. Did you want to add it as a directive and forget a semicolon?
+The Content-Security-Policy directive 'default-src' contains 'report-uri' as a source expression. Did you want to add it as a directive and forget a semicolon?
+The Content-Security-Policy directive 'default-src' contains 'report-uri' as a source expression. Did you want to add it as a directive and forget a semicolon?
+The Content-Security-Policy directive 'default-src' contains 'report-uri' as a source expression. Did you want to add it as a directive and forget a semicolon?
+The Content-Security-Policy directive 'default-src' contains 'report-uri' as a source expression. Did you want to add it as a directive and forget a semicolon?
+The Content-Security-Policy directive 'default-src' contains 'report-uri' as a source expression. Did you want to add it as a directive and forget a semicolon?
+The source list for Content Security Policy directive 'default-src' contains a source with an invalid path: '/api/4509669501698048/security/?sentry_key=7eb3d90eb4660416caf507087367e67e'. The query component, including the '?', will be ignored.
+The source list for Content Security Policy directive 'default-src' contains a source with an invalid path: '/api/4509669501698048/security/?sentry_key=7eb3d90eb4660416caf507087367e67e'. The query component, including the '?', will be ignored.
+The source list for Content Security Policy directive 'default-src' contains a source with an invalid path: '/api/4509669501698048/security/?sentry_key=7eb3d90eb4660416caf507087367e67e'. The query component, including the '?', will be ignored.
+The source list for Content Security Policy directive 'default-src' contains a source with an invalid path: '/api/4509669501698048/security/?sentry_key=7eb3d90eb4660416caf507087367e67e'. The query component, including the '?', will be ignored.
+The source list for Content Security Policy directive 'default-src' contains a source with an invalid path: '/api/4509669501698048/security/?sentry_key=7eb3d90eb4660416caf507087367e67e'. The query component, including the '?', will be ignored.
+The source list for Content Security Policy directive 'default-src' contains a source with an invalid path: '/api/4509669501698048/security/?sentry_key=7eb3d90eb4660416caf507087367e67e'. The query component, including the '?', will be ignored.
+The source list for Content Security Policy directive 'default-src' contains a source with an invalid path: '/api/4509669501698048/security/?sentry_key=7eb3d90eb4660416caf507087367e67e'. The query component, including the '?', will be ignored.
+The source list for Content Security Policy directive 'default-src' contains a source with an invalid path: '/api/4509669501698048/security/?sentry_key=7eb3d90eb4660416caf507087367e67e'. The query component, including the '?', will be ignored.
+The source list for Content Security Policy directive 'default-src' contains a source with an invalid path: '/api/4509669501698048/security/?sentry_key=7eb3d90eb4660416caf507087367e67e'. The query component, including the '?', will be ignored.
+The source list for Content Security Policy directive 'default-src' contains a source with an invalid path: '/api/4509669501698048/security/?sentry_key=7eb3d90eb4660416caf507087367e67e'. The query component, including the '?', will be ignored.
+The source list for Content Security Policy directive 'default-src' contains a source with an invalid path: '/api/4509669501698048/security/?sentry_key=7eb3d90eb4660416caf507087367e67e'. The query component, including the '?', will be ignored.
+The source list for Content Security Policy directive 'default-src' contains a source with an invalid path: '/api/4509669501698048/security/?sentry_key=7eb3d90eb4660416caf507087367e67e'. The query component, including the '?', will be ignored.
+The source list for Content Security Policy directive 'default-src' contains a source with an invalid path: '/api/4509669501698048/security/?sentry_key=7eb3d90eb4660416caf507087367e67e'. The query component, including the '?', will be ignored.
+The source list for Content Security Policy directive 'default-src' contains a source with an invalid path: '/api/4509669501698048/security/?sentry_key=7eb3d90eb4660416caf507087367e67e'. The query component, including the '?', will be ignored.
+The source list for Content Security Policy directive 'default-src' contains a source with an invalid path: '/api/4509669501698048/security/?sentry_key=7eb3d90eb4660416caf507087367e67e'. The query component, including the '?', will be ignored.
+The source list for Content Security Policy directive 'default-src' contains a source with an invalid path: '/api/4509669501698048/security/?sentry_key=7eb3d90eb4660416caf507087367e67e'. The query component, including the '?', will be ignored.
+The source list for the Content Security Policy directive 'default-src' contains an invalid source: ''unsafe-dynamic''. It will be ignored.
+The Content-Security-Policy directive 'default-src' contains 'report-uri' as a source expression. Did you want to add it as a directive and forget a semicolon?
+The source list for Content Security Policy directive 'default-src' contains a source with an invalid path: '/api/4509669501698048/security/?sentry_key=7eb3d90eb4660416caf507087367e67e'. The query component, including the '?', will be ignored.
+rentrix-xx:1 The source list for the Content Security Policy directive 'default-src' contains an invalid source: ''unsafe-dynamic''. It will be ignored.
+rentrix-xx:1 The Content-Security-Policy directive 'default-src' contains 'report-uri' as a source expression. Did you want to add it as a directive and forget a semicolon?
+rentrix-xx:1 The source list for Content Security Policy directive 'default-src' contains a source with an invalid path: '/api/4509669501698048/security/?sentry_key=7eb3d90eb4660416caf507087367e67e'. The query component, including the '?', will be ignored.
+1b247a0be936d4ce.js:21 
+      /////////////////////
+   ///////////////////////////
+  ////////@@@@@@@//////////////
+  ////////@@@@@@@//////////////
+  ////////@@@@@@@//////////////        Curious and driven?
+  ///////////////@@@@@@@///////        Work with us!
+  ///////////////@@@@@@@///////
+  ///////////////@@@@@@@///////        https://join.replit.com/hack.with.us
+  ////////@@@@@@@//////////////
+  ////////@@@@@@@//////////////
+  ////////@@@@@@#//////////////
+   ///////////////////////////
+      /////////////////////
+      
+1b247a0be936d4ce.js:21 Download the Apollo DevTools for a better development experience: https://chrome.google.com/webstore/detail/apollo-client-developer-t/jdkknkkbebbapilgoeccciglkfbmbnfm
+1b247a0be936d4ce.js:21 [LaunchDarkly] LaunchDarkly client initialized
+rentrix-xx:1 Banner not shown: beforeinstallpromptevent.preventDefault() called. The page must call beforeinstallpromptevent.prompt() to show the banner.
+Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+9954129c7dd6dc22.js:2 Unrecognized feature: 'ambient-light-sensor'.
+C @ 9954129c7dd6dc22.js:2
+(anonymous) @ 9954129c7dd6dc22.js:2
+oO @ 9954129c7dd6dc22.js:2
+oD @ 9954129c7dd6dc22.js:2
+oR @ 9954129c7dd6dc22.js:2
+oS @ 9954129c7dd6dc22.js:2
+E @ 9954129c7dd6dc22.js:2
+L @ 9954129c7dd6dc22.js:2
+9954129c7dd6dc22.js:2 Unrecognized feature: 'battery'.
+C @ 9954129c7dd6dc22.js:2
+(anonymous) @ 9954129c7dd6dc22.js:2
+oO @ 9954129c7dd6dc22.js:2
+oD @ 9954129c7dd6dc22.js:2
+oR @ 9954129c7dd6dc22.js:2
+oS @ 9954129c7dd6dc22.js:2
+E @ 9954129c7dd6dc22.js:2
+L @ 9954129c7dd6dc22.js:2
+9954129c7dd6dc22.js:2 Unrecognized feature: 'execution-while-not-rendered'.
+C @ 9954129c7dd6dc22.js:2
+(anonymous) @ 9954129c7dd6dc22.js:2
+oO @ 9954129c7dd6dc22.js:2
+oD @ 9954129c7dd6dc22.js:2
+oR @ 9954129c7dd6dc22.js:2
+oS @ 9954129c7dd6dc22.js:2
+E @ 9954129c7dd6dc22.js:2
+L @ 9954129c7dd6dc22.js:2
+9954129c7dd6dc22.js:2 Unrecognized feature: 'execution-while-out-of-viewport'.
+C @ 9954129c7dd6dc22.js:2
+(anonymous) @ 9954129c7dd6dc22.js:2
+oO @ 9954129c7dd6dc22.js:2
+oD @ 9954129c7dd6dc22.js:2
+oR @ 9954129c7dd6dc22.js:2
+oS @ 9954129c7dd6dc22.js:2
+E @ 9954129c7dd6dc22.js:2
+L @ 9954129c7dd6dc22.js:2
+9954129c7dd6dc22.js:2 Unrecognized feature: 'layout-animations'.
+C @ 9954129c7dd6dc22.js:2
+(anonymous) @ 9954129c7dd6dc22.js:2
+oO @ 9954129c7dd6dc22.js:2
+oD @ 9954129c7dd6dc22.js:2
+oR @ 9954129c7dd6dc22.js:2
+oS @ 9954129c7dd6dc22.js:2
+E @ 9954129c7dd6dc22.js:2
+L @ 9954129c7dd6dc22.js:2
+9954129c7dd6dc22.js:2 Unrecognized feature: 'legacy-image-formats'.
+C @ 9954129c7dd6dc22.js:2
+(anonymous) @ 9954129c7dd6dc22.js:2
+oO @ 9954129c7dd6dc22.js:2
+oD @ 9954129c7dd6dc22.js:2
+oR @ 9954129c7dd6dc22.js:2
+oS @ 9954129c7dd6dc22.js:2
+E @ 9954129c7dd6dc22.js:2
+L @ 9954129c7dd6dc22.js:2
+9954129c7dd6dc22.js:2 Unrecognized feature: 'navigation-override'.
+C @ 9954129c7dd6dc22.js:2
+(anonymous) @ 9954129c7dd6dc22.js:2
+oO @ 9954129c7dd6dc22.js:2
+oD @ 9954129c7dd6dc22.js:2
+oR @ 9954129c7dd6dc22.js:2
+oS @ 9954129c7dd6dc22.js:2
+E @ 9954129c7dd6dc22.js:2
+L @ 9954129c7dd6dc22.js:2
+9954129c7dd6dc22.js:2 Unrecognized feature: 'oversized-images'.
+C @ 9954129c7dd6dc22.js:2
+(anonymous) @ 9954129c7dd6dc22.js:2
+oO @ 9954129c7dd6dc22.js:2
+oD @ 9954129c7dd6dc22.js:2
+oR @ 9954129c7dd6dc22.js:2
+oS @ 9954129c7dd6dc22.js:2
+E @ 9954129c7dd6dc22.js:2
+L @ 9954129c7dd6dc22.js:2
+9954129c7dd6dc22.js:2 Unrecognized feature: 'publickey-credentials'.
+C @ 9954129c7dd6dc22.js:2
+(anonymous) @ 9954129c7dd6dc22.js:2
+oO @ 9954129c7dd6dc22.js:2
+oD @ 9954129c7dd6dc22.js:2
+oR @ 9954129c7dd6dc22.js:2
+oS @ 9954129c7dd6dc22.js:2
+E @ 9954129c7dd6dc22.js:2
+L @ 9954129c7dd6dc22.js:2
+9954129c7dd6dc22.js:2 Unrecognized feature: 'speaker-selection'.
+C @ 9954129c7dd6dc22.js:2
+(anonymous) @ 9954129c7dd6dc22.js:2
+oO @ 9954129c7dd6dc22.js:2
+oD @ 9954129c7dd6dc22.js:2
+oR @ 9954129c7dd6dc22.js:2
+oS @ 9954129c7dd6dc22.js:2
+E @ 9954129c7dd6dc22.js:2
+L @ 9954129c7dd6dc22.js:2
+9954129c7dd6dc22.js:2 Unrecognized feature: 'unoptimized-images'.
+C @ 9954129c7dd6dc22.js:2
+(anonymous) @ 9954129c7dd6dc22.js:2
+oO @ 9954129c7dd6dc22.js:2
+oD @ 9954129c7dd6dc22.js:2
+oR @ 9954129c7dd6dc22.js:2
+oS @ 9954129c7dd6dc22.js:2
+E @ 9954129c7dd6dc22.js:2
+L @ 9954129c7dd6dc22.js:2
+9954129c7dd6dc22.js:2 Unrecognized feature: 'unsized-media'.
+C @ 9954129c7dd6dc22.js:2
+(anonymous) @ 9954129c7dd6dc22.js:2
+oO @ 9954129c7dd6dc22.js:2
+oD @ 9954129c7dd6dc22.js:2
+oR @ 9954129c7dd6dc22.js:2
+oS @ 9954129c7dd6dc22.js:2
+E @ 9954129c7dd6dc22.js:2
+L @ 9954129c7dd6dc22.js:2
+9954129c7dd6dc22.js:2 Unrecognized feature: 'pointer-lock'.
+C @ 9954129c7dd6dc22.js:2
+(anonymous) @ 9954129c7dd6dc22.js:2
+oO @ 9954129c7dd6dc22.js:2
+oD @ 9954129c7dd6dc22.js:2
+oR @ 9954129c7dd6dc22.js:2
+oS @ 9954129c7dd6dc22.js:2
+E @ 9954129c7dd6dc22.js:2
+L @ 9954129c7dd6dc22.js:2
+9954129c7dd6dc22.js:2 Allow attribute will take precedence over 'allowfullscreen'.
+C @ 9954129c7dd6dc22.js:2
+(anonymous) @ 9954129c7dd6dc22.js:2
+oO @ 9954129c7dd6dc22.js:2
+oD @ 9954129c7dd6dc22.js:2
+oR @ 9954129c7dd6dc22.js:2
+oS @ 9954129c7dd6dc22.js:2
+E @ 9954129c7dd6dc22.js:2
+L @ 9954129c7dd6dc22.js:2
+9954129c7dd6dc22.js:2 Allow attribute will take precedence over 'allowpaymentrequest'.
+C @ 9954129c7dd6dc22.js:2
+(anonymous) @ 9954129c7dd6dc22.js:2
+oO @ 9954129c7dd6dc22.js:2
+oD @ 9954129c7dd6dc22.js:2
+oR @ 9954129c7dd6dc22.js:2
+oS @ 9954129c7dd6dc22.js:2
+E @ 9954129c7dd6dc22.js:2
+L @ 9954129c7dd6dc22.js:2
+injected.js:37 [replit-cartographer] Skipped loading tailwind config due to an incompatible Node plugin: ReferenceError: module is not defined
+    at tailwind.config.js:2:1
+(anonymous) @ injected.js:37
+(anonymous) @ main.tsx:5
+await in (anonymous)
+(anonymous) @ main.tsx:5
+injected.js:37 [replit-cartographer] Skipped loading tailwind config due to an incompatible Node plugin: ReferenceError: module is not defined
+    at tailwind.config.js:2:1
+(anonymous) @ injected.js:37
+(anonymous) @ main.tsx:5
+await in (anonymous)
+(anonymous) @ main.tsx:5
+injected.js:37 [replit-cartographer] Skipped loading tailwind config due to an incompatible Node plugin: ReferenceError: module is not defined
+    at tailwind.config.js:2:1
+(anonymous) @ injected.js:37
+(anonymous) @ main.tsx:5
+await in (anonymous)
+(anonymous) @ main.tsx:5
+injected.js:37 [replit-cartographer] Skipped loading tailwind config due to an incompatible Node plugin: ReferenceError: module is not defined
+    at tailwind.config.js:2:1
+(anonymous) @ injected.js:37
+(anonymous) @ main.tsx:5
+await in (anonymous)
+(anonymous) @ main.tsx:5
+injected.js:37 [replit-cartographer] Skipped loading tailwind config due to an incompatible Node plugin: ReferenceError: module is not defined
+    at tailwind.config.js:2:1
+(anonymous) @ injected.js:37
+(anonymous) @ main.tsx:5
+await in (anonymous)
+(anonymous) @ main.tsx:5
+injected.js:37 [replit-cartographer] Skipped loading tailwind config due to an incompatible Node plugin: ReferenceError: module is not defined
+    at tailwind.config.js:2:1
+(anonymous) @ injected.js:37
+(anonymous) @ main.tsx:5
+await in (anonymous)
+(anonymous) @ main.tsx:5
+workspace_iframe.html?initialPath=%2F&id=default-dev-server:32 Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+workspace_iframe.html?initialPath=%2F&id=default-dev-server:32 Unrecognized feature: 'ambient-light-sensor'.
+workspace_iframe.html?initialPath=%2F&id=default-dev-server:32 Unrecognized feature: 'battery'.
+workspace_iframe.html?initialPath=%2F&id=default-dev-server:32 Unrecognized feature: 'execution-while-not-rendered'.
+workspace_iframe.html?initialPath=%2F&id=default-dev-server:32 Unrecognized feature: 'execution-while-out-of-viewport'.
+workspace_iframe.html?initialPath=%2F&id=default-dev-server:32 Unrecognized feature: 'layout-animations'.
+workspace_iframe.html?initialPath=%2F&id=default-dev-server:32 Unrecognized feature: 'legacy-image-formats'.
+workspace_iframe.html?initialPath=%2F&id=default-dev-server:32 Unrecognized feature: 'navigation-override'.
+workspace_iframe.html?initialPath=%2F&id=default-dev-server:32 Unrecognized feature: 'oversized-images'.
+workspace_iframe.html?initialPath=%2F&id=default-dev-server:32 Unrecognized feature: 'publickey-credentials'.
+workspace_iframe.html?initialPath=%2F&id=default-dev-server:32 Unrecognized feature: 'speaker-selection'.
+workspace_iframe.html?initialPath=%2F&id=default-dev-server:32 Unrecognized feature: 'unoptimized-images'.
+workspace_iframe.html?initialPath=%2F&id=default-dev-server:32 Unrecognized feature: 'unsized-media'.
+workspace_iframe.html?initialPath=%2F&id=default-dev-server:32 Allow attribute will take precedence over 'allowfullscreen'.
+workspace_iframe.html?initialPath=%2F&id=default-dev-server:32 Allow attribute will take precedence over 'allowpaymentrequest'.
+workspace_iframe.html?initialPath=%2F&id=default-dev-server:32 Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+injected.js:37 The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+(anonymous) @ injected.js:37
+warn2 @ recharts.js?v=5d71aec3:9086
+(anonymous) @ recharts.js?v=5d71aec3:9340
+react_stack_bottom_frame @ react-dom_client.js?v=5d71aec3:18509
+renderWithHooks @ react-dom_client.js?v=5d71aec3:5654
+updateForwardRef @ react-dom_client.js?v=5d71aec3:7198
+beginWork @ react-dom_client.js?v=5d71aec3:8735
+runWithFiberInDEV @ react-dom_client.js?v=5d71aec3:997
+performUnitOfWork @ react-dom_client.js?v=5d71aec3:12561
+workLoopConcurrentByScheduler @ react-dom_client.js?v=5d71aec3:12557
+renderRootConcurrent @ react-dom_client.js?v=5d71aec3:12539
+performWorkOnRoot @ react-dom_client.js?v=5d71aec3:11766
+performWorkOnRootViaSchedulerTask @ react-dom_client.js?v=5d71aec3:13505
+performWorkUntilDeadline @ react-dom_client.js?v=5d71aec3:36
+<ForwardRef>
+exports.createElement @ chunk-6KCF6AHO.js?v=5d71aec3:793
+(anonymous) @ recharts.js?v=5d71aec3:9390
+react_stack_bottom_frame @ react-dom_client.js?v=5d71aec3:18509
+renderWithHooksAgain @ react-dom_client.js?v=5d71aec3:5729
+renderWithHooks @ react-dom_client.js?v=5d71aec3:5665
+updateForwardRef @ react-dom_client.js?v=5d71aec3:7198
+beginWork @ react-dom_client.js?v=5d71aec3:8735
+runWithFiberInDEV @ react-dom_client.js?v=5d71aec3:997
+performUnitOfWork @ react-dom_client.js?v=5d71aec3:12561
+workLoopConcurrentByScheduler @ react-dom_client.js?v=5d71aec3:12557
+renderRootConcurrent @ react-dom_client.js?v=5d71aec3:12539
+performWorkOnRoot @ react-dom_client.js?v=5d71aec3:11766
+performWorkOnRootViaSchedulerTask @ react-dom_client.js?v=5d71aec3:13505
+performWorkUntilDeadline @ react-dom_client.js?v=5d71aec3:36
+<ForwardRef>
+exports.jsxDEV @ react_jsx-dev-runtime.js?v=5d71aec3:247
+DashboardRevenueChart @ Dashboard.tsx:439
+react_stack_bottom_frame @ react-dom_client.js?v=5d71aec3:18509
+renderWithHooksAgain @ react-dom_client.js?v=5d71aec3:5729
+renderWithHooks @ react-dom_client.js?v=5d71aec3:5665
+updateFunctionComponent @ react-dom_client.js?v=5d71aec3:7475
+beginWork @ react-dom_client.js?v=5d71aec3:8525
+runWithFiberInDEV @ react-dom_client.js?v=5d71aec3:997
+performUnitOfWork @ react-dom_client.js?v=5d71aec3:12561
+workLoopConcurrentByScheduler @ react-dom_client.js?v=5d71aec3:12557
+renderRootConcurrent @ react-dom_client.js?v=5d71aec3:12539
+performWorkOnRoot @ react-dom_client.js?v=5d71aec3:11766
+performWorkOnRootViaSchedulerTask @ react-dom_client.js?v=5d71aec3:13505
+performWorkUntilDeadline @ react-dom_client.js?v=5d71aec3:36
+<DashboardRevenueChart>
+exports.jsxDEV @ react_jsx-dev-runtime.js?v=5d71aec3:247
+Dashboard @ Dashboard.tsx:263
+react_stack_bottom_frame @ react-dom_client.js?v=5d71aec3:18509
+renderWithHooksAgain @ react-dom_client.js?v=5d71aec3:5729
+renderWithHooks @ react-dom_client.js?v=5d71aec3:5665
+updateFunctionComponent @ react-dom_client.js?v=5d71aec3:7475
+beginWork @ react-dom_client.js?v=5d71aec3:8525
+runWithFiberInDEV @ react-dom_client.js?v=5d71aec3:997
+performUnitOfWork @ react-dom_client.js?v=5d71aec3:12561
+workLoopConcurrentByScheduler @ react-dom_client.js?v=5d71aec3:12557
+renderRootConcurrent @ react-dom_client.js?v=5d71aec3:12539
+performWorkOnRoot @ react-dom_client.js?v=5d71aec3:11766
+performWorkOnRootViaSchedulerTask @ react-dom_client.js?v=5d71aec3:13505
+performWorkUntilDeadline @ react-dom_client.js?v=5d71aec3:36
+<Dashboard>
+exports.jsxDEV @ react_jsx-dev-runtime.js?v=5d71aec3:247
+App @ App.tsx:131
+react_stack_bottom_frame @ react-dom_client.js?v=5d71aec3:18509
+renderWithHooksAgain @ react-dom_client.js?v=5d71aec3:5729
+renderWithHooks @ react-dom_client.js?v=5d71aec3:5665
+updateFunctionComponent @ react-dom_client.js?v=5d71aec3:7475
+beginWork @ react-dom_client.js?v=5d71aec3:8525
+runWithFiberInDEV @ react-dom_client.js?v=5d71aec3:997
+performUnitOfWork @ react-dom_client.js?v=5d71aec3:12561
+workLoopConcurrentByScheduler @ react-dom_client.js?v=5d71aec3:12557
+renderRootConcurrent @ react-dom_client.js?v=5d71aec3:12539
+performWorkOnRoot @ react-dom_client.js?v=5d71aec3:11766
+performWorkOnRootViaSchedulerTask @ react-dom_client.js?v=5d71aec3:13505
+performWorkUntilDeadline @ react-dom_client.js?v=5d71aec3:36
+<App>
+exports.jsxDEV @ react_jsx-dev-runtime.js?v=5d71aec3:247
+(anonymous) @ index.tsx:18
+injected.js:37 The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+(anonymous) @ injected.js:37
+warn2 @ recharts.js?v=5d71aec3:9086
+(anonymous) @ recharts.js?v=5d71aec3:9340
+react_stack_bottom_frame @ react-dom_client.js?v=5d71aec3:18509
+renderWithHooksAgain @ react-dom_client.js?v=5d71aec3:5729
+renderWithHooks @ react-dom_client.js?v=5d71aec3:5665
+updateForwardRef @ react-dom_client.js?v=5d71aec3:7198
+beginWork @ react-dom_client.js?v=5d71aec3:8735
+runWithFiberInDEV @ react-dom_client.js?v=5d71aec3:997
+performUnitOfWork @ react-dom_client.js?v=5d71aec3:12561
+workLoopConcurrentByScheduler @ react-dom_client.js?v=5d71aec3:12557
+renderRootConcurrent @ react-dom_client.js?v=5d71aec3:12539
+performWorkOnRoot @ react-dom_client.js?v=5d71aec3:11766
+performWorkOnRootViaSchedulerTask @ react-dom_client.js?v=5d71aec3:13505
+performWorkUntilDeadline @ react-dom_client.js?v=5d71aec3:36
+<ForwardRef>
+exports.createElement @ chunk-6KCF6AHO.js?v=5d71aec3:793
+(anonymous) @ recharts.js?v=5d71aec3:9390
+react_stack_bottom_frame @ react-dom_client.js?v=5d71aec3:18509
+renderWithHooksAgain @ react-dom_client.js?v=5d71aec3:5729
+renderWithHooks @ react-dom_client.js?v=5d71aec3:5665
+updateForwardRef @ react-dom_client.js?v=5d71aec3:7198
+beginWork @ react-dom_client.js?v=5d71aec3:8735
+runWithFiberInDEV @ react-dom_client.js?v=5d71aec3:997
+performUnitOfWork @ react-dom_client.js?v=5d71aec3:12561
+workLoopConcurrentByScheduler @ react-dom_client.js?v=5d71aec3:12557
+renderRootConcurrent @ react-dom_client.js?v=5d71aec3:12539
+performWorkOnRoot @ react-dom_client.js?v=5d71aec3:11766
+performWorkOnRootViaSchedulerTask @ react-dom_client.js?v=5d71aec3:13505
+performWorkUntilDeadline @ react-dom_client.js?v=5d71aec3:36
+<ForwardRef>
+exports.jsxDEV @ react_jsx-dev-runtime.js?v=5d71aec3:247
+DashboardRevenueChart @ Dashboard.tsx:439
+react_stack_bottom_frame @ react-dom_client.js?v=5d71aec3:18509
+renderWithHooksAgain @ react-dom_client.js?v=5d71aec3:5729
+renderWithHooks @ react-dom_client.js?v=5d71aec3:5665
+updateFunctionComponent @ react-dom_client.js?v=5d71aec3:7475
+beginWork @ react-dom_client.js?v=5d71aec3:8525
+runWithFiberInDEV @ react-dom_client.js?v=5d71aec3:997
+performUnitOfWork @ react-dom_client.js?v=5d71aec3:12561
+workLoopConcurrentByScheduler @ react-dom_client.js?v=5d71aec3:12557
+renderRootConcurrent @ react-dom_client.js?v=5d71aec3:12539
+performWorkOnRoot @ react-dom_client.js?v=5d71aec3:11766
+performWorkOnRootViaSchedulerTask @ react-dom_client.js?v=5d71aec3:13505
+performWorkUntilDeadline @ react-dom_client.js?v=5d71aec3:36
+<DashboardRevenueChart>
+exports.jsxDEV @ react_jsx-dev-runtime.js?v=5d71aec3:247
+Dashboard @ Dashboard.tsx:263
+react_stack_bottom_frame @ react-dom_client.js?v=5d71aec3:18509
+renderWithHooksAgain @ react-dom_client.js?v=5d71aec3:5729
+renderWithHooks @ react-dom_client.js?v=5d71aec3:5665
+updateFunctionComponent @ react-dom_client.js?v=5d71aec3:7475
+beginWork @ react-dom_client.js?v=5d71aec3:8525
+runWithFiberInDEV @ react-dom_client.js?v=5d71aec3:997
+performUnitOfWork @ react-dom_client.js?v=5d71aec3:12561
+workLoopConcurrentByScheduler @ react-dom_client.js?v=5d71aec3:12557
+renderRootConcurrent @ react-dom_client.js?v=5d71aec3:12539
+performWorkOnRoot @ react-dom_client.js?v=5d71aec3:11766
+performWorkOnRootViaSchedulerTask @ react-dom_client.js?v=5d71aec3:13505
+performWorkUntilDeadline @ react-dom_client.js?v=5d71aec3:36
+<Dashboard>
+exports.jsxDEV @ react_jsx-dev-runtime.js?v=5d71aec3:247
+App @ App.tsx:131
+react_stack_bottom_frame @ react-dom_client.js?v=5d71aec3:18509
+renderWithHooksAgain @ react-dom_client.js?v=5d71aec3:5729
+renderWithHooks @ react-dom_client.js?v=5d71aec3:5665
+updateFunctionComponent @ react-dom_client.js?v=5d71aec3:7475
+beginWork @ react-dom_client.js?v=5d71aec3:8525
+runWithFiberInDEV @ react-dom_client.js?v=5d71aec3:997
+performUnitOfWork @ react-dom_client.js?v=5d71aec3:12561
+workLoopConcurrentByScheduler @ react-dom_client.js?v=5d71aec3:12557
+renderRootConcurrent @ react-dom_client.js?v=5d71aec3:12539
+performWorkOnRoot @ react-dom_client.js?v=5d71aec3:11766
+performWorkOnRootViaSchedulerTask @ react-dom_client.js?v=5d71aec3:13505
+performWorkUntilDeadline @ react-dom_client.js?v=5d71aec3:36
+<App>
+exports.jsxDEV @ react_jsx-dev-runtime.js?v=5d71aec3:247
+(anonymous) @ index.tsx:18
+injected.js:37 The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+(anonymous) @ injected.js:37
+warn2 @ recharts.js?v=5d71aec3:9086
+(anonymous) @ recharts.js?v=5d71aec3:9340
+react_stack_bottom_frame @ react-dom_client.js?v=5d71aec3:18509
+renderWithHooks @ react-dom_client.js?v=5d71aec3:5654
+updateForwardRef @ react-dom_client.js?v=5d71aec3:7198
+beginWork @ react-dom_client.js?v=5d71aec3:8735
+runWithFiberInDEV @ react-dom_client.js?v=5d71aec3:997
+performUnitOfWork @ react-dom_client.js?v=5d71aec3:12561
+workLoopConcurrentByScheduler @ react-dom_client.js?v=5d71aec3:12557
+renderRootConcurrent @ react-dom_client.js?v=5d71aec3:12539
+performWorkOnRoot @ react-dom_client.js?v=5d71aec3:11766
+performWorkOnRootViaSchedulerTask @ react-dom_client.js?v=5d71aec3:13505
+performWorkUntilDeadline @ react-dom_client.js?v=5d71aec3:36
+<ForwardRef>
+exports.createElement @ chunk-6KCF6AHO.js?v=5d71aec3:793
+(anonymous) @ recharts.js?v=5d71aec3:9390
+react_stack_bottom_frame @ react-dom_client.js?v=5d71aec3:18509
+renderWithHooksAgain @ react-dom_client.js?v=5d71aec3:5729
+renderWithHooks @ react-dom_client.js?v=5d71aec3:5665
+updateForwardRef @ react-dom_client.js?v=5d71aec3:7198
+beginWork @ react-dom_client.js?v=5d71aec3:8735
+runWithFiberInDEV @ react-dom_client.js?v=5d71aec3:997
+performUnitOfWork @ react-dom_client.js?v=5d71aec3:12561
+workLoopConcurrentByScheduler @ react-dom_client.js?v=5d71aec3:12557
+renderRootConcurrent @ react-dom_client.js?v=5d71aec3:12539
+performWorkOnRoot @ react-dom_client.js?v=5d71aec3:11766
+performWorkOnRootViaSchedulerTask @ react-dom_client.js?v=5d71aec3:13505
+performWorkUntilDeadline @ react-dom_client.js?v=5d71aec3:36
+<ForwardRef>
+exports.jsxDEV @ react_jsx-dev-runtime.js?v=5d71aec3:247
+DashboardRevenueChart @ Dashboard.tsx:439
+react_stack_bottom_frame @ react-dom_client.js?v=5d71aec3:18509
+renderWithHooksAgain @ react-dom_client.js?v=5d71aec3:5729
+renderWithHooks @ react-dom_client.js?v=5d71aec3:5665
+updateFunctionComponent @ react-dom_client.js?v=5d71aec3:7475
+beginWork @ react-dom_client.js?v=5d71aec3:8525
+runWithFiberInDEV @ react-dom_client.js?v=5d71aec3:997
+performUnitOfWork @ react-dom_client.js?v=5d71aec3:12561
+workLoopConcurrentByScheduler @ react-dom_client.js?v=5d71aec3:12557
+renderRootConcurrent @ react-dom_client.js?v=5d71aec3:12539
+performWorkOnRoot @ react-dom_client.js?v=5d71aec3:11766
+performWorkOnRootViaSchedulerTask @ react-dom_client.js?v=5d71aec3:13505
+performWorkUntilDeadline @ react-dom_client.js?v=5d71aec3:36
+<DashboardRevenueChart>
+exports.jsxDEV @ react_jsx-dev-runtime.js?v=5d71aec3:247
+Dashboard @ Dashboard.tsx:263
+react_stack_bottom_frame @ react-dom_client.js?v=5d71aec3:18509
+renderWithHooksAgain @ react-dom_client.js?v=5d71aec3:5729
+renderWithHooks @ react-dom_client.js?v=5d71aec3:5665
+updateFunctionComponent @ react-dom_client.js?v=5d71aec3:7475
+beginWork @ react-dom_client.js?v=5d71aec3:8525
+runWithFiberInDEV @ react-dom_client.js?v=5d71aec3:997
+performUnitOfWork @ react-dom_client.js?v=5d71aec3:12561
+workLoopConcurrentByScheduler @ react-dom_client.js?v=5d71aec3:12557
+renderRootConcurrent @ react-dom_client.js?v=5d71aec3:12539
+performWorkOnRoot @ react-dom_client.js?v=5d71aec3:11766
+performWorkOnRootViaSchedulerTask @ react-dom_client.js?v=5d71aec3:13505
+performWorkUntilDeadline @ react-dom_client.js?v=5d71aec3:36
+<Dashboard>
+exports.jsxDEV @ react_jsx-dev-runtime.js?v=5d71aec3:247
+App @ App.tsx:131
+react_stack_bottom_frame @ react-dom_client.js?v=5d71aec3:18509
+renderWithHooksAgain @ react-dom_client.js?v=5d71aec3:5729
+renderWithHooks @ react-dom_client.js?v=5d71aec3:5665
+updateFunctionComponent @ react-dom_client.js?v=5d71aec3:7475
+beginWork @ react-dom_client.js?v=5d71aec3:8525
+runWithFiberInDEV @ react-dom_client.js?v=5d71aec3:997
+performUnitOfWork @ react-dom_client.js?v=5d71aec3:12561
+workLoopConcurrentByScheduler @ react-dom_client.js?v=5d71aec3:12557
+renderRootConcurrent @ react-dom_client.js?v=5d71aec3:12539
+performWorkOnRoot @ react-dom_client.js?v=5d71aec3:11766
+performWorkOnRootViaSchedulerTask @ react-dom_client.js?v=5d71aec3:13505
+performWorkUntilDeadline @ react-dom_client.js?v=5d71aec3:36
+<App>
+exports.jsxDEV @ react_jsx-dev-runtime.js?v=5d71aec3:247
+(anonymous) @ index.tsx:18
+injected.js:37 The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+(anonymous) @ injected.js:37
+warn2 @ recharts.js?v=5d71aec3:9086
+(anonymous) @ recharts.js?v=5d71aec3:9340
+react_stack_bottom_frame @ react-dom_client.js?v=5d71aec3:18509
+renderWithHooksAgain @ react-dom_client.js?v=5d71aec3:5729
+renderWithHooks @ react-dom_client.js?v=5d71aec3:5665
+updateForwardRef @ react-dom_client.js?v=5d71aec3:7198
+beginWork @ react-dom_client.js?v=5d71aec3:8735
+runWithFiberInDEV @ react-dom_client.js?v=5d71aec3:997
+performUnitOfWork @ react-dom_client.js?v=5d71aec3:12561
+workLoopConcurrentByScheduler @ react-dom_client.js?v=5d71aec3:12557
+renderRootConcurrent @ react-dom_client.js?v=5d71aec3:12539
+performWorkOnRoot @ react-dom_client.js?v=5d71aec3:11766
+performWorkOnRootViaSchedulerTask @ react-dom_client.js?v=5d71aec3:13505
+performWorkUntilDeadline @ react-dom_client.js?v=5d71aec3:36
+<ForwardRef>
+exports.createElement @ chunk-6KCF6AHO.js?v=5d71aec3:793
+(anonymous) @ recharts.js?v=5d71aec3:9390
+react_stack_bottom_frame @ react-dom_client.js?v=5d71aec3:18509
+renderWithHooksAgain @ react-dom_client.js?v=5d71aec3:5729
+renderWithHooks @ react-dom_client.js?v=5d71aec3:5665
+updateForwardRef @ react-dom_client.js?v=5d71aec3:7198
+beginWork @ react-dom_client.js?v=5d71aec3:8735
+runWithFiberInDEV @ react-dom_client.js?v=5d71aec3:997
+performUnitOfWork @ react-dom_client.js?v=5d71aec3:12561
+workLoopConcurrentByScheduler @ react-dom_client.js?v=5d71aec3:12557
+renderRootConcurrent @ react-dom_client.js?v=5d71aec3:12539
+performWorkOnRoot @ react-dom_client.js?v=5d71aec3:11766
+performWorkOnRootViaSchedulerTask @ react-dom_client.js?v=5d71aec3:13505
+performWorkUntilDeadline @ react-dom_client.js?v=5d71aec3:36
+<ForwardRef>
+exports.jsxDEV @ react_jsx-dev-runtime.js?v=5d71aec3:247
+DashboardRevenueChart @ Dashboard.tsx:439
+react_stack_bottom_frame @ react-dom_client.js?v=5d71aec3:18509
+renderWithHooksAgain @ react-dom_client.js?v=5d71aec3:5729
+renderWithHooks @ react-dom_client.js?v=5d71aec3:5665
+updateFunctionComponent @ react-dom_client.js?v=5d71aec3:7475
+beginWork @ react-dom_client.js?v=5d71aec3:8525
+runWithFiberInDEV @ react-dom_client.js?v=5d71aec3:997
+performUnitOfWork @ react-dom_client.js?v=5d71aec3:12561
+workLoopConcurrentByScheduler @ react-dom_client.js?v=5d71aec3:12557
+renderRootConcurrent @ react-dom_client.js?v=5d71aec3:12539
+performWorkOnRoot @ react-dom_client.js?v=5d71aec3:11766
+performWorkOnRootViaSchedulerTask @ react-dom_client.js?v=5d71aec3:13505
+performWorkUntilDeadline @ react-dom_client.js?v=5d71aec3:36
+<DashboardRevenueChart>
+exports.jsxDEV @ react_jsx-dev-runtime.js?v=5d71aec3:247
+Dashboard @ Dashboard.tsx:263
+react_stack_bottom_frame @ react-dom_client.js?v=5d71aec3:18509
+renderWithHooksAgain @ react-dom_client.js?v=5d71aec3:5729
+renderWithHooks @ react-dom_client.js?v=5d71aec3:5665
+updateFunctionComponent @ react-dom_client.js?v=5d71aec3:7475
+beginWork @ react-dom_client.js?v=5d71aec3:8525
+runWithFiberInDEV @ react-dom_client.js?v=5d71aec3:997
+performUnitOfWork @ react-dom_client.js?v=5d71aec3:12561
+workLoopConcurrentByScheduler @ react-dom_client.js?v=5d71aec3:12557
+renderRootConcurrent @ react-dom_client.js?v=5d71aec3:12539
+performWorkOnRoot @ react-dom_client.js?v=5d71aec3:11766
+performWorkOnRootViaSchedulerTask @ react-dom_client.js?v=5d71aec3:13505
+performWorkUntilDeadline @ react-dom_client.js?v=5d71aec3:36
+<Dashboard>
+exports.jsxDEV @ react_jsx-dev-runtime.js?v=5d71aec3:247
+App @ App.tsx:131
+react_stack_bottom_frame @ react-dom_client.js?v=5d71aec3:18509
+renderWithHooksAgain @ react-dom_client.js?v=5d71aec3:5729
+renderWithHooks @ react-dom_client.js?v=5d71aec3:5665
+updateFunctionComponent @ react-dom_client.js?v=5d71aec3:7475
+beginWork @ react-dom_client.js?v=5d71aec3:8525
+runWithFiberInDEV @ react-dom_client.js?v=5d71aec3:997
+performUnitOfWork @ react-dom_client.js?v=5d71aec3:12561
+workLoopConcurrentByScheduler @ react-dom_client.js?v=5d71aec3:12557
+renderRootConcurrent @ react-dom_client.js?v=5d71aec3:12539
+performWorkOnRoot @ react-dom_client.js?v=5d71aec3:11766
+performWorkOnRootViaSchedulerTask @ react-dom_client.js?v=5d71aec3:13505
+performWorkUntilDeadline @ react-dom_client.js?v=5d71aec3:36
+<App>
+exports.jsxDEV @ react_jsx-dev-runtime.js?v=5d71aec3:247
+(anonymous) @ index.tsx:18
+injected.js:214  GET https://nnggcnpcuomwfuupupwg.supabase.co/rest/v1/utility_records?select=* 404 (Not Found)
+apply @ injected.js:214
+(anonymous) @ @supabase_supabase-js.js?v=5d71aec3:16750
+(anonymous) @ @supabase_supabase-js.js?v=5d71aec3:16764
+await in (anonymous)
+then @ @supabase_supabase-js.js?v=5d71aec3:329
+injected.js:37 [SupabaseData] fetchAll utility_records: {code: 'PGRST205', details: null, hint: "Perhaps you meant the table 'public.utility_bills'", message: "Could not find the table 'public.utility_records' in the schema cache"}
+(anonymous) @ injected.js:37
+fetchAll @ supabaseDataService.ts:85
+await in fetchAll
+(anonymous) @ supabaseDataService.ts:230
+getAllData @ supabaseDataService.ts:230
+(anonymous) @ AppContext.tsx:108
+init @ AppContext.tsx:165
+injected.js:214  GET https://nnggcnpcuomwfuupupwg.supabase.co/rest/v1/utility_records?select=* 404 (Not Found)
+apply @ injected.js:214
+(anonymous) @ @supabase_supabase-js.js?v=5d71aec3:16750
+(anonymous) @ @supabase_supabase-js.js?v=5d71aec3:16764
+await in (anonymous)
+then @ @supabase_supabase-js.js?v=5d71aec3:329
+injected.js:37 [SupabaseData] fetchAll utility_records: {code: 'PGRST205', details: null, hint: "Perhaps you meant the table 'public.utility_bills'", message: "Could not find the table 'public.utility_records' in the schema cache"}
+(anonymous) @ injected.js:37
+fetchAll @ supabaseDataService.ts:85
+await in fetchAll
+(anonymous) @ supabaseDataService.ts:230
+getAllData @ supabaseDataService.ts:230
+(anonymous) @ AppContext.tsx:108
+init @ AppContext.tsx:165
+injected.js:214  GET https://nnggcnpcuomwfuupupwg.supabase.co/rest/v1/utility_records?select=* 404 (Not Found)
+apply @ injected.js:214
+(anonymous) @ @supabase_supabase-js.js?v=5d71aec3:16750
+(anonymous) @ @supabase_supabase-js.js?v=5d71aec3:16764
+await in (anonymous)
+then @ @supabase_supabase-js.js?v=5d71aec3:329
+injected.js:37 [SupabaseData] fetchAll utility_records: {code: 'PGRST205', details: null, hint: "Perhaps you meant the table 'public.utility_bills'", message: "Could not find the table 'public.utility_records' in the schema cache"}
+(anonymous) @ injected.js:37
+fetchAll @ supabaseDataService.ts:85
+await in fetchAll
+(anonymous) @ supabaseDataService.ts:230
+getAllData @ supabaseDataService.ts:230
+(anonymous) @ AppContext.tsx:108
+init @ AppContext.tsx:165
+injected.js:214  GET https://nnggcnpcuomwfuupupwg.supabase.co/rest/v1/utility_records?select=* 404 (Not Found)
+apply @ injected.js:214
+(anonymous) @ @supabase_supabase-js.js?v=5d71aec3:16750
+(anonymous) @ @supabase_supabase-js.js?v=5d71aec3:16764
+await in (anonymous)
+then @ @supabase_supabase-js.js?v=5d71aec3:329
+injected.js:37 [SupabaseData] fetchAll utility_records: {code: 'PGRST205', details: null, hint: "Perhaps you meant the table 'public.utility_bills'", message: "Could not find the table 'public.utility_records' in the schema cache"}
+(anonymous) @ injected.js:37
+fetchAll @ supabaseDataService.ts:85
+await in fetchAll
+(anonymous) @ supabaseDataService.ts:230
+getAllData @ supabaseDataService.ts:230
+(anonymous) @ AppContext.tsx:108
+init @ AppContext.tsx:165
