@@ -8,7 +8,7 @@ import {
   TrendingUp, TrendingDown, AlertTriangle, Wrench,
   Receipt, ArrowLeft, CheckCircle2, Clock, XCircle,
   Home, Percent, DollarSign, CalendarClock, Activity,
-  Plus, FileInput, Calculator
+  Plus, FileInput, Calculator, Github, Mail, Globe
 } from 'lucide-react';
 import { Contract, Tenant, Unit, Receipt as ReceiptType, Invoice, Expense, MaintenanceRecord } from '../types';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
@@ -50,24 +50,31 @@ const QuickSearch = () => {
     };
 
     return (
-        <div className="relative max-w-lg mx-auto">
+        <div className="relative w-full max-w-2xl mx-auto">
             <div className="relative">
-                <Search className="absolute right-4 top-1/2 -translate-y-1/2 h-5 w-5 text-text-muted" />
+                <Search className="absolute right-4 top-1/2 -translate-y-1/2 h-5 w-5 text-text-muted pointer-events-none" />
                 <input
                     type="text"
-                    placeholder="ابحث عن مستأجر، أو وحدة..."
-                    className="w-full p-3 pr-12 text-base rounded-full border-2 border-border focus:border-primary focus:ring-primary transition-all shadow-sm"
+                    placeholder="🔍 ابحث عن مستأجر أو وحدة..."
+                    className="w-full px-4 py-3 pr-12 text-base rounded-full border-2 border-border/50 focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all shadow-sm hover:border-border"
                     onChange={(e) => setQuery(e.target.value)}
                     value={query}
                 />
             </div>
             {results.length > 0 && (
-                <div className="absolute top-full left-0 right-0 mt-2 bg-card border border-border rounded-lg shadow-lg z-10 overflow-hidden">
+                <div className="absolute top-full left-0 right-0 mt-2 bg-card border border-border rounded-lg shadow-lg z-10 overflow-hidden max-h-60 overflow-y-auto">
                     {results.map(r => (
-                        <div key={r.id} onClick={() => handleSelect(r.id)} className="p-3 hover:bg-background cursor-pointer border-b border-border last:border-b-0 flex justify-between items-center text-sm">
-                            <span className="font-bold"><Home size={14} className="inline ml-1" /> {r.unitName}</span>
-                            <span className="text-text-muted">{r.tenantName}</span>
-                        </div>
+                        <button
+                            key={r.id}
+                            onClick={() => handleSelect(r.id)}
+                            className="w-full p-3 hover:bg-background cursor-pointer border-b border-border last:border-b-0 flex justify-between items-center text-sm transition-colors"
+                        >
+                            <span className="font-medium flex items-center gap-2">
+                                <Home size={14} />
+                                {r.unitName}
+                            </span>
+                            <span className="text-text-muted text-xs">{r.tenantName}</span>
+                        </button>
                     ))}
                 </div>
             )}
@@ -178,19 +185,24 @@ const Dashboard: React.FC = () => {
 
     return (
         <div className="space-y-6">
-            <header className="flex flex-wrap justify-between items-center gap-4">
-                <div>
-                    <h1 className="text-2xl font-bold text-text">لوحة التحكم</h1>
-                    <p className="text-text-muted mt-1">مرحباً بك في {settings?.general?.company?.name ?? 'Rentrix'}</p>
+            {/* Header */}
+            <header className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
+                <div className="space-y-1">
+                    <h1 className="text-3xl md:text-4xl font-black bg-gradient-to-l from-primary to-primary/70 bg-clip-text text-transparent">لوحة التحكم</h1>
+                    <p className="text-text-muted text-sm md:text-base">مرحباً بك في <span className="font-bold text-text">{settings?.general?.company?.name ?? 'Rentrix'}</span></p>
                 </div>
-                <div className="flex items-center gap-3">
-                    <div className="p-2 bg-card rounded-lg shadow-sm border border-border text-xs">
-                        <span className="text-text-muted">الحالة: </span>
-                        <span className="text-green-600 font-bold">● متصل</span>
+                <div className="flex items-center gap-2 flex-wrap">
+                    <div className="px-3 py-2 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800 text-xs font-semibold text-green-600 dark:text-green-400 flex items-center gap-1.5">
+                        <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+                        متصل
+                    </div>
+                    <div className="px-3 py-2 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800 text-xs font-semibold text-blue-600 dark:text-blue-400">
+                        {new Date().toLocaleDateString('ar-SA')}
                     </div>
                 </div>
             </header>
 
+            {/* Quick Search */}
             <QuickSearch />
 
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
@@ -202,13 +214,14 @@ const Dashboard: React.FC = () => {
                 <KpiMini label="الإشغال" value={`${stats.occupancyRate.toFixed(0)}%`} icon={<Percent size={18} />} color={stats.occupancyRate >= 80 ? "green" : stats.occupancyRate >= 50 ? "amber" : "red"} />
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
                 <KpiCard
                     title="إيرادات الشهر"
                     value={formatCurrency(stats.monthlyRevenue, currency)}
                     icon={<TrendingUp size={22} />}
                     gradient="from-emerald-600 to-emerald-400"
                     shadowColor="shadow-emerald-500/20"
+                    trend={stats.monthlyRevenue > 0 ? "↑" : ""}
                 />
                 <KpiCard
                     title="مصروفات الشهر"
@@ -223,6 +236,7 @@ const Dashboard: React.FC = () => {
                     icon={<DollarSign size={22} />}
                     gradient={stats.netMonthly >= 0 ? "from-blue-600 to-blue-400" : "from-red-600 to-red-400"}
                     shadowColor={stats.netMonthly >= 0 ? "shadow-blue-500/20" : "shadow-red-500/20"}
+                    trend={stats.netMonthly >= 0 ? "↑" : "↓"}
                 />
                 <KpiCard
                     title="رصيد الخزنة"
@@ -263,9 +277,9 @@ const Dashboard: React.FC = () => {
             <DashboardRevenueChart receipts={receipts} expenses={expenses} currency={currency} />
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="bg-card p-5 rounded-2xl border border-border shadow-sm">
-                    <div className="flex justify-between items-center mb-3">
-                        <h3 className="font-bold text-text">الذمم المدينة والمستحقات</h3>
+                <div className="bg-card p-5 rounded-2xl border border-border shadow-sm hover:shadow-md transition-shadow">
+                    <div className="flex justify-between items-center mb-4">
+                        <h3 className="font-bold text-text text-lg">الذمم المدينة والمستحقات</h3>
                         <button onClick={() => navigate('/reports?tab=aged_receivables')} className="text-primary text-xs font-bold hover:underline">تفاصيل</button>
                     </div>
                     <div className="space-y-3">
@@ -275,9 +289,9 @@ const Dashboard: React.FC = () => {
                     </div>
                 </div>
 
-                <div className="bg-card p-5 rounded-2xl border border-border shadow-sm">
-                    <h3 className="font-bold text-text mb-3">إجراءات سريعة</h3>
-                    <div className="grid grid-cols-2 gap-2">
+                <div className="bg-card p-5 rounded-2xl border border-border shadow-sm hover:shadow-md transition-shadow">
+                    <h3 className="font-bold text-text text-lg mb-4">إجراءات سريعة</h3>
+                    <div className="grid grid-cols-2 gap-3">
                         <QuickAction label="سند قبض جديد" icon={<Plus size={16} />} onClick={() => navigate('/finance/receipts')} />
                         <QuickAction label="عقد جديد" icon={<FileText size={16} />} onClick={() => navigate('/contracts')} />
                         <QuickAction label="توليد الفواتير" icon={<Calculator size={16} />} onClick={() => navigate('/finance/invoices')} />
@@ -404,6 +418,52 @@ const Dashboard: React.FC = () => {
                     </div>
                 )}
             </div>
+
+            {/* Footer - Developer Info */}
+            <footer className="mt-8 pt-6 border-t border-border/50">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {/* Product Info */}
+                    <div className="text-center sm:text-right">
+                        <h4 className="font-bold text-text mb-2 flex items-center gap-2">
+                            <Globe size={16} className="text-primary" />
+                            Rentrix System
+                        </h4>
+                        <p className="text-xs text-text-muted leading-relaxed">
+                            نظام إدارة عقارات متقدم مع محاسبة مزدوجة الدخول وتقارير مالية شاملة
+                        </p>
+                    </div>
+
+                    {/* Developer Info */}
+                    <div className="text-center">
+                        <h4 className="font-bold text-text mb-2">Developed by</h4>
+                        <p className="text-sm font-semibold text-primary mb-2">Mohamed Masoud</p>
+                        <p className="text-xs text-text-muted">Full Stack Developer</p>
+                    </div>
+
+                    {/* Contact Info */}
+                    <div className="text-center sm:text-left">
+                        <h4 className="font-bold text-text mb-2">Contact & Links</h4>
+                        <div className="space-y-1 text-xs text-text-muted">
+                            <p className="flex items-center gap-2 justify-center sm:justify-start hover:text-primary transition-colors">
+                                <Mail size={14} />
+                                <a href="mailto:masoud.dev@outlook.com" className="hover:underline">masoud.dev@outlook.com</a>
+                            </p>
+                            <p className="flex items-center gap-2 justify-center sm:justify-start hover:text-primary transition-colors">
+                                <Globe size={14} />
+                                <a href="https://www.rentrix-system.com" target="_blank" rel="noopener noreferrer" className="hover:underline">www.rentrix-system.com</a>
+                            </p>
+                            <p className="flex items-center gap-2 justify-center sm:justify-start text-text-muted">
+                                <span>Version 1.0.0 • 2026</span>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Copyright */}
+                <div className="mt-6 pt-4 border-t border-border/30 text-center text-xs text-text-muted">
+                    <p>© 2026 Rentrix. جميع الحقوق محفوظة | All Rights Reserved</p>
+                </div>
+            </footer>
         </div>
     );
 };
@@ -471,21 +531,24 @@ const KpiMini: React.FC<{ label: string; value: string | number; icon: React.Rea
         indigo: 'bg-indigo-50 text-indigo-600 dark:bg-indigo-900/30 dark:text-indigo-400',
     };
     return (
-        <div onClick={onClick} className={`bg-card p-4 rounded-xl border border-border shadow-sm text-center ${onClick ? 'cursor-pointer hover:border-primary transition-colors' : ''}`}>
-            <div className={`w-9 h-9 mx-auto rounded-lg flex items-center justify-center mb-2 ${colorMap[color] || colorMap.blue}`}>{icon}</div>
-            <p className="text-xl font-bold text-text">{value}</p>
-            <p className="text-[11px] text-text-muted mt-0.5">{label}</p>
+        <div onClick={onClick} className={`bg-card p-4 rounded-lg border border-border shadow-sm text-center hover:shadow-md transition-all ${onClick ? 'cursor-pointer hover:border-primary hover:bg-primary/5' : ''}`}>
+            <div className={`w-10 h-10 mx-auto rounded-lg flex items-center justify-center mb-2 ${colorMap[color] || colorMap.blue}`}>{icon}</div>
+            <p className="text-lg md:text-xl font-bold text-text">{value}</p>
+            <p className="text-xs text-text-muted mt-1">{label}</p>
         </div>
     );
 };
 
-const KpiCard: React.FC<{ title: string; value: string; icon: React.ReactNode; gradient: string; shadowColor: string }> = ({ title, value, icon, gradient, shadowColor }) => (
-    <div className={`bg-gradient-to-br ${gradient} p-5 rounded-2xl text-white shadow-lg ${shadowColor}`}>
+const KpiCard: React.FC<{ title: string; value: string; icon: React.ReactNode; gradient: string; shadowColor: string; trend?: string }> = ({ title, value, icon, gradient, shadowColor, trend }) => (
+    <div className={`bg-gradient-to-br ${gradient} p-5 rounded-2xl text-white shadow-lg ${shadowColor} hover:shadow-2xl transition-shadow`}>
         <div className="flex justify-between items-start">
-            <p className="opacity-80 text-sm">{title}</p>
+            <p className="opacity-80 text-sm font-medium">{title}</p>
             <div className="opacity-60">{icon}</div>
         </div>
-        <h2 className="text-2xl font-bold mt-2" dir="ltr">{value}</h2>
+        <div className="mt-3 flex items-end justify-between">
+            <h2 className="text-2xl md:text-3xl font-bold" dir="ltr">{value}</h2>
+            {trend && <span className="text-xl opacity-80">{trend}</span>}
+        </div>
     </div>
 );
 
@@ -518,9 +581,9 @@ const BalanceRow: React.FC<{ label: string; value: string; color: string }> = ({
 );
 
 const QuickAction: React.FC<{ label: string; icon: React.ReactNode; onClick: () => void }> = ({ label, icon, onClick }) => (
-    <button onClick={onClick} className="flex items-center gap-2 p-3 rounded-xl border border-border bg-background hover:bg-primary/5 hover:border-primary text-sm font-medium text-text transition-all">
-        <span className="text-primary">{icon}</span>
-        {label}
+    <button onClick={onClick} className="flex flex-col sm:flex-row items-center justify-center sm:items-center gap-2 p-3 rounded-lg border border-border/50 bg-background hover:bg-primary/5 hover:border-primary text-xs sm:text-sm font-medium text-text transition-all active:scale-95">
+        <span className="text-primary text-base">{icon}</span>
+        <span className="text-center sm:text-left">{label}</span>
     </button>
 );
 
