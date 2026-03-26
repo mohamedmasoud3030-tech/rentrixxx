@@ -143,6 +143,8 @@ const AssistantModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
             <footer className="p-3 border-t border-border">
                 <div className="relative">
                     <input
+                        id="assistant-query"
+                        name="query"
                         type="text"
                         value={input}
                         onChange={e => setInput(e.target.value)}

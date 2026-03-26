@@ -17,6 +17,7 @@ const fileToBase64 = (file: File): Promise<string> => {
 const AppearanceSettings: React.FC = () => {
     const { settings, updateSettings } = useApp();
     const [appearance, setAppearance] = useState<Appearance>(settings.appearance || { theme: 'light', primaryColor: '#B8860B' });
+    const [isSaving, setIsSaving] = useState(false);
 
     useEffect(() => {
         setAppearance(settings.appearance);
@@ -50,9 +51,15 @@ const AppearanceSettings: React.FC = () => {
         }
     };
 
-    const handleSave = () => {
-        updateSettings({ appearance });
-        toast.success("تم حفظ إعدادات المظهر.");
+    const handleSave = async () => {
+        if (isSaving) return;
+        setIsSaving(true);
+        try {
+            await updateSettings({ appearance });
+            toast.success("تم حفظ إعدادات المظهر.");
+        } finally {
+            setIsSaving(false);
+        }
     };
     
     return (
@@ -63,15 +70,15 @@ const AppearanceSettings: React.FC = () => {
                 <h3 className="text-lg font-bold text-text">السمة واللون الأساسي</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
                     <div>
-                        <label className="text-xs font-medium text-text-muted">السمة (Theme)</label>
-                        <select name="theme" value={appearance.theme} onChange={handleAppearanceChange}>
+                        <label htmlFor="theme" className="text-xs font-medium text-text-muted">السمة (Theme)</label>
+                        <select id="theme" name="theme" value={appearance.theme} onChange={handleAppearanceChange}>
                             <option value="light">فاتح</option>
                             <option value="dark">داكن</option>
                         </select>
                     </div>
                      <div className="flex items-center gap-4">
-                        <label className="text-xs font-medium text-text-muted">اللون الأساسي</label>
-                        <input type="color" name="primaryColor" value={appearance.primaryColor} onChange={handleAppearanceChange} className="w-12 h-10 p-1"/>
+                        <label htmlFor="primaryColor" className="text-xs font-medium text-text-muted">اللون الأساسي</label>
+                        <input id="primaryColor" type="color" name="primaryColor" value={appearance.primaryColor} onChange={handleAppearanceChange} className="w-12 h-10 p-1"/>
                         <span className="p-2 rounded-md" style={{ backgroundColor: appearance.primaryColor, color: '#fff' }}>{appearance.primaryColor}</span>
                     </div>
                 </div>
@@ -84,7 +91,7 @@ const AppearanceSettings: React.FC = () => {
                     {appearance.logoDataUrl && (
                         <img src={appearance.logoDataUrl} alt="شعار المؤسسة" className="h-20 w-auto bg-white p-2 rounded-md border border-border"/>
                     )}
-                    <input type="file" accept="image/png, image/jpeg" onChange={handleLogoUpload} />
+                    <input id="logo-upload" name="logo" type="file" accept="image/png, image/jpeg" onChange={handleLogoUpload} />
                 </div>
             </div>
 
@@ -95,12 +102,14 @@ const AppearanceSettings: React.FC = () => {
                     {appearance.stampDataUrl && (
                         <img src={appearance.stampDataUrl} alt="ختم المؤسسة" className="h-24 w-auto bg-white p-2 rounded-md border border-border"/>
                     )}
-                    <input type="file" accept="image/png, image/jpeg" onChange={handleStampUpload} />
+                    <input id="stamp-upload" name="stamp" type="file" accept="image/png, image/jpeg" onChange={handleStampUpload} />
                 </div>
             </div>
 
             <div className="pt-4 flex justify-end">
-                <button onClick={handleSave} className="btn btn-primary">حفظ التغييرات</button>
+                <button onClick={handleSave} disabled={isSaving} className="btn btn-primary disabled:opacity-50 disabled:cursor-not-allowed">
+                    {isSaving ? 'جاري الحفظ...' : 'حفظ التغييرات'}
+                </button>
             </div>
         </div>
     );

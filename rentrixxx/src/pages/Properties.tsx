@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useRef } from 'react';
+import React, { useState, useMemo, useRef, memo, useCallback } from 'react';
 import { useApp } from '../contexts/AppContext';
 import { Property, Unit, UtilityRecord, UtilityType, UTILITY_TYPE_AR, UTILITY_ICON } from '../types';
 import Card from '../components/ui/Card';
@@ -6,7 +6,7 @@ import Modal from '../components/ui/Modal';
 import ActionsMenu, { EditAction, DeleteAction } from '../components/shared/ActionsMenu';
 import AttachmentsManager from '../components/shared/AttachmentsManager';
 import { formatCurrency, toArabicDigits, formatDate } from '../utils/helpers';
-import { Building, Home, ArrowRight, User, Map, AlertCircle, Clock, FileText, Wrench, Phone, Percent, TrendingUp, Zap, Droplets, Flame, Wifi, ChevronRight, Plus, Image, Trash2 } from 'lucide-react';
+import { Building, Home, ArrowRight, User, Map as MapIcon, AlertCircle, Clock, FileText, Wrench, Phone, Percent, TrendingUp, Zap, Droplets, Flame, Wifi, ChevronRight, Plus, Image, Trash2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 import PropertyMapView from './PropertyMap';
@@ -23,7 +23,7 @@ const Properties: React.FC = () => {
                             <Building size={16}/> العقارات والوحدات
                         </button>
                         <button onClick={() => setActiveTab('map')} className={`${activeTab === 'map' ? 'border-primary text-primary' : 'border-transparent text-text-muted'} py-4 px-1 border-b-2 font-medium text-sm flex items-center gap-2`}>
-                            <Map size={16}/> الخارطة
+                            <MapIcon size={16}/> الخارطة
                         </button>
                     </nav>
                 </div>
@@ -125,18 +125,29 @@ const UnitsView: React.FC<{ property: Property, onBack: () => void }> = ({ prope
     const [isUnitModalOpen, setIsUnitModalOpen] = useState(false);
     const [editingUnit, setEditingUnit] = useState<Unit | null>(null);
     const [selectedUnit, setSelectedUnit] = useState<Unit | null>(null);
-    const units = db.units.filter(u => u.propertyId === property.id);
+    
+    const units = useMemo(() => db.units.filter(u => u.propertyId === property.id), [db.units, property.id]);
+    
+    const utilityCountMap = useMemo(() => {
+        const map = new Map<string, number>();
+        (db.utilityRecords || []).forEach(r => {
+            map.set(r.unitId, (map.get(r.unitId) || 0) + 1);
+        });
+        return map;
+    }, [db.utilityRecords]);
 
     if (selectedUnit) {
         return <UnitDetailView unit={selectedUnit} property={property} onBack={() => setSelectedUnit(null)} />;
     }
 
-    const floors = [...new Set(units.map(u => u.floor || 'بدون دور'))];
-    const hasFloors = units.some(u => u.floor);
+    const floors = useMemo(() => [...new Set(units.map(u => u.floor || 'بدون دور'))], [units]);
+    const hasFloors = useMemo(() => units.some(u => u.floor), [units]);
 
-    const rented = units.filter(u => u.status === 'RENTED').length;
-    const available = units.filter(u => u.status === 'AVAILABLE').length;
-    const onHold = units.filter(u => u.status === 'ON_HOLD').length;
+    const stats = useMemo(() => ({
+        rented: units.filter(u => u.status === 'RENTED').length,
+        available: units.filter(u => u.status === 'AVAILABLE').length,
+        onHold: units.filter(u => u.status === 'ON_HOLD').length,
+    }), [units]);
 
     return (
         <div className="space-y-6">
@@ -154,15 +165,15 @@ const UnitsView: React.FC<{ property: Property, onBack: () => void }> = ({ prope
                     <p className="text-xs text-text-muted">إجمالي الوحدات</p>
                 </div>
                 <div className="bg-background border border-border rounded-lg p-4 text-center">
-                    <p className="text-2xl font-bold text-blue-600">{toArabicDigits(rented)}</p>
+                    <p className="text-2xl font-bold text-blue-600">{toArabicDigits(stats.rented)}</p>
                     <p className="text-xs text-text-muted">مؤجرة</p>
                 </div>
                 <div className="bg-background border border-border rounded-lg p-4 text-center">
-                    <p className="text-2xl font-bold text-green-600">{toArabicDigits(available)}</p>
+                    <p className="text-2xl font-bold text-green-600">{toArabicDigits(stats.available)}</p>
                     <p className="text-xs text-text-muted">شاغرة</p>
                 </div>
                 <div className="bg-background border border-border rounded-lg p-4 text-center">
-                    <p className="text-2xl font-bold text-gray-600">{toArabicDigits(onHold)}</p>
+                    <p className="text-2xl font-bold text-gray-600">{toArabicDigits(stats.onHold)}</p>
                     <p className="text-xs text-text-muted">معلقة</p>
                 </div>
             </div>
@@ -174,14 +185,32 @@ const UnitsView: React.FC<{ property: Property, onBack: () => void }> = ({ prope
                         <div key={fl} className="space-y-3">
                             <h3 className="font-bold text-lg border-b border-border pb-2">{fl === 'بدون دور' ? fl : `الدور ${fl}`} <span className="text-sm text-text-muted font-normal">({toArabicDigits(floorUnits.length)} وحدات)</span></h3>
                             <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
-                                {floorUnits.map(u => <UnitCard key={u.id} u={u} onEdit={() => { setEditingUnit(u); setIsUnitModalOpen(true); }} onDelete={async () => await dataService.remove('units', u.id)} onViewUtilities={() => setSelectedUnit(u)} />)}
+                                {floorUnits.map(u => (
+                                    <UnitCard 
+                                        key={u.id} 
+                                        u={u} 
+                                        utilCount={utilityCountMap.get(u.id) || 0}
+                                        onEdit={() => { setEditingUnit(u); setIsUnitModalOpen(true); }} 
+                                        onDelete={async () => await dataService.remove('units', u.id)} 
+                                        onViewUtilities={() => setSelectedUnit(u)} 
+                                    />
+                                ))}
                             </div>
                         </div>
                     );
                 })
             ) : (
                 <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
-                    {units.map(u => <UnitCard key={u.id} u={u} onEdit={() => { setEditingUnit(u); setIsUnitModalOpen(true); }} onDelete={async () => await dataService.remove('units', u.id)} onViewUtilities={() => setSelectedUnit(u)} />)}
+                    {units.map(u => (
+                        <UnitCard 
+                            key={u.id} 
+                            u={u} 
+                            utilCount={utilityCountMap.get(u.id) || 0}
+                            onEdit={() => { setEditingUnit(u); setIsUnitModalOpen(true); }} 
+                            onDelete={async () => await dataService.remove('units', u.id)} 
+                            onViewUtilities={() => setSelectedUnit(u)} 
+                        />
+                    ))}
                 </div>
             )}
             {isUnitModalOpen && <UnitForm isOpen={isUnitModalOpen} onClose={() => setIsUnitModalOpen(false)} unit={editingUnit} propertyId={property.id} />}
@@ -189,18 +218,20 @@ const UnitsView: React.FC<{ property: Property, onBack: () => void }> = ({ prope
     );
 };
 
-const UnitCard: React.FC<{ u: Unit; onEdit: () => void; onDelete: () => void; onViewUtilities: () => void }> = ({ u, onEdit, onDelete, onViewUtilities }) => {
+const UnitCard: React.FC<{ u: Unit; utilCount: number; onEdit: () => void; onDelete: () => void; onViewUtilities: () => void }> = memo(({ u, utilCount, onEdit, onDelete, onViewUtilities }) => {
     const st = UNIT_STATUS_MAP[u.status] || UNIT_STATUS_MAP.AVAILABLE;
-    const { db } = useApp();
-    const featuresList: string[] = [];
-    if (u.bedrooms) featuresList.push(`${u.bedrooms} غرف`);
-    if (u.bathrooms) featuresList.push(`${u.bathrooms} حمام`);
-    if (u.kitchens) featuresList.push(`${u.kitchens} مطبخ`);
-    if (u.livingRooms) featuresList.push(`${u.livingRooms} صالة`);
-    const utilCount = (db.utilityRecords || []).filter(r => r.unitId === u.id).length;
+    
+    const featuresList = useMemo(() => {
+        const list: string[] = [];
+        if (u.bedrooms) list.push(`${u.bedrooms} غرف`);
+        if (u.bathrooms) list.push(`${u.bathrooms} حمام`);
+        if (u.kitchens) list.push(`${u.kitchens} مطبخ`);
+        if (u.livingRooms) list.push(`${u.livingRooms} صالة`);
+        return list;
+    }, [u.bedrooms, u.bathrooms, u.kitchens, u.livingRooms]);
 
     return (
-        <div className="p-4 bg-background border border-border rounded-lg relative group">
+        <div className="p-4 bg-background border border-border rounded-lg relative group hover:shadow-lg transition-shadow">
             <div className="absolute top-2 left-2">
                 <ActionsMenu items={[
                     { label: 'إدارة المرافق', icon: <Zap size={14} />, onClick: onViewUtilities },
@@ -223,7 +254,7 @@ const UnitCard: React.FC<{ u: Unit; onEdit: () => void; onDelete: () => void; on
             )}
         </div>
     );
-};
+});
 
 const UTILITY_COLORS: Record<string, string> = {
     WATER: 'bg-blue-100 text-blue-700 border-blue-200',
@@ -265,31 +296,43 @@ const UtilityRecordForm: React.FC<{
         }
     }, [record, isOpen]);
 
-    const consumption = Math.max(0, currReading - prevReading);
-    const amount = consumption * unitPrice;
+    const [isSaving, setIsSaving] = useState(false);
+    const isSavingRef = useRef(false);
 
-    const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const consumption = useMemo(() => Math.max(0, currReading - prevReading), [currReading, prevReading]);
+    const amount = useMemo(() => consumption * unitPrice, [consumption, unitPrice]);
+
+    const handleImageUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file) return;
         if (file.size > 5 * 1024 * 1024) { toast.error('حجم الصورة يجب أن يكون أقل من 5MB'); return; }
         const reader = new FileReader();
         reader.onload = (ev) => { setBillImageUrl(ev.target?.result as string); setBillImageMime(file.type); };
         reader.readAsDataURL(file);
-    };
+    }, []);
 
-    const handleSubmit = async (e: React.FormEvent) => {
+    const handleSubmit = useCallback(async (e: React.FormEvent) => {
         e.preventDefault();
+        if (isSavingRef.current) return;
         if (currReading < prevReading) { toast.error('القراءة الحالية يجب أن تكون أكبر من أو تساوي القراءة السابقة'); return; }
-        const data: Omit<UtilityRecord, 'id' | 'createdAt'> = {
-            unitId, propertyId, type, month, previousReading: prevReading,
-            currentReading: currReading, unitPrice, amount, paidBy,
-            notes: notes || undefined, billImageUrl: billImageUrl || undefined,
-            billImageMime: billImageMime || undefined,
-        };
-        if (record) await dataService.update('utilityRecords', record.id, data as any);
-        else await dataService.add('utilityRecords', data as any);
-        onClose();
-    };
+        
+        isSavingRef.current = true;
+        setIsSaving(true);
+        try {
+            const data: Omit<UtilityRecord, 'id' | 'createdAt'> = {
+                unitId, propertyId, type, month, previousReading: prevReading,
+                currentReading: currReading, unitPrice, amount, paidBy,
+                notes: notes || undefined, billImageUrl: billImageUrl || undefined,
+                billImageMime: billImageMime || undefined,
+            };
+            if (record) await dataService.update('utilityRecords', record.id, data as any);
+            else await dataService.add('utilityRecords', data as any);
+            onClose();
+        } finally {
+            isSavingRef.current = false;
+            setIsSaving(false);
+        }
+    }, [record, currReading, prevReading, unitId, propertyId, type, month, amount, paidBy, notes, billImageUrl, billImageMime, dataService, onClose]);
 
     return (
         <Modal isOpen={isOpen} onClose={onClose} title={record ? 'تعديل سجل مرفق' : 'إضافة سجل مرفق جديد'}>
@@ -297,7 +340,7 @@ const UtilityRecordForm: React.FC<{
                 <div className="grid grid-cols-2 gap-4">
                     <div>
                         <label className="block text-sm font-medium mb-1">نوع المرفق</label>
-                        <select value={type} onChange={e => setType(e.target.value as UtilityType)}>
+                        <select value={type} onChange={e => setType(e.target.value as UtilityType)} disabled={isSaving}>
                             {(Object.keys(UTILITY_TYPE_AR) as UtilityType[]).map(k => (
                                 <option key={k} value={k}>{UTILITY_ICON[k]} {UTILITY_TYPE_AR[k]}</option>
                             ))}
@@ -305,21 +348,21 @@ const UtilityRecordForm: React.FC<{
                     </div>
                     <div>
                         <label className="block text-sm font-medium mb-1">الشهر</label>
-                        <input type="month" value={month} onChange={e => setMonth(e.target.value)} required />
+                        <input type="month" value={month} onChange={e => setMonth(e.target.value)} required disabled={isSaving} />
                     </div>
                 </div>
                 <div className="grid grid-cols-3 gap-4">
                     <div>
                         <label className="block text-sm font-medium mb-1">القراءة السابقة</label>
-                        <input type="number" min="0" value={prevReading} onChange={e => setPrevReading(Number(e.target.value))} required />
+                        <input type="number" min="0" value={prevReading} onChange={e => setPrevReading(Number(e.target.value))} required disabled={isSaving} />
                     </div>
                     <div>
                         <label className="block text-sm font-medium mb-1">القراءة الحالية</label>
-                        <input type="number" min="0" value={currReading} onChange={e => setCurrReading(Number(e.target.value))} required />
+                        <input type="number" min="0" value={currReading} onChange={e => setCurrReading(Number(e.target.value))} required disabled={isSaving} />
                     </div>
                     <div>
                         <label className="block text-sm font-medium mb-1">سعر الوحدة ({currency})</label>
-                        <input type="number" min="0" step="0.001" value={unitPrice} onChange={e => setUnitPrice(Number(e.target.value))} required />
+                        <input type="number" min="0" step="0.001" value={unitPrice} onChange={e => setUnitPrice(Number(e.target.value))} required disabled={isSaving} />
                     </div>
                 </div>
                 <div className="bg-background border border-border rounded-lg p-3 flex justify-between items-center">
@@ -328,7 +371,7 @@ const UtilityRecordForm: React.FC<{
                 </div>
                 <div>
                     <label className="block text-sm font-medium mb-1">على حساب</label>
-                    <select value={paidBy} onChange={e => setPaidBy(e.target.value as UtilityRecord['paidBy'])}>
+                    <select value={paidBy} onChange={e => setPaidBy(e.target.value as UtilityRecord['paidBy'])} disabled={isSaving}>
                         <option value="TENANT">المستأجر</option>
                         <option value="OWNER">المالك</option>
                         <option value="OFFICE">المكتب</option>
@@ -336,15 +379,15 @@ const UtilityRecordForm: React.FC<{
                 </div>
                 <div>
                     <label className="block text-sm font-medium mb-1">صورة الفاتورة</label>
-                    <input type="file" accept="image/*,application/pdf" ref={fileRef} onChange={handleImageUpload} className="hidden" />
+                    <input type="file" accept="image/*,application/pdf" ref={fileRef} onChange={handleImageUpload} className="hidden" disabled={isSaving} />
                     {billImageUrl ? (
                         <div className="border border-border rounded-lg p-2 flex items-center justify-between">
                             {billImageMime?.startsWith('image/') && <img src={billImageUrl} alt="فاتورة" className="h-16 w-auto rounded object-cover" />}
                             {billImageMime === 'application/pdf' && <span className="text-sm text-blue-600">📄 PDF مرفق</span>}
-                            <button type="button" onClick={() => { setBillImageUrl(''); setBillImageMime(''); }} className="text-red-500 hover:text-red-700"><Trash2 size={16} /></button>
+                            <button type="button" onClick={() => { setBillImageUrl(''); setBillImageMime(''); }} className="text-red-500 hover:text-red-700" disabled={isSaving}><Trash2 size={16} /></button>
                         </div>
                     ) : (
-                        <button type="button" onClick={() => fileRef.current?.click()} className="btn btn-secondary w-full flex items-center justify-center gap-2">
+                        <button type="button" onClick={() => fileRef.current?.click()} className="btn btn-secondary w-full flex items-center justify-center gap-2" disabled={isSaving}>
                             <Image size={16} /> رفع صورة الفاتورة
                         </button>
                     )}
@@ -354,8 +397,8 @@ const UtilityRecordForm: React.FC<{
                     <textarea value={notes} onChange={e => setNotes(e.target.value)} rows={2} placeholder="أي ملاحظات إضافية..." />
                 </div>
                 <div className="flex gap-3 pt-2">
-                    <button type="button" onClick={onClose} className="btn btn-ghost flex-1">إلغاء</button>
-                    <button type="submit" className="btn btn-primary flex-1">حفظ السجل</button>
+                    <button type="button" onClick={onClose} className="btn btn-ghost flex-1" disabled={isSaving}>إلغاء</button>
+                    <button type="submit" className="btn btn-primary flex-1" disabled={isSaving}>{isSaving ? 'جاري الحفظ...' : 'حفظ السجل'}</button>
                 </div>
             </form>
         </Modal>
@@ -410,12 +453,12 @@ const UnitDetailView: React.FC<{ unit: Unit; property: Property; onBack: () => v
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div className="bg-background border border-border rounded-lg p-4">
                     <p className="text-xs text-text-muted mb-1">رقم عداد المياه</p>
-                    <p className="font-bold">{unit.waterMeter || '-'}</p>
+                    <p className="font-bold">{unit.waterMeter || '—'}</p>
                     <p className="text-2xl mt-1">💧</p>
                 </div>
                 <div className="bg-background border border-border rounded-lg p-4">
                     <p className="text-xs text-text-muted mb-1">رقم عداد الكهرباء</p>
-                    <p className="font-bold">{unit.electricityMeter || '-'}</p>
+                    <p className="font-bold">{unit.electricityMeter || '—'}</p>
                     <p className="text-2xl mt-1">⚡</p>
                 </div>
                 <div className="bg-background border border-border rounded-lg p-4">
@@ -504,26 +547,37 @@ const UnitDetailView: React.FC<{ unit: Unit; property: Property; onBack: () => v
 };
 
 const PropertyForm: React.FC<{ isOpen: boolean, onClose: () => void, property: Property | null }> = ({ isOpen, onClose, property }) => {
-    // FIX: Use dataService for data manipulation
     const { db, dataService } = useApp();
     const [name, setName] = useState(property?.name || '');
     const [ownerId, setOwnerId] = useState(property?.ownerId || db.owners[0]?.id || '');
     const [location, setLocation] = useState(property?.location || '');
+    const [isSaving, setIsSaving] = useState(false);
+    const isSavingRef = useRef(false);
 
-    const handleSubmit = async (e: React.FormEvent) => {
+    const handleSubmit = useCallback(async (e: React.FormEvent) => {
         e.preventDefault();
-        const data = { name, ownerId, location, type: 'Building', notes: '' };
-        if (property) await dataService.update('properties', property.id, data); else await dataService.add('properties', data as any);
-        onClose();
-    };
+        if (isSavingRef.current) return;
+        
+        isSavingRef.current = true;
+        setIsSaving(true);
+        try {
+            const data = { name, ownerId, location, type: 'Building', notes: '' };
+            if (property) await dataService.update('properties', property.id, data); 
+            else await dataService.add('properties', data as any);
+            onClose();
+        } finally {
+            isSavingRef.current = false;
+            setIsSaving(false);
+        }
+    }, [property, name, ownerId, location, dataService, onClose]);
     return (
         <Modal isOpen={isOpen} onClose={onClose} title="بيانات العقار">
             <form onSubmit={handleSubmit} className="space-y-4">
-                <input placeholder="اسم العقار" value={name} onChange={e=>setName(e.target.value)} required />
-                <select value={ownerId} onChange={e=>setOwnerId(e.target.value)}>{db.owners.map(o=><option key={o.id} value={o.id}>{o.name}</option>)}</select>
-                <input placeholder="الموقع" value={location} onChange={e=>setLocation(e.target.value)} />
+                <input placeholder="اسم العقار" value={name} onChange={e=>setName(e.target.value)} required disabled={isSaving} />
+                <select value={ownerId} onChange={e=>setOwnerId(e.target.value)} disabled={isSaving}>{db.owners.map(o=><option key={o.id} value={o.id}>{o.name}</option>)}</select>
+                <input placeholder="الموقع" value={location} onChange={e=>setLocation(e.target.value)} disabled={isSaving} />
                 {property && <AttachmentsManager entityType="PROPERTY" entityId={property.id} />}
-                <button type="submit" className="btn btn-primary w-full">حفظ العقار</button>
+                <button type="submit" className="btn btn-primary w-full" disabled={isSaving}>{isSaving ? 'جاري الحفظ...' : 'حفظ العقار'}</button>
             </form>
         </Modal>
     );
@@ -566,6 +620,8 @@ const UnitForm: React.FC<{ isOpen: boolean, onClose: () => void, unit: Unit | nu
     const [electricityMeter, setElectricityMeter] = useState(unit?.electricityMeter || '');
     const [features, setFeatures] = useState(unit?.features || '');
     const [notes, setNotes] = useState(unit?.notes || '');
+    const [isSaving, setIsSaving] = useState(false);
+    const isSavingRef = useRef(false);
 
     React.useEffect(() => {
         if (unit) {
@@ -578,18 +634,28 @@ const UnitForm: React.FC<{ isOpen: boolean, onClose: () => void, unit: Unit | nu
         }
     }, [unit, isOpen]);
 
-    const handleSubmit = async (e: React.FormEvent) => {
+    const handleSubmit = useCallback(async (e: React.FormEvent) => {
         e.preventDefault();
-        const data = {
-            name, type, floor, status, rentDefault: rent, area: area || undefined,
-            bedrooms: bedrooms || undefined, bathrooms: bathrooms || undefined,
-            kitchens: kitchens || undefined, livingRooms: livingRooms || undefined,
-            waterMeter: waterMeter || undefined, electricityMeter: electricityMeter || undefined,
-            features: features || undefined, notes, propertyId,
-        };
-        if (unit) await dataService.update('units', unit.id, data as any); else await dataService.add('units', data as any);
-        onClose();
-    };
+        if (isSavingRef.current) return;
+        
+        isSavingRef.current = true;
+        setIsSaving(true);
+        try {
+            const data = {
+                name, type, floor, status, rentDefault: rent, area: area || undefined,
+                bedrooms: bedrooms || undefined, bathrooms: bathrooms || undefined,
+                kitchens: kitchens || undefined, livingRooms: livingRooms || undefined,
+                waterMeter: waterMeter || undefined, electricityMeter: electricityMeter || undefined,
+                features: features || undefined, notes, propertyId,
+            };
+            if (unit) await dataService.update('units', unit.id, data as any); 
+            else await dataService.add('units', data as any);
+            onClose();
+        } finally {
+            isSavingRef.current = false;
+            setIsSaving(false);
+        }
+    }, [unit, name, type, floor, status, rent, area, bedrooms, bathrooms, kitchens, livingRooms, waterMeter, electricityMeter, features, notes, propertyId, dataService, onClose]);
 
     return (
         <Modal isOpen={isOpen} onClose={onClose} title={unit ? 'تعديل الوحدة' : 'إضافة وحدة جديدة'}>
@@ -598,24 +664,24 @@ const UnitForm: React.FC<{ isOpen: boolean, onClose: () => void, unit: Unit | nu
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                             <label className="block text-sm font-medium mb-1">رقم/اسم الوحدة</label>
-                            <input type="text" value={name} onChange={e => setName(e.target.value)} required />
+                            <input type="text" value={name} onChange={e => setName(e.target.value)} required disabled={isSaving} />
                         </div>
                         <div>
                             <label className="block text-sm font-medium mb-1">نوع الوحدة</label>
-                            <select value={type} onChange={e => setType(e.target.value)}>
+                            <select value={type} onChange={e => setType(e.target.value)} disabled={isSaving}>
                                 {UNIT_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
                             </select>
                         </div>
                         <div>
                             <label className="block text-sm font-medium mb-1">الدور</label>
-                            <select value={floor} onChange={e => setFloor(e.target.value)}>
+                            <select value={floor} onChange={e => setFloor(e.target.value)} disabled={isSaving}>
                                 <option value="">-- اختر الدور --</option>
                                 {FLOOR_OPTIONS.map(f => <option key={f.value} value={f.value}>{f.label}</option>)}
                             </select>
                         </div>
                         <div>
                             <label className="block text-sm font-medium mb-1">الحالة</label>
-                            <select value={status} onChange={e => setStatus(e.target.value as Unit['status'])}>
+                            <select value={status} onChange={e => setStatus(e.target.value as Unit['status'])} disabled={isSaving}>
                                 <option value="AVAILABLE">شاغرة</option>
                                 <option value="RENTED">مؤجرة</option>
                                 <option value="MAINTENANCE">صيانة</option>
@@ -624,11 +690,11 @@ const UnitForm: React.FC<{ isOpen: boolean, onClose: () => void, unit: Unit | nu
                         </div>
                         <div>
                             <label className="block text-sm font-medium mb-1">الإيجار الافتراضي</label>
-                            <input type="number" value={rent} onChange={e => setRent(Number(e.target.value))} required />
+                            <input type="number" value={rent} onChange={e => setRent(Number(e.target.value))} required disabled={isSaving} />
                         </div>
                         <div>
                             <label className="block text-sm font-medium mb-1">المساحة (م²)</label>
-                            <input type="number" value={area} onChange={e => setArea(Number(e.target.value))} />
+                            <input type="number" value={area} onChange={e => setArea(Number(e.target.value))} disabled={isSaving} />
                         </div>
                     </div>
 
@@ -636,19 +702,19 @@ const UnitForm: React.FC<{ isOpen: boolean, onClose: () => void, unit: Unit | nu
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                         <div>
                             <label className="block text-sm font-medium mb-1">غرف النوم</label>
-                            <input type="number" min="0" value={bedrooms} onChange={e => setBedrooms(Number(e.target.value))} />
+                            <input type="number" min="0" value={bedrooms} onChange={e => setBedrooms(Number(e.target.value))} disabled={isSaving} />
                         </div>
                         <div>
                             <label className="block text-sm font-medium mb-1">الحمامات</label>
-                            <input type="number" min="0" value={bathrooms} onChange={e => setBathrooms(Number(e.target.value))} />
+                            <input type="number" min="0" value={bathrooms} onChange={e => setBathrooms(Number(e.target.value))} disabled={isSaving} />
                         </div>
                         <div>
                             <label className="block text-sm font-medium mb-1">المطابخ</label>
-                            <input type="number" min="0" value={kitchens} onChange={e => setKitchens(Number(e.target.value))} />
+                            <input type="number" min="0" value={kitchens} onChange={e => setKitchens(Number(e.target.value))} disabled={isSaving} />
                         </div>
                         <div>
                             <label className="block text-sm font-medium mb-1">الصالات</label>
-                            <input type="number" min="0" value={livingRooms} onChange={e => setLivingRooms(Number(e.target.value))} />
+                            <input type="number" min="0" value={livingRooms} onChange={e => setLivingRooms(Number(e.target.value))} disabled={isSaving} />
                         </div>
                     </div>
 
@@ -656,26 +722,26 @@ const UnitForm: React.FC<{ isOpen: boolean, onClose: () => void, unit: Unit | nu
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                             <label className="block text-sm font-medium mb-1">رقم عداد المياه</label>
-                            <input type="text" value={waterMeter} onChange={e => setWaterMeter(e.target.value)} />
+                            <input type="text" value={waterMeter} onChange={e => setWaterMeter(e.target.value)} disabled={isSaving} />
                         </div>
                         <div>
                             <label className="block text-sm font-medium mb-1">رقم عداد الكهرباء</label>
-                            <input type="text" value={electricityMeter} onChange={e => setElectricityMeter(e.target.value)} />
+                            <input type="text" value={electricityMeter} onChange={e => setElectricityMeter(e.target.value)} disabled={isSaving} />
                         </div>
                     </div>
 
                     <div>
                         <label className="block text-sm font-medium mb-1">مميزات إضافية</label>
-                        <input type="text" value={features} onChange={e => setFeatures(e.target.value)} placeholder="مثال: مكيف مركزي، موقف سيارة، بلكونة" />
+                        <input type="text" value={features} onChange={e => setFeatures(e.target.value)} placeholder="مثال: مكيف مركزي، موقف سيارة، بلكونة" disabled={isSaving} />
                     </div>
                     <div>
                         <label className="block text-sm font-medium mb-1">ملاحظات</label>
-                        <textarea value={notes} onChange={e => setNotes(e.target.value)} />
+                        <textarea value={notes} onChange={e => setNotes(e.target.value)} disabled={isSaving} />
                     </div>
                 </div>
                 <div className="flex justify-end gap-3 pt-4 mt-4 border-t border-border">
-                    <button type="button" onClick={onClose} className="btn btn-ghost">إلغاء</button>
-                    <button type="submit" className="btn btn-primary">حفظ الوحدة</button>
+                    <button type="button" onClick={onClose} className="btn btn-ghost" disabled={isSaving}>إلغاء</button>
+                    <button type="submit" className="btn btn-primary" disabled={isSaving}>{isSaving ? 'جاري الحفظ...' : 'حفظ الوحدة'}</button>
                 </div>
             </form>
         </Modal>
