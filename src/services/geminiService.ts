@@ -6,7 +6,8 @@ export async function queryAssistant(apiKey: string, query: string, context: str
     }
 
     try {
-        const client = new GoogleGenerativeAI(apiKey);
+        // @ts-ignore - GoogleGenerativeAI export compatibility
+        const client = new (GoogleGenerativeAI as any)(apiKey);
         const model = client.getGenerativeModel({ model: 'gemini-1.5-flash' });
         
         const prompt = context 
