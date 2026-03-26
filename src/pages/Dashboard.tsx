@@ -495,7 +495,7 @@ const DashboardRevenueChart: React.FC<{ receipts: ReceiptType[]; expenses: Expen
                 </h3>
                 <span className="text-xs text-text-muted">آخر 6 أشهر</span>
             </div>
-            <div className="h-52" dir="ltr">
+            <div className="h-52 overflow-hidden" dir="ltr">
                 <ResponsiveContainer width="100%" height="100%">
                     <AreaChart data={chartData}>
                         <defs>
