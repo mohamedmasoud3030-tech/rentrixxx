@@ -5,7 +5,7 @@ import {
     BarChart2, Settings, UserPlus, MessageSquare, Map as MapIcon, Bot, ClipboardList, ScrollText, Wrench
 } from 'lucide-react';
 import { useApp } from '../../contexts/AppContext';
-import { getLastRunDate } from '../../../services/automationService';
+import { getLastRunDate } from '../../services/automationService';
 
 interface NavLinkItem {
   path: string;
