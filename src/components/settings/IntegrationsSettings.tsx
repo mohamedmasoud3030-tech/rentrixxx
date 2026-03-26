@@ -5,6 +5,7 @@ import { toast } from 'react-hot-toast';
 const IntegrationsSettings: React.FC = () => {
     const { settings, updateSettings } = useApp();
     const [integrations, setIntegrations] = useState(settings.integrations);
+    const [isSaving, setIsSaving] = useState(false);
 
     useEffect(() => {
         setIntegrations(settings.integrations);
@@ -14,9 +15,15 @@ const IntegrationsSettings: React.FC = () => {
         setIntegrations({ ...integrations, [e.target.name]: e.target.value });
     };
 
-    const handleSave = () => {
-        updateSettings({ integrations });
-        toast.success("تم حفظ إعدادات التكامل.");
+    const handleSave = async () => {
+        if (isSaving) return;
+        setIsSaving(true);
+        try {
+            await updateSettings({ integrations });
+            toast.success("تم حفظ إعدادات التكامل.");
+        } finally {
+            setIsSaving(false);
+        }
     };
     
     return (
@@ -58,7 +65,9 @@ const IntegrationsSettings: React.FC = () => {
             </div>
 
             <div className="pt-4 flex justify-end">
-                <button onClick={handleSave} className="btn btn-primary">حفظ الإعدادات</button>
+                <button onClick={handleSave} disabled={isSaving} className="btn btn-primary disabled:opacity-50 disabled:cursor-not-allowed">
+                    {isSaving ? 'جاري الحفظ...' : 'حفظ الإعدادات'}
+                </button>
             </div>
         </div>
     );
