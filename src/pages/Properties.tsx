@@ -590,6 +590,7 @@ const UNIT_TYPES = [
     { value: 'استوديو', label: 'استوديو' },
     { value: 'فيلا', label: 'فيلا' },
     { value: 'مستودع', label: 'مستودع' },
+    { value: 'غرفة', label: 'غرفة' },
     { value: 'أخرى', label: 'أخرى' },
 ];
 
