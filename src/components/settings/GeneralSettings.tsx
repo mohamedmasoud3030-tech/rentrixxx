@@ -215,6 +215,35 @@ const GeneralSettings: React.FC = () => {
                 </div>
             </SettingsSection>
 
+            <SettingsSection title="نوع التاريخ" icon={<Clock size={20} />} description="اختر بين التقويم الهجري والميلادي لعرض التواريخ في كل أنحاء التطبيق">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label className="text-xs font-medium text-text-muted flex items-center gap-1.5 mb-1">
+                            <Clock size={14} />
+                            نوع التقويم
+                        </label>
+                        <select 
+                            name="calendarType" 
+                            value={operational.calendarType || 'gregorian'} 
+                            onChange={handleOperationalChange}
+                        >
+                            <option value="gregorian">التقويم الميلادي (Gregorian)</option>
+                            <option value="hijri">التقويم الهجري (Hijri)</option>
+                        </select>
+                    </div>
+                    <div className="flex items-end">
+                        <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800/30 text-sm">
+                            <p className="font-medium text-blue-900 dark:text-blue-200">
+                                {operational.calendarType === 'hijri' ? 'التواريخ ستعرض بالصيغة الهجرية' : 'التواريخ ستعرض بالصيغة الميلادية'}
+                            </p>
+                            <p className="text-xs text-blue-700 dark:text-blue-300 mt-1">
+                                يؤثر على جميع التواريخ في التطبيق والمستندات المطبوعة
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </SettingsSection>
+
             <div className="pt-4 flex justify-end">
                 <button onClick={handleSave} className="btn btn-primary px-8 py-3 text-base">حفظ جميع التغييرات</button>
             </div>

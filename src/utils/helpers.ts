@@ -30,17 +30,63 @@ export function formatCurrency(amount: number, currency: 'OMR' | 'SAR' | 'EGP' =
   return `${toArabicDigits(formattedNumber)} ${symbol}`;
 }
 
-export function formatDate(dateString: string): string {
+// Convert Gregorian date to Hijri date
+export function toHijri(date: Date): { day: number; month: number; year: number } {
+  const jd = Math.floor((date.getTime() / 86400000) + date.getTimezoneOffset() / 1440 + 1948439.5);
+  const l = jd + 68569;
+  const n = Math.floor((4 * l) / 146097);
+  const l2 = l - Math.floor((146097 * n + 3) / 4);
+  const i = Math.floor((4000 * (l2 + 1)) / 1461001);
+  const l3 = l2 - Math.floor((1461 * i) / 4) + 31;
+  const j = Math.floor((80 * l3) / 2447);
+  const day = l3 - Math.floor((2447 * j) / 80);
+  const l4 = Math.floor(j / 11);
+  const month = j + 2 - 12 * l4;
+  const year = 100 * (n - 49) + i + l4;
+  return { day: Math.floor(day), month: Math.floor(month), year: Math.floor(year) };
+}
+
+// Convert Hijri date to Gregorian date
+export function toGregorian(hijriDay: number, hijriMonth: number, hijriYear: number): Date {
+  const n = hijriDay + Math.ceil(29.5001 * (hijriMonth - 1)) + (hijriYear - 1) * 354 + Math.floor((3 + 11 * hijriYear) / 30) - Math.floor((hijriYear / 100) * 0.97);
+  const q = Math.floor(n / 36524.25);
+  const r = n % 36524.25;
+  const s = Math.floor(r / 365.2425);
+  const t = (r % 365.2425 + 0.5) / 365.2425;
+  const u = Math.floor((q * 36524 + s * 365.25 + t) / 36525);
+  const v = Math.floor(((q * 36524 + s * 365.25 + t) % 36525) / 365.25);
+  const w = Math.floor(((q * 36524 + s * 365.25 + t) % 365.25) / 30.44);
+  const x = Math.floor(((q * 36524 + s * 365.25 + t) % 30.44) + 0.5);
+  const timestamp = Math.floor(new Date(2000 + u - 30, w, x).getTime());
+  return new Date(timestamp);
+}
+
+// Format date with calendar type option
+export function formatDateWithType(dateString: string, calendarType: 'gregorian' | 'hijri' = 'gregorian'): string {
   if (!dateString) return '—';
   try {
     const date = new Date(dateString);
-    const day = toArabicDigits(date.getDate());
-    const month = toArabicDigits(date.getMonth() + 1);
-    const year = toArabicDigits(date.getFullYear());
-    return `${year}/${month}/${day}`;
+    
+    if (calendarType === 'hijri') {
+      const hijri = toHijri(date);
+      const day = toArabicDigits(hijri.day.toString().padStart(2, '0'));
+      const month = toArabicDigits(hijri.month.toString().padStart(2, '0'));
+      const year = toArabicDigits(hijri.year.toString());
+      return `${year}/${month}/${day}`;
+    } else {
+      // Gregorian
+      const day = toArabicDigits(date.getDate().toString().padStart(2, '0'));
+      const month = toArabicDigits((date.getMonth() + 1).toString().padStart(2, '0'));
+      const year = toArabicDigits(date.getFullYear().toString());
+      return `${year}/${month}/${day}`;
+    }
   } catch {
     return dateString;
   }
+}
+
+export function formatDate(dateString: string): string {
+  return formatDateWithType(dateString, 'gregorian');
 }
 
 export function formatDateTime(dateTimeString: string): string {
@@ -48,6 +94,18 @@ export function formatDateTime(dateTimeString: string): string {
     try {
         const date = new Date(dateTimeString);
         const formattedDate = formatDate(dateTimeString);
+        const time = date.toLocaleTimeString('ar-EG', { hour: 'numeric', minute: 'numeric', hour12: true });
+        return `${formattedDate} ${time}`;
+    } catch {
+        return dateTimeString;
+    }
+}
+
+export function formatDateTimeWithType(dateTimeString: string, calendarType: 'gregorian' | 'hijri' = 'gregorian'): string {
+    if (!dateTimeString) return '—';
+    try {
+        const date = new Date(dateTimeString);
+        const formattedDate = formatDateWithType(dateTimeString, calendarType);
         const time = date.toLocaleTimeString('ar-EG', { hour: 'numeric', minute: 'numeric', hour12: true });
         return `${formattedDate} ${time}`;
     } catch {

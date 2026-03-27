@@ -111,6 +111,7 @@ export interface Settings {
     };
     documentNumbering: DocumentNumberingSettings;
     maintenance: MaintenanceSettings;
+    calendarType?: 'gregorian' | 'hijri';
   };
   accounting: {
      accountMappings: {
