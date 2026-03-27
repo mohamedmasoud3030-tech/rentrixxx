@@ -246,49 +246,57 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   }, []);
 
   const add: AppContextType['dataService']['add'] = useCallback(async (table, entry) => {
-    if (isReadOnly || !settings) return null;
-    if (FINANCIAL_TABLES.includes(table as keyof Database)) setIsDataStale(true);
-    const id = crypto.randomUUID();
-    const now = Date.now();
-    const serialKeyMap: Partial<Record<keyof Database, string>> = {
-      receipts: 'receipt', expenses: 'expense', invoices: 'invoice',
-      ownerSettlements: 'ownerSettlement', maintenanceRecords: 'maintenance',
-      leads: 'lead', missions: 'mission'
-    };
-    const serialKey = serialKeyMap[table as keyof Database];
-    const mutableEntry: Record<string, unknown> = { ...entry, id, createdAt: now };
+    if (isReadOnly || !settings) { toast.error('لا يمكن إضافة سجلات في وضع القراءة فقط'); return null; }
+    try {
+      if (FINANCIAL_TABLES.includes(table as keyof Database)) setIsDataStale(true);
+      const id = crypto.randomUUID();
+      const now = Date.now();
+      const serialKeyMap: Partial<Record<keyof Database, string>> = {
+        receipts: 'receipt', expenses: 'expense', invoices: 'invoice',
+        ownerSettlements: 'ownerSettlement', maintenanceRecords: 'maintenance',
+        leads: 'lead', missions: 'mission'
+      };
+      const serialKey = serialKeyMap[table as keyof Database];
+      const mutableEntry: Record<string, unknown> = { ...entry, id, createdAt: now };
 
-    if (serialKey) {
-      const newNo = await supabaseData.incrementSerial(serialKey);
-      mutableEntry['no'] = String(newNo);
-    }
-
-    const result = await supabaseData.insert(table as string, mutableEntry);
-    if (!result) { toast.error('فشل في إضافة السجل'); return null; }
-    await audit('CREATE', String(table), id);
-
-    const mappings = settings.accounting?.accountMappings;
-    if (table === 'receipts') {
-      const r = mutableEntry as unknown as Receipt;
-      await postJournalEntrySupabase({ dr: mappings.paymentMethods[r.channel], cr: mappings.accountsReceivable, amount: r.amount, ref: r.id });
-    } else if (table === 'expenses') {
-      const e = mutableEntry as unknown as Expense;
-      const cashAccount = mappings.paymentMethods.CASH;
-      if (e.chargedTo === 'OWNER') {
-        await postJournalEntrySupabase({ dr: '2121', cr: cashAccount, amount: e.amount, ref: e.id });
-      } else {
-        const expenseAccount = mappings.expenseCategories[e.category] || mappings.expenseCategories.default;
-        await postJournalEntrySupabase({ dr: expenseAccount, cr: cashAccount, amount: e.amount, ref: e.id });
+      if (serialKey) {
+        const newNo = await supabaseData.incrementSerial(serialKey);
+        mutableEntry['no'] = String(newNo);
       }
-    } else if (table === 'ownerSettlements') {
-      const s = mutableEntry as unknown as OwnerSettlement;
-      const cashAccount = mappings.paymentMethods[s.method === 'CASH' ? 'CASH' : 'BANK'];
-      await postJournalEntrySupabase({ dr: '2121', cr: cashAccount, amount: s.amount, ref: s.id });
-    }
 
-    await refreshData();
-    toast.success('تمت الإضافة بنجاح!');
-    return mutableEntry as unknown as Database[typeof table][number];
+      const result = await supabaseData.insert(table as string, mutableEntry);
+      if (result.error) { toast.error(`فشل في إضافة السجل: ${result.error}`); return null; }
+      if (!result.data) { toast.error('فشل في إضافة السجل: لم يتم استرجاع البيانات'); return null; }
+      
+      await audit('CREATE', String(table), id);
+
+      const mappings = settings.accounting?.accountMappings;
+      if (table === 'receipts') {
+        const r = mutableEntry as unknown as Receipt;
+        await postJournalEntrySupabase({ dr: mappings.paymentMethods[r.channel], cr: mappings.accountsReceivable, amount: r.amount, ref: r.id });
+      } else if (table === 'expenses') {
+        const e = mutableEntry as unknown as Expense;
+        const cashAccount = mappings.paymentMethods.CASH;
+        if (e.chargedTo === 'OWNER') {
+          await postJournalEntrySupabase({ dr: '2121', cr: cashAccount, amount: e.amount, ref: e.id });
+        } else {
+          const expenseAccount = mappings.expenseCategories[e.category] || mappings.expenseCategories.default;
+          await postJournalEntrySupabase({ dr: expenseAccount, cr: cashAccount, amount: e.amount, ref: e.id });
+        }
+      } else if (table === 'ownerSettlements') {
+        const s = mutableEntry as unknown as OwnerSettlement;
+        const cashAccount = mappings.paymentMethods[s.method === 'CASH' ? 'CASH' : 'BANK'];
+        await postJournalEntrySupabase({ dr: '2121', cr: cashAccount, amount: s.amount, ref: s.id });
+      }
+
+      await refreshData();
+      toast.success('تمت الإضافة بنجاح!');
+      return mutableEntry as unknown as Database[typeof table][number];
+    } catch (err: any) {
+      console.error('[AppContext] add error:', err);
+      toast.error(`خطأ أثناء الإضافة: ${err?.message || 'خطأ غير معروف'}`);
+      return null;
+    }
   }, [isReadOnly, settings, audit, postJournalEntrySupabase, refreshData]);
 
   const addReceiptWithAllocations: AppContextType['financeService']['addReceiptWithAllocations'] = useCallback(async (receiptData, allocations) => {
@@ -350,11 +358,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   }, [isReadOnly, audit, refreshData]);
 
   const update: AppContextType['dataService']['update'] = useCallback(async (table, id, updates) => {
-    await supabaseData.update(table as string, id, { ...updates, updatedAt: Date.now() });
-    await audit('UPDATE', String(table), id);
-    if (FINANCIAL_TABLES.includes(table as keyof Database)) setIsDataStale(true);
-    await refreshData();
-    toast.success('تم التحديث بنجاح!');
+    try {
+      const result = await supabaseData.update(table as string, id, { ...updates, updatedAt: Date.now() });
+      if (!result.ok) { toast.error(`فشل التحديث: ${result.error}`); return; }
+      await audit('UPDATE', String(table), id);
+      if (FINANCIAL_TABLES.includes(table as keyof Database)) setIsDataStale(true);
+      await refreshData();
+      toast.success('تم التحديث بنجاح!');
+    } catch (err: any) {
+      console.error('[AppContext] update error:', err);
+      toast.error(`خطأ أثناء التحديث: ${err?.message || 'خطأ غير معروف'}`);
+    }
   }, [audit, refreshData]);
 
   const remove: AppContextType['dataService']['remove'] = useCallback(async (table, id) => {

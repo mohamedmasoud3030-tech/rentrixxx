@@ -8,6 +8,16 @@ Rentrix is a comprehensive property management system for real estate. It is an 
 
 Preferred communication style: Simple, everyday language.
 
+## Recent Fixes & Improvements
+
+**Add Tenant/Owner Bug Fixes (Mar 27, 2026):**
+- ✅ Improved error handling in `supabaseDataService.ts`: `insert()` and `update()` now return detailed error messages
+- ✅ Enhanced error reporting in `AppContext.tsx`: User sees specific error reasons instead of generic "failed" messages
+- ✅ Added `isSaving` state to TenantForm & OwnerForm for better UX (button disabled during save, shows "جاري الحفظ...")
+- ✅ Added try-catch blocks in form submit handlers for graceful error handling
+- ✅ Added `.trim()` to all input fields to prevent whitespace-only entries
+- ✅ Form fields with empty/undefined values now properly handled (converted to `undefined` instead of empty strings)
+
 ## System Architecture
 
 ### Frontend

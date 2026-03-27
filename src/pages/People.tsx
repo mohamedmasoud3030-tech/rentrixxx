@@ -412,6 +412,7 @@ const TenantForm: React.FC<{ isOpen: boolean, onClose: () => void, tenant: Tenan
     const [nationality, setNationality] = useState('');
     const [status, setStatus] = useState<Tenant['status']>('ACTIVE');
     const [notes, setNotes] = useState('');
+    const [isSaving, setIsSaving] = useState(false);
 
     React.useEffect(() => {
         if (tenant) {
@@ -429,20 +430,37 @@ const TenantForm: React.FC<{ isOpen: boolean, onClose: () => void, tenant: Tenan
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!name) { toast.error("اسم المستأجر مطلوب"); return; }
-
-        const data = {
-            name, phone, email: email || undefined, idNo, tenantType,
-            crNumber: crNumber || undefined, address: address || undefined,
-            postalCode: postalCode || undefined, poBox: poBox || undefined,
-            nationality: nationality || undefined, status, notes,
-        };
-        if (tenant) {
-            await dataService.update('tenants', tenant.id, data);
-        } else {
-            await dataService.add('tenants', data);
+        if (!name.trim()) { toast.error("اسم المستأجر مطلوب"); return; }
+        
+        setIsSaving(true);
+        try {
+            const data = {
+                name: name.trim(), 
+                phone: phone.trim() || undefined, 
+                email: email.trim() || undefined, 
+                idNo: idNo.trim() || undefined, 
+                tenantType,
+                crNumber: crNumber.trim() || undefined, 
+                address: address.trim() || undefined,
+                postalCode: postalCode.trim() || undefined, 
+                poBox: poBox.trim() || undefined,
+                nationality: nationality.trim() || undefined, 
+                status, 
+                notes: notes.trim() || undefined,
+            };
+            
+            if (tenant) {
+                await dataService.update('tenants', tenant.id, data);
+            } else {
+                await dataService.add('tenants', data);
+            }
+            onClose();
+        } catch (error: any) {
+            console.error('TenantForm error:', error);
+            toast.error(`خطأ: ${error?.message || 'فشل الحفظ'}`);
+        } finally {
+            setIsSaving(false);
         }
-        onClose();
     };
 
     return (
@@ -518,8 +536,10 @@ const TenantForm: React.FC<{ isOpen: boolean, onClose: () => void, tenant: Tenan
                 {tenant && <AttachmentsManager entityType="TENANT" entityId={tenant.id} />}
 
                 <div className="flex justify-end gap-3 pt-4 mt-4 border-t border-border">
-                    <button type="button" onClick={onClose} className="btn btn-ghost">إلغاء</button>
-                    <button type="submit" className="btn btn-primary">حفظ</button>
+                    <button type="button" onClick={onClose} className="btn btn-ghost" disabled={isSaving}>إلغاء</button>
+                    <button type="submit" className="btn btn-primary" disabled={isSaving}>
+                        {isSaving ? 'جاري الحفظ...' : 'حفظ'}
+                    </button>
                 </div>
             </form>
         </Modal>
@@ -528,7 +548,6 @@ const TenantForm: React.FC<{ isOpen: boolean, onClose: () => void, tenant: Tenan
 
 
 const OwnerForm: React.FC<{ isOpen: boolean, onClose: () => void, owner: Owner | null }> = ({ isOpen, onClose, owner }) => {
-    // FIX: Use dataService for data manipulation
     const { dataService } = useApp();
     const [name, setName] = useState('');
     const [phone, setPhone] = useState('');
@@ -539,6 +558,7 @@ const OwnerForm: React.FC<{ isOpen: boolean, onClose: () => void, owner: Owner |
     const [notes, setNotes] = useState('');
     const [commissionType, setCommissionType] = useState<Owner['commissionType']>('RATE');
     const [commissionValue, setCommissionValue] = useState(0);
+    const [isSaving, setIsSaving] = useState(false);
 
     React.useEffect(() => {
         if (owner) {
@@ -566,15 +586,33 @@ const OwnerForm: React.FC<{ isOpen: boolean, onClose: () => void, owner: Owner |
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!name) { toast.error("اسم المالك مطلوب"); return; }
-
-        const data = { name, phone, address, managementContractDate, bankName, bankAccountNumber, notes, commissionType, commissionValue };
-        if (owner) {
-            await dataService.update('owners', owner.id, data);
-        } else {
-            await dataService.add('owners', data as any);
+        if (!name.trim()) { toast.error("اسم المالك مطلوب"); return; }
+        
+        setIsSaving(true);
+        try {
+            const data = { 
+                name: name.trim(), 
+                phone: phone.trim() || undefined, 
+                address: address.trim() || undefined, 
+                managementContractDate: managementContractDate || undefined, 
+                bankName: bankName.trim() || undefined, 
+                bankAccountNumber: bankAccountNumber.trim() || undefined, 
+                notes: notes.trim() || undefined, 
+                commissionType, 
+                commissionValue 
+            };
+            if (owner) {
+                await dataService.update('owners', owner.id, data);
+            } else {
+                await dataService.add('owners', data as any);
+            }
+            onClose();
+        } catch (error: any) {
+            console.error('OwnerForm error:', error);
+            toast.error(`خطأ: ${error?.message || 'فشل الحفظ'}`);
+        } finally {
+            setIsSaving(false);
         }
-        onClose();
     };
     
     return (
@@ -649,8 +687,10 @@ const OwnerForm: React.FC<{ isOpen: boolean, onClose: () => void, owner: Owner |
                 {owner && <AttachmentsManager entityType="OWNER" entityId={owner.id} />}
 
                 <div className="flex justify-end gap-3 pt-6 mt-6 border-t border-border">
-                    <button type="button" onClick={onClose} className="btn btn-ghost">إلغاء</button>
-                    <button type="submit" className="btn btn-primary">حفظ</button>
+                    <button type="button" onClick={onClose} className="btn btn-ghost" disabled={isSaving}>إلغاء</button>
+                    <button type="submit" className="btn btn-primary" disabled={isSaving}>
+                        {isSaving ? 'جاري الحفظ...' : 'حفظ'}
+                    </button>
                 </div>
             </form>
         </Modal>

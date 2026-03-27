@@ -93,12 +93,16 @@ export const supabaseData = {
     return data ? toCamelObj(data, jsTable) as T : null;
   },
 
-  async insert<T>(jsTable: string, record: Record<string, any>): Promise<T | null> {
+  async insert<T>(jsTable: string, record: Record<string, any>): Promise<{ data: T | null; error: string | null }> {
     const sqlTable = resolveTable(jsTable);
     const snakeRecord = toSnakeObj(record, jsTable);
     const { data, error } = await supabase.from(sqlTable).insert(snakeRecord).select().single();
-    if (error) { console.error(`[SupabaseData] insert ${sqlTable}:`, error, snakeRecord); return null; }
-    return data ? toCamelObj(data, jsTable) as T : null;
+    if (error) { 
+      const errorMsg = error.message || 'خطأ غير معروف';
+      console.error(`[SupabaseData] insert ${sqlTable}:`, error, snakeRecord); 
+      return { data: null, error: errorMsg };
+    }
+    return { data: data ? toCamelObj(data, jsTable) as T : null, error: null };
   },
 
   async upsert<T>(jsTable: string, record: Record<string, any>): Promise<T | null> {
@@ -109,12 +113,16 @@ export const supabaseData = {
     return data ? toCamelObj(data, jsTable) as T : null;
   },
 
-  async update(jsTable: string, id: string | number, updates: Record<string, any>): Promise<boolean> {
+  async update(jsTable: string, id: string | number, updates: Record<string, any>): Promise<{ ok: boolean; error: string | null }> {
     const sqlTable = resolveTable(jsTable);
     const snakeUpdates = toSnakeObj(updates, jsTable);
     const { error } = await supabase.from(sqlTable).update(snakeUpdates).eq('id', id);
-    if (error) { console.error(`[SupabaseData] update ${sqlTable}:`, error); return false; }
-    return true;
+    if (error) { 
+      const errorMsg = error.message || 'خطأ غير معروف';
+      console.error(`[SupabaseData] update ${sqlTable}:`, error); 
+      return { ok: false, error: errorMsg };
+    }
+    return { ok: true, error: null };
   },
 
   async remove(jsTable: string, id: string | number): Promise<boolean> {
