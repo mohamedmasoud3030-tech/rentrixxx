@@ -52,6 +52,15 @@ Preferred communication style: Simple, everyday language.
 - ✅ Print system properly detects multiple pages (يطبع ورقتين إذا احتاج ورقتين)
 - ✅ Unified header with company info (الاسم، الهاتف، العنوان، السجل التجاري، الرقم الضريبي)
 
+**Mobile UX Overhaul (Mar 27, 2026):**
+- ✅ `BottomNav.tsx` — شريط تنقل سفلي ثابت على الجوال (Dashboard, Properties, Tenants, Finance + القائمة) مع notification badges
+- ✅ `Layout.tsx` — backdrop داكن عند فتح الـ Sidebar على الجوال، padding سفلي للـ BottomNav
+- ✅ `Sidebar.tsx` — زر X إغلاق على الجوال، قسم المستخدم مع زر Logout في الأسفل (جوال فقط)
+- ✅ `Topbar.tsx` — عرض اسم الصفحة الحالية على الجوال بدلاً من الـ hamburger
+- ✅ `Modal.tsx` — Bottom Sheet على الجوال (يظهر من الأسفل بـ drag handle)
+- ✅ `SmartAssistant.tsx` — مرفوع فوق الـ BottomNav على الجوال
+- ✅ `index.html` — viewport-fit=cover للـ safe area (iPhone notch)، تحسينات UX للمس
+
 **Calendar Type Feature (Mar 27, 2026 - IN PROGRESS):**
 - ✅ Added `calendarType?: 'gregorian' | 'hijri'` to `Settings.operational` in types
 - ✅ Added `calendarType: 'gregorian'` default to `DEFAULT_SETTINGS` in AppContext
