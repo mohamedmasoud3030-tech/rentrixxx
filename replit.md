@@ -31,6 +31,12 @@ Preferred communication style: Simple, everyday language.
 - ✅ Print system properly detects multiple pages (يطبع ورقتين إذا احتاج ورقتين)
 - ✅ Unified header with company info (الاسم، الهاتف، العنوان، السجل التجاري، الرقم الضريبي)
 
+**Calendar Type Feature (Mar 27, 2026 - IN PROGRESS):**
+- ✅ Added `calendarType?: 'gregorian' | 'hijri'` to `Settings.operational` in types
+- ✅ Added `calendarType: 'gregorian'` default to `DEFAULT_SETTINGS` in AppContext
+- ✅ Added Calendar Type toggle in `GeneralSettings.tsx` with live preview
+- ❌ Still need to wire `formatDateWithType()` throughout the app (dashboard, contracts, invoices, reports, etc.)
+
 **Application Icon Created (Mar 27, 2026):**
 - ✅ Created professional app icon: `public/icon-rentrix.png` (1024×1024 PNG with RGBA transparency)
 - ✅ Modern building design with integrated letter R
