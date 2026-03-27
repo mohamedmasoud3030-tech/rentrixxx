@@ -1,4 +1,4 @@
-﻿import React, { useRef } from 'react';
+import React, { useRef } from 'react';
 import { Printer, X } from 'lucide-react';
 
 interface PrintPreviewModalProps {
@@ -10,58 +10,50 @@ interface PrintPreviewModalProps {
 
 const PrintPreviewModal: React.FC<PrintPreviewModalProps> = ({ isOpen, onClose, title, children }) => {
     const componentRef = useRef<HTMLDivElement>(null);
-
+    
     const handlePrint = () => {
         const content = componentRef.current;
         if (!content) return;
 
-        const headStyles = Array.from(document.querySelectorAll('link[rel="stylesheet"], style'))
-            .map(node => node.outerHTML)
-            .join('\n');
-
         const printWindow = window.open('', '', 'height=800,width=1000');
-        if (!printWindow) return;
-
-        printWindow.document.write('<!DOCTYPE html><html><head><title>طباعة</title>');
-        printWindow.document.write(`
-            ${headStyles}
-            <style>
-                body {
-                    font-family: 'Cairo', sans-serif;
-                    direction: rtl;
-                    margin: 0;
-                    padding: 16px;
-                    background: #fff;
-                    color: #333;
-                }
-                #print-root {
-                    max-width: 1200px;
-                    margin: 0 auto;
-                }
-                @media print {
-                    body {
-                        margin: 0;
-                        padding: 0;
-                        -webkit-print-color-adjust: exact;
-                        print-color-adjust: exact;
+        if (printWindow) {
+            printWindow.document.write('<!DOCTYPE html><html><head><title>طباعة</title>');
+            printWindow.document.write(`
+                <style>
+                    @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap');
+                    body { 
+                        font-family: 'Cairo', sans-serif;
+                        direction: rtl;
+                        margin: 20px;
+                        color: #333;
                     }
-                    #print-root {
-                        max-width: 100%;
+                    table { width: 100%; border-collapse: collapse; margin-top: 1rem; font-size: 0.9rem; }
+                    th, td { border: 1px solid #ccc; padding: 8px; text-align: right; }
+                    thead { background-color: #f2f2f2; }
+                    h1, h2, h3, h4 { margin-bottom: 1rem; color: #000; }
+                    .text-center { text-align: center; }
+                    .font-bold { font-weight: 700; }
+                    .mb-2 { margin-bottom: 0.5rem; }
+                    .mb-6 { margin-bottom: 1.5rem; }
+                    .text-sm { font-size: 0.875rem; }
+                    .text-text-muted { color: #666; }
+                    @media print {
+                        body { margin: 0; }
                     }
-                }
-            </style>
-        `);
-        printWindow.document.write('</head><body>');
-        printWindow.document.write(`<div id="print-root">${content.innerHTML}</div>`);
-        printWindow.document.write('</body></html>');
-        printWindow.document.close();
-        printWindow.focus();
-
-        setTimeout(() => {
-            printWindow.print();
-            printWindow.close();
-        }, 300);
+                </style>
+            `);
+            printWindow.document.write('</head><body>');
+            printWindow.document.write(content.innerHTML);
+            printWindow.document.write('</body></html>');
+            printWindow.document.close();
+            printWindow.focus();
+            setTimeout(() => {
+                printWindow.print();
+                printWindow.close();
+            }, 250);
+        }
     };
+
 
     if (!isOpen) return null;
 

@@ -151,8 +151,7 @@ CREATE TABLE IF NOT EXISTS public.utility_records (
 ALTER TABLE public.utility_records ENABLE ROW LEVEL SECURITY;
 
 -- Policy: allow authenticated users full access
-DROP POLICY IF EXISTS "Authenticated users can manage utility records" ON public.utility_records;
-CREATE POLICY "Authenticated users can manage utility records"
+CREATE POLICY IF NOT EXISTS "Authenticated users can manage utility records"
   ON public.utility_records
   FOR ALL
   TO authenticated

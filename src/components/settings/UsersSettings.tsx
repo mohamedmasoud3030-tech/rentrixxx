@@ -43,7 +43,7 @@ const UsersSettings: React.FC = () => {
                         {db.auth.users.map(u => (
                             <tr key={u.id} className="border-t border-border">
                                 <td className="p-4 font-bold">{u.username}</td>
-                                <td className="p-4 text-sm font-mono text-text-muted" dir="ltr">{u.email || '-'}</td>
+                                <td className="p-4 text-sm font-mono text-text-muted" dir="ltr">{u.email || '—'}</td>
                                 <td className="p-4">{USER_ROLE_AR[u.role] || u.role}</td>
                                 <td className="p-4 text-sm text-text-muted">{new Date(u.createdAt).toLocaleDateString('ar-EG')}</td>
                                 <td className="p-4">

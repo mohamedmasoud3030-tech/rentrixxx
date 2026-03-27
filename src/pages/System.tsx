@@ -1,6 +1,7 @@
 import React from 'react';
-import { Routes, Route, Navigate, NavLink } from 'react-router-dom';
+import { Routes, Route, NavLink, Navigate, useLocation } from 'react-router-dom';
 import Card from '../components/ui/Card';
+import { Settings as SettingsIcon, ShieldCheck, Database, FileSearch, Users, Bell, Palette, Zap, Bot, SearchCheck, Calculator, FileText } from 'lucide-react';
 import GeneralSettings from '../components/settings/GeneralSettings';
 import AppearanceSettings from '../components/settings/AppearanceSettings';
 import UsersSettings from '../components/settings/UsersSettings';
@@ -12,66 +13,68 @@ import FinancialSettings from '../components/settings/FinancialSettings';
 import AutomationSettings from '../components/settings/AutomationSettings';
 import DataIntegrityAudit from './DataIntegrityAudit';
 import DocumentTemplatesSettings from '../components/settings/DocumentTemplatesSettings';
-import { Settings as SettingsIcon, Users, ShieldCheck, Zap, Bell, FileText, Calculator, Palette, Database, Bot, SearchCheck } from 'lucide-react';
+
 
 const settingsSections = [
-  { path: '/settings/general', label: 'عام', icon: SettingsIcon },
-  { path: '/settings/users', label: 'المستخدمون', icon: Users },
-  { path: '/settings/security', label: 'الأمان', icon: ShieldCheck },
-  { path: '/settings/integrations', label: 'التكاملات', icon: Zap },
-  { path: '/settings/notifications', label: 'الإشعارات', icon: Bell },
-  { path: '/settings/documents', label: 'المستندات', icon: FileText },
-  { path: '/settings/financial', label: 'مالي', icon: Calculator },
-  { path: '/settings/appearance', label: 'المظهر', icon: Palette },
-  { path: '/settings/backup', label: 'النسخ الاحتياطي', icon: Database },
-  { path: '/settings/automation', label: 'الأتمتة', icon: Bot },
-  { path: '/settings/integrity', label: 'سلامة البيانات', icon: SearchCheck },
+    { id: 'general', label: 'الإعدادات العامة', icon: SettingsIcon, path: '/settings/general' },
+    { id: 'financial', label: 'الإعدادات المالية', icon: Calculator, path: '/settings/financial' },
+    { id: 'appearance', label: 'المظهر والتخصيص', icon: Palette, path: '/settings/appearance' },
+    { id: 'documents', label: 'قوالب المستندات', icon: FileText, path: '/settings/documents' },
+    { id: 'users', label: 'المستخدمون والصلاحيات', icon: Users, path: '/settings/users' },
+    { id: 'notifications', label: 'الإشعارات والقوالب', icon: Bell, path: '/settings/notifications' },
+    { id: 'security', label: 'الأمان والتحكم', icon: ShieldCheck, path: '/settings/security' },
+    { id: 'backup', label: 'النسخ الاحتياطي', icon: Database, path: '/settings/backup' },
+    { id: 'integrations', label: 'التكاملات والربط', icon: Zap, path: '/settings/integrations' },
+    { id: 'automation', label: 'الأتمتة', icon: Bot, path: '/settings/automation' },
+    { id: 'integrity', label: 'سلامة البيانات', icon: SearchCheck, path: '/settings/integrity' },
 ];
 
 const Settings: React.FC = () => {
-  return (
-    <Card>
-      <div className="grid grid-cols-1 lg:grid-cols-[260px_1fr] gap-6">
-        <aside className="border border-border rounded-xl p-3 h-fit bg-background">
-          <h3 className="text-sm font-black text-text-muted mb-2 px-2">الإعدادات</h3>
-          <nav className="space-y-1">
-            {settingsSections.map(section => (
-              <NavLink
-                key={section.path}
-                to={section.path}
-                className={({ isActive }) =>
-                  `flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-bold transition ${
-                    isActive ? 'bg-primary text-white' : 'text-text-muted hover:bg-card hover:text-text'
-                  }`
-                }
-              >
-                <section.icon size={16} />
-                <span>{section.label}</span>
-              </NavLink>
-            ))}
-          </nav>
-        </aside>
+    const location = useLocation();
 
-        <main className="min-w-0">
-          <Routes>
-            <Route path="general" element={<GeneralSettings />} />
-            <Route path="financial" element={<FinancialSettings />} />
-            <Route path="appearance" element={<AppearanceSettings />} />
-            <Route path="documents" element={<DocumentTemplatesSettings />} />
-            <Route path="users" element={<UsersSettings />} />
-            <Route path="notifications" element={<NotificationsSettings />} />
-            <Route path="security" element={<SecuritySettings />} />
-            <Route path="backup" element={<BackupSettings />} />
-            <Route path="integrations" element={<IntegrationsSettings />} />
-            <Route path="automation" element={<AutomationSettings />} />
-            <Route path="integrity" element={<DataIntegrityAudit />} />
-            <Route index element={<Navigate to="general" replace />} />
-            <Route path="*" element={<Navigate to="general" replace />} />
-          </Routes>
-        </main>
-      </div>
-    </Card>
-  );
+    return (
+        <Card>
+            <div className="flex flex-col md:flex-row gap-8">
+                <aside className="md:w-1/4 lg:w-1/5 border-l border-border pl-4">
+                    <h2 className="text-xl font-bold mb-6">مركز التحكم</h2>
+                    <nav className="flex flex-col gap-2">
+                        {settingsSections.map(section => (
+                            <NavLink
+                                key={section.id}
+                                to={section.path}
+                                className={({ isActive }) =>
+                                    `flex items-center gap-3 rounded-md px-4 py-2 font-semibold text-sm transition-all ${
+                                        isActive
+                                        ? 'bg-primary text-white shadow-md' 
+                                        : 'text-text-muted hover:bg-background hover:text-primary'
+                                    }`
+                                }
+                            >
+                                <section.icon size={18} />
+                                {section.label}
+                            </NavLink>
+                        ))}
+                    </nav>
+                </aside>
+                <main className="flex-1 min-w-0">
+                    <Routes>
+                        <Route path="general" element={<GeneralSettings />} />
+                        <Route path="financial" element={<FinancialSettings />} />
+                        <Route path="appearance" element={<AppearanceSettings />} />
+                        <Route path="documents" element={<DocumentTemplatesSettings />} />
+                        <Route path="users" element={<UsersSettings />} />
+                        <Route path="notifications" element={<NotificationsSettings />} />
+                        <Route path="security" element={<SecuritySettings />} />
+                        <Route path="backup" element={<BackupSettings />} />
+                        <Route path="integrations" element={<IntegrationsSettings />} />
+                        <Route path="automation" element={<AutomationSettings />} />
+                        <Route path="integrity" element={<DataIntegrityAudit />} />
+                        <Route index element={<Navigate to="general" replace />} />
+                    </Routes>
+                </main>
+            </div>
+        </Card>
+    );
 };
 
 export default Settings;

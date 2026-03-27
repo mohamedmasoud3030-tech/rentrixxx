@@ -31,7 +31,7 @@ export function formatCurrency(amount: number, currency: 'OMR' | 'SAR' | 'EGP' =
 }
 
 export function formatDate(dateString: string): string {
-  if (!dateString) return '-';
+  if (!dateString) return '—';
   try {
     const date = new Date(dateString);
     const day = toArabicDigits(date.getDate());
@@ -44,7 +44,7 @@ export function formatDate(dateString: string): string {
 }
 
 export function formatDateTime(dateTimeString: string): string {
-    if (!dateTimeString) return '-';
+    if (!dateTimeString) return '—';
     try {
         const date = new Date(dateTimeString);
         const formattedDate = formatDate(dateTimeString);

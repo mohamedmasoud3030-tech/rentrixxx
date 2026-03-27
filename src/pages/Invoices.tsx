@@ -122,7 +122,7 @@ const Invoices: React.FC = () => {
             const currency = settings.operational?.currency ?? 'OMR';
             const balance = formatCurrency(inv.amount - inv.paidAmount, currency);
             const msg = encodeURIComponent(
-                `مرحباً ${inv.tenant?.name}،\nهذا تذكير بفاتورتك رقم ${inv.no} بمبلغ ${balance} مستحقة بتاريخ ${formatDate(inv.dueDate)}.\nيُرجى سداد المبلغ في أقرب وقت.\nشكراً - نظام Rentrix`
+                `مرحباً ${inv.tenant?.name}،\nهذا تذكير بفاتورتك رقم ${inv.no} بمبلغ ${balance} مستحقة بتاريخ ${formatDate(inv.dueDate)}.\nيُرجى سداد المبلغ في أقرب وقت.\nشكراً — نظام Rentrix`
             );
             const cleanPhone = phone.replace(/\D/g, '');
             window.open(`https://wa.me/${cleanPhone}?text=${msg}`, '_blank');

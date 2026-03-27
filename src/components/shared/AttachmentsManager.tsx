@@ -81,7 +81,7 @@ const AttachmentsManager: React.FC<AttachmentsManagerProps> = ({ entityType, ent
                     const savedPct = Math.round((1 - approxBytes / file.size) * 100);
                     finalSize = approxBytes;
                     if (savedPct > 5) {
-                        toast.success(`تم ضغط الصورة - وُفِّر ${savedPct}% من الحجم`);
+                        toast.success(`تم ضغط الصورة — وُفِّر ${savedPct}% من الحجم`);
                     }
                 } else {
                     dataUrl = await fileToBase64(file);
