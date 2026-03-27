@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useRef, memo, useCallback } from 'react';
+import React, { useState, useMemo, useRef, memo, useCallback, Component, ErrorInfo, ReactNode } from 'react';
 import { useApp } from '../contexts/AppContext';
 import { Property, Unit, UtilityRecord, UtilityType, UTILITY_TYPE_AR, UTILITY_ICON } from '../types';
 import Card from '../components/ui/Card';
@@ -11,6 +11,32 @@ import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 import PropertyMapView from './PropertyMap';
 import { PieChart as RechartsPie, Pie, Cell, ResponsiveContainer, Legend } from 'recharts';
+
+interface ErrorBoundaryState { hasError: boolean; error: Error | null; }
+class ErrorBoundary extends Component<{ children: ReactNode; fallback?: ReactNode }, ErrorBoundaryState> {
+    constructor(props: { children: ReactNode; fallback?: ReactNode }) {
+        super(props);
+        this.state = { hasError: false, error: null };
+    }
+    static getDerivedStateFromError(error: Error): ErrorBoundaryState {
+        return { hasError: true, error };
+    }
+    componentDidCatch(error: Error, info: ErrorInfo) {
+        console.error('[ErrorBoundary] UnitDetailView crashed:', error, info);
+    }
+    render() {
+        if (this.state.hasError) {
+            return this.props.fallback ?? (
+                <div className="p-8 text-center space-y-4">
+                    <p className="text-lg font-bold text-red-600">حدث خطأ أثناء عرض تفاصيل الوحدة</p>
+                    <p className="text-sm text-text-muted">{this.state.error?.message}</p>
+                    <button className="btn btn-primary" onClick={() => this.setState({ hasError: false, error: null })}>إعادة المحاولة</button>
+                </div>
+            );
+        }
+        return this.props.children;
+    }
+}
 
 const Properties: React.FC = () => {
     const [activeTab, setActiveTab] = useState<'list' | 'map'>('list');
@@ -137,7 +163,11 @@ const UnitsView: React.FC<{ property: Property, onBack: () => void }> = ({ prope
     }, [db.utilityRecords]);
 
     if (selectedUnit) {
-        return <UnitDetailView unit={selectedUnit} property={property} onBack={() => setSelectedUnit(null)} />;
+        return (
+            <ErrorBoundary key={selectedUnit.id}>
+                <UnitDetailView unit={selectedUnit} property={property} onBack={() => setSelectedUnit(null)} />
+            </ErrorBoundary>
+        );
     }
 
     const floors = useMemo(() => [...new Set(units.map(u => u.floor || 'بدون دور'))], [units]);

@@ -37,12 +37,12 @@ const TABLE_MAP: Record<string, string> = {
 
 const SPECIAL_FIELD_MAP: Record<string, Record<string, string>> = {
   contracts: { start: 'start_date', end: 'end_date', rent: 'rent_amount' },
-  units: { rentDefault: 'rent_default' },
+  units: { rentDefault: 'rent_default', minRent: 'min_rent' },
 };
 
 const REVERSE_SPECIAL_MAP: Record<string, Record<string, string>> = {
   contracts: { start_date: 'start', end_date: 'end', rent_amount: 'rent' },
-  units: { rent_default: 'rentDefault' },
+  units: { rent_default: 'rentDefault', min_rent: 'minRent' },
 };
 
 function camelToSnake(str: string): string {

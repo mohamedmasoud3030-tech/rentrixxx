@@ -57,7 +57,7 @@ const AttachmentsManager: React.FC<AttachmentsManagerProps> = ({ entityType, ent
     const [uploading, setUploading] = React.useState(false);
 
     const attachments = useMemo(() => {
-        return db.attachments.filter(att => att.entityType === entityType && att.entityId === entityId);
+        return (db.attachments || []).filter(att => att.entityType === entityType && att.entityId === entityId);
     }, [db.attachments, entityType, entityId]);
 
     const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
