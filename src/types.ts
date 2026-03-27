@@ -225,6 +225,7 @@ export interface Unit {
   floor?: string;
   status: 'AVAILABLE' | 'RENTED' | 'MAINTENANCE' | 'ON_HOLD';
   rentDefault: number;
+  minRent?: number;
   area?: number;
   bedrooms?: number;
   bathrooms?: number;
@@ -326,6 +327,8 @@ export interface Expense {
     id: string;
     no: string;
     contractId: string | null;
+    ownerId?: string | null;
+    propertyId?: string | null;
     payee?: string;
     dateTime: string; // ISO format
     category: string;

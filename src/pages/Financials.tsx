@@ -1,11 +1,11 @@
 
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { useApp } from '../contexts/AppContext';
 import { Receipt, Expense, DepositTx, OwnerSettlement, Tenant } from '../types';
 import Card from '../components/ui/Card';
 import Modal from '../components/ui/Modal';
 import ActionsMenu, { EditAction, VoidAction, DeleteAction, PrintAction } from '../components/shared/ActionsMenu';
-import { formatCurrency, formatDateTime, getStatusBadgeClass, formatDate, exportToCsv, RECEIPT_STATUS_AR, CHANNEL_AR, EXPENSE_STATUS_AR } from '../utils/helpers';
+import { formatCurrency, formatDateTime, getStatusBadgeClass, formatDate, exportToCsv, RECEIPT_STATUS_AR, CHANNEL_AR, EXPENSE_STATUS_AR, normalizeArabicNumerals } from '../utils/helpers';
 import HardGateBanner from '../components/shared/HardGateBanner';
 import AttachmentsManager from '../components/shared/AttachmentsManager';
 import SearchFilterBar from '../components/shared/SearchFilterBar';
@@ -391,6 +391,8 @@ const ReceiptForm: React.FC<{ isOpen: boolean, onClose: () => void, receipt: Rec
     const [checkBank, setCheckBank] = useState('');
     const [checkDate, setCheckDate] = useState('');
     const [checkStatus, setCheckStatus] = useState<Receipt['checkStatus']>('PENDING');
+    const [isSaving, setIsSaving] = useState(false);
+    const isSavingRef = useRef(false);
     
     useEffect(() => {
         if (receipt) {
@@ -403,41 +405,49 @@ const ReceiptForm: React.FC<{ isOpen: boolean, onClose: () => void, receipt: Rec
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        if (isSavingRef.current) return;
         if (channel === 'CHECK' && !checkNumber) {
             toast.error('يرجى إدخال رقم الشيك.');
             return;
         }
-        const data: any = { contractId, dateTime, channel, amount, ref, notes, status: 'POSTED' as const };
-        if (channel === 'CHECK') {
-            data.checkNumber = checkNumber;
-            data.checkBank = checkBank;
-            data.checkDate = checkDate;
-            data.checkStatus = checkStatus;
+        isSavingRef.current = true;
+        setIsSaving(true);
+        try {
+            const data: any = { contractId, dateTime, channel, amount, ref, notes, status: 'POSTED' as const };
+            if (channel === 'CHECK') {
+                data.checkNumber = checkNumber;
+                data.checkBank = checkBank;
+                data.checkDate = checkDate;
+                data.checkStatus = checkStatus;
+            }
+            if (receipt) await dataService.update('receipts', receipt.id, data); else await dataService.add('receipts', data);
+            onClose();
+        } finally {
+            isSavingRef.current = false;
+            setIsSaving(false);
         }
-        if (receipt) await dataService.update('receipts', receipt.id, data); else await dataService.add('receipts', data);
-        onClose();
     };
     return (
         <Modal isOpen={isOpen} onClose={onClose} title={receipt ? 'تعديل سند قبض' : 'إضافة سند قبض'}>
             <form onSubmit={handleSubmit} className="space-y-4">
                 {receipt && <p className="text-xs text-center bg-blue-50 dark:bg-blue-900/30 p-2 rounded-md">لتعديل تاريخ هذه الحركة، قم بتغيير حقل التاريخ واحفظ التغييرات. سيؤثر هذا على التقارير المالية.</p>}
                 <div className="grid grid-cols-2 gap-4">
-                    <div><label className="text-xs">العقد</label><select value={contractId} onChange={e=>setContractId(e.target.value)} required>{db.contracts.map(c=><option key={c.id} value={c.id}>{db.tenants.find(t=>t.id===c.tenantId)?.name} - {db.units.find(u=>u.id===c.unitId)?.name}</option>)}</select></div>
-                    <div><label className="text-xs">التاريخ</label><input type="datetime-local" value={dateTime} onChange={e=>setDateTime(e.target.value)} required /></div>
-                    <div><label className="text-xs">المبلغ</label><input type="number" value={amount} onChange={e=>setAmount(Number(e.target.value))} required /></div>
-                    <div><label className="text-xs">طريقة الدفع</label><select value={channel} onChange={e=>setChannel(e.target.value as any)}><option value="CASH">نقدي</option><option value="BANK">تحويل بنكي</option><option value="POS">شبكة</option><option value="CHECK">شيك</option><option value="OTHER">أخرى</option></select></div>
+                    <div><label className="text-xs">العقد</label><select value={contractId} onChange={e=>setContractId(e.target.value)} required disabled={isSaving}>{db.contracts.map(c=><option key={c.id} value={c.id}>{db.tenants.find(t=>t.id===c.tenantId)?.name} - {db.units.find(u=>u.id===c.unitId)?.name}</option>)}</select></div>
+                    <div><label className="text-xs">التاريخ</label><input type="datetime-local" value={dateTime} onChange={e=>setDateTime(e.target.value)} required disabled={isSaving} /></div>
+                    <div><label className="text-xs">المبلغ</label><input type="number" value={amount} onChange={e=>setAmount(Number(normalizeArabicNumerals(e.target.value)))} required disabled={isSaving} /></div>
+                    <div><label className="text-xs">طريقة الدفع</label><select value={channel} onChange={e=>setChannel(e.target.value as any)} disabled={isSaving}><option value="CASH">نقدي</option><option value="BANK">تحويل بنكي</option><option value="POS">شبكة</option><option value="CHECK">شيك</option><option value="OTHER">أخرى</option></select></div>
                 </div>
                 {channel === 'CHECK' && (
                     <div className="grid grid-cols-2 gap-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
-                        <div><label className="text-xs font-bold text-blue-700 dark:text-blue-300">رقم الشيك *</label><input value={checkNumber} onChange={e=>setCheckNumber(e.target.value)} required placeholder="رقم الشيك" /></div>
-                        <div><label className="text-xs font-bold text-blue-700 dark:text-blue-300">البنك</label><input value={checkBank} onChange={e=>setCheckBank(e.target.value)} placeholder="اسم البنك" /></div>
-                        <div><label className="text-xs font-bold text-blue-700 dark:text-blue-300">تاريخ الاستحقاق</label><input type="date" value={checkDate} onChange={e=>setCheckDate(e.target.value)} /></div>
-                        <div><label className="text-xs font-bold text-blue-700 dark:text-blue-300">حالة الشيك</label><select value={checkStatus} onChange={e=>setCheckStatus(e.target.value as any)}><option value="PENDING">معلق</option><option value="DEPOSITED">مودع</option><option value="CLEARED">محصّل</option><option value="BOUNCED">مرتجع</option></select></div>
+                        <div><label className="text-xs font-bold text-blue-700 dark:text-blue-300">رقم الشيك *</label><input value={checkNumber} onChange={e=>setCheckNumber(e.target.value)} required disabled={isSaving} /></div>
+                        <div><label className="text-xs font-bold text-blue-700 dark:text-blue-300">البنك</label><input value={checkBank} onChange={e=>setCheckBank(e.target.value)} disabled={isSaving} /></div>
+                        <div><label className="text-xs font-bold text-blue-700 dark:text-blue-300">تاريخ الاستحقاق</label><input type="date" value={checkDate} onChange={e=>setCheckDate(e.target.value)} disabled={isSaving} /></div>
+                        <div><label className="text-xs font-bold text-blue-700 dark:text-blue-300">حالة الشيك</label><select value={checkStatus} onChange={e=>setCheckStatus(e.target.value as any)} disabled={isSaving}><option value="PENDING">معلق</option><option value="DEPOSITED">مودع</option><option value="CLEARED">محصّل</option><option value="BOUNCED">مرتجع</option></select></div>
                     </div>
                 )}
-                <input placeholder="مرجع / رقم الحوالة" value={ref} onChange={e=>setRef(e.target.value)} />
-                <textarea placeholder="ملاحظات" value={notes} onChange={e=>setNotes(e.target.value)} rows={2} />
-                <div className="flex justify-end gap-2 pt-4 border-t"><button type="button" onClick={onClose} className="btn btn-ghost">إلغاء</button><button type="submit" className="btn btn-primary">حفظ</button></div>
+                <input value={ref} onChange={e=>setRef(e.target.value)} disabled={isSaving} />
+                <textarea value={notes} onChange={e=>setNotes(e.target.value)} rows={2} disabled={isSaving} />
+                <div className="flex justify-end gap-2 pt-4 border-t"><button type="button" onClick={onClose} className="btn btn-ghost" disabled={isSaving}>إلغاء</button><button type="submit" className="btn btn-primary" disabled={isSaving}>{isSaving ? 'جاري الحفظ...' : 'حفظ'}</button></div>
             </form>
         </Modal>
     );
@@ -451,6 +461,8 @@ const ExpenseForm: React.FC<{ isOpen: boolean, onClose: () => void, expense: Exp
     const [amount, setAmount] = useState(0);
     const [chargedTo, setChargedTo] = useState<Expense['chargedTo']>('OWNER');
     const [dateTime, setDateTime] = useState(new Date().toISOString().slice(0, 16));
+    const [isSaving, setIsSaving] = useState(false);
+    const isSavingRef = useRef(false);
 
     useEffect(() => {
         if (expense) {
@@ -461,9 +473,17 @@ const ExpenseForm: React.FC<{ isOpen: boolean, onClose: () => void, expense: Exp
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        const data = { contractId, dateTime, category, amount, status: 'POSTED' as const, chargedTo, ref: '', notes: '' };
-        if (expense) await dataService.update('expenses', expense.id, data); else await dataService.add('expenses', data);
-        onClose();
+        if (isSavingRef.current) return;
+        isSavingRef.current = true;
+        setIsSaving(true);
+        try {
+            const data = { contractId, dateTime, category, amount, status: 'POSTED' as const, chargedTo, ref: '', notes: '' };
+            if (expense) await dataService.update('expenses', expense.id, data); else await dataService.add('expenses', data);
+            onClose();
+        } finally {
+            isSavingRef.current = false;
+            setIsSaving(false);
+        }
     };
 
     return (
@@ -471,13 +491,13 @@ const ExpenseForm: React.FC<{ isOpen: boolean, onClose: () => void, expense: Exp
             <form onSubmit={handleSubmit} className="space-y-4">
                  {expense && <p className="text-xs text-center bg-blue-50 dark:bg-blue-900/30 p-2 rounded-md">لتعديل تاريخ هذه الحركة، قم بتغيير حقل التاريخ واحفظ التغييرات. سيؤثر هذا على التقارير المالية.</p>}
                 <div className="grid grid-cols-2 gap-4">
-                    <div><label className="text-xs">التصنيف</label><input value={category} onChange={e=>setCategory(e.target.value)} required /></div>
-                    <div><label className="text-xs">المبلغ</label><input type="number" value={amount} onChange={e=>setAmount(Number(e.target.value))} required /></div>
-                    <div><label className="text-xs">يخصم من</label><select value={chargedTo} onChange={e=>setChargedTo(e.target.value as any)}><option value="OWNER">المالك</option><option value="OFFICE">المكتب</option><option value="TENANT">المستأجر</option></select></div>
-                    <div><label className="text-xs">العقد المرتبط</label><select value={contractId || ''} onChange={e=>setContractId(e.target.value || null)}><option value="">-- مصروف مكتب عام --</option>{db.contracts.map(c=><option key={c.id} value={c.id}>{db.tenants.find(t=>t.id===c.tenantId)?.name}</option>)}</select></div>
-                    <div><label className="text-xs">التاريخ</label><input type="datetime-local" value={dateTime} onChange={e=>setDateTime(e.target.value)} required /></div>
+                    <div><label className="text-xs">التصنيف</label><input value={category} onChange={e=>setCategory(e.target.value)} required disabled={isSaving} /></div>
+                    <div><label className="text-xs">المبلغ</label><input type="number" value={amount} onChange={e=>setAmount(Number(normalizeArabicNumerals(e.target.value)))} required disabled={isSaving} /></div>
+                    <div><label className="text-xs">يخصم من</label><select value={chargedTo} onChange={e=>setChargedTo(e.target.value as any)} disabled={isSaving}><option value="OWNER">المالك</option><option value="OFFICE">المكتب</option><option value="TENANT">المستأجر</option></select></div>
+                    <div><label className="text-xs">العقد المرتبط</label><select value={contractId || ''} onChange={e=>setContractId(e.target.value || null)} disabled={isSaving}><option value="">-- مصروف مكتب عام --</option>{db.contracts.map(c=><option key={c.id} value={c.id}>{db.tenants.find(t=>t.id===c.tenantId)?.name}</option>)}</select></div>
+                    <div><label className="text-xs">التاريخ</label><input type="datetime-local" value={dateTime} onChange={e=>setDateTime(e.target.value)} required disabled={isSaving} /></div>
                 </div>
-                <div className="flex justify-end gap-2 pt-4 border-t"><button type="button" onClick={onClose} className="btn btn-ghost">إلغاء</button><button type="submit" className="btn btn-primary">حفظ</button></div>
+                <div className="flex justify-end gap-2 pt-4 border-t"><button type="button" onClick={onClose} className="btn btn-ghost" disabled={isSaving}>إلغاء</button><button type="submit" className="btn btn-primary" disabled={isSaving}>{isSaving ? 'جاري الحفظ...' : 'حفظ'}</button></div>
             </form>
         </Modal>
     );
@@ -489,46 +509,65 @@ const DepositTxForm: React.FC<{ isOpen: boolean, onClose: () => void }> = ({ isO
     const [contractId, setContractId] = useState(db.contracts[0]?.id || '');
     const [type, setType] = useState<DepositTx['type']>('DEPOSIT_IN');
     const [amount, setAmount] = useState(0);
+    const [isSaving, setIsSaving] = useState(false);
+    const isSavingRef = useRef(false);
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        await dataService.add('depositTxs', { contractId, type, amount, date: new Date().toISOString().slice(0, 10), note: '' });
-        onClose();
+        if (isSavingRef.current) return;
+        isSavingRef.current = true;
+        setIsSaving(true);
+        try {
+            await dataService.add('depositTxs', { contractId, type, amount, date: new Date().toISOString().slice(0, 10), note: '' });
+            onClose();
+        } finally {
+            isSavingRef.current = false;
+            setIsSaving(false);
+        }
     };
     return (
         <Modal isOpen={isOpen} onClose={onClose} title="حركة وديعة">
             <form onSubmit={handleSubmit} className="space-y-4">
-                <select value={contractId} onChange={e=>setContractId(e.target.value)} required>{db.contracts.map(c=><option key={c.id} value={c.id}>{db.tenants.find(t=>t.id===c.tenantId)?.name}</option>)}</select>
-                <select value={type} onChange={e=>setType(e.target.value as any)}><option value="DEPOSIT_IN">إيداع جديد</option><option value="DEPOSIT_RETURN">إرجاع للمستأجر</option><option value="DEPOSIT_DEDUCT">خصم إصلاحات</option></select>
-                <input type="number" value={amount} onChange={e=>setAmount(Number(e.target.value))} required placeholder="المبلغ" />
-                <button type="submit" className="btn btn-primary w-full">حفظ الحركة</button>
+                <select value={contractId} onChange={e=>setContractId(e.target.value)} required disabled={isSaving}>{db.contracts.map(c=><option key={c.id} value={c.id}>{db.tenants.find(t=>t.id===c.tenantId)?.name}</option>)}</select>
+                <select value={type} onChange={e=>setType(e.target.value as any)} disabled={isSaving}><option value="DEPOSIT_IN">إيداع جديد</option><option value="DEPOSIT_RETURN">إرجاع للمستأجر</option><option value="DEPOSIT_DEDUCT">خصم إصلاحات</option></select>
+                <input type="number" value={amount} onChange={e=>setAmount(Number(normalizeArabicNumerals(e.target.value)))} required disabled={isSaving} />
+                <button type="submit" className="btn btn-primary w-full" disabled={isSaving}>{isSaving ? 'جاري الحفظ...' : 'حفظ الحركة'}</button>
             </form>
         </Modal>
     );
 };
 
 const OwnerSettlementForm: React.FC<{ isOpen: boolean, onClose: () => void, settlement: OwnerSettlement | null }> = ({ isOpen, onClose, settlement }) => {
-    // FIX: Use dataService for data manipulation
     const { db, dataService } = useApp();
     const [ownerId, setOwnerId] = useState(db.owners[0]?.id || '');
     const [amount, setAmount] = useState(0);
     const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
+    const [isSaving, setIsSaving] = useState(false);
+    const isSavingRef = useRef(false);
 
     useEffect(() => { if (settlement) { setOwnerId(settlement.ownerId); setAmount(settlement.amount); setDate(settlement.date); } }, [settlement]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        const data = { ownerId, amount, date, method: 'BANK' as const, ref: '', notes: '' };
-        if (settlement) await dataService.update('ownerSettlements', settlement.id, data); else await dataService.add('ownerSettlements', data);
-        onClose();
+        if (isSavingRef.current) return;
+        isSavingRef.current = true;
+        setIsSaving(true);
+        try {
+            const data = { ownerId, amount, date, method: 'BANK' as const, ref: '', notes: '' };
+            if (settlement) await dataService.update('ownerSettlements', settlement.id, data); else await dataService.add('ownerSettlements', data);
+            onClose();
+        } finally {
+            isSavingRef.current = false;
+            setIsSaving(false);
+        }
     };
     return (
         <Modal isOpen={isOpen} onClose={onClose} title={settlement ? "تعديل تسوية مالية" : "تسوية مالية للمالك"}>
             <form onSubmit={handleSubmit} className="space-y-4">
                  {settlement && <p className="text-xs text-center bg-blue-50 dark:bg-blue-900/30 p-2 rounded-md">لتعديل تاريخ هذه الحركة، قم بتغيير حقل التاريخ واحفظ التغييرات. سيؤثر هذا على التقارير المالية.</p>}
-                <select value={ownerId} onChange={e=>setOwnerId(e.target.value)} required>{db.owners.map(o=><option key={o.id} value={o.id}>{o.name}</option>)}</select>
-                <input type="date" value={date} onChange={e=>setDate(e.target.value)} required />
-                <input type="number" value={amount} onChange={e=>setAmount(Number(e.target.value))} required placeholder="المبلغ المحول" />
-                <button type="submit" className="btn btn-primary w-full">تأكيد التسوية</button>
+                <select value={ownerId} onChange={e=>setOwnerId(e.target.value)} required disabled={isSaving}>{db.owners.map(o=><option key={o.id} value={o.id}>{o.name}</option>)}</select>
+                <input type="date" value={date} onChange={e=>setDate(e.target.value)} required disabled={isSaving} />
+                <input type="number" value={amount} onChange={e=>setAmount(Number(normalizeArabicNumerals(e.target.value)))} required disabled={isSaving} />
+                <button type="submit" className="btn btn-primary w-full" disabled={isSaving}>{isSaving ? 'جاري الحفظ...' : 'تأكيد التسوية'}</button>
             </form>
         </Modal>
     );

@@ -2,7 +2,7 @@
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import { cairoFontBase64 } from './cairoFontBase64';
-import { Settings, Contract, Database, Invoice, Expense } from '../types';
+import { Settings, Contract, Database, Invoice, Expense, UtilityType, UTILITY_TYPE_AR } from '../types';
 import { formatDate, formatCurrency } from '../utils/helpers';
 
 // Helper to create a jsPDF instance with Arabic font support and a standard header
@@ -355,7 +355,6 @@ export const exportAgedReceivablesToPdf = (data: any, settings: Settings, date: 
 
     const head = [['+90 يوم', '61-90 يوم', '31-60 يوم', '1-30 يوم', 'حالي', 'الإجمالي', 'المستأجر']];
     const body = data.lines.map((line: any) => [
-        // FIX: Corrected path to currency settings
         formatCurrency(line['90+'], settings.operational.currency),
         formatCurrency(line['61-90'], settings.operational.currency),
         formatCurrency(line['31-60'], settings.operational.currency),
@@ -365,7 +364,6 @@ export const exportAgedReceivablesToPdf = (data: any, settings: Settings, date: 
         line.tenantName
     ]);
     const footer = [[
-        // FIX: Corrected path to currency settings
         formatCurrency(data.totals['90+'], settings.operational.currency),
         formatCurrency(data.totals['61-90'], settings.operational.currency),
         formatCurrency(data.totals['31-60'], settings.operational.currency),
@@ -386,4 +384,289 @@ export const exportAgedReceivablesToPdf = (data: any, settings: Settings, date: 
     });
 
     doc.save('Aged_Receivables.pdf');
+};
+
+const HEAD_STYLE = { fillColor: [30, 80, 130] as [number, number, number], fontStyle: 'bold' as const };
+const FOOT_STYLE = { fillColor: [230, 230, 230] as [number, number, number], textColor: 0, fontStyle: 'bold' as const };
+const TABLE_STYLE = { font: 'Cairo', halign: 'right' as const, fontSize: 9 };
+
+export const exportDailyCollectionToPdf = (receipts: any[], totals: { cash: number; bank: number; check: number; total: number }, settings: Settings, date: string) => {
+    const cur = settings.operational.currency;
+    const doc = getArabicDoc('كشف التحصيل اليومي', `بتاريخ ${formatDate(date)}`, settings);
+
+    doc.setFontSize(9);
+    let y = 33;
+    const summaryItems = [
+        { label: 'إجمالي التحصيل', value: formatCurrency(totals.total, cur) },
+        { label: 'نقدي', value: formatCurrency(totals.cash, cur) },
+        { label: 'تحويل/شبكة', value: formatCurrency(totals.bank, cur) },
+        { label: 'شيكات', value: formatCurrency(totals.check, cur) },
+    ];
+    summaryItems.forEach((item, i) => {
+        const x = 200 - i * 45;
+        doc.text(`${item.label}: ${item.value}`, x, y, { align: 'right' });
+    });
+
+    const head = [['ملاحظات', 'طريقة الدفع', 'المبلغ', 'المستأجر', 'رقم السند']];
+    const body = receipts.map(r => [
+        r.ref || '-',
+        r.channelAr || r.channel,
+        formatCurrency(r.amount, cur),
+        r.tenantName || '-',
+        r.no,
+    ]);
+    body.push([
+        { content: '', styles: {} },
+        { content: '', styles: {} },
+        { content: formatCurrency(totals.total, cur), styles: { fontStyle: 'bold' } },
+        { content: 'الإجمالي', colSpan: 2, styles: { halign: 'center', fontStyle: 'bold' } } as any,
+    ] as any);
+
+    (doc as any).autoTable({
+        head, body, startY: 38,
+        styles: TABLE_STYLE,
+        headStyles: HEAD_STYLE,
+    });
+    doc.save(`Daily_Collection_${date}.pdf`);
+};
+
+export const exportExpensesReportToPdf = (expenses: Expense[], byCategory: [string, number][], totalExpenses: number, settings: Settings, dateRange: string) => {
+    const cur = settings.operational.currency;
+    const doc = getArabicDoc('تقرير المصروفات', dateRange, settings);
+
+    if (byCategory.length > 0) {
+        const catBody = byCategory.map(([cat, amt]) => [formatCurrency(amt, cur), cat]);
+        catBody.push([
+            { content: formatCurrency(totalExpenses, cur), styles: { fontStyle: 'bold' } } as any,
+            { content: 'الإجمالي', styles: { fontStyle: 'bold', halign: 'center' } } as any,
+        ]);
+        (doc as any).autoTable({
+            head: [['المبلغ', 'الفئة']],
+            body: catBody,
+            startY: 35,
+            styles: TABLE_STYLE,
+            headStyles: { ...HEAD_STYLE, fillColor: [100, 50, 50] },
+        });
+    }
+
+    const detailY = byCategory.length > 0 ? (doc as any).lastAutoTable.finalY + 8 : 35;
+    const head = [['ملاحظات', 'المبلغ', 'المستفيد', 'الفئة', 'التاريخ', 'الرقم']];
+    const body = expenses.map(e => [
+        e.notes || '-',
+        formatCurrency(e.amount, cur),
+        e.payee || '-',
+        e.category,
+        formatDate(e.dateTime),
+        e.no,
+    ]);
+
+    (doc as any).autoTable({
+        head, body, startY: detailY,
+        styles: TABLE_STYLE,
+        headStyles: HEAD_STYLE,
+        footStyles: FOOT_STYLE,
+    });
+    doc.save('Expenses_Report.pdf');
+};
+
+export const exportDepositsReportToPdf = (contracts: any[], totalDeposits: number, settings: Settings) => {
+    const cur = settings.operational.currency;
+    const doc = getArabicDoc('تقرير التأمينات (الودائع)', `تاريخ التقرير: ${formatDate(new Date().toISOString())}`, settings);
+
+    doc.setFontSize(10);
+    doc.text(`إجمالي التأمينات: ${formatCurrency(totalDeposits, cur)}  |  عدد العقود: ${contracts.length}`, 200, 34, { align: 'right' });
+
+    const head = [['نهاية العقد', 'بداية العقد', 'مبلغ التأمين', 'العقار', 'الوحدة', 'المستأجر']];
+    const body = contracts.map((c: any) => [
+        formatDate(c.end),
+        formatDate(c.start),
+        formatCurrency(c.deposit, cur),
+        c.propertyName || '-',
+        c.unitName || '-',
+        c.tenantName || '-',
+    ]);
+    body.push([
+        { content: '', styles: {} },
+        { content: '', styles: {} },
+        { content: formatCurrency(totalDeposits, cur), styles: { fontStyle: 'bold' } },
+        { content: 'الإجمالي', colSpan: 3, styles: { halign: 'center', fontStyle: 'bold' } } as any,
+    ] as any);
+
+    (doc as any).autoTable({
+        head, body, startY: 40,
+        styles: TABLE_STYLE,
+        headStyles: HEAD_STYLE,
+    });
+    doc.save('Deposits_Report.pdf');
+};
+
+export const exportMaintenanceReportToPdf = (records: any[], totalCost: number, settings: Settings, dateRange: string) => {
+    const cur = settings.operational.currency;
+    const doc = getArabicDoc('تقرير الصيانة', dateRange, settings);
+
+    const head = [['الحالة', 'التكلفة', 'على حساب', 'الوصف', 'الوحدة', 'التاريخ']];
+    const body = records.map((m: any) => [
+        m.statusAr || m.status,
+        formatCurrency(m.cost || 0, cur),
+        m.chargedToAr || m.chargedTo,
+        m.description,
+        m.unitName || '-',
+        m.requestDate,
+    ]);
+    body.push([
+        { content: '', styles: {} },
+        { content: formatCurrency(totalCost, cur), styles: { fontStyle: 'bold' } },
+        { content: 'الإجمالي', colSpan: 4, styles: { halign: 'center', fontStyle: 'bold' } } as any,
+    ] as any);
+
+    (doc as any).autoTable({
+        head, body, startY: 35,
+        styles: TABLE_STYLE,
+        headStyles: HEAD_STYLE,
+    });
+    doc.save('Maintenance_Report.pdf');
+};
+
+export const exportOverdueTenantsToPdf = (overdue: any[], totalOverdue: number, settings: Settings) => {
+    const cur = settings.operational.currency;
+    const doc = getArabicDoc('تقرير المتأخرين عن الدفع', `تاريخ التقرير: ${formatDate(new Date().toISOString())}`, settings);
+
+    doc.setFontSize(10);
+    doc.text(`إجمالي المتأخرات: ${formatCurrency(totalOverdue, cur)}  |  عدد الفواتير: ${overdue.length}`, 200, 34, { align: 'right' });
+
+    const head = [['المبلغ المستحق', 'أيام التأخير', 'تاريخ الاستحقاق', 'العقار', 'الوحدة', 'الهاتف', 'المستأجر']];
+    const body = overdue.map((r: any) => [
+        formatCurrency(r.remaining, cur),
+        `${r.daysOverdue} يوم`,
+        formatDate(r.dueDate),
+        r.propertyName || '-',
+        r.unitName || '-',
+        r.phone || '-',
+        r.tenantName || '-',
+    ]);
+    body.push([
+        { content: formatCurrency(totalOverdue, cur), styles: { fontStyle: 'bold' } },
+        { content: 'الإجمالي', colSpan: 6, styles: { halign: 'center', fontStyle: 'bold' } } as any,
+    ] as any);
+
+    (doc as any).autoTable({
+        head, body, startY: 40,
+        styles: TABLE_STYLE,
+        headStyles: HEAD_STYLE,
+        didParseCell: (data: any) => {
+            if (data.section === 'body' && data.column.index === 1) {
+                const days = parseInt(data.cell.raw);
+                if (days > 90) data.cell.styles.textColor = [185, 28, 28];
+                else if (days > 60) data.cell.styles.textColor = [234, 88, 12];
+                else if (days > 30) data.cell.styles.textColor = [202, 138, 4];
+            }
+        },
+    });
+    doc.save('Overdue_Tenants.pdf');
+};
+
+export const exportVacantUnitsToPdf = (units: any[], totalPotentialRent: number, settings: Settings) => {
+    const cur = settings.operational.currency;
+    const doc = getArabicDoc('تقرير الوحدات الشاغرة', `تاريخ التقرير: ${formatDate(new Date().toISOString())}`, settings);
+
+    doc.setFontSize(10);
+    doc.text(`عدد الوحدات الشاغرة: ${units.length}  |  الإيجار المحتمل الشهري: ${formatCurrency(totalPotentialRent, cur)}`, 200, 34, { align: 'right' });
+
+    const head = [['الحالة', 'الإيجار المقترح', 'الحمامات', 'الغرف', 'المساحة', 'الطابق', 'النوع', 'الوحدة', 'العقار']];
+    const body = units.map((r: any) => [
+        r.statusAr || r.status,
+        r.rentDefault ? formatCurrency(r.rentDefault, cur) : '-',
+        r.bathrooms ?? '-',
+        r.bedrooms ?? '-',
+        r.area ? `${r.area} م²` : '-',
+        r.floorAr || r.floor || '-',
+        r.typeAr || r.type || '-',
+        r.name,
+        r.propertyName || '-',
+    ]);
+
+    (doc as any).autoTable({
+        head, body, startY: 40,
+        styles: { ...TABLE_STYLE, fontSize: 8 },
+        headStyles: HEAD_STYLE,
+    });
+    doc.save('Vacant_Units.pdf');
+};
+
+export const exportUtilitiesReportToPdf = (records: any[], totalAmount: number, byType: Record<string, { amount: number; count: number }>, settings: Settings, dateRange: string) => {
+    const cur = settings.operational.currency;
+    const doc = getArabicDoc('تقرير المرافق والخدمات', dateRange, settings);
+
+    doc.setFontSize(10);
+    let y = 34;
+    doc.text(`إجمالي فواتير المرافق: ${formatCurrency(totalAmount, cur)}`, 200, y, { align: 'right' });
+    y += 6;
+    const typeEntries = Object.entries(byType);
+    if (typeEntries.length > 0) {
+        const summary = typeEntries.map(([t, v]) => `${UTILITY_TYPE_AR[t as UtilityType] || t}: ${formatCurrency(v.amount, cur)} (${v.count})`).join('  |  ');
+        doc.setFontSize(8);
+        doc.text(summary, 200, y, { align: 'right' });
+    }
+
+    const head = [['على حساب', 'المبلغ', 'سعر الوحدة', 'الاستهلاك', 'المرفق', 'العقار', 'الوحدة', 'الشهر']];
+    const body = records.map((r: any) => [
+        r.paidByAr || r.paidBy,
+        formatCurrency(r.amount, cur),
+        formatCurrency(r.unitPrice, cur),
+        `${r.consumption} وحدة`,
+        UTILITY_TYPE_AR[r.type as UtilityType] || r.type,
+        r.propertyName || '-',
+        r.unitName || '-',
+        r.month,
+    ]);
+    body.push([
+        { content: '', styles: {} },
+        { content: formatCurrency(totalAmount, cur), styles: { fontStyle: 'bold' } },
+        { content: 'الإجمالي', colSpan: 6, styles: { halign: 'center', fontStyle: 'bold' } } as any,
+    ] as any);
+
+    (doc as any).autoTable({
+        head, body, startY: y + 5,
+        styles: { ...TABLE_STYLE, fontSize: 8 },
+        headStyles: HEAD_STYLE,
+    });
+    doc.save('Utilities_Report.pdf');
+};
+
+export const exportPropertyReportToPdf = (property: any, owner: any, units: any[], totalRent: number, annualIncome: number, maintenanceCost: number, settings: Settings) => {
+    const cur = settings.operational.currency;
+    const doc = getArabicDoc(`تقرير عقار: ${property.name}`, `تاريخ التقرير: ${formatDate(new Date().toISOString())}`, settings);
+
+    doc.setFontSize(10);
+    let y = 34;
+    doc.text(`المالك: ${owner?.name || '-'}`, 200, y, { align: 'right' });
+    doc.text(`الموقع: ${property.location || '-'}`, 100, y, { align: 'right' });
+    y += 7;
+    const rented = units.filter((u: any) => u.status === 'RENTED').length;
+    const available = units.filter((u: any) => u.status !== 'RENTED').length;
+    doc.text(`إجمالي الوحدات: ${units.length}  |  مؤجرة: ${rented}  |  شاغرة: ${available}  |  الدخل الشهري: ${formatCurrency(totalRent, cur)}  |  السنوي: ${formatCurrency(annualIncome, cur)}  |  الصيانة: ${formatCurrency(maintenanceCost, cur)}`, 200, y, { align: 'right' });
+
+    const head = [['التأمين', 'الإيجار', 'المستأجر', 'الحالة', 'النوع', 'الوحدة']];
+    const body = units.map((u: any) => [
+        u.deposit ? formatCurrency(u.deposit, cur) : '-',
+        u.rent ? formatCurrency(u.rent, cur) : '-',
+        u.tenantName || '-',
+        u.statusAr || u.status,
+        u.type || '-',
+        u.name,
+    ]);
+
+    (doc as any).autoTable({
+        head, body, startY: y + 5,
+        styles: TABLE_STYLE,
+        headStyles: HEAD_STYLE,
+        didParseCell: (data: any) => {
+            if (data.section === 'body' && data.column.index === 3) {
+                const val = data.cell.raw;
+                if (val === 'مؤجرة') data.cell.styles.textColor = [21, 128, 61];
+                else if (val === 'شاغرة') data.cell.styles.textColor = [202, 138, 4];
+            }
+        },
+    });
+    doc.save(`Property_Report_${property.name}.pdf`);
 };

@@ -10,6 +10,18 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Fixes & Improvements
 
+**Page Separation & UI Refactoring (Mar 27, 2026):**
+- ✅ Separated Tenants → `/tenants` (own page: `Tenants.tsx`)
+- ✅ Separated Owners → `/owners` (own page: `Owners.tsx`)
+- ✅ Separated Lands → `/lands` (own page: `Lands.tsx`)
+- ✅ Separated Commissions → `/commissions` (own page: `Commissions.tsx`)
+- ✅ Maintenance already a standalone file, now properly routed to `/maintenance`
+- ✅ Sidebar updated with all new routes and groupings
+- ✅ Reports page refactored: flat tab bar replaced with grouped collapsible sidebar (4 groups: General, Financial, Rental, Operations)
+- ✅ Settings page refactored: sensitive settings (Financial, Users, Security, Integrations, Backup, Integrity) hidden behind a toggle with amber warning banner
+
+
+
 **Add Tenant/Owner Bug Fixes (Mar 27, 2026):**
 - ✅ Improved error handling in `supabaseDataService.ts`: `insert()` and `update()` now return detailed error messages
 - ✅ Enhanced error reporting in `AppContext.tsx`: User sees specific error reasons instead of generic "failed" messages
@@ -17,6 +29,15 @@ Preferred communication style: Simple, everyday language.
 - ✅ Added try-catch blocks in form submit handlers for graceful error handling
 - ✅ Added `.trim()` to all input fields to prevent whitespace-only entries
 - ✅ Form fields with empty/undefined values now properly handled (converted to `undefined` instead of empty strings)
+
+**PDF Export & Reports Professional Upgrade (Mar 27, 2026):**
+- ✅ `PrintPreviewModal.tsx` completely overhauled: comprehensive CSS mapping for all Tailwind utility classes used in reports (colors, layout, typography, borders, grids, badges). Print output now matches the preview with full color fidelity.
+- ✅ `print-color-adjust: exact` enabled for both screen and print media to ensure background colors and badges render in print.
+- ✅ SVG chart rendering preserved in print (Recharts charts carry over with proper namespace attributes).
+- ✅ 8 new PDF export functions added to `pdfService.ts`: Daily Collection, Expenses Report, Deposits Report, Maintenance Report, Overdue Tenants, Vacant Units, Utilities Report, Property Report.
+- ✅ All 16 report types now have both Print and PDF export buttons.
+- ✅ PDF exports include professional formatting: colored headers, category summaries, severity-based coloring (overdue tenants), and status coloring.
+- ✅ Reports display inline KPIs (MiniKpi components), charts, category breakdowns, and detailed tables.
 
 **Unified Print System & DocumentTemplates Enhancement (Mar 27, 2026):**
 - ✅ Created `PrintPageLayout.tsx` - موحّد ترويسة (Header) لجميع المستندات المطبوعة مع بيانات الشركة كاملة

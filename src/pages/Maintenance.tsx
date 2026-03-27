@@ -1,12 +1,12 @@
 
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useApp } from '../contexts/AppContext';
 import { MaintenanceRecord, Expense, Invoice } from '../types';
 import Card from '../components/ui/Card';
 import Modal from '../components/ui/Modal';
 import ActionsMenu, { EditAction, DeleteAction } from '../components/shared/ActionsMenu';
-import { formatCurrency, formatDate, getStatusBadgeClass } from '../utils/helpers';
+import { formatCurrency, formatDate, getStatusBadgeClass, normalizeArabicNumerals } from '../utils/helpers';
 import HardGateBanner from '../components/shared/HardGateBanner';
 import SearchFilterBar from '../components/shared/SearchFilterBar';
 import { toast } from 'react-hot-toast';
@@ -167,6 +167,8 @@ const MaintenanceForm: React.FC<{ isOpen: boolean, onClose: () => void, record: 
     const [status, setStatus] = useState<MaintenanceRecord['status']>('NEW');
     const [cost, setCost] = useState(0);
     const [chargedTo, setChargedTo] = useState<MaintenanceRecord['chargedTo']>('OWNER');
+    const [isSaving, setIsSaving] = useState(false);
+    const isSavingRef = useRef(false);
 
     useEffect(() => {
         if (!db) return;
@@ -190,68 +192,71 @@ const MaintenanceForm: React.FC<{ isOpen: boolean, onClose: () => void, record: 
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        if (isSavingRef.current) return;
         if (!db) return;
         if (!unitId || !description) {
             toast.error("الوحدة والوصف مطلوبان.");
             return;
         }
 
-        // This is an update
-        if (record) {
-            // Prevent editing financial fields if already linked to a transaction
-            if ((record.expenseId || record.invoiceId) && (record.status !== status || record.cost !== cost || record.chargedTo !== chargedTo)) {
-                toast.error("لا يمكن تعديل البيانات المالية لطلب صيانة مرتبط بالفعل بحركة مالية. لإجراء تغيير، يجب إلغاء المصروف أو الفاتورة أولاً.");
-                return;
-            }
+        isSavingRef.current = true;
+        setIsSaving(true);
+        try {
+            if (record) {
+                if ((record.expenseId || record.invoiceId) && (record.status !== status || record.cost !== cost || record.chargedTo !== chargedTo)) {
+                    toast.error("لا يمكن تعديل البيانات المالية لطلب صيانة مرتبط بالفعل بحركة مالية. لإجراء تغيير، يجب إلغاء المصروف أو الفاتورة أولاً.");
+                    return;
+                }
 
-            const isNewlyCompleted = ['COMPLETED', 'CLOSED'].includes(status) && !['COMPLETED', 'CLOSED'].includes(record.status) && cost > 0;
-            let updates: Partial<MaintenanceRecord> = { unitId, requestDate, description, status, cost, chargedTo };
+                const isNewlyCompleted = ['COMPLETED', 'CLOSED'].includes(status) && !['COMPLETED', 'CLOSED'].includes(record.status) && cost > 0;
+                let updates: Partial<MaintenanceRecord> = { unitId, requestDate, description, status, cost, chargedTo };
 
-            if (isNewlyCompleted) {
-                const activeContract = db.contracts.find(c => c.unitId === unitId && c.status === 'ACTIVE');
-                if (chargedTo === 'TENANT') {
-                    if (!activeContract) {
-                        toast.error("لا يمكن تحميل التكلفة على المستأجر لعدم وجود عقد نشط لهذه الوحدة.");
-                        return; // Stop submission
-                    }
-                    // FIX: Use dataService for data manipulation
-                    const newInvoice = await dataService.add('invoices', {
-                        contractId: activeContract.id,
-                        dueDate: new Date().toISOString().slice(0, 10),
-                        amount: cost,
-                        paidAmount: 0,
-                        status: 'UNPAID',
-                        type: 'MAINTENANCE',
-                        notes: `فاتورة صيانة: ${description}`.slice(0, 100),
-                    });
-                    if (newInvoice) {
-                        updates.invoiceId = newInvoice.id;
-                        updates.completedAt = Date.now();
-                    }
-                } else { // OWNER or OFFICE
-                    // FIX: Use dataService for data manipulation
-                    const newExpense = await dataService.add('expenses', {
-                        contractId: activeContract?.id || null, // For context
-                        dateTime: new Date().toISOString(),
-                        category: 'صيانة',
-                        amount: cost,
-                        ref: `صيانة للوحدة ${db.units.find(u => u.id === unitId)?.name}`,
-                        notes: description,
-                        chargedTo,
-                        // FIX: Added missing `status` property required by the Expense type.
-                        status: 'POSTED',
-                    });
-                    if (newExpense) {
-                        updates.expenseId = newExpense.id;
-                        updates.completedAt = Date.now();
+                if (isNewlyCompleted) {
+                    const activeContract = db.contracts.find(c => c.unitId === unitId && c.status === 'ACTIVE');
+                    if (chargedTo === 'TENANT') {
+                        if (!activeContract) {
+                            toast.error("لا يمكن تحميل التكلفة على المستأجر لعدم وجود عقد نشط لهذه الوحدة.");
+                            return;
+                        }
+                        const newInvoice = await dataService.add('invoices', {
+                            contractId: activeContract.id,
+                            dueDate: new Date().toISOString().slice(0, 10),
+                            amount: cost,
+                            paidAmount: 0,
+                            status: 'UNPAID',
+                            type: 'MAINTENANCE',
+                            notes: `فاتورة صيانة: ${description}`.slice(0, 100),
+                        });
+                        if (newInvoice) {
+                            updates.invoiceId = newInvoice.id;
+                            updates.completedAt = Date.now();
+                        }
+                    } else {
+                        const newExpense = await dataService.add('expenses', {
+                            contractId: activeContract?.id || null,
+                            dateTime: new Date().toISOString(),
+                            category: 'صيانة',
+                            amount: cost,
+                            ref: `صيانة للوحدة ${db.units.find(u => u.id === unitId)?.name}`,
+                            notes: description,
+                            chargedTo,
+                            status: 'POSTED',
+                        });
+                        if (newExpense) {
+                            updates.expenseId = newExpense.id;
+                            updates.completedAt = Date.now();
+                        }
                     }
                 }
+                await dataService.update('maintenanceRecords', record.id, updates);
+            } else {
+                await dataService.add('maintenanceRecords', { unitId, requestDate, description, status, cost, chargedTo });
             }
-            await dataService.update('maintenanceRecords', record.id, updates);
-        } else {
-            await dataService.add('maintenanceRecords', { unitId, requestDate, description, status, cost, chargedTo });
+            onClose();
+        } finally {
+            isSavingRef.current = false;
+            setIsSaving(false);
         }
-        onClose();
     };
     
     if (!db) return null;
@@ -287,7 +292,7 @@ const MaintenanceForm: React.FC<{ isOpen: boolean, onClose: () => void, record: 
                     </div>
                     <div>
                         <label className="block text-sm font-medium mb-1">التكلفة</label>
-                        <input type="number" value={cost} onChange={e => setCost(Number(e.target.value))} />
+                        <input type="number" value={cost} onChange={e => setCost(Number(normalizeArabicNumerals(e.target.value)))} />
                     </div>
                     <div>
                         <label className="block text-sm font-medium mb-1">تحميل على</label>
@@ -299,8 +304,8 @@ const MaintenanceForm: React.FC<{ isOpen: boolean, onClose: () => void, record: 
                     </div>
                  </div>
                 <div className="flex justify-end gap-3 pt-4 mt-4 border-t border-border">
-                    <button type="button" onClick={onClose} className="btn btn-ghost">إلغاء</button>
-                    <button type="submit" className="btn btn-primary">حفظ</button>
+                    <button type="button" onClick={onClose} className="btn btn-ghost" disabled={isSaving}>إلغاء</button>
+                    <button type="submit" className="btn btn-primary" disabled={isSaving}>{isSaving ? 'جاري الحفظ...' : 'حفظ'}</button>
                 </div>
             </form>
         </Modal>

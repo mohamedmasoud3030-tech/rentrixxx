@@ -1,8 +1,8 @@
 import React, { useEffect, useRef, useState, useMemo } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
-import { 
-    LayoutGrid, Building2, Users, FileText, Banknote, 
-    BarChart2, Settings, UserPlus, MessageSquare, Map as MapIcon, Bot, ClipboardList, ScrollText, Wrench
+import {
+    LayoutGrid, Building2, Users, UserCheck, FileText, Banknote,
+    BarChart2, Settings, UserPlus, MessageSquare, Map as MapIcon, DollarSign, Bot, ScrollText, Wrench
 } from 'lucide-react';
 import { useApp } from '../../../contexts/AppContext';
 import { getLastRunDate } from '../../../services/automationService';
@@ -31,8 +31,10 @@ const navGroups: { title: string; links: NavLinkItem[] }[] = [
     title: 'العمليات التشغيلية',
     links: [
       { path: '/properties', label: 'إدارة العقارات', icon: Building2 },
-      { path: '/people', label: 'الأشخاص', icon: Users },
-      { path: '/contracts', label: 'العقود', icon: FileText, badgeKey: 'expiringContracts' },
+      { path: '/tenants', label: 'المستأجرون', icon: Users, badgeKey: 'expiringContracts' },
+      { path: '/owners', label: 'الملاك', icon: UserCheck },
+      { path: '/contracts', label: 'العقود', icon: FileText },
+      { path: '/maintenance', label: 'الصيانة', icon: Wrench },
     ],
   },
   {
@@ -45,7 +47,8 @@ const navGroups: { title: string; links: NavLinkItem[] }[] = [
     title: 'التسويق والتطوير',
     links: [
       { path: '/leads', label: 'العملاء المحتملون', icon: UserPlus, badgeKey: 'newLeads' },
-      { path: '/lands', label: 'الأراضي والعمولات', icon: MapIcon },
+      { path: '/lands', label: 'الأراضي', icon: MapIcon },
+      { path: '/commissions', label: 'العمولات', icon: DollarSign },
       { path: '/communication', label: 'مركز التواصل', icon: MessageSquare, badgeKey: 'pendingNotifications' },
     ],
   },

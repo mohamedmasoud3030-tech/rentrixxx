@@ -92,13 +92,28 @@ export async function rebuildOwnerBalancesSnapshot(tx: Transaction, db: Database
     const unitsMap = createMap(db.units);
     const propertiesMap = createMap(db.properties);
 
+    const utilityRecordsMap = createMap(db.utilityRecords || []);
+
     const getOwnerForSource = (sourceId: string): string | null => {
         if (settlementsMap.has(sourceId)) return settlementsMap.get(sourceId)!.ownerId;
         const sourceTx = receiptsMap.get(sourceId) || expensesMap.get(sourceId);
-        if (sourceTx && sourceTx.contractId) {
+        if (!sourceTx) return null;
+        if (sourceTx.contractId) {
             const contract = contractsMap.get(sourceTx.contractId); if (!contract) return null;
             const unit = unitsMap.get(contract.unitId); if (!unit) return null;
             const property = propertiesMap.get(unit.propertyId); return property ? property.ownerId : null;
+        }
+        if (sourceTx.ownerId) return sourceTx.ownerId;
+        if (sourceTx.propertyId) {
+            const property = propertiesMap.get(sourceTx.propertyId); return property ? property.ownerId : null;
+        }
+        if (sourceTx.ref && sourceTx.ref.startsWith('UTIL-')) {
+            const utilRefPrefix = sourceTx.ref.slice(5);
+            const utilRecord = Array.from(utilityRecordsMap.values()).find(r => r.id.startsWith(utilRefPrefix));
+            if (utilRecord) {
+                const unit = unitsMap.get(utilRecord.unitId);
+                if (unit) { const property = propertiesMap.get(unit.propertyId); return property ? property.ownerId : null; }
+            }
         }
         return null;
     };

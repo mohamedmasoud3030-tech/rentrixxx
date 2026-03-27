@@ -1,10 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useApp } from '../contexts/AppContext';
 import { Lead } from '../types';
 import Card from '../components/ui/Card';
 import Modal from '../components/ui/Modal';
 import ActionsMenu, { EditAction, DeleteAction } from '../components/shared/ActionsMenu';
-import { getStatusBadgeClass } from '../utils/helpers';
+import { getStatusBadgeClass, normalizeArabicNumerals } from '../utils/helpers';
 import { UserPlus, MessageCircle } from 'lucide-react';
 import WhatsAppModal from '../components/shared/WhatsAppModal';
 import { toast } from 'react-hot-toast';
@@ -112,6 +112,8 @@ const LeadForm: React.FC<{ isOpen: boolean, onClose: () => void, lead: Lead | nu
     const [maxBudget, setMaxBudget] = useState<number | undefined>();
     const [status, setStatus] = useState<Lead['status']>('NEW');
     const [notes, setNotes] = useState('');
+    const [isSaving, setIsSaving] = useState(false);
+    const isSavingRef = useRef(false);
 
     React.useEffect(() => {
         if (isOpen) {
@@ -139,18 +141,26 @@ const LeadForm: React.FC<{ isOpen: boolean, onClose: () => void, lead: Lead | nu
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        if (isSavingRef.current) return;
         if (!name || !phone) {
             toast.error("الاسم والهاتف مطلوبان.");
             return;
         }
 
-        const data = { name, phone, email, desiredUnitType, minBudget, maxBudget, status, notes };
-        if (lead) {
-            await dataService.update('leads', lead.id, data);
-        } else {
-            await dataService.add('leads', data as any);
+        isSavingRef.current = true;
+        setIsSaving(true);
+        try {
+            const data = { name, phone, email, desiredUnitType, minBudget, maxBudget, status, notes };
+            if (lead) {
+                await dataService.update('leads', lead.id, data);
+            } else {
+                await dataService.add('leads', data as any);
+            }
+            onClose();
+        } finally {
+            isSavingRef.current = false;
+            setIsSaving(false);
         }
-        onClose();
     };
 
     return (
@@ -175,11 +185,11 @@ const LeadForm: React.FC<{ isOpen: boolean, onClose: () => void, lead: Lead | nu
                     </div>
                     <div>
                         <label className="block text-sm font-medium mb-1">أقل ميزانية ({settings.operational?.currency ?? 'OMR'})</label>
-                        <input type="number" value={minBudget || ''} onChange={e => setMinBudget(Number(e.target.value) || undefined)} />
+                        <input type="number" value={minBudget || ''} onChange={e => setMinBudget(Number(normalizeArabicNumerals(e.target.value)) || undefined)} />
                     </div>
                      <div>
                         <label className="block text-sm font-medium mb-1">أعلى ميزانية ({settings.operational?.currency ?? 'OMR'})</label>
-                        <input type="number" value={maxBudget || ''} onChange={e => setMaxBudget(Number(e.target.value) || undefined)} />
+                        <input type="number" value={maxBudget || ''} onChange={e => setMaxBudget(Number(normalizeArabicNumerals(e.target.value)) || undefined)} />
                     </div>
                 </div>
                 <div>
@@ -197,8 +207,8 @@ const LeadForm: React.FC<{ isOpen: boolean, onClose: () => void, lead: Lead | nu
                     <textarea value={notes} onChange={e => setNotes(e.target.value)} rows={3} />
                 </div>
                  <div className="flex justify-end gap-3 pt-4 border-t border-border mt-4">
-                    <button type="button" onClick={onClose} className="btn btn-ghost">إلغاء</button>
-                    <button type="submit" className="btn btn-primary">حفظ</button>
+                    <button type="button" onClick={onClose} className="btn btn-ghost" disabled={isSaving}>إلغاء</button>
+                    <button type="submit" className="btn btn-primary" disabled={isSaving}>{isSaving ? 'جاري الحفظ...' : 'حفظ'}</button>
                 </div>
             </form>
         </Modal>

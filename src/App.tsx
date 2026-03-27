@@ -13,14 +13,17 @@ import { Toaster } from 'react-hot-toast';
 import Dashboard from './pages/Dashboard';
 import Properties from './pages/Properties';
 import People from './pages/People';
+import Tenants from './pages/Tenants';
+import Owners from './pages/Owners';
 import Contracts from './pages/Contracts';
 import Finance from './pages/Finance';
 import Reports from './pages/Reports';
-// FIX: Changed import path to correct file
 import Settings from './pages/System';
 import Leads from './pages/Leads';
 import CommunicationHub from './pages/CommunicationHub';
-import LandsAndCommissions from './pages/LandsAndCommissions';
+import Lands from './pages/Lands';
+import Commissions from './pages/Commissions';
+import Maintenance from './pages/Maintenance';
 import AuditLog from './pages/AuditLog';
 import SmartAssistant from './pages/SmartAssistant';
 
@@ -58,6 +61,9 @@ const ROUTE_META: Record<string, { title: string; description: string }> = {
     '/': { title: 'لوحة التحكم', description: 'نظرة شاملة على أداء المحفظة العقارية والمؤشرات الرئيسية' },
     '/properties': { title: 'العقارات والوحدات', description: 'إدارة العقارات والوحدات والوحدات الفرعية المؤجرة' },
     '/people': { title: 'المستأجرون والملاك', description: 'إدارة بيانات المستأجرين والملاك والتواصل معهم' },
+    '/tenants': { title: 'المستأجرون', description: 'إدارة بيانات المستأجرين والتواصل معهم' },
+    '/owners': { title: 'الملاك', description: 'إدارة بيانات الملاك وعمولاتهم' },
+    '/maintenance': { title: 'الصيانة', description: 'إدارة طلبات الصيانة ومتابعة حالتها' },
     '/contracts': { title: 'العقود', description: 'عرض وإدارة عقود الإيجار النشطة والمنتهية' },
     '/finance/invoices': { title: 'الفواتير', description: 'إدارة الفواتير الشهرية ومتابعة المدفوعات المتأخرة' },
     '/finance/receipts': { title: 'سندات القبض', description: 'سندات قبض المبالغ المدفوعة وتوزيعها على الفواتير' },
@@ -68,7 +74,8 @@ const ROUTE_META: Record<string, { title: string; description: string }> = {
     '/reports': { title: 'التقارير والتحليلات', description: 'تقارير الأداء المالي والإشغال والتحليلات الذكية' },
     '/leads': { title: 'العملاء المحتملون', description: 'إدارة العملاء المحتملين ومتابعة خط الفرص العقارية' },
     '/communication': { title: 'مركز التواصل', description: 'قوالب الرسائل والإشعارات للمستأجرين والملاك' },
-    '/lands': { title: 'الأراضي والعمولات', description: 'إدارة صفقات الأراضي وعمولات الوسطاء العقاريين' },
+    '/lands': { title: 'الأراضي', description: 'إدارة عروض وصفقات الأراضي' },
+    '/commissions': { title: 'العمولات', description: 'إدارة عمولات الموظفين والوسطاء العقاريين' },
     '/settings': { title: 'الإعدادات', description: 'إعدادات النظام والمظهر والمستخدمين والتكاملات' },
     '/audit-log': { title: 'سجل المراجعة', description: 'سجل شامل لجميع العمليات والأحداث في النظام' },
     '/smart-assistant': { title: 'المساعد الذكي', description: 'مساعد ذكاء اصطناعي لتحليل البيانات والإجابة على استفساراتك' },
@@ -133,15 +140,19 @@ const App: React.FC = () => {
               {/* Operation Hub */}
               <Route path="/properties" element={<Properties />} />
               <Route path="/people" element={<People />} />
+              <Route path="/tenants" element={<Tenants />} />
+              <Route path="/owners" element={<Owners />} />
               <Route path="/contracts" element={<Contracts />} />
-              
+              <Route path="/maintenance" element={<Maintenance />} />
+
               {/* Finance Hub (Unified) */}
               <Route path="/finance/*" element={<Finance />} />
-              
+
               {/* CRM & Growth */}
               <Route path="/leads" element={<Leads />} />
               <Route path="/communication" element={<CommunicationHub />} />
-              <Route path="/lands" element={<LandsAndCommissions />} />
+              <Route path="/lands" element={<Lands />} />
+              <Route path="/commissions" element={<Commissions />} />
               
               {/* Analytics & Admin Hub */}
               <Route path="/reports" element={<Reports />} />

@@ -1,10 +1,10 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { useApp } from '../contexts/AppContext';
 import { Contract, Receipt, Expense } from '../types';
 import Card from '../components/ui/Card';
 import Modal from '../components/ui/Modal';
 import ActionsMenu, { EditAction, DeleteAction, PrintAction } from '../components/shared/ActionsMenu';
-import { formatCurrency, toArabicDigits, getStatusBadgeClass, formatDateTime, formatDate, exportToCsv, CONTRACT_STATUS_AR } from '../utils/helpers';
+import { formatCurrency, toArabicDigits, getStatusBadgeClass, formatDateTime, formatDate, exportToCsv, CONTRACT_STATUS_AR, normalizeArabicNumerals } from '../utils/helpers';
 import HardGateBanner from '../components/shared/HardGateBanner';
 import AttachmentsManager from '../components/shared/AttachmentsManager';
 import { FileText, Download, CheckCircle, AlertTriangle, Clock, Users, RefreshCw } from 'lucide-react';
@@ -350,6 +350,8 @@ const ContractForm: React.FC<{ isOpen: boolean, onClose: () => void, contract: C
     const [sponsorName, setSponsorName] = useState('');
     const [sponsorId, setSponsorId] = useState('');
     const [sponsorPhone, setSponsorPhone] = useState('');
+    const [isSaving, setIsSaving] = useState(false);
+    const isSavingRef = useRef(false);
     
     const availableUnits = db.units.filter(u => 
         !db.contracts.some(c => c.unitId === u.id && c.status === 'ACTIVE' && c.id !== contract?.id)
@@ -416,18 +418,43 @@ const ContractForm: React.FC<{ isOpen: boolean, onClose: () => void, contract: C
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        if (isSavingRef.current) return;
         if (!unitId || !tenantId || !start || !end) {
             toast.error("يرجى ملء جميع الحقول المطلوبة (الوحدة، المستأجر، تاريخ البدء والانتهاء).");
             return;
         }
 
-        const data = { unitId, tenantId, rent, dueDay, start, end, deposit, status, sponsorName, sponsorId, sponsorPhone };
-        if (contract) {
-            await dataService.update('contracts', contract.id, data);
-        } else {
-            await dataService.add('contracts', data);
+        if (status === 'ACTIVE') {
+            const tenantHasActiveContract = db.contracts.some(c =>
+                c.tenantId === tenantId && c.status === 'ACTIVE' && c.id !== contract?.id
+            );
+            if (tenantHasActiveContract) {
+                toast.error('لا يمكن تسجيل هذا العقد: المستأجر لديه عقد نشط بالفعل. يرجى إنهاء العقد الحالي أولاً.');
+                return;
+            }
+            const unitHasActiveContract = db.contracts.some(c =>
+                c.unitId === unitId && c.status === 'ACTIVE' && c.id !== contract?.id
+            );
+            if (unitHasActiveContract) {
+                toast.error('لا يمكن تسجيل هذا العقد: الوحدة مرتبطة بعقد نشط آخر. يرجى إنهاء العقد الحالي أولاً.');
+                return;
+            }
         }
-        onClose();
+
+        isSavingRef.current = true;
+        setIsSaving(true);
+        try {
+            const data = { unitId, tenantId, rent, dueDay, start, end, deposit, status, sponsorName, sponsorId, sponsorPhone };
+            if (contract) {
+                await dataService.update('contracts', contract.id, data);
+            } else {
+                await dataService.add('contracts', data);
+            }
+            onClose();
+        } finally {
+            isSavingRef.current = false;
+            setIsSaving(false);
+        }
     };
 
     return (
@@ -455,11 +482,11 @@ const ContractForm: React.FC<{ isOpen: boolean, onClose: () => void, contract: C
                         </div>
                         <div>
                             <label className="block text-sm font-medium mb-1">الإيجار الشهري</label>
-                            <input type="number" value={rent} onChange={e => setRent(Number(e.target.value))} required />
+                            <input type="number" value={rent} onChange={e => setRent(Number(normalizeArabicNumerals(e.target.value)))} required disabled={isSaving} />
                         </div>
                         <div>
                             <label className="block text-sm font-medium mb-1">يوم الاستحقاق</label>
-                            <input type="number" min="1" max="28" value={dueDay} onChange={e => setDueDay(Number(e.target.value))} required />
+                            <input type="number" min="1" max="28" value={dueDay} onChange={e => setDueDay(Number(normalizeArabicNumerals(e.target.value)))} required disabled={isSaving} />
                         </div>
                         <div>
                             <label className="block text-sm font-medium mb-1">تاريخ البدء</label>
@@ -471,7 +498,7 @@ const ContractForm: React.FC<{ isOpen: boolean, onClose: () => void, contract: C
                         </div>
                         <div>
                             <label className="block text-sm font-medium mb-1">الوديعة</label>
-                            <input type="number" value={deposit} onChange={e => setDeposit(Number(e.target.value))} />
+                            <input type="number" value={deposit} onChange={e => setDeposit(Number(normalizeArabicNumerals(e.target.value)))} disabled={isSaving} />
                         </div>
                         <div>
                             <label className="block text-sm font-medium mb-1">الحالة</label>
@@ -529,8 +556,8 @@ const ContractForm: React.FC<{ isOpen: boolean, onClose: () => void, contract: C
 
 
                 <div className="flex justify-end gap-3 pt-4 mt-4 border-t border-border">
-                    <button type="button" onClick={onClose} className="btn btn-ghost">إلغاء</button>
-                    <button type="submit" className="btn btn-primary">حفظ</button>
+                    <button type="button" onClick={onClose} className="btn btn-ghost" disabled={isSaving}>إلغاء</button>
+                    <button type="submit" className="btn btn-primary" disabled={isSaving}>{isSaving ? 'جاري الحفظ...' : 'حفظ'}</button>
                 </div>
             </form>
         </Modal>

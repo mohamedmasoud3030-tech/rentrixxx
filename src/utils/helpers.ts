@@ -207,3 +207,7 @@ export const CHANNEL_AR: Record<string, string> = {
 export const EXPENSE_STATUS_AR: Record<string, string> = {
     POSTED: 'مرحّل', VOID: 'ملغى'
 };
+
+export function normalizeArabicNumerals(value: string): string {
+    return value.replace(/[٠-٩]/g, (d) => String('٠١٢٣٤٥٦٧٨٩'.indexOf(d)));
+}

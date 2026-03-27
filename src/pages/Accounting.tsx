@@ -291,7 +291,6 @@ const ManualVoucher: React.FC = () => {
                                             step="0.001"
                                             value={line.debit || ''}
                                             onChange={e => updateLine(i, 'debit', parseFloat(e.target.value) || 0)}
-                                            placeholder="0.000"
                                         />
                                     </td>
                                     <td className="px-3 py-2">
@@ -301,7 +300,6 @@ const ManualVoucher: React.FC = () => {
                                             step="0.001"
                                             value={line.credit || ''}
                                             onChange={e => updateLine(i, 'credit', parseFloat(e.target.value) || 0)}
-                                            placeholder="0.000"
                                         />
                                     </td>
                                     <td className="px-3 py-2">

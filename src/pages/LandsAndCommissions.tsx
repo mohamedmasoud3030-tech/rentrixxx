@@ -1,10 +1,10 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { useApp } from '../contexts/AppContext';
 import Card from '../components/ui/Card';
 import Modal from '../components/ui/Modal';
 import { Users, Eye, MapPin, PlusCircle, DollarSign } from 'lucide-react';
 import { Land, Commission } from '../types';
-import { formatCurrency } from '../utils/helpers';
+import { formatCurrency, normalizeArabicNumerals } from '../utils/helpers';
 import { toast } from 'react-hot-toast';
 import ActionsMenu, { EditAction, DeleteAction } from '../components/shared/ActionsMenu';
 
@@ -167,9 +167,10 @@ const StaffRewards = () => {
 };
 
 const CommissionForm: React.FC<{ isOpen: boolean, onClose: () => void, commission: Commission | null }> = ({ isOpen, onClose, commission }) => {
-    // FIX: Use dataService for data manipulation
     const { db, dataService } = useApp();
     const [data, setData] = useState<Partial<Commission>>({});
+    const [isSaving, setIsSaving] = useState(false);
+    const isSavingRef = useRef(false);
     
     if (!db) return null;
 
@@ -183,7 +184,8 @@ const CommissionForm: React.FC<{ isOpen: boolean, onClose: () => void, commissio
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
-        setData(prev => ({ ...prev, [name]: ['dealValue', 'percentage', 'amount'].includes(name) ? parseFloat(value) : value }));
+        const normalized = ['dealValue', 'percentage', 'amount'].includes(name) ? normalizeArabicNumerals(value) : value;
+        setData(prev => ({ ...prev, [name]: ['dealValue', 'percentage', 'amount'].includes(name) ? parseFloat(normalized) : normalized }));
     };
 
     const calculatedAmount = useMemo(() => {
@@ -195,13 +197,21 @@ const CommissionForm: React.FC<{ isOpen: boolean, onClose: () => void, commissio
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        const finalData = { ...data, amount: calculatedAmount };
-        if(commission) {
-            await dataService.update('commissions', commission.id, finalData);
-        } else {
-            await dataService.add('commissions', finalData as any);
+        if (isSavingRef.current) return;
+        isSavingRef.current = true;
+        setIsSaving(true);
+        try {
+            const finalData = { ...data, amount: calculatedAmount };
+            if (commission) {
+                await dataService.update('commissions', commission.id, finalData);
+            } else {
+                await dataService.add('commissions', finalData as any);
+            }
+            onClose();
+        } finally {
+            isSavingRef.current = false;
+            setIsSaving(false);
         }
-        onClose();
     };
 
     return (
@@ -223,7 +233,7 @@ const CommissionForm: React.FC<{ isOpen: boolean, onClose: () => void, commissio
                         <option value="UNPAID">قيد الانتظار</option><option value="PAID">تم الصرف</option>
                     </select>
                  </div>
-                <div className="flex justify-end gap-2 pt-4 border-t"><button type="button" onClick={onClose} className="btn btn-ghost">إلغاء</button><button type="submit" className="btn btn-primary">حفظ</button></div>
+                <div className="flex justify-end gap-2 pt-4 border-t"><button type="button" onClick={onClose} className="btn btn-ghost" disabled={isSaving}>إلغاء</button><button type="submit" className="btn btn-primary" disabled={isSaving}>{isSaving ? 'جاري الحفظ...' : 'حفظ'}</button></div>
             </form>
         </Modal>
     );
@@ -232,6 +242,8 @@ const CommissionForm: React.FC<{ isOpen: boolean, onClose: () => void, commissio
 const LandForm: React.FC<{ isOpen: boolean, onClose: () => void, land: Land | null }> = ({ isOpen, onClose, land }) => {
     const { dataService, settings } = useApp();
     const [data, setData] = useState<Partial<Land>>({});
+    const [isSaving, setIsSaving] = useState(false);
+    const isSavingRef = useRef(false);
 
     React.useEffect(() => {
         if (land) setData(land);
@@ -240,46 +252,56 @@ const LandForm: React.FC<{ isOpen: boolean, onClose: () => void, land: Land | nu
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
         const { name, value } = e.target;
-        setData(prev => ({ ...prev, [name]: name === 'area' || name === 'ownerPrice' || name === 'commission' ? parseFloat(value) : value }));
+        const numericFields = ['area', 'ownerPrice', 'commission'];
+        const normalized = numericFields.includes(name) ? normalizeArabicNumerals(value) : value;
+        setData(prev => ({ ...prev, [name]: numericFields.includes(name) ? parseFloat(normalized) : normalized }));
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        const wasPreviouslyNotSold = !land || land.status !== 'SOLD';
-        const isNowSold = data.status === 'SOLD';
+        if (isSavingRef.current) return;
+        isSavingRef.current = true;
+        setIsSaving(true);
+        try {
+            const wasPreviouslyNotSold = !land || land.status !== 'SOLD';
+            const isNowSold = data.status === 'SOLD';
 
-        if (land) {
-            await dataService.update('lands', land.id, data);
-        } else {
-            await dataService.add('lands', data as any);
-        }
-
-        if (wasPreviouslyNotSold && isNowSold && data.commission && data.commission > 0) {
-            try {
-                const mappings = settings.accounting?.accountMappings;
-                const cashAccount = mappings?.paymentMethods?.CASH || '1111';
-                const commissionRevenueAccount = mappings?.revenue?.OFFICE_COMMISSION || '4120';
-                const landId = land?.id || 'new-land';
-                await dataService.add('journalEntries', {
-                    date: new Date().toISOString().slice(0, 10),
-                    accountId: cashAccount,
-                    amount: data.commission!,
-                    type: 'DEBIT',
-                    sourceId: `LAND-SALE-${landId}`,
-                });
-                await dataService.add('journalEntries', {
-                    date: new Date().toISOString().slice(0, 10),
-                    accountId: commissionRevenueAccount,
-                    amount: data.commission!,
-                    type: 'CREDIT',
-                    sourceId: `LAND-SALE-${landId}`,
-                });
-                toast.success('تم تسجيل قيد إيراد عمولة بيع الأرض.');
-            } catch (err) {
-                console.error('Failed to post land commission journal entry', err);
+            if (land) {
+                await dataService.update('lands', land.id, data);
+            } else {
+                await dataService.add('lands', data as any);
             }
+
+            if (wasPreviouslyNotSold && isNowSold && data.commission && data.commission > 0) {
+                try {
+                    const mappings = settings.accounting?.accountMappings;
+                    const cashAccount = mappings?.paymentMethods?.CASH || '1111';
+                    const commissionRevenueAccount = mappings?.revenue?.OFFICE_COMMISSION || '4120';
+                    const landId = land?.id || 'new-land';
+                    await dataService.add('journalEntries', {
+                        date: new Date().toISOString().slice(0, 10),
+                        accountId: cashAccount,
+                        amount: data.commission!,
+                        type: 'DEBIT',
+                        sourceId: `LAND-SALE-${landId}`,
+                    });
+                    await dataService.add('journalEntries', {
+                        date: new Date().toISOString().slice(0, 10),
+                        accountId: commissionRevenueAccount,
+                        amount: data.commission!,
+                        type: 'CREDIT',
+                        sourceId: `LAND-SALE-${landId}`,
+                    });
+                    toast.success('تم تسجيل قيد إيراد عمولة بيع الأرض.');
+                } catch (err) {
+                    console.error('Failed to post land commission journal entry', err);
+                }
+            }
+            onClose();
+        } finally {
+            isSavingRef.current = false;
+            setIsSaving(false);
         }
-        onClose();
     };
 
     return (
@@ -308,8 +330,8 @@ const LandForm: React.FC<{ isOpen: boolean, onClose: () => void, land: Land | nu
                  <textarea name="notes" value={data.notes || ''} onChange={handleChange} placeholder="ملاحظات..." />
 
                  <div className="flex justify-end items-center pt-4 border-t gap-2">
-                    <button type="button" onClick={onClose} className="btn btn-ghost">إلغاء</button>
-                    <button type="submit" className="btn btn-primary">حفظ</button>
+                    <button type="button" onClick={onClose} className="btn btn-ghost" disabled={isSaving}>إلغاء</button>
+                    <button type="submit" className="btn btn-primary" disabled={isSaving}>{isSaving ? 'جاري الحفظ...' : 'حفظ'}</button>
                  </div>
             </form>
         </Modal>

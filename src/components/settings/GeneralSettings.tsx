@@ -3,6 +3,7 @@ import { useApp } from '../../contexts/AppContext';
 import { toast } from 'react-hot-toast';
 import { Settings } from '../../types';
 import { Building2, Phone, MapPin, Mail, FileText, DollarSign, Clock, Hash, Shield, AlertTriangle } from 'lucide-react';
+import { normalizeArabicNumerals } from '../../utils/helpers';
 
 type GeneralCompany = Settings['general']['company'];
 type Operational = Settings['operational'];
@@ -65,12 +66,14 @@ const GeneralSettings: React.FC = () => {
     };
 
     const handleOperationalChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-        const { name, value, type } = e.target;
+        const { name, type } = e.target;
+        const rawValue = e.target.value;
+        const value = type === 'number' ? Number(normalizeArabicNumerals(rawValue)) : rawValue;
         if (name.includes('.')) {
             const [parent, child] = name.split('.');
-            setOperational(prev => ({ ...prev, [parent]: { ...(prev as any)[parent], [child]: type === 'number' ? Number(value) : value } }));
+            setOperational(prev => ({ ...prev, [parent]: { ...(prev as any)[parent], [child]: value } }));
         } else {
-            setOperational(prev => ({ ...prev, [name]: type === 'number' ? Number(value) : value }));
+            setOperational(prev => ({ ...prev, [name]: value }));
         }
     };
     
@@ -135,14 +138,14 @@ const GeneralSettings: React.FC = () => {
                             <Hash size={14} />
                             نسبة الضريبة (%)
                         </label>
-                        <input type="number" name="taxRate" value={operational.taxRate} onChange={handleOperationalChange} placeholder="0" min="0" max="100" />
+                        <input type="number" name="taxRate" value={operational.taxRate} onChange={handleOperationalChange} min="0" max="100" />
                     </div>
                     <div>
                         <label className="text-xs font-medium text-text-muted flex items-center gap-1.5 mb-1">
                             <Clock size={14} />
                             أيام تنبيه انتهاء العقد
                         </label>
-                        <input type="number" name="contractAlertDays" value={operational.contractAlertDays} onChange={handleOperationalChange} placeholder="30" min="0" />
+                        <input type="number" name="contractAlertDays" value={operational.contractAlertDays} onChange={handleOperationalChange} min="0" />
                     </div>
                 </div>
             </SettingsSection>

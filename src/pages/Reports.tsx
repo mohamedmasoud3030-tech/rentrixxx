@@ -14,7 +14,9 @@ import { DocumentHeaderInline } from '../components/shared/DocumentHeader';
 import {
   exportRentRollToPdf, exportOwnerLedgerToPdf, exportTenantStatementToPdf,
   exportIncomeStatementToPdf, exportTrialBalanceToPdf, exportBalanceSheetToPdf,
-  exportAgedReceivablesToPdf
+  exportAgedReceivablesToPdf, exportDailyCollectionToPdf, exportExpensesReportToPdf,
+  exportDepositsReportToPdf, exportMaintenanceReportToPdf, exportOverdueTenantsToPdf,
+  exportVacantUnitsToPdf, exportUtilitiesReportToPdf, exportPropertyReportToPdf
 } from '../services/pdfService';
 import { calculateBalanceSheetData, calculateIncomeStatementData, calculateAgedReceivables } from '../services/accountingService';
 import { startOfMonth, endOfMonth, subMonths, startOfYear, endOfYear, isWithinInterval, format, eachMonthOfInterval } from 'date-fns';
@@ -26,6 +28,11 @@ import {
 } from 'recharts';
 
 type ReportTab = 'overview' | 'rent_roll' | 'owner' | 'tenant' | 'income_statement' | 'balance_sheet' | 'trial_balance' | 'aged_receivables' | 'property_report' | 'daily_collection' | 'maintenance_report' | 'deposits_report' | 'expenses_report' | 'utilities_report' | 'overdue_tenants' | 'vacant_units';
+
+interface ReportGroup {
+  label: string;
+  items: { id: ReportTab; label: string; icon: React.ReactNode }[];
+}
 
 const CHART_COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4', '#ec4899', '#14b8a6'];
 
@@ -71,9 +78,10 @@ const ActionBar: React.FC<{ onPrint: () => void; onExport?: () => void; children
 const Reports: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { db, contractBalances, ownerBalances, settings } = useApp();
+  const { settings } = useApp();
   const queryParams = useMemo(() => new URLSearchParams(location.search), [location.search]);
   const [activeTab, setActiveTab] = useState<ReportTab>(queryParams.get('tab') as ReportTab || 'overview');
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const currency = settings.operational?.currency ?? 'OMR';
 
   const handleTabChange = (tab: ReportTab) => {
@@ -81,23 +89,43 @@ const Reports: React.FC = () => {
     navigate(`/reports?tab=${tab}`, { replace: true });
   };
 
-  const tabs: { id: ReportTab; label: string; icon: React.ReactNode }[] = [
-    { id: 'overview', label: 'نظرة عامة', icon: <BarChart3 size={16} /> },
-    { id: 'income_statement', label: 'قائمة الدخل', icon: <TrendingUp size={16} /> },
-    { id: 'balance_sheet', label: 'الميزانية', icon: <Wallet size={16} /> },
-    { id: 'trial_balance', label: 'ميزان المراجعة', icon: <Filter size={16} /> },
-    { id: 'rent_roll', label: 'قائمة الإيجارات', icon: <Building2 size={16} /> },
-    { id: 'owner', label: 'كشف حساب المالك', icon: <Users size={16} /> },
-    { id: 'tenant', label: 'كشف حساب المستأجر', icon: <Users size={16} /> },
-    { id: 'aged_receivables', label: 'أعمار الديون', icon: <CalendarRange size={16} /> },
-    { id: 'property_report', label: 'تقرير عقار', icon: <Building2 size={16} /> },
-    { id: 'daily_collection', label: 'كشف التحصيل اليومي', icon: <Banknote size={16} /> },
-    { id: 'maintenance_report', label: 'تقرير الصيانة', icon: <Filter size={16} /> },
-    { id: 'deposits_report', label: 'تقرير التأمينات', icon: <Wallet size={16} /> },
-    { id: 'expenses_report', label: 'تقرير المصروفات', icon: <TrendingDown size={16} /> },
-    { id: 'utilities_report', label: 'تقرير المرافق', icon: <Zap size={16} /> },
-    { id: 'overdue_tenants', label: 'المتأخرون عن الدفع', icon: <TrendingDown size={16} /> },
-    { id: 'vacant_units', label: 'الوحدات الشاغرة', icon: <Building2 size={16} /> },
+  const reportGroups: ReportGroup[] = [
+    {
+      label: 'عام',
+      items: [
+        { id: 'overview', label: 'نظرة عامة', icon: <BarChart3 size={15} /> },
+      ],
+    },
+    {
+      label: 'التقارير المالية',
+      items: [
+        { id: 'income_statement', label: 'قائمة الدخل', icon: <TrendingUp size={15} /> },
+        { id: 'balance_sheet', label: 'الميزانية العمومية', icon: <Wallet size={15} /> },
+        { id: 'trial_balance', label: 'ميزان المراجعة', icon: <Filter size={15} /> },
+        { id: 'aged_receivables', label: 'أعمار الديون', icon: <CalendarRange size={15} /> },
+        { id: 'daily_collection', label: 'كشف التحصيل اليومي', icon: <Banknote size={15} /> },
+        { id: 'expenses_report', label: 'تقرير المصروفات', icon: <TrendingDown size={15} /> },
+        { id: 'deposits_report', label: 'تقرير التأمينات', icon: <Wallet size={15} /> },
+      ],
+    },
+    {
+      label: 'تقارير الإيجار',
+      items: [
+        { id: 'rent_roll', label: 'قائمة الإيجارات', icon: <Building2 size={15} /> },
+        { id: 'owner', label: 'كشف حساب المالك', icon: <Users size={15} /> },
+        { id: 'tenant', label: 'كشف حساب المستأجر', icon: <Users size={15} /> },
+        { id: 'property_report', label: 'تقرير عقار', icon: <Building2 size={15} /> },
+      ],
+    },
+    {
+      label: 'تقارير التشغيل',
+      items: [
+        { id: 'maintenance_report', label: 'تقرير الصيانة', icon: <Filter size={15} /> },
+        { id: 'utilities_report', label: 'تقرير المرافق', icon: <Zap size={15} /> },
+        { id: 'overdue_tenants', label: 'المتأخرون عن الدفع', icon: <TrendingDown size={15} /> },
+        { id: 'vacant_units', label: 'الوحدات الشاغرة', icon: <Building2 size={15} /> },
+      ],
+    },
   ];
 
   const renderContent = () => {
@@ -122,25 +150,52 @@ const Reports: React.FC = () => {
     }
   };
 
+  const activeLabel = reportGroups.flatMap(g => g.items).find(i => i.id === activeTab)?.label || '';
+
   return (
-    <div className="space-y-4">
-      <Card className="p-2 overflow-hidden">
-        <nav className="flex items-center gap-1 overflow-x-auto whitespace-nowrap">
-          {tabs.map(tab => (
-            <button
-              key={tab.id}
-              onClick={() => handleTabChange(tab.id)}
-              className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold transition-all ${
-                activeTab === tab.id ? 'bg-primary text-white shadow-lg' : 'text-text-muted hover:bg-background'
-              }`}
-            >
-              {tab.icon}
-              {tab.label}
-            </button>
+    <div className="flex gap-4 items-start">
+      <Card className={`flex-shrink-0 transition-all duration-300 ${sidebarCollapsed ? 'w-12' : 'w-56'} self-start sticky top-4`}>
+        <div className="flex items-center justify-between p-3 border-b border-border">
+          {!sidebarCollapsed && <span className="text-xs font-black text-text-muted uppercase tracking-wide">التقارير</span>}
+          <button onClick={() => setSidebarCollapsed(c => !c)} className="p-1 rounded hover:bg-background text-text-muted" title="طي القائمة">
+            <ChevronLeft size={16} className={`transition-transform ${sidebarCollapsed ? 'rotate-180' : ''}`} />
+          </button>
+        </div>
+        <nav className="py-2">
+          {reportGroups.map(group => (
+            <div key={group.label} className="mb-2">
+              {!sidebarCollapsed && (
+                <p className="px-3 py-1 text-[10px] font-black text-text-muted uppercase tracking-widest opacity-60">{group.label}</p>
+              )}
+              {group.items.map(item => (
+                <button
+                  key={item.id}
+                  onClick={() => handleTabChange(item.id)}
+                  title={sidebarCollapsed ? item.label : undefined}
+                  className={`w-full flex items-center gap-2.5 px-3 py-2 text-sm font-semibold transition-all rounded-lg mx-1 ${
+                    activeTab === item.id
+                      ? 'bg-primary text-white'
+                      : 'text-text-muted hover:bg-background hover:text-text'
+                  } ${sidebarCollapsed ? 'justify-center' : ''}`}
+                  style={{ width: sidebarCollapsed ? 'calc(100% - 8px)' : 'calc(100% - 8px)' }}
+                >
+                  {item.icon}
+                  {!sidebarCollapsed && <span className="truncate">{item.label}</span>}
+                </button>
+              ))}
+            </div>
           ))}
         </nav>
       </Card>
-      <div>{renderContent()}</div>
+
+      <div className="flex-1 min-w-0">
+        <div className="mb-4 flex items-center gap-2">
+          <span className="text-xs text-text-muted">التقارير</span>
+          <ChevronLeft size={12} className="text-text-muted" />
+          <span className="text-sm font-bold text-text">{activeLabel}</span>
+        </div>
+        {renderContent()}
+      </div>
     </div>
   );
 };
@@ -1066,7 +1121,15 @@ const PropertyReport: React.FC = () => {
   return (
     <Card className="p-6">
       <SectionHeader title="تقرير عقار" icon={<Building2 size={20} />} />
-      <ActionBar onPrint={() => setIsPrinting(true)}>
+      <ActionBar onPrint={() => setIsPrinting(true)} onExport={() => {
+        if (!property) return;
+        const pdfUnits = units.map(u => {
+          const contract = db.contracts.find(c => c.unitId === u.id && c.status === 'ACTIVE');
+          const tenant = contract ? db.tenants.find(t => t.id === contract.tenantId) : null;
+          return { ...u, tenantName: tenant?.name || '-', rent: contract?.rent || 0, deposit: contract?.deposit || 0, statusAr: u.status === 'RENTED' ? 'مؤجرة' : u.status === 'AVAILABLE' ? 'شاغرة' : u.status === 'ON_HOLD' ? 'معلقة' : 'صيانة' };
+        });
+        exportPropertyReportToPdf(property, owner, pdfUnits, totalRent, annualIncome, maintenanceCost, settings);
+      }}>
         <div>
           <label className="block text-xs font-medium text-text-muted mb-1">العقار</label>
           <select value={selectedPropertyId} onChange={e => setSelectedPropertyId(e.target.value)} className="text-sm">
@@ -1136,7 +1199,14 @@ const DailyCollectionReport: React.FC = () => {
   return (
     <Card className="p-6">
       <SectionHeader title="كشف التحصيل اليومي" icon={<Banknote size={20} />} />
-      <ActionBar onPrint={() => setIsPrinting(true)}>
+      <ActionBar onPrint={() => setIsPrinting(true)} onExport={() => {
+        const pdfReceipts = dayReceipts.map(r => {
+          const contract = db.contracts.find(c => c.id === r.contractId);
+          const tenant = contract ? db.tenants.find(t => t.id === contract.tenantId) : null;
+          return { ...r, tenantName: tenant?.name || '-', channelAr: r.channel === 'CASH' ? 'نقدي' : r.channel === 'BANK' ? 'تحويل' : r.channel === 'POS' ? 'شبكة' : r.channel === 'CHECK' ? 'شيك' : 'أخرى' };
+        });
+        exportDailyCollectionToPdf(pdfReceipts, { cash: totalCash, bank: totalBank, check: totalCheck, total: totalAll }, settings, date);
+      }}>
         <div>
           <label className="block text-xs font-medium text-text-muted mb-1">التاريخ</label>
           <input type="date" value={date} onChange={e => setDate(e.target.value)} className="text-sm" />
@@ -1214,7 +1284,13 @@ const MaintenanceReport: React.FC = () => {
   return (
     <Card className="p-6">
       <SectionHeader title="تقرير الصيانة" icon={<Filter size={20} />} />
-      <ActionBar onPrint={() => setIsPrinting(true)}>
+      <ActionBar onPrint={() => setIsPrinting(true)} onExport={() => {
+        const pdfRecords = records.map(m => {
+          const unit = db.units.find(u => u.id === m.unitId);
+          return { ...m, unitName: unit?.name || '-', statusAr: m.status === 'COMPLETED' ? 'مكتمل' : m.status === 'IN_PROGRESS' ? 'جاري' : m.status === 'NEW' ? 'جديد' : m.status, chargedToAr: m.chargedTo === 'OWNER' ? 'المالك' : m.chargedTo === 'TENANT' ? 'المستأجر' : 'المكتب' };
+        });
+        exportMaintenanceReportToPdf(pdfRecords, totalCost, settings, `${formatDate(fromDate)} - ${formatDate(toDate)}`);
+      }}>
         <div><label className="block text-xs font-medium text-text-muted mb-1">من</label><input type="date" value={fromDate} onChange={e => setFromDate(e.target.value)} className="text-sm" /></div>
         <div><label className="block text-xs font-medium text-text-muted mb-1">إلى</label><input type="date" value={toDate} onChange={e => setToDate(e.target.value)} className="text-sm" /></div>
         <div><label className="block text-xs font-medium text-text-muted mb-1">العقار</label>
@@ -1280,7 +1356,15 @@ const DepositsReport: React.FC = () => {
   return (
     <Card className="p-6">
       <SectionHeader title="تقرير التأمينات (الودائع)" icon={<Wallet size={20} />} />
-      <ActionBar onPrint={() => setIsPrinting(true)} />
+      <ActionBar onPrint={() => setIsPrinting(true)} onExport={() => {
+        const pdfContracts = activeContracts.map(c => {
+          const tenant = db.tenants.find(t => t.id === c.tenantId);
+          const unit = db.units.find(u => u.id === c.unitId);
+          const property = unit ? db.properties.find(p => p.id === unit.propertyId) : null;
+          return { ...c, tenantName: tenant?.name || '-', unitName: unit?.name || '-', propertyName: property?.name || '-' };
+        });
+        exportDepositsReportToPdf(pdfContracts, totalDeposits, settings);
+      }} />
       <ReportPrintableContent title="تقرير التأمينات" date={formatDate(new Date().toISOString())}>{reportContent}</ReportPrintableContent>
       {isPrinting && <PrintPreviewModal isOpen={isPrinting} onClose={() => setIsPrinting(false)} title="تقرير التأمينات"><ReportPrintableContent title="تقرير التأمينات" date={formatDate(new Date().toISOString())}>{reportContent}</ReportPrintableContent></PrintPreviewModal>}
     </Card>
@@ -1353,7 +1437,7 @@ const ExpensesReport: React.FC = () => {
   return (
     <Card className="p-6">
       <SectionHeader title="تقرير المصروفات" icon={<TrendingDown size={20} />} />
-      <ActionBar onPrint={() => setIsPrinting(true)}>
+      <ActionBar onPrint={() => setIsPrinting(true)} onExport={() => exportExpensesReportToPdf(expenses, byCategory, totalExpenses, settings, `${formatDate(fromDate)} - ${formatDate(toDate)}`)}>
         <div><label className="block text-xs font-medium text-text-muted mb-1">من</label><input type="date" value={fromDate} onChange={e => setFromDate(e.target.value)} className="text-sm" /></div>
         <div><label className="block text-xs font-medium text-text-muted mb-1">إلى</label><input type="date" value={toDate} onChange={e => setToDate(e.target.value)} className="text-sm" /></div>
       </ActionBar>
@@ -1448,7 +1532,10 @@ const OverdueTenants: React.FC = () => {
   return (
     <Card className="p-6">
       <SectionHeader title="تقرير المتأخرين عن الدفع" icon={<TrendingDown size={20} />} />
-      <ActionBar onPrint={() => setIsPrinting(true)}>
+      <ActionBar onPrint={() => setIsPrinting(true)} onExport={() => {
+        const pdfOverdue = overdue.map(r => ({ tenantName: r.tenant?.name || '-', phone: r.tenant?.phone || '-', unitName: r.unit?.name || '-', propertyName: r.property?.name || '-', dueDate: r.inv.dueDate, daysOverdue: r.daysOverdue, remaining: r.remaining }));
+        exportOverdueTenantsToPdf(pdfOverdue, totalOverdue, settings);
+      }}>
         <div><label className="block text-xs font-medium text-text-muted mb-1">العقار</label>
           <select value={filterPropertyId} onChange={e => setFilterPropertyId(e.target.value)} className="text-sm">
             <option value="all">الكل</option>
@@ -1557,7 +1644,10 @@ const VacantUnits: React.FC = () => {
   return (
     <Card className="p-6">
       <SectionHeader title="تقرير الوحدات الشاغرة" icon={<Building2 size={20} />} />
-      <ActionBar onPrint={() => setIsPrinting(true)}>
+      <ActionBar onPrint={() => setIsPrinting(true)} onExport={() => {
+        const pdfUnits = vacantUnits.map(({ unit, property: prop }) => ({ ...unit, propertyName: prop?.name || '-', typeAr: UNIT_TYPE_AR[unit.type] || unit.type || '-', floorAr: FLOOR_AR[unit.floor] || unit.floor || '-', statusAr: unit.status === 'MAINTENANCE' ? 'صيانة' : unit.status === 'ON_HOLD' ? 'محجوزة' : 'متاحة' }));
+        exportVacantUnitsToPdf(pdfUnits, totalPotentialRent, settings);
+      }}>
         <div><label className="block text-xs font-medium text-text-muted mb-1">العقار</label>
           <select value={filterPropertyId} onChange={e => setFilterPropertyId(e.target.value)} className="text-sm">
             <option value="all">الكل</option>
@@ -1704,7 +1794,14 @@ const UtilitiesReport: React.FC = () => {
   return (
     <Card className="p-6">
       <SectionHeader title="تقرير المرافق والخدمات" icon={<Zap size={20} />} />
-      <ActionBar onPrint={() => setIsPrinting(true)}>
+      <ActionBar onPrint={() => setIsPrinting(true)} onExport={() => {
+        const pdfRecords = records.map(r => {
+          const unit = db.units.find(u => u.id === r.unitId);
+          const prop = db.properties.find(p => p.id === r.propertyId);
+          return { ...r, unitName: unit?.name || '-', propertyName: prop?.name || '-', consumption: Math.max(0, r.currentReading - r.previousReading), paidByAr: r.paidBy === 'TENANT' ? 'مستأجر' : r.paidBy === 'OWNER' ? 'مالك' : 'مكتب' };
+        });
+        exportUtilitiesReportToPdf(pdfRecords, totalAmount, byType, settings, `${fromMonth} - ${toMonth}`);
+      }}>
         <div><label className="block text-xs font-medium text-text-muted mb-1">من شهر</label><input type="month" value={fromMonth} onChange={e => setFromMonth(e.target.value)} className="text-sm" /></div>
         <div><label className="block text-xs font-medium text-text-muted mb-1">إلى شهر</label><input type="month" value={toMonth} onChange={e => setToMonth(e.target.value)} className="text-sm" /></div>
         <div><label className="block text-xs font-medium text-text-muted mb-1">نوع المرفق</label>

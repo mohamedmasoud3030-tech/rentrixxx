@@ -5,7 +5,7 @@ import Card from '../components/ui/Card';
 import Modal from '../components/ui/Modal';
 import ActionsMenu, { EditAction, DeleteAction } from '../components/shared/ActionsMenu';
 import AttachmentsManager from '../components/shared/AttachmentsManager';
-import { formatCurrency, toArabicDigits, formatDate } from '../utils/helpers';
+import { formatCurrency, toArabicDigits, formatDate, normalizeArabicNumerals } from '../utils/helpers';
 import { Building, Home, ArrowRight, User, Map as MapIcon, AlertCircle, Clock, FileText, Wrench, Phone, Percent, TrendingUp, Zap, Droplets, Flame, Wifi, ChevronRight, Plus, Image, Trash2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
@@ -268,7 +268,7 @@ const UtilityRecordForm: React.FC<{
     isOpen: boolean; onClose: () => void;
     record: UtilityRecord | null; unitId: string; propertyId: string;
 }> = ({ isOpen, onClose, record, unitId, propertyId }) => {
-    const { dataService, settings } = useApp();
+    const { dataService, settings, db } = useApp();
     const currency = settings.operational?.currency ?? 'OMR';
     const fileRef = useRef<HTMLInputElement>(null);
 
@@ -325,14 +325,41 @@ const UtilityRecordForm: React.FC<{
                 notes: notes || undefined, billImageUrl: billImageUrl || undefined,
                 billImageMime: billImageMime || undefined,
             };
-            if (record) await dataService.update('utilityRecords', record.id, data as any);
-            else await dataService.add('utilityRecords', data as any);
+            if (record) {
+                await dataService.update('utilityRecords', record.id, data);
+            } else {
+                const newRecord = await dataService.add('utilityRecords', data);
+                if (newRecord && amount > 0) {
+                    const property = db.properties.find(p => p.id === propertyId);
+                    const unit = db.units.find(u => u.id === unitId);
+                    const UTILITY_AR: Record<string, string> = { WATER: 'مياه', ELECTRICITY: 'كهرباء', GAS: 'غاز', INTERNET: 'إنترنت', OTHER: 'مرافق' };
+                    const expenseCategory = `مرافق - ${UTILITY_AR[type] || type}`;
+                    const expenseNotes = `فاتورة ${UTILITY_AR[type] || type} - وحدة ${unit?.name || ''} - شهر ${month}`;
+                    const chargedTo = paidBy === 'OWNER' ? 'OWNER' : paidBy === 'TENANT' ? 'TENANT' : 'OFFICE';
+                    const unitContracts = db.contracts.filter(c => c.unitId === unitId);
+                    const linkedContract =
+                        unitContracts.find(c => c.status === 'ACTIVE') ||
+                        unitContracts.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0))[0] ||
+                        null;
+                    await dataService.add('expenses', {
+                        dateTime: new Date(`${month}-01`).toISOString(),
+                        category: expenseCategory,
+                        amount,
+                        status: 'POSTED' as const,
+                        chargedTo,
+                        contractId: linkedContract?.id || null,
+                        ref: `UTIL-${newRecord.id?.slice?.(0, 8) || ''}`,
+                        notes: expenseNotes,
+                        payee: property?.name || 'مرافق',
+                    });
+                }
+            }
             onClose();
         } finally {
             isSavingRef.current = false;
             setIsSaving(false);
         }
-    }, [record, currReading, prevReading, unitId, propertyId, type, month, amount, paidBy, notes, billImageUrl, billImageMime, dataService, onClose]);
+    }, [record, currReading, prevReading, unitId, propertyId, type, month, amount, paidBy, notes, billImageUrl, billImageMime, dataService, db, onClose]);
 
     return (
         <Modal isOpen={isOpen} onClose={onClose} title={record ? 'تعديل سجل مرفق' : 'إضافة سجل مرفق جديد'}>
@@ -354,15 +381,15 @@ const UtilityRecordForm: React.FC<{
                 <div className="grid grid-cols-3 gap-4">
                     <div>
                         <label className="block text-sm font-medium mb-1">القراءة السابقة</label>
-                        <input type="number" min="0" value={prevReading} onChange={e => setPrevReading(Number(e.target.value))} required disabled={isSaving} />
+                        <input type="number" min="0" value={prevReading} onChange={e => setPrevReading(Number(normalizeArabicNumerals(e.target.value)))} required disabled={isSaving} />
                     </div>
                     <div>
                         <label className="block text-sm font-medium mb-1">القراءة الحالية</label>
-                        <input type="number" min="0" value={currReading} onChange={e => setCurrReading(Number(e.target.value))} required disabled={isSaving} />
+                        <input type="number" min="0" value={currReading} onChange={e => setCurrReading(Number(normalizeArabicNumerals(e.target.value)))} required disabled={isSaving} />
                     </div>
                     <div>
                         <label className="block text-sm font-medium mb-1">سعر الوحدة ({currency})</label>
-                        <input type="number" min="0" step="0.001" value={unitPrice} onChange={e => setUnitPrice(Number(e.target.value))} required disabled={isSaving} />
+                        <input type="number" min="0" step="0.001" value={unitPrice} onChange={e => setUnitPrice(Number(normalizeArabicNumerals(e.target.value)))} required disabled={isSaving} />
                     </div>
                 </div>
                 <div className="bg-background border border-border rounded-lg p-3 flex justify-between items-center">
@@ -394,8 +421,9 @@ const UtilityRecordForm: React.FC<{
                 </div>
                 <div>
                     <label className="block text-sm font-medium mb-1">ملاحظات</label>
-                    <textarea value={notes} onChange={e => setNotes(e.target.value)} rows={2} placeholder="أي ملاحظات إضافية..." />
+                    <textarea value={notes} onChange={e => setNotes(e.target.value)} rows={2} />
                 </div>
+                {record && <AttachmentsManager entityType="UTILITY" entityId={record.id} />}
                 <div className="flex gap-3 pt-2">
                     <button type="button" onClick={onClose} className="btn btn-ghost flex-1" disabled={isSaving}>إلغاء</button>
                     <button type="submit" className="btn btn-primary flex-1" disabled={isSaving}>{isSaving ? 'جاري الحفظ...' : 'حفظ السجل'}</button>
@@ -557,19 +585,27 @@ const PropertyForm: React.FC<{ isOpen: boolean, onClose: () => void, property: P
     const handleSubmit = useCallback(async (e: React.FormEvent) => {
         e.preventDefault();
         if (isSavingRef.current) return;
+
+        const ownerAlreadyHasProperty = db.properties.some(
+            p => p.ownerId === ownerId && p.id !== property?.id
+        );
+        if (ownerAlreadyHasProperty) {
+            toast.error('لا يمكن إسناد عقارين للمالك نفسه. يرجى اختيار مالك آخر أو إلغاء إسناد العقار الحالي أولاً.');
+            return;
+        }
         
         isSavingRef.current = true;
         setIsSaving(true);
         try {
             const data = { name, ownerId, location, type: 'Building', notes: '' };
             if (property) await dataService.update('properties', property.id, data); 
-            else await dataService.add('properties', data as any);
+            else await dataService.add('properties', data);
             onClose();
         } finally {
             isSavingRef.current = false;
             setIsSaving(false);
         }
-    }, [property, name, ownerId, location, dataService, onClose]);
+    }, [property, name, ownerId, location, db.properties, dataService, onClose]);
     return (
         <Modal isOpen={isOpen} onClose={onClose} title="بيانات العقار">
             <form onSubmit={handleSubmit} className="space-y-4">
@@ -612,6 +648,7 @@ const UnitForm: React.FC<{ isOpen: boolean, onClose: () => void, unit: Unit | nu
     const [floor, setFloor] = useState(unit?.floor || '');
     const [status, setStatus] = useState<Unit['status']>(unit?.status || 'AVAILABLE');
     const [rent, setRent] = useState(unit?.rentDefault || 0);
+    const [minRent, setMinRent] = useState(unit?.minRent || 0);
     const [area, setArea] = useState(unit?.area || 0);
     const [bedrooms, setBedrooms] = useState(unit?.bedrooms || 0);
     const [bathrooms, setBathrooms] = useState(unit?.bathrooms || 0);
@@ -622,41 +659,58 @@ const UnitForm: React.FC<{ isOpen: boolean, onClose: () => void, unit: Unit | nu
     const [features, setFeatures] = useState(unit?.features || '');
     const [notes, setNotes] = useState(unit?.notes || '');
     const [isSaving, setIsSaving] = useState(false);
+    const [rentError, setRentError] = useState('');
     const isSavingRef = useRef(false);
 
     React.useEffect(() => {
         if (unit) {
             setName(unit.name); setType(unit.type || 'شقة'); setFloor(unit.floor || '');
-            setStatus(unit.status); setRent(unit.rentDefault); setArea(unit.area || 0);
+            setStatus(unit.status); setRent(unit.rentDefault); setMinRent(unit.minRent || 0); setArea(unit.area || 0);
             setBedrooms(unit.bedrooms || 0); setBathrooms(unit.bathrooms || 0);
             setKitchens(unit.kitchens || 0); setLivingRooms(unit.livingRooms || 0);
             setWaterMeter(unit.waterMeter || ''); setElectricityMeter(unit.electricityMeter || '');
             setFeatures(unit.features || ''); setNotes(unit.notes || '');
+        } else {
+            setMinRent(0); setRentError('');
         }
     }, [unit, isOpen]);
+
+    const handleRentChange = useCallback((val: number) => {
+        setRent(val);
+        if (minRent > 0 && val < minRent) {
+            setRentError(`الإيجار لا يمكن أن يقل عن الحد الأدنى (${minRent})`);
+        } else {
+            setRentError('');
+        }
+    }, [minRent]);
 
     const handleSubmit = useCallback(async (e: React.FormEvent) => {
         e.preventDefault();
         if (isSavingRef.current) return;
+        if (minRent > 0 && rent < minRent) {
+            toast.error(`الإيجار الافتراضي (${rent}) لا يمكن أن يقل عن الحد الأدنى (${minRent})`);
+            return;
+        }
         
         isSavingRef.current = true;
         setIsSaving(true);
         try {
             const data = {
-                name, type, floor, status, rentDefault: rent, area: area || undefined,
+                name, type, floor, status, rentDefault: rent, minRent: minRent || undefined,
+                area: area || undefined,
                 bedrooms: bedrooms || undefined, bathrooms: bathrooms || undefined,
                 kitchens: kitchens || undefined, livingRooms: livingRooms || undefined,
                 waterMeter: waterMeter || undefined, electricityMeter: electricityMeter || undefined,
                 features: features || undefined, notes, propertyId,
             };
-            if (unit) await dataService.update('units', unit.id, data as any); 
-            else await dataService.add('units', data as any);
+            if (unit) await dataService.update('units', unit.id, data); 
+            else await dataService.add('units', data);
             onClose();
         } finally {
             isSavingRef.current = false;
             setIsSaving(false);
         }
-    }, [unit, name, type, floor, status, rent, area, bedrooms, bathrooms, kitchens, livingRooms, waterMeter, electricityMeter, features, notes, propertyId, dataService, onClose]);
+    }, [unit, name, type, floor, status, rent, minRent, area, bedrooms, bathrooms, kitchens, livingRooms, waterMeter, electricityMeter, features, notes, propertyId, dataService, onClose]);
 
     return (
         <Modal isOpen={isOpen} onClose={onClose} title={unit ? 'تعديل الوحدة' : 'إضافة وحدة جديدة'}>
@@ -691,11 +745,16 @@ const UnitForm: React.FC<{ isOpen: boolean, onClose: () => void, unit: Unit | nu
                         </div>
                         <div>
                             <label className="block text-sm font-medium mb-1">الإيجار الافتراضي</label>
-                            <input type="number" value={rent} onChange={e => setRent(Number(e.target.value))} required disabled={isSaving} />
+                            <input type="number" value={rent} onChange={e => handleRentChange(Number(normalizeArabicNumerals(e.target.value)))} required disabled={isSaving} />
+                            {rentError && <p className="text-xs text-red-500 mt-1">{rentError}</p>}
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium mb-1">الحد الأدنى للإيجار</label>
+                            <input type="number" min="0" value={minRent} onChange={e => setMinRent(Number(normalizeArabicNumerals(e.target.value)))} disabled={isSaving} />
                         </div>
                         <div>
                             <label className="block text-sm font-medium mb-1">المساحة (م²)</label>
-                            <input type="number" value={area} onChange={e => setArea(Number(e.target.value))} disabled={isSaving} />
+                            <input type="number" value={area} onChange={e => setArea(Number(normalizeArabicNumerals(e.target.value)))} disabled={isSaving} />
                         </div>
                     </div>
 
@@ -703,19 +762,19 @@ const UnitForm: React.FC<{ isOpen: boolean, onClose: () => void, unit: Unit | nu
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                         <div>
                             <label className="block text-sm font-medium mb-1">غرف النوم</label>
-                            <input type="number" min="0" value={bedrooms} onChange={e => setBedrooms(Number(e.target.value))} disabled={isSaving} />
+                            <input type="number" min="0" value={bedrooms} onChange={e => setBedrooms(Number(normalizeArabicNumerals(e.target.value)))} disabled={isSaving} />
                         </div>
                         <div>
                             <label className="block text-sm font-medium mb-1">الحمامات</label>
-                            <input type="number" min="0" value={bathrooms} onChange={e => setBathrooms(Number(e.target.value))} disabled={isSaving} />
+                            <input type="number" min="0" value={bathrooms} onChange={e => setBathrooms(Number(normalizeArabicNumerals(e.target.value)))} disabled={isSaving} />
                         </div>
                         <div>
                             <label className="block text-sm font-medium mb-1">المطابخ</label>
-                            <input type="number" min="0" value={kitchens} onChange={e => setKitchens(Number(e.target.value))} disabled={isSaving} />
+                            <input type="number" min="0" value={kitchens} onChange={e => setKitchens(Number(normalizeArabicNumerals(e.target.value)))} disabled={isSaving} />
                         </div>
                         <div>
                             <label className="block text-sm font-medium mb-1">الصالات</label>
-                            <input type="number" min="0" value={livingRooms} onChange={e => setLivingRooms(Number(e.target.value))} disabled={isSaving} />
+                            <input type="number" min="0" value={livingRooms} onChange={e => setLivingRooms(Number(normalizeArabicNumerals(e.target.value)))} disabled={isSaving} />
                         </div>
                     </div>
 

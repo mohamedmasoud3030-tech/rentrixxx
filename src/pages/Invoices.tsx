@@ -1,10 +1,10 @@
 
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import { useApp } from '../contexts/AppContext';
 import { Invoice, Unit } from '../types';
 import Card from '../components/ui/Card';
 import Modal from '../components/ui/Modal';
-import { formatCurrency, formatDate, getStatusBadgeClass, exportToCsv, INVOICE_STATUS_AR, INVOICE_TYPE_AR } from '../utils/helpers';
+import { formatCurrency, formatDate, getStatusBadgeClass, exportToCsv, INVOICE_STATUS_AR, INVOICE_TYPE_AR, normalizeArabicNumerals } from '../utils/helpers';
 import { ReceiptText, RefreshCw, Download, CheckSquare, Square, CheckCircle, MessageCircle } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
@@ -296,6 +296,8 @@ const InvoiceForm: React.FC<{ isOpen: boolean, onClose: () => void, invoice: Inv
     const [amount, setAmount] = useState(0);
     const [type, setType] = useState<Invoice['type']>('UTILITY');
     const [notes, setNotes] = useState('');
+    const [isSaving, setIsSaving] = useState(false);
+    const isSavingRef = useRef(false);
 
     const isReadOnly = invoice && (invoice.type === 'RENT' || invoice.type === 'LATE_FEE');
 
@@ -330,9 +332,10 @@ const InvoiceForm: React.FC<{ isOpen: boolean, onClose: () => void, invoice: Inv
         }
     }, [isOpen, invoice, unitsWithProperties, db.contracts]);
 
-    const handleSubmit = async (e: React.FormEvent) => {
+    const handleSubmit = useCallback(async (e: React.FormEvent) => {
         e.preventDefault();
         if (isReadOnly) return;
+        if (isSavingRef.current) return;
         if (!unitId || amount <= 0) {
             toast.error("يرجى تحديد الوحدة وإدخال مبلغ صحيح.");
             return;
@@ -341,24 +344,31 @@ const InvoiceForm: React.FC<{ isOpen: boolean, onClose: () => void, invoice: Inv
             toast.error("لا يمكن إنشاء فاتورة لوحدة شاغرة. لإضافة تكاليف على المالك، يرجى إنشاء 'مصروف' من قسم المالية.");
             return;
         }
-        
-        const data = {
-            contractId: activeContractForUnit.id,
-            dueDate,
-            amount,
-            paidAmount: invoice ? invoice.paidAmount : 0,
-            status: invoice ? invoice.status : 'UNPAID',
-            type,
-            notes,
-        };
 
-        if (invoice) {
-            await dataService.update('invoices', invoice.id, data);
-        } else {
-            await dataService.add('invoices', data);
+        isSavingRef.current = true;
+        setIsSaving(true);
+        try {
+            const data = {
+                contractId: activeContractForUnit.id,
+                dueDate,
+                amount,
+                paidAmount: invoice ? invoice.paidAmount : 0,
+                status: invoice ? invoice.status : 'UNPAID',
+                type,
+                notes,
+            };
+
+            if (invoice) {
+                await dataService.update('invoices', invoice.id, data);
+            } else {
+                await dataService.add('invoices', data);
+            }
+            onClose();
+        } finally {
+            isSavingRef.current = false;
+            setIsSaving(false);
         }
-        onClose();
-    };
+    }, [isReadOnly, unitId, amount, activeContractForUnit, dueDate, invoice, type, notes, dataService, onClose]);
 
     return (
         <Modal isOpen={isOpen} onClose={onClose} title={isReadOnly ? "عرض تفاصيل الفاتورة" : (invoice ? "تعديل فاتورة" : "إضافة فاتورة يدوية")}>
@@ -388,7 +398,7 @@ const InvoiceForm: React.FC<{ isOpen: boolean, onClose: () => void, invoice: Inv
                     </div>
                     <div>
                         <label className="block text-sm font-medium mb-1">المبلغ</label>
-                        <input type="number" value={amount} onChange={e => setAmount(Number(e.target.value))} required disabled={isReadOnly} />
+                        <input type="number" value={amount} onChange={e => setAmount(Number(normalizeArabicNumerals(e.target.value)))} required disabled={isReadOnly} />
                     </div>
                 </div>
                  <div>
@@ -402,8 +412,8 @@ const InvoiceForm: React.FC<{ isOpen: boolean, onClose: () => void, invoice: Inv
 
                 {!isReadOnly && (
                     <div className="flex justify-end gap-3 pt-4 mt-4 border-t border-border">
-                        <button type="button" onClick={onClose} className="btn btn-ghost">إلغاء</button>
-                        <button type="submit" className="btn btn-primary" disabled={!activeContractForUnit}>حفظ</button>
+                        <button type="button" onClick={onClose} className="btn btn-ghost" disabled={isSaving}>إلغاء</button>
+                        <button type="submit" className="btn btn-primary" disabled={isSaving || !activeContractForUnit}>{isSaving ? 'جاري الحفظ...' : 'حفظ'}</button>
                     </div>
                 )}
             </form>
