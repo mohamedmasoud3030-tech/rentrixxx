@@ -156,6 +156,12 @@ export interface Settings {
   documentTemplates: {
     contractClauses: string[];
     contractFooterNote: string;
+    marginTop?: number;
+    marginBottom?: number;
+    marginLeft?: number;
+    marginRight?: number;
+    includeSignatures?: boolean;
+    signatureBlockCount?: number;
   };
 }
 

@@ -17,28 +17,53 @@ const PrintPreviewModal: React.FC<PrintPreviewModalProps> = ({ isOpen, onClose, 
 
         const printWindow = window.open('', '', 'height=800,width=1000');
         if (printWindow) {
-            printWindow.document.write('<!DOCTYPE html><html><head><title>طباعة</title>');
+            printWindow.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8"><title>طباعة</title>');
             printWindow.document.write(`
                 <style>
                     @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap');
-                    body { 
+                    * { margin: 0; padding: 0; box-sizing: border-box; }
+                    html, body { 
                         font-family: 'Cairo', sans-serif;
                         direction: rtl;
-                        margin: 20px;
                         color: #333;
+                        width: 210mm;
+                        height: 297mm;
                     }
+                    body {
+                        margin: 0;
+                        padding: 0;
+                        background: white;
+                    }
+                    @page {
+                        size: A4;
+                        margin: 15mm;
+                    }
+                    .print-container {
+                        width: 210mm;
+                        min-height: 297mm;
+                        padding: 15mm;
+                        page-break-after: always;
+                        background: white;
+                    }
+                    .page-break { page-break-after: always; break-after: page; }
                     table { width: 100%; border-collapse: collapse; margin-top: 1rem; font-size: 0.9rem; }
                     th, td { border: 1px solid #ccc; padding: 8px; text-align: right; }
                     thead { background-color: #f2f2f2; }
-                    h1, h2, h3, h4 { margin-bottom: 1rem; color: #000; }
+                    h1, h2, h3, h4 { margin-bottom: 1rem; color: #1e3a8a; }
+                    .print-header {
+                        text-align: center;
+                        border-bottom: 3px solid #1e3a8a;
+                        padding-bottom: 15px;
+                        margin-bottom: 20px;
+                    }
                     .text-center { text-align: center; }
                     .font-bold { font-weight: 700; }
-                    .mb-2 { margin-bottom: 0.5rem; }
-                    .mb-6 { margin-bottom: 1.5rem; }
                     .text-sm { font-size: 0.875rem; }
                     .text-text-muted { color: #666; }
                     @media print {
-                        body { margin: 0; }
+                        body { margin: 0 !important; padding: 0 !important; width: 210mm; height: 297mm; }
+                        .print-container { margin: 0 !important; padding: 15mm; }
+                        .no-print { display: none !important; }
                     }
                 </style>
             `);

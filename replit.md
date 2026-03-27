@@ -18,6 +18,19 @@ Preferred communication style: Simple, everyday language.
 - ✅ Added `.trim()` to all input fields to prevent whitespace-only entries
 - ✅ Form fields with empty/undefined values now properly handled (converted to `undefined` instead of empty strings)
 
+**Unified Print System & DocumentTemplates Enhancement (Mar 27, 2026):**
+- ✅ Created `PrintPageLayout.tsx` - موحّد ترويسة (Header) لجميع المستندات المطبوعة مع بيانات الشركة كاملة
+- ✅ Created `SignatureBlock.tsx` - مكون موحّد للتوقيعات (3 توقيع: مُصدِر، مستقبِل، ختم)
+- ✅ Enhanced `PrintPreviewModal.tsx` - طباعة ذكية (A4 بـ 15ملم هوامش، بدون العناصر الإضافية للتطبيق)
+- ✅ All numbers display in Arabic numerals (٠-٩) in print using `toArabicDigits()` function
+- ✅ Significantly improved `DocumentTemplatesSettings.tsx`:
+  - إضافة إعدادات الهوامش (A4: 15ملم افتراضي)
+  - إدارة عدد مربعات التوقيع (2 أو 3 أو 4)
+  - تفعيل/تعطيل منطقة التوقيعات
+  - معاينة حية لترقيم البنود
+- ✅ Print system properly detects multiple pages (يطبع ورقتين إذا احتاج ورقتين)
+- ✅ Unified header with company info (الاسم، الهاتف، العنوان، السجل التجاري، الرقم الضريبي)
+
 ## System Architecture
 
 ### Frontend

@@ -13,10 +13,24 @@ const DocumentTemplatesSettings: React.FC = () => {
     const [dragIdx, setDragIdx] = useState<number | null>(null);
     const [isDirty, setIsDirty] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
+    
+    // Print Settings
+    const [marginTop, setMarginTop] = useState(templates?.marginTop || 15);
+    const [marginBottom, setMarginBottom] = useState(templates?.marginBottom || 15);
+    const [marginLeft, setMarginLeft] = useState(templates?.marginLeft || 15);
+    const [marginRight, setMarginRight] = useState(templates?.marginRight || 15);
+    const [includeSignatures, setIncludeSignatures] = useState(templates?.includeSignatures !== false);
+    const [signatureBlockCount, setSignatureBlockCount] = useState(templates?.signatureBlockCount || 3);
 
     useEffect(() => {
         setClauses(templates?.contractClauses || []);
         setFooterNote(templates?.contractFooterNote || '');
+        setMarginTop(templates?.marginTop || 15);
+        setMarginBottom(templates?.marginBottom || 15);
+        setMarginLeft(templates?.marginLeft || 15);
+        setMarginRight(templates?.marginRight || 15);
+        setIncludeSignatures(templates?.includeSignatures !== false);
+        setSignatureBlockCount(templates?.signatureBlockCount || 3);
         setIsDirty(false);
     }, [templates]);
 
@@ -60,9 +74,11 @@ const DocumentTemplatesSettings: React.FC = () => {
                 documentTemplates: {
                     contractClauses: clauses.filter(c => c.trim()),
                     contractFooterNote: footerNote,
+                    marginTop, marginBottom, marginLeft, marginRight,
+                    includeSignatures, signatureBlockCount
                 }
             });
-            toast.success('تم حفظ قالب العقد بنجاح');
+            toast.success('تم حفظ إعدادات المستندات بنجاح');
             setIsDirty(false);
         } finally {
             setIsSaving(false);
@@ -162,6 +178,90 @@ const DocumentTemplatesSettings: React.FC = () => {
                     {clauses.filter(c => c.trim()).length === 0 && (
                         <p className="text-text-muted">لا توجد بنود. أضف بنداً أعلاه.</p>
                     )}
+                </div>
+            </Card>
+
+            {/* Print Layout Settings */}
+            <Card className="p-4 bg-amber-50 border-amber-200">
+                <h3 className="font-bold text-sm text-amber-900 mb-4 flex items-center gap-2">
+                    إعدادات تخطيط الطباعة (A4)
+                </h3>
+                
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+                    <div>
+                        <label className="block text-xs font-semibold mb-1">الهامش العلوي (ملم)</label>
+                        <input 
+                            type="number" 
+                            min="5" 
+                            max="30" 
+                            value={marginTop}
+                            onChange={(e) => { setMarginTop(Number(e.target.value)); markDirty(); }}
+                            className="w-full border border-border rounded px-2 py-1 text-sm"
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-xs font-semibold mb-1">الهامش السفلي (ملم)</label>
+                        <input 
+                            type="number" 
+                            min="5" 
+                            max="30" 
+                            value={marginBottom}
+                            onChange={(e) => { setMarginBottom(Number(e.target.value)); markDirty(); }}
+                            className="w-full border border-border rounded px-2 py-1 text-sm"
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-xs font-semibold mb-1">الهامش الأيمن (ملم)</label>
+                        <input 
+                            type="number" 
+                            min="5" 
+                            max="30" 
+                            value={marginRight}
+                            onChange={(e) => { setMarginRight(Number(e.target.value)); markDirty(); }}
+                            className="w-full border border-border rounded px-2 py-1 text-sm"
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-xs font-semibold mb-1">الهامش الأيسر (ملم)</label>
+                        <input 
+                            type="number" 
+                            min="5" 
+                            max="30" 
+                            value={marginLeft}
+                            onChange={(e) => { setMarginLeft(Number(e.target.value)); markDirty(); }}
+                            className="w-full border border-border rounded px-2 py-1 text-sm"
+                        />
+                    </div>
+                </div>
+
+                <div className="border-t border-amber-200 pt-4">
+                    <h4 className="text-sm font-bold mb-3">إعدادات التوقيعات</h4>
+                    <div className="space-y-3">
+                        <label className="flex items-center gap-2 cursor-pointer">
+                            <input 
+                                type="checkbox" 
+                                checked={includeSignatures}
+                                onChange={(e) => { setIncludeSignatures(e.target.checked); markDirty(); }}
+                                className="rounded"
+                            />
+                            <span className="text-sm">إضافة منطقة التوقيعات في المستندات المطبوعة</span>
+                        </label>
+                        
+                        {includeSignatures && (
+                            <div>
+                                <label className="block text-xs font-semibold mb-2">عدد مربعات التوقيع</label>
+                                <select 
+                                    value={signatureBlockCount}
+                                    onChange={(e) => { setSignatureBlockCount(Number(e.target.value)); markDirty(); }}
+                                    className="w-full border border-border rounded px-2 py-1 text-sm"
+                                >
+                                    <option value={2}>اثنان (المُصدِر والمستقبِل)</option>
+                                    <option value={3}>ثلاثة (المُصدِر والمستقبِل والختم)</option>
+                                    <option value={4}>أربعة (مع شاهد إضافي)</option>
+                                </select>
+                            </div>
+                        )}
+                    </div>
                 </div>
             </Card>
         </div>
