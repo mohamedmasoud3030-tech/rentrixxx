@@ -17,6 +17,7 @@ import FinancialSettings from '../components/settings/FinancialSettings';
 import AutomationSettings from '../components/settings/AutomationSettings';
 import DataIntegrityAudit from './DataIntegrityAudit';
 import DocumentTemplatesSettings from '../components/settings/DocumentTemplatesSettings';
+import { useApp } from '../contexts/AppContext';
 
 interface SettingsSection {
     id: string;
@@ -60,8 +61,24 @@ const SectionLink: React.FC<{ section: SettingsSection }> = ({ section }) => (
     </NavLink>
 );
 
+const AdminGuard: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+    const { auth } = useApp();
+    if (auth.currentUser?.role !== 'ADMIN') {
+        return (
+            <div className="flex flex-col items-center justify-center py-16 text-center gap-4">
+                <Lock size={40} className="text-amber-500" />
+                <h3 className="text-lg font-bold">صلاحية غير كافية</h3>
+                <p className="text-sm text-text-muted max-w-xs">هذا القسم مخصص للمديرين فقط. تواصل مع مدير النظام للحصول على الصلاحيات اللازمة.</p>
+            </div>
+        );
+    }
+    return <>{children}</>;
+};
+
 const Settings: React.FC = () => {
     const location = useLocation();
+    const { auth } = useApp();
+    const isAdmin = auth.currentUser?.role === 'ADMIN';
     const [showSensitive, setShowSensitive] = useState(() => {
         return sensitiveSections.some(s => location.pathname.startsWith(s.path));
     });
@@ -78,40 +95,44 @@ const Settings: React.FC = () => {
                         ))}
                     </nav>
 
-                    <button
-                        onClick={() => setShowSensitive(v => !v)}
-                        className="w-full flex items-center gap-2 px-3 py-2 rounded-lg border border-amber-300 bg-amber-50 dark:bg-amber-900/20 dark:border-amber-700 text-amber-700 dark:text-amber-400 text-xs font-bold mb-2 hover:bg-amber-100 dark:hover:bg-amber-900/40 transition-all"
-                    >
-                        <AlertTriangle size={13} className="flex-shrink-0" />
-                        <span className="flex-1 text-right">الإعدادات الحساسة</span>
-                        {showSensitive ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
-                    </button>
+                    {isAdmin && (
+                        <>
+                            <button
+                                onClick={() => setShowSensitive(v => !v)}
+                                className="w-full flex items-center gap-2 px-3 py-2 rounded-lg border border-amber-300 bg-amber-50 dark:bg-amber-900/20 dark:border-amber-700 text-amber-700 dark:text-amber-400 text-xs font-bold mb-2 hover:bg-amber-100 dark:hover:bg-amber-900/40 transition-all"
+                            >
+                                <AlertTriangle size={13} className="flex-shrink-0" />
+                                <span className="flex-1 text-right">الإعدادات الحساسة</span>
+                                {showSensitive ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
+                            </button>
 
-                    {showSensitive && (
-                        <div className="flex flex-col gap-1 border border-amber-200 dark:border-amber-800 rounded-lg p-2 bg-amber-50/50 dark:bg-amber-900/10">
-                            <p className="text-[10px] text-amber-600 dark:text-amber-400 px-1 mb-1 leading-tight">
-                                هذه الإعدادات تؤثر على البيانات المالية والأمان. تأكد قبل أي تغيير.
-                            </p>
-                            {sensitiveSections.map(section => (
-                                <SectionLink key={section.id} section={section} />
-                            ))}
-                        </div>
+                            {showSensitive && (
+                                <div className="flex flex-col gap-1 border border-amber-200 dark:border-amber-800 rounded-lg p-2 bg-amber-50/50 dark:bg-amber-900/10">
+                                    <p className="text-[10px] text-amber-600 dark:text-amber-400 px-1 mb-1 leading-tight">
+                                        هذه الإعدادات تؤثر على البيانات المالية والأمان. تأكد قبل أي تغيير.
+                                    </p>
+                                    {sensitiveSections.map(section => (
+                                        <SectionLink key={section.id} section={section} />
+                                    ))}
+                                </div>
+                            )}
+                        </>
                     )}
                 </aside>
 
                 <main className="flex-1 min-w-0 border-r border-border pr-6">
                     <Routes>
                         <Route path="general" element={<GeneralSettings />} />
-                        <Route path="financial" element={<FinancialSettings />} />
+                        <Route path="financial" element={<AdminGuard><FinancialSettings /></AdminGuard>} />
                         <Route path="appearance" element={<AppearanceSettings />} />
                         <Route path="documents" element={<DocumentTemplatesSettings />} />
-                        <Route path="users" element={<UsersSettings />} />
+                        <Route path="users" element={<AdminGuard><UsersSettings /></AdminGuard>} />
                         <Route path="notifications" element={<NotificationsSettings />} />
-                        <Route path="security" element={<SecuritySettings />} />
-                        <Route path="backup" element={<BackupSettings />} />
-                        <Route path="integrations" element={<IntegrationsSettings />} />
+                        <Route path="security" element={<AdminGuard><SecuritySettings /></AdminGuard>} />
+                        <Route path="backup" element={<AdminGuard><BackupSettings /></AdminGuard>} />
+                        <Route path="integrations" element={<AdminGuard><IntegrationsSettings /></AdminGuard>} />
                         <Route path="automation" element={<AutomationSettings />} />
-                        <Route path="integrity" element={<DataIntegrityAudit />} />
+                        <Route path="integrity" element={<AdminGuard><DataIntegrityAudit /></AdminGuard>} />
                         <Route index element={<Navigate to="general" replace />} />
                     </Routes>
                 </main>

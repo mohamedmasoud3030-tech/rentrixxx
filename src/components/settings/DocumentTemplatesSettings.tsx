@@ -68,6 +68,11 @@ const DocumentTemplatesSettings: React.FC = () => {
 
     const handleSave = async () => {
         if (isSaving) return;
+        const margins = [marginTop, marginBottom, marginLeft, marginRight];
+        if (margins.some(m => m < 5 || m > 30)) {
+            toast.error('هوامش المستند يجب أن تكون بين 5 و 30 ملم.');
+            return;
+        }
         setIsSaving(true);
         try {
             await updateSettings({
@@ -80,6 +85,8 @@ const DocumentTemplatesSettings: React.FC = () => {
             });
             toast.success('تم حفظ إعدادات المستندات بنجاح');
             setIsDirty(false);
+        } catch {
+            toast.error('فشل حفظ إعدادات المستندات.');
         } finally {
             setIsSaving(false);
         }

@@ -3,11 +3,12 @@ import { useApp } from '../../contexts/AppContext';
 import { User } from '../../types';
 import Modal from '../ui/Modal';
 import { toast } from 'react-hot-toast';
-import { KeyRound, Edit } from 'lucide-react';
+import { KeyRound, Edit, UserX, UserCheck } from 'lucide-react';
 import { USER_ROLE_AR } from '../../utils/helpers';
 
 const UsersSettings: React.FC = () => {
     const { db, auth } = useApp();
+    const currentUserId = auth.currentUser?.id;
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingUser, setEditingUser] = useState<User | null>(null);
 
@@ -18,7 +19,7 @@ const UsersSettings: React.FC = () => {
 
     return (
         <div className="space-y-6">
-             <div className="flex justify-between items-center">
+            <div className="flex justify-between items-center">
                 <h2 className="text-2xl font-bold">إدارة المستخدمين والصلاحيات</h2>
                 <button onClick={() => handleOpenModal()} className="btn btn-primary">إضافة مستخدم</button>
             </div>
@@ -35,21 +36,36 @@ const UsersSettings: React.FC = () => {
                             <th className="p-4">اسم المستخدم</th>
                             <th className="p-4">البريد الإلكتروني</th>
                             <th className="p-4">الدور</th>
+                            <th className="p-4">الحالة</th>
                             <th className="p-4">تاريخ الإنشاء</th>
                             <th className="p-4">إجراءات</th>
                         </tr>
                     </thead>
                     <tbody>
                         {db.auth.users.map(u => (
-                            <tr key={u.id} className="border-t border-border">
+                            <tr key={u.id} className={`border-t border-border ${u.isDisabled ? 'opacity-60 bg-red-50 dark:bg-red-900/10' : ''}`}>
                                 <td className="p-4 font-bold">{u.username}</td>
                                 <td className="p-4 text-sm font-mono text-text-muted" dir="ltr">{u.email || '—'}</td>
                                 <td className="p-4">{USER_ROLE_AR[u.role] || u.role}</td>
+                                <td className="p-4">
+                                    {u.isDisabled ? (
+                                        <span className="text-xs bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 px-2 py-0.5 rounded-full font-bold">معطّل</span>
+                                    ) : (
+                                        <span className="text-xs bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 px-2 py-0.5 rounded-full font-bold">نشط</span>
+                                    )}
+                                </td>
                                 <td className="p-4 text-sm text-text-muted">{new Date(u.createdAt).toLocaleDateString('ar-EG')}</td>
                                 <td className="p-4">
-                                    <div className="flex gap-4">
-                                        <button onClick={() => handleOpenModal(u)} className="text-primary text-xs flex items-center gap-1 hover:underline"><Edit size={12}/> تعديل</button>
-                                        <button onClick={() => auth.forcePasswordReset(u.id)} className="text-yellow-600 text-xs flex items-center gap-1 hover:underline"><KeyRound size={12}/> تصفير كلمة المرور</button>
+                                    <div className="flex gap-3 flex-wrap">
+                                        <button onClick={() => handleOpenModal(u)} className="text-primary text-xs flex items-center gap-1 hover:underline"><Edit size={12} /> تعديل</button>
+                                        <button onClick={() => auth.forcePasswordReset(u.id)} className="text-yellow-600 text-xs flex items-center gap-1 hover:underline"><KeyRound size={12} /> تصفير كلمة المرور</button>
+                                        {u.id !== currentUserId && (
+                                            u.isDisabled ? (
+                                                <button onClick={() => auth.enableUser(u.id)} className="text-green-600 text-xs flex items-center gap-1 hover:underline"><UserCheck size={12} /> تفعيل</button>
+                                            ) : (
+                                                <button onClick={() => auth.disableUser(u.id)} className="text-red-600 text-xs flex items-center gap-1 hover:underline"><UserX size={12} /> تعطيل</button>
+                                            )
+                                        )}
                                     </div>
                                 </td>
                             </tr>
@@ -62,7 +78,7 @@ const UsersSettings: React.FC = () => {
     );
 };
 
-const UserForm: React.FC<{ isOpen: boolean, onClose: () => void, user: User | null }> = ({ isOpen, onClose, user }) => {
+const UserForm: React.FC<{ isOpen: boolean; onClose: () => void; user: User | null }> = ({ isOpen, onClose, user }) => {
     const { auth } = useApp();
     const [username, setUsername] = useState('');
     const [email, setEmail] = useState('');
@@ -87,10 +103,10 @@ const UserForm: React.FC<{ isOpen: boolean, onClose: () => void, user: User | nu
         e.preventDefault();
         if (user) {
             await auth.updateUser(user.id, { username, role });
-            toast.success("تم تحديث المستخدم.");
+            toast.success('تم تحديث المستخدم.');
         } else {
             if (!password || !email) {
-                toast.error("البريد الإلكتروني وكلمة المرور مطلوبان عند إنشاء مستخدم جديد.");
+                toast.error('البريد الإلكتروني وكلمة المرور مطلوبان عند إنشاء مستخدم جديد.');
                 return;
             }
             const result = await auth.addUser({ username, email, role, mustChange: true }, password);
@@ -105,7 +121,7 @@ const UserForm: React.FC<{ isOpen: boolean, onClose: () => void, user: User | nu
     };
 
     return (
-        <Modal isOpen={isOpen} onClose={onClose} title={user ? "تعديل مستخدم" : "إضافة مستخدم جديد"}>
+        <Modal isOpen={isOpen} onClose={onClose} title={user ? 'تعديل مستخدم' : 'إضافة مستخدم جديد'}>
             <form onSubmit={handleSubmit} className="space-y-4">
                 <input id="username" name="username" value={username} onChange={e => setUsername(e.target.value)} placeholder="اسم المستخدم (للعرض)" required />
                 {!user && (

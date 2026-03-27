@@ -57,6 +57,7 @@ export interface User {
   mustChange: boolean;
   createdAt: number;
   isDemo?: boolean;
+  isDisabled?: boolean;
 }
 
 export interface CompanyInfo {
@@ -694,6 +695,8 @@ export interface AppContextType {
     addUser: (user: Omit<User, 'id'|'createdAt'|'salt'|'hash'>, pass: string) => Promise<{ok: boolean, msg: string}>;
     updateUser: (id: string, updates: Partial<User>) => Promise<void>;
     forcePasswordReset: (userId: string) => Promise<void>;
+    disableUser: (userId: string) => Promise<void>;
+    enableUser: (userId: string) => Promise<void>;
   };
   settings: Settings;
   updateSettings: (newSettings: Partial<Settings>) => Promise<void>;

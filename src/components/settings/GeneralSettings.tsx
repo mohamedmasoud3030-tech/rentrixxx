@@ -84,10 +84,16 @@ const GeneralSettings: React.FC = () => {
 
     const handleSave = async () => {
         if (isSaving) return;
+        if (operational.taxRate < 0 || operational.taxRate > 100) {
+            toast.error('نسبة الضريبة يجب أن تكون بين 0 و 100.');
+            return;
+        }
         setIsSaving(true);
         try {
             await updateSettings({ general: { company }, operational });
             toast.success("تم حفظ الإعدادات العامة.");
+        } catch {
+            toast.error("فشل حفظ الإعدادات العامة.");
         } finally {
             setIsSaving(false);
         }

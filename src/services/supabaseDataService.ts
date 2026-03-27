@@ -254,6 +254,7 @@ export const supabaseData = {
       id: p.id, username: p.username || '', email: '', hash: '', salt: '',
       role: p.role || 'USER', mustChange: p.must_change_password || false,
       createdAt: p.created_at || Date.now(),
+      isDisabled: p.is_disabled || false,
     }));
 
     return {

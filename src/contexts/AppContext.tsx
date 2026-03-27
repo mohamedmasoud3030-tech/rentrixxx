@@ -138,18 +138,31 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       if (session?.user) {
         const { data: profile } = await supabase.from('profiles').select('*').eq('id', session.user.id).single();
         if (profile) {
+          if (profile.is_disabled) {
+            await supabase.auth.signOut();
+            setCurrentUser(null);
+            return;
+          }
           setCurrentUser({
             id: session.user.id, username: profile.username || session.user.email!.split('@')[0],
             email: session.user.email || '', hash: '', salt: '',
             role: (profile.role as 'ADMIN' | 'USER') || 'USER',
             mustChange: profile.must_change_password || false, createdAt: profile.created_at || Date.now(),
+            isDisabled: false,
           });
         } else { setCurrentUser(null); }
       } else { setCurrentUser(null); }
     };
     initAuth();
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (event === 'SIGNED_OUT' || !session) setCurrentUser(null);
+      if (event === 'SIGNED_OUT' || !session) { setCurrentUser(null); return; }
+      if (event === 'TOKEN_REFRESHED' && session.user) {
+        const { data: profile } = await supabase.from('profiles').select('is_disabled').eq('id', session.user.id).single();
+        if (profile?.is_disabled) {
+          await supabase.auth.signOut();
+          setCurrentUser(null);
+        }
+      }
     });
     return () => subscription.unsubscribe();
   }, []);
@@ -185,7 +198,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         await supabase.from('profiles').insert(newProfile);
         profile = newProfile;
       }
-      const user: User = { id: data.user.id, username: profile.username || data.user.email!.split('@')[0], email: data.user.email || '', hash: '', salt: '', role: (profile.role as 'ADMIN' | 'USER') || 'USER', mustChange: profile.must_change_password || false, createdAt: profile.created_at || Date.now() };
+      if (profile.is_disabled) {
+        await supabase.auth.signOut();
+        return { ok: false, msg: 'هذا الحساب معطّل. تواصل مع مدير النظام.' };
+      }
+      const user: User = { id: data.user.id, username: profile.username || data.user.email!.split('@')[0], email: data.user.email || '', hash: '', salt: '', role: (profile.role as 'ADMIN' | 'USER') || 'USER', mustChange: profile.must_change_password || false, createdAt: profile.created_at || Date.now(), isDisabled: false };
       setCurrentUser(user);
       await audit('LOGIN', 'SESSION', user.id);
       return { ok: true, msg: 'Ok', mustChange: user.mustChange };
@@ -231,9 +248,29 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (window.confirm('هل أنت متأكد من رغبتك في فرض إعادة تعيين كلمة المرور لهذا المستخدم؟')) {
       await supabase.from('profiles').update({ must_change_password: true }).eq('id', userId);
       await audit('FORCE_RESET_PASSWORD', 'users', userId);
-      toast.success('تم فرض إعادة تعيين كلمة المرور بنجاح.');
+      if (currentUser?.id === userId) {
+        await supabase.auth.signOut();
+      }
+      toast.success('تم فرض إعادة تعيين كلمة المرور. سيتطلب تغيير كلمة المرور عند الدخول التالي.');
     }
-  }, [audit]);
+  }, [audit, currentUser]);
+
+  const disableUser = useCallback(async (userId: string) => {
+    if (currentUser?.id === userId) { toast.error('لا يمكنك تعطيل حسابك الخاص.'); return; }
+    if (window.confirm('هل أنت متأكد من تعطيل هذا المستخدم؟ سيتم حظر وصوله عند انتهاء الجلسة الحالية أو تحديثها.')) {
+      await supabase.from('profiles').update({ is_disabled: true }).eq('id', userId);
+      await audit('DISABLE_USER', 'users', userId);
+      await refreshData();
+      toast.success('تم تعطيل المستخدم. سيُحظر عند انتهاء جلسته أو تحديث التوكن.');
+    }
+  }, [currentUser, audit, refreshData]);
+
+  const enableUser = useCallback(async (userId: string) => {
+    await supabase.from('profiles').update({ is_disabled: false }).eq('id', userId);
+    await audit('ENABLE_USER', 'users', userId);
+    await refreshData();
+    toast.success('تم تفعيل المستخدم بنجاح.');
+  }, [audit, refreshData]);
 
   const postJournalEntrySupabase = useCallback(async (params: { dr: string; cr: string; amount: number; ref: string; date?: string }) => {
     const now = Date.now();
@@ -279,15 +316,26 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         const e = mutableEntry as unknown as Expense;
         const cashAccount = mappings.paymentMethods.CASH;
         if (e.chargedTo === 'OWNER') {
-          await postJournalEntrySupabase({ dr: '2121', cr: cashAccount, amount: e.amount, ref: e.id });
+          const ownersPayableAccount = mappings.ownersPayable || '2121';
+          await postJournalEntrySupabase({ dr: ownersPayableAccount, cr: cashAccount, amount: e.amount, ref: e.id });
         } else {
           const expenseAccount = mappings.expenseCategories[e.category] || mappings.expenseCategories.default;
-          await postJournalEntrySupabase({ dr: expenseAccount, cr: cashAccount, amount: e.amount, ref: e.id });
+          const taxAmount = e.taxAmount ?? 0;
+          const netAmount = e.amount - taxAmount;
+          if (taxAmount > 0.001 && mappings.vatReceivable) {
+            if (netAmount > 0.001) {
+              await postJournalEntrySupabase({ dr: expenseAccount, cr: cashAccount, amount: netAmount, ref: e.id });
+            }
+            await postJournalEntrySupabase({ dr: mappings.vatReceivable, cr: cashAccount, amount: taxAmount, ref: e.id });
+          } else {
+            await postJournalEntrySupabase({ dr: expenseAccount, cr: cashAccount, amount: e.amount, ref: e.id });
+          }
         }
       } else if (table === 'ownerSettlements') {
         const s = mutableEntry as unknown as OwnerSettlement;
         const cashAccount = mappings.paymentMethods[s.method === 'CASH' ? 'CASH' : 'BANK'];
-        await postJournalEntrySupabase({ dr: '2121', cr: cashAccount, amount: s.amount, ref: s.id });
+        const ownersPayableAccount = mappings.ownersPayable || '2121';
+        await postJournalEntrySupabase({ dr: ownersPayableAccount, cr: cashAccount, amount: s.amount, ref: s.id });
       }
 
       await refreshData();
@@ -312,18 +360,31 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       const newAllocations = allocations.map(a => ({ id: crypto.randomUUID(), receiptId: newReceipt.id, ...a, createdAt: Date.now() }));
       await supabaseData.bulkInsert('receiptAllocations', newAllocations);
 
+      let totalVatCollected = 0;
       for (const alloc of allocations) {
         const invoices = await supabaseData.fetchWhere<Invoice>('invoices', 'id', alloc.invoiceId);
         const invoice = invoices[0];
         if (!invoice) continue;
         const newPaid = invoice.paidAmount + alloc.amount;
-        const newStatus = newPaid >= (invoice.amount + (invoice.taxAmount || 0)) - 0.001 ? 'PAID' : 'PARTIALLY_PAID';
+        const invoiceTotal = invoice.amount + (invoice.taxAmount || 0);
+        const newStatus = newPaid >= invoiceTotal - 0.001 ? 'PAID' : 'PARTIALLY_PAID';
         await supabaseData.update('invoices', invoice.id, { paidAmount: newPaid, status: newStatus });
+        if (invoice.taxAmount && invoiceTotal > 0) {
+          totalVatCollected += (alloc.amount / invoiceTotal) * invoice.taxAmount;
+        }
       }
 
       const mappings = settings.accounting?.accountMappings;
-      await postJournalEntrySupabase({ dr: mappings.paymentMethods[newReceipt.channel], cr: mappings.accountsReceivable, amount: newReceipt.amount, ref: newReceipt.id });
-      await audit('CREATE', 'receipts', newReceipt.id, `Created receipt ${newReceipt.no} with ${allocations.length} allocations.`);
+      const cashAccount = mappings.paymentMethods[newReceipt.channel];
+      const arAccount = mappings.accountsReceivable;
+      const baseAmount = newReceipt.amount - totalVatCollected;
+      if (totalVatCollected > 0.001 && mappings.vatPayable) {
+        await postJournalEntrySupabase({ dr: cashAccount, cr: arAccount, amount: baseAmount, ref: newReceipt.id });
+        await postJournalEntrySupabase({ dr: cashAccount, cr: mappings.vatPayable, amount: totalVatCollected, ref: `${newReceipt.id}-vat` });
+      } else {
+        await postJournalEntrySupabase({ dr: cashAccount, cr: arAccount, amount: newReceipt.amount, ref: newReceipt.id });
+      }
+      await audit('CREATE', 'receipts', newReceipt.id, `Created receipt ${newReceipt.no} with ${allocations.length} allocations. VAT collected: ${totalVatCollected.toFixed(2)}`);
 
       const endTime = performance.now();
       logOperationTime('addReceipt', endTime - startTime);
@@ -388,18 +449,27 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   }, [audit, refreshData]);
 
+  const reverseAllJournalEntries = useCallback(async (sourceId: string) => {
+    const entries = await supabaseData.fetchWhere<JournalEntry>('journalEntries', 'sourceId', sourceId);
+    const debits = entries.filter(e => e.type === 'DEBIT');
+    const credits = entries.filter(e => e.type === 'CREDIT');
+    const pairs: { dr: string; cr: string; amount: number }[] = [];
+    for (let i = 0; i < Math.min(debits.length, credits.length); i++) {
+      pairs.push({ dr: credits[i].accountId, cr: debits[i].accountId, amount: debits[i].amount });
+    }
+    for (const pair of pairs) {
+      await postJournalEntrySupabase({ ...pair, ref: `${sourceId}-void` });
+    }
+  }, [postJournalEntrySupabase]);
+
   const voidReceipt: AppContextType['financeService']['voidReceipt'] = useCallback(async (id) => {
     const startTime = performance.now();
     try {
       await supabaseData.update('receipts', id, { status: 'VOID', voidedAt: Date.now() });
       await audit('VOID', 'receipts', id);
 
-      const existingEntries = await supabaseData.fetchWhere<JournalEntry>('journalEntries', 'sourceId', id);
-      const debitEntry = existingEntries.find(e => e.type === 'DEBIT');
-      const creditEntry = existingEntries.find(e => e.type === 'CREDIT');
-      if (debitEntry && creditEntry) {
-        await postJournalEntrySupabase({ dr: creditEntry.accountId, cr: debitEntry.accountId, amount: debitEntry.amount, ref: id });
-      }
+      await reverseAllJournalEntries(id);
+      await reverseAllJournalEntries(`${id}-vat`);
 
       const allocations = await supabaseData.fetchWhere<ReceiptAllocation>('receiptAllocations', 'receiptId', id);
       for (const alloc of allocations) {
@@ -422,7 +492,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       toast.error('حدث خطأ أثناء إلغاء السند: ' + (err?.message || 'خطأ غير معروف'));
       await refreshData();
     }
-  }, [audit, postJournalEntrySupabase, logOperationTime, refreshData]);
+  }, [audit, reverseAllJournalEntries, logOperationTime, refreshData]);
 
   const voidExpense: AppContextType['financeService']['voidExpense'] = useCallback(async (id) => {
     const startTime = performance.now();
@@ -430,12 +500,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       await supabaseData.update('expenses', id, { status: 'VOID', voidedAt: Date.now() });
       await audit('VOID', 'expenses', id);
 
-      const existingEntries = await supabaseData.fetchWhere<JournalEntry>('journalEntries', 'sourceId', id);
-      const debitEntry = existingEntries.find(e => e.type === 'DEBIT');
-      const creditEntry = existingEntries.find(e => e.type === 'CREDIT');
-      if (debitEntry && creditEntry) {
-        await postJournalEntrySupabase({ dr: creditEntry.accountId, cr: debitEntry.accountId, amount: debitEntry.amount, ref: id });
-      }
+      await reverseAllJournalEntries(id);
 
       const endTime = performance.now();
       logOperationTime('voidExpense', endTime - startTime);
@@ -447,7 +512,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       toast.error('حدث خطأ أثناء إلغاء المصروف: ' + (err?.message || 'خطأ غير معروف'));
       await refreshData();
     }
-  }, [audit, postJournalEntrySupabase, logOperationTime, refreshData]);
+  }, [audit, reverseAllJournalEntries, logOperationTime, refreshData]);
 
   const generateMonthlyInvoices: AppContextType['financeService']['generateMonthlyInvoices'] = useCallback(async () => {
     if (!settings) return 0;
@@ -466,18 +531,26 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const taxRate = settings.operational?.taxRate ?? 0;
     const invoiceNotifications: Array<{ tenantName: string; tenantPhone: string; unitName: string; amount: number; dueDate: string }> = [];
 
+    const mappings = settings.accounting?.accountMappings;
     for (const c of activeContracts) {
       const hasInvoice = currentMonthInvoices.some(i => i.contractId === c.id && i.type === 'RENT');
       if (!hasInvoice) {
         const taxAmount = (c.rent * taxRate) / 100;
         const dueDate = `${currentMonthYm}-${String(c.dueDay).padStart(2, '0')}`;
-        await add('invoices', {
+        const newInvoice = await add('invoices', {
           contractId: c.id,
           dueDate,
           amount: c.rent, taxAmount: taxAmount > 0 ? taxAmount : undefined,
           paidAmount: 0, status: 'UNPAID', type: 'RENT',
           notes: `فاتورة إيجار شهر ${monthName}`,
-        });
+        }) as Invoice | null;
+        if (newInvoice && mappings) {
+          const arAccount = mappings.accountsReceivable;
+          const rentRevAccount = mappings.revenue?.RENT;
+          if (arAccount && rentRevAccount) {
+            await postJournalEntrySupabase({ dr: arAccount, cr: rentRevAccount, amount: c.rent, ref: newInvoice.id, date: dueDate });
+          }
+        }
         count++;
 
         const tenant = allTenants.find(t => t.id === c.tenantId);
@@ -510,7 +583,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const endTime = performance.now();
     if (count > 0) logOperationTime('generateInvoices', endTime - startTime);
     return count;
-  }, [add, logOperationTime, settings]);
+  }, [add, logOperationTime, settings, postJournalEntrySupabase]);
 
   const payoutCommission = useCallback(async (commissionId: string) => {
     if (isReadOnly) { toast.error("النظام في وضع القراءة فقط."); return; }
@@ -619,15 +692,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   return (
     <AppContext.Provider value={{
       db: activeDb,
-      auth: { currentUser: currentUser ?? null, login, logout, changePassword, addUser, updateUser, forcePasswordReset },
+      auth: { currentUser: currentUser ?? null, login, logout, changePassword, addUser, updateUser, forcePasswordReset, disableUser, enableUser },
       settings: activeSettings,
       updateSettings: async (s) => {
         const ok = await supabaseData.updateSettingsPartial(s);
-        if (ok) {
-          const newSettings = await supabaseData.getSettings();
-          if (newSettings) setSettings(newSettings);
-          await audit('UPDATE', 'settings', 'main', `Updated settings: ${Object.keys(s).join(', ')}`);
+        if (!ok) {
+          throw new Error('فشل تحديث الإعدادات في قاعدة البيانات');
         }
+        const newSettings = await supabaseData.getSettings();
+        if (newSettings) setSettings(newSettings);
+        await audit('UPDATE', 'settings', 'main', `Updated settings: ${Object.keys(s).join(', ')}`);
       },
       rebuildSnapshotsFromJournal, isReadOnly, dataService, financeService,
       runManualAutomation: async () => {
