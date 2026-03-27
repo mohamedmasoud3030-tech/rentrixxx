@@ -204,6 +204,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   }, [audit]);
 
   const addUser: AppContextType['auth']['addUser'] = useCallback(async (user, pass) => {
+    if (currentUser?.role !== 'ADMIN') return { ok: false, msg: 'غير مصرح لك بإدارة المستخدمين' };
     const email = (user as User).email || `${user.username}@rentrix.local`;
     const { data, error } = await supabase.auth.signUp({ email, password: pass });
     if (error || !data.user) return { ok: false, msg: error?.message || 'فشل إنشاء المستخدم' };
@@ -211,21 +212,26 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     await supabase.from('profiles').insert(profile);
     await audit('CREATE', 'users', data.user.id, `Created user ${user.username}`);
     return { ok: true, msg: 'تم إنشاء المستخدم. سيتلقى المستخدم رسالة تأكيد بالبريد الإلكتروني.' };
-  }, [audit]);
+  }, [audit, currentUser]);
 
   const updateUser: AppContextType['auth']['updateUser'] = useCallback(async (id, updates) => {
+    if (currentUser?.role !== 'ADMIN') return;
     if (updates.username) await supabase.from('profiles').update({ username: updates.username }).eq('id', id);
     if (updates.role) await supabase.from('profiles').update({ role: updates.role }).eq('id', id);
     await audit('UPDATE', 'users', id, `Updated user details`);
-  }, [audit]);
+  }, [audit, currentUser]);
 
   const forcePasswordReset = useCallback(async (userId: string) => {
+    if (currentUser?.role !== 'ADMIN') {
+      toast.error('غير مصرح لك بإدارة المستخدمين.');
+      return;
+    }
     if (window.confirm('هل أنت متأكد من رغبتك في فرض إعادة تعيين كلمة المرور لهذا المستخدم؟')) {
       await supabase.from('profiles').update({ must_change_password: true }).eq('id', userId);
       await audit('FORCE_RESET_PASSWORD', 'users', userId);
       toast.success('تم فرض إعادة تعيين كلمة المرور بنجاح.');
     }
-  }, [audit]);
+  }, [audit, currentUser]);
 
   const postJournalEntrySupabase = useCallback(async (params: { dr: string; cr: string; amount: number; ref: string; date?: string }) => {
     const now = Date.now();
