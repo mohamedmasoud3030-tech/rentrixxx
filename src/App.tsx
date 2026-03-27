@@ -146,9 +146,9 @@ const App: React.FC = () => {
               {/* Analytics & Admin Hub */}
               <Route path="/reports" element={<Reports />} />
               <Route path="/smart-assistant" element={<SmartAssistant />} />
-              <Route path="/settings/*" element={<Settings />} />
               {auth.currentUser.role === 'ADMIN' && (
                 <>
+                  <Route path="/settings/*" element={<Settings />} />
                   <Route path="/audit-log" element={<AuditLog />} />
                 </>
               )}
