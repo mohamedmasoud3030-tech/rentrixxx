@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
-import { LayoutGrid, Building2, Users, Banknote, Menu } from 'lucide-react';
+import { LayoutGrid, Building2, Users, Banknote, MoreHorizontal } from 'lucide-react';
 import { useApp } from '../../../contexts/AppContext';
 
 interface BottomNavProps {
@@ -33,42 +33,63 @@ const BottomNav: React.FC<BottomNavProps> = ({ onMenuOpen }) => {
   };
 
   return (
-    <nav className="fixed bottom-0 right-0 left-0 z-40 lg:hidden bg-card border-t border-border safe-bottom"
-      style={{ boxShadow: '0 -4px 20px rgba(0,0,0,0.08)' }}>
-      <div className="flex items-stretch h-16">
+    <nav
+      className="fixed bottom-0 right-0 left-0 z-40 lg:hidden safe-bottom"
+      style={{
+        background: 'hsl(var(--color-card) / 0.92)',
+        backdropFilter: 'blur(20px)',
+        WebkitBackdropFilter: 'blur(20px)',
+        borderTop: '1px solid hsl(var(--color-border) / 0.6)',
+        boxShadow: '0 -8px 32px rgba(0,0,0,0.1)',
+      }}
+    >
+      <div className="flex items-end h-[62px] px-2 pb-1">
         {navItems.map(item => {
           const active = isActive(item.path);
           return (
             <NavLink
               key={item.path}
               to={item.path}
-              className="flex-1 flex flex-col items-center justify-center gap-1 relative transition-all"
-              style={active ? { color: 'hsl(var(--color-primary))' } : { color: 'var(--color-text-muted)' }}
+              className="flex-1 flex flex-col items-center justify-end pb-1 gap-0.5 relative"
+              style={{ color: active ? 'hsl(var(--color-primary))' : 'hsl(var(--color-text-muted))' }}
             >
-              {active && (
-                <span className="absolute top-0 right-1/2 translate-x-1/2 h-0.5 w-8 rounded-full"
-                  style={{ background: 'hsl(var(--color-primary))' }} />
-              )}
-              <div className="relative">
-                <item.icon size={22} />
+              {/* Active pill background */}
+              <div
+                className="flex items-center justify-center w-12 h-7 rounded-full transition-all duration-200 relative"
+                style={active ? {
+                  background: 'hsl(var(--color-primary) / 0.12)',
+                } : {}}
+              >
+                <item.icon size={active ? 21 : 20} strokeWidth={active ? 2.5 : 1.8} />
                 {item.badge && item.badge > 0 && (
-                  <span className="absolute -top-1.5 -left-1.5 min-w-[16px] h-4 flex items-center justify-center rounded-full bg-red-500 text-white text-[9px] font-black px-1">
-                    {item.badge > 99 ? '99+' : item.badge}
+                  <span
+                    className="absolute -top-1 -left-0.5 min-w-[15px] h-[15px] flex items-center justify-center rounded-full text-white text-[9px] font-black px-0.5"
+                    style={{ background: '#ef4444' }}
+                  >
+                    {item.badge > 9 ? '9+' : item.badge}
                   </span>
                 )}
               </div>
-              <span className="text-[10px] font-bold leading-none">{item.label}</span>
+              <span
+                className="text-[10px] leading-none font-bold transition-all duration-200"
+                style={{ opacity: active ? 1 : 0.65 }}
+              >
+                {item.label}
+              </span>
             </NavLink>
           );
         })}
 
-        {/* Menu button */}
+        {/* More / Menu button */}
         <button
           onClick={onMenuOpen}
-          className="flex-1 flex flex-col items-center justify-center gap-1 text-text-muted"
+          className="flex-1 flex flex-col items-center justify-end pb-1 gap-0.5"
+          style={{ color: 'hsl(var(--color-text-muted))' }}
         >
-          <Menu size={22} />
-          <span className="text-[10px] font-bold leading-none">القائمة</span>
+          <div className="flex items-center justify-center w-12 h-7 rounded-full">
+            <MoreHorizontal size={20} strokeWidth={1.8} />
+          </div>
+          <span className="text-[10px] leading-none font-bold" style={{ opacity: 0.65 }}>المزيد</span>
         </button>
       </div>
     </nav>
