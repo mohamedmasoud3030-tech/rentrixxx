@@ -3,6 +3,7 @@ import { Outlet } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import Topbar from './Topbar';
 import Footer from './Footer';
+import BottomNav from './BottomNav';
 import SmartAssistant from '../../shared/SmartAssistant';
 import { useApp } from '../../../contexts/AppContext';
 import { AlertTriangle } from 'lucide-react';
@@ -24,11 +25,20 @@ const Layout: React.FC = () => {
 
   return (
     <div className="flex h-screen overflow-hidden bg-background">
+      {/* Sidebar backdrop on mobile */}
+      {sidebarOpen && (
+        <div
+          className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm lg:hidden"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+
       <Sidebar sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
+
       <div className="relative flex flex-col flex-1 overflow-y-auto overflow-x-hidden">
         <Topbar setSidebarOpen={setSidebarOpen} />
         <ReadOnlyBanner />
-        <main className="p-4 sm:p-6 lg:p-8 flex-1">
+        <main className="p-3 sm:p-5 lg:p-8 flex-1 pb-20 lg:pb-8">
           <div className="max-w-7xl mx-auto w-full">
             <Outlet />
           </div>
@@ -36,6 +46,9 @@ const Layout: React.FC = () => {
         <Footer />
         <SmartAssistant />
       </div>
+
+      {/* Mobile bottom navigation */}
+      <BottomNav onMenuOpen={() => setSidebarOpen(true)} />
     </div>
   );
 };

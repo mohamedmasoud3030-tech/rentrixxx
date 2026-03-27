@@ -22,7 +22,7 @@ const SmartAssistant: React.FC = () => {
         <>
             <button
                 onClick={() => setIsOpen(true)}
-                className="fixed bottom-6 left-6 bg-primary text-white w-14 h-14 rounded-full shadow-lg flex items-center justify-center z-50 hover:bg-opacity-90 transition-transform transform hover:scale-110"
+                className="fixed bottom-20 left-4 lg:bottom-6 lg:left-6 bg-primary text-white w-12 h-12 lg:w-14 lg:h-14 rounded-full shadow-lg flex items-center justify-center z-50 hover:bg-opacity-90 transition-transform transform hover:scale-110"
                 aria-label="افتح المساعد الذكي"
             >
                 <Sparkles size={24} />
@@ -104,7 +104,7 @@ const AssistantModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
     };
     
     return (
-        <div className="fixed bottom-24 left-6 w-96 h-[60vh] bg-card shadow-2xl rounded-lg z-50 flex flex-col border border-border">
+        <div className="fixed bottom-32 left-3 right-3 lg:left-6 lg:right-auto lg:bottom-24 lg:w-96 h-[60vh] bg-card shadow-2xl rounded-xl z-50 flex flex-col border border-border">
             <header className="flex justify-between items-center p-3 border-b border-border">
                 <div className="flex items-center gap-2">
                     <Bot className="text-primary" />

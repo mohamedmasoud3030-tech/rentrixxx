@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState, useMemo } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import {
     LayoutGrid, Building2, Users, UserCheck, FileText, Banknote,
-    BarChart2, Settings, UserPlus, MessageSquare, Map as MapIcon, DollarSign, Bot, ScrollText, Wrench
+    BarChart2, Settings, UserPlus, MessageSquare, Map as MapIcon, DollarSign, Bot, ScrollText, Wrench, X, LogOut
 } from 'lucide-react';
 import { useApp } from '../../../contexts/AppContext';
 import { getLastRunDate } from '../../../services/automationService';
@@ -111,7 +111,7 @@ const Sidebar: React.FC<SidebarProps> = ({ sidebarOpen, setSidebarOpen }) => {
       style={{ boxShadow: 'var(--shadow-sidebar)' }}
     >
       {/* Logo / Brand */}
-      <div className="flex items-center gap-3 px-6 py-6 border-b border-border">
+      <div className="flex items-center gap-3 px-4 py-4 border-b border-border">
         <div
           className="w-10 h-10 rounded-xl flex items-center justify-center text-white font-black text-xl flex-shrink-0"
           style={{
@@ -121,10 +121,17 @@ const Sidebar: React.FC<SidebarProps> = ({ sidebarOpen, setSidebarOpen }) => {
         >
           {companyName.charAt(0)}
         </div>
-        <div className="min-w-0">
+        <div className="min-w-0 flex-1">
           <span className="block text-base font-black text-text truncate">{companyName}</span>
           <span className="block text-xs text-text-muted">نظام Rentrix</span>
         </div>
+        {/* Close button - mobile only */}
+        <button
+          onClick={() => setSidebarOpen(false)}
+          className="lg:hidden flex items-center justify-center w-8 h-8 rounded-xl hover:bg-background text-text-muted transition-colors active:scale-95 flex-shrink-0"
+        >
+          <X size={18} />
+        </button>
       </div>
 
       {/* Navigation */}
@@ -193,13 +200,36 @@ const Sidebar: React.FC<SidebarProps> = ({ sidebarOpen, setSidebarOpen }) => {
 
       {/* Automation last run indicator */}
       {lastRunDate && (
-        <div className="px-4 py-3 border-t border-border">
+        <div className="px-4 py-2 border-t border-border hidden lg:block">
           <div className="flex items-center gap-2 text-[10px] text-text-muted">
             <Bot size={12} className="text-primary flex-shrink-0" />
             <span>آخر تشغيل تلقائي: {lastRunDate}</span>
           </div>
         </div>
       )}
+
+      {/* Mobile: User info + logout */}
+      <div className="lg:hidden px-4 py-4 border-t border-border">
+        <div className="flex items-center gap-3">
+          <div
+            className="w-10 h-10 rounded-xl flex items-center justify-center text-white font-bold text-base flex-shrink-0"
+            style={{ background: 'linear-gradient(135deg, hsl(var(--color-primary)), hsl(var(--color-primary) / 0.75))' }}
+          >
+            {(auth.currentUser?.username || 'U').charAt(0).toUpperCase()}
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-bold text-text truncate">{auth.currentUser?.username}</p>
+            <p className="text-xs text-text-muted">{auth.currentUser?.role === 'ADMIN' ? 'مدير النظام' : 'مستخدم'}</p>
+          </div>
+          <button
+            onClick={auth.logout}
+            className="flex items-center justify-center w-9 h-9 rounded-xl text-danger-text hover:bg-danger-bg transition-colors active:scale-95 flex-shrink-0"
+            title="تسجيل الخروج"
+          >
+            <LogOut size={18} />
+          </button>
+        </div>
+      </div>
     </aside>
   );
 };

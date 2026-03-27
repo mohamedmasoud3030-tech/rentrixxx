@@ -2,7 +2,7 @@
 <html lang="ar" dir="rtl">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <title>Rentrix — نظام إدارة العقارات الذكي</title>
     <meta name="description" content="Rentrix نظام إدارة العقارات الذكي — إدارة شاملة للعقود والمستأجرين والمالية والتقارير." />
     <meta name="robots" content="index, follow" />
@@ -153,6 +153,29 @@
 
       * { transition: background-color 0.2s ease, border-color 0.2s ease, color 0.15s ease; }
       *, *::before, *::after { box-sizing: border-box; }
+
+      /* ===  MOBILE SAFE AREA & UX === */
+      .safe-bottom {
+        padding-bottom: env(safe-area-inset-bottom, 0px);
+      }
+
+      /* Prevent text selection on tap (mobile) */
+      button, a, nav {
+        -webkit-tap-highlight-color: transparent;
+        -webkit-touch-callout: none;
+      }
+
+      /* Smooth scrolling on mobile */
+      .overflow-y-auto, .overflow-x-auto {
+        -webkit-overflow-scrolling: touch;
+      }
+
+      /* Hide scrollbar but keep scroll */
+      .scrollbar-hide::-webkit-scrollbar { display: none; }
+      .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+
+      /* Active press effect for touch */
+      .active\:scale-95:active { transform: scale(0.95); }
     </style>
     <script>
       (function() {
