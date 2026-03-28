@@ -466,7 +466,8 @@ const ContractForm: React.FC<{ isOpen: boolean, onClose: () => void, contract: C
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                             <label className="block text-sm font-medium mb-1">الوحدة (الشاغرة فقط)</label>
-                            <select value={unitId} onChange={e => setUnitId(e.target.value)} required>
+                            <select value={unitId} onChange={e => setUnitId(e.target.value)} required className="w-full px-3 py-2 border border-border rounded-lg bg-card text-text focus:outline-none focus:ring-2 focus:ring-primary">
+                                <option value="">-- اختر وحدة --</option>
                                 {contract && !availableUnits.some(u => u.id === contract.unitId) && <option value={contract.unitId}>الوحدة الحالية</option>}
                                 {availableUnits.map(u => (
                                     <option key={u.id} value={u.id}>
@@ -477,7 +478,8 @@ const ContractForm: React.FC<{ isOpen: boolean, onClose: () => void, contract: C
                         </div>
                         <div>
                             <label className="block text-sm font-medium mb-1">المستأجر</label>
-                            <select value={tenantId} onChange={e => setTenantId(e.target.value)} required>
+                            <select value={tenantId} onChange={e => setTenantId(e.target.value)} required className="w-full px-3 py-2 border border-border rounded-lg bg-card text-text focus:outline-none focus:ring-2 focus:ring-primary">
+                                <option value="">-- اختر مستأجر --</option>
                                 {db.tenants.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
                             </select>
                         </div>
@@ -503,7 +505,7 @@ const ContractForm: React.FC<{ isOpen: boolean, onClose: () => void, contract: C
                         </div>
                         <div>
                             <label className="block text-sm font-medium mb-1">الحالة</label>
-                            <select value={status} onChange={e => setStatus(e.target.value as Contract['status'])}>
+                            <select value={status} onChange={e => setStatus(e.target.value as Contract['status'])} className="w-full px-3 py-2 border border-border rounded-lg bg-card text-text focus:outline-none focus:ring-2 focus:ring-primary">
                                 <option value="ACTIVE">نشط</option>
                                 <option value="ENDED">منتهي</option>
                                 <option value="SUSPENDED">معلق</option>
