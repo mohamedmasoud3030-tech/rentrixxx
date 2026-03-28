@@ -1,29 +1,29 @@
-// This file is now a proxy to the Electron main process for handling Gemini API calls.
-
-// TypeScript declaration for the API exposed by the preload script.
-declare global {
-    interface Window {
-        electronAPI: {
-            queryGemini: (query: string, context: string) => Promise<{success: boolean, text?: string, error?: string}>
-        }
-    }
-}
-
+import { GoogleGenAI } from '@google/genai';
 
 export async function queryAssistant(apiKey: string, query: string, context: string): Promise<string> {
-    // The apiKey is no longer used in the frontend but is kept for signature compatibility.
-    // The actual API key is now securely handled in the Electron main process.
-    
-    if (!window.electronAPI?.queryGemini) {
-        throw new Error("Gemini AI integration is not available in this environment (electronAPI not found).");
+    if (!apiKey) {
+        throw new Error("مفتاح Gemini API غير موجود. يرجى إضافته في الإعدادات.");
     }
 
-    const response = await window.electronAPI.queryGemini(query, context);
+    const ai = new GoogleGenAI({ apiKey });
 
-    if (!response.success || !response.text) {
-        // The error message from the main process will be more specific (e.g., invalid API key).
-        throw new Error(response.error || "Failed to get a response from the AI assistant.");
+    const prompt = `أنت مساعد ذكي متخصص في إدارة العقارات. لديك البيانات التالية:
+
+${context}
+
+سؤال المستخدم: ${query}
+
+أجب بشكل واضح ومفيد باللغة العربية.`;
+
+    const response = await ai.models.generateContent({
+        model: 'gemini-2.0-flash',
+        contents: prompt,
+    });
+
+    const text = response.text;
+    if (!text) {
+        throw new Error("لم يتم الحصول على رد من المساعد الذكي.");
     }
 
-    return response.text;
+    return text;
 }
