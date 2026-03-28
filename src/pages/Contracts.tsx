@@ -353,6 +353,7 @@ const ContractForm: React.FC<{ isOpen: boolean, onClose: () => void, contract: C
     const [sponsorPhone, setSponsorPhone] = useState('');
     const [isSaving, setIsSaving] = useState(false);
     const isSavingRef = useRef(false);
+    const initializedRef = useRef(false);
     
     const availableUnits = db.units.filter(u => 
         !db.contracts.some(c => c.unitId === u.id && c.status === 'ACTIVE' && c.id !== contract?.id)
@@ -369,8 +370,14 @@ const ContractForm: React.FC<{ isOpen: boolean, onClose: () => void, contract: C
 
 
     React.useEffect(() => {
+        if (!isOpen) {
+            initializedRef.current = false;
+            return;
+        }
+        
         const today = new Date().toISOString().slice(0, 10);
         if (contract) {
+            // Always load contract data when editing
             setUnitId(contract.unitId);
             setTenantId(contract.tenantId);
             setRent(contract.rent);
@@ -382,7 +389,9 @@ const ContractForm: React.FC<{ isOpen: boolean, onClose: () => void, contract: C
             setSponsorName(contract.sponsorName || '');
             setSponsorId(contract.sponsorId || '');
             setSponsorPhone(contract.sponsorPhone || '');
-        } else {
+            initializedRef.current = true;
+        } else if (!initializedRef.current) {
+            // Initialize new contract only once
             const startDate = new Date(today);
             const endDate = new Date(startDate);
             endDate.setFullYear(startDate.getFullYear() + 1);
@@ -398,8 +407,9 @@ const ContractForm: React.FC<{ isOpen: boolean, onClose: () => void, contract: C
             setSponsorName('');
             setSponsorId('');
             setSponsorPhone('');
+            initializedRef.current = true;
         }
-    }, [contract, isOpen, db.tenants, availableUnits, defaultUnitId]);
+    }, [contract, isOpen, defaultUnitId, availableUnits, db.tenants]);
 
     const handleStartDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const newStart = e.target.value;
