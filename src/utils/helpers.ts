@@ -1,12 +1,30 @@
-﻿
-const ARABIC_INDIC_DIGITS: { [key: string]: string } = {
-  '0': 'Ù ', '1': 'Ù¡', '2': 'Ù¢', '3': 'Ù£', '4': 'Ù¤',
-  '5': 'Ù¥', '6': 'Ù¦', '7': 'Ù§', '8': 'Ù¨', '9': 'Ù©'
+const ARABIC_INDIC_DIGITS: Record<string, string> = {
+  '0': '\u0660',
+  '1': '\u0661',
+  '2': '\u0662',
+  '3': '\u0663',
+  '4': '\u0664',
+  '5': '\u0665',
+  '6': '\u0666',
+  '7': '\u0667',
+  '8': '\u0668',
+  '9': '\u0669',
 };
 
-const ENGLISH_DIGITS: { [key: string]: string } = {
-  'Ù ': '0', 'Ù¡': '1', 'Ù¢': '2', 'Ù£': '3', 'Ù¤': '4',
-  'Ù¥': '5', 'Ù¦': '6', 'Ù§': '7', 'Ù¨': '8', 'Ù©': '9'
+const PERSIAN_DIGITS = '۰۱۲۳۴۵۶۷۸۹';
+const ARABIC_DECIMAL_SEPARATOR = '\u066B';
+const ARABIC_THOUSANDS_SEPARATOR = '\u066C';
+
+const CURRENCY_SYMBOLS: Record<'OMR' | 'SAR' | 'EGP', string> = {
+  OMR: '\u0631.\u0639.',
+  SAR: '\u0631.\u0633.',
+  EGP: '\u062C.\u0645.',
+};
+
+const CURRENCY_DECIMALS: Record<'OMR' | 'SAR' | 'EGP', number> = {
+  OMR: 3,
+  SAR: 3,
+  EGP: 2,
 };
 
 export function toArabicDigits(input: string | number): string {
@@ -16,22 +34,69 @@ export function toArabicDigits(input: string | number): string {
 export function toEnglishDigits(input: string | number): string {
   return String(input)
     .replace(/[٠-٩]/g, (d) => String('٠١٢٣٤٥٦٧٨٩'.indexOf(d)))
-    .replace(/[۰-۹]/g, (d) => String('۰۱۲۳۴۵۶۷۸۹'.indexOf(d)))
-    .replace(/[٫]/g, '.')
-    .replace(/[٬،]/g, '');
+    .replace(/[۰-۹]/g, (d) => String(PERSIAN_DIGITS.indexOf(d)))
+    .replace(new RegExp(`[${ARABIC_DECIMAL_SEPARATOR}]`, 'g'), '.')
+    .replace(new RegExp(`[${ARABIC_THOUSANDS_SEPARATOR}،]`, 'g'), '');
 }
 
-export function formatCurrency(amount: number, currency: 'OMR' | 'SAR' | 'EGP' = 'OMR'): string {
-  const n = Number(amount) || 0;
-  const decimals = currency === 'EGP' ? 2 : 3;
-  const symbol = currency === 'OMR' ? 'Ø±.Ø¹.' : currency === 'SAR' ? 'Ø±.Ø³.' : 'Ø¬.Ù….';
-  
-  const formattedNumber = n.toLocaleString('en-US', {
-    minimumFractionDigits: decimals,
-    maximumFractionDigits: decimals,
+export function normalizeLocalizedNumber(value: unknown): string {
+  if (value === null || value === undefined) return '';
+
+  const normalized = String(value)
+    .trim()
+    .replace(/\u200E|\u200F|\u202A|\u202B|\u202C|\u202D|\u202E/g, '')
+    .replace(/[٠-٩]/g, (d) => String('٠١٢٣٤٥٦٧٨٩'.indexOf(d)))
+    .replace(/[۰-۹]/g, (d) => String(PERSIAN_DIGITS.indexOf(d)))
+    .replace(new RegExp(`[${ARABIC_DECIMAL_SEPARATOR}]`, 'g'), '.')
+    .replace(new RegExp(`[${ARABIC_THOUSANDS_SEPARATOR}\u00A0\\s]`, 'g'), '')
+    .replace(/,/g, '.')
+    .replace(/[^0-9.+-]/g, '');
+
+  if (!normalized) return '';
+
+  const sign = normalized.startsWith('-') ? '-' : normalized.startsWith('+') ? '+' : '';
+  const unsigned = normalized.replace(/^[+-]/, '').replace(/[+-]/g, '');
+  const [intPart = '', ...fractionParts] = unsigned.split('.');
+  const decimalPart = fractionParts.join('');
+  const safeInt = intPart.replace(/\D/g, '');
+  const safeDecimal = decimalPart.replace(/\D/g, '');
+
+  if (!safeInt && !safeDecimal) return '';
+  return safeDecimal.length > 0 ? `${sign}${safeInt || '0'}.${safeDecimal}` : `${sign}${safeInt || '0'}`;
+}
+
+export function parseLocalizedNumber(value: unknown): number {
+  if (typeof value === 'number') {
+    return Number.isFinite(value) ? value : 0;
+  }
+
+  const normalized = normalizeLocalizedNumber(value);
+  if (!normalized || normalized === '-' || normalized === '+') return 0;
+  const parsed = Number.parseFloat(normalized);
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+export function formatNumber(value: unknown, fractionDigits = 2): string {
+  const normalizedDigits = Number.isFinite(fractionDigits) ? Math.max(0, Math.min(6, Math.floor(fractionDigits))) : 2;
+  const parsed = parseLocalizedNumber(value);
+
+  const formattedNumber = parsed.toLocaleString('en-US', {
+    minimumFractionDigits: normalizedDigits,
+    maximumFractionDigits: normalizedDigits,
   });
 
-  return `${toArabicDigits(formattedNumber)} ${symbol}`;
+  return toArabicDigits(formattedNumber);
+}
+
+export function formatCurrency(amount: unknown, currency: 'OMR' | 'SAR' | 'EGP' = 'OMR'): string {
+  const safeCurrency = currency in CURRENCY_SYMBOLS ? currency : 'OMR';
+  const decimals = CURRENCY_DECIMALS[safeCurrency];
+  const formattedNumber = formatNumber(amount, decimals).replace(/\s.+$/, '');
+  return `${formattedNumber} ${CURRENCY_SYMBOLS[safeCurrency]}`;
+}
+
+export function formatMoney(amount: unknown, currency: 'OMR' | 'SAR' | 'EGP' = 'OMR'): string {
+  return formatCurrency(amount, currency);
 }
 
 // Convert Gregorian date to Hijri date
@@ -213,5 +278,5 @@ export const EXPENSE_STATUS_AR: Record<string, string> = {
 };
 
 export function normalizeArabicNumerals(value: string): string {
-    return value.replace(/[Ù -Ù©]/g, (d) => String('Ù Ù¡Ù¢Ù£Ù¤Ù¥Ù¦Ù§Ù¨Ù©'.indexOf(d)));
+    return normalizeLocalizedNumber(value);
 }
