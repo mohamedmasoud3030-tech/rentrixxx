@@ -75,32 +75,36 @@ export const calculateBalanceSheetData = (db: Database, asOfDate: string) => {
         }
     });
 
-    const buildHierarchy = (accountIds: string[]) => {
+    const buildHierarchy = (accountIds: string[], type: 'ASSET' | 'LIABILITY' | 'EQUITY' | 'REVENUE' | 'EXPENSE') => {
         return accountIds.map(id => {
             const account = accountsMap.get(id)!;
-            const balance = getAccountBalance(id, balances, accountsMap, childrenMap);
+            const rawBalance = getAccountBalance(id, balances, accountsMap, childrenMap);
+            // Assets and Expenses: Debit balance is positive
+            // Liabilities, Equity, Revenue: Credit balance is positive
+            const balance = (type === 'ASSET' || type === 'EXPENSE') ? rawBalance : -rawBalance;
+            
             const children = childrenMap.get(id);
             return {
                 no: account.no,
                 name: account.name,
                 isParent: account.isParent,
                 balance,
-                children: children ? buildHierarchy(children) : [],
+                children: children ? buildHierarchy(children, type) : [],
             };
-        }).filter(acc => acc.balance !== 0 || acc.children.length > 0);
+        }).filter(acc => Math.abs(acc.balance) > 0.001 || acc.children.length > 0);
     };
 
     const rootAssets = db.accounts.filter(a => a.type === 'ASSET' && !a.parentId).map(a => a.id);
     const rootLiabilities = db.accounts.filter(a => a.type === 'LIABILITY' && !a.parentId).map(a => a.id);
     const rootEquity = db.accounts.filter(a => a.type === 'EQUITY' && !a.parentId).map(a => a.id);
 
-    const assets = buildHierarchy(rootAssets);
-    const liabilities = buildHierarchy(rootLiabilities);
-    const equity = buildHierarchy(rootEquity);
+    const assets = buildHierarchy(rootAssets, 'ASSET');
+    const liabilities = buildHierarchy(rootLiabilities, 'LIABILITY');
+    const equity = buildHierarchy(rootEquity, 'EQUITY');
 
-    const totalAssets = assets.reduce((sum, a) => sum + a.balance, 0);
-    const totalLiabilities = liabilities.reduce((sum, l) => sum + l.balance, 0);
-    const totalEquity = equity.reduce((sum, e) => sum + e.balance, 0);
+    const totalAssets = assets.reduce((sum, item) => sum + item.balance, 0);
+    const totalLiabilities = liabilities.reduce((sum, item) => sum + item.balance, 0);
+    const totalEquity = equity.reduce((sum, item) => sum + item.balance, 0);
 
     return { assets, liabilities, equity, totalAssets, totalLiabilities, totalEquity };
 };

@@ -203,22 +203,39 @@ const Reports: React.FC = () => {
 
 const ReportsOverview: React.FC<{ currency: string }> = ({ currency }) => {
   const { db, contractBalances, ownerBalances, settings } = useApp();
+  const accountTypeMap = useMemo(() => new Map(db.accounts.map(account => [account.id, account.type])), [db.accounts]);
+  const accountNameMap = useMemo(() => new Map(db.accounts.map(account => [account.id, account.name])), [db.accounts]);
+  const monthKey = (dateValue: string) => new Date(dateValue).toISOString().slice(0, 7);
 
   const monthlyTrend = useMemo(() => {
     const now = new Date();
     const months = eachMonthOfInterval({ start: subMonths(startOfMonth(now), 5), end: endOfMonth(now) });
+    const monthRange = new Set(months.map(month => month.toISOString().slice(0, 7)));
+    const monthLedger = new Map<string, { revenue: number; expenses: number }>();
+    months.forEach(month => monthLedger.set(month.toISOString().slice(0, 7), { revenue: 0, expenses: 0 }));
+    db.journalEntries.forEach(entry => {
+      const key = monthKey(entry.date);
+      if (!monthRange.has(key)) return;
+      const accountType = accountTypeMap.get(entry.accountId);
+      const monthData = monthLedger.get(key);
+      if (!monthData) return;
+      if (accountType === 'REVENUE') {
+        const signed = entry.type === 'CREDIT' ? entry.amount : -entry.amount;
+        monthData.revenue += signed;
+      }
+      if (accountType === 'EXPENSE') {
+        const signed = entry.type === 'DEBIT' ? entry.amount : -entry.amount;
+        monthData.expenses += signed;
+      }
+    });
     return months.map(monthStart => {
-      const monthEnd = endOfMonth(monthStart);
       const label = format(monthStart, 'MMM', { locale: ar });
-      const revenue = db.receipts
-        .filter(r => r.status === 'POSTED' && isWithinInterval(new Date(r.dateTime), { start: monthStart, end: monthEnd }))
-        .reduce((s, r) => s + r.amount, 0);
-      const expenses = db.expenses
-        .filter(e => e.status === 'POSTED' && isWithinInterval(new Date(e.dateTime), { start: monthStart, end: monthEnd }))
-        .reduce((s, e) => s + e.amount, 0);
+      const key = monthStart.toISOString().slice(0, 7);
+      const revenue = monthLedger.get(key)?.revenue || 0;
+      const expenses = monthLedger.get(key)?.expenses || 0;
       return { name: label, revenue, expenses, net: revenue - expenses };
     });
-  }, [db.receipts, db.expenses]);
+  }, [db.journalEntries, accountTypeMap]);
 
   const occupancyData = useMemo(() => {
     const rented = db.units.filter(u => u.status === 'RENTED').length;
@@ -236,26 +253,33 @@ const ReportsOverview: React.FC<{ currency: string }> = ({ currency }) => {
     const start = startOfYear(now);
     const end = endOfYear(now);
     const catMap = new Map<string, number>();
-    db.expenses
-      .filter(e => e.status === 'POSTED' && isWithinInterval(new Date(e.dateTime), { start, end }))
-      .forEach(e => {
-        const cat = e.category || 'أخرى';
-        catMap.set(cat, (catMap.get(cat) || 0) + e.amount);
+    db.journalEntries
+      .filter(entry => isWithinInterval(new Date(entry.date), { start, end }))
+      .forEach(entry => {
+        if (accountTypeMap.get(entry.accountId) !== 'EXPENSE') return;
+        const category = accountNameMap.get(entry.accountId) || 'مصروف غير معرف';
+        const signed = entry.type === 'DEBIT' ? entry.amount : -entry.amount;
+        catMap.set(category, (catMap.get(category) || 0) + signed);
       });
-    return Array.from(catMap.entries()).map(([name, value]) => ({ name, value })).sort((a, b) => b.value - a.value);
-  }, [db.expenses]);
+    return Array.from(catMap.entries()).map(([name, value]) => ({ name, value })).filter(item => item.value > 0.001).sort((a, b) => b.value - a.value);
+  }, [db.journalEntries, accountTypeMap, accountNameMap]);
 
   const summaryKpis = useMemo(() => {
     const now = new Date();
     const monthStart = startOfMonth(now);
     const monthEnd = endOfMonth(now);
-    const revenue = db.receipts.filter(r => r.status === 'POSTED' && isWithinInterval(new Date(r.dateTime), { start: monthStart, end: monthEnd })).reduce((s, r) => s + r.amount, 0);
-    const expenses = db.expenses.filter(e => e.status === 'POSTED' && isWithinInterval(new Date(e.dateTime), { start: monthStart, end: monthEnd })).reduce((s, e) => s + e.amount, 0);
+    let revenue = 0;
+    let expenses = 0;
+    db.journalEntries.filter(entry => isWithinInterval(new Date(entry.date), { start: monthStart, end: monthEnd })).forEach(entry => {
+      const accountType = accountTypeMap.get(entry.accountId);
+      if (accountType === 'REVENUE') revenue += entry.type === 'CREDIT' ? entry.amount : -entry.amount;
+      if (accountType === 'EXPENSE') expenses += entry.type === 'DEBIT' ? entry.amount : -entry.amount;
+    });
     const totalReceivables = Object.values(contractBalances).reduce((sum, b) => sum + (b.balance > 0 ? b.balance : 0), 0);
     const totalOwnerPayables = Object.values(ownerBalances).reduce((sum, b) => sum + (b.net > 0 ? b.net : 0), 0);
     const occupancyRate = db.units.length > 0 ? (db.contracts.filter(c => c.status === 'ACTIVE').length / db.units.length) * 100 : 0;
     return { revenue, expenses, net: revenue - expenses, totalReceivables, totalOwnerPayables, occupancyRate };
-  }, [db, contractBalances, ownerBalances]);
+  }, [db.journalEntries, db.units, db.contracts, contractBalances, ownerBalances, accountTypeMap]);
 
   const cur = settings.operational?.currency ?? 'OMR';
 
@@ -698,7 +722,7 @@ const TenantStatement: React.FC = () => {
     const invoices = db.invoices.filter(inv => inv.contractId === contract.id);
     const receipts = db.receipts.filter(r => r.contractId === contract.id && r.status === 'POSTED');
     let transactions: { date: string; description: string; debit: number; credit: number }[] = [];
-    invoices.forEach(inv => transactions.push({ date: inv.dueDate, description: inv.notes || `فاتورة رقم ${inv.no}`, debit: inv.amount, credit: 0 }));
+    invoices.forEach(inv => transactions.push({ date: inv.dueDate, description: inv.notes || `فاتورة رقم ${inv.no}`, debit: inv.amount + (inv.taxAmount || 0), credit: 0 }));
     const channelLabels: Record<string, string> = { CASH: 'نقدي', BANK: 'تحويل بنكي', POS: 'شبكة', OTHER: 'أخرى' };
     receipts.forEach(r => transactions.push({ date: r.dateTime, description: `دفعة (${channelLabels[r.channel] || r.channel}) - سند ${r.no}`, debit: 0, credit: r.amount }));
     transactions.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
@@ -903,7 +927,9 @@ const BalanceSheet: React.FC = () => {
         <React.Fragment key={line.no}>
           <tr className={line.isParent ? 'font-bold bg-background' : 'hover:bg-background/50'}>
             <td className="p-2.5 border border-border" style={{ paddingRight: `${1 + indent}rem` }}>{line.name}</td>
-            <td className="p-2.5 border border-border font-mono">{line.balance > 0 ? formatCurrency(line.balance, cur) : '-'}</td>
+            <td className={`p-2.5 border border-border font-mono ${line.balance < 0 ? 'text-red-500' : ''}`}>
+              {Math.abs(line.balance) > 0.001 ? formatCurrency(line.balance, cur) : '-'}
+            </td>
           </tr>
           {line.children && renderLines(line.children, indent + 1.5)}
         </React.Fragment>

@@ -544,6 +544,24 @@ ALTER TABLE public.tenant_balances ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "tenant_balances_all_auth" ON public.tenant_balances;
 CREATE POLICY "tenant_balances_all_auth" ON public.tenant_balances FOR ALL USING (auth.role() = 'authenticated');
 
+CREATE TABLE IF NOT EXISTS public.account_balances (
+    account_id  UUID    PRIMARY KEY,
+    balance     NUMERIC DEFAULT 0
+);
+ALTER TABLE public.account_balances ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "account_balances_all_auth" ON public.account_balances;
+CREATE POLICY "account_balances_all_auth" ON public.account_balances FOR ALL USING (auth.role() = 'authenticated');
+
+CREATE TABLE IF NOT EXISTS public.kpi_snapshots (
+    id                       TEXT    PRIMARY KEY,
+    total_owner_net_balance  NUMERIC DEFAULT 0,
+    total_contract_ar_balance NUMERIC DEFAULT 0,
+    total_tenant_ar_balance  NUMERIC DEFAULT 0
+);
+ALTER TABLE public.kpi_snapshots ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "kpi_snapshots_all_auth" ON public.kpi_snapshots;
+CREATE POLICY "kpi_snapshots_all_auth" ON public.kpi_snapshots FOR ALL USING (auth.role() = 'authenticated');
+
 -- ──────────────────────────────────────────────────────────────
 -- DONE – paste into Supabase SQL Editor and click Run
 -- ──────────────────────────────────────────────────────────────

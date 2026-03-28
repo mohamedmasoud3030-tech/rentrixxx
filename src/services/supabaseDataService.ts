@@ -32,17 +32,25 @@ const TABLE_MAP: Record<string, string> = {
   budgets: 'budgets',
   attachments: 'attachments',
   utilityRecords: 'utility_bills',
+  accountBalances: 'account_balances',
+  kpiSnapshots: 'kpi_snapshots',
   users: 'profiles',
 };
 
 const SPECIAL_FIELD_MAP: Record<string, Record<string, string>> = {
   contracts: { start: 'start_date', end: 'end_date', rent: 'rent_amount' },
   units: { rentDefault: 'rent_default', minRent: 'min_rent' },
+  ownerBalances: { collections: 'total_income', expenses: 'total_expenses', officeShare: 'commission', net: 'net_balance', updatedAt: 'updated_at' },
+  contractBalances: { balance: 'balance_due', lastUpdatedAt: 'updated_at' },
+  tenantBalances: { balance: 'balance_due', lastUpdatedAt: 'updated_at' },
 };
 
 const REVERSE_SPECIAL_MAP: Record<string, Record<string, string>> = {
   contracts: { start_date: 'start', end_date: 'end', rent_amount: 'rent' },
   units: { rent_default: 'rentDefault', min_rent: 'minRent' },
+  ownerBalances: { total_income: 'collections', total_expenses: 'expenses', commission: 'officeShare', net_balance: 'net', updated_at: 'updatedAt' },
+  contractBalances: { balance_due: 'balance', updated_at: 'lastUpdatedAt' },
+  tenantBalances: { balance_due: 'balance', updated_at: 'lastUpdatedAt' },
 };
 
 function camelToSnake(str: string): string {
@@ -168,6 +176,15 @@ export const supabaseData = {
     return true;
   },
 
+  async upsertMany(jsTable: string, records: Record<string, any>[]): Promise<boolean> {
+    if (!records.length) return true;
+    const sqlTable = resolveTable(jsTable);
+    const snakeRecords = records.map(r => toSnakeObj(r, jsTable));
+    const { error } = await supabase.from(sqlTable).upsert(snakeRecords);
+    if (error) { console.error(`[SupabaseData] upsertMany ${sqlTable}:`, error); return false; }
+    return true;
+  },
+
   async getSettings(): Promise<Settings | null> {
     const { data, error } = await supabase.from('settings').select('data').eq('id', 1).single();
     if (error || !data) return null;
@@ -233,6 +250,7 @@ export const supabaseData = {
       'accounts', 'journalEntries', 'notificationTemplates',
       'outgoingNotifications', 'appNotifications', 'leads', 'lands',
       'commissions', 'missions', 'budgets', 'attachments', 'snapshots', 'utilityRecords',
+      'accountBalances', 'kpiSnapshots', 'ownerBalances', 'contractBalances', 'tenantBalances',
     ];
 
     const results = await Promise.all(tables.map(t => this.fetchAll(t)));
@@ -244,10 +262,6 @@ export const supabaseData = {
       this.getGovernance(),
       this.getSerials(),
     ]);
-
-    const ownerBalances = await this.fetchAll('ownerBalances');
-    const contractBalances = await this.fetchAll('contractBalances');
-    const tenantBalances = await this.fetchAll('tenantBalances');
 
     const { data: profileRows } = await supabase.from('profiles').select('*');
     const users = (profileRows || []).map((p: any) => ({
@@ -279,11 +293,11 @@ export const supabaseData = {
       accounts: dataMap.accounts || [],
       journalEntries: dataMap.journalEntries || [],
       autoBackups: [],
-      ownerBalances: ownerBalances || [],
-      accountBalances: [],
-      kpiSnapshots: [],
-      contractBalances: contractBalances || [],
-      tenantBalances: tenantBalances || [],
+      ownerBalances: dataMap.ownerBalances || [],
+      accountBalances: dataMap.accountBalances || [],
+      kpiSnapshots: dataMap.kpiSnapshots || [],
+      contractBalances: dataMap.contractBalances || [],
+      tenantBalances: dataMap.tenantBalances || [],
       notificationTemplates: dataMap.notificationTemplates || [],
       outgoingNotifications: dataMap.outgoingNotifications || [],
       appNotifications: dataMap.appNotifications || [],

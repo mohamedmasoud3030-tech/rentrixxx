@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import { useApp } from '../contexts/AppContext';
 import { Invoice, Unit } from '../types';
@@ -6,13 +5,17 @@ import Card from '../components/ui/Card';
 import Modal from '../components/ui/Modal';
 import { formatCurrency, formatDate, getStatusBadgeClass, exportToCsv, INVOICE_STATUS_AR, INVOICE_TYPE_AR } from '../utils/helpers';
 import NumberInput from '../components/ui/NumberInput';
-import { ReceiptText, RefreshCw, Download, CheckSquare, Square, CheckCircle, MessageCircle, FileText } from 'lucide-react';
+import { 
+    ReceiptText, RefreshCw, Download, CheckSquare, Square, 
+    CheckCircle, MessageCircle, FileText, Plus, Search, 
+    Filter, AlertCircle, Clock, CheckCircle2, MoreVertical, 
+    Trash2, Edit2, Share2, Printer, ArrowUpRight, ArrowDownRight, Wallet
+} from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 import { exportInvoiceToPdf } from '../services/pdfService';
 
 const Invoices: React.FC = () => {
-    // FIX: Use financeService for financial operations
     const { db, financeService, settings, dataService } = useApp();
     const location = useLocation();
     const navigate = useNavigate();
@@ -22,6 +25,7 @@ const Invoices: React.FC = () => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingInvoice, setEditingInvoice] = useState<Invoice | null>(null);
     const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+    const [searchTerm, setSearchTerm] = useState('');
 
     const filters = [
         { key: 'all', label: 'الكل' },
@@ -45,9 +49,15 @@ const Invoices: React.FC = () => {
         navigate(`/finance/invoices?filter=${filterKey}`);
     };
 
+    const stats = useMemo(() => {
+        const unpaid = db.invoices.filter(i => ['UNPAID', 'PARTIALLY_PAID'].includes(i.status)).reduce((s, i) => s + (i.amount - i.paidAmount), 0);
+        const overdue = db.invoices.filter(i => i.status === 'OVERDUE').reduce((s, i) => s + (i.amount - i.paidAmount), 0);
+        const collectedThisMonth = db.receipts.filter(r => r.dateTime.startsWith(new Date().toISOString().slice(0, 7))).reduce((s, r) => s + r.amount, 0);
+        return { unpaid, overdue, collectedThisMonth };
+    }, [db.invoices, db.receipts]);
+
     const handleGenerateInvoices = async () => {
         setIsMonthlyLoading(true);
-        // FIX: Use financeService for financial operations
         const count = await financeService.generateMonthlyInvoices();
         toast.success(`تم إصدار ${count} فاتورة جديدة بنجاح.`);
         setIsMonthlyLoading(false);
@@ -55,7 +65,6 @@ const Invoices: React.FC = () => {
 
     const handleGenerateLateFees = async () => {
         setIsLateFeeLoading(true);
-        // FIX: Use financeService for financial operations
         const count = await financeService.generateLateFees();
         toast.success(`تم إصدار ${count} فاتورة رسوم تأخير جديدة.`);
         setIsLateFeeLoading(false);
@@ -97,23 +106,6 @@ const Invoices: React.FC = () => {
         setSelectedIds(new Set());
     };
 
-    const handleBulkExport = () => {
-        const selected = invoicesWithDetails.filter(i => selectedIds.has(i.id));
-        const rows = selected.map(inv => ({
-            'رقم الفاتورة': inv.no,
-            'المستأجر': inv.tenant?.name || '',
-            'الوحدة': inv.unit?.name || '',
-            'النوع': getInvoiceTypeLabel(inv.type),
-            'تاريخ الاستحقاق': inv.dueDate,
-            'المبلغ': inv.amount,
-            'المدفوع': inv.paidAmount,
-            'الرصيد': inv.amount - inv.paidAmount,
-            'الحالة': getInvoiceStatusLabel(inv.status),
-        }));
-        exportToCsv('فواتير_مختارة_rentrix', rows);
-        toast.success(`تم تصدير ${rows.length} فاتورة.`);
-    };
-
     const handleBulkSendWhatsApp = () => {
         const selected = invoicesWithDetails.filter(i => selectedIds.has(i.id));
         if (selected.length === 0) { toast.error('لم يتم اختيار أي فاتورة.'); return; }
@@ -148,168 +140,211 @@ const Invoices: React.FC = () => {
                 return true;
             });
         }
+        
+        if (searchTerm) {
+            filteredInvoices = filteredInvoices.filter(inv => {
+                const contract = db.contracts.find(c => c.id === inv.contractId);
+                const tenant = contract ? db.tenants.find(t => t.id === contract.tenantId) : null;
+                return inv.no.includes(searchTerm) || tenant?.name.includes(searchTerm);
+            });
+        }
     
         return filteredInvoices.map(inv => {
             const contract = db.contracts.find(c => c.id === inv.contractId);
             const tenant = contract ? db.tenants.find(t => t.id === contract.tenantId) : null;
             const unit = contract ? db.units.find(u => u.id === contract.unitId) : null;
-            return { ...inv, tenant, unit };
+            const property = unit ? db.properties.find(p => p.id === unit.propertyId) : null;
+            return { ...inv, tenant, unit, propertyName: property?.name || '' };
         }).sort((a, b) => new Date(b.dueDate).getTime() - new Date(a.dueDate).getTime());
-    }, [db.invoices, db.contracts, db.tenants, db.units, activeFilter]);
-
-    const getInvoiceStatusLabel = (status: Invoice['status']) => INVOICE_STATUS_AR[status] || status;
-    const getInvoiceTypeLabel = (type: Invoice['type']) => INVOICE_TYPE_AR[type] || type;
+    }, [db.invoices, db.contracts, db.tenants, db.units, db.properties, activeFilter, searchTerm]);
 
     const currency = settings.operational?.currency ?? 'OMR';
 
-    const handleExportCsv = () => {
-        const rows = invoicesWithDetails.map(inv => ({
-            'رقم الفاتورة': inv.no,
-            'المستأجر': inv.tenant?.name || '',
-            'الوحدة': inv.unit?.name || '',
-            'النوع': getInvoiceTypeLabel(inv.type),
-            'تاريخ الاستحقاق': inv.dueDate,
-            'المبلغ': inv.amount,
-            'المدفوع': inv.paidAmount,
-            'الرصيد': inv.amount - inv.paidAmount,
-            'الحالة': getInvoiceStatusLabel(inv.status),
-        }));
-        exportToCsv('فواتير_rentrix', rows);
-    };
-    
     return (
-        <Card>
-            <div className="flex flex-wrap justify-between items-center mb-4 gap-4">
-                <h2 className="text-xl font-bold flex items-center gap-2">
-                    <ReceiptText />
-                    الفواتير
-                </h2>
-                <div className="flex items-center gap-2 flex-wrap">
-                    <button onClick={() => handleOpenModal()} className="btn btn-secondary">
-                        إضافة فاتورة يدوية
-                    </button>
-                    {settings.operational?.lateFee?.isEnabled && (
-                         <button onClick={handleGenerateLateFees} disabled={isLateFeeLoading} className="btn btn-warning">
-                            {isLateFeeLoading ? 'جاري...' : 'توليد رسوم التأخير'}
-                        </button>
-                    )}
-                    <button onClick={handleExportCsv} className="btn btn-secondary">
-                        <Download size={15} />
-                        تصدير CSV
-                    </button>
-                    <button onClick={handleGenerateInvoices} disabled={isMonthlyLoading} className="btn btn-primary flex items-center gap-2">
-                        {isMonthlyLoading && <RefreshCw size={16} className="animate-spin" />}
-                        {isMonthlyLoading ? 'جاري الإصدار...' : 'إصدار فواتير الإيجار'}
-                    </button>
-                </div>
+        <div className="space-y-6">
+            {/* Quick Stats */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <StatCard label="مستحقات غير محصلة" value={stats.unpaid} icon={<Clock className="text-amber-500" />} color="amber" />
+                <StatCard label="فواتير متأخرة" value={stats.overdue} icon={<AlertCircle className="text-rose-500" />} color="rose" />
+                <StatCard label="تحصيلات الشهر" value={stats.collectedThisMonth} icon={<ArrowUpRight className="text-emerald-500" />} color="emerald" />
             </div>
-            <div className="border-b border-border mb-4">
-                <nav className="-mb-px flex space-x-4" aria-label="Tabs">
-                    {filters.map(filter => (
-                         <button
-                            key={filter.key}
-                            onClick={() => handleFilterChange(filter.key)}
-                            className={`${activeFilter === filter.key ? 'border-primary text-primary' : 'border-transparent text-text-muted hover:text-text hover:border-gray-300'} whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm`}
-                        >
-                            {filter.label}
-                        </button>
-                    ))}
-                </nav>
-            </div>
-            {selectedIds.size > 0 && (
-                <div className="flex items-center gap-3 mb-3 p-3 bg-primary/10 border border-primary/30 rounded-lg flex-wrap">
-                    <span className="text-sm font-medium text-primary">تم اختيار {selectedIds.size} فاتورة</span>
-                    <button onClick={handleBulkMarkOverdue} className="btn btn-warning text-xs flex items-center gap-1">
-                        <CheckCircle size={13} />
-                        تعليم كمتأخرة
-                    </button>
-                    <button onClick={handleBulkSendWhatsApp} className="btn btn-success text-xs flex items-center gap-1">
-                        <MessageCircle size={13} />
-                        إرسال واتساب
-                    </button>
-                    <button onClick={handleBulkExport} className="btn btn-secondary text-xs flex items-center gap-1">
-                        <Download size={13} />
-                        تصدير CSV
-                    </button>
-                    <button onClick={() => setSelectedIds(new Set())} className="btn btn-secondary text-xs">
-                        إلغاء التحديد
-                    </button>
-                </div>
-            )}
-            <div className="overflow-x-auto">
-                <table className="w-full text-sm text-right border-collapse border border-border">
-                    <thead className="text-xs uppercase bg-background text-text">
-                        <tr>
-                            <th scope="col" className="px-3 py-3 border border-border w-10">
-                                <button onClick={toggleSelectAll} className="flex items-center justify-center w-full">
-                                    {selectedIds.size === invoicesWithDetails.length && invoicesWithDetails.length > 0
-                                        ? <CheckSquare size={16} className="text-primary" />
-                                        : <Square size={16} className="text-text-muted" />
-                                    }
-                                </button>
-                            </th>
-                            <th scope="col" className="px-6 py-3 border border-border">رقم الفاتورة</th>
-                            <th scope="col" className="px-6 py-3 border border-border">المستأجر / الوحدة</th>
-                            <th scope="col" className="px-6 py-3 border border-border">النوع</th>
-                            <th scope="col" className="px-6 py-3 border border-border">تاريخ الاستحقاق</th>
-                            <th scope="col" className="px-6 py-3 border border-border">المبلغ</th>
-                            <th scope="col" className="px-6 py-3 border border-border">الرصيد</th>
-                            <th scope="col" className="px-6 py-3 border border-border">الحالة</th>
-                            <th scope="col" className="px-6 py-3 border border-border">PDF</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {invoicesWithDetails.map(inv => (
-                            <tr key={inv.id} className={`hover:bg-background cursor-pointer ${selectedIds.has(inv.id) ? 'bg-primary/5' : 'bg-card'}`}>
-                                <td className="px-3 py-4 border border-border" onClick={() => toggleSelect(inv.id)}>
-                                    <div className="flex items-center justify-center">
-                                        {selectedIds.has(inv.id)
-                                            ? <CheckSquare size={16} className="text-primary" />
-                                            : <Square size={16} className="text-text-muted" />
-                                        }
-                                    </div>
-                                </td>
-                                <td className="px-6 py-4 font-mono border border-border" onClick={() => handleOpenModal(inv)}>{inv.no}</td>
-                                <td className="px-6 py-4 border border-border" onClick={() => handleOpenModal(inv)}>{inv.tenant?.name} / {inv.unit?.name}</td>
-                                <td className="px-6 py-4 border border-border" onClick={() => handleOpenModal(inv)}>{getInvoiceTypeLabel(inv.type)}</td>
-                                <td className="px-6 py-4 border border-border" onClick={() => handleOpenModal(inv)}>{formatDate(inv.dueDate)}</td>
-                                <td className="px-6 py-4 border border-border" onClick={() => handleOpenModal(inv)}>{formatCurrency(inv.amount, currency)}</td>
-                                <td className="px-6 py-4 font-bold text-red-500 border border-border" onClick={() => handleOpenModal(inv)}>{formatCurrency(inv.amount - inv.paidAmount, currency)}</td>
-                                <td className="px-6 py-4 border border-border" onClick={() => handleOpenModal(inv)}>
-                                    <span className={`px-2 py-1 text-xs rounded-full ${getStatusBadgeClass(inv.status)}`}>
-                                        {getInvoiceStatusLabel(inv.status)}
-                                    </span>
-                                </td>
-                                <td className="px-6 py-4 border border-border" onClick={(e) => e.stopPropagation()}>
-                                    <button 
-                                        onClick={() => {
-                                            try {
-                                                exportInvoiceToPdf(inv, db);
-                                                toast.success('تم تصدير الفاتورة بصيغة PDF');
-                                            } catch (error) {
-                                                console.error('PDF Export Error:', error);
-                                                toast.error('خطأ في تصدير PDF');
-                                            }
-                                        }}
-                                        className="btn btn-xs btn-ghost flex items-center gap-1"
-                                        title="تصدير PDF"
-                                    >
-                                        <FileText size={14} />
-                                    </button>
-                                </td>
-                            </tr>
+
+            <Card className="p-0 overflow-hidden border-none shadow-xl bg-card/50 backdrop-blur-sm">
+                <div className="flex flex-col md:flex-row md:items-center justify-between p-4 border-b border-border gap-4">
+                    <div className="flex bg-background/50 p-1 rounded-xl border border-border overflow-x-auto self-start">
+                        {filters.map(filter => (
+                            <TabButton 
+                                key={filter.key}
+                                active={activeFilter === filter.key} 
+                                onClick={() => handleFilterChange(filter.key)} 
+                                label={filter.label} 
+                                icon={filter.key === 'overdue' ? <AlertCircle size={14} /> : filter.key === 'paid' ? <CheckCircle2 size={14} /> : <ReceiptText size={14} />}
+                            />
                         ))}
-                    </tbody>
-                </table>
-            </div>
-            <InvoiceForm isOpen={isModalOpen} onClose={handleCloseModal} invoice={editingInvoice} />
-        </Card>
+                    </div>
+                    <div className="flex gap-2 w-full md:w-auto">
+                        <button onClick={handleGenerateInvoices} disabled={isMonthlyLoading} className="btn btn-primary flex-1 md:flex-none flex items-center justify-center gap-2 shadow-lg shadow-primary/20">
+                            {isMonthlyLoading ? <RefreshCw size={16} className="animate-spin" /> : <Plus size={16} />}
+                            إصدار فواتير الإيجار
+                        </button>
+                    </div>
+                </div>
+
+                <div className="p-6 space-y-4">
+                    <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                        <div className="relative flex-1 max-w-md w-full">
+                            <Search className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted" size={18} />
+                            <input
+                                type="text"
+                                placeholder="بحث برقم الفاتورة أو اسم المستأجر..."
+                                className="w-full pr-10 py-2.5 bg-background border border-border rounded-xl focus:ring-2 focus:ring-primary/20 transition-all outline-none text-sm"
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                            />
+                        </div>
+                        <div className="flex gap-2">
+                            <button onClick={() => handleOpenModal()} className="btn btn-secondary flex items-center gap-2">
+                                <Plus size={16} /> إضافة فاتورة يدوية
+                            </button>
+                            <button onClick={() => exportToCsv('فواتير_rentrix', invoicesWithDetails.map(inv => ({
+                                'رقم الفاتورة': inv.no,
+                                'المستأجر': inv.tenant?.name || '',
+                                'الوحدة': inv.unit?.name || '',
+                                'العقار': inv.propertyName || '',
+                                'النوع': INVOICE_TYPE_AR[inv.type],
+                                'تاريخ الاستحقاق': inv.dueDate,
+                                'المبلغ': inv.amount,
+                                'المدفوع': inv.paidAmount,
+                                'المتبقي': inv.amount - inv.paidAmount,
+                                'الحالة': INVOICE_STATUS_AR[inv.status],
+                            })))} className="btn btn-ghost border border-border flex items-center gap-2">
+                                <Download size={16} /> تصدير
+                            </button>
+                        </div>
+                    </div>
+
+                    {selectedIds.size > 0 && (
+                        <div className="flex items-center gap-3 p-3 bg-primary/5 border border-primary/20 rounded-2xl animate-in fade-in slide-in-from-top-2">
+                            <span className="text-xs font-black text-primary px-3 py-1 bg-white rounded-full shadow-sm">تم اختيار {selectedIds.size} فاتورة</span>
+                            <div className="h-4 w-px bg-primary/20 mx-1"></div>
+                            <button onClick={handleBulkMarkOverdue} className="text-xs font-bold text-amber-600 hover:bg-amber-50 px-3 py-1.5 rounded-xl transition-all flex items-center gap-1.5">
+                                <AlertCircle size={14} /> تعليم كمتأخرة
+                            </button>
+                            <button onClick={handleBulkSendWhatsApp} className="text-xs font-bold text-emerald-600 hover:bg-emerald-50 px-3 py-1.5 rounded-xl transition-all flex items-center gap-1.5">
+                                <MessageCircle size={14} /> إرسال واتساب
+                            </button>
+                            <button onClick={() => setSelectedIds(new Set())} className="text-xs font-bold text-text-muted hover:bg-background px-3 py-1.5 rounded-xl transition-all">إلغاء</button>
+                        </div>
+                    )}
+
+                    <div className="overflow-x-auto border border-border rounded-2xl">
+                        <table className="w-full text-sm text-right">
+                            <thead className="bg-background text-text-muted text-[10px] uppercase tracking-wider">
+                                <tr>
+                                    <th className="px-4 py-4 w-10">
+                                        <button onClick={toggleSelectAll} className="flex items-center justify-center p-2 hover:bg-background rounded-lg transition-all">
+                                            {selectedIds.size === invoicesWithDetails.length && invoicesWithDetails.length > 0
+                                                ? <CheckSquare size={18} className="text-primary" />
+                                                : <Square size={18} className="text-text-muted" />
+                                            }
+                                        </button>
+                                    </th>
+                                    <th className="px-6 py-4 font-black">رقم الفاتورة</th>
+                                    <th className="px-6 py-4 font-black">المستأجر / الوحدة</th>
+                                    <th className="px-6 py-4 font-black">النوع</th>
+                                    <th className="px-6 py-4 font-black">تاريخ الاستحقاق</th>
+                                    <th className="px-6 py-4 font-black text-left">المبلغ</th>
+                                    <th className="px-6 py-4 font-black text-left">المتبقي</th>
+                                    <th className="px-6 py-4 font-black text-center">الحالة</th>
+                                    <th className="px-6 py-4 font-black text-center">الإجراءات</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-border/50 bg-card/30">
+                                {invoicesWithDetails.map(inv => (
+                                    <tr key={inv.id} className={`hover:bg-primary/5 transition-colors group ${selectedIds.has(inv.id) ? 'bg-primary/5' : ''}`}>
+                                        <td className="px-4 py-4" onClick={() => toggleSelect(inv.id)}>
+                                            <div className="flex items-center justify-center">
+                                                {selectedIds.has(inv.id)
+                                                    ? <CheckSquare size={18} className="text-primary" />
+                                                    : <Square size={18} className="text-text-muted opacity-50 group-hover:opacity-100 transition-opacity" />
+                                                }
+                                            </div>
+                                        </td>
+                                        <td className="px-6 py-4 font-mono font-bold text-primary" onClick={() => handleOpenModal(inv)}>{inv.no}</td>
+                                        <td className="px-6 py-4" onClick={() => handleOpenModal(inv)}>
+                                            <div className="flex flex-col">
+                                                <span className="font-bold">{inv.tenant?.name || '—'}</span>
+                                                <span className="text-[10px] text-text-muted">{inv.propertyName} — {inv.unit?.name}</span>
+                                            </div>
+                                        </td>
+                                        <td className="px-6 py-4 text-xs font-bold" onClick={() => handleOpenModal(inv)}>{INVOICE_TYPE_AR[inv.type]}</td>
+                                        <td className="px-6 py-4 text-text-muted" onClick={() => handleOpenModal(inv)}>{formatDate(inv.dueDate)}</td>
+                                        <td className="px-6 py-4 font-bold text-left" dir="ltr" onClick={() => handleOpenModal(inv)}>{formatCurrency(inv.amount, currency)}</td>
+                                        <td className="px-6 py-4 font-black text-rose-600 text-left" dir="ltr" onClick={() => handleOpenModal(inv)}>
+                                            {inv.amount - inv.paidAmount > 0 ? formatCurrency(inv.amount - inv.paidAmount, currency) : '—'}
+                                        </td>
+                                        <td className="px-6 py-4 text-center" onClick={() => handleOpenModal(inv)}>
+                                            <span className={`px-2 py-1 rounded-lg text-[10px] font-bold border ${getStatusBadgeClass(inv.status)}`}>
+                                                {INVOICE_STATUS_AR[inv.status]}
+                                            </span>
+                                        </td>
+                                        <td className="px-6 py-4 text-center">
+                                            <div className="flex items-center justify-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                <button 
+                                                    onClick={() => { try { exportInvoiceToPdf(inv, db); toast.success('تم تصدير PDF'); } catch(e) { toast.error('خطأ'); } }}
+                                                    className="p-2 text-text-muted hover:text-primary hover:bg-primary/10 rounded-xl"
+                                                    title="تصدير PDF"
+                                                >
+                                                    <FileText size={16} />
+                                                </button>
+                                                <button onClick={() => handleOpenModal(inv)} className="p-2 text-text-muted hover:text-primary hover:bg-primary/10 rounded-xl"><Edit2 size={16} /></button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </Card>
+            {isModalOpen && <InvoiceForm isOpen={isModalOpen} onClose={handleCloseModal} invoice={editingInvoice} />}
+        </div>
     );
 };
 
+const StatCard: React.FC<{ label: string; value: number; icon: React.ReactNode; color: string }> = ({ label, value, icon, color }) => {
+    const colorClasses: Record<string, string> = {
+        amber: 'text-amber-600 bg-amber-50 border-amber-100',
+        rose: 'text-rose-600 bg-rose-50 border-rose-100',
+        emerald: 'text-emerald-600 bg-emerald-50 border-emerald-100',
+    };
+    return (
+        <div className={`p-4 rounded-2xl border ${colorClasses[color]} flex items-center justify-between shadow-sm hover:shadow-md transition-all`}>
+            <div className="flex items-center gap-3">
+                <div className="p-3 bg-white/50 rounded-xl shadow-inner">{icon}</div>
+                <div>
+                    <p className="text-[10px] font-black uppercase tracking-widest opacity-70">{label}</p>
+                    <p className="text-xl font-black" dir="ltr">{formatCurrency(value)}</p>
+                </div>
+            </div>
+            <div className="opacity-10"><ArrowUpRight size={40} /></div>
+        </div>
+    );
+};
+
+const TabButton: React.FC<{ active: boolean; onClick: () => void; icon: React.ReactNode; label: string }> = ({ active, onClick, icon, label }) => (
+    <button
+        onClick={onClick}
+        className={`flex items-center gap-2 px-6 py-2 rounded-lg text-sm font-bold transition-all whitespace-nowrap ${
+            active ? 'bg-primary text-white shadow-md' : 'text-text-muted hover:text-text hover:bg-background'
+        }`}
+    >
+        {icon}
+        {label}
+    </button>
+);
 
 const InvoiceForm: React.FC<{ isOpen: boolean, onClose: () => void, invoice: Invoice | null }> = ({ isOpen, onClose, invoice }) => {
-    // FIX: Use dataService for data manipulation
     const { db, dataService } = useApp();
     const [unitId, setUnitId] = useState('');
     const [dueDate, setDueDate] = useState('');
@@ -356,14 +391,8 @@ const InvoiceForm: React.FC<{ isOpen: boolean, onClose: () => void, invoice: Inv
         e.preventDefault();
         if (isReadOnly) return;
         if (isSavingRef.current) return;
-        if (!unitId || amount <= 0) {
-            toast.error("يرجى تحديد الوحدة وإدخال مبلغ صحيح.");
-            return;
-        }
-        if (!activeContractForUnit) {
-            toast.error("لا يمكن إنشاء فاتورة لوحدة شاغرة. لإضافة تكاليف على المالك، يرجى إنشاء 'مصروف' من قسم المالية.");
-            return;
-        }
+        if (!unitId || amount <= 0) { toast.error("بيانات غير مكتملة."); return; }
+        if (!activeContractForUnit) { toast.error("الوحدة شاغرة حالياً."); return; }
 
         isSavingRef.current = true;
         setIsSaving(true);
@@ -377,63 +406,56 @@ const InvoiceForm: React.FC<{ isOpen: boolean, onClose: () => void, invoice: Inv
                 type,
                 notes,
             };
-
-            if (invoice) {
-                await dataService.update('invoices', invoice.id, data);
-            } else {
-                await dataService.add('invoices', data);
-            }
+            if (invoice) await dataService.update('invoices', invoice.id, data); else await dataService.add('invoices', data);
             onClose();
-        } finally {
-            isSavingRef.current = false;
-            setIsSaving(false);
-        }
+        } finally { isSavingRef.current = false; setIsSaving(false); }
     }, [isReadOnly, unitId, amount, activeContractForUnit, dueDate, invoice, type, notes, dataService, onClose]);
 
     return (
-        <Modal isOpen={isOpen} onClose={onClose} title={isReadOnly ? "عرض تفاصيل الفاتورة" : (invoice ? "تعديل فاتورة" : "إضافة فاتورة يدوية")}>
-            <form onSubmit={handleSubmit} className="space-y-4">
-                 {invoice && !isReadOnly && <p className="text-xs text-center bg-blue-50 dark:bg-blue-900/30 p-2 rounded-md">لتعديل تاريخ استحقاق هذه الفاتورة، قم بتغيير حقل التاريخ واحفظ التغييرات.</p>}
-                <div>
-                    <label className="block text-sm font-medium mb-1">الوحدة</label>
+        <Modal isOpen={isOpen} onClose={onClose} title={isReadOnly ? "تفاصيل الفاتورة" : (invoice ? "تعديل الفاتورة" : "إنشاء فاتورة يدوية")}>
+            <form onSubmit={handleSubmit} className="space-y-6 p-1">
+                <div className="space-y-1.5">
+                    <label className="text-xs font-black text-text-muted">الوحدة العقارية</label>
                     <select value={unitId} onChange={e => setUnitId(e.target.value)} required disabled={isReadOnly}>
                         <option value="">-- اختر الوحدة --</option>
                         {unitsWithProperties.map(u => (
-                            <option key={u.id} value={u.id}>
-                                {u.propertyName} - {u.name}
-                            </option>
+                            <option key={u.id} value={u.id}>{u.propertyName} - {u.name}</option>
                         ))}
                     </select>
-                     {unitId && !activeContractForUnit && !isReadOnly && (
-                        <p className="text-xs text-red-500 mt-1">هذه الوحدة شاغرة. لا يمكن إنشاء فاتورة. لإضافة تكلفة على المالك، أنشئ مصروفاً.</p>
-                    )}
                 </div>
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                        <label className="block text-sm font-medium mb-1">نوع الفاتورة</label>
+                    <div className="space-y-1.5">
+                        <label className="text-xs font-black text-text-muted">نوع الفاتورة</label>
                         <select value={type} onChange={e => setType(e.target.value as Invoice['type'])} disabled={isReadOnly}>
-                            <option value="UTILITY">خدمات</option>
+                            <option value="RENT">إيجار</option>
+                            <option value="UTILITY">خدمات (كهرباء/ماء)</option>
                             <option value="MAINTENANCE">صيانة</option>
+                            <option value="LATE_FEE">رسوم تأخير</option>
                         </select>
                     </div>
-                    <div>
-                        <label className="block text-sm font-medium mb-1">المبلغ</label>
-                        <NumberInput value={amount} onChange={setAmount} required disabled={isReadOnly} />
+                    <div className="space-y-1.5">
+                        <label className="text-xs font-black text-text-muted">تاريخ الاستحقاق</label>
+                        <input type="date" value={dueDate} onChange={e => setDueDate(e.target.value)} required disabled={isReadOnly} />
                     </div>
                 </div>
-                 <div>
-                    <label className="block text-sm font-medium mb-1">تاريخ الاستحقاق</label>
-                    <input type="date" value={dueDate} onChange={e => setDueDate(e.target.value)} required disabled={isReadOnly} />
+
+                <div className="space-y-1.5">
+                    <label className="text-xs font-black text-text-muted">المبلغ الإجمالي</label>
+                    <NumberInput value={amount} onChange={setAmount} required disabled={isReadOnly} className="text-2xl font-black text-primary" />
                 </div>
-                <div>
-                    <label className="block text-sm font-medium mb-1">ملاحظات (مثال: فاتورة كهرباء شهر يونيو)</label>
-                    <textarea value={notes} onChange={e => setNotes(e.target.value)} rows={2} required disabled={isReadOnly} />
+
+                <div className="space-y-1.5">
+                    <label className="text-xs font-black text-text-muted">ملاحظات الفاتورة</label>
+                    <textarea value={notes} onChange={e => setNotes(e.target.value)} rows={3} placeholder="اكتب تفاصيل إضافية تظهر في الفاتورة..." required disabled={isReadOnly} />
                 </div>
 
                 {!isReadOnly && (
-                    <div className="flex justify-end gap-3 pt-4 mt-4 border-t border-border">
-                        <button type="button" onClick={onClose} className="btn btn-ghost" disabled={isSaving}>إلغاء</button>
-                        <button type="submit" className="btn btn-primary" disabled={isSaving || !activeContractForUnit}>{isSaving ? 'جاري الحفظ...' : 'حفظ'}</button>
+                    <div className="flex gap-3 pt-4 border-t border-border">
+                        <button type="button" onClick={onClose} className="btn btn-ghost flex-1 py-3" disabled={isSaving}>إلغاء</button>
+                        <button type="submit" className="btn btn-primary flex-1 py-3 shadow-lg shadow-primary/20" disabled={isSaving || !activeContractForUnit}>
+                            {isSaving ? 'جاري الحفظ...' : 'حفظ الفاتورة'}
+                        </button>
                     </div>
                 )}
             </form>

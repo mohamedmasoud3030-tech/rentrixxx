@@ -1,11 +1,10 @@
-
 import React from 'react';
 import { Routes, Route, NavLink, Navigate } from 'react-router-dom';
 import Invoices from './Invoices';
 import Financials from './Financials';
 import Maintenance from './Maintenance';
 import Card from '../components/ui/Card';
-import { Wallet, ReceiptText, Wrench, Calculator, BookOpen } from 'lucide-react';
+import { Wallet, ReceiptText, Wrench, Calculator, BookOpen, Landmark, TrendingUp } from 'lucide-react';
 import GeneralLedger from './GeneralLedger';
 import Accounting from './Accounting';
 
@@ -14,30 +13,48 @@ const FinanceTab: React.FC<{ to: string, icon: React.ReactNode, label: string }>
         to={to}
         end
         className={({ isActive }) => 
-            `flex items-center gap-2 px-6 py-3 rounded-lg text-sm font-bold transition-all ${
-                isActive ? 'bg-primary text-white shadow-lg' : 'text-text-muted hover:bg-background'
+            `flex items-center gap-3 px-6 py-3 rounded-xl text-sm font-black transition-all ${
+                isActive 
+                    ? 'bg-primary text-white shadow-xl shadow-primary/20 scale-[1.02]' 
+                    : 'text-text-muted hover:text-primary hover:bg-primary/5'
             }`
         }
     >
-        {icon}
+        <span className="opacity-80">{icon}</span>
         {label}
     </NavLink>
 );
 
 const Finance: React.FC = () => {
     return (
-        <div className="space-y-6">
-            <Card className="p-2 overflow-hidden">
-                <nav className="flex items-center gap-1 overflow-x-auto whitespace-nowrap">
-                    <FinanceTab to="/finance/invoices" icon={<ReceiptText size={18}/>} label="الفواتير" />
-                    <FinanceTab to="/finance/financials" icon={<Wallet size={18}/>} label="السندات والمصروفات" />
-                    <FinanceTab to="/finance/maintenance" icon={<Wrench size={18}/>} label="الصيانة" />
-                    <FinanceTab to="/finance/gl" icon={<Calculator size={18}/>} label="دفتر الأستاذ العام" />
-                    <FinanceTab to="/finance/accounting" icon={<BookOpen size={18}/>} label="المحاسبة" />
+        <div className="space-y-8 animate-in fade-in duration-500">
+            {/* Page Header */}
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div>
+                    <h1 className="text-3xl font-black tracking-tight text-primary">الإدارة المالية</h1>
+                    <p className="text-text-muted text-sm mt-1">تتبع الفواتير، السندات، والقيود المحاسبية بدقة واحترافية</p>
+                </div>
+                <div className="flex items-center gap-3">
+                    <div className="px-4 py-2 bg-emerald-50 border border-emerald-100 rounded-2xl flex items-center gap-2">
+                        <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
+                        <span className="text-[10px] font-black text-emerald-700 uppercase tracking-widest">النظام المالي متصل</span>
+                    </div>
+                </div>
+            </div>
+
+            {/* Navigation Tabs */}
+            <Card className="p-1.5 overflow-hidden border-none shadow-lg bg-card/50 backdrop-blur-md sticky top-4 z-10">
+                <nav className="flex items-center gap-1 overflow-x-auto whitespace-nowrap scrollbar-hide">
+                    <FinanceTab to="/finance/invoices" icon={<ReceiptText size={20}/>} label="الفواتير" />
+                    <FinanceTab to="/finance/financials" icon={<Wallet size={20}/>} label="السندات والمصروفات" />
+                    <FinanceTab to="/finance/maintenance" icon={<Wrench size={20}/>} label="الصيانة" />
+                    <FinanceTab to="/finance/gl" icon={<Calculator size={20}/>} label="الأستاذ العام" />
+                    <FinanceTab to="/finance/accounting" icon={<BookOpen size={20}/>} label="دليل الحسابات" />
                 </nav>
             </Card>
 
-            <div>
+            {/* Content Area */}
+            <div className="min-h-[60vh]">
                 <Routes>
                     <Route path="invoices" element={<Invoices />} />
                     <Route path="financials" element={<Financials />} />

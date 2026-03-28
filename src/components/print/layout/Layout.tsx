@@ -37,8 +37,8 @@ const Layout: React.FC = () => {
       <div className="relative flex flex-col flex-1 overflow-y-auto overflow-x-hidden">
         <Topbar setSidebarOpen={setSidebarOpen} />
         <ReadOnlyBanner />
-        <main className="p-3 sm:p-5 lg:p-8 flex-1">
-          <div className="max-w-7xl mx-auto w-full">
+        <main className="p-3 sm:p-5 lg:p-8 xl:p-10 flex-1">
+          <div className="max-w-[1400px] mx-auto w-full">
             <Outlet />
           </div>
         </main>
