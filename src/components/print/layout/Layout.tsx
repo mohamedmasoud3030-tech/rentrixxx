@@ -3,7 +3,6 @@ import { Outlet } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import Topbar from './Topbar';
 import Footer from './Footer';
-import BottomNav from './BottomNav';
 import SmartAssistant from '../../shared/SmartAssistant';
 import { useApp } from '../../../contexts/AppContext';
 import { AlertTriangle } from 'lucide-react';
@@ -38,7 +37,7 @@ const Layout: React.FC = () => {
       <div className="relative flex flex-col flex-1 overflow-y-auto overflow-x-hidden">
         <Topbar setSidebarOpen={setSidebarOpen} />
         <ReadOnlyBanner />
-        <main className="p-3 sm:p-5 lg:p-8 flex-1 pb-20 lg:pb-8">
+        <main className="p-3 sm:p-5 lg:p-8 flex-1">
           <div className="max-w-7xl mx-auto w-full">
             <Outlet />
           </div>
@@ -46,9 +45,6 @@ const Layout: React.FC = () => {
         <Footer />
         <SmartAssistant />
       </div>
-
-      {/* Mobile bottom navigation */}
-      <BottomNav onMenuOpen={() => setSidebarOpen(true)} />
     </div>
   );
 };

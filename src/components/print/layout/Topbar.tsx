@@ -1,6 +1,6 @@
 import React from 'react';
 import { useApp } from '../../../contexts/AppContext';
-import { Sun, Moon, LogOut } from 'lucide-react';
+import { Sun, Moon, LogOut, Menu } from 'lucide-react';
 import Notifications from './Notifications';
 import { useLocation } from 'react-router-dom';
 
@@ -26,7 +26,7 @@ const PAGE_TITLES: Record<string, string> = {
   '/settings': 'الإعدادات',
 };
 
-const Topbar: React.FC<TopbarProps> = ({ setSidebarOpen: _setSidebarOpen }) => {
+const Topbar: React.FC<TopbarProps> = ({ setSidebarOpen }) => {
   const { auth, settings, updateSettings } = useApp();
   const { pathname } = useLocation();
 
@@ -53,8 +53,15 @@ const Topbar: React.FC<TopbarProps> = ({ setSidebarOpen: _setSidebarOpen }) => {
     >
       <div className="flex flex-grow items-center justify-between px-4 py-2 md:px-6">
 
-        {/* Mobile: page title */}
-        <div className="lg:hidden flex-1 min-w-0">
+        {/* Mobile: hamburger + page title */}
+        <div className="lg:hidden flex items-center gap-2 flex-1 min-w-0">
+          <button
+            onClick={() => setSidebarOpen(true)}
+            className="flex items-center justify-center w-9 h-9 rounded-xl hover:bg-background text-text-muted transition-colors active:scale-95 flex-shrink-0"
+            aria-label="فتح القائمة"
+          >
+            <Menu size={20} />
+          </button>
           <span className="text-base font-black text-text truncate">{pageTitle}</span>
         </div>
 
