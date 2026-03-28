@@ -56,3 +56,8 @@ timeoutMs = 120000
 [userenv.shared]
 VITE_SUPABASE_URL = "https://nnggcnpcuomwfuupupwg.supabase.co"
 VITE_SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5uZ2djbnBjdW9td2Z1dXB1cHdnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM4MTcyMjQsImV4cCI6MjA4OTM5MzIyNH0.i_3dknmkEjUONYx0bF_6CujPsBKMH4zfrC_qPz-XxZE"
+
+[deployment]
+deploymentTarget = "static"
+build = ["npm", "run", "build"]
+publicDir = "dist"
