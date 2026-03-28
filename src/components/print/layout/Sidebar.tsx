@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState, useMemo } from 'react';
+import React, { useMemo } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import {
     LayoutGrid, Building2, Users, UserCheck, FileText, Banknote,
@@ -71,7 +71,6 @@ const navGroups: { title: string; links: NavLinkItem[] }[] = [
 const Sidebar: React.FC<SidebarProps> = ({ sidebarOpen, setSidebarOpen }) => {
   const { auth, settings, db } = useApp();
   const { pathname } = useLocation();
-  const sidebar = useRef<HTMLDivElement>(null);
   const lastRunDate = getLastRunDate();
 
   const badges = useMemo(() => {
@@ -85,16 +84,6 @@ const Sidebar: React.FC<SidebarProps> = ({ sidebarOpen, setSidebarOpen }) => {
     return { expiringContracts, overdueInvoices, newLeads, pendingNotifications } as Record<string, number>;
   }, [db, settings]);
 
-  useEffect(() => {
-    const clickHandler = ({ target }: MouseEvent) => {
-      if (!sidebar.current) return;
-      if (!sidebarOpen || sidebar.current.contains(target as Node)) return;
-      setSidebarOpen(false);
-    };
-    document.addEventListener('click', clickHandler);
-    return () => document.removeEventListener('click', clickHandler);
-  }, [sidebarOpen, setSidebarOpen]);
-
   const isLinkActive = (path: string) => {
     if (path === '/') return pathname === '/';
     return pathname.startsWith(path);
@@ -104,7 +93,6 @@ const Sidebar: React.FC<SidebarProps> = ({ sidebarOpen, setSidebarOpen }) => {
 
   return (
     <aside
-      ref={sidebar}
       className={`absolute right-0 top-0 z-50 flex h-screen w-72 flex-col overflow-y-hidden bg-sidebar-bg border-l border-border duration-300 ease-in-out lg:static lg:translate-x-0 ${
         sidebarOpen ? 'translate-x-0' : 'translate-x-full'
       }`}
