@@ -7,23 +7,41 @@ import { formatDate, formatCurrency } from '../utils/helpers';
 
 // Helper to create a jsPDF instance with Arabic font support and a standard header
 const getArabicDoc = (title: string, subtitle: string, settings: Settings) => {
-    const doc = new jsPDF();
-    
-    // Add Cairo font for Arabic support
-    doc.addFileToVFS('Cairo-Regular.ttf', cairoFontBase64);
-    doc.addFont('Cairo-Regular.ttf', 'Cairo', 'normal');
-    doc.setFont('Cairo');
+    try {
+        const doc = new jsPDF();
+        
+        // Add Cairo font for Arabic support
+        if (cairoFontBase64) {
+            doc.addFileToVFS('Cairo-Regular.ttf', cairoFontBase64);
+            doc.addFont('Cairo-Regular.ttf', 'Cairo', 'normal');
+            doc.setFont('Cairo');
+        } else {
+            doc.setFont('helvetica');
+        }
 
-    // Header
-    doc.setFontSize(16);
-    // FIX: Corrected path to company settings
-    doc.text(settings.general.company.name, 105, 15, { align: 'center' });
-    doc.setFontSize(12);
-    doc.text(title, 105, 22, { align: 'center' });
-    doc.setFontSize(10);
-    doc.text(subtitle, 105, 28, { align: 'center' });
+        // Header
+        doc.setFontSize(16);
+        // FIX: Corrected path to company settings
+        doc.text(settings.general.company.name, 105, 15, { align: 'center' });
+        doc.setFontSize(12);
+        doc.text(title, 105, 22, { align: 'center' });
+        doc.setFontSize(10);
+        doc.text(subtitle, 105, 28, { align: 'center' });
 
-    return doc;
+        return doc;
+    } catch (error) {
+        console.error('Error creating PDF document:', error);
+        // Fallback to basic PDF without Arabic font
+        const doc = new jsPDF();
+        doc.setFont('helvetica');
+        doc.setFontSize(16);
+        doc.text(settings.general.company.name, 105, 15, { align: 'center' });
+        doc.setFontSize(12);
+        doc.text(title, 105, 22, { align: 'center' });
+        doc.setFontSize(10);
+        doc.text(subtitle, 105, 28, { align: 'center' });
+        return doc;
+    }
 };
 
 // --- Financial Reports ---
@@ -207,6 +225,7 @@ export const exportTrialBalanceToPdf = (data: any, settings: Settings, date: str
 // --- Contract PDF ---
 
 export const exportContractToPdf = (contract: Contract, db: Database) => {
+    try {
     const tenant = db.tenants.find(t => t.id === contract.tenantId);
     const unit = db.units.find(u => u.id === contract.unitId);
     const property = unit ? db.properties.find(p => p.id === unit.propertyId) : null;
@@ -260,54 +279,68 @@ export const exportContractToPdf = (contract: Contract, db: Database) => {
     doc.text('.........................', 50, y + 10, { align: 'center'});
 
     doc.save(`Contract_${tenant?.name}.pdf`);
+    } catch (error) {
+        console.error('Error exporting contract to PDF:', error);
+        throw new Error('فشل تصدير العقد إلى PDF');
+    }
 };
 
 export const exportExpenseToPdf = (expense: Expense, db: Database) => {
-    const { settings } = db;
-    const doc = getArabicDoc('سند صرف', `رقم السند: ${expense.no}`, settings);
+    try {
+        const { settings } = db;
+        const doc = getArabicDoc('سند صرف', `رقم السند: ${expense.no}`, settings);
 
-    doc.setFontSize(11);
-    doc.text(`التاريخ: ${formatDate(expense.dateTime)}`, 200, 40, { align: 'right' });
-    // FIX: Corrected path to currency settings
-    doc.text(`المبلغ: ${formatCurrency(expense.amount, settings.operational.currency)}`, 200, 48, { align: 'right' });
-    doc.text(`صرف إلى: ${expense.payee || 'غير محدد'}`, 200, 56, { align: 'right' });
-    doc.text(`وذلك عن: ${expense.category} - ${expense.notes || ''}`, 200, 64, { align: 'right' });
+        doc.setFontSize(11);
+        doc.text(`التاريخ: ${formatDate(expense.dateTime)}`, 200, 40, { align: 'right' });
+        // FIX: Corrected path to currency settings
+        doc.text(`المبلغ: ${formatCurrency(expense.amount, settings.operational.currency)}`, 200, 48, { align: 'right' });
+        doc.text(`صرف إلى: ${expense.payee || 'غير محدد'}`, 200, 56, { align: 'right' });
+        doc.text(`وذلك عن: ${expense.category} - ${expense.notes || ''}`, 200, 64, { align: 'right' });
 
-    doc.save(`Expense_${expense.no}.pdf`);
+        doc.save(`Expense_${expense.no}.pdf`);
+    } catch (error) {
+        console.error('Error exporting expense to PDF:', error);
+        throw new Error('فشل تصدير المصروف إلى PDF');
+    }
 };
 
 export const exportInvoiceToPdf = (invoice: Invoice, db: Database) => {
-    const { settings } = db;
-    const contract = db.contracts.find(c => c.id === invoice.contractId);
-    const tenant = contract ? db.tenants.find(t => t.id === contract.tenantId) : null;
-    const doc = getArabicDoc('فاتورة', `رقم الفاتورة: ${invoice.no}`, settings);
+    try {
+        const { settings } = db;
+        const contract = db.contracts.find(c => c.id === invoice.contractId);
+        const tenant = contract ? db.tenants.find(t => t.id === contract.tenantId) : null;
+        const doc = getArabicDoc('فاتورة', `رقم الفاتورة: ${invoice.no}`, settings);
 
-    doc.setFontSize(11);
-    doc.text(`إلى السيد/ة: ${tenant?.name || 'غير معروف'}`, 200, 40, { align: 'right' });
-    doc.text(`تاريخ الاستحقاق: ${formatDate(invoice.dueDate)}`, 200, 48, { align: 'right' });
+        doc.setFontSize(11);
+        doc.text(`إلى السيد/ة: ${tenant?.name || 'غير معروف'}`, 200, 40, { align: 'right' });
+        doc.text(`تاريخ الاستحقاق: ${formatDate(invoice.dueDate)}`, 200, 48, { align: 'right' });
 
-    (doc as any).autoTable({
-        head: [['المجموع', 'الضريبة', 'السعر', 'الكمية', 'البيان']],
-        body: [[
-            // FIX: Corrected path to currency settings
-            formatCurrency(invoice.amount + (invoice.taxAmount || 0), settings.operational.currency),
-            formatCurrency(invoice.taxAmount || 0, settings.operational.currency),
-            formatCurrency(invoice.amount, settings.operational.currency),
-            '1',
-            invoice.notes || `فاتورة ${invoice.type}`
-        ]],
-        startY: 55,
-        styles: { font: 'Cairo', halign: 'right' },
-        headStyles: { fillColor: [30, 80, 130], fontStyle: 'bold' },
-    });
+        (doc as any).autoTable({
+            head: [['المجموع', 'الضريبة', 'السعر', 'الكمية', 'البيان']],
+            body: [[
+                // FIX: Corrected path to currency settings
+                formatCurrency(invoice.amount + (invoice.taxAmount || 0), settings.operational.currency),
+                formatCurrency(invoice.taxAmount || 0, settings.operational.currency),
+                formatCurrency(invoice.amount, settings.operational.currency),
+                '1',
+                invoice.notes || `فاتورة ${invoice.type}`
+            ]],
+            startY: 55,
+            styles: { font: 'Cairo', halign: 'right' },
+            headStyles: { fillColor: [30, 80, 130], fontStyle: 'bold' },
+        });
 
-    const finalY = (doc as any).lastAutoTable.finalY + 10;
-    doc.setFontSize(12);
-    doc.text('الإجمالي:', 200, finalY, { align: 'right' });
-    // FIX: Corrected path to currency settings
-    doc.text(formatCurrency(invoice.amount + (invoice.taxAmount || 0), settings.operational.currency), 150, finalY, { align: 'right' });
+        const finalY = (doc as any).lastAutoTable.finalY + 10;
+        doc.setFontSize(12);
+        doc.text('الإجمالي:', 200, finalY, { align: 'right' });
+        // FIX: Corrected path to currency settings
+        doc.text(formatCurrency(invoice.amount + (invoice.taxAmount || 0), settings.operational.currency), 150, finalY, { align: 'right' });
 
-    doc.save(`Invoice_${invoice.no}.pdf`);
+        doc.save(`Invoice_${invoice.no}.pdf`);
+    } catch (error) {
+        console.error('Error exporting invoice to PDF:', error);
+        throw new Error('فشل تصدير الفاتورة إلى PDF');
+    }
 };
 
 export const exportBalanceSheetToPdf = (data: any, settings: Settings, date: string) => {

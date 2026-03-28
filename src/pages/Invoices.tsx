@@ -282,7 +282,15 @@ const Invoices: React.FC = () => {
                                 </td>
                                 <td className="px-6 py-4 border border-border" onClick={(e) => e.stopPropagation()}>
                                     <button 
-                                        onClick={() => exportInvoiceToPdf(inv, db)}
+                                        onClick={() => {
+                                            try {
+                                                exportInvoiceToPdf(inv, db);
+                                                toast.success('تم تصدير الفاتورة بصيغة PDF');
+                                            } catch (error) {
+                                                console.error('PDF Export Error:', error);
+                                                toast.error('خطأ في تصدير PDF');
+                                            }
+                                        }}
                                         className="btn btn-xs btn-ghost flex items-center gap-1"
                                         title="تصدير PDF"
                                     >

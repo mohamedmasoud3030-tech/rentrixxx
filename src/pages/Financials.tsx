@@ -259,7 +259,15 @@ const ExpensesView: React.FC = () => {
                                     <ActionsMenu items={[
                                         EditAction(() => { setEditingExpense(e); setIsModalOpen(true); }),
                                         PrintAction(() => setPrintingExpense(e)),
-                                        { label: 'تصدير PDF', icon: <FileText size={16} />, onClick: () => exportExpenseToPdf(e, db) },
+                                        { label: 'تصدير PDF', icon: <FileText size={16} />, onClick: () => {
+                                            try {
+                                                exportExpenseToPdf(e, db);
+                                                toast.success('تم تصدير المصروف بصيغة PDF');
+                                            } catch (error) {
+                                                console.error('PDF Export Error:', error);
+                                                toast.error('خطأ في تصدير PDF');
+                                            }
+                                        }},
                                         // FIX: Use financeService for financial operations
                                         VoidAction(() => financeService.voidExpense(e.id))
                                     ]} />

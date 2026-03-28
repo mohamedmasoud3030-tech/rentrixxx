@@ -133,8 +133,16 @@ const Contracts: React.FC = () => {
     };
 
     const handleDelete = async (id: string) => {
-        if (db.receipts.some(r => r.contractId === id) || db.expenses.some(e => e.contractId === id)) {
-            toast.error("لا يمكن حذف العقد لوجود حركات مالية مرتبطة به.");
+        const hasReceipts = db.receipts.some(r => r.contractId === id);
+        const hasExpenses = db.expenses.some(e => e.contractId === id);
+        const hasInvoices = db.invoices.some(i => i.contractId === id);
+        
+        if (hasReceipts || hasExpenses || hasInvoices) {
+            const items = [];
+            if (hasReceipts) items.push('سندات قبض');
+            if (hasExpenses) items.push('مصروفات');
+            if (hasInvoices) items.push('فواتير');
+            toast.error(`لا يمكن حذف العقد لأنه يحتوي على ${items.join(' و ')} مرتبطة به.`);
             return;
         }
         await dataService.remove('contracts', id);
@@ -148,7 +156,13 @@ const Contracts: React.FC = () => {
     };
 
     const handleExportPdf = (contract: Contract) => {
-        exportContractToPdf(contract, db);
+        try {
+            exportContractToPdf(contract, db);
+            toast.success('تم تصدير العقد بصيغة PDF بنجاح');
+        } catch (error) {
+            console.error('PDF Export Error:', error);
+            toast.error('حدث خطأ في تصدير ملف PDF. يرجى المحاولة مرة أخرى.');
+        }
     };
 
     const handleRenewContract = async (contract: Contract) => {
