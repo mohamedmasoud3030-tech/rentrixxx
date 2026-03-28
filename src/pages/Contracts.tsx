@@ -341,7 +341,7 @@ const ContractForm: React.FC<{ isOpen: boolean, onClose: () => void, contract: C
     const { db, dataService } = useApp();
     const [unitId, setUnitId] = useState('');
     const [tenantId, setTenantId] = useState('');
-    const [rent, setRent] = useState(0);
+    const [rentInput, setRentInput] = useState('0');
     const [dueDay, setDueDay] = useState(1);
     const [start, setStart] = useState('');
     const [end, setEnd] = useState('');
@@ -350,6 +350,20 @@ const ContractForm: React.FC<{ isOpen: boolean, onClose: () => void, contract: C
     const [sponsorName, setSponsorName] = useState('');
     const [sponsorId, setSponsorId] = useState('');
     const [sponsorPhone, setSponsorPhone] = useState('');
+    
+    const parseLocalizedNumber = (value: string): number | null => {
+        if (!value?.trim()) return null;
+        const normalized = value
+            .trim()
+            .replace(/[٠-٩]/g, (d) => String('٠١٢٣٤٥٦٧٨٩'.indexOf(d)))
+            .replace(/[۰-۹]/g, (d) => String('۰۱۲۳۴۵۶۷۸۹'.indexOf(d)))
+            .replace(/[٬،\s]/g, '')
+            .replace(/٫/g, '.');
+
+        if (!/^\d*\.?\d+$/.test(normalized)) return null;
+        const n = Number(normalized);
+        return Number.isFinite(n) ? n : null;
+    };
     
     const availableUnits = db.units.filter(u => 
         !db.contracts.some(c => c.unitId === u.id && c.status === 'ACTIVE' && c.id !== contract?.id)
@@ -370,7 +384,7 @@ const ContractForm: React.FC<{ isOpen: boolean, onClose: () => void, contract: C
         if (contract) {
             setUnitId(contract.unitId);
             setTenantId(contract.tenantId);
-            setRent(contract.rent);
+            setRentInput(String(contract.rent));
             setDueDay(contract.dueDay);
             setStart(contract.start);
             setEnd(contract.end);
@@ -386,7 +400,7 @@ const ContractForm: React.FC<{ isOpen: boolean, onClose: () => void, contract: C
             
             setUnitId(defaultUnitId || availableUnits[0]?.id || '');
             setTenantId(db.tenants[0]?.id || '');
-            setRent(0);
+            setRentInput('0');
             setDueDay(1);
             setStart(today);
             setEnd(endDate.toISOString().slice(0,10));
@@ -418,6 +432,12 @@ const ContractForm: React.FC<{ isOpen: boolean, onClose: () => void, contract: C
         e.preventDefault();
         if (!unitId || !tenantId || !start || !end) {
             toast.error("يرجى ملء جميع الحقول المطلوبة (الوحدة، المستأجر، تاريخ البدء والانتهاء).");
+            return;
+        }
+
+        const rent = parseLocalizedNumber(rentInput);
+        if (rent === null || rent < 0) {
+            toast.error('يرجى إدخال مبلغ إيجار شهري صحيح.');
             return;
         }
 
@@ -455,7 +475,15 @@ const ContractForm: React.FC<{ isOpen: boolean, onClose: () => void, contract: C
                         </div>
                         <div>
                             <label className="block text-sm font-medium mb-1">الإيجار الشهري</label>
-                            <input type="number" value={rent} onChange={e => setRent(Number(e.target.value))} required />
+                            <input
+                                type="text"
+                                inputMode="decimal"
+                                dir="ltr"
+                                value={rentInput}
+                                onChange={e => setRentInput(e.target.value)}
+                                placeholder="مثال: 250 أو ٢٥٠"
+                                required
+                            />
                         </div>
                         <div>
                             <label className="block text-sm font-medium mb-1">يوم الاستحقاق</label>
