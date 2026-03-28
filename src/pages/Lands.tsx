@@ -4,7 +4,7 @@ import Card from '../components/ui/Card';
 import Modal from '../components/ui/Modal';
 import { Eye, MapPin, PlusCircle } from 'lucide-react';
 import { Land } from '../types';
-import { formatCurrency } from '../utils/helpers';
+import { formatCurrency, normalizeArabicNumerals } from '../utils/helpers';
 import NumberInput from '../components/ui/NumberInput';
 import { toast } from 'react-hot-toast';
 import ActionsMenu, { EditAction, DeleteAction } from '../components/shared/ActionsMenu';

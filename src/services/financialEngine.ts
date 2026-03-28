@@ -1,4 +1,4 @@
-import { Database, DerivedData, Invoice, Receipt, OwnerBalance, JournalEntry, AccountBalance, KpiSnapshot, ContractBalance, TenantBalance, OwnerSettlement } from '../types';
+import { Database, DerivedData, Invoice, Receipt, Expense, OwnerBalance, JournalEntry, AccountBalance, KpiSnapshot, ContractBalance, TenantBalance, OwnerSettlement } from '../types';
 import { dbEngine } from './db';
 import Dexie, { Transaction } from 'dexie';
 
@@ -103,9 +103,10 @@ export async function rebuildOwnerBalancesSnapshot(tx: Transaction, db: Database
             const unit = unitsMap.get(contract.unitId); if (!unit) return null;
             const property = propertiesMap.get(unit.propertyId); return property ? property.ownerId : null;
         }
-        if (sourceTx.ownerId) return sourceTx.ownerId;
-        if (sourceTx.propertyId) {
-            const property = propertiesMap.get(sourceTx.propertyId); return property ? property.ownerId : null;
+        const expenseTx = sourceTx as Expense;
+        if (expenseTx.ownerId) return expenseTx.ownerId;
+        if (expenseTx.propertyId) {
+            const property = propertiesMap.get(expenseTx.propertyId); return property ? property.ownerId : null;
         }
         if (sourceTx.ref && sourceTx.ref.startsWith('UTIL-')) {
             const utilRefPrefix = sourceTx.ref.slice(5);
