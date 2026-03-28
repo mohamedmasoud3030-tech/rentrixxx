@@ -66,18 +66,21 @@ const Properties: React.FC = () => {
 const PropertiesListView: React.FC = () => {
     // FIX: Use dataService for data manipulation
     const { db, dataService } = useApp();
+    const properties = Array.isArray(db.properties) ? db.properties : [];
+    const units = Array.isArray(db.units) ? db.units : [];
+    const owners = Array.isArray(db.owners) ? db.owners : [];
     const [selectedProp, setSelectedProp] = useState<Property | null>(null);
     const [isPropModalOpen, setIsPropModalOpen] = useState(false);
     const [editingProp, setEditingProp] = useState<Property | null>(null);
 
     const stats = useMemo(() => {
-        const totalUnits = db.units.length;
-        const rented = db.units.filter(u => u.status === 'RENTED').length;
-        const available = db.units.filter(u => u.status === 'AVAILABLE').length;
-        const maintenance = db.units.filter(u => u.status === 'MAINTENANCE').length;
+        const totalUnits = units.length;
+        const rented = units.filter(u => u.status === 'RENTED').length;
+        const available = units.filter(u => u.status === 'AVAILABLE').length;
+        const maintenance = units.filter(u => u.status === 'MAINTENANCE').length;
         const occupancy = totalUnits > 0 ? ((rented / totalUnits) * 100) : 0;
         return { totalUnits, rented, available, maintenance, occupancy };
-    }, [db.units]);
+    }, [units]);
 
     if (selectedProp) {
         return <UnitsView property={selectedProp} onBack={() => setSelectedProp(null)} />;
@@ -88,7 +91,7 @@ const PropertiesListView: React.FC = () => {
             <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
                 <div className="bg-background rounded-xl border border-border p-3 text-center">
                     <Building size={18} className="mx-auto mb-1 text-blue-500" />
-                    <p className="text-lg font-black">{db.properties.length}</p>
+                    <p className="text-lg font-black">{properties.length}</p>
                     <p className="text-[10px] text-text-muted">عقارات</p>
                 </div>
                 <div className="bg-background rounded-xl border border-border p-3 text-center">
@@ -118,7 +121,7 @@ const PropertiesListView: React.FC = () => {
                 <button onClick={() => { setEditingProp(null); setIsPropModalOpen(true); }} className="btn btn-primary">إضافة عقار</button>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {db.properties.map(p => (
+                {properties.map(p => (
                     <div key={p.id} onClick={() => setSelectedProp(p)} className="bg-background p-4 rounded-lg border border-border cursor-pointer hover:ring-2 hover:ring-primary transition-all">
                         <div className="flex justify-between items-start mb-2">
                             <h3 className="font-bold text-lg">{p.name}</h3>
@@ -129,8 +132,8 @@ const PropertiesListView: React.FC = () => {
                         </div>
                         <p className="text-sm text-text-muted mb-4">{p.location}</p>
                         <div className="flex justify-between text-xs text-text-muted">
-                            <span>الوحدات: {toArabicDigits(db.units.filter(u=>u.propertyId===p.id).length)}</span>
-                            <span>المالك: {db.owners.find(o=>o.id===p.ownerId)?.name}</span>
+                            <span>الوحدات: {toArabicDigits(units.filter(u=>u.propertyId===p.id).length)}</span>
+                            <span>المالك: {owners.find(o=>o.id===p.ownerId)?.name || '-'}</span>
                         </div>
                     </div>
                 ))}
@@ -149,20 +152,31 @@ const UNIT_STATUS_MAP: Record<string, { label: string; color: string }> = {
 
 const UnitsView: React.FC<{ property: Property, onBack: () => void }> = ({ property, onBack }) => {
     const { db, dataService } = useApp();
+    const allUnits = Array.isArray(db.units) ? db.units : [];
+    const utilityRecords = Array.isArray(db.utilityRecords) ? db.utilityRecords : [];
     const [isUnitModalOpen, setIsUnitModalOpen] = useState(false);
     const [editingUnit, setEditingUnit] = useState<Unit | null>(null);
     const [selectedUnit, setSelectedUnit] = useState<Unit | null>(null);
     
-    const units = useMemo(() => db.units.filter(u => u.propertyId === property.id), [db.units, property.id]);
+    const units = useMemo(() => allUnits.filter(u => u.propertyId === property.id), [allUnits, property.id]);
     
     const utilityCountMap = useMemo(() => {
         const map = new Map<string, number>();
-        (db.utilityRecords || []).forEach(r => {
+        utilityRecords.forEach(r => {
             map.set(r.unitId, (map.get(r.unitId) || 0) + 1);
         });
         return map;
-    }, [db.utilityRecords]);
+    }, [utilityRecords]);
 
+    const floors = useMemo(() => [...new Set(units.map(u => u.floor || 'بدون دور'))], [units]);
+    const hasFloors = useMemo(() => units.some(u => u.floor), [units]);
+    const stats = useMemo(() => ({
+        rented: units.filter(u => u.status === 'RENTED').length,
+        available: units.filter(u => u.status === 'AVAILABLE').length,
+        onHold: units.filter(u => u.status === 'ON_HOLD').length,
+    }), [units]);
+
+<<<<<<< HEAD
     const floors = useMemo(() => [...new Set(units.map(u => u.floor || 'بدون دور'))], [units]);
     const hasFloors = useMemo(() => units.some(u => u.floor), [units]);
 
@@ -173,6 +187,8 @@ const UnitsView: React.FC<{ property: Property, onBack: () => void }> = ({ prope
     }), [units]);
 
     // Early return AFTER all hooks have been called
+=======
+>>>>>>> e45aa20c70971e52a53c2ecff2f6f4408c3f718b
     if (selectedUnit) {
         return (
             <ErrorBoundary key={selectedUnit.id}>
@@ -301,6 +317,9 @@ const UtilityRecordForm: React.FC<{
     record: UtilityRecord | null; unitId: string; propertyId: string;
 }> = ({ isOpen, onClose, record, unitId, propertyId }) => {
     const { dataService, settings, db } = useApp();
+    const properties = Array.isArray(db.properties) ? db.properties : [];
+    const units = Array.isArray(db.units) ? db.units : [];
+    const contracts = Array.isArray(db.contracts) ? db.contracts : [];
     const currency = settings.operational?.currency ?? 'OMR';
     const fileRef = useRef<HTMLInputElement>(null);
 
@@ -362,13 +381,13 @@ const UtilityRecordForm: React.FC<{
             } else {
                 const newRecord = await dataService.add('utilityRecords', data);
                 if (newRecord && amount > 0) {
-                    const property = db.properties.find(p => p.id === propertyId);
-                    const unit = db.units.find(u => u.id === unitId);
+                    const property = properties.find(p => p.id === propertyId);
+                    const unit = units.find(u => u.id === unitId);
                     const UTILITY_AR: Record<string, string> = { WATER: 'مياه', ELECTRICITY: 'كهرباء', GAS: 'غاز', INTERNET: 'إنترنت', OTHER: 'مرافق' };
                     const expenseCategory = `مرافق - ${UTILITY_AR[type] || type}`;
                     const expenseNotes = `فاتورة ${UTILITY_AR[type] || type} - وحدة ${unit?.name || ''} - شهر ${month}`;
                     const chargedTo = paidBy === 'OWNER' ? 'OWNER' : paidBy === 'TENANT' ? 'TENANT' : 'OFFICE';
-                    const unitContracts = db.contracts.filter(c => c.unitId === unitId);
+                    const unitContracts = contracts.filter(c => c.unitId === unitId);
                     const linkedContract =
                         unitContracts.find(c => c.status === 'ACTIVE') ||
                         unitContracts.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0))[0] ||
@@ -467,12 +486,15 @@ const UtilityRecordForm: React.FC<{
 
 const UnitDetailView: React.FC<{ unit: Unit; property: Property; onBack: () => void }> = ({ unit, property, onBack }) => {
     const { db, dataService, settings } = useApp();
+    const utilityRecords = Array.isArray(db.utilityRecords) ? db.utilityRecords : [];
+    const contracts = Array.isArray(db.contracts) ? db.contracts : [];
+    const tenants = Array.isArray(db.tenants) ? db.tenants : [];
     const currency = settings.operational?.currency ?? 'OMR';
     const [isFormOpen, setIsFormOpen] = useState(false);
     const [editingRecord, setEditingRecord] = useState<UtilityRecord | null>(null);
     const [activeType, setActiveType] = useState<UtilityType | 'ALL'>('ALL');
 
-    const unitRecords = useMemo(() => (db.utilityRecords || []).filter(r => r.unitId === unit.id), [db.utilityRecords, unit.id]);
+    const unitRecords = useMemo(() => utilityRecords.filter(r => r.unitId === unit.id), [utilityRecords, unit.id]);
     const filtered = useMemo(() => activeType === 'ALL' ? unitRecords : unitRecords.filter(r => r.type === activeType), [unitRecords, activeType]);
     const sorted = useMemo(() => [...filtered].sort((a, b) => b.month.localeCompare(a.month)), [filtered]);
 
@@ -488,8 +510,8 @@ const UnitDetailView: React.FC<{ unit: Unit; property: Property; onBack: () => v
     }, [unitRecords]);
 
     const totalAmount = unitRecords.reduce((s, r) => s + r.amount, 0);
-    const activeContract = db.contracts.find(c => c.unitId === unit.id && c.status === 'ACTIVE');
-    const tenant = activeContract ? db.tenants.find(t => t.id === activeContract.tenantId) : null;
+    const activeContract = contracts.find(c => c.unitId === unit.id && c.status === 'ACTIVE');
+    const tenant = activeContract ? tenants.find(t => t.id === activeContract.tenantId) : null;
 
     const handleDelete = async (id: string) => {
         if (!window.confirm('هل أنت متأكد من حذف سجل المرفق هذا؟')) return;
@@ -608,8 +630,10 @@ const UnitDetailView: React.FC<{ unit: Unit; property: Property; onBack: () => v
 
 const PropertyForm: React.FC<{ isOpen: boolean, onClose: () => void, property: Property | null }> = ({ isOpen, onClose, property }) => {
     const { db, dataService } = useApp();
+    const owners = Array.isArray(db.owners) ? db.owners : [];
+    const properties = Array.isArray(db.properties) ? db.properties : [];
     const [name, setName] = useState(property?.name || '');
-    const [ownerId, setOwnerId] = useState(property?.ownerId || db.owners[0]?.id || '');
+    const [ownerId, setOwnerId] = useState(property?.ownerId || owners[0]?.id || '');
     const [location, setLocation] = useState(property?.location || '');
     const [isSaving, setIsSaving] = useState(false);
     const isSavingRef = useRef(false);
@@ -618,7 +642,7 @@ const PropertyForm: React.FC<{ isOpen: boolean, onClose: () => void, property: P
         e.preventDefault();
         if (isSavingRef.current) return;
 
-        const ownerAlreadyHasProperty = db.properties.some(
+        const ownerAlreadyHasProperty = properties.some(
             p => p.ownerId === ownerId && p.id !== property?.id
         );
         if (ownerAlreadyHasProperty) {
@@ -637,12 +661,12 @@ const PropertyForm: React.FC<{ isOpen: boolean, onClose: () => void, property: P
             isSavingRef.current = false;
             setIsSaving(false);
         }
-    }, [property, name, ownerId, location, db.properties, dataService, onClose]);
+    }, [property, name, ownerId, location, properties, dataService, onClose]);
     return (
         <Modal isOpen={isOpen} onClose={onClose} title="بيانات العقار">
             <form onSubmit={handleSubmit} className="space-y-4">
                 <input placeholder="اسم العقار" value={name} onChange={e=>setName(e.target.value)} required disabled={isSaving} />
-                <select value={ownerId} onChange={e=>setOwnerId(e.target.value)} disabled={isSaving}>{db.owners.map(o=><option key={o.id} value={o.id}>{o.name}</option>)}</select>
+                <select value={ownerId} onChange={e=>setOwnerId(e.target.value)} disabled={isSaving}>{owners.map(o=><option key={o.id} value={o.id}>{o.name}</option>)}</select>
                 <input placeholder="الموقع" value={location} onChange={e=>setLocation(e.target.value)} disabled={isSaving} />
                 {property && <AttachmentsManager entityType="PROPERTY" entityId={property.id} />}
                 <button type="submit" className="btn btn-primary w-full" disabled={isSaving}>{isSaving ? 'جاري الحفظ...' : 'حفظ العقار'}</button>

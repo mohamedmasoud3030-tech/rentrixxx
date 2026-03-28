@@ -4,7 +4,7 @@ import { Contract, Receipt, Expense } from '../types';
 import Card from '../components/ui/Card';
 import Modal from '../components/ui/Modal';
 import ActionsMenu, { EditAction, DeleteAction, PrintAction } from '../components/shared/ActionsMenu';
-import { formatCurrency, toArabicDigits, getStatusBadgeClass, formatDateTime, formatDate, exportToCsv, CONTRACT_STATUS_AR } from '../utils/helpers';
+import { formatCurrency, toArabicDigits, getStatusBadgeClass, formatDateTime, formatDate, exportToCsv, CONTRACT_STATUS_AR, parseLocalizedNumber } from '../utils/helpers';
 import NumberInput from '../components/ui/NumberInput';
 import HardGateBanner from '../components/shared/HardGateBanner';
 import AttachmentsManager from '../components/shared/AttachmentsManager';
@@ -95,6 +95,12 @@ const ContractPrintable: React.FC<{ contract: Contract }> = ({ contract }) => {
 const Contracts: React.FC = () => {
     // FIX: Use dataService and contractBalances from context
     const { db, dataService, contractBalances } = useApp();
+    const contracts = Array.isArray(db.contracts) ? db.contracts : [];
+    const units = Array.isArray(db.units) ? db.units : [];
+    const properties = Array.isArray(db.properties) ? db.properties : [];
+    const tenants = Array.isArray(db.tenants) ? db.tenants : [];
+    const receipts = Array.isArray(db.receipts) ? db.receipts : [];
+    const expenses = Array.isArray(db.expenses) ? db.expenses : [];
     const location = useLocation();
     const navigate = useNavigate();
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -118,13 +124,13 @@ const Contracts: React.FC = () => {
             handleOpenModal(null, unitId);
             navigate('/contracts', { replace: true });
         } else if (contractId) {
-            const contractToEdit = db.contracts.find(c => c.id === contractId);
+            const contractToEdit = contracts.find(c => c.id === contractId);
             if (contractToEdit) {
                 handleOpenModal(contractToEdit);
             }
             navigate('/contracts', { replace: true });
         }
-    }, [location, db.contracts, navigate]);
+    }, [location, contracts, navigate]);
 
     const handleCloseModal = () => {
         setEditingContract(null);
@@ -133,6 +139,7 @@ const Contracts: React.FC = () => {
     };
 
     const handleDelete = async (id: string) => {
+<<<<<<< HEAD
         const hasReceipts = db.receipts.some(r => r.contractId === id);
         const hasExpenses = db.expenses.some(e => e.contractId === id);
         const hasInvoices = db.invoices.some(i => i.contractId === id);
@@ -143,13 +150,17 @@ const Contracts: React.FC = () => {
             if (hasExpenses) items.push('مصروفات');
             if (hasInvoices) items.push('فواتير');
             toast.error(`لا يمكن حذف العقد لأنه يحتوي على ${items.join(' و ')} مرتبطة به.`);
+=======
+        if (receipts.some(r => r.contractId === id) || expenses.some(e => e.contractId === id)) {
+            toast.error("لا يمكن حذف العقد لوجود حركات مالية مرتبطة به.");
+>>>>>>> e45aa20c70971e52a53c2ecff2f6f4408c3f718b
             return;
         }
         await dataService.remove('contracts', id);
     };
     
     const handlePrint = (id: string) => {
-        const contractToPrint = db.contracts.find(c => c.id === id);
+        const contractToPrint = contracts.find(c => c.id === id);
         if (contractToPrint) {
             setPrintingContract(contractToPrint);
         }
@@ -202,10 +213,10 @@ const Contracts: React.FC = () => {
     };
 
     const handleExportCsv = () => {
-        const rows = db.contracts.map(c => {
-            const unit = db.units.find(u => u.id === c.unitId);
-            const property = unit ? db.properties.find(p => p.id === unit.propertyId) : null;
-            const tenant = db.tenants.find(t => t.id === c.tenantId);
+        const rows = contracts.map(c => {
+            const unit = units.find(u => u.id === c.unitId);
+            const property = unit ? properties.find(p => p.id === unit.propertyId) : null;
+            const tenant = tenants.find(t => t.id === c.tenantId);
             const balance = contractBalances[c.id]?.balance || 0;
             return {
                 'الوحدة': unit?.name || '',
@@ -225,12 +236,12 @@ const Contracts: React.FC = () => {
         const now = new Date();
         const alertDays = db.settings.operational?.contractAlertDays ?? 30;
         const futureDate = new Date(now.getTime() + alertDays * 86400000);
-        const active = db.contracts.filter(c => c.status === 'ACTIVE').length;
-        const expiring = db.contracts.filter(c => c.status === 'ACTIVE' && new Date(c.end) <= futureDate).length;
-        const expired = db.contracts.filter(c => c.status === 'ENDED').length;
+        const active = contracts.filter(c => c.status === 'ACTIVE').length;
+        const expiring = contracts.filter(c => c.status === 'ACTIVE' && new Date(c.end) <= futureDate).length;
+        const expired = contracts.filter(c => c.status === 'ENDED').length;
         const totalBalance = Object.values(contractBalances).reduce((s, b) => s + (b.balance > 0 ? b.balance : 0), 0);
-        return { total: db.contracts.length, active, expiring, expired, totalBalance };
-    }, [db.contracts, contractBalances, db.settings]);
+        return { total: contracts.length, active, expiring, expired, totalBalance };
+    }, [contracts, contractBalances, db.settings]);
 
     return (
         <div className="space-y-6">
@@ -275,7 +286,7 @@ const Contracts: React.FC = () => {
                         <button onClick={() => handleOpenModal()} className="btn btn-primary">إضافة عقد</button>
                     </div>
                 </div>
-                {db.contracts.length === 0 ? (
+                {contracts.length === 0 ? (
                     <div className="text-center py-12">
                         <FileText size={48} className="mx-auto text-text-muted" />
                         <h3 className="mt-4 text-lg font-semibold">لا توجد عقود بعد</h3>
@@ -299,10 +310,10 @@ const Contracts: React.FC = () => {
                                 </tr>
                             </thead>
                             <tbody>
-                                {db.contracts.map(c => {
-                                    const unit = db.units.find(u => u.id === c.unitId);
-                                    const property = unit ? db.properties.find(p => p.id === unit.propertyId) : null;
-                                    const tenant = db.tenants.find(t => t.id === c.tenantId);
+                                {contracts.map(c => {
+                                    const unit = units.find(u => u.id === c.unitId);
+                                    const property = unit ? properties.find(p => p.id === unit.propertyId) : null;
+                                    const tenant = tenants.find(t => t.id === c.tenantId);
                                     // FIX: Use contractBalances instead of derivedData
                                     const balance = contractBalances[c.id]?.balance || 0;
                                     return (
@@ -356,11 +367,11 @@ const ContractForm: React.FC<{ isOpen: boolean, onClose: () => void, contract: C
     const { db, dataService } = useApp();
     const [unitId, setUnitId] = useState('');
     const [tenantId, setTenantId] = useState('');
-    const [rent, setRent] = useState(0);
+    const [rentInput, setRentInput] = useState('');
     const [dueDay, setDueDay] = useState(1);
     const [start, setStart] = useState('');
     const [end, setEnd] = useState('');
-    const [deposit, setDeposit] = useState(0);
+    const [depositInput, setDepositInput] = useState('');
     const [status, setStatus] = useState<Contract['status']>('ACTIVE');
     const [sponsorName, setSponsorName] = useState('');
     const [sponsorId, setSponsorId] = useState('');
@@ -369,18 +380,25 @@ const ContractForm: React.FC<{ isOpen: boolean, onClose: () => void, contract: C
     const isSavingRef = useRef(false);
     const initializedRef = useRef(false);
     
-    const availableUnits = db.units.filter(u => 
-        !db.contracts.some(c => c.unitId === u.id && c.status === 'ACTIVE' && c.id !== contract?.id)
+    const contracts = Array.isArray(db.contracts) ? db.contracts : [];
+    const units = Array.isArray(db.units) ? db.units : [];
+    const tenants = Array.isArray(db.tenants) ? db.tenants : [];
+    const expenses = Array.isArray(db.expenses) ? db.expenses : [];
+    const receipts = Array.isArray(db.receipts) ? db.receipts : [];
+    const properties = Array.isArray(db.properties) ? db.properties : [];
+
+    const availableUnits = units.filter(u => 
+        !contracts.some(c => c.unitId === u.id && c.status === 'ACTIVE' && c.id !== contract?.id)
     );
 
     const contractTransactions = useMemo(() => {
         if (!contract) return [];
-        const receipts = db.receipts.filter(r => r.contractId === contract.id);
-        const expenses = db.expenses.filter(e => e.contractId === contract.id && e.chargedTo === 'TENANT');
-        const all: (Receipt | Expense)[] = [...receipts, ...expenses];
+        const contractReceipts = receipts.filter(r => r.contractId === contract.id);
+        const contractExpenses = expenses.filter(e => e.contractId === contract.id && e.chargedTo === 'TENANT');
+        const all: (Receipt | Expense)[] = [...contractReceipts, ...contractExpenses];
         all.sort((a,b) => new Date(b.dateTime).getTime() - new Date(a.dateTime).getTime());
         return all;
-    }, [contract, db.receipts, db.expenses]);
+    }, [contract, receipts, expenses]);
 
 
     React.useEffect(() => {
@@ -394,11 +412,11 @@ const ContractForm: React.FC<{ isOpen: boolean, onClose: () => void, contract: C
             // Always load contract data when editing
             setUnitId(contract.unitId);
             setTenantId(contract.tenantId);
-            setRent(contract.rent);
+            setRentInput(String(contract.rent ?? ''));
             setDueDay(contract.dueDay);
             setStart(contract.start);
             setEnd(contract.end);
-            setDeposit(contract.deposit);
+            setDepositInput(String(contract.deposit ?? ''));
             setStatus(contract.status);
             setSponsorName(contract.sponsorName || '');
             setSponsorId(contract.sponsorId || '');
@@ -411,19 +429,29 @@ const ContractForm: React.FC<{ isOpen: boolean, onClose: () => void, contract: C
             endDate.setFullYear(startDate.getFullYear() + 1);
             
             setUnitId(defaultUnitId || availableUnits[0]?.id || '');
-            setTenantId(db.tenants[0]?.id || '');
-            setRent(0);
+            setTenantId(tenants[0]?.id || '');
+            setRentInput('');
             setDueDay(1);
             setStart(today);
             setEnd(endDate.toISOString().slice(0,10));
-            setDeposit(0);
+            setDepositInput('');
             setStatus('ACTIVE');
             setSponsorName('');
             setSponsorId('');
             setSponsorPhone('');
             initializedRef.current = true;
         }
+<<<<<<< HEAD
     }, [contract, isOpen, defaultUnitId, availableUnits, db.tenants]);
+=======
+    }, [contract, isOpen, tenants, availableUnits, defaultUnitId]);
+
+    const handleMoneyInputChange = (setter: React.Dispatch<React.SetStateAction<string>>) => (e: React.ChangeEvent<HTMLInputElement>) => {
+        const next = e.target.value;
+        if (!/^[0-9٠-٩۰-۹.,٬٫+\-\s\u00A0\u200E\u200F]*$/.test(next)) return;
+        setter(next);
+    };
+>>>>>>> e45aa20c70971e52a53c2ecff2f6f4408c3f718b
 
     const handleStartDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const newStart = e.target.value;
@@ -450,14 +478,14 @@ const ContractForm: React.FC<{ isOpen: boolean, onClose: () => void, contract: C
         }
 
         if (status === 'ACTIVE') {
-            const tenantHasActiveContract = db.contracts.some(c =>
+            const tenantHasActiveContract = contracts.some(c =>
                 c.tenantId === tenantId && c.status === 'ACTIVE' && c.id !== contract?.id
             );
             if (tenantHasActiveContract) {
                 toast.error('لا يمكن تسجيل هذا العقد: المستأجر لديه عقد نشط بالفعل. يرجى إنهاء العقد الحالي أولاً.');
                 return;
             }
-            const unitHasActiveContract = db.contracts.some(c =>
+            const unitHasActiveContract = contracts.some(c =>
                 c.unitId === unitId && c.status === 'ACTIVE' && c.id !== contract?.id
             );
             if (unitHasActiveContract) {
@@ -469,6 +497,8 @@ const ContractForm: React.FC<{ isOpen: boolean, onClose: () => void, contract: C
         isSavingRef.current = true;
         setIsSaving(true);
         try {
+            const rent = parseLocalizedNumber(rentInput);
+            const deposit = parseLocalizedNumber(depositInput);
             const data = { unitId, tenantId, rent, dueDay, start, end, deposit, status, sponsorName, sponsorId, sponsorPhone };
             if (contract) {
                 await dataService.update('contracts', contract.id, data);
@@ -495,21 +525,36 @@ const ContractForm: React.FC<{ isOpen: boolean, onClose: () => void, contract: C
                                 {contract && !availableUnits.some(u => u.id === contract.unitId) && <option value={contract.unitId}>الوحدة الحالية</option>}
                                 {availableUnits.map(u => (
                                     <option key={u.id} value={u.id}>
-                                        {u.name} ({db.properties.find(p => p.id === u.propertyId)?.name})
+                                        {u.name} ({properties.find(p => p.id === u.propertyId)?.name})
                                     </option>
                                 ))}
                             </select>
                         </div>
                         <div>
                             <label className="block text-sm font-medium mb-1">المستأجر</label>
+<<<<<<< HEAD
                             <select value={tenantId} onChange={e => setTenantId(e.target.value)} required className="w-full px-3 py-2 border border-border rounded-lg bg-card text-text focus:outline-none focus:ring-2 focus:ring-primary">
                                 <option value="">-- اختر مستأجر --</option>
                                 {db.tenants.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
+=======
+                            <select value={tenantId} onChange={e => setTenantId(e.target.value)} required>
+                                {tenants.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
+>>>>>>> e45aa20c70971e52a53c2ecff2f6f4408c3f718b
                             </select>
                         </div>
                         <div>
                             <label className="block text-sm font-medium mb-1">الإيجار الشهري</label>
-                            <NumberInput value={rent} onChange={setRent} required disabled={isSaving} />
+                            <input
+                                type="text"
+                                inputMode="decimal"
+                                value={rentInput}
+                                onChange={handleMoneyInputChange(setRentInput)}
+                                required
+                                disabled={isSaving}
+                                className="ltr-input"
+                                dir="ltr"
+                                style={{ textAlign: 'right' }}
+                            />
                         </div>
                         <div>
                             <label className="block text-sm font-medium mb-1">يوم الاستحقاق</label>
@@ -525,7 +570,16 @@ const ContractForm: React.FC<{ isOpen: boolean, onClose: () => void, contract: C
                         </div>
                         <div>
                             <label className="block text-sm font-medium mb-1">الوديعة</label>
-                            <NumberInput value={deposit} onChange={setDeposit} disabled={isSaving} />
+                            <input
+                                type="text"
+                                inputMode="decimal"
+                                value={depositInput}
+                                onChange={handleMoneyInputChange(setDepositInput)}
+                                disabled={isSaving}
+                                className="ltr-input"
+                                dir="ltr"
+                                style={{ textAlign: 'right' }}
+                            />
                         </div>
                         <div>
                             <label className="block text-sm font-medium mb-1">الحالة</label>
