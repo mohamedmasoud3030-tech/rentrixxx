@@ -419,3 +419,21 @@ input:focus, select:focus, textarea:focus {
         text-align: right;
     }
 }
+
+/* ── Number inputs: hide spinner arrows ── */
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+input[type="number"] {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+
+/* ── LTR number input with RTL alignment ── */
+.ltr-input {
+  direction: ltr;
+  text-align: right;
+  unicode-bidi: plaintext;
+}

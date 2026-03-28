@@ -4,7 +4,8 @@ import Card from '../components/ui/Card';
 import Modal from '../components/ui/Modal';
 import { Eye, MapPin, PlusCircle } from 'lucide-react';
 import { Land } from '../types';
-import { formatCurrency, normalizeArabicNumerals } from '../utils/helpers';
+import { formatCurrency } from '../utils/helpers';
+import NumberInput from '../components/ui/NumberInput';
 import { toast } from 'react-hot-toast';
 import ActionsMenu, { EditAction, DeleteAction } from '../components/shared/ActionsMenu';
 
@@ -204,7 +205,7 @@ const LandForm: React.FC<{ isOpen: boolean, onClose: () => void, land: Land | nu
                     <input name="location" value={data.location || ''} onChange={handleChange} placeholder="الموقع (مثال: الخوض)" />
                     <div>
                         <label className="block text-sm font-medium mb-1">المساحة (م²)</label>
-                        <input name="area" type="number" value={data.area || ''} onChange={handleChange} min="0" step="0.01" />
+                        <NumberInput value={data.area || ''} onChange={v => setData(prev => ({ ...prev, area: v }))} />
                     </div>
                     <select name="category" value={data.category} onChange={handleChange}>
                         <option value="سكني">سكني</option>
@@ -220,11 +221,11 @@ const LandForm: React.FC<{ isOpen: boolean, onClose: () => void, land: Land | nu
                 <div className="grid grid-cols-2 gap-4">
                     <div>
                         <label className="block text-sm font-medium mb-1">صافي المالك</label>
-                        <input name="ownerPrice" type="number" value={data.ownerPrice || ''} onChange={handleChange} min="0" step="0.01" />
+                        <NumberInput value={data.ownerPrice || ''} onChange={v => setData(prev => ({ ...prev, ownerPrice: v }))} />
                     </div>
                     <div>
                         <label className="block text-sm font-medium mb-1">عمولة المكتب</label>
-                        <input name="commission" type="number" value={data.commission || ''} onChange={handleChange} min="0" step="0.01" />
+                        <NumberInput value={data.commission || ''} onChange={v => setData(prev => ({ ...prev, commission: v }))} />
                     </div>
                 </div>
                 <textarea name="notes" value={data.notes || ''} onChange={handleChange} placeholder="ملاحظات..." />

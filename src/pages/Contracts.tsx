@@ -4,7 +4,8 @@ import { Contract, Receipt, Expense } from '../types';
 import Card from '../components/ui/Card';
 import Modal from '../components/ui/Modal';
 import ActionsMenu, { EditAction, DeleteAction, PrintAction } from '../components/shared/ActionsMenu';
-import { formatCurrency, toArabicDigits, getStatusBadgeClass, formatDateTime, formatDate, exportToCsv, CONTRACT_STATUS_AR, normalizeArabicNumerals } from '../utils/helpers';
+import { formatCurrency, toArabicDigits, getStatusBadgeClass, formatDateTime, formatDate, exportToCsv, CONTRACT_STATUS_AR } from '../utils/helpers';
+import NumberInput from '../components/ui/NumberInput';
 import HardGateBanner from '../components/shared/HardGateBanner';
 import AttachmentsManager from '../components/shared/AttachmentsManager';
 import { FileText, Download, CheckCircle, AlertTriangle, Clock, Users, RefreshCw } from 'lucide-react';
@@ -482,11 +483,11 @@ const ContractForm: React.FC<{ isOpen: boolean, onClose: () => void, contract: C
                         </div>
                         <div>
                             <label className="block text-sm font-medium mb-1">الإيجار الشهري</label>
-                            <input type="number" value={rent} onChange={e => setRent(Number(normalizeArabicNumerals(e.target.value)))} required disabled={isSaving} />
+                            <NumberInput value={rent} onChange={setRent} required disabled={isSaving} />
                         </div>
                         <div>
                             <label className="block text-sm font-medium mb-1">يوم الاستحقاق</label>
-                            <input type="number" min="1" max="28" value={dueDay} onChange={e => setDueDay(Number(normalizeArabicNumerals(e.target.value)))} required disabled={isSaving} />
+                            <NumberInput value={dueDay} onChange={setDueDay} allowDecimal={false} min={1} max={28} required disabled={isSaving} />
                         </div>
                         <div>
                             <label className="block text-sm font-medium mb-1">تاريخ البدء</label>
@@ -498,7 +499,7 @@ const ContractForm: React.FC<{ isOpen: boolean, onClose: () => void, contract: C
                         </div>
                         <div>
                             <label className="block text-sm font-medium mb-1">الوديعة</label>
-                            <input type="number" value={deposit} onChange={e => setDeposit(Number(normalizeArabicNumerals(e.target.value)))} disabled={isSaving} />
+                            <NumberInput value={deposit} onChange={setDeposit} disabled={isSaving} />
                         </div>
                         <div>
                             <label className="block text-sm font-medium mb-1">الحالة</label>

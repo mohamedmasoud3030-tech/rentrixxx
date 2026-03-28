@@ -4,6 +4,7 @@ import Card from '../components/ui/Card';
 import Modal from '../components/ui/Modal';
 import { Account } from '../types';
 import { formatCurrency } from '../utils/helpers';
+import NumberInput from '../components/ui/NumberInput';
 import { PlusCircle, Trash2, Edit2, BookOpen, FilePen, Scale } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 
@@ -285,22 +286,10 @@ const ManualVoucher: React.FC = () => {
                                         </select>
                                     </td>
                                     <td className="px-3 py-2">
-                                        <input
-                                            type="number"
-                                            min="0"
-                                            step="0.001"
-                                            value={line.debit || ''}
-                                            onChange={e => updateLine(i, 'debit', parseFloat(e.target.value) || 0)}
-                                        />
+                                        <NumberInput value={line.debit || ''} onChange={v => updateLine(i, 'debit', v)} />
                                     </td>
                                     <td className="px-3 py-2">
-                                        <input
-                                            type="number"
-                                            min="0"
-                                            step="0.001"
-                                            value={line.credit || ''}
-                                            onChange={e => updateLine(i, 'credit', parseFloat(e.target.value) || 0)}
-                                        />
+                                        <NumberInput value={line.credit || ''} onChange={v => updateLine(i, 'credit', v)} />
                                     </td>
                                     <td className="px-3 py-2">
                                         {lines.length > 2 && (

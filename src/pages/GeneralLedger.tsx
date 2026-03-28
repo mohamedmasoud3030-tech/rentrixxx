@@ -5,7 +5,8 @@ import { useApp } from '../contexts/AppContext';
 import { JournalEntry, Account } from '../types';
 import Card from '../components/ui/Card';
 import Modal from '../components/ui/Modal';
-import { formatCurrency, formatDate, normalizeArabicNumerals } from '../utils/helpers';
+import { formatCurrency, formatDate } from '../utils/helpers';
+import NumberInput from '../components/ui/NumberInput';
 import { Calculator, PlusCircle } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 
@@ -122,8 +123,8 @@ const ManualJournalVoucherForm: React.FC<{ isOpen: boolean, onClose: () => void,
                                 <option value="">-- اختر الحساب --</option>
                                 {accounts.filter(a => !a.isParent).map(acc => <option key={acc.id} value={acc.id}>{acc.name} ({acc.no})</option>)}
                             </select>
-                            <input className="col-span-2" type="number" value={line.debit || ''} onChange={e => handleLineChange(index, 'debit', parseFloat(normalizeArabicNumerals(e.target.value)))} />
-                            <input className="col-span-2" type="number" value={line.credit || ''} onChange={e => handleLineChange(index, 'credit', parseFloat(normalizeArabicNumerals(e.target.value)))} />
+                            <NumberInput className="col-span-2" value={line.debit || ''} onChange={v => handleLineChange(index, 'debit', v)} />
+                            <NumberInput className="col-span-2" value={line.credit || ''} onChange={v => handleLineChange(index, 'credit', v)} />
                             <div className="col-span-2 flex justify-end">
                                 <button type="button" onClick={addLine} className="btn btn-ghost">+</button>
                                 {lines.length > 2 && <button type="button" onClick={() => removeLine(index)} className="btn btn-ghost text-red-500">-</button>}

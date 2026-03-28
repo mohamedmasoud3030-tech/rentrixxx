@@ -5,7 +5,8 @@ import Card from '../components/ui/Card';
 import Modal from '../components/ui/Modal';
 import ActionsMenu, { EditAction, DeleteAction } from '../components/shared/ActionsMenu';
 import AttachmentsManager from '../components/shared/AttachmentsManager';
-import { formatCurrency, toArabicDigits, formatDate, normalizeArabicNumerals } from '../utils/helpers';
+import { formatCurrency, toArabicDigits, formatDate } from '../utils/helpers';
+import NumberInput from '../components/ui/NumberInput';
 import { Building, Home, ArrowRight, User, Map as MapIcon, AlertCircle, Clock, FileText, Wrench, Phone, Percent, TrendingUp, Zap, Droplets, Flame, Wifi, ChevronRight, Plus, Image, Trash2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
@@ -411,15 +412,15 @@ const UtilityRecordForm: React.FC<{
                 <div className="grid grid-cols-3 gap-4">
                     <div>
                         <label className="block text-sm font-medium mb-1">القراءة السابقة</label>
-                        <input type="number" min="0" value={prevReading} onChange={e => setPrevReading(Number(normalizeArabicNumerals(e.target.value)))} required disabled={isSaving} />
+                        <NumberInput value={prevReading} onChange={setPrevReading} required disabled={isSaving} />
                     </div>
                     <div>
                         <label className="block text-sm font-medium mb-1">القراءة الحالية</label>
-                        <input type="number" min="0" value={currReading} onChange={e => setCurrReading(Number(normalizeArabicNumerals(e.target.value)))} required disabled={isSaving} />
+                        <NumberInput value={currReading} onChange={setCurrReading} required disabled={isSaving} />
                     </div>
                     <div>
                         <label className="block text-sm font-medium mb-1">سعر الوحدة ({currency})</label>
-                        <input type="number" min="0" step="0.001" value={unitPrice} onChange={e => setUnitPrice(Number(normalizeArabicNumerals(e.target.value)))} required disabled={isSaving} />
+                        <NumberInput value={unitPrice} onChange={setUnitPrice} required disabled={isSaving} />
                     </div>
                 </div>
                 <div className="bg-background border border-border rounded-lg p-3 flex justify-between items-center">
@@ -775,16 +776,16 @@ const UnitForm: React.FC<{ isOpen: boolean, onClose: () => void, unit: Unit | nu
                         </div>
                         <div>
                             <label className="block text-sm font-medium mb-1">الإيجار الافتراضي</label>
-                            <input type="number" value={rent} onChange={e => handleRentChange(Number(normalizeArabicNumerals(e.target.value)))} required disabled={isSaving} />
+                            <NumberInput value={rent} onChange={handleRentChange} required disabled={isSaving} />
                             {rentError && <p className="text-xs text-red-500 mt-1">{rentError}</p>}
                         </div>
                         <div>
                             <label className="block text-sm font-medium mb-1">الحد الأدنى للإيجار</label>
-                            <input type="number" min="0" value={minRent} onChange={e => setMinRent(Number(normalizeArabicNumerals(e.target.value)))} disabled={isSaving} />
+                            <NumberInput value={minRent} onChange={setMinRent} disabled={isSaving} />
                         </div>
                         <div>
                             <label className="block text-sm font-medium mb-1">المساحة (م²)</label>
-                            <input type="number" value={area} onChange={e => setArea(Number(normalizeArabicNumerals(e.target.value)))} disabled={isSaving} />
+                            <NumberInput value={area} onChange={setArea} disabled={isSaving} />
                         </div>
                     </div>
 
@@ -792,19 +793,19 @@ const UnitForm: React.FC<{ isOpen: boolean, onClose: () => void, unit: Unit | nu
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                         <div>
                             <label className="block text-sm font-medium mb-1">غرف النوم</label>
-                            <input type="number" min="0" value={bedrooms} onChange={e => setBedrooms(Number(normalizeArabicNumerals(e.target.value)))} disabled={isSaving} />
+                            <NumberInput value={bedrooms} onChange={setBedrooms} allowDecimal={false} disabled={isSaving} />
                         </div>
                         <div>
                             <label className="block text-sm font-medium mb-1">الحمامات</label>
-                            <input type="number" min="0" value={bathrooms} onChange={e => setBathrooms(Number(normalizeArabicNumerals(e.target.value)))} disabled={isSaving} />
+                            <NumberInput value={bathrooms} onChange={setBathrooms} allowDecimal={false} disabled={isSaving} />
                         </div>
                         <div>
                             <label className="block text-sm font-medium mb-1">المطابخ</label>
-                            <input type="number" min="0" value={kitchens} onChange={e => setKitchens(Number(normalizeArabicNumerals(e.target.value)))} disabled={isSaving} />
+                            <NumberInput value={kitchens} onChange={setKitchens} allowDecimal={false} disabled={isSaving} />
                         </div>
                         <div>
                             <label className="block text-sm font-medium mb-1">الصالات</label>
-                            <input type="number" min="0" value={livingRooms} onChange={e => setLivingRooms(Number(normalizeArabicNumerals(e.target.value)))} disabled={isSaving} />
+                            <NumberInput value={livingRooms} onChange={setLivingRooms} allowDecimal={false} disabled={isSaving} />
                         </div>
                     </div>
 

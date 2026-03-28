@@ -4,7 +4,8 @@ import { useApp } from '../contexts/AppContext';
 import { Invoice, Unit } from '../types';
 import Card from '../components/ui/Card';
 import Modal from '../components/ui/Modal';
-import { formatCurrency, formatDate, getStatusBadgeClass, exportToCsv, INVOICE_STATUS_AR, INVOICE_TYPE_AR, normalizeArabicNumerals } from '../utils/helpers';
+import { formatCurrency, formatDate, getStatusBadgeClass, exportToCsv, INVOICE_STATUS_AR, INVOICE_TYPE_AR } from '../utils/helpers';
+import NumberInput from '../components/ui/NumberInput';
 import { ReceiptText, RefreshCw, Download, CheckSquare, Square, CheckCircle, MessageCircle } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
@@ -398,7 +399,7 @@ const InvoiceForm: React.FC<{ isOpen: boolean, onClose: () => void, invoice: Inv
                     </div>
                     <div>
                         <label className="block text-sm font-medium mb-1">المبلغ</label>
-                        <input type="number" value={amount} onChange={e => setAmount(Number(normalizeArabicNumerals(e.target.value)))} required disabled={isReadOnly} />
+                        <NumberInput value={amount} onChange={setAmount} required disabled={isReadOnly} />
                     </div>
                 </div>
                  <div>

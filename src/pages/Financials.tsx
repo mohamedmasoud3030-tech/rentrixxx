@@ -5,7 +5,8 @@ import { Receipt, Expense, DepositTx, OwnerSettlement, Tenant } from '../types';
 import Card from '../components/ui/Card';
 import Modal from '../components/ui/Modal';
 import ActionsMenu, { EditAction, VoidAction, DeleteAction, PrintAction } from '../components/shared/ActionsMenu';
-import { formatCurrency, formatDateTime, getStatusBadgeClass, formatDate, exportToCsv, RECEIPT_STATUS_AR, CHANNEL_AR, EXPENSE_STATUS_AR, normalizeArabicNumerals } from '../utils/helpers';
+import { formatCurrency, formatDateTime, getStatusBadgeClass, formatDate, exportToCsv, RECEIPT_STATUS_AR, CHANNEL_AR, EXPENSE_STATUS_AR } from '../utils/helpers';
+import NumberInput from '../components/ui/NumberInput';
 import HardGateBanner from '../components/shared/HardGateBanner';
 import AttachmentsManager from '../components/shared/AttachmentsManager';
 import SearchFilterBar from '../components/shared/SearchFilterBar';
@@ -434,7 +435,7 @@ const ReceiptForm: React.FC<{ isOpen: boolean, onClose: () => void, receipt: Rec
                 <div className="grid grid-cols-2 gap-4">
                     <div><label className="text-xs">العقد</label><select value={contractId} onChange={e=>setContractId(e.target.value)} required disabled={isSaving}>{db.contracts.map(c=><option key={c.id} value={c.id}>{db.tenants.find(t=>t.id===c.tenantId)?.name} - {db.units.find(u=>u.id===c.unitId)?.name}</option>)}</select></div>
                     <div><label className="text-xs">التاريخ</label><input type="datetime-local" value={dateTime} onChange={e=>setDateTime(e.target.value)} required disabled={isSaving} /></div>
-                    <div><label className="text-xs">المبلغ</label><input type="number" value={amount} onChange={e=>setAmount(Number(normalizeArabicNumerals(e.target.value)))} required disabled={isSaving} /></div>
+                    <div><label className="text-xs">المبلغ</label><NumberInput value={amount} onChange={setAmount} required disabled={isSaving} /></div>
                     <div><label className="text-xs">طريقة الدفع</label><select value={channel} onChange={e=>setChannel(e.target.value as any)} disabled={isSaving}><option value="CASH">نقدي</option><option value="BANK">تحويل بنكي</option><option value="POS">شبكة</option><option value="CHECK">شيك</option><option value="OTHER">أخرى</option></select></div>
                 </div>
                 {channel === 'CHECK' && (
@@ -492,7 +493,7 @@ const ExpenseForm: React.FC<{ isOpen: boolean, onClose: () => void, expense: Exp
                  {expense && <p className="text-xs text-center bg-blue-50 dark:bg-blue-900/30 p-2 rounded-md">لتعديل تاريخ هذه الحركة، قم بتغيير حقل التاريخ واحفظ التغييرات. سيؤثر هذا على التقارير المالية.</p>}
                 <div className="grid grid-cols-2 gap-4">
                     <div><label className="text-xs">التصنيف</label><input value={category} onChange={e=>setCategory(e.target.value)} required disabled={isSaving} /></div>
-                    <div><label className="text-xs">المبلغ</label><input type="number" value={amount} onChange={e=>setAmount(Number(normalizeArabicNumerals(e.target.value)))} required disabled={isSaving} /></div>
+                    <div><label className="text-xs">المبلغ</label><NumberInput value={amount} onChange={setAmount} required disabled={isSaving} /></div>
                     <div><label className="text-xs">يخصم من</label><select value={chargedTo} onChange={e=>setChargedTo(e.target.value as any)} disabled={isSaving}><option value="OWNER">المالك</option><option value="OFFICE">المكتب</option><option value="TENANT">المستأجر</option></select></div>
                     <div><label className="text-xs">العقد المرتبط</label><select value={contractId || ''} onChange={e=>setContractId(e.target.value || null)} disabled={isSaving}><option value="">-- مصروف مكتب عام --</option>{db.contracts.map(c=><option key={c.id} value={c.id}>{db.tenants.find(t=>t.id===c.tenantId)?.name}</option>)}</select></div>
                     <div><label className="text-xs">التاريخ</label><input type="datetime-local" value={dateTime} onChange={e=>setDateTime(e.target.value)} required disabled={isSaving} /></div>
@@ -529,7 +530,7 @@ const DepositTxForm: React.FC<{ isOpen: boolean, onClose: () => void }> = ({ isO
             <form onSubmit={handleSubmit} className="space-y-4">
                 <select value={contractId} onChange={e=>setContractId(e.target.value)} required disabled={isSaving}>{db.contracts.map(c=><option key={c.id} value={c.id}>{db.tenants.find(t=>t.id===c.tenantId)?.name}</option>)}</select>
                 <select value={type} onChange={e=>setType(e.target.value as any)} disabled={isSaving}><option value="DEPOSIT_IN">إيداع جديد</option><option value="DEPOSIT_RETURN">إرجاع للمستأجر</option><option value="DEPOSIT_DEDUCT">خصم إصلاحات</option></select>
-                <input type="number" value={amount} onChange={e=>setAmount(Number(normalizeArabicNumerals(e.target.value)))} required disabled={isSaving} />
+                <NumberInput value={amount} onChange={setAmount} required disabled={isSaving} />
                 <button type="submit" className="btn btn-primary w-full" disabled={isSaving}>{isSaving ? 'جاري الحفظ...' : 'حفظ الحركة'}</button>
             </form>
         </Modal>
@@ -566,7 +567,7 @@ const OwnerSettlementForm: React.FC<{ isOpen: boolean, onClose: () => void, sett
                  {settlement && <p className="text-xs text-center bg-blue-50 dark:bg-blue-900/30 p-2 rounded-md">لتعديل تاريخ هذه الحركة، قم بتغيير حقل التاريخ واحفظ التغييرات. سيؤثر هذا على التقارير المالية.</p>}
                 <select value={ownerId} onChange={e=>setOwnerId(e.target.value)} required disabled={isSaving}>{db.owners.map(o=><option key={o.id} value={o.id}>{o.name}</option>)}</select>
                 <input type="date" value={date} onChange={e=>setDate(e.target.value)} required disabled={isSaving} />
-                <input type="number" value={amount} onChange={e=>setAmount(Number(normalizeArabicNumerals(e.target.value)))} required disabled={isSaving} />
+                <NumberInput value={amount} onChange={setAmount} required disabled={isSaving} />
                 <button type="submit" className="btn btn-primary w-full" disabled={isSaving}>{isSaving ? 'جاري الحفظ...' : 'تأكيد التسوية'}</button>
             </form>
         </Modal>

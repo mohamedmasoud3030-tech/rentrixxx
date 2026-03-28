@@ -4,7 +4,8 @@ import Card from '../components/ui/Card';
 import Modal from '../components/ui/Modal';
 import { DollarSign } from 'lucide-react';
 import { Commission } from '../types';
-import { formatCurrency, normalizeArabicNumerals } from '../utils/helpers';
+import { formatCurrency } from '../utils/helpers';
+import NumberInput from '../components/ui/NumberInput';
 import { toast } from 'react-hot-toast';
 import ActionsMenu, { EditAction } from '../components/shared/ActionsMenu';
 
@@ -148,8 +149,7 @@ const CommissionForm: React.FC<{
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
-        const normalized = ['dealValue', 'percentage', 'amount'].includes(name) ? normalizeArabicNumerals(value) : value;
-        setData(prev => ({ ...prev, [name]: ['dealValue', 'percentage', 'amount'].includes(name) ? parseFloat(normalized) : normalized }));
+        setData(prev => ({ ...prev, [name]: value }));
     };
 
     const calculatedAmount = useMemo(() => {
@@ -194,16 +194,16 @@ const CommissionForm: React.FC<{
                 <div className="grid grid-cols-2 gap-4">
                     <div>
                         <label className="block text-sm font-medium mb-1">قيمة الصفقة</label>
-                        <input type="number" name="dealValue" value={data.dealValue || ''} onChange={handleChange} min="0" step="0.01" />
+                        <NumberInput value={data.dealValue || ''} onChange={v => setData(prev => ({ ...prev, dealValue: v }))} />
                     </div>
                     <div>
                         <label className="block text-sm font-medium mb-1">النسبة %</label>
-                        <input type="number" name="percentage" value={data.percentage || ''} onChange={handleChange} min="0" max="100" step="0.01" />
+                        <NumberInput value={data.percentage || ''} onChange={v => setData(prev => ({ ...prev, percentage: v }))} />
                     </div>
                 </div>
                 <div>
                     <label className="block text-sm font-medium mb-1">المبلغ المستحق</label>
-                    <input type="number" name="amount" value={calculatedAmount} onChange={handleChange} min="0" step="0.01" required />
+                    <NumberInput value={calculatedAmount} onChange={v => setData(prev => ({ ...prev, amount: v }))} required />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                     <select name="type" value={data.type} onChange={handleChange}>

@@ -6,7 +6,7 @@ import Modal from '../components/ui/Modal';
 import ActionsMenu, { EditAction, DeleteAction } from '../components/shared/ActionsMenu';
 import AttachmentsManager from '../components/shared/AttachmentsManager';
 import { MessageCircle, Users, BookOpen, Link as LinkIcon } from 'lucide-react';
-import { normalizeArabicNumerals } from '../utils/helpers';
+import NumberInput from '../components/ui/NumberInput';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 
@@ -215,7 +215,7 @@ const OwnerForm: React.FC<{ isOpen: boolean, onClose: () => void, owner: Owner |
                                 <label className="block text-sm font-medium mb-1">
                                     {commissionType === 'RATE' ? 'قيمة النسبة (%)' : 'المبلغ الشهري'}
                                 </label>
-                                <input type="number" value={commissionValue} onChange={e => setCommissionValue(Number(normalizeArabicNumerals(e.target.value)))} required />
+                                <NumberInput value={commissionValue} onChange={setCommissionValue} required />
                             </div>
                         </div>
                     </div>
