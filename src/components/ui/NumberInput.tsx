@@ -19,14 +19,19 @@ const NumberInput: React.FC<NumberInputProps> = ({
   const [display, setDisplay] = useState('');
 
   useEffect(() => {
+    // Sync parent value to display, but don't override user's active typing
     const numVal = value === undefined || value === '' || isNaN(Number(value)) ? '' : String(value);
-    if (numVal === '' || numVal === '0' && display === '') {
-      return;
+    // Only update display if it's empty or if the normalized number differs from display
+    if (numVal === '') {
+      setDisplay('');
+    } else if (!display) {
+      // Initialize empty display with the number value (show 0 as '0', not empty)
+      setDisplay(numVal);
+    } else if (Number(display) !== Number(numVal)) {
+      // Only sync if the actual numbers differ
+      setDisplay(numVal);
     }
-    if (!display || Number(display) !== Number(numVal)) {
-      setDisplay(numVal === '0' ? '' : numVal);
-    }
-  }, [value]);
+  }, [value, display]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const raw = e.target.value;
@@ -37,12 +42,14 @@ const NumberInput: React.FC<NumberInputProps> = ({
       ? new RegExp(`^${negativePart}[0-9]*(\\.[0-9]*)?$`)
       : new RegExp(`^${negativePart}[0-9]*$`);
 
+    // Allow empty and allow minus sign for negatives
     if (normalized === '' || normalized === '-') {
       setDisplay(raw);
       onChange(0);
       return;
     }
 
+    // Only accept if matches pattern
     if (!pattern.test(normalized)) return;
 
     setDisplay(raw);
@@ -53,10 +60,11 @@ const NumberInput: React.FC<NumberInputProps> = ({
   const handleBlur = () => {
     const normalized = normalizeLocalizedNumber(display);
     const parsed = parseFloat(normalized);
-    if (isNaN(parsed)) {
+    if (isNaN(parsed) || normalized === '' || normalized === '-') {
       setDisplay('');
       onChange(0);
     } else {
+      // Keep display as normalized number
       setDisplay(String(parsed));
     }
   };

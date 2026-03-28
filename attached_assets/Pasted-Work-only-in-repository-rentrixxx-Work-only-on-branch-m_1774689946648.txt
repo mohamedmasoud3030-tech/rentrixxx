@@ -1,0 +1,81 @@
+Work only in repository: rentrixxx
+Work only on branch: main
+Do not create any new branches.
+Do not change the deployment strategy.
+Treat https://rentrix-egy.vercel.app/ as the only official public URL.
+
+You must fully fix two production issues in the Rentrix app.
+
+Issue 1: Add Contract form - monthly rent field cannot be typed into correctly
+Observed behavior:
+- In the Add Contract modal/form, the "monthly rent" field appears stuck at 0 or does not accept normal typing.
+- This strongly suggests a controlled numeric input bug where the field is converted to Number too early during typing.
+
+Fix requirements for issue 1:
+1. Find the Add Contract form and the monthly rent field.
+2. If the field is controlled as a number during typing, change it so it is controlled as a string while typing.
+3. Use type="text" and inputMode="decimal" if needed instead of strict type="number".
+4. Support Arabic digits, Persian digits, and English digits during entry.
+5. Convert to number only during validation/save/submit.
+6. Make clearing, editing, and retyping work naturally.
+7. Apply the same fix to any similar monetary fields in the same form.
+
+Issue 2: Some pages such as /properties crash the app
+Observed behavior:
+- Navigating to pages like:
+  https://rentrix-egy-git-main-mohamedmasoud3030-techs-projects.vercel.app/properties
+  causes the app to crash.
+- You must identify the exact runtime cause and fix it fully.
+
+Fix requirements for issue 2:
+1. Audit the routes/components/pages for:
+   - properties
+   - contracts
+   - dashboard financial cards
+   - any shared list/table components used by those pages
+2. Inspect all data loading and rendering paths for unsafe assumptions such as:
+   - mapping over undefined
+   - accessing missing nested fields
+   - passing invalid values to formatters
+   - broken parsing of localized numbers
+   - runtime errors caused by alias/deployment URL differences
+3. Add defensive guards for null/undefined/invalid records where appropriate.
+4. Fix any broken formatter usage so pages do not crash when values are empty, malformed, or localized.
+5. Ensure pages render safely even with incomplete or migrated data.
+
+Global implementation requirements:
+1. Audit all relevant files first.
+2. Identify root causes precisely for both issues.
+3. Implement the fixes fully in code.
+4. Do not leave TODOs, placeholders, or stubs.
+5. Do not use fragile host-based hacks.
+6. Keep Arabic RTL UX intact.
+7. Keep business logic intact.
+8. Prefer one trusted numeric/money normalization and formatting pipeline.
+9. Support:
+   - Arabic digits
+   - Persian digits
+   - English digits
+   - null
+   - undefined
+   - empty string
+   - NaN
+   - zero
+   - negative values
+10. If persisted state or origin-specific storage is contributing, implement a targeted safe reset/migration only for the affected keys.
+11. Verify the fix on:
+   - Add Contract form
+   - /properties
+   - dashboard cards
+   - financial summary widgets
+   - any tables that show money values
+
+Return exactly:
+1. Root cause summary
+2. Files changed
+3. What changed in each file
+4. Why the fix works
+5. Any storage migration/reset added
+6. Verification checklist
+
+Treat this as a production fix and implement it now on main.

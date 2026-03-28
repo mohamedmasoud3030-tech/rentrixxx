@@ -523,7 +523,7 @@ const UnitDetailView: React.FC<{ unit: Unit; property: Property; onBack: () => v
                 <div className="bg-background border border-border rounded-lg p-4">
                     <p className="text-xs text-text-muted mb-1">المستأجر الحالي</p>
                     <p className="font-bold text-sm">{tenant?.name || 'شاغرة'}</p>
-                    <p className="text-xs text-text-muted mt-1">{tenant ? activeContract?.rent && formatCurrency(activeContract.rent, currency) + '/شهر' : ''}</p>
+                    <p className="text-xs text-text-muted mt-1">{tenant && activeContract?.rent ? formatCurrency(activeContract.rent, currency) + '/شهر' : ''}</p>
                 </div>
                 <div className="bg-background border border-border rounded-lg p-4">
                     <p className="text-xs text-text-muted mb-1">إجمالي فواتير المرافق</p>
