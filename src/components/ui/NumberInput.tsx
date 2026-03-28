@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { toEnglishDigits } from '../../utils/helpers';
+import { normalizeLocalizedNumber } from '../../utils/helpers';
 
 interface NumberInputProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'onChange' | 'value' | 'type'> {
   value: number | string | undefined;
@@ -30,8 +30,7 @@ const NumberInput: React.FC<NumberInputProps> = ({
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const raw = e.target.value;
-    const english = toEnglishDigits(raw);
-    const normalized = english.replace(/,/g, '.');
+    const normalized = normalizeLocalizedNumber(raw);
 
     const negativePart = allowNegative ? '-?' : '';
     const pattern = allowDecimal
@@ -52,8 +51,7 @@ const NumberInput: React.FC<NumberInputProps> = ({
   };
 
   const handleBlur = () => {
-    const english = toEnglishDigits(display);
-    const normalized = english.replace(/,/g, '.');
+    const normalized = normalizeLocalizedNumber(display);
     const parsed = parseFloat(normalized);
     if (isNaN(parsed)) {
       setDisplay('');
