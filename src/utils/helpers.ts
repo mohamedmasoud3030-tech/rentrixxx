@@ -1,12 +1,12 @@
-
+﻿
 const ARABIC_INDIC_DIGITS: { [key: string]: string } = {
-  '0': '٠', '1': '١', '2': '٢', '3': '٣', '4': '٤',
-  '5': '٥', '6': '٦', '7': '٧', '8': '٨', '9': '٩'
+  '0': 'Ù ', '1': 'Ù¡', '2': 'Ù¢', '3': 'Ù£', '4': 'Ù¤',
+  '5': 'Ù¥', '6': 'Ù¦', '7': 'Ù§', '8': 'Ù¨', '9': 'Ù©'
 };
 
 const ENGLISH_DIGITS: { [key: string]: string } = {
-  '٠': '0', '١': '1', '٢': '2', '٣': '3', '٤': '4',
-  '٥': '5', '٦': '6', '٧': '7', '٨': '8', '٩': '9'
+  'Ù ': '0', 'Ù¡': '1', 'Ù¢': '2', 'Ù£': '3', 'Ù¤': '4',
+  'Ù¥': '5', 'Ù¦': '6', 'Ù§': '7', 'Ù¨': '8', 'Ù©': '9'
 };
 
 export function toArabicDigits(input: string | number): string {
@@ -14,13 +14,17 @@ export function toArabicDigits(input: string | number): string {
 }
 
 export function toEnglishDigits(input: string | number): string {
-  return String(input).replace(/[٠-٩]/g, (d) => ENGLISH_DIGITS[d]);
+  return String(input)
+    .replace(/[٠-٩]/g, (d) => String('٠١٢٣٤٥٦٧٨٩'.indexOf(d)))
+    .replace(/[۰-۹]/g, (d) => String('۰۱۲۳۴۵۶۷۸۹'.indexOf(d)))
+    .replace(/[٫]/g, '.')
+    .replace(/[٬،]/g, '');
 }
 
 export function formatCurrency(amount: number, currency: 'OMR' | 'SAR' | 'EGP' = 'OMR'): string {
   const n = Number(amount) || 0;
   const decimals = currency === 'EGP' ? 2 : 3;
-  const symbol = currency === 'OMR' ? 'ر.ع.' : currency === 'SAR' ? 'ر.س.' : 'ج.م.';
+  const symbol = currency === 'OMR' ? 'Ø±.Ø¹.' : currency === 'SAR' ? 'Ø±.Ø³.' : 'Ø¬.Ù….';
   
   const formattedNumber = n.toLocaleString('en-US', {
     minimumFractionDigits: decimals,
@@ -63,7 +67,7 @@ export function toGregorian(hijriDay: number, hijriMonth: number, hijriYear: num
 
 // Format date with calendar type option
 export function formatDateWithType(dateString: string, calendarType: 'gregorian' | 'hijri' = 'gregorian'): string {
-  if (!dateString) return '—';
+  if (!dateString) return 'â€”';
   try {
     const date = new Date(dateString);
     
@@ -90,7 +94,7 @@ export function formatDate(dateString: string): string {
 }
 
 export function formatDateTime(dateTimeString: string): string {
-    if (!dateTimeString) return '—';
+    if (!dateTimeString) return 'â€”';
     try {
         const date = new Date(dateTimeString);
         const formattedDate = formatDate(dateTimeString);
@@ -102,7 +106,7 @@ export function formatDateTime(dateTimeString: string): string {
 }
 
 export function formatDateTimeWithType(dateTimeString: string, calendarType: 'gregorian' | 'hijri' = 'gregorian'): string {
-    if (!dateTimeString) return '—';
+    if (!dateTimeString) return 'â€”';
     try {
         const date = new Date(dateTimeString);
         const formattedDate = formatDateWithType(dateTimeString, calendarType);
@@ -173,41 +177,41 @@ export function exportToCsv(filename: string, rows: Record<string, string | numb
 }
 
 export const INVOICE_STATUS_AR: Record<string, string> = {
-    PAID: 'مدفوعة', UNPAID: 'غير مدفوعة', PARTIALLY_PAID: 'مدفوعة جزئياً', OVERDUE: 'متأخرة'
+    PAID: 'Ù…Ø¯ÙÙˆØ¹Ø©', UNPAID: 'ØºÙŠØ± Ù…Ø¯ÙÙˆØ¹Ø©', PARTIALLY_PAID: 'Ù…Ø¯ÙÙˆØ¹Ø© Ø¬Ø²Ø¦ÙŠØ§Ù‹', OVERDUE: 'Ù…ØªØ£Ø®Ø±Ø©'
 };
 
 export const INVOICE_TYPE_AR: Record<string, string> = {
-    RENT: 'إيجار', MAINTENANCE: 'صيانة', UTILITY: 'خدمات', LATE_FEE: 'رسوم تأخير'
+    RENT: 'Ø¥ÙŠØ¬Ø§Ø±', MAINTENANCE: 'ØµÙŠØ§Ù†Ø©', UTILITY: 'Ø®Ø¯Ù…Ø§Øª', LATE_FEE: 'Ø±Ø³ÙˆÙ… ØªØ£Ø®ÙŠØ±'
 };
 
 export const CONTRACT_STATUS_AR: Record<string, string> = {
-    ACTIVE: 'نشط', ENDED: 'منتهي', SUSPENDED: 'معلق'
+    ACTIVE: 'Ù†Ø´Ø·', ENDED: 'Ù…Ù†ØªÙ‡ÙŠ', SUSPENDED: 'Ù…Ø¹Ù„Ù‚'
 };
 
 export const TENANT_STATUS_AR: Record<string, string> = {
-    ACTIVE: 'نشط', INACTIVE: 'غير نشط', BLACKLIST: 'قائمة سوداء'
+    ACTIVE: 'Ù†Ø´Ø·', INACTIVE: 'ØºÙŠØ± Ù†Ø´Ø·', BLACKLIST: 'Ù‚Ø§Ø¦Ù…Ø© Ø³ÙˆØ¯Ø§Ø¡'
 };
 
 export const USER_ROLE_AR: Record<string, string> = {
-    ADMIN: 'مدير', USER: 'مستخدم'
+    ADMIN: 'Ù…Ø¯ÙŠØ±', USER: 'Ù…Ø³ØªØ®Ø¯Ù…'
 };
 
 export const RECEIPT_STATUS_AR: Record<string, string> = {
-    POSTED: 'مرحّل', VOID: 'ملغى'
+    POSTED: 'Ù…Ø±Ø­Ù‘Ù„', VOID: 'Ù…Ù„ØºÙ‰'
 };
 
 export const UNIT_STATUS_AR: Record<string, string> = {
-    AVAILABLE: 'شاغرة', RENTED: 'مؤجرة', MAINTENANCE: 'صيانة', ON_HOLD: 'معلقة'
+    AVAILABLE: 'Ø´Ø§ØºØ±Ø©', RENTED: 'Ù…Ø¤Ø¬Ø±Ø©', MAINTENANCE: 'ØµÙŠØ§Ù†Ø©', ON_HOLD: 'Ù…Ø¹Ù„Ù‚Ø©'
 };
 
 export const CHANNEL_AR: Record<string, string> = {
-    CASH: 'نقدي', BANK: 'تحويل بنكي', POS: 'شبكة', CHECK: 'شيك', OTHER: 'أخرى'
+    CASH: 'Ù†Ù‚Ø¯ÙŠ', BANK: 'ØªØ­ÙˆÙŠÙ„ Ø¨Ù†ÙƒÙŠ', POS: 'Ø´Ø¨ÙƒØ©', CHECK: 'Ø´ÙŠÙƒ', OTHER: 'Ø£Ø®Ø±Ù‰'
 };
 
 export const EXPENSE_STATUS_AR: Record<string, string> = {
-    POSTED: 'مرحّل', VOID: 'ملغى'
+    POSTED: 'Ù…Ø±Ø­Ù‘Ù„', VOID: 'Ù…Ù„ØºÙ‰'
 };
 
 export function normalizeArabicNumerals(value: string): string {
-    return value.replace(/[٠-٩]/g, (d) => String('٠١٢٣٤٥٦٧٨٩'.indexOf(d)));
+    return value.replace(/[Ù -Ù©]/g, (d) => String('Ù Ù¡Ù¢Ù£Ù¤Ù¥Ù¦Ù§Ù¨Ù©'.indexOf(d)));
 }

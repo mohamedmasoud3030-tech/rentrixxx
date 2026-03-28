@@ -31,27 +31,30 @@ const NumberInput: React.FC<NumberInputProps> = ({
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const raw = e.target.value;
     const english = toEnglishDigits(raw);
+    const normalized = english.replace(/,/g, '.');
 
-    const decimalSep = allowDecimal ? '.' : '';
     const negativePart = allowNegative ? '-?' : '';
-    const pattern = new RegExp(`^${negativePart}[0-9]*${decimalSep}[0-9]*$`);
+    const pattern = allowDecimal
+      ? new RegExp(`^${negativePart}[0-9]*(\\.[0-9]*)?$`)
+      : new RegExp(`^${negativePart}[0-9]*$`);
 
-    if (english === '' || english === '-') {
+    if (normalized === '' || normalized === '-') {
       setDisplay(raw);
       onChange(0);
       return;
     }
 
-    if (!pattern.test(english)) return;
+    if (!pattern.test(normalized)) return;
 
     setDisplay(raw);
-    const parsed = parseFloat(english);
+    const parsed = parseFloat(normalized);
     onChange(isNaN(parsed) ? 0 : parsed);
   };
 
   const handleBlur = () => {
     const english = toEnglishDigits(display);
-    const parsed = parseFloat(english);
+    const normalized = english.replace(/,/g, '.');
+    const parsed = parseFloat(normalized);
     if (isNaN(parsed)) {
       setDisplay('');
       onChange(0);
