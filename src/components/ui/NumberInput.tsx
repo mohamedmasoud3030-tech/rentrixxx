@@ -19,19 +19,13 @@ const NumberInput: React.FC<NumberInputProps> = ({
   const [display, setDisplay] = useState('');
 
   useEffect(() => {
-    // Sync parent value to display, but don't override user's active typing
+    // Sync parent value to display only when value prop changes from outside
     const numVal = value === undefined || value === '' || isNaN(Number(value)) ? '' : String(value);
-    // Only update display if it's empty or if the normalized number differs from display
-    if (numVal === '') {
-      setDisplay('');
-    } else if (!display) {
-      // Initialize empty display with the number value (show 0 as '0', not empty)
-      setDisplay(numVal);
-    } else if (Number(display) !== Number(numVal)) {
-      // Only sync if the actual numbers differ
+    // Only update if display is empty (initial load or after blur reset)
+    if (!display) {
       setDisplay(numVal);
     }
-  }, [value, display]);
+  }, [value]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const raw = e.target.value;
