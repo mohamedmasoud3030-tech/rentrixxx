@@ -6,11 +6,11 @@ import { MaintenanceRecord, Expense, Invoice } from '../types';
 import Card from '../components/ui/Card';
 import Modal from '../components/ui/Modal';
 import ActionsMenu, { EditAction, DeleteAction } from '../components/shared/ActionsMenu';
-import { formatCurrency, formatDate, getStatusBadgeClass, normalizeArabicNumerals } from '../utils/helpers';
+import { formatCurrency, formatDate, getStatusBadgeClass, normalizeArabicNumerals, exportToCsv } from '../utils/helpers';
 import HardGateBanner from '../components/shared/HardGateBanner';
 import SearchFilterBar from '../components/shared/SearchFilterBar';
 import { toast } from 'react-hot-toast';
-import { Wrench, Clock, Loader2, CheckCircle, DollarSign } from 'lucide-react';
+import { Wrench, Clock, Loader2, CheckCircle, DollarSign, Download } from 'lucide-react';
 
 const Maintenance: React.FC = () => {
     // FIX: Use dataService for data manipulation
@@ -99,7 +99,22 @@ const Maintenance: React.FC = () => {
             <Card>
                 <div className="flex justify-between items-center mb-4">
                     <h2 className="text-xl font-bold">طلبات الصيانة</h2>
-                    <button onClick={() => handleOpenModal()} className="btn btn-primary">إضافة طلب صيانة</button>
+                    <div className="flex gap-2">
+                        <button onClick={() => {
+                            const data = filteredRecords.map(r => ({
+                                'رقم الطلب': r.no,
+                                'الوحدة': db.units.find(u => u.id === r.unitId)?.name || '—',
+                                'تاريخ الطلب': formatDate(r.requestDate),
+                                'الوصف': r.description || '—',
+                                'التكلفة': formatCurrency(r.cost || 0, db.settings.operational.currency),
+                                'الحالة': r.status === 'NEW' ? 'جديد' : r.status === 'IN_PROGRESS' ? 'قيد التنفيذ' : r.status === 'COMPLETED' ? 'مكتمل' : 'مغلق',
+                            }));
+                            exportToCsv('طلبات_صيانة_rentrix', data);
+                        }} className="btn btn-secondary flex items-center gap-2">
+                            <Download size={14} /> تصدير CSV
+                        </button>
+                        <button onClick={() => handleOpenModal()} className="btn btn-primary">إضافة طلب صيانة</button>
+                    </div>
                 </div>
                 <SearchFilterBar searchTerm={searchTerm} onSearchChange={setSearchTerm} placeholder="بحث برقم الطلب، الوصف، أو اسم الوحدة..." />
                 <div className="overflow-x-auto">

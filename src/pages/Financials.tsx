@@ -10,11 +10,12 @@ import NumberInput from '../components/ui/NumberInput';
 import HardGateBanner from '../components/shared/HardGateBanner';
 import AttachmentsManager from '../components/shared/AttachmentsManager';
 import SearchFilterBar from '../components/shared/SearchFilterBar';
-import { Receipt as ReceiptIcon, CreditCard, Landmark, PiggyBank, MessageCircle, Download } from 'lucide-react';
+import { Receipt as ReceiptIcon, CreditCard, Landmark, PiggyBank, MessageCircle, Download, FileText } from 'lucide-react';
 import PrintPreviewModal from '../components/shared/PrintPreviewModal';
 import { WhatsAppComposerModal } from '../components/shared/WhatsAppComposerModal';
 import { ReceiptPrint } from '../components/print/PrintTemplate';
 import { toast } from 'react-hot-toast';
+import { exportExpenseToPdf } from '../services/pdfService';
 
 const ExpensePrintable: React.FC<{ expense: Expense }> = ({ expense }) => {
     const { db } = useApp();
@@ -258,6 +259,7 @@ const ExpensesView: React.FC = () => {
                                     <ActionsMenu items={[
                                         EditAction(() => { setEditingExpense(e); setIsModalOpen(true); }),
                                         PrintAction(() => setPrintingExpense(e)),
+                                        { label: 'تصدير PDF', icon: <FileText size={16} />, onClick: () => exportExpenseToPdf(e, db) },
                                         // FIX: Use financeService for financial operations
                                         VoidAction(() => financeService.voidExpense(e.id))
                                     ]} />

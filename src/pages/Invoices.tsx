@@ -6,9 +6,10 @@ import Card from '../components/ui/Card';
 import Modal from '../components/ui/Modal';
 import { formatCurrency, formatDate, getStatusBadgeClass, exportToCsv, INVOICE_STATUS_AR, INVOICE_TYPE_AR } from '../utils/helpers';
 import NumberInput from '../components/ui/NumberInput';
-import { ReceiptText, RefreshCw, Download, CheckSquare, Square, CheckCircle, MessageCircle } from 'lucide-react';
+import { ReceiptText, RefreshCw, Download, CheckSquare, Square, CheckCircle, MessageCircle, FileText } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
+import { exportInvoiceToPdf } from '../services/pdfService';
 
 const Invoices: React.FC = () => {
     // FIX: Use financeService for financial operations
@@ -254,6 +255,7 @@ const Invoices: React.FC = () => {
                             <th scope="col" className="px-6 py-3 border border-border">المبلغ</th>
                             <th scope="col" className="px-6 py-3 border border-border">الرصيد</th>
                             <th scope="col" className="px-6 py-3 border border-border">الحالة</th>
+                            <th scope="col" className="px-6 py-3 border border-border">PDF</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -277,6 +279,15 @@ const Invoices: React.FC = () => {
                                     <span className={`px-2 py-1 text-xs rounded-full ${getStatusBadgeClass(inv.status)}`}>
                                         {getInvoiceStatusLabel(inv.status)}
                                     </span>
+                                </td>
+                                <td className="px-6 py-4 border border-border" onClick={(e) => e.stopPropagation()}>
+                                    <button 
+                                        onClick={() => exportInvoiceToPdf(inv, db)}
+                                        className="btn btn-xs btn-ghost flex items-center gap-1"
+                                        title="تصدير PDF"
+                                    >
+                                        <FileText size={14} />
+                                    </button>
                                 </td>
                             </tr>
                         ))}
