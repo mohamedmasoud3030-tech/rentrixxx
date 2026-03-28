@@ -241,40 +241,41 @@ export function exportToCsv(filename: string, rows: Record<string, string | numb
     URL.revokeObjectURL(url);
 }
 
+
 export const INVOICE_STATUS_AR: Record<string, string> = {
-    PAID: 'Ù…Ø¯ÙÙˆØ¹Ø©', UNPAID: 'ØºÙŠØ± Ù…Ø¯ÙÙˆØ¹Ø©', PARTIALLY_PAID: 'Ù…Ø¯ÙÙˆØ¹Ø© Ø¬Ø²Ø¦ÙŠØ§Ù‹', OVERDUE: 'Ù…ØªØ£Ø®Ø±Ø©'
+    PAID: 'مدفوعة', UNPAID: 'غير مدفوعة', PARTIALLY_PAID: 'مدفوعة جزئياً', OVERDUE: 'متأخرة'
 };
 
 export const INVOICE_TYPE_AR: Record<string, string> = {
-    RENT: 'Ø¥ÙŠØ¬Ø§Ø±', MAINTENANCE: 'ØµÙŠØ§Ù†Ø©', UTILITY: 'Ø®Ø¯Ù…Ø§Øª', LATE_FEE: 'Ø±Ø³ÙˆÙ… ØªØ£Ø®ÙŠØ±'
+    RENT: 'إيجار', MAINTENANCE: 'صيانة', UTILITY: 'خدمات', LATE_FEE: 'رسوم تأخير'
 };
 
 export const CONTRACT_STATUS_AR: Record<string, string> = {
-    ACTIVE: 'Ù†Ø´Ø·', ENDED: 'Ù…Ù†ØªÙ‡ÙŠ', SUSPENDED: 'Ù…Ø¹Ù„Ù‚'
+    ACTIVE: 'نشط', ENDED: 'منتهي', SUSPENDED: 'معلق'
 };
 
 export const TENANT_STATUS_AR: Record<string, string> = {
-    ACTIVE: 'Ù†Ø´Ø·', INACTIVE: 'ØºÙŠØ± Ù†Ø´Ø·', BLACKLIST: 'Ù‚Ø§Ø¦Ù…Ø© Ø³ÙˆØ¯Ø§Ø¡'
+    ACTIVE: 'نشط', INACTIVE: 'غير نشط', BLACKLIST: 'قائمة سوداء'
 };
 
 export const USER_ROLE_AR: Record<string, string> = {
-    ADMIN: 'Ù…Ø¯ÙŠØ±', USER: 'Ù…Ø³ØªØ®Ø¯Ù…'
+    ADMIN: 'مدير', USER: 'مستخدم'
 };
 
 export const RECEIPT_STATUS_AR: Record<string, string> = {
-    POSTED: 'Ù…Ø±Ø­Ù‘Ù„', VOID: 'Ù…Ù„ØºÙ‰'
+    POSTED: 'مرحل', VOID: 'ملغى'
 };
 
 export const UNIT_STATUS_AR: Record<string, string> = {
-    AVAILABLE: 'Ø´Ø§ØºØ±Ø©', RENTED: 'Ù…Ø¤Ø¬Ø±Ø©', MAINTENANCE: 'ØµÙŠØ§Ù†Ø©', ON_HOLD: 'Ù…Ø¹Ù„Ù‚Ø©'
+    AVAILABLE: 'شاغرة', RENTED: 'مؤجرة', MAINTENANCE: 'صيانة', ON_HOLD: 'معلقة'
 };
 
 export const CHANNEL_AR: Record<string, string> = {
-    CASH: 'Ù†Ù‚Ø¯ÙŠ', BANK: 'ØªØ­ÙˆÙŠÙ„ Ø¨Ù†ÙƒÙŠ', POS: 'Ø´Ø¨ÙƒØ©', CHECK: 'Ø´ÙŠÙƒ', OTHER: 'Ø£Ø®Ø±Ù‰'
+    CASH: 'نقدي', BANK: 'تحويل بنكي', POS: 'شبكة', CHECK: 'شيك', OTHER: 'أخرى'
 };
 
 export const EXPENSE_STATUS_AR: Record<string, string> = {
-    POSTED: 'Ù…Ø±Ø­Ù‘Ù„', VOID: 'Ù…Ù„ØºÙ‰'
+    POSTED: 'مرحل', VOID: 'ملغى'
 };
 
 export function normalizeArabicNumerals(value: string): string {
