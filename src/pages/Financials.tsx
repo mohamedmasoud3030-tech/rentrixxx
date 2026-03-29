@@ -8,7 +8,6 @@ import { formatCurrency, formatDateTime, formatDate, exportToCsv, RECEIPT_STATUS
 import NumberInput from '../components/ui/NumberInput';
 import HardGateBanner from '../components/shared/HardGateBanner';
 import AttachmentsManager from '../components/shared/AttachmentsManager';
-import SearchFilterBar from '../components/shared/SearchFilterBar';
 import { 
     Receipt as ReceiptIcon, CreditCard, Landmark, PiggyBank, 
     MessageCircle, Download, FileText, Plus, ArrowUpRight, 
