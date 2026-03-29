@@ -71,7 +71,12 @@ const GeneralSettings: React.FC = () => {
         const value = type === 'number' ? Number(normalizeArabicNumerals(rawValue)) : rawValue;
         if (name.includes('.')) {
             const [parent, child] = name.split('.');
-            setOperational(prev => ({ ...prev, [parent]: { ...(prev as any)[parent], [child]: value } }));
+            if (parent === 'lateFee') {
+                setOperational(prev => ({
+                    ...prev,
+                    lateFee: { ...prev.lateFee, [child]: value as never },
+                }));
+            }
         } else {
             setOperational(prev => ({ ...prev, [name]: value }));
         }

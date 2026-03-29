@@ -247,8 +247,8 @@ export const runDailyAutomation = async (
         if (taskConfig.snapshots) {
             result.snapshotsRebuilt = await autoRebuildSnapshots();
         }
-    } catch (e: any) {
-        result.error = e?.message || 'خطأ غير معروف';
+    } catch (e: unknown) {
+        result.error = e instanceof Error ? e.message : 'خطأ غير معروف';
     }
 
     localStorage.setItem(STORAGE_KEY_LAST_RUN, today);
@@ -284,8 +284,8 @@ export const runManualAutomation = async (
         if (taskConfig.snapshots) {
             result.snapshotsRebuilt = await autoRebuildSnapshots();
         }
-    } catch (e: any) {
-        result.error = e?.message || 'خطأ غير معروف';
+    } catch (e: unknown) {
+        result.error = e instanceof Error ? e.message : 'خطأ غير معروف';
     }
 
     localStorage.setItem(STORAGE_KEY_LAST_RUN, getTodayStr());

@@ -3,6 +3,7 @@ import { useApp } from '../../contexts/AppContext';
 import { toast } from 'react-hot-toast';
 import { Settings } from '../../types';
 import { AlertTriangle, CheckCircle2 } from 'lucide-react';
+import { confirmDialog } from '../shared/confirmDialog';
 
 type AccountMappings = Settings['accounting']['accountMappings'];
 
@@ -71,7 +72,12 @@ const FinancialSettings: React.FC = () => {
     const handleSave = async () => {
         if (isSaving) return;
         if (missingMappings.length > 0) {
-            const confirmed = window.confirm(`تحذير: يوجد ${missingMappings.length} ربط مفقود أو مكسور. هل تريد الحفظ على أي حال؟`);
+            const confirmed = await confirmDialog({
+                title: 'تأكيد الحفظ مع روابط ناقصة',
+                message: `تحذير: يوجد ${missingMappings.length} ربط مفقود أو مكسور. هل تريد الحفظ على أي حال؟`,
+                confirmLabel: 'حفظ على أي حال',
+                tone: 'danger',
+            });
             if (!confirmed) return;
         }
         setIsSaving(true);

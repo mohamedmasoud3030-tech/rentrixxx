@@ -67,7 +67,13 @@ interface Line {
     credit: number;
 }
 
-const ManualJournalVoucherForm: React.FC<{ isOpen: boolean, onClose: () => void, onSubmit: (data: any) => Promise<void> }> = ({ isOpen, onClose, onSubmit }) => {
+interface ManualVoucherPayload {
+    date: string;
+    notes: string;
+    lines: Line[];
+}
+
+const ManualJournalVoucherForm: React.FC<{ isOpen: boolean, onClose: () => void, onSubmit: (data: ManualVoucherPayload) => Promise<void> }> = ({ isOpen, onClose, onSubmit }) => {
     const { db } = useApp();
     const accounts = db.accounts || [];
     const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
@@ -81,12 +87,13 @@ const ManualJournalVoucherForm: React.FC<{ isOpen: boolean, onClose: () => void,
         const newLines = [...lines];
         if (field === 'debit' || field === 'credit') {
             const normalized = Math.max(0, Number(value) || 0);
-            (newLines[index] as any)[field] = normalized;
+            newLines[index][field] = normalized;
             if (normalized > 0) {
-                (newLines[index] as any)[field === 'debit' ? 'credit' : 'debit'] = 0;
+                const oppositeField: keyof Pick<Line, 'debit' | 'credit'> = field === 'debit' ? 'credit' : 'debit';
+                newLines[index][oppositeField] = 0;
             }
         } else {
-            (newLines[index] as any)[field] = value;
+            newLines[index][field] = String(value);
         }
         setLines(newLines);
     };

@@ -3,10 +3,10 @@ import { Database } from '../types';
 import { formatCurrency } from '../utils/helpers';
 
 // Helper function to safely get a number
-const n = (val: any) => typeof val === 'number' && isFinite(val) ? val : 0;
+const n = (val: unknown) => typeof val === 'number' && isFinite(val) ? val : 0;
 
 // Helper to calculate balance of an account and its children
-const getAccountBalance = (accountId: string, balances: Map<string, number>, accounts: Map<string, any>, childrenMap: Map<string, string[]>) => {
+const getAccountBalance = (accountId: string, balances: Map<string, number>, accounts: Map<string, Database['accounts'][number]>, childrenMap: Map<string, string[]>) => {
     let total = balances.get(accountId) || 0;
     const children = childrenMap.get(accountId);
     if (children) {

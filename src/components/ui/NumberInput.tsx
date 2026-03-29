@@ -73,7 +73,7 @@ const NumberInput: React.FC<NumberInputProps> = ({
       dir="ltr"
       style={{
         textAlign: 'right',
-        ...((rest as any).style || {}),
+        ...(rest.style || {}),
       }}
     />
   );

@@ -4,6 +4,7 @@ import { supabaseData } from '../services/supabaseDataService';
 import { IntegrationService } from '../services/integrationService';
 import { supabase } from '../services/supabase';
 import { toast } from 'react-hot-toast';
+import { confirmDialog } from '../components/shared/confirmDialog';
 
 const DEFAULT_GEMINI_API_KEY = (import.meta.env.VITE_GEMINI_API_KEY as string) || '';
 
@@ -273,24 +274,37 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   }, [audit]);
 
   const forcePasswordReset = useCallback(async (userId: string) => {
-    if (window.confirm('هل أنت متأكد من رغبتك في فرض إعادة تعيين كلمة المرور لهذا المستخدم؟')) {
-      await supabase.from('profiles').update({ must_change_password: true }).eq('id', userId);
-      await audit('FORCE_RESET_PASSWORD', 'users', userId);
-      if (currentUser?.id === userId) {
-        await supabase.auth.signOut();
-      }
-      toast.success('تم فرض إعادة تعيين كلمة المرور. سيتطلب تغيير كلمة المرور عند الدخول التالي.');
+    const confirmed = await confirmDialog({
+      title: 'تأكيد تصفير كلمة المرور',
+      message: 'هل أنت متأكد من رغبتك في فرض إعادة تعيين كلمة المرور لهذا المستخدم؟',
+      confirmLabel: 'تأكيد التصفير',
+      tone: 'danger',
+    });
+    if (!confirmed) return;
+
+    await supabase.from('profiles').update({ must_change_password: true }).eq('id', userId);
+    await audit('FORCE_RESET_PASSWORD', 'users', userId);
+    if (currentUser?.id === userId) {
+      await supabase.auth.signOut();
     }
+    toast.success('تم فرض إعادة تعيين كلمة المرور. سيتطلب تغيير كلمة المرور عند الدخول التالي.');
   }, [audit, currentUser]);
 
   const disableUser = useCallback(async (userId: string) => {
     if (currentUser?.id === userId) { toast.error('لا يمكنك تعطيل حسابك الخاص.'); return; }
-    if (window.confirm('هل أنت متأكد من تعطيل هذا المستخدم؟ سيتم حظر وصوله عند انتهاء الجلسة الحالية أو تحديثها.')) {
-      await supabase.from('profiles').update({ is_disabled: true }).eq('id', userId);
-      await audit('DISABLE_USER', 'users', userId);
-      await refreshData();
-      toast.success('تم تعطيل المستخدم. سيُحظر عند انتهاء جلسته أو تحديث التوكن.');
-    }
+
+    const confirmed = await confirmDialog({
+      title: 'تأكيد تعطيل المستخدم',
+      message: 'هل أنت متأكد من تعطيل هذا المستخدم؟ سيتم حظر وصوله عند انتهاء الجلسة الحالية أو تحديثها.',
+      confirmLabel: 'تعطيل المستخدم',
+      tone: 'danger',
+    });
+    if (!confirmed) return;
+
+    await supabase.from('profiles').update({ is_disabled: true }).eq('id', userId);
+    await audit('DISABLE_USER', 'users', userId);
+    await refreshData();
+    toast.success('تم تعطيل المستخدم. سيُحظر عند انتهاء جلسته أو تحديث التوكن.');
   }, [currentUser, audit, refreshData]);
 
   const enableUser = useCallback(async (userId: string) => {
@@ -650,25 +664,33 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       if (FINANCIAL_TABLES.includes(table as keyof Database)) setIsDataStale(true);
       await refreshData();
       toast.success('تم التحديث بنجاح!');
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'خطأ غير معروف';
       console.error('[AppContext] update error:', err);
-      toast.error(`خطأ أثناء التحديث: ${err?.message || 'خطأ غير معروف'}`);
+      toast.error(`خطأ أثناء التحديث: ${message}`);
     }
   }, [audit, refreshData]);
 
   const remove: AppContextType['dataService']['remove'] = useCallback(async (table, id) => {
-    if (window.confirm('هل أنت متأكد من الحذف؟ لا يمكن التراجع عن هذا الإجراء.')) {
-      try {
-        const ok = await supabaseData.remove(table as string, id);
-        if (!ok) throw new Error('Delete failed');
-        await audit('DELETE', String(table), id);
-        if (FINANCIAL_TABLES.includes(table as keyof Database)) setIsDataStale(true);
-        await refreshData();
-        toast.success('تم الحذف بنجاح');
-      } catch (error: unknown) {
-        console.error("Delete error:", error);
-        toast.error('حدث خطأ أثناء محاولة الحذف.');
-      }
+    const confirmed = await confirmDialog({
+      title: 'تأكيد الحذف',
+      message: 'هل أنت متأكد من الحذف؟ لا يمكن التراجع عن هذا الإجراء.',
+      confirmLabel: 'حذف نهائي',
+      tone: 'danger',
+    });
+    if (!confirmed) return;
+
+    try {
+      const ok = await supabaseData.remove(table as string, id);
+      if (!ok) throw new Error('Delete failed');
+      await audit('DELETE', String(table), id);
+      if (FINANCIAL_TABLES.includes(table as keyof Database)) setIsDataStale(true);
+      await refreshData();
+      toast.success('تم الحذف بنجاح');
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'حدث خطأ أثناء محاولة الحذف.';
+      console.error('Delete error:', error);
+      toast.error(message);
     }
   }, [audit, refreshData]);
 

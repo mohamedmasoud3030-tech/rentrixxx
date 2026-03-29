@@ -31,7 +31,10 @@ const Notifications: React.FC = () => {
 
     const overdueInvoices = db.invoices.filter(inv => inv.status === 'OVERDUE');
 
-    const allItems = [
+    const allItems: Array<
+        | { id: string; type: 'overdue'; inv: (typeof overdueInvoices)[number] }
+        | { id: string; type: 'expiring'; c: (typeof expiringContracts)[number] }
+    > = [
         ...overdueInvoices.map(inv => ({ id: `inv-${inv.id}`, type: 'overdue' as const, inv })),
         ...expiringContracts.map(c => ({ id: `ctr-${c.id}`, type: 'expiring' as const, c })),
     ];
@@ -43,8 +46,12 @@ const Notifications: React.FC = () => {
         if (filter === 'read') return item.id in readLog;
         return true;
     });
-    const filteredOverdueInvoices = filteredItems.filter(i => i.type === 'overdue').map(i => (i as any).inv);
-    const filteredExpiringContracts = filteredItems.filter(i => i.type === 'expiring').map(i => (i as any).c);
+    const filteredOverdueInvoices = filteredItems
+        .filter((i): i is Extract<(typeof allItems)[number], { type: 'overdue' }> => i.type === 'overdue')
+        .map(i => i.inv);
+    const filteredExpiringContracts = filteredItems
+        .filter((i): i is Extract<(typeof allItems)[number], { type: 'expiring' }> => i.type === 'expiring')
+        .map(i => i.c);
 
     const markAllRead = () => {
         const now = Date.now();

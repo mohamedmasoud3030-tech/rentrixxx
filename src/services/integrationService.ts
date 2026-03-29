@@ -22,7 +22,7 @@ export const IntegrationService = {
      * @param data البيانات المراد مزامنتها.
      * @param fileName اسم الملف.
      */
-    syncToCloud: async (data: any, fileName: string) => {
+    syncToCloud: async (data: unknown, fileName: string) => {
         console.log("جاري رفع النسخة الاحتياطية سحابياً...");
         // في التطبيق الفعلي، هنا يتم استدعاء API جوجل.
         // للتبسيط في هذه المرحلة، سنقوم بمحاكاة العملية.

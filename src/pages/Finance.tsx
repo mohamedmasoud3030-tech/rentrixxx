@@ -1,10 +1,10 @@
-import React from 'react';
-import { Routes, Route, NavLink, Navigate } from 'react-router-dom';
+import React, { useEffect, useMemo } from 'react';
+import { Routes, Route, NavLink, Navigate, useLocation } from 'react-router-dom';
 import Invoices from './Invoices';
 import Financials from './Financials';
 import Maintenance from './Maintenance';
 import Card from '../components/ui/Card';
-import { Wallet, ReceiptText, Wrench, Calculator, BookOpen, Landmark, TrendingUp } from 'lucide-react';
+import { Wallet, ReceiptText, Wrench, Calculator, BookOpen } from 'lucide-react';
 import GeneralLedger from './GeneralLedger';
 import Accounting from './Accounting';
 
@@ -25,7 +25,22 @@ const FinanceTab: React.FC<{ to: string, icon: React.ReactNode, label: string }>
     </NavLink>
 );
 
+const LAST_FINANCE_TAB_KEY = 'rentrix:last-finance-tab';
+
 const Finance: React.FC = () => {
+    const location = useLocation();
+
+    useEffect(() => {
+        if (location.pathname.startsWith('/finance/') && location.pathname !== '/finance') {
+            window.localStorage.setItem(LAST_FINANCE_TAB_KEY, location.pathname);
+        }
+    }, [location.pathname]);
+
+    const defaultFinancePath = useMemo(() => {
+        const savedPath = window.localStorage.getItem(LAST_FINANCE_TAB_KEY);
+        return savedPath && savedPath.startsWith('/finance/') ? savedPath : '/finance/invoices';
+    }, []);
+
     return (
         <div className="space-y-8 animate-in fade-in duration-500">
             {/* Page Header */}
@@ -61,7 +76,7 @@ const Finance: React.FC = () => {
                     <Route path="maintenance" element={<Maintenance />} />
                     <Route path="gl" element={<GeneralLedger />} />
                     <Route path="accounting" element={<Accounting />} />
-                    <Route index element={<Navigate to="/finance/invoices" replace />} />
+                    <Route index element={<Navigate to={defaultFinancePath} replace />} />
                 </Routes>
             </div>
         </div>

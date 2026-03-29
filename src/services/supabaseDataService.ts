@@ -140,7 +140,7 @@ export const supabaseData = {
     return true;
   },
 
-  async removeWhere(jsTable: string, column: string, value: any): Promise<boolean> {
+  async removeWhere(jsTable: string, column: string, value: unknown): Promise<boolean> {
     const sqlTable = resolveTable(jsTable);
     const snakeCol = camelToSnake(column);
     const { error } = await supabase.from(sqlTable).delete().eq(snakeCol, value);
@@ -148,7 +148,7 @@ export const supabaseData = {
     return true;
   },
 
-  async fetchWhere<T>(jsTable: string, column: string, value: any): Promise<T[]> {
+  async fetchWhere<T>(jsTable: string, column: string, value: unknown): Promise<T[]> {
     const sqlTable = resolveTable(jsTable);
     const snakeCol = jsTable && SPECIAL_FIELD_MAP[jsTable]?.[column]
       ? SPECIAL_FIELD_MAP[jsTable][column]
@@ -264,7 +264,7 @@ export const supabaseData = {
     ]);
 
     const { data: profileRows } = await supabase.from('profiles').select('*');
-    const users = (profileRows || []).map((p: any) => ({
+    const users = (profileRows || []).map((p: Record<string, unknown>) => ({
       id: p.id, username: p.username || '', email: '', hash: '', salt: '',
       role: p.role || 'USER', mustChange: p.must_change_password || false,
       createdAt: p.created_at || Date.now(),
@@ -311,7 +311,7 @@ export const supabaseData = {
     };
   },
 
-  async seedDefaults(defaultSettings: Settings, defaultAccounts: any[], defaultTemplates: any[], defaultSerials: Serials): Promise<void> {
+  async seedDefaults(defaultSettings: Settings, defaultAccounts: Record<string, unknown>[], defaultTemplates: Record<string, unknown>[], defaultSerials: Serials): Promise<void> {
     const existingSettings = await this.getSettings();
     if (!existingSettings) {
       await this.saveSettings(defaultSettings);
@@ -346,7 +346,7 @@ export const supabaseData = {
   },
 };
 
-function deepMerge(target: any, source: any): any {
+function deepMerge<T extends Record<string, unknown>, U extends Record<string, unknown>>(target: T, source: U): T & U {
   const output = { ...target };
   for (const key in source) {
     if (source[key] && typeof source[key] === 'object' && !Array.isArray(source[key])) {

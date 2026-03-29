@@ -111,7 +111,7 @@ const Invoices: React.FC = () => {
         if (selected.length === 0) { toast.error('لم يتم اختيار أي فاتورة.'); return; }
         let sent = 0;
         for (const inv of selected) {
-            const phone = (inv.tenant as any)?.phone;
+            const phone = inv.tenant?.phone;
             if (!phone) continue;
             const currency = settings.operational?.currency ?? 'OMR';
             const balance = formatCurrency(inv.amount - inv.paidAmount, currency);

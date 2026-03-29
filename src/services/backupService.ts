@@ -1,5 +1,5 @@
 
-export const exportToJson = (data: any, filename: string) => {
+export const exportToJson = (data: unknown, filename: string) => {
   const jsonString = JSON.stringify(data, null, 2);
   const blob = new Blob([jsonString], { type: 'application/json' });
   const href = URL.createObjectURL(blob);
@@ -12,7 +12,7 @@ export const exportToJson = (data: any, filename: string) => {
   URL.revokeObjectURL(href);
 };
 
-export const importFromJson = (file: File): Promise<any> => {
+export const importFromJson = (file: File): Promise<unknown> => {
   return new Promise((resolve, reject) => {
     const fileReader = new FileReader();
     fileReader.onload = event => {
@@ -33,7 +33,7 @@ export const importFromJson = (file: File): Promise<any> => {
   });
 };
 
-export const downloadSystemSnapshot = (db: any) => {
+export const downloadSystemSnapshot = (db: unknown) => {
     const date = new Date().toISOString().split('T')[0];
     const filename = `Rentrix_Backup_${date}.json`;
     const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(db));

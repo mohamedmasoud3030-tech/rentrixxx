@@ -11,6 +11,7 @@ import {
     TrendingDown, Calculator, Search, Download, CheckCircle, RefreshCw, AlertCircle
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
+import ConfirmActionModal from '../components/shared/ConfirmActionModal';
 
 type AccountingTab = 'chart' | 'voucher' | 'trial';
 
@@ -110,6 +111,7 @@ const ChartOfAccounts: React.FC = () => {
     const [editingAccount, setEditingAccount] = useState<Account | null>(null);
     const [searchTerm, setSearchTerm] = useState('');
     const [expandedTypes, setExpandedTypes] = useState<Set<string>>(new Set(['ASSET', 'LIABILITY', 'EQUITY', 'REVENUE', 'EXPENSE']));
+    const [accountToDelete, setAccountToDelete] = useState<Account | null>(null);
 
     const balanceMap = useMemo(() =>
         new Map(accountBalances.map(ab => [ab.accountId, ab.balance])),
@@ -141,9 +143,8 @@ const ChartOfAccounts: React.FC = () => {
     };
 
     const handleDelete = async (acc: Account) => {
-        if (window.confirm(`هل تريد حذف الحساب "${acc.name}"؟`)) {
-            await dataService.remove('accounts', acc.id);
-        }
+        await dataService.remove('accounts', acc.id);
+        setAccountToDelete(null);
     };
 
     return (
@@ -244,7 +245,7 @@ const ChartOfAccounts: React.FC = () => {
                                                                 <Edit2 size={16} />
                                                             </button>
                                                             <button
-                                                                onClick={() => handleDelete(acc)}
+                                                                onClick={() => setAccountToDelete(acc)}
                                                                 className="p-2 text-text-muted hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-all"
                                                                 title="حذف"
                                                             >
@@ -270,6 +271,14 @@ const ChartOfAccounts: React.FC = () => {
                     accounts={accounts}
                 />
             )}
+            <ConfirmActionModal
+                isOpen={!!accountToDelete}
+                onClose={() => setAccountToDelete(null)}
+                onConfirm={() => accountToDelete && handleDelete(accountToDelete)}
+                title="تأكيد حذف الحساب"
+                message={accountToDelete ? `هل تريد حذف الحساب "${accountToDelete.name}"؟` : ''}
+                confirmLabel="حذف الحساب"
+            />
         </div>
     );
 };
@@ -295,7 +304,7 @@ const AccountForm: React.FC<{ isOpen: boolean; onClose: () => void; account: Acc
         if (account) {
             await dataService.update('accounts', account.id, data);
         } else {
-            await dataService.add('accounts', data as any);
+            await dataService.add('accounts', data as Omit<Account, 'id' | 'createdAt'>);
         }
         onClose();
     };

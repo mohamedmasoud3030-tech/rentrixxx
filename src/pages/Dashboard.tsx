@@ -210,7 +210,7 @@ const Dashboard: React.FC = () => {
                 <KpiMini label="الوحدات" value={stats.totalUnits} icon={<Home size={18} />} color="indigo" />
                 <KpiMini label="الشاغرة" value={stats.vacantUnits} icon={<Home size={18} />} color={stats.vacantUnits > 0 ? "amber" : "green"} />
                 <KpiMini label="العقود النشطة" value={stats.activeContracts} icon={<FileText size={18} />} color="green" onClick={() => navigate('/contracts')} />
-                <KpiMini label="المستأجرون" value={stats.activeTenants} icon={<Users size={18} />} color="violet" onClick={() => navigate('/people')} />
+                <KpiMini label="المستأجرون" value={stats.activeTenants} icon={<Users size={18} />} color="violet" onClick={() => navigate('/tenants')} />
                 <KpiMini label="الإشغال" value={`${stats.occupancyRate.toFixed(0)}%`} icon={<Percent size={18} />} color={stats.occupancyRate >= 80 ? "green" : stats.occupancyRate >= 50 ? "amber" : "red"} />
             </div>
 
@@ -396,7 +396,7 @@ const Dashboard: React.FC = () => {
                             </tr>
                         </thead>
                         <tbody>
-                            {latestReceiptsData.map((r: any) => (
+                            {latestReceiptsData.map((r) => (
                                 <tr key={r.id} className="border-b border-border last:border-0 hover:bg-background/50 cursor-pointer" onClick={() => navigate(`/finance/receipts`)}>
                                     <td className="py-2.5 font-mono">{r.no}</td>
                                     <td className="py-2.5">{r.tenantName}</td>
@@ -511,7 +511,7 @@ const DashboardRevenueChart: React.FC<{ receipts: ReceiptType[]; expenses: Expen
                         <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
                         <XAxis dataKey="name" fontSize={12} />
                         <YAxis fontSize={11} tickFormatter={(v) => v > 0 ? `${(v / 1000).toFixed(0)}k` : '0'} />
-                        <Tooltip formatter={(value: number) => formatCurrency(value, currency as any)} />
+                        <Tooltip formatter={(value: number) => formatCurrency(value, currency)} />
                         <Area type="monotone" dataKey="revenue" name="الإيرادات" stroke="#10b981" fill="url(#dashRevGrad)" strokeWidth={2} />
                         <Area type="monotone" dataKey="expenses" name="المصروفات" stroke="#ef4444" fill="url(#dashExpGrad)" strokeWidth={2} />
                     </AreaChart>
