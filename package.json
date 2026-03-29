@@ -1,13 +1,11 @@
 {
-  "name": "rentrix-desktop",
+  "name": "rentrix-web",
   "version": "1.0.0",
   "description": "نظام ادارة مؤسسات شامل لإدارة العقارات",
-  "main": "electron/main.js",
   "scripts": {
-    "start": "electron .",
     "dev": "vite",
     "build": "vite build",
-    "dist": "npm run build && electron-builder"
+    "dist": "npm run build"
   },
   "author": "Mohamed Masoud",
   "license": "UNLICENSED",
@@ -16,8 +14,6 @@
     "@replit/connectors-sdk": "^0.3.0",
     "@supabase/supabase-js": "^2.100.0",
     "date-fns": "^4.1.0",
-    "dexie": "^4.3.0",
-    "dexie-react-hooks": "^4.2.0",
     "jspdf": "^4.1.0",
     "jspdf-autotable": "^5.0.7",
     "lucide-react": "^0.563.0",
@@ -32,29 +28,8 @@
     "@types/react-dom": "^18.3.0",
     "@vitejs/plugin-react": "^4.3.1",
     "autoprefixer": "^10.4.19",
-    "electron": "^28.2.0",
-    "electron-builder": "^24.9.1",
     "postcss": "^8.4.39",
     "tailwindcss": "^3.4.6",
     "vite": "^5.3.4"
-  },
-  "build": {
-    "appId": "com.rentrix.app",
-    "productName": "Rentrix",
-    "files": [
-      "dist/",
-      "electron/"
-    ],
-    "directories": {
-      "output": "release"
-    },
-    "win": {
-      "target": "nsis",
-      "icon": "assets/icon.ico"
-    },
-    "nsis": {
-      "oneClick": false,
-      "allowToChangeInstallationDirectory": true
-    }
   }
 }
