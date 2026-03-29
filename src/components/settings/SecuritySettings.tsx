@@ -1,6 +1,5 @@
 import React from 'react';
 import AuditLog from '../../pages/AuditLog';
-import DataIntegrityAudit from '../../pages/DataIntegrityAudit';
 
 const SecuritySettings: React.FC = () => {
     return (
@@ -11,10 +10,7 @@ const SecuritySettings: React.FC = () => {
                     مراقبة شاملة لجميع الأنشطة وفحص سلامة البيانات لضمان استقرار النظام وأمانه.
                 </p>
             </div>
-            
-            <div className="border-t border-border pt-6">
-                 <DataIntegrityAudit />
-            </div>
+
             <div className="border-t border-border pt-6">
                 <AuditLog />
             </div>

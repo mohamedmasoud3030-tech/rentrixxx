@@ -20,6 +20,8 @@ interface SidebarProps {
   setSidebarOpen: (open: boolean) => void;
 }
 
+const getPreferredFinancePath = () => window.localStorage.getItem('rentrix:last-finance-tab') || '/finance/invoices';
+
 const navGroups: { title: string; links: NavLinkItem[] }[] = [
   {
     title: 'الرئيسية',
@@ -40,7 +42,7 @@ const navGroups: { title: string; links: NavLinkItem[] }[] = [
   {
     title: 'المركز المالي',
     links: [
-      { path: '/finance', label: 'الحسابات والمالية', icon: Banknote, badgeKey: 'overdueInvoices' },
+      { path: getPreferredFinancePath(), label: 'الحسابات والمالية', icon: Banknote, badgeKey: 'overdueInvoices' },
     ],
   },
   {
