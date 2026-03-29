@@ -170,25 +170,12 @@ const UnitsView: React.FC<{ property: Property, onBack: () => void }> = ({ prope
 
     const floors = useMemo(() => [...new Set(units.map(u => u.floor || 'بدون دور'))], [units]);
     const hasFloors = useMemo(() => units.some(u => u.floor), [units]);
-    const stats = useMemo(() => ({
-        rented: units.filter(u => u.status === 'RENTED').length,
-        available: units.filter(u => u.status === 'AVAILABLE').length,
-        onHold: units.filter(u => u.status === 'ON_HOLD').length,
-    }), [units]);
-
-<<<<<<< HEAD
-    const floors = useMemo(() => [...new Set(units.map(u => u.floor || 'بدون دور'))], [units]);
-    const hasFloors = useMemo(() => units.some(u => u.floor), [units]);
 
     const stats = useMemo(() => ({
         rented: units.filter(u => u.status === 'RENTED').length,
         available: units.filter(u => u.status === 'AVAILABLE').length,
         onHold: units.filter(u => u.status === 'ON_HOLD').length,
     }), [units]);
-
-    // Early return AFTER all hooks have been called
-=======
->>>>>>> e45aa20c70971e52a53c2ecff2f6f4408c3f718b
     if (selectedUnit) {
         return (
             <ErrorBoundary key={selectedUnit.id}>

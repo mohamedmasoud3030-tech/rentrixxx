@@ -106,7 +106,7 @@ input, select, textarea {
     padding: 0.65rem 0.9rem;
     color: hsl(var(--color-text-primary));
     transition: all 0.2s ease-in-out;
-    font-family: 'Cairo', sans-serif;
+    font-family: 'Cairo', 'Noto Sans Arabic', 'Tajawal', sans-serif;
     font-size: 0.92rem;
     line-height: 1.35rem;
 }

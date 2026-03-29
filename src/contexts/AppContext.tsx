@@ -59,6 +59,13 @@ const DEFAULT_SERIALS: Serials = { receipt: 1000, expense: 1000, maintenance: 10
 
 const FINANCIAL_TABLES: (keyof Database)[] = ['receipts', 'expenses', 'invoices', 'ownerSettlements', 'maintenanceRecords', 'depositTxs', 'journalEntries', 'receiptAllocations'];
 const STRICT_FINANCIAL_WRITE_TABLES: (keyof Database)[] = ['receipts', 'expenses', 'invoices', 'ownerSettlements', 'depositTxs', 'journalEntries', 'receiptAllocations'];
+const TABLES_WITHOUT_UPDATED_AT = new Set<keyof Database>([
+  'outgoingNotifications',
+  'appNotifications',
+  'notificationTemplates',
+  'snapshots',
+  'auditLog',
+]);
 const ROUND_SCALE = 3;
 
 const initialPerformanceMetrics: PerformanceMetrics = {
@@ -634,7 +641,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         toast.error('تعديل الحركات المالية المباشرة غير مسموح بعد الترحيل. استخدم الإلغاء/التسوية.');
         return;
       }
-      const result = await supabaseData.update(table as string, id, { ...updates, updatedAt: Date.now() });
+      const normalizedUpdates = TABLES_WITHOUT_UPDATED_AT.has(table as keyof Database)
+        ? { ...updates }
+        : { ...updates, updatedAt: Date.now() };
+      const result = await supabaseData.update(table as string, id, normalizedUpdates);
       if (!result.ok) { toast.error(`فشل التحديث: ${result.error}`); return; }
       await audit('UPDATE', String(table), id);
       if (FINANCIAL_TABLES.includes(table as keyof Database)) setIsDataStale(true);
