@@ -61,8 +61,9 @@ const AutomationSettings: React.FC = () => {
             } else {
                 toast.success('اكتمل التشغيل. لم تكن هناك مهام جديدة.');
             }
-        } catch (e: any) {
-            toast.error(e.message || 'حدث خطأ.');
+        } catch (e: unknown) {
+            const message = e instanceof Error ? e.message : 'حدث خطأ.';
+            toast.error(message);
         } finally {
             setLoading(false);
         }

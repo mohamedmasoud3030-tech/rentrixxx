@@ -173,7 +173,7 @@ const LeadForm: React.FC<{ isOpen: boolean, onClose: () => void, lead: Lead | nu
             if (lead) {
                 await dataService.update('leads', lead.id, data);
             } else {
-                await dataService.add('leads', data as any);
+                await dataService.add('leads', data);
             }
             onClose();
         } finally {

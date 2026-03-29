@@ -201,9 +201,10 @@ const Contracts: React.FC = () => {
 
             await dataService.update('contracts', contract.id, { status: 'ENDED' as const });
             toast.success('تم تجديد العقد بنجاح! العقد القديم أصبح منتهياً والعقد الجديد نشط.');
-        } catch (err: any) {
+        } catch (err: unknown) {
             console.error('Contract renewal failed:', err);
-            toast.error('حدث خطأ أثناء تجديد العقد: ' + (err?.message || 'خطأ غير معروف'));
+            const message = err instanceof Error ? err.message : 'خطأ غير معروف';
+            toast.error('حدث خطأ أثناء تجديد العقد: ' + message);
         }
     };
 

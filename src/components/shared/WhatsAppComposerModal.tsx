@@ -11,7 +11,10 @@ import { toast } from 'react-hot-toast';
 interface ComposerContext {
     recipient: { name: string, phone: string };
     type: 'tenant' | 'owner' | 'receipt';
-    data: any;
+    data: {
+        tenant?: Tenant;
+        receipt?: Receipt;
+    };
 }
 
 interface WhatsAppComposerModalProps {
@@ -61,13 +64,15 @@ export const WhatsAppComposerModal: React.FC<WhatsAppComposerModalProps> = ({ is
         let generatedMessage = '';
         switch (templateKey) {
             case 'welcome':
-                const tenant = context.data.tenant as Tenant;
+                if (!context.data.tenant) break;
+                const tenant = context.data.tenant;
                 const contract = db.contracts.find(c => c.tenantId === tenant.id && c.status === 'ACTIVE');
                 const unit = contract ? db.units.find(u => u.id === contract.unitId) : null;
                 generatedMessage = templates.welcome(context.recipient.name, unit?.name || 'وحدتكم');
                 break;
             case 'latePayment':
-                const tenantForLate = context.data.tenant as Tenant;
+                if (!context.data.tenant) break;
+                const tenantForLate = context.data.tenant;
                 const contractForLate = db.contracts.find(c => c.tenantId === tenantForLate.id && c.status === 'ACTIVE');
                 const balance = contractForLate ? contractBalances[contractForLate.id]?.balance || 0 : 0;
                 if (balance > 0) {
@@ -77,7 +82,8 @@ export const WhatsAppComposerModal: React.FC<WhatsAppComposerModalProps> = ({ is
                 }
                 break;
             case 'receipt':
-                const receipt = context.data.receipt as Receipt;
+                if (!context.data.receipt) break;
+                const receipt = context.data.receipt;
                 generatedMessage = templates.receipt(receipt.no, receipt.amount);
                 break;
         }

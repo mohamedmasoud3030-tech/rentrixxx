@@ -304,7 +304,7 @@ const AccountForm: React.FC<{ isOpen: boolean; onClose: () => void; account: Acc
         if (account) {
             await dataService.update('accounts', account.id, data);
         } else {
-            await dataService.add('accounts', data as any);
+            await dataService.add('accounts', data as Omit<Account, 'id' | 'createdAt'>);
         }
         onClose();
     };

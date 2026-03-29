@@ -1,6 +1,7 @@
 import React, { useRef } from 'react';
 import { useApp } from '../../contexts/AppContext';
 import { exportToJson, importFromJson } from '../../services/backupService';
+import { confirmDialog } from '../shared/confirmDialog';
 import { toast } from 'react-hot-toast';
 import { Database, Download } from 'lucide-react';
 
@@ -27,16 +28,22 @@ const BackupSettings: React.FC = () => {
         const file = event.target.files?.[0];
         if (!file) return;
 
-        if (window.confirm("تحذير! سيؤدي استعادة نسخة احتياطية إلى استبدال جميع البيانات الحالية. هل أنت متأكد من المتابعة؟")) {
-            try {
-                const data = await importFromJson(file);
-                const dataString = JSON.stringify(data);
-                await restoreBackup(dataString);
-                // The app will reload automatically after restore
-            } catch (error) {
-                toast.error("فشل استعادة النسخة الاحتياطية. تأكد من أن الملف صحيح.");
-                console.error(error);
-            }
+        const confirmed = await confirmDialog({
+            title: 'تأكيد استعادة النسخة الاحتياطية',
+            message: 'تحذير! سيؤدي استعادة نسخة احتياطية إلى استبدال جميع البيانات الحالية. هل أنت متأكد من المتابعة؟',
+            confirmLabel: 'استعادة الآن',
+            tone: 'danger',
+        });
+        if (!confirmed) return;
+
+        try {
+            const data = await importFromJson(file);
+            const dataString = JSON.stringify(data);
+            await restoreBackup(dataString);
+            // The app will reload automatically after restore
+        } catch (error) {
+            toast.error("فشل استعادة النسخة الاحتياطية. تأكد من أن الملف صحيح.");
+            console.error(error);
         }
         // Reset file input
         if(event.target) event.target.value = '';

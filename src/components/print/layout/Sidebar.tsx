@@ -4,13 +4,14 @@ import {
     LayoutGrid, Building2, Users, UserCheck, FileText, Banknote,
     BarChart2, Settings, UserPlus, MessageSquare, Map as MapIcon, DollarSign, Bot, ScrollText, Wrench, X, LogOut
 } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 import { useApp } from '../../../contexts/AppContext';
 import { getLastRunDate } from '../../../services/automationService';
 
 interface NavLinkItem {
   path: string;
   label: string;
-  icon: React.FC<any>;
+  icon: LucideIcon;
   adminOnly?: boolean;
   badgeKey?: string;
 }

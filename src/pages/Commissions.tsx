@@ -28,8 +28,14 @@ const Commissions: React.FC = () => {
         try {
             await financeService.payoutCommission(commission.id);
             toast.success("تم صرف العمولة وتسجيل القيد بنجاح.");
+ main
         } catch (e: any) {
             toast.error(e.message);
+
+        } catch (e: unknown) {
+            const message = e instanceof Error ? e.message : 'تعذر صرف العمولة حالياً.';
+            toast.error(message);
+          codex/fix-react-typescript-version-conflict
         } finally {
             setPayoutLoading(null);
             setCommissionToPayout(null);

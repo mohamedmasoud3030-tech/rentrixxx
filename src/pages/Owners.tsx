@@ -166,9 +166,10 @@ const OwnerForm: React.FC<{ isOpen: boolean, onClose: () => void, owner: Owner |
                 }
             }
             onClose();
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error('OwnerForm error:', error);
-            toast.error(`خطأ: ${error?.message || 'فشل الحفظ'}`);
+            const message = error instanceof Error ? error.message : 'فشل الحفظ';
+            toast.error(`خطأ: ${message}`);
         } finally {
             isSavingRef.current = false;
             setIsSaving(false);

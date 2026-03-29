@@ -6,6 +6,7 @@ import {
     Palette, Zap, Bot, SearchCheck, Calculator, FileText,
     ChevronDown, ChevronUp, AlertTriangle, Lock
 } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 import GeneralSettings from '../components/settings/GeneralSettings';
 import AppearanceSettings from '../components/settings/AppearanceSettings';
 import UsersSettings from '../components/settings/UsersSettings';
@@ -22,7 +23,7 @@ import { useApp } from '../contexts/AppContext';
 interface SettingsSection {
     id: string;
     label: string;
-    icon: React.FC<any>;
+    icon: LucideIcon;
     path: string;
     sensitive?: boolean;
 }

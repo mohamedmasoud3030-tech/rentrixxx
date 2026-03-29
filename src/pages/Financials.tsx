@@ -591,7 +591,7 @@ const ReceiptForm: React.FC<{ isOpen: boolean, onClose: () => void, receipt: Rec
         isSavingRef.current = true;
         setIsSaving(true);
         try {
-            const data: any = { contractId, dateTime, channel, amount, ref, notes, status: 'POSTED' as const };
+            const data: Omit<Receipt, 'id' | 'no' | 'createdAt' | 'updatedAt' | 'voidedAt'> = { contractId, dateTime, channel, amount, ref, notes, status: 'POSTED' };
             if (channel === 'CHECK') { data.checkNumber = checkNumber; data.checkBank = checkBank; data.checkDate = checkDate; data.checkStatus = checkStatus; }
             await financeService.addReceiptWithAllocations(data, normalizedAllocations);
             onClose();
@@ -618,7 +618,7 @@ const ReceiptForm: React.FC<{ isOpen: boolean, onClose: () => void, receipt: Rec
                     </div>
                     <div className="space-y-1.5">
                         <label className="text-xs font-black text-text-muted">طريقة الدفع</label>
-                        <select value={channel} onChange={e=>setChannel(e.target.value as any)} disabled={isSaving}>
+                        <select value={channel} onChange={e=>setChannel(e.target.value as Receipt['channel'])} disabled={isSaving}>
                             <option value="CASH">نقدي</option><option value="BANK">تحويل بنكي</option><option value="POS">شبكة</option><option value="CHECK">شيك</option><option value="OTHER">أخرى</option>
                         </select>
                     </div>
@@ -640,7 +640,7 @@ const ReceiptForm: React.FC<{ isOpen: boolean, onClose: () => void, receipt: Rec
                                     className="w-24 text-left font-mono font-bold"
                                     value={allocations[invoice.id] || ''}
                                     onChange={(value) => {
-                                        const nextValue = Math.min(Math.max(0, Number(value) || 0), (invoice as any).remaining);
+                                        const nextValue = Math.min(Math.max(0, Number(value) || 0), invoice.remaining);
                                         setAllocations(prev => ({ ...prev, [invoice.id]: Number(nextValue.toFixed(3)) }));
                                     }}
                                     disabled={isSaving}
@@ -661,7 +661,7 @@ const ReceiptForm: React.FC<{ isOpen: boolean, onClose: () => void, receipt: Rec
                         <div className="space-y-1"><label className="text-[10px] font-black text-amber-700">رقم الشيك</label><input value={checkNumber} onChange={e=>setCheckNumber(e.target.value)} required disabled={isSaving} className="bg-white" /></div>
                         <div className="space-y-1"><label className="text-[10px] font-black text-amber-700">البنك</label><input value={checkBank} onChange={e=>setCheckBank(e.target.value)} disabled={isSaving} className="bg-white" /></div>
                         <div className="space-y-1"><label className="text-[10px] font-black text-amber-700">تاريخ الاستحقاق</label><input type="date" value={checkDate} onChange={e=>setCheckDate(e.target.value)} disabled={isSaving} className="bg-white" /></div>
-                        <div className="space-y-1"><label className="text-[10px] font-black text-amber-700">الحالة</label><select value={checkStatus} onChange={e=>setCheckStatus(e.target.value as any)} disabled={isSaving} className="bg-white"><option value="PENDING">معلق</option><option value="DEPOSITED">مودع</option><option value="CLEARED">محصّل</option><option value="BOUNCED">مرتجع</option></select></div>
+                        <div className="space-y-1"><label className="text-[10px] font-black text-amber-700">الحالة</label><select value={checkStatus} onChange={e=>setCheckStatus(e.target.value as NonNullable<Receipt['checkStatus']>)} disabled={isSaving} className="bg-white"><option value="PENDING">معلق</option><option value="DEPOSITED">مودع</option><option value="CLEARED">محصّل</option><option value="BOUNCED">مرتجع</option></select></div>
                     </div>
                 )}
 
@@ -724,7 +724,7 @@ const ExpenseForm: React.FC<{ isOpen: boolean, onClose: () => void, expense: Exp
                     </div>
                     <div className="space-y-1.5">
                         <label className="text-xs font-black text-text-muted">جهة التحميل</label>
-                        <select value={chargedTo} onChange={e=>setChargedTo(e.target.value as any)} disabled={isSaving}>
+                        <select value={chargedTo} onChange={e=>setChargedTo(e.target.value as Expense['chargedTo'])} disabled={isSaving}>
                             <option value="OWNER">على المالك</option><option value="OFFICE">على المكتب</option><option value="TENANT">على المستأجر</option>
                         </select>
                     </div>
@@ -780,7 +780,7 @@ const DepositTxForm: React.FC<{ isOpen: boolean, onClose: () => void }> = ({ isO
                 </div>
                 <div className="space-y-1.5">
                     <label className="text-xs font-black text-text-muted">نوع الحركة</label>
-                    <select value={type} onChange={e=>setType(e.target.value as any)} disabled={isSaving}>
+                    <select value={type} onChange={e=>setType(e.target.value as DepositTx['type'])} disabled={isSaving}>
                         <option value="DEPOSIT_IN">إيداع تأمين جديد</option>
                         <option value="DEPOSIT_RETURN">إرجاع التأمين للمستأجر</option>
                         <option value="DEPOSIT_DEDUCT">خصم من التأمين للإصلاحات</option>

@@ -1,8 +1,24 @@
 import React from 'react';
 import { DocumentHeaderInline } from '../shared/DocumentHeader';
+import { CompanyInfo, Settings } from '../../types';
 
-export const ReceiptPrint = ({ data, settings }: any) => {
-  const company = settings.general?.company || settings.company || {};
+interface ReceiptPrintData {
+  no: string;
+  date: string;
+  tenantName: string;
+  amount: string;
+  description?: string;
+}
+
+interface ReceiptPrintProps {
+  data: ReceiptPrintData;
+  settings: Settings & { company?: CompanyInfo };
+}
+
+const FALLBACK_COMPANY: CompanyInfo = { name: 'Rentrix', address: '', phone: '' };
+
+export const ReceiptPrint: React.FC<ReceiptPrintProps> = ({ data, settings }) => {
+  const company = settings.general?.company || settings.company || FALLBACK_COMPANY;
   const logo = settings.appearance?.logoDataUrl;
   const stamp = settings.appearance?.stampDataUrl;
 
