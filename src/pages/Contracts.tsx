@@ -139,21 +139,16 @@ const Contracts: React.FC = () => {
     };
 
     const handleDelete = async (id: string) => {
-<<<<<<< HEAD
-        const hasReceipts = db.receipts.some(r => r.contractId === id);
-        const hasExpenses = db.expenses.some(e => e.contractId === id);
+        const hasReceipts = receipts.some(r => r.contractId === id);
+        const hasExpenses = expenses.some(e => e.contractId === id);
         const hasInvoices = db.invoices.some(i => i.contractId === id);
-        
+
         if (hasReceipts || hasExpenses || hasInvoices) {
-            const items = [];
+            const items: string[] = [];
             if (hasReceipts) items.push('سندات قبض');
             if (hasExpenses) items.push('مصروفات');
             if (hasInvoices) items.push('فواتير');
             toast.error(`لا يمكن حذف العقد لأنه يحتوي على ${items.join(' و ')} مرتبطة به.`);
-=======
-        if (receipts.some(r => r.contractId === id) || expenses.some(e => e.contractId === id)) {
-            toast.error("لا يمكن حذف العقد لوجود حركات مالية مرتبطة به.");
->>>>>>> e45aa20c70971e52a53c2ecff2f6f4408c3f718b
             return;
         }
         await dataService.remove('contracts', id);
@@ -441,17 +436,13 @@ const ContractForm: React.FC<{ isOpen: boolean, onClose: () => void, contract: C
             setSponsorPhone('');
             initializedRef.current = true;
         }
-<<<<<<< HEAD
     }, [contract, isOpen, defaultUnitId, availableUnits, db.tenants]);
-=======
-    }, [contract, isOpen, tenants, availableUnits, defaultUnitId]);
 
     const handleMoneyInputChange = (setter: React.Dispatch<React.SetStateAction<string>>) => (e: React.ChangeEvent<HTMLInputElement>) => {
         const next = e.target.value;
         if (!/^[0-9٠-٩۰-۹.,٬٫+\-\s\u00A0\u200E\u200F]*$/.test(next)) return;
         setter(next);
     };
->>>>>>> e45aa20c70971e52a53c2ecff2f6f4408c3f718b
 
     const handleStartDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const newStart = e.target.value;
@@ -532,14 +523,9 @@ const ContractForm: React.FC<{ isOpen: boolean, onClose: () => void, contract: C
                         </div>
                         <div>
                             <label className="block text-sm font-medium mb-1">المستأجر</label>
-<<<<<<< HEAD
                             <select value={tenantId} onChange={e => setTenantId(e.target.value)} required className="w-full px-3 py-2 border border-border rounded-lg bg-card text-text focus:outline-none focus:ring-2 focus:ring-primary">
                                 <option value="">-- اختر مستأجر --</option>
-                                {db.tenants.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
-=======
-                            <select value={tenantId} onChange={e => setTenantId(e.target.value)} required>
                                 {tenants.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
->>>>>>> e45aa20c70971e52a53c2ecff2f6f4408c3f718b
                             </select>
                         </div>
                         <div>

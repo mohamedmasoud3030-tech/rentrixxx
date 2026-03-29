@@ -163,3 +163,9 @@ CREATE INDEX IF NOT EXISTS idx_invoices_contract_id ON public.invoices(contract_
 CREATE INDEX IF NOT EXISTS idx_expenses_owner_id ON public.expenses(owner_id);
 CREATE INDEX IF NOT EXISTS idx_maintenance_unit_id ON public.maintenance_records(unit_id);
 CREATE INDEX IF NOT EXISTS idx_utility_bills_unit_id ON public.utility_bills(unit_id);
+
+-- ──────────────────────────────────────────────────────────────
+-- 14. OUTGOING_NOTIFICATIONS TABLE - Add missing columns
+-- ──────────────────────────────────────────────────────────────
+ALTER TABLE public.outgoing_notifications
+ADD COLUMN IF NOT EXISTS updated_at BIGINT DEFAULT (extract(epoch from now()) * 1000)::BIGINT;

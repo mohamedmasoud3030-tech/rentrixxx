@@ -19,10 +19,8 @@ const NumberInput: React.FC<NumberInputProps> = ({
   const [display, setDisplay] = useState('');
 
   useEffect(() => {
-    // Sync parent value to display only when value prop changes from outside
     const numVal = value === undefined || value === '' || isNaN(Number(value)) ? '' : String(value);
-    // Only update if display is empty (initial load or after blur reset)
-    if (!display) {
+    if (numVal !== display) {
       setDisplay(numVal);
     }
   }, [value]);
