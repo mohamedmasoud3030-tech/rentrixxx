@@ -4,6 +4,7 @@ import { useApp } from '../contexts/AppContext';
 import { AuditIssue, Snapshot } from '../types';
 import { runDataIntegrityAudit } from '../services/auditEngine';
 import Card from '../components/ui/Card';
+import ConfirmActionModal from '../components/shared/ConfirmActionModal';
 import { AlertTriangle, AlertCircle, Info, RefreshCw, ChevronsRight, SearchCheck, PlusCircle, RotateCcw, XCircle, Search } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { formatDateTime } from '../utils/helpers';
@@ -25,6 +26,7 @@ const AuditLog: React.FC = () => {
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedUser, setSelectedUser] = useState('all');
     const [selectedAction, setSelectedAction] = useState('all');
+    const [snapshotToRestore, setSnapshotToRestore] = useState<Snapshot | null>(null);
 
     const handleCreateSnapshot = () => {
         const note = prompt("يرجى إدخال ملاحظة لنقطة الاستعادة (مثال: 'قبل تعديلات نهاية الشهر'):");
@@ -34,10 +36,14 @@ const AuditLog: React.FC = () => {
     };
 
     const handleRestore = (snapshot: Snapshot) => {
-        if (window.confirm(`تحذير! هل أنت متأكد من أنك تريد استعادة النظام إلى الحالة التي كان عليها في "${formatDateTime(new Date(snapshot.ts).toISOString())}"؟ سيتم فقدان جميع التغييرات التي تمت بعد هذا التاريخ. لا يمكن التراجع عن هذا الإجراء.`)) {
-            const snapshotDataString = JSON.stringify(snapshot.data);
-            restoreBackup(snapshotDataString);
-        }
+        setSnapshotToRestore(snapshot);
+    };
+
+    const handleConfirmRestore = () => {
+        if (!snapshotToRestore) return;
+        const snapshotDataString = JSON.stringify(snapshotToRestore.data);
+        restoreBackup(snapshotDataString);
+        setSnapshotToRestore(null);
     };
 
     const uniqueUsers = useMemo(() => ['all', ...Array.from(new Set(db.auditLog.map(log => log.username)))], [db.auditLog]);
@@ -59,6 +65,7 @@ const AuditLog: React.FC = () => {
     };
 
     return (
+        <>
         <div className="space-y-6">
             <Card>
                 <div className="flex justify-between items-center mb-4">
@@ -161,6 +168,18 @@ const AuditLog: React.FC = () => {
                 </div>
             </Card>
         </div>
+        <ConfirmActionModal
+            isOpen={!!snapshotToRestore}
+            onClose={() => setSnapshotToRestore(null)}
+            onConfirm={handleConfirmRestore}
+            title="تأكيد استعادة النظام"
+            message={snapshotToRestore
+                ? `تحذير! هل أنت متأكد من أنك تريد استعادة النظام إلى الحالة التي كان عليها في "${formatDateTime(new Date(snapshotToRestore.ts).toISOString())}"؟ سيتم فقدان جميع التغييرات التي تمت بعد هذا التاريخ. لا يمكن التراجع عن هذا الإجراء.`
+                : ''}
+            confirmLabel="استعادة الآن"
+            tone="danger"
+        />
+        </>
     );
 };
 

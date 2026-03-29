@@ -8,6 +8,7 @@ import { formatCurrency } from '../utils/helpers';
 import NumberInput from '../components/ui/NumberInput';
 import { toast } from 'react-hot-toast';
 import ActionsMenu, { EditAction } from '../components/shared/ActionsMenu';
+import ConfirmActionModal from '../components/shared/ConfirmActionModal';
 
 const Commissions: React.FC = () => {
     const { db, dataService, financeService } = useApp();
@@ -16,22 +17,22 @@ const Commissions: React.FC = () => {
     const [payoutLoading, setPayoutLoading] = useState<string | null>(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingCommission, setEditingCommission] = useState<Commission | null>(null);
+    const [commissionToPayout, setCommissionToPayout] = useState<Commission | null>(null);
 
     const usersMap = useMemo(() => new Map<string, string>(
         users ? users.map(u => [u.id, u.username] as [string, string]) : []
     ), [users]);
 
     const handlePayout = async (commission: Commission) => {
-        if (window.confirm(`هل أنت متأكد من صرف عمولة بقيمة ${formatCurrency(commission.amount)} للموظف ${usersMap.get(commission.staffId)}؟ سيتم إنشاء قيد محاسبي تلقائياً.`)) {
-            setPayoutLoading(commission.id);
-            try {
-                await financeService.payoutCommission(commission.id);
-                toast.success("تم صرف العمولة وتسجيل القيد بنجاح.");
-            } catch (e: any) {
-                toast.error(e.message);
-            } finally {
-                setPayoutLoading(null);
-            }
+        setPayoutLoading(commission.id);
+        try {
+            await financeService.payoutCommission(commission.id);
+            toast.success("تم صرف العمولة وتسجيل القيد بنجاح.");
+        } catch (e: any) {
+            toast.error(e.message);
+        } finally {
+            setPayoutLoading(null);
+            setCommissionToPayout(null);
         }
     };
 
@@ -102,7 +103,7 @@ const Commissions: React.FC = () => {
                                                 ...(comm.status === 'UNPAID' ? [{
                                                     label: payoutLoading === comm.id ? 'جاري الصرف...' : 'صرف العمولة',
                                                     icon: <DollarSign size={16} />,
-                                                    onClick: () => handlePayout(comm)
+                                                    onClick: () => setCommissionToPayout(comm)
                                                 }] : []),
                                             ]} />
                                         </td>
@@ -121,6 +122,18 @@ const Commissions: React.FC = () => {
                     commission={editingCommission}
                 />
             )}
+            <ConfirmActionModal
+                isOpen={!!commissionToPayout}
+                onClose={() => setCommissionToPayout(null)}
+                onConfirm={() => commissionToPayout && handlePayout(commissionToPayout)}
+                title="تأكيد صرف العمولة"
+                message={commissionToPayout
+                    ? `هل أنت متأكد من صرف عمولة بقيمة ${formatCurrency(commissionToPayout.amount)} للموظف ${usersMap.get(commissionToPayout.staffId)}؟ سيتم إنشاء قيد محاسبي تلقائياً.`
+                    : ''}
+                confirmLabel="صرف العمولة"
+                isLoading={!!commissionToPayout && payoutLoading === commissionToPayout.id}
+                tone="primary"
+            />
         </div>
     );
 };

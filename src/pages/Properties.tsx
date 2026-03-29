@@ -5,6 +5,7 @@ import Card from '../components/ui/Card';
 import Modal from '../components/ui/Modal';
 import ActionsMenu, { EditAction, DeleteAction } from '../components/shared/ActionsMenu';
 import AttachmentsManager from '../components/shared/AttachmentsManager';
+import ConfirmActionModal from '../components/shared/ConfirmActionModal';
 import { formatCurrency, toArabicDigits, formatDate } from '../utils/helpers';
 import NumberInput from '../components/ui/NumberInput';
 import { Building, Home, ArrowRight, User, Map as MapIcon, AlertCircle, Clock, FileText, Wrench, Phone, Percent, TrendingUp, Zap, Droplets, Flame, Wifi, ChevronRight, Plus, Image, Trash2 } from 'lucide-react';
@@ -480,6 +481,7 @@ const UnitDetailView: React.FC<{ unit: Unit; property: Property; onBack: () => v
     const [isFormOpen, setIsFormOpen] = useState(false);
     const [editingRecord, setEditingRecord] = useState<UtilityRecord | null>(null);
     const [activeType, setActiveType] = useState<UtilityType | 'ALL'>('ALL');
+    const [recordToDelete, setRecordToDelete] = useState<UtilityRecord | null>(null);
 
     const unitRecords = useMemo(() => utilityRecords.filter(r => r.unitId === unit.id), [utilityRecords, unit.id]);
     const filtered = useMemo(() => activeType === 'ALL' ? unitRecords : unitRecords.filter(r => r.type === activeType), [unitRecords, activeType]);
@@ -500,9 +502,9 @@ const UnitDetailView: React.FC<{ unit: Unit; property: Property; onBack: () => v
     const activeContract = contracts.find(c => c.unitId === unit.id && c.status === 'ACTIVE');
     const tenant = activeContract ? tenants.find(t => t.id === activeContract.tenantId) : null;
 
-    const handleDelete = async (id: string) => {
-        if (!window.confirm('هل أنت متأكد من حذف سجل المرفق هذا؟')) return;
-        await dataService.remove('utilityRecords', id);
+    const handleDelete = async (record: UtilityRecord) => {
+        await dataService.remove('utilityRecords', record.id);
+        setRecordToDelete(null);
         toast.success('تم حذف السجل');
     };
 
@@ -591,7 +593,7 @@ const UnitDetailView: React.FC<{ unit: Unit; property: Property; onBack: () => v
                             <div className="shrink-0">
                                 <ActionsMenu items={[
                                     EditAction(() => { setEditingRecord(r); setIsFormOpen(true); }),
-                                    DeleteAction(() => handleDelete(r.id)),
+                                    DeleteAction(() => setRecordToDelete(r)),
                                 ]} />
                             </div>
                         </div>
@@ -611,6 +613,14 @@ const UnitDetailView: React.FC<{ unit: Unit; property: Property; onBack: () => v
             <AttachmentsManager entityType="UNIT" entityId={unit.id} />
 
             {isFormOpen && <UtilityRecordForm isOpen={isFormOpen} onClose={() => setIsFormOpen(false)} record={editingRecord} unitId={unit.id} propertyId={property.id} />}
+            <ConfirmActionModal
+                isOpen={!!recordToDelete}
+                onClose={() => setRecordToDelete(null)}
+                onConfirm={() => recordToDelete && handleDelete(recordToDelete)}
+                title="تأكيد حذف سجل المرافق"
+                message="هل أنت متأكد من حذف سجل المرافق هذا؟ لا يمكن التراجع بعد الحذف."
+                confirmLabel="حذف السجل"
+            />
         </div>
     );
 };
