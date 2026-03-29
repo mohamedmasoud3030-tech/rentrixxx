@@ -79,30 +79,56 @@ const ManualJournalVoucherForm: React.FC<{ isOpen: boolean, onClose: () => void,
 
     const handleLineChange = (index: number, field: keyof Line, value: string | number) => {
         const newLines = [...lines];
-        (newLines[index] as any)[field] = value;
+        if (field === 'debit' || field === 'credit') {
+            const normalized = Math.max(0, Number(value) || 0);
+            (newLines[index] as any)[field] = normalized;
+            if (normalized > 0) {
+                (newLines[index] as any)[field === 'debit' ? 'credit' : 'debit'] = 0;
+            }
+        } else {
+            (newLines[index] as any)[field] = value;
+        }
         setLines(newLines);
     };
 
     const addLine = () => setLines([...lines, { accountId: '', debit: 0, credit: 0 }]);
     const removeLine = (index: number) => setLines(lines.filter((_, i) => i !== index));
 
+    const postedLines = useMemo(() => {
+        return lines
+            .map(line => ({
+                accountId: line.accountId,
+                debit: Math.max(0, Number(line.debit) || 0),
+                credit: Math.max(0, Number(line.credit) || 0),
+            }))
+            .filter(line => line.accountId || line.debit > 0 || line.credit > 0);
+    }, [lines]);
+
+    const hasInvalidLines = useMemo(() => {
+        return postedLines.some(line => !line.accountId || (line.debit > 0 && line.credit > 0) || (line.debit <= 0 && line.credit <= 0));
+    }, [postedLines]);
+
     const totals = useMemo(() => {
-        return lines.reduce((acc, line) => {
+        return postedLines.reduce((acc, line) => {
             acc.debit += Number(line.debit) || 0;
             acc.credit += Number(line.credit) || 0;
             return acc;
         }, { debit: 0, credit: 0 });
-    }, [lines]);
+    }, [postedLines]);
 
-    const isBalanced = Math.abs(totals.debit - totals.credit) < 0.001 && totals.debit > 0;
+    const isBalanced = postedLines.length >= 2 && !hasInvalidLines && Math.abs(totals.debit - totals.credit) < 0.001 && totals.debit > 0;
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        if (hasInvalidLines) {
+            toast.error("يوجد سطر غير صالح: اختر حسابًا واحدد مبلغًا في المدين أو الدائن فقط.");
+            return;
+        }
         if (!isBalanced) {
             toast.error("القيد غير متوازن أو فارغ.");
             return;
         }
-        await onSubmit({ date, notes, lines: lines.filter(l => l.accountId && (l.debit > 0 || l.credit > 0)) });
+        await onSubmit({ date, notes, lines: postedLines });
         onClose();
     };
     
@@ -119,7 +145,7 @@ const ManualJournalVoucherForm: React.FC<{ isOpen: boolean, onClose: () => void,
                 <div className="space-y-2">
                     {lines.map((line, index) => (
                         <div key={index} className="grid grid-cols-12 gap-2 items-center">
-                            <select className="col-span-6" value={line.accountId} onChange={e => handleLineChange(index, 'accountId', e.target.value)} required>
+                            <select className="col-span-6" value={line.accountId} onChange={e => handleLineChange(index, 'accountId', e.target.value)}>
                                 <option value="">-- اختر الحساب --</option>
                                 {accounts.filter(a => !a.isParent).map(acc => <option key={acc.id} value={acc.id}>{acc.name} ({acc.no})</option>)}
                             </select>
@@ -138,7 +164,8 @@ const ManualJournalVoucherForm: React.FC<{ isOpen: boolean, onClose: () => void,
                     <div className="col-span-2">{formatCurrency(totals.debit)}</div>
                     <div className="col-span-2">{formatCurrency(totals.credit)}</div>
                 </div>
-                {!isBalanced && <p className="text-red-500 text-xs text-center">القيد غير متوازن. يجب أن يتساوى مجموع المدين مع مجموع الدائن.</p>}
+                {hasInvalidLines && <p className="text-red-500 text-xs text-center">يوجد سطر غير مكتمل أو يحتوي مدين/دائن معًا. أصلح السطور أولاً.</p>}
+                {!hasInvalidLines && !isBalanced && <p className="text-red-500 text-xs text-center">القيد غير متوازن. يجب أن يتساوى مجموع المدين مع مجموع الدائن.</p>}
                 
                 <div className="flex justify-end gap-2 pt-4 border-t">
                     <button type="button" onClick={onClose} className="btn btn-ghost">إلغاء</button>
