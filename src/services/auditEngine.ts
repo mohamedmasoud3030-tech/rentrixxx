@@ -4,8 +4,8 @@ import { Database, AuditIssue } from '../types';
 const ENTITY_PATHS: { [key in keyof Database]?: string } = {
     properties: '/properties',
     units: '/properties',
-    tenants: '/people',
-    owners: '/people',
+    tenants: '/tenants',
+    owners: '/owners',
     contracts: '/contracts',
     invoices: '/finance?tab=invoices',
     receipts: '/finance?tab=receipts',

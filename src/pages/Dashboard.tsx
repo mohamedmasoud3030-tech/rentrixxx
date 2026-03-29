@@ -210,7 +210,7 @@ const Dashboard: React.FC = () => {
                 <KpiMini label="الوحدات" value={stats.totalUnits} icon={<Home size={18} />} color="indigo" />
                 <KpiMini label="الشاغرة" value={stats.vacantUnits} icon={<Home size={18} />} color={stats.vacantUnits > 0 ? "amber" : "green"} />
                 <KpiMini label="العقود النشطة" value={stats.activeContracts} icon={<FileText size={18} />} color="green" onClick={() => navigate('/contracts')} />
-                <KpiMini label="المستأجرون" value={stats.activeTenants} icon={<Users size={18} />} color="violet" onClick={() => navigate('/people')} />
+                <KpiMini label="المستأجرون" value={stats.activeTenants} icon={<Users size={18} />} color="violet" onClick={() => navigate('/tenants')} />
                 <KpiMini label="الإشغال" value={`${stats.occupancyRate.toFixed(0)}%`} icon={<Percent size={18} />} color={stats.occupancyRate >= 80 ? "green" : stats.occupancyRate >= 50 ? "amber" : "red"} />
             </div>
 
