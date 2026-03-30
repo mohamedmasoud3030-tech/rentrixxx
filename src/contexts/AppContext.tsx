@@ -179,6 +179,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       ADMIN: new Set(['VIEW_DASHBOARD', 'VIEW_FINANCIALS', 'MANAGE_SETTINGS', 'MANAGE_USERS', 'VIEW_AUDIT_LOG', 'USE_SMART_ASSISTANT']),
       USER: new Set(['VIEW_DASHBOARD', 'VIEW_FINANCIALS', 'USE_SMART_ASSISTANT']),
       USER: new Set(['VIEW_DASHBOARD', 'VIEW_FINANCIALS']),
+ main
     };
     return capabilityMap[currentUser.role]?.has(action) || false;
   }, [currentUser]);

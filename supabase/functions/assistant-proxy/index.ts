@@ -7,6 +7,7 @@ const ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY')!;
 const WINDOW_MS = 60_000;
 const WINDOW_MAX = 20;
 const GEMINI_API_KEY = Deno.env.get('GEMINI_API_KEY') || '';
+ main
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -99,6 +100,7 @@ Deno.serve(async req => {
       status,
     return new Response(JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error' }), {
       status: 400,
+ main
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   }
