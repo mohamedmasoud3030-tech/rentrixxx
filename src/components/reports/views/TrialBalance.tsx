@@ -80,7 +80,8 @@ const TrialBalance: React.FC = () => {
   );
 
   return (
-    <Card className="p-6" dir="rtl">
+    <Card className="p-6">
+      <div dir="rtl">
       <SectionHeader title="ميزان المراجعة" icon={<Filter size={18} className="text-primary" />} />
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
         <MiniKpi label="إجمالي المدين" value={formatCurrency(data.totalDebit)} icon={<Download size={14} />} color="bg-blue-100 text-blue-700" />
@@ -107,6 +108,7 @@ const TrialBalance: React.FC = () => {
           </ReportPrintableContent>
         </PrintPreviewModal>
       )}
+      </div>
     </Card>
   );
 };
