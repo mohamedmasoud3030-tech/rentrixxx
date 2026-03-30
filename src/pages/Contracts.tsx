@@ -477,11 +477,6 @@ const ContractForm: React.FC<{ isOpen: boolean, onClose: () => void, contract: C
         }
 
         if (status === 'ACTIVE') {
-            const rentForValidation = parseLocalizedNumber(rentInput);
-            if (rentForValidation <= 0) {
-                toast.error('لا يمكن تفعيل عقد بإيجار صفري أو سالب.');
-                return;
-            }
             const hasBlockingMaintenance = db.maintenanceRecords.some(m =>
                 m.unitId === unitId && ['NEW', 'IN_PROGRESS'].includes(m.status)
             );
