@@ -5,6 +5,8 @@ import { IntegrationService } from '../services/integrationService';
 import { supabase } from '../services/supabase';
 import { toast } from 'react-hot-toast';
 import { confirmDialog } from '../components/shared/confirmDialog';
+import { adminCreateUser } from '../services/edgeFunctions';
+import { logger } from '../services/logger';
 
 const DEFAULT_GEMINI_API_KEY = (import.meta.env.VITE_GEMINI_API_KEY as string) || '';
 
@@ -80,6 +82,20 @@ const toNumber = (value: unknown): number => {
 
 const round3 = (value: number): number => Number(value.toFixed(ROUND_SCALE));
 
+const withRetry = async <T,>(fn: () => Promise<T>, retries = 2): Promise<T> => {
+  let lastError: unknown = null;
+  for (let attempt = 0; attempt <= retries; attempt += 1) {
+    try {
+      return await fn();
+    } catch (error) {
+      lastError = error;
+      if (attempt === retries) break;
+      await new Promise(resolve => setTimeout(resolve, 250 * (attempt + 1)));
+    }
+  }
+  throw lastError;
+};
+
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export const useApp = (): AppContextType => {
@@ -134,17 +150,18 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const refreshData = useCallback(async () => {
     try {
-      const [allData, settingsData, govData] = await Promise.all([
+      const [allData, settingsData, govData] = await withRetry(() => Promise.all([
         supabaseData.getAllData(),
         supabaseData.getSettings(),
         supabaseData.getGovernance(),
-      ]);
+      ]), 1);
       setDb(allData);
       setSettings(settingsData || DEFAULT_SETTINGS);
       setGovernance(govData || { readOnly: false, lockedPeriods: [] });
       setIsDataStale(false);
     } catch (err) {
-      console.error('[AppContext] refreshData error:', err);
+      logger.error('[AppContext] refreshData error', err);
+      toast.error('تعذر تحديث البيانات. تم تفعيل إعادة المحاولة التلقائية.');
     }
   }, []);
 
@@ -157,8 +174,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const canAccess = useCallback((action: string) => {
     if (!currentUser) return false;
-    if (currentUser.role === 'ADMIN') return true;
-    return action === 'VIEW_FINANCIALS';
+    const capabilityMap: Record<'ADMIN' | 'USER', Set<string>> = {
+      ADMIN: new Set(['VIEW_DASHBOARD', 'VIEW_FINANCIALS', 'MANAGE_SETTINGS', 'MANAGE_USERS', 'VIEW_AUDIT_LOG', 'USE_SMART_ASSISTANT']),
+      USER: new Set(['VIEW_DASHBOARD', 'VIEW_FINANCIALS']),
+    };
+    return capabilityMap[currentUser.role]?.has(action) || false;
   }, [currentUser]);
 
   useEffect(() => {
@@ -259,13 +279,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const addUser: AppContextType['auth']['addUser'] = useCallback(async (user, pass) => {
     const email = (user as User).email || `${user.username}@rentrix.local`;
-    const { data, error } = await supabase.auth.signUp({ email, password: pass });
-    if (error || !data.user) return { ok: false, msg: error?.message || 'فشل إنشاء المستخدم' };
-    const profile = { id: data.user.id, username: user.username, role: user.role, must_change_password: true, created_at: Date.now() };
-    await supabase.from('profiles').insert(profile);
-    await audit('CREATE', 'users', data.user.id, `Created user ${user.username}`);
+    const result = await adminCreateUser({ email, password: pass, username: user.username, role: user.role });
+    await audit('CREATE', 'users', result.id, `Created user ${user.username}`);
+    await refreshData();
     return { ok: true, msg: 'تم إنشاء المستخدم. سيتلقى المستخدم رسالة تأكيد بالبريد الإلكتروني.' };
-  }, [audit]);
+  }, [audit, refreshData]);
 
   const updateUser: AppContextType['auth']['updateUser'] = useCallback(async (id, updates) => {
     if (updates.username) await supabase.from('profiles').update({ username: updates.username }).eq('id', id);
