@@ -5,7 +5,6 @@ import { useApp } from './contexts/AppContext';
 import Layout from './components/print/layout/Layout';
 import Login from './pages/Login';
 import ChangePassword from './pages/ChangePassword';
-import OwnerPortal from './pages/OwnerPortal';
 import OwnerView from './pages/OwnerView';
 import { Toaster } from 'react-hot-toast';
 
@@ -121,7 +120,6 @@ const App: React.FC = () => {
       <Suspense fallback={<PageLoader />}>
         <Routes>
           {/* Public Routes */}
-          <Route path="/portal/:ownerId" element={<OwnerPortal />} />
           <Route path="/owner-view/:ownerId" element={<OwnerView />} />
 
           {!auth.currentUser ? (
