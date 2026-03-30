@@ -54,7 +54,7 @@ const Leads: React.FC = () => {
             'البريد الإلكتروني': l.email || '—',
             'الحالة': getStatusLabel(l.status),
             'ميزانية': l.minBudget || l.maxBudget ? `${l.minBudget || 0} - ${l.maxBudget || 0}` : '—',
-            'نوع العقار': l.propertyType || '—',
+            'نوع الوحدة المطلوبة': l.desiredUnitType || '—',
             'تاريخ الإضافة': new Date(l.createdAt).toLocaleDateString('ar')
         }));
         exportToCsv('عملاء_محتملين_rentrix', data);

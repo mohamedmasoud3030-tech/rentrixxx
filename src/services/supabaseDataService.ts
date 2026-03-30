@@ -98,7 +98,7 @@ export const supabaseData = {
 
   async fetchRecent<T>(jsTable: string, limit = 200): Promise<T[]> {
     const sqlTable = resolveTable(jsTable);
- codex/conduct-full-technical-audit-i14q4c
+ codex/conduct-full-technical-audit
     const orderCandidates = ['created_at', 'updated_at', 'ts', 'date'];
     for (const orderBy of orderCandidates) {
       const { data, error } = await supabase.from(sqlTable).select('*').order(orderBy, { ascending: false }).limit(limit);
