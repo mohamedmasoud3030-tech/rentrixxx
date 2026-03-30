@@ -35,6 +35,18 @@ const Invoices: React.FC = () => {
     ];
     
     const [activeFilter, setActiveFilter] = useState('all');
+    const todayIso = new Date().toISOString().slice(0, 10);
+
+    const getInvoiceTotal = useCallback((invoice: Invoice) => (invoice.amount || 0) + (invoice.taxAmount || 0), []);
+    const getInvoiceRemaining = useCallback((invoice: Invoice) => Math.max(0, getInvoiceTotal(invoice) - (invoice.paidAmount || 0)), [getInvoiceTotal]);
+    const getEffectiveStatus = useCallback((invoice: Invoice): Invoice['status'] => {
+        const total = getInvoiceTotal(invoice);
+        const paid = invoice.paidAmount || 0;
+        if (paid >= total - 0.001) return 'PAID';
+        if (invoice.dueDate < todayIso) return 'OVERDUE';
+        if (paid > 0.001) return 'PARTIALLY_PAID';
+        return 'UNPAID';
+    }, [getInvoiceTotal, todayIso]);
 
     useEffect(() => {
         const params = new URLSearchParams(location.search);
@@ -50,11 +62,15 @@ const Invoices: React.FC = () => {
     };
 
     const stats = useMemo(() => {
-        const unpaid = db.invoices.filter(i => ['UNPAID', 'PARTIALLY_PAID'].includes(i.status)).reduce((s, i) => s + (i.amount - i.paidAmount), 0);
-        const overdue = db.invoices.filter(i => i.status === 'OVERDUE').reduce((s, i) => s + (i.amount - i.paidAmount), 0);
+        const unpaid = db.invoices
+            .filter(i => ['UNPAID', 'PARTIALLY_PAID'].includes(getEffectiveStatus(i)))
+            .reduce((s, i) => s + getInvoiceRemaining(i), 0);
+        const overdue = db.invoices
+            .filter(i => getEffectiveStatus(i) === 'OVERDUE')
+            .reduce((s, i) => s + getInvoiceRemaining(i), 0);
         const collectedThisMonth = db.receipts.filter(r => r.dateTime.startsWith(new Date().toISOString().slice(0, 7))).reduce((s, r) => s + r.amount, 0);
         return { unpaid, overdue, collectedThisMonth };
-    }, [db.invoices, db.receipts]);
+    }, [db.invoices, db.receipts, getEffectiveStatus, getInvoiceRemaining]);
 
     const handleGenerateInvoices = async () => {
         setIsMonthlyLoading(true);
@@ -114,7 +130,7 @@ const Invoices: React.FC = () => {
             const phone = inv.tenant?.phone;
             if (!phone) continue;
             const currency = settings.operational?.currency ?? 'OMR';
-            const balance = formatCurrency(inv.amount - inv.paidAmount, currency);
+            const balance = formatCurrency(getInvoiceRemaining(inv), currency);
             const msg = encodeURIComponent(
                 `مرحباً ${inv.tenant?.name}،\nهذا تذكير بفاتورتك رقم ${inv.no} بمبلغ ${balance} مستحقة بتاريخ ${formatDate(inv.dueDate)}.\nيُرجى سداد المبلغ في أقرب وقت.\nشكراً — نظام Rentrix`
             );
@@ -134,9 +150,10 @@ const Invoices: React.FC = () => {
         let filteredInvoices = db.invoices;
         if (activeFilter !== 'all') {
             filteredInvoices = db.invoices.filter(inv => {
-                if (activeFilter === 'unpaid') return ['UNPAID', 'PARTIALLY_PAID'].includes(inv.status);
-                if (activeFilter === 'overdue') return inv.status === 'OVERDUE';
-                if (activeFilter === 'paid') return inv.status === 'PAID';
+                const effectiveStatus = getEffectiveStatus(inv);
+                if (activeFilter === 'unpaid') return ['UNPAID', 'PARTIALLY_PAID'].includes(effectiveStatus);
+                if (activeFilter === 'overdue') return effectiveStatus === 'OVERDUE';
+                if (activeFilter === 'paid') return effectiveStatus === 'PAID';
                 return true;
             });
         }
@@ -154,9 +171,12 @@ const Invoices: React.FC = () => {
             const tenant = contract ? db.tenants.find(t => t.id === contract.tenantId) : null;
             const unit = contract ? db.units.find(u => u.id === contract.unitId) : null;
             const property = unit ? db.properties.find(p => p.id === unit.propertyId) : null;
-            return { ...inv, tenant, unit, propertyName: property?.name || '' };
+            const total = getInvoiceTotal(inv);
+            const remaining = getInvoiceRemaining(inv);
+            const effectiveStatus = getEffectiveStatus(inv);
+            return { ...inv, tenant, unit, propertyName: property?.name || '', total, remaining, effectiveStatus };
         }).sort((a, b) => new Date(b.dueDate).getTime() - new Date(a.dueDate).getTime());
-    }, [db.invoices, db.contracts, db.tenants, db.units, db.properties, activeFilter, searchTerm]);
+    }, [db.invoices, db.contracts, db.tenants, db.units, db.properties, activeFilter, searchTerm, getInvoiceTotal, getInvoiceRemaining, getEffectiveStatus]);
 
     const currency = settings.operational?.currency ?? 'OMR';
 
@@ -213,10 +233,10 @@ const Invoices: React.FC = () => {
                                 'العقار': inv.propertyName || '',
                                 'النوع': INVOICE_TYPE_AR[inv.type],
                                 'تاريخ الاستحقاق': inv.dueDate,
-                                'المبلغ': inv.amount,
+                                'المبلغ': inv.total,
                                 'المدفوع': inv.paidAmount,
-                                'المتبقي': inv.amount - inv.paidAmount,
-                                'الحالة': INVOICE_STATUS_AR[inv.status],
+                                'المتبقي': inv.remaining,
+                                'الحالة': INVOICE_STATUS_AR[inv.effectiveStatus],
                             })))} className="btn btn-ghost border border-border flex items-center gap-2">
                                 <Download size={16} /> تصدير
                             </button>
@@ -279,13 +299,13 @@ const Invoices: React.FC = () => {
                                         </td>
                                         <td className="px-6 py-4 text-xs font-bold" onClick={() => handleOpenModal(inv)}>{INVOICE_TYPE_AR[inv.type]}</td>
                                         <td className="px-6 py-4 text-text-muted" onClick={() => handleOpenModal(inv)}>{formatDate(inv.dueDate)}</td>
-                                        <td className="px-6 py-4 font-bold text-left" dir="ltr" onClick={() => handleOpenModal(inv)}>{formatCurrency(inv.amount, currency)}</td>
+                                        <td className="px-6 py-4 font-bold text-left" dir="ltr" onClick={() => handleOpenModal(inv)}>{formatCurrency(inv.total, currency)}</td>
                                         <td className="px-6 py-4 font-black text-rose-600 text-left" dir="ltr" onClick={() => handleOpenModal(inv)}>
-                                            {inv.amount - inv.paidAmount > 0 ? formatCurrency(inv.amount - inv.paidAmount, currency) : '—'}
+                                            {inv.remaining > 0 ? formatCurrency(inv.remaining, currency) : '—'}
                                         </td>
                                         <td className="px-6 py-4 text-center" onClick={() => handleOpenModal(inv)}>
-                                            <span className={`px-2 py-1 rounded-lg text-[10px] font-bold border ${getStatusBadgeClass(inv.status)}`}>
-                                                {INVOICE_STATUS_AR[inv.status]}
+                                            <span className={`px-2 py-1 rounded-lg text-[10px] font-bold border ${getStatusBadgeClass(inv.effectiveStatus)}`}>
+                                                {INVOICE_STATUS_AR[inv.effectiveStatus]}
                                             </span>
                                         </td>
                                         <td className="px-6 py-4 text-center">

@@ -32,6 +32,7 @@ interface OwnerLedgerTransaction {
   date: string;
   details: string;
   type: 'receipt' | 'expense' | 'settlement';
+  propertyName: string;
   gross: number;
   officeShare: number;
   net: number;
@@ -75,18 +76,26 @@ const OwnerLedger: React.FC = () => {
     const transactions: OwnerLedgerTransaction[] = [];
     db.receipts.forEach(r => {
       if (r.status === 'POSTED' && ownerContracts.includes(r.contractId) && new Date(r.dateTime) >= start && new Date(r.dateTime) <= end) {
+        const contract = db.contracts.find(c => c.id === r.contractId);
+        const unit = contract ? db.units.find(u => u.id === contract.unitId) : null;
+        const property = unit ? db.properties.find(p => p.id === unit.propertyId) : null;
+        const propertyName = property?.name || 'غير محدد';
         const officeShare = showCommission && owner.commissionType === 'RATE' ? r.amount * (owner.commissionValue / 100) : 0;
-        transactions.push({ date: r.dateTime, details: `تحصيل من عقد ${r.no}`, type: 'receipt', gross: r.amount, officeShare, net: r.amount - officeShare });
+        transactions.push({ date: r.dateTime, details: `تحصيل من عقد ${r.no}`, type: 'receipt', propertyName, gross: r.amount, officeShare, net: r.amount - officeShare });
       }
     });
     db.expenses.forEach(e => {
       if (e.status === 'POSTED' && e.contractId && ownerContracts.includes(e.contractId) && e.chargedTo === 'OWNER' && new Date(e.dateTime) >= start && new Date(e.dateTime) <= end) {
-        transactions.push({ date: e.dateTime, details: `مصروف صيانة ${e.no}`, type: 'expense', gross: -e.amount, officeShare: 0, net: -e.amount });
+        const contract = db.contracts.find(c => c.id === e.contractId);
+        const unit = contract ? db.units.find(u => u.id === contract.unitId) : null;
+        const property = unit ? db.properties.find(p => p.id === unit.propertyId) : null;
+        const propertyName = property?.name || 'غير محدد';
+        transactions.push({ date: e.dateTime, details: `مصروف صيانة ${e.no}`, type: 'expense', propertyName, gross: -e.amount, officeShare: 0, net: -e.amount });
       }
     });
     db.ownerSettlements.forEach(s => {
       if (s.ownerId === selectedOwnerId && new Date(s.date) >= start && new Date(s.date) <= end) {
-        transactions.push({ date: s.date, details: `تسوية مالية - دفعة #${s.no}`, type: 'settlement', gross: -s.amount, officeShare: 0, net: -s.amount });
+        transactions.push({ date: s.date, details: `تسوية مالية - دفعة #${s.no}`, type: 'settlement', propertyName: 'تسوية عامة', gross: -s.amount, officeShare: 0, net: -s.amount });
       }
     });
     if (showCommission && owner.commissionType === 'FIXED_MONTHLY') {
@@ -94,12 +103,23 @@ const OwnerLedger: React.FC = () => {
       transactions.filter(tx => tx.type === 'receipt').forEach(tx => commissionMonths.add(tx.date.slice(0, 7)));
       commissionMonths.forEach(month => {
         const lastDayOfMonth = new Date(Number(month.slice(0, 4)), Number(month.slice(5, 7)), 0).toISOString();
-        transactions.push({ date: lastDayOfMonth, details: `عمولة إدارة ثابتة لشهر ${month}`, type: 'expense', gross: 0, officeShare: owner.commissionValue, net: -owner.commissionValue });
+        transactions.push({ date: lastDayOfMonth, details: `عمولة إدارة ثابتة لشهر ${month}`, type: 'expense', propertyName: 'عمولة مكتب', gross: 0, officeShare: owner.commissionValue, net: -owner.commissionValue });
       });
     }
     transactions.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
     const totals = transactions.reduce((acc, tx) => { acc.gross += tx.gross; acc.officeShare += tx.officeShare; acc.net += tx.net; return acc; }, { gross: 0, officeShare: 0, net: 0 });
-    return { transactions, totals };
+    const propertyBreakdown = Array.from(transactions.reduce((acc, tx) => {
+      if (!acc.has(tx.propertyName)) {
+        acc.set(tx.propertyName, { propertyName: tx.propertyName, gross: 0, officeShare: 0, net: 0 });
+      }
+      const row = acc.get(tx.propertyName)!;
+      row.gross += tx.gross;
+      row.officeShare += tx.officeShare;
+      row.net += tx.net;
+      return acc;
+    }, new Map<string, { propertyName: string; gross: number; officeShare: number; net: number }>()).values())
+      .sort((a, b) => b.net - a.net);
+    return { transactions, totals, propertyBreakdown };
   }, [selectedOwnerId, startDate, endDate, db, showCommission]);
 
   const handleExportPdf = () => {
@@ -148,9 +168,9 @@ const OwnerLedger: React.FC = () => {
       <SectionHeader title="كشف حساب المالك" icon={<Users size={20} className="text-primary" />} />
       {ledgerData && (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-6">
-          <MiniKpi label="إجمالي التحصيل" value={formatCurrency(ledgerData.totals.gross, cur)} icon={<ArrowUp size={16} />} color="bg-green-100 dark:bg-green-900/40 text-green-600" />
-          <MiniKpi label="حصة المكتب" value={formatCurrency(ledgerData.totals.officeShare, cur)} icon={<Banknote size={16} />} color="bg-amber-100 dark:bg-amber-900/40 text-amber-600" />
-          <MiniKpi label="صافي المالك" value={formatCurrency(ledgerData.totals.net, cur)} icon={<Wallet size={16} />} color="bg-blue-100 dark:bg-blue-900/40 text-blue-600" />
+          <MiniKpi label="حساب العقار (الإجمالي)" value={formatCurrency(ledgerData.totals.gross, cur)} icon={<Building2 size={16} />} color="bg-green-100 dark:bg-green-900/40 text-green-600" />
+          <MiniKpi label="حساب المكتب (العمولات)" value={formatCurrency(ledgerData.totals.officeShare, cur)} icon={<Banknote size={16} />} color="bg-amber-100 dark:bg-amber-900/40 text-amber-600" />
+          <MiniKpi label="حساب المالك (الصافي)" value={formatCurrency(ledgerData.totals.net, cur)} icon={<Wallet size={16} />} color="bg-blue-100 dark:bg-blue-900/40 text-blue-600" />
         </div>
       )}
       <ActionBar onPrint={() => setIsPrinting(true)} onExport={handleExportPdf}>
@@ -174,6 +194,33 @@ const OwnerLedger: React.FC = () => {
           <label className="flex items-center gap-1.5 text-sm cursor-pointer"><input type="radio" name="commission" checked={showCommission} onChange={() => setShowCommission(true)} /> بعد الخصم</label>
         </div>
       </ActionBar>
+      {ledgerData && ledgerData.propertyBreakdown.length > 0 && (
+        <div className="mb-6">
+          <h3 className="text-sm font-black mb-2">فصل حسابات العقارات</h3>
+          <div className="overflow-x-auto border border-border rounded-xl">
+            <table className="w-full text-xs text-right">
+              <thead className="bg-background text-text-muted">
+                <tr>
+                  <th className="px-3 py-2 border border-border">العقار / البيان</th>
+                  <th className="px-3 py-2 border border-border">حساب العقار</th>
+                  <th className="px-3 py-2 border border-border">حساب المكتب</th>
+                  <th className="px-3 py-2 border border-border">حساب المالك</th>
+                </tr>
+              </thead>
+              <tbody>
+                {ledgerData.propertyBreakdown.map(row => (
+                  <tr key={row.propertyName} className="bg-card">
+                    <td className="px-3 py-2 border border-border font-bold">{row.propertyName}</td>
+                    <td className="px-3 py-2 border border-border font-mono">{formatCurrency(row.gross, cur)}</td>
+                    <td className="px-3 py-2 border border-border font-mono text-amber-600">{formatCurrency(row.officeShare, cur)}</td>
+                    <td className="px-3 py-2 border border-border font-mono text-primary">{formatCurrency(row.net, cur)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
       {reportContent && <ReportPrintableContent title={`كشف حساب المالك: ${db.owners.find(o => o.id === selectedOwnerId)?.name}`} date={`للفترة من ${formatDate(startDate)} إلى ${formatDate(endDate)}`}>{reportContent}</ReportPrintableContent>}
       {isPrinting && reportContent && <PrintPreviewModal isOpen={isPrinting} onClose={() => setIsPrinting(false)} title="كشف حساب المالك"><ReportPrintableContent title={`كشف حساب المالك: ${db.owners.find(o => o.id === selectedOwnerId)?.name}`} date={`للفترة من ${formatDate(startDate)} إلى ${formatDate(endDate)}`}>{reportContent}</ReportPrintableContent></PrintPreviewModal>}
     </Card>
