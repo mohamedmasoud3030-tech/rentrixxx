@@ -748,8 +748,8 @@ const UnitForm: React.FC<{ isOpen: boolean, onClose: () => void, unit: Unit | nu
         isSavingRef.current = true;
         setIsSaving(true);
         try {
-            const data = {
-                name, type, floor, status, rentDefault: rent, minRent: minRent || undefined,
+                const data = {
+                    name, type, floor, rentDefault: rent, minRent: minRent || undefined,
                 area: area || undefined,
                 bedrooms: bedrooms || undefined, bathrooms: bathrooms || undefined,
                 kitchens: kitchens || undefined, livingRooms: livingRooms || undefined,
@@ -789,12 +789,13 @@ const UnitForm: React.FC<{ isOpen: boolean, onClose: () => void, unit: Unit | nu
                         </div>
                         <div>
                             <label className="block text-sm font-medium mb-1">الحالة</label>
-                            <select value={status} onChange={e => setStatus(e.target.value as Unit['status'])} disabled={isSaving}>
+                            <select value={status} onChange={e => setStatus(e.target.value as Unit['status'])} disabled>
                                 <option value="AVAILABLE">شاغرة</option>
                                 <option value="RENTED">مؤجرة</option>
                                 <option value="MAINTENANCE">صيانة</option>
                                 <option value="ON_HOLD">معلقة</option>
                             </select>
+                            <p className="text-xs text-text-muted mt-1">تتحدد الحالة تلقائياً وفق العقد النشط والصيانة.</p>
                         </div>
                         <div>
                             <label className="block text-sm font-medium mb-1">الإيجار الافتراضي</label>
