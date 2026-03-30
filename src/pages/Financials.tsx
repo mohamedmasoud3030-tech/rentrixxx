@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
+import { Link } from 'react-router-dom';
 import { useApp } from '../contexts/AppContext';
 import { Receipt, Expense, DepositTx, OwnerSettlement, Invoice } from '../types';
 import Card from '../components/ui/Card';
@@ -34,15 +35,28 @@ const Financials: React.FC = () => {
             if (tx.type === 'DEPOSIT_IN') return s + tx.amount;
             return s - tx.amount;
         }, 0);
-        const pendingSettlements = db.ownerSettlements.length; // Just a count for now
+        const pendingSettlements = db.ownerSettlements.length;
+        const openInvoices = db.invoices.filter(inv => inv.status !== 'PAID').length;
 
-        return { receiptsToday, expensesMonth, totalDeposits, pendingSettlements };
-    }, [db.receipts, db.expenses, db.depositTxs, db.ownerSettlements]);
+        return { receiptsToday, expensesMonth, totalDeposits, pendingSettlements, openInvoices };
+    }, [db.receipts, db.expenses, db.depositTxs, db.ownerSettlements, db.invoices]);
 
     return (
         <div className="space-y-6">
             <HardGateBanner />
             
+            <div className="rounded-2xl border border-blue-100 bg-blue-50/70 p-4 flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+                <div>
+                    <p className="text-xs uppercase tracking-widest text-blue-700 font-black">Cashflow Orchestration</p>
+                    <p className="text-sm font-bold mt-1">السندات والمصروفات مرتبطة تلقائيًا بدورة الفاتورة والعقد لضبط التدفق النقدي.</p>
+                    <p className="text-xs text-text-muted mt-1">الفواتير المفتوحة الآن: <span className="font-black" dir="ltr">{stats.openInvoices}</span></p>
+                </div>
+                <div className="flex gap-2 flex-wrap">
+                    <Link to="/finance/invoices" className="btn btn-secondary text-xs font-black">سير الفوترة</Link>
+                    <Link to="/reports" className="btn btn-primary text-xs font-black">تقرير التدفقات</Link>
+                </div>
+            </div>
+
             {/* Quick Stats */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <StatCard 
