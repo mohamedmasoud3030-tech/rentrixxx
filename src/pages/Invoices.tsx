@@ -200,7 +200,7 @@ const Invoices: React.FC = () => {
                         </button>
                         <button onClick={() => setIsModalOpen(true)} className="btn btn-secondary"><Plus size={16} /> إضافة فاتورة يدوية</button>
                         <button onClick={handleBulkSendWhatsApp} className="btn btn-ghost"><MessageCircle size={16} /> إرسال تذكير واتساب للمتأخرين</button>
-                        <button onClick={() => exportToCsv('فواتير_rentrix', invoicesWithDetails)} className="btn btn-ghost"><Download size={16} /> تصدير</button>
+                        <button onClick={() => exportToCsv('فواتير_rentrix', invoicesWithDetails.map(inv => ({ 'رقم الفاتورة': inv.no, 'المستأجر': inv.tenant?.name || '', 'الوحدة': inv.unit?.name || '', 'العقار': inv.propertyName || '', 'النوع': INVOICE_TYPE_AR[inv.type] || inv.type, 'تاريخ الاستحقاق': inv.dueDate, 'المبلغ': inv.total, 'المدفوع': inv.paidAmount || 0, 'المتبقي': inv.remaining, 'الحالة': INVOICE_STATUS_AR[inv.effectiveStatus] || inv.effectiveStatus })))} className="btn btn-ghost"><Download size={16} /> تصدير</button>
                     </div>
                 </div>
 

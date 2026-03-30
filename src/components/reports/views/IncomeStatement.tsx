@@ -93,7 +93,8 @@ const IncomeStatement: React.FC = () => {
   );
 
   return (
-    <Card className="p-6" dir="rtl">
+    <Card className="p-6">
+      <div dir="rtl">
       <SectionHeader title="قائمة الدخل" icon={<TrendingUp size={18} className="text-primary" />} />
 
       <div className="flex flex-wrap gap-2 mb-4">
@@ -135,6 +136,7 @@ const IncomeStatement: React.FC = () => {
           </ReportPrintableContent>
         </PrintPreviewModal>
       )}
+      </div>
     </Card>
   );
 };
