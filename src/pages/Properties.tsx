@@ -749,7 +749,7 @@ const UnitForm: React.FC<{ isOpen: boolean, onClose: () => void, unit: Unit | nu
         setIsSaving(true);
         try {
                 const data = {
-                    name, type, floor, rentDefault: rent, minRent: minRent || undefined,
+                    name, type, floor, status, rentDefault: rent, minRent: minRent || undefined,
                 area: area || undefined,
                 bedrooms: bedrooms || undefined, bathrooms: bathrooms || undefined,
                 kitchens: kitchens || undefined, livingRooms: livingRooms || undefined,

@@ -2,10 +2,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
 const SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
- codex/conduct-full-technical-audit-y73z10
 const ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY')!;
-
- main
 const OWNER_TOKEN_SECRET = Deno.env.get('OWNER_TOKEN_SECRET')!;
 
 const corsHeaders = {
@@ -15,13 +12,10 @@ const corsHeaders = {
 
 const encoder = new TextEncoder();
 
- codex/conduct-full-technical-audit-y73z10
 const logEvent = (level: 'info' | 'warn' | 'error', message: string, meta: Record<string, unknown> = {}) => {
   console[level](JSON.stringify({ level, message, ...meta, ts: Date.now() }));
 };
 
-
- main
 async function sign(payload: string): Promise<string> {
   const key = await crypto.subtle.importKey('raw', encoder.encode(OWNER_TOKEN_SECRET), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
   const sig = await crypto.subtle.sign('HMAC', key, encoder.encode(payload));
@@ -47,7 +41,6 @@ Deno.serve(async req => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
 
   try {
- codex/conduct-full-technical-audit-y73z10
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) throw new Error('Unauthorized');
 
@@ -61,7 +54,6 @@ Deno.serve(async req => {
     const { data: profile, error: profileError } = await adminClient.from('profiles').select('role').eq('id', caller.id).single();
     if (profileError || !profile) throw new Error('Forbidden');
 
-
     const client = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
  main
     const body = await req.json();
@@ -69,7 +61,7 @@ Deno.serve(async req => {
     if (body?.action === 'issue') {
       const ownerId = String(body.ownerId || '');
       if (!ownerId) throw new Error('ownerId required');
- codex/conduct-full-technical-audit-y73z10
+ codex/conduct-full-technical-audit
 
       const ownerFromMetadata = String(caller.user_metadata?.ownerId || caller.app_metadata?.ownerId || '');
       const isAdmin = profile.role === 'ADMIN';
@@ -103,7 +95,7 @@ Deno.serve(async req => {
       if (!valid) throw new Error('invalid signature');
 
       const [{ data: owner }, { data: stats }, { data: settings }] = await Promise.all([
- codex/conduct-full-technical-audit-y73z10
+ codex/conduct-full-technical-audit
         adminClient.from('owners').select('id,name').eq('id', ownerId).single(),
         adminClient.from('owner_balances').select('total_income,total_expenses,commission,net_balance').eq('owner_id', ownerId).single(),
         adminClient.from('settings').select('data').eq('id', 1).single(),
@@ -133,7 +125,7 @@ Deno.serve(async req => {
     throw new Error('unsupported action');
   } catch (error) {
     return new Response(JSON.stringify({ error: error instanceof Error ? error.message : 'unknown error' }), {
- codex/conduct-full-technical-audit-y73z10
+ codex/conduct-full-technical-audit
       status: 401,
 
       status: 400,
