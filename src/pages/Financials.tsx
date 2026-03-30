@@ -240,7 +240,17 @@ const ReceiptsView: React.FC = () => {
                                         <div className="flex items-center justify-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                                             <button onClick={() => setPrintingReceipt(r)} className="p-2 text-text-muted hover:text-primary hover:bg-primary/10 rounded-xl" title="طباعة"><Printer size={16} /></button>
                                             <button onClick={() => setWhatsAppContext({ recipient: tenant, type: 'receipt', data: { receipt: r } })} className="p-2 text-text-muted hover:text-emerald-600 hover:bg-emerald-50 rounded-xl" title="واتساب"><MessageCircle size={16} /></button>
-                                            <button onClick={() => financeService.voidReceipt(r.id)} className="p-2 text-text-muted hover:text-rose-600 hover:bg-rose-50 rounded-xl" title="إلغاء"><XCircle size={16} /></button>
+                                            <button
+                                                onClick={() => {
+                                                    if (r.status === 'VOID') return;
+                                                    financeService.voidReceipt(r.id);
+                                                }}
+                                                disabled={r.status === 'VOID'}
+                                                className="p-2 text-text-muted hover:text-rose-600 hover:bg-rose-50 rounded-xl disabled:opacity-40 disabled:cursor-not-allowed"
+                                                title={r.status === 'VOID' ? 'تم الإلغاء مسبقًا' : 'إلغاء'}
+                                            >
+                                                <XCircle size={16} />
+                                            </button>
                                         </div>
                                     </td>
                                 </tr>
@@ -340,7 +350,17 @@ const ExpensesView: React.FC = () => {
                                             try { exportExpenseToPdf(e, db); toast.success('تم تصدير المصروف بصيغة PDF'); } 
                                             catch (err) { toast.error('خطأ في تصدير PDF'); }
                                         }} className="p-2 text-text-muted hover:text-blue-600 hover:bg-blue-50 rounded-xl" title="تصدير PDF"><FileText size={16} /></button>
-                                        <button onClick={() => financeService.voidExpense(e.id)} className="p-2 text-text-muted hover:text-rose-600 hover:bg-rose-50 rounded-xl" title="إلغاء"><XCircle size={16} /></button>
+                                        <button
+                                            onClick={() => {
+                                                if (e.status === 'VOID') return;
+                                                financeService.voidExpense(e.id);
+                                            }}
+                                            disabled={e.status === 'VOID'}
+                                            className="p-2 text-text-muted hover:text-rose-600 hover:bg-rose-50 rounded-xl disabled:opacity-40 disabled:cursor-not-allowed"
+                                            title={e.status === 'VOID' ? 'تم الإلغاء مسبقًا' : 'إلغاء'}
+                                        >
+                                            <XCircle size={16} />
+                                        </button>
                                     </div>
                                 </td>
                             </tr>
@@ -580,6 +600,8 @@ const ReceiptForm: React.FC<{ isOpen: boolean, onClose: () => void, receipt: Rec
         e.preventDefault();
         if (isSavingRef.current) return;
         if (receipt) { toast.error('تعديل السندات المرحلة غير مسموح.'); return; }
+        if (amount <= 0) { toast.error('قيمة السند يجب أن تكون أكبر من صفر.'); return; }
+        if (!dateTime) { toast.error('تاريخ السند مطلوب.'); return; }
         if (channel === 'CHECK' && !checkNumber) { toast.error('يرجى إدخال رقم الشيك.'); return; }
         if (openInvoicesForContract.length === 0) { toast.error('لا توجد فواتير مفتوحة.'); return; }
         const normalizedAllocations = Object.entries(allocations)
@@ -701,6 +723,8 @@ const ExpenseForm: React.FC<{ isOpen: boolean, onClose: () => void, expense: Exp
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (isSavingRef.current) return;
+        if (amount <= 0) { toast.error('قيمة المصروف يجب أن تكون أكبر من صفر.'); return; }
+        if (!dateTime) { toast.error('تاريخ المصروف مطلوب.'); return; }
         isSavingRef.current = true;
         setIsSaving(true);
         try {
