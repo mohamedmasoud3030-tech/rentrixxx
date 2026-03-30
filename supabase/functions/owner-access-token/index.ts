@@ -2,7 +2,6 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
 const SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-const ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY')!;
 const OWNER_TOKEN_SECRET = Deno.env.get('OWNER_TOKEN_SECRET')!;
 
 const corsHeaders = {
@@ -11,10 +10,6 @@ const corsHeaders = {
 };
 
 const encoder = new TextEncoder();
-
-const logEvent = (level: 'info' | 'warn' | 'error', message: string, meta: Record<string, unknown> = {}) => {
-  console[level](JSON.stringify({ level, message, ...meta, ts: Date.now() }));
-};
 
 async function sign(payload: string): Promise<string> {
   const key = await crypto.subtle.importKey('raw', encoder.encode(OWNER_TOKEN_SECRET), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
@@ -41,34 +36,12 @@ Deno.serve(async req => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
 
   try {
-    const authHeader = req.headers.get('Authorization');
-    if (!authHeader) throw new Error('Unauthorized');
-
-    const userClient = createClient(SUPABASE_URL, ANON_KEY, { global: { headers: { Authorization: authHeader } } });
-    const adminClient = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
-
-    const { data: authData } = await userClient.auth.getUser();
-    const caller = authData.user;
-    if (!caller) throw new Error('Unauthorized');
-
-    const { data: profile, error: profileError } = await adminClient.from('profiles').select('role').eq('id', caller.id).single();
-    if (profileError || !profile) throw new Error('Forbidden');
-
+    const client = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
     const body = await req.json();
 
     if (body?.action === 'issue') {
       const ownerId = String(body.ownerId || '');
       if (!ownerId) throw new Error('ownerId required');
-
-      const ownerFromMetadata = String(caller.user_metadata?.ownerId || caller.app_metadata?.ownerId || '');
-      const isAdmin = profile.role === 'ADMIN';
-      const isOwner = ownerFromMetadata && ownerFromMetadata === ownerId;
-
-      if (!isAdmin && !isOwner) {
-        logEvent('warn', 'owner token issuance denied', { callerId: caller.id, ownerId });
-        throw new Error('Forbidden');
-      }
-
       const { payload } = createToken(ownerId);
       const signature = await sign(payload);
       return new Response(JSON.stringify({ token: `${payload}.${signature}` }), {
@@ -90,9 +63,9 @@ Deno.serve(async req => {
       if (!valid) throw new Error('invalid signature');
 
       const [{ data: owner }, { data: stats }, { data: settings }] = await Promise.all([
-        adminClient.from('owners').select('id,name').eq('id', ownerId).single(),
-        adminClient.from('owner_balances').select('total_income,total_expenses,commission,net_balance').eq('owner_id', ownerId).single(),
-        adminClient.from('settings').select('data').eq('id', 1).single(),
+        client.from('owners').select('id,name').eq('id', ownerId).single(),
+        client.from('owner_balances').select('total_income,total_expenses,commission,net_balance').eq('owner_id', ownerId).single(),
+        client.from('settings').select('data').eq('id', 1).single(),
       ]);
       if (!owner || !stats) throw new Error('owner not found');
       const currency = settings?.data?.operational?.currency || 'OMR';
@@ -114,7 +87,7 @@ Deno.serve(async req => {
     throw new Error('unsupported action');
   } catch (error) {
     return new Response(JSON.stringify({ error: error instanceof Error ? error.message : 'unknown error' }), {
-      status: 401,
+      status: 400,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   }

@@ -7,7 +7,6 @@ import { toast } from 'react-hot-toast';
 import { confirmDialog } from '../components/shared/confirmDialog';
 import { adminCreateUser } from '../services/edgeFunctions';
 import { logger } from '../services/logger';
-import { postReceiptAtomic, renewContractAtomic, syncUnitStatus, voidReceiptAtomic } from '../services/antiMistakeService';
 
 const DEFAULT_GEMINI_API_KEY = (import.meta.env.VITE_GEMINI_API_KEY as string) || '';
 
@@ -177,7 +176,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (!currentUser) return false;
     const capabilityMap: Record<'ADMIN' | 'USER', Set<string>> = {
       ADMIN: new Set(['VIEW_DASHBOARD', 'VIEW_FINANCIALS', 'MANAGE_SETTINGS', 'MANAGE_USERS', 'VIEW_AUDIT_LOG', 'USE_SMART_ASSISTANT']),
-      USER: new Set(['VIEW_DASHBOARD', 'VIEW_FINANCIALS', 'USE_SMART_ASSISTANT']),
+      USER: new Set(['VIEW_DASHBOARD', 'VIEW_FINANCIALS']),
     };
     return capabilityMap[currentUser.role]?.has(action) || false;
   }, [currentUser]);
@@ -284,7 +283,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     await audit('CREATE', 'users', result.id, `Created user ${user.username}`);
     await refreshData();
     return { ok: true, msg: 'تم إنشاء المستخدم. سيتلقى المستخدم رسالة تأكيد بالبريد الإلكتروني.' };
-  }, [audit, refreshData, db?.contracts, db?.maintenanceRecords]);
+  }, [audit, refreshData]);
 
   const updateUser: AppContextType['auth']['updateUser'] = useCallback(async (id, updates) => {
     if (updates.username) await supabase.from('profiles').update({ username: updates.username }).eq('id', id);

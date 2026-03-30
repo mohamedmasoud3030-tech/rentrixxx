@@ -25,13 +25,3 @@ begin
   return result;
 end;
 $$;
-
-create table if not exists public.edge_rate_limits (
-  id bigserial primary key,
-  user_id uuid not null,
-  endpoint text not null,
-  ts bigint not null
-);
-
-create index if not exists idx_edge_rate_limits_lookup
-  on public.edge_rate_limits (user_id, endpoint, ts);
