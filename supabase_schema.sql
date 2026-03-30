@@ -12,6 +12,7 @@ CREATE TABLE IF NOT EXISTS public.profiles (
     id                   UUID    PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
     username             TEXT    NOT NULL DEFAULT '',
     role                 TEXT    NOT NULL DEFAULT 'USER' CHECK (role IN ('ADMIN', 'USER')),
+    is_disabled          BOOLEAN NOT NULL DEFAULT false,
     must_change_password BOOLEAN NOT NULL DEFAULT false,
     created_at           BIGINT  NOT NULL DEFAULT (EXTRACT(EPOCH FROM NOW()) * 1000)::BIGINT
 );
@@ -46,6 +47,10 @@ CREATE TABLE IF NOT EXISTS public.owners (
     id_no       TEXT,
     nationality TEXT,
     notes       TEXT,
+    commission_type TEXT DEFAULT 'RATE',
+    commission_value NUMERIC DEFAULT 5,
+    portal_token TEXT,
+    management_contract_date TEXT,
     created_at  BIGINT
 );
 ALTER TABLE public.owners ENABLE ROW LEVEL SECURITY;
@@ -157,6 +162,7 @@ CREATE TABLE IF NOT EXISTS public.receipts (
     date_time   TEXT,
     amount      NUMERIC,
     channel     TEXT,
+    ref         TEXT,
     status      TEXT    DEFAULT 'POSTED',
     notes       TEXT,
     voided_at   BIGINT,
@@ -187,10 +193,12 @@ CREATE TABLE IF NOT EXISTS public.expenses (
     id          UUID    PRIMARY KEY DEFAULT gen_random_uuid(),
     no          TEXT,
     contract_id UUID,
+    property_id UUID,
     date_time   TEXT,
     amount      NUMERIC,
     category    TEXT,
     charged_to  TEXT,
+    ref         TEXT,
     description TEXT,
     status      TEXT    DEFAULT 'POSTED',
     voided_at   BIGINT,
@@ -543,6 +551,16 @@ CREATE TABLE IF NOT EXISTS public.tenant_balances (
 ALTER TABLE public.tenant_balances ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "tenant_balances_all_auth" ON public.tenant_balances;
 CREATE POLICY "tenant_balances_all_auth" ON public.tenant_balances FOR ALL USING (auth.role() = 'authenticated');
+
+-- Backward-compatible safety for older environments using an earlier baseline.
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS is_disabled BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE public.receipts ADD COLUMN IF NOT EXISTS ref TEXT;
+ALTER TABLE public.expenses ADD COLUMN IF NOT EXISTS ref TEXT;
+ALTER TABLE public.expenses ADD COLUMN IF NOT EXISTS property_id UUID;
+ALTER TABLE public.owners ADD COLUMN IF NOT EXISTS commission_type TEXT DEFAULT 'RATE';
+ALTER TABLE public.owners ADD COLUMN IF NOT EXISTS commission_value NUMERIC DEFAULT 5;
+ALTER TABLE public.owners ADD COLUMN IF NOT EXISTS portal_token TEXT;
+ALTER TABLE public.owners ADD COLUMN IF NOT EXISTS management_contract_date TEXT;
 
 CREATE TABLE IF NOT EXISTS public.account_balances (
     account_id  UUID    PRIMARY KEY,
