@@ -6,6 +6,8 @@ const SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 const ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY')!;
 const WINDOW_MS = 60_000;
 const WINDOW_MAX = 20;
+const GEMINI_API_KEY = Deno.env.get('GEMINI_API_KEY') || '';
+ main
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -96,6 +98,9 @@ Deno.serve(async req => {
     const status = message.includes('Rate limit') ? 429 : message === 'Unauthorized' || message === 'Forbidden' ? 403 : 400;
     return new Response(JSON.stringify({ error: message }), {
       status,
+    return new Response(JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error' }), {
+      status: 400,
+ main
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   }
