@@ -141,6 +141,17 @@ const Contracts: React.FC = () => {
     };
 
     const handleDelete = async (id: string) => {
+        const targetContract = contracts.find(c => c.id === id);
+        if (!targetContract) {
+            toast.error('العقد غير موجود أو تم حذفه مسبقًا.');
+            return;
+        }
+
+        if (targetContract.status === 'ACTIVE') {
+            toast.error('لا يمكن حذف عقد نشط. قم بإنهاء العقد أولًا ثم حاول مرة أخرى.');
+            return;
+        }
+
         const hasReceipts = receipts.some(r => r.contractId === id);
         const hasExpenses = expenses.some(e => e.contractId === id);
         const hasInvoices = db.invoices.some(i => i.contractId === id);
@@ -385,6 +396,8 @@ const ContractForm: React.FC<{ isOpen: boolean, onClose: () => void, contract: C
     const expenses = Array.isArray(db.expenses) ? db.expenses : [];
     const receipts = Array.isArray(db.receipts) ? db.receipts : [];
     const properties = Array.isArray(db.properties) ? db.properties : [];
+    
+    const normalizeOptionalText = (value: string) => value.trim();
 
     const availableUnits = units.filter(u => 
         !contracts.some(c => c.unitId === u.id && c.status === 'ACTIVE' && c.id !== contract?.id)
@@ -475,6 +488,48 @@ const ContractForm: React.FC<{ isOpen: boolean, onClose: () => void, contract: C
             toast.error('تاريخ الانتهاء يجب أن يكون بعد أو مساويًا لتاريخ البدء.');
             return;
         }
+        const selectedUnit = units.find(u => u.id === unitId);
+        const selectedTenant = tenants.find(t => t.id === tenantId);
+        if (!selectedUnit || !selectedTenant) {
+            toast.error('الوحدة أو المستأجر المحدد غير صالح. يرجى إعادة الاختيار.');
+            return;
+        }
+
+        const rent = parseLocalizedNumber(rentInput);
+        const deposit = parseLocalizedNumber(depositInput);
+        if (!Number.isFinite(rent) || rent <= 0) {
+            toast.error('قيمة الإيجار الشهرية يجب أن تكون رقمًا أكبر من صفر.');
+            return;
+        }
+        if (!Number.isFinite(deposit) || deposit < 0) {
+            toast.error('قيمة الوديعة يجب أن تكون رقمًا صالحًا (صفر أو أكبر).');
+            return;
+        }
+        if (!Number.isInteger(dueDay) || dueDay < 1 || dueDay > 28) {
+            toast.error('يوم الاستحقاق يجب أن يكون رقمًا صحيحًا بين 1 و 28.');
+            return;
+        }
+
+        const normalizedSponsorName = normalizeOptionalText(sponsorName);
+        const normalizedSponsorId = normalizeOptionalText(sponsorId);
+        const normalizedSponsorPhone = normalizeOptionalText(sponsorPhone);
+        if ((normalizedSponsorId || normalizedSponsorPhone) && !normalizedSponsorName) {
+            toast.error('يرجى إدخال اسم الكفيل عند تعبئة رقم الهوية أو الهاتف.');
+            return;
+        }
+
+        const hasOverlappingActiveContract = contracts.some(c => {
+            if (c.id === contract?.id || c.unitId !== unitId || c.status !== 'ACTIVE') return false;
+            const existingStart = new Date(c.start).getTime();
+            const existingEnd = new Date(c.end).getTime();
+            const nextStart = new Date(start).getTime();
+            const nextEnd = new Date(end).getTime();
+            return nextStart <= existingEnd && nextEnd >= existingStart;
+        });
+        if (hasOverlappingActiveContract) {
+            toast.error('توجد فترة متداخلة مع عقد نشط آخر لنفس الوحدة.');
+            return;
+        }
 
         if (status === 'ACTIVE') {
             const hasBlockingMaintenance = db.maintenanceRecords.some(m =>
@@ -503,9 +558,19 @@ const ContractForm: React.FC<{ isOpen: boolean, onClose: () => void, contract: C
         isSavingRef.current = true;
         setIsSaving(true);
         try {
-            const rent = parseLocalizedNumber(rentInput);
-            const deposit = parseLocalizedNumber(depositInput);
-            const data = { unitId, tenantId, rent, dueDay, start, end, deposit, status, sponsorName, sponsorId, sponsorPhone };
+            const data = {
+                unitId,
+                tenantId,
+                rent,
+                dueDay,
+                start,
+                end,
+                deposit,
+                status,
+                sponsorName: normalizedSponsorName,
+                sponsorId: normalizedSponsorId,
+                sponsorPhone: normalizedSponsorPhone
+            };
             if (contract) {
                 await dataService.update('contracts', contract.id, data);
             } else {
