@@ -121,6 +121,7 @@ const App: React.FC = () => {
         <Routes>
           {/* Public Routes */}
           <Route path="/owner-view/:ownerId" element={<OwnerView />} />
+          <Route path="/portal/:ownerId" element={<OwnerView />} />
 
           {!auth.currentUser ? (
             <>
