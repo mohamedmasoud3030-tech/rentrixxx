@@ -25,6 +25,7 @@ begin
   return result;
 end;
 $$;
+ codex/conduct-full-technical-audit-utj7f7
 
 create table if not exists public.edge_rate_limits (
   id bigserial primary key,
@@ -35,3 +36,5 @@ create table if not exists public.edge_rate_limits (
 
 create index if not exists idx_edge_rate_limits_lookup
   on public.edge_rate_limits (user_id, endpoint, ts);
+
+ main
