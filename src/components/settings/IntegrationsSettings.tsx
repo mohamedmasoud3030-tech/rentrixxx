@@ -33,16 +33,17 @@ const IntegrationsSettings: React.FC = () => {
             <div className="bg-background rounded-lg border border-border p-6 space-y-4">
                 <h3 className="text-lg font-bold text-text">Google Gemini AI</h3>
                 <p className="text-sm text-text-muted">
-                    أضف مفتاح API الخاص بك من Google AI Studio لتفعيل المساعد الذكي في النظام.
+                    تم نقل التكامل إلى Proxy آمن على الخادم. إدارة المفتاح تتم عبر متغيرات البيئة الخلفية فقط.
                 </p>
                 <div>
-                    <label className="text-xs font-medium text-text-muted">Gemini API Key</label>
+                    <label className="text-xs font-medium text-text-muted">Gemini API Key (Server Managed)</label>
                     <input
                         type="password"
                         name="geminiApiKey"
-                        value={integrations.geminiApiKey}
-                        onChange={handleChange}
-                        placeholder="ادخل مفتاح API هنا"
+                        value={integrations.geminiApiKey ? '********' : ''}
+                        onChange={() => undefined}
+                        placeholder="Managed on backend"
+                        disabled
                     />
                 </div>
             </div>

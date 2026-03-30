@@ -1,49 +1,21 @@
-import React, { useMemo, useEffect, useState } from 'react';
-import { useApp } from '../../../contexts/AppContext';
-import Card from '../../ui/Card';
-import { formatCurrency, formatDate } from '../../../utils/helpers';
-import {
-  FileText, BarChart3, TrendingUp, Wallet, TrendingDown, Users,
-  PieChart, ArrowUp, ArrowDown, Banknote, Percent,
-  Building2, CalendarRange, Filter, Zap
-} from 'lucide-react';
-import { UtilityRecord, UtilityType, UTILITY_TYPE_AR, UTILITY_ICON } from '../../../types';
-import PrintPreviewModal from '../../shared/PrintPreviewModal';
-import { ActionBar, CHART_COLORS, MiniKpi, ReportPrintableContent, SectionHeader } from '../ReportPrimitives';
-import {
-  exportRentRollToPdf, exportOwnerLedgerToPdf, exportTenantStatementToPdf,
-  exportIncomeStatementToPdf, exportTrialBalanceToPdf, exportBalanceSheetToPdf,
-  exportAgedReceivablesToPdf, exportDailyCollectionToPdf, exportExpensesReportToPdf,
-  exportDepositsReportToPdf, exportMaintenanceReportToPdf, exportOverdueTenantsToPdf,
-  exportVacantUnitsToPdf, exportUtilitiesReportToPdf, exportPropertyReportToPdf
-} from '../../../services/pdfService';
-import { calculateBalanceSheetData, calculateIncomeStatementData, calculateAgedReceivables } from '../../../services/accountingService';
-import { startOfMonth, endOfMonth, subMonths, startOfYear, endOfYear, isWithinInterval, format, eachMonthOfInterval } from 'date-fns';
-import { ar } from 'date-fns/locale';
-import {
-  BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid,
-  PieChart as RechartsPie, Pie, Cell, Legend, AreaChart, Area,
-  LineChart, Line
-} from 'recharts';
-import { ReportTab } from './ReportsSidebar';
-
-interface OwnerLedgerTransaction {
-  date: string;
-  details: string;
-  type: 'receipt' | 'expense' | 'settlement';
-  gross: number;
-  officeShare: number;
-  net: number;
-}
-
-interface BalanceSheetLine {
-  no: string;
-  name: string;
-  isParent: boolean;
-  balance: number;
-  children: BalanceSheetLine[];
-}
-
+import React from 'react';
+import { ReportTab } from '../ReportsSidebar';
+import ReportsOverview from './ReportsOverview';
+import RentRoll from './RentRoll';
+import OwnerLedger from './OwnerLedger';
+import TenantStatement from './TenantStatement';
+import IncomeStatement from './IncomeStatement';
+import BalanceSheet from './BalanceSheet';
+import TrialBalance from './TrialBalance';
+import AgedReceivables from './AgedReceivables';
+import PropertyReport from './PropertyReport';
+import DailyCollectionReport from './DailyCollectionReport';
+import MaintenanceReport from './MaintenanceReport';
+import DepositsReport from './DepositsReport';
+import ExpensesReport from './ExpensesReport';
+import UtilitiesReport from './UtilitiesReport';
+import OverdueTenants from './OverdueTenants';
+import VacantUnits from './VacantUnits';
 
 const ReportContentRenderer: React.FC<{ activeTab: ReportTab; currency: string }> = ({ activeTab, currency }) => {
   switch (activeTab) {
