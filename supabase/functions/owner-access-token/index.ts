@@ -28,8 +28,7 @@ const logEvent = (level: 'info' | 'warn' | 'error', message: string, meta: Recor
 async function sign(payload: string): Promise<string> {
   const key = await crypto.subtle.importKey('raw', encoder.encode(OWNER_TOKEN_SECRET), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
   const sig = await crypto.subtle.sign('HMAC', key, encoder.encode(payload));
-  const b64 = btoa(String.fromCharCode(...new Uint8Array(sig))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/g, '');
-  return b64;
+  return btoa(String.fromCharCode(...new Uint8Array(sig))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/g, '');
 }
 
 async function verify(payload: string, signature: string): Promise<boolean> {
@@ -71,8 +70,7 @@ Deno.serve(async req => {
 
       const ownerFromMetadata = String(caller.user_metadata?.ownerId || caller.app_metadata?.ownerId || '');
       const isAdmin = profile.role === 'ADMIN';
-      const isOwner = ownerFromMetadata && ownerFromMetadata === ownerId;
-
+      const isOwner = ownerFromMetadata !== '' && ownerFromMetadata === ownerId;
       if (!isAdmin && !isOwner) {
         logEvent('warn', 'owner token issuance denied', { callerId: caller.id, ownerId });
         throw new HttpError('Forbidden', 403);

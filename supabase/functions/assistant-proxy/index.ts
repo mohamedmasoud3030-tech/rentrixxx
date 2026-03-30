@@ -6,8 +6,6 @@ const SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 const ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY')!;
 const WINDOW_MS = 60_000;
 const WINDOW_MAX = 20;
-const GEMINI_API_KEY = Deno.env.get('GEMINI_API_KEY') || '';
- main
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -32,6 +30,7 @@ Deno.serve(async req => {
 
     const userClient = createClient(SUPABASE_URL, ANON_KEY, { global: { headers: { Authorization: authHeader } } });
     const adminClient = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
+
     const { data: authData } = await userClient.auth.getUser();
     const caller = authData.user;
     if (!caller) throw new Error('Unauthorized');
@@ -95,12 +94,9 @@ Deno.serve(async req => {
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown error';
-    const status = message.includes('Rate limit') ? 429 : message === 'Unauthorized' || message === 'Forbidden' ? 403 : 400;
+    const status = message.includes('Rate limit') ? 429 : message === 'Unauthorized' ? 401 : message === 'Forbidden' ? 403 : 400;
     return new Response(JSON.stringify({ error: message }), {
       status,
-    return new Response(JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error' }), {
-      status: 400,
- main
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   }
