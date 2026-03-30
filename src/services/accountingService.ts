@@ -1,172 +1,387 @@
+import { Account, Database, JournalEntry } from '../types';
 
-import { Database } from '../types';
-import { formatCurrency } from '../utils/helpers';
+type AccountType = Account['type'];
 
-// Helper function to safely get a number
-const n = (val: unknown) => typeof val === 'number' && isFinite(val) ? val : 0;
+interface BalanceSheetLine {
+  id: string;
+  no: string;
+  name: string;
+  isParent: boolean;
+  balance: number;
+  children: BalanceSheetLine[];
+}
 
-// Helper to calculate balance of an account and its children
-const getAccountBalance = (accountId: string, balances: Map<string, number>, accounts: Map<string, Database['accounts'][number]>, childrenMap: Map<string, string[]>) => {
-    let total = balances.get(accountId) || 0;
-    const children = childrenMap.get(accountId);
-    if (children) {
-        children.forEach(childId => {
-            total += getAccountBalance(childId, balances, accounts, childrenMap);
-        });
-    }
-    return total;
+interface TrialLine {
+  id: string;
+  no: string;
+  name: string;
+  type: AccountType;
+  totalDebit: number;
+  totalCredit: number;
+  netBalance: number;
+}
+
+interface LedgerLine {
+  id: string;
+  no: string;
+  date: string;
+  sourceId: string;
+  type: JournalEntry['type'];
+  debit: number;
+  credit: number;
+  amount: number;
+  runningBalance: number;
+}
+
+const round3 = (value: number): number => Math.round((Number.isFinite(value) ? value : 0) * 1000) / 1000;
+const toNumber = (value: unknown): number => (typeof value === 'number' && Number.isFinite(value) ? value : 0);
+
+const safeDate = (value: unknown): Date | null => {
+  if (!value) return null;
+  const d = new Date(String(value));
+  return Number.isNaN(d.getTime()) ? null : d;
 };
 
+const isDebitNormal = (type?: AccountType): boolean => type === 'ASSET' || type === 'EXPENSE';
+
+const signedByNormal = (type: AccountType | undefined, debit: number, credit: number): number => {
+  if (!type) return round3(debit - credit);
+  return isDebitNormal(type) ? round3(debit - credit) : round3(credit - debit);
+};
+
+const getArrays = (db: Database) => ({
+  accounts: Array.isArray(db?.accounts) ? db.accounts : [],
+  journalEntries: Array.isArray(db?.journalEntries) ? db.journalEntries : [],
+  invoices: Array.isArray(db?.invoices) ? db.invoices : [],
+  contracts: Array.isArray(db?.contracts) ? db.contracts : [],
+  tenants: Array.isArray(db?.tenants) ? db.tenants : [],
+});
+
+const getEntrySumsByAccount = (
+  journalEntries: JournalEntry[],
+  predicate: (entry: JournalEntry) => boolean,
+): Map<string, { debit: number; credit: number }> => {
+  const sums = new Map<string, { debit: number; credit: number }>();
+
+  for (const je of journalEntries) {
+    if (!je?.accountId || !predicate(je)) continue;
+    const current = sums.get(je.accountId) ?? { debit: 0, credit: 0 };
+    const amount = toNumber(je.amount);
+    if (je.type === 'DEBIT') current.debit = round3(current.debit + amount);
+    if (je.type === 'CREDIT') current.credit = round3(current.credit + amount);
+    sums.set(je.accountId, current);
+  }
+
+  return sums;
+};
 
 export const calculateIncomeStatementData = (db: Database, startDate: string, endDate: string) => {
-    const start = new Date(startDate);
-    const end = new Date(endDate);
-    const balances = new Map<string, number>();
+  try {
+    const { accounts, journalEntries } = getArrays(db);
+    const start = safeDate(startDate);
+    const end = safeDate(endDate);
 
-    db.accounts.forEach(acc => balances.set(acc.id, 0));
-    
-    db.journalEntries
-      .filter(je => { const d = new Date(je.date); return d >= start && d <= end; })
-      .forEach(je => {
-        const currentBalance = balances.get(je.accountId) || 0;
-        const amount = je.type === 'DEBIT' ? je.amount : -je.amount;
-        balances.set(je.accountId, currentBalance + amount);
+    if (!start || !end) {
+      return { revenues: [], expenses: [], totalRevenue: 0, totalExpense: 0, netIncome: 0 };
+    }
+
+    const sums = getEntrySumsByAccount(journalEntries, (je) => {
+      const d = safeDate(je?.date);
+      return !!d && d >= start && d <= end;
     });
 
-    const revenueAccounts = db.accounts.filter(acc => acc.type === 'REVENUE');
-    const expenseAccounts = db.accounts.filter(acc => acc.type === 'EXPENSE');
+    const revenues = accounts
+      .filter((acc) => acc?.type === 'REVENUE')
+      .map((acc) => {
+        const sum = sums.get(acc.id) ?? { debit: 0, credit: 0 };
+        const balance = round3(sum.credit - sum.debit);
+        return { id: acc.id, no: acc.no, name: acc.name, balance };
+      })
+      .filter((line) => Math.abs(line.balance) > 0.0001);
 
-    const revenues = revenueAccounts.map(acc => ({ no: acc.no, name: acc.name, balance: -n(balances.get(acc.id)) })).filter(r => r.balance !== 0);
-    const expenses = expenseAccounts.map(acc => ({ no: acc.no, name: acc.name, balance: n(balances.get(acc.id)) })).filter(e => e.balance !== 0);
+    const expenses = accounts
+      .filter((acc) => acc?.type === 'EXPENSE')
+      .map((acc) => {
+        const sum = sums.get(acc.id) ?? { debit: 0, credit: 0 };
+        const balance = round3(sum.debit - sum.credit);
+        return { id: acc.id, no: acc.no, name: acc.name, balance };
+      })
+      .filter((line) => Math.abs(line.balance) > 0.0001);
 
-    const totalRevenue = revenues.reduce((sum, item) => sum + item.balance, 0);
-    const totalExpense = expenses.reduce((sum, item) => sum + item.balance, 0);
-    
+    const totalRevenue = round3(revenues.reduce((sum, item) => sum + item.balance, 0));
+    const totalExpense = round3(expenses.reduce((sum, item) => sum + item.balance, 0));
+
     return {
-        revenues,
-        expenses,
-        totalRevenue,
-        totalExpense,
-        netIncome: totalRevenue - totalExpense,
+      revenues,
+      expenses,
+      totalRevenue,
+      totalExpense,
+      netIncome: round3(totalRevenue - totalExpense),
     };
+  } catch {
+    return { revenues: [], expenses: [], totalRevenue: 0, totalExpense: 0, netIncome: 0 };
+  }
 };
 
+export const calculateTrialBalanceData = (db: Database, endDate: string) => {
+  try {
+    const { accounts, journalEntries } = getArrays(db);
+    const end = safeDate(endDate);
+    if (!end) {
+      return { lines: [] as TrialLine[], totalDebit: 0, totalCredit: 0, isBalanced: true };
+    }
+
+    const accountMap = new Map(accounts.map((acc) => [acc.id, acc]));
+    const sums = getEntrySumsByAccount(journalEntries, (je) => {
+      const d = safeDate(je?.date);
+      return !!d && d <= end;
+    });
+
+    const lines: TrialLine[] = [];
+
+    sums.forEach((sum, accountId) => {
+      const account = accountMap.get(accountId);
+      if (!account) return;
+
+      const totalDebit = round3(sum.debit);
+      const totalCredit = round3(sum.credit);
+      const netBalance = signedByNormal(account.type, totalDebit, totalCredit);
+
+      if (Math.abs(totalDebit) < 0.0001 && Math.abs(totalCredit) < 0.0001) return;
+
+      lines.push({
+        id: account.id,
+        no: account.no,
+        name: account.name,
+        type: account.type,
+        totalDebit,
+        totalCredit,
+        netBalance,
+      });
+    });
+
+    lines.sort((a, b) => a.no.localeCompare(b.no, 'en'));
+
+    const totalDebit = round3(lines.reduce((sum, line) => sum + line.totalDebit, 0));
+    const totalCredit = round3(lines.reduce((sum, line) => sum + line.totalCredit, 0));
+
+    return {
+      lines,
+      totalDebit,
+      totalCredit,
+      isBalanced: Math.abs(totalDebit - totalCredit) < 0.001,
+    };
+  } catch {
+    return { lines: [] as TrialLine[], totalDebit: 0, totalCredit: 0, isBalanced: true };
+  }
+};
+
+export const calculateGeneralLedgerForAccount = (db: Database, accountId: string, startDate: string, endDate: string) => {
+  try {
+    const { accounts, journalEntries } = getArrays(db);
+    const account = accounts.find((acc) => acc.id === accountId);
+    const start = safeDate(startDate);
+    const end = safeDate(endDate);
+
+    if (!account || !start || !end) return [] as LedgerLine[];
+
+    let runningBalance = 0;
+
+    const entries = journalEntries
+      .filter((je) => {
+        const d = safeDate(je?.date);
+        return je?.accountId === accountId && !!d && d >= start && d <= end;
+      })
+      .sort((a, b) => {
+        const da = safeDate(a.date)?.getTime() ?? 0;
+        const dbt = safeDate(b.date)?.getTime() ?? 0;
+        if (da !== dbt) return da - dbt;
+        return (a.createdAt ?? 0) - (b.createdAt ?? 0);
+      })
+      .map((je) => {
+        const debit = je.type === 'DEBIT' ? toNumber(je.amount) : 0;
+        const credit = je.type === 'CREDIT' ? toNumber(je.amount) : 0;
+        runningBalance = round3(runningBalance + signedByNormal(account.type, debit, credit));
+
+        return {
+          id: je.id,
+          no: je.no,
+          date: je.date,
+          sourceId: je.sourceId,
+          type: je.type,
+          debit: round3(debit),
+          credit: round3(credit),
+          amount: round3(toNumber(je.amount)),
+          runningBalance,
+        };
+      });
+
+    return entries;
+  } catch {
+    return [] as LedgerLine[];
+  }
+};
 
 export const calculateBalanceSheetData = (db: Database, asOfDate: string) => {
-    const end = new Date(asOfDate);
-    const balances = new Map<string, number>();
-    db.accounts.forEach(acc => balances.set(acc.id, 0));
+  try {
+    const { accounts, journalEntries } = getArrays(db);
+    const end = safeDate(asOfDate);
+    if (!end) {
+      return { assets: [], liabilities: [], equity: [], totalAssets: 0, totalLiabilities: 0, totalEquity: 0 };
+    }
 
-    // Calculate balances up to the given date
-    db.journalEntries
-      .filter(je => new Date(je.date) <= end)
-      .forEach(je => {
-        const currentBalance = balances.get(je.accountId) || 0;
-        const amount = je.type === 'DEBIT' ? je.amount : -je.amount;
-        balances.set(je.accountId, currentBalance + amount);
+    const sums = getEntrySumsByAccount(journalEntries, (je) => {
+      const d = safeDate(je?.date);
+      return !!d && d <= end;
     });
 
-    const accountsMap = new Map(db.accounts.map(acc => [acc.id, acc]));
+    const accountsMap = new Map(accounts.map((acc) => [acc.id, acc]));
     const childrenMap = new Map<string, string[]>();
-    db.accounts.forEach(acc => {
-        if (acc.parentId) {
-            if (!childrenMap.has(acc.parentId)) childrenMap.set(acc.parentId, []);
-            childrenMap.get(acc.parentId)!.push(acc.id);
-        }
-    });
 
-    const buildHierarchy = (accountIds: string[], type: 'ASSET' | 'LIABILITY' | 'EQUITY' | 'REVENUE' | 'EXPENSE') => {
-        return accountIds.map(id => {
-            const account = accountsMap.get(id)!;
-            const rawBalance = getAccountBalance(id, balances, accountsMap, childrenMap);
-            // Assets and Expenses: Debit balance is positive
-            // Liabilities, Equity, Revenue: Credit balance is positive
-            const balance = (type === 'ASSET' || type === 'EXPENSE') ? rawBalance : -rawBalance;
-            
-            const children = childrenMap.get(id);
-            return {
-                no: account.no,
-                name: account.name,
-                isParent: account.isParent,
-                balance,
-                children: children ? buildHierarchy(children, type) : [],
-            };
-        }).filter(acc => Math.abs(acc.balance) > 0.001 || acc.children.length > 0);
+    for (const acc of accounts) {
+      const parentId = (acc.parentId ?? '').toString().trim();
+      if (!parentId) continue;
+      const children = childrenMap.get(parentId) ?? [];
+      children.push(acc.id);
+      childrenMap.set(parentId, children);
+    }
+
+    const getAccountWithChildrenBalance = (accountId: string): number => {
+      const acc = accountsMap.get(accountId);
+      if (!acc) return 0;
+      const own = sums.get(accountId) ?? { debit: 0, credit: 0 };
+      let total = signedByNormal(acc.type, own.debit, own.credit);
+      const children = childrenMap.get(accountId) ?? [];
+      for (const childId of children) {
+        total = round3(total + getAccountWithChildrenBalance(childId));
+      }
+      return round3(total);
     };
 
-    const rootAssets = db.accounts.filter(a => a.type === 'ASSET' && !a.parentId).map(a => a.id);
-    const rootLiabilities = db.accounts.filter(a => a.type === 'LIABILITY' && !a.parentId).map(a => a.id);
-    const rootEquity = db.accounts.filter(a => a.type === 'EQUITY' && !a.parentId).map(a => a.id);
+    const buildHierarchy = (roots: Account[]): BalanceSheetLine[] =>
+      roots
+        .map((acc) => {
+          const children = (childrenMap.get(acc.id) ?? [])
+            .map((childId) => accountsMap.get(childId))
+            .filter((child): child is Account => !!child);
 
-    const assets = buildHierarchy(rootAssets, 'ASSET');
-    const liabilities = buildHierarchy(rootLiabilities, 'LIABILITY');
-    const equity = buildHierarchy(rootEquity, 'EQUITY');
+          const nodeChildren = buildHierarchy(children);
+          const balance = getAccountWithChildrenBalance(acc.id);
 
-    const totalAssets = assets.reduce((sum, item) => sum + item.balance, 0);
-    const totalLiabilities = liabilities.reduce((sum, item) => sum + item.balance, 0);
-    const totalEquity = equity.reduce((sum, item) => sum + item.balance, 0);
+          return {
+            id: acc.id,
+            no: acc.no,
+            name: acc.name,
+            isParent: !!acc.isParent,
+            balance: round3(balance),
+            children: nodeChildren,
+          };
+        })
+        .filter((line) => Math.abs(line.balance) > 0.0001 || line.children.length > 0)
+        .sort((a, b) => a.no.localeCompare(b.no, 'en'));
+
+    const isRoot = (acc: Account): boolean => !acc.parentId || acc.parentId === '' || acc.parentId === null;
+
+    const assets = buildHierarchy(accounts.filter((acc) => acc.type === 'ASSET' && isRoot(acc)));
+    const liabilities = buildHierarchy(accounts.filter((acc) => acc.type === 'LIABILITY' && isRoot(acc)));
+    const equity = buildHierarchy(accounts.filter((acc) => acc.type === 'EQUITY' && isRoot(acc)));
+
+    const totalAssets = round3(assets.reduce((sum, item) => sum + item.balance, 0));
+    const totalLiabilities = round3(liabilities.reduce((sum, item) => sum + item.balance, 0));
+    const totalEquity = round3(equity.reduce((sum, item) => sum + item.balance, 0));
 
     return { assets, liabilities, equity, totalAssets, totalLiabilities, totalEquity };
+  } catch {
+    return { assets: [], liabilities: [], equity: [], totalAssets: 0, totalLiabilities: 0, totalEquity: 0 };
+  }
 };
 
 export const calculateAgedReceivables = (db: Database, asOfDate: string) => {
-    const asOf = new Date(asOfDate);
-    const tenantBalances = new Map<string, { tenantName: string, buckets: { [key: string]: number } }>();
+  try {
+    const { invoices, contracts, tenants } = getArrays(db);
+    const asOf = safeDate(asOfDate);
+    if (!asOf) {
+      return { lines: [], totals: { total: 0, current: 0, '1-30': 0, '31-60': 0, '61-90': 0, '90+': 0 } };
+    }
 
-    db.tenants.forEach(t => {
-        tenantBalances.set(t.id, {
-            tenantName: t.name,
-            buckets: { current: 0, '1-30': 0, '31-60': 0, '61-90': 0, '90+': 0, total: 0 }
-        });
-    });
+    const tenantMap = new Map(tenants.map((t) => [t.id, t.name]));
+    const contractMap = new Map(contracts.map((c) => [c.id, c]));
+    const bucketsByTenant = new Map<string, { tenantName: string; current: number; '1-30': number; '31-60': number; '61-90': number; '90+': number; total: number }>();
 
-    db.invoices.forEach(invoice => {
-        if (new Date(invoice.dueDate) > asOf || invoice.status === 'PAID') return;
+    for (const invoice of invoices) {
+      const dueDate = safeDate(invoice?.dueDate);
+      if (!dueDate || dueDate > asOf || invoice?.status === 'PAID') continue;
 
-        const remainingBalance = (invoice.amount + (invoice.taxAmount || 0)) - invoice.paidAmount;
-        if (remainingBalance <= 0) return;
+      const remaining = round3(toNumber(invoice.amount) + toNumber(invoice.taxAmount) - toNumber(invoice.paidAmount));
+      if (remaining <= 0) continue;
 
-        const contract = db.contracts.find(c => c.id === invoice.contractId);
-        if (!contract) return;
-        
-        const tenantData = tenantBalances.get(contract.tenantId);
-        if (!tenantData) return;
+      const contract = contractMap.get(invoice.contractId);
+      if (!contract) continue;
 
-        const dueDate = new Date(invoice.dueDate);
-        const daysOverdue = Math.floor((asOf.getTime() - dueDate.getTime()) / (1000 * 3600 * 24));
+      const tenantId = contract.tenantId;
+      const entry = bucketsByTenant.get(tenantId) ?? {
+        tenantName: tenantMap.get(tenantId) ?? 'غير معروف',
+        current: 0,
+        '1-30': 0,
+        '31-60': 0,
+        '61-90': 0,
+        '90+': 0,
+        total: 0,
+      };
 
-        if (daysOverdue <= 0) tenantData.buckets.current += remainingBalance;
-        else if (daysOverdue <= 30) tenantData.buckets['1-30'] += remainingBalance;
-        else if (daysOverdue <= 60) tenantData.buckets['31-60'] += remainingBalance;
-        else if (daysOverdue <= 90) tenantData.buckets['61-90'] += remainingBalance;
-        else tenantData.buckets['90+'] += remainingBalance;
+      const days = Math.floor((asOf.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24));
 
-        tenantData.buckets.total += remainingBalance;
-    });
+      if (days <= 0) entry.current = round3(entry.current + remaining);
+      else if (days <= 30) entry['1-30'] = round3(entry['1-30'] + remaining);
+      else if (days <= 60) entry['31-60'] = round3(entry['31-60'] + remaining);
+      else if (days <= 90) entry['61-90'] = round3(entry['61-90'] + remaining);
+      else entry['90+'] = round3(entry['90+'] + remaining);
 
-    // FIX: Explicitly construct object to ensure correct type inference for `lines` array.
-    const lines = Array.from(tenantBalances.values())
-        .filter(t => t.buckets.total > 0.001)
-        .map(t => ({ 
-            tenantName: t.tenantName,
-            total: t.buckets.total,
-            current: t.buckets.current,
-            '1-30': t.buckets['1-30'],
-            '31-60': t.buckets['31-60'],
-            '61-90': t.buckets['61-90'],
-            '90+': t.buckets['90+'],
-        }))
-        .sort((a,b) => b.total - a.total);
+      entry.total = round3(entry.total + remaining);
+      bucketsByTenant.set(tenantId, entry);
+    }
 
-    const totals = lines.reduce((acc, line) => {
-        acc.total += line.total;
-        acc.current += line.current;
-        acc['1-30'] += line['1-30'];
-        acc['31-60'] += line['31-60'];
-        acc['61-90'] += line['61-90'];
-        acc['90+'] += line['90+'];
-        return acc;
-    }, { total: 0, current: 0, '1-30': 0, '31-60': 0, '61-90': 0, '90+': 0 });
+    const lines = Array.from(bucketsByTenant.values())
+      .filter((line) => line.total > 0)
+      .sort((a, b) => b.total - a.total);
+
+    const totals = lines.reduce(
+      (acc, line) => ({
+        total: round3(acc.total + line.total),
+        current: round3(acc.current + line.current),
+        '1-30': round3(acc['1-30'] + line['1-30']),
+        '31-60': round3(acc['31-60'] + line['31-60']),
+        '61-90': round3(acc['61-90'] + line['61-90']),
+        '90+': round3(acc['90+'] + line['90+']),
+      }),
+      { total: 0, current: 0, '1-30': 0, '31-60': 0, '61-90': 0, '90+': 0 },
+    );
 
     return { lines, totals };
+  } catch {
+    return { lines: [], totals: { total: 0, current: 0, '1-30': 0, '31-60': 0, '61-90': 0, '90+': 0 } };
+  }
+};
+
+export const getAccountingHealthCheck = (db: Database) => {
+  try {
+    const { accounts, journalEntries } = getArrays(db);
+    const debitTotal = round3(
+      journalEntries.filter((je) => je?.type === 'DEBIT').reduce((sum, je) => sum + toNumber(je.amount), 0),
+    );
+    const creditTotal = round3(
+      journalEntries.filter((je) => je?.type === 'CREDIT').reduce((sum, je) => sum + toNumber(je.amount), 0),
+    );
+
+    const discrepancy = round3(debitTotal - creditTotal);
+
+    return {
+      isBalanced: Math.abs(discrepancy) < 0.001,
+      discrepancy,
+      journalCount: journalEntries.length,
+      accountCount: accounts.length,
+    };
+  } catch {
+    return { isBalanced: false, discrepancy: 0, journalCount: 0, accountCount: 0 };
+  }
 };

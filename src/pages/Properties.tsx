@@ -6,13 +6,14 @@ import Modal from '../components/ui/Modal';
 import ActionsMenu, { EditAction, DeleteAction } from '../components/shared/ActionsMenu';
 import AttachmentsManager from '../components/shared/AttachmentsManager';
 import ConfirmActionModal from '../components/shared/ConfirmActionModal';
-import { formatCurrency, toArabicDigits, formatDate } from '../utils/helpers';
+import { formatCurrency, toArabicDigits, formatDate, normalizeArabicNumerals } from '../utils/helpers';
 import NumberInput from '../components/ui/NumberInput';
 import { Building, Home, ArrowRight, User, Map as MapIcon, AlertCircle, Clock, FileText, Wrench, Phone, Percent, TrendingUp, Zap, Droplets, Flame, Wifi, ChevronRight, Plus, Image, Trash2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 import PropertyMapView from './PropertyMap';
 import { PieChart as RechartsPie, Pie, Cell, ResponsiveContainer, Legend } from 'recharts';
+import SearchFilterBar from '../components/shared/SearchFilterBar';
 
 interface ErrorBoundaryState { hasError: boolean; error: Error | null; }
 class ErrorBoundary extends Component<{ children: ReactNode; fallback?: ReactNode }, ErrorBoundaryState> {
@@ -65,14 +66,32 @@ const Properties: React.FC = () => {
 };
 
 const PropertiesListView: React.FC = () => {
-    // FIX: Use dataService for data manipulation
-    const { db, dataService } = useApp();
+    const { db, dataService, settings, ownerBalances } = useApp();
     const properties = Array.isArray(db.properties) ? db.properties : [];
     const units = Array.isArray(db.units) ? db.units : [];
     const owners = Array.isArray(db.owners) ? db.owners : [];
     const [selectedProp, setSelectedProp] = useState<Property | null>(null);
     const [isPropModalOpen, setIsPropModalOpen] = useState(false);
     const [editingProp, setEditingProp] = useState<Property | null>(null);
+    const [searchTerm, setSearchTerm] = useState('');
+
+    const filteredProperties = useMemo(() => {
+        const q = normalizeArabicNumerals(searchTerm).trim().toLowerCase();
+        if (!q) return properties;
+        return properties.filter(p => {
+            const ownerName = owners.find(o => o.id === p.ownerId)?.name || '';
+            return [p.name, p.location, ownerName].some(value => normalizeArabicNumerals(value || '').toLowerCase().includes(q));
+        });
+    }, [properties, owners, searchTerm]);
+
+    const handleDeleteProperty = useCallback(async (id: string) => {
+        const linkedUnits = units.filter(u => u.propertyId === id);
+        if (linkedUnits.length > 0) {
+            toast.error(`لا يمكن حذف العقار لأنه يحتوي على ${linkedUnits.length} وحدة. احذف الوحدات أولاً.`);
+            return;
+        }
+        await dataService.remove('properties', id);
+    }, [dataService, units]);
 
     const stats = useMemo(() => {
         const totalUnits = units.length;
@@ -121,23 +140,35 @@ const PropertiesListView: React.FC = () => {
                 <h2 className="text-xl font-bold">قائمة العقارات</h2>
                 <button onClick={() => { setEditingProp(null); setIsPropModalOpen(true); }} className="btn btn-primary">إضافة عقار</button>
             </div>
+            <SearchFilterBar searchTerm={searchTerm} onSearchChange={setSearchTerm} placeholder="بحث باسم العقار، الموقع أو المالك..." />
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {properties.map(p => (
+                {filteredProperties.map(p => {
+                    const propertyUnits = units.filter(u => u.propertyId === p.id);
+                    const rentedUnits = propertyUnits.filter(u => u.status === 'RENTED').length;
+                    const occupancy = propertyUnits.length > 0 ? (rentedUnits / propertyUnits.length) * 100 : 0;
+                    const activeContracts = db.contracts.filter(c => c.status === 'ACTIVE' && propertyUnits.some(u => u.id === c.unitId));
+                    const monthlyRevenue = activeContracts.reduce((sum, c) => sum + (c.rent || 0), 0);
+                    const netOwnerDue = ownerBalances[p.ownerId]?.net ?? 0;
+                    return (
                     <div key={p.id} onClick={() => setSelectedProp(p)} className="bg-background p-4 rounded-lg border border-border cursor-pointer hover:ring-2 hover:ring-primary transition-all">
                         <div className="flex justify-between items-start mb-2">
                             <h3 className="font-bold text-lg">{p.name}</h3>
                             <div onClick={(e) => e.stopPropagation()}>
-                                {/* FIX: Use dataService for data manipulation */}
-                                <ActionsMenu items={[ EditAction(() => { setEditingProp(p); setIsPropModalOpen(true); }), DeleteAction(async () => await dataService.remove('properties', p.id)) ]} />
+                                <ActionsMenu items={[ EditAction(() => { setEditingProp(p); setIsPropModalOpen(true); }), DeleteAction(async () => await handleDeleteProperty(p.id)) ]} />
                             </div>
                         </div>
                         <p className="text-sm text-text-muted mb-4">{p.location}</p>
                         <div className="flex justify-between text-xs text-text-muted">
-                            <span>الوحدات: {toArabicDigits(units.filter(u=>u.propertyId===p.id).length)}</span>
+                            <span>الوحدات: {toArabicDigits(propertyUnits.length)}</span>
                             <span>المالك: {owners.find(o=>o.id===p.ownerId)?.name || '-'}</span>
                         </div>
+                        <div className="grid grid-cols-1 gap-1 mt-3 pt-3 border-t border-border text-xs">
+                            <p>إجمالي الإيرادات الشهرية: <span className="font-bold text-primary">{formatCurrency(monthlyRevenue, settings.operational.currency)}</span></p>
+                            <p>نسبة الإشغال: <span className="font-bold">{occupancy.toFixed(0)}%</span></p>
+                            <p>صافي مستحق المالك: <span className={`font-bold ${netOwnerDue >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>{formatCurrency(netOwnerDue, settings.operational.currency)}</span></p>
+                        </div>
                     </div>
-                ))}
+                )})}
             </div>
             {isPropModalOpen && <PropertyForm isOpen={isPropModalOpen} onClose={() => setIsPropModalOpen(false)} property={editingProp} />}
         </div>
@@ -155,11 +186,29 @@ const UnitsView: React.FC<{ property: Property, onBack: () => void }> = ({ prope
     const { db, dataService } = useApp();
     const allUnits = Array.isArray(db.units) ? db.units : [];
     const utilityRecords = Array.isArray(db.utilityRecords) ? db.utilityRecords : [];
+    const contracts = Array.isArray(db.contracts) ? db.contracts : [];
     const [isUnitModalOpen, setIsUnitModalOpen] = useState(false);
     const [editingUnit, setEditingUnit] = useState<Unit | null>(null);
     const [selectedUnit, setSelectedUnit] = useState<Unit | null>(null);
+    const [statusFilter, setStatusFilter] = useState<'ALL' | Unit['status']>('ALL');
     
     const units = useMemo(() => allUnits.filter(u => u.propertyId === property.id), [allUnits, property.id]);
+    const filteredUnits = useMemo(() => statusFilter === 'ALL' ? units : units.filter(u => u.status === statusFilter), [units, statusFilter]);
+
+    const activeContractsByUnit = useMemo(() => {
+        const map = new Map<string, typeof contracts[number]>();
+        contracts.filter(c => c.status === 'ACTIVE').forEach(c => map.set(c.unitId, c));
+        return map;
+    }, [contracts]);
+
+    const handleDeleteUnit = useCallback(async (id: string) => {
+        const hasContract = db.contracts.some(c => c.unitId === id && c.status === 'ACTIVE');
+        if (hasContract) {
+            toast.error('لا يمكن حذف وحدة مرتبطة بعقد نشط.');
+            return;
+        }
+        await dataService.remove('units', id);
+    }, [dataService, db.contracts]);
     
     const utilityCountMap = useMemo(() => {
         const map = new Map<string, number>();
@@ -169,8 +218,8 @@ const UnitsView: React.FC<{ property: Property, onBack: () => void }> = ({ prope
         return map;
     }, [utilityRecords]);
 
-    const floors = useMemo(() => [...new Set(units.map(u => u.floor || 'بدون دور'))], [units]);
-    const hasFloors = useMemo(() => units.some(u => u.floor), [units]);
+    const floors = useMemo(() => [...new Set(filteredUnits.map(u => u.floor || 'بدون دور'))], [filteredUnits]);
+    const hasFloors = useMemo(() => filteredUnits.some(u => u.floor), [filteredUnits]);
 
     const stats = useMemo(() => ({
         rented: units.filter(u => u.status === 'RENTED').length,
@@ -213,10 +262,17 @@ const UnitsView: React.FC<{ property: Property, onBack: () => void }> = ({ prope
                     <p className="text-xs text-text-muted">معلقة</p>
                 </div>
             </div>
+            <div className="flex flex-wrap items-center gap-2">
+                <button className={`btn text-sm ${statusFilter === 'ALL' ? 'btn-primary' : 'btn-ghost'}`} onClick={() => setStatusFilter('ALL')}>الكل</button>
+                <button className={`btn text-sm ${statusFilter === 'RENTED' ? 'btn-primary' : 'btn-ghost'}`} onClick={() => setStatusFilter('RENTED')}>مؤجرة</button>
+                <button className={`btn text-sm ${statusFilter === 'AVAILABLE' ? 'btn-primary' : 'btn-ghost'}`} onClick={() => setStatusFilter('AVAILABLE')}>شاغرة</button>
+                <button className={`btn text-sm ${statusFilter === 'MAINTENANCE' ? 'btn-primary' : 'btn-ghost'}`} onClick={() => setStatusFilter('MAINTENANCE')}>صيانة</button>
+                <button className={`btn text-sm ${statusFilter === 'ON_HOLD' ? 'btn-primary' : 'btn-ghost'}`} onClick={() => setStatusFilter('ON_HOLD')}>معلقة</button>
+            </div>
 
             {hasFloors ? (
                 floors.map(fl => {
-                    const floorUnits = units.filter(u => (u.floor || 'بدون دور') === fl);
+                    const floorUnits = filteredUnits.filter(u => (u.floor || 'بدون دور') === fl);
                     return (
                         <div key={fl} className="space-y-3">
                             <h3 className="font-bold text-lg border-b border-border pb-2">{fl === 'بدون دور' ? fl : `الدور ${fl}`} <span className="text-sm text-text-muted font-normal">({toArabicDigits(floorUnits.length)} وحدات)</span></h3>
@@ -225,9 +281,10 @@ const UnitsView: React.FC<{ property: Property, onBack: () => void }> = ({ prope
                                     <UnitCard 
                                         key={u.id} 
                                         u={u} 
+                                        activeContract={activeContractsByUnit.get(u.id)}
                                         utilCount={utilityCountMap.get(u.id) || 0}
                                         onEdit={() => { setEditingUnit(u); setIsUnitModalOpen(true); }} 
-                                        onDelete={async () => await dataService.remove('units', u.id)} 
+                                        onDelete={async () => await handleDeleteUnit(u.id)}
                                         onViewUtilities={() => setSelectedUnit(u)} 
                                     />
                                 ))}
@@ -237,13 +294,14 @@ const UnitsView: React.FC<{ property: Property, onBack: () => void }> = ({ prope
                 })
             ) : (
                 <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
-                    {units.map(u => (
+                    {filteredUnits.map(u => (
                         <UnitCard 
                             key={u.id} 
                             u={u} 
+                            activeContract={activeContractsByUnit.get(u.id)}
                             utilCount={utilityCountMap.get(u.id) || 0}
                             onEdit={() => { setEditingUnit(u); setIsUnitModalOpen(true); }} 
-                            onDelete={async () => await dataService.remove('units', u.id)} 
+                            onDelete={async () => await handleDeleteUnit(u.id)}
                             onViewUtilities={() => setSelectedUnit(u)} 
                         />
                     ))}
@@ -254,7 +312,8 @@ const UnitsView: React.FC<{ property: Property, onBack: () => void }> = ({ prope
     );
 };
 
-const UnitCard: React.FC<{ u: Unit; utilCount: number; onEdit: () => void; onDelete: () => void; onViewUtilities: () => void }> = memo(({ u, utilCount, onEdit, onDelete, onViewUtilities }) => {
+const UnitCard: React.FC<{ u: Unit; activeContract?: { rent: number } | null; utilCount: number; onEdit: () => void; onDelete: () => void; onViewUtilities: () => void }> = memo(({ u, activeContract, utilCount, onEdit, onDelete, onViewUtilities }) => {
+    const navigate = useNavigate();
     const st = UNIT_STATUS_MAP[u.status] || UNIT_STATUS_MAP.AVAILABLE;
     
     const featuresList = useMemo(() => {
@@ -279,10 +338,26 @@ const UnitCard: React.FC<{ u: Unit; utilCount: number; onEdit: () => void; onDel
             <span className={`text-xs px-2 py-0.5 rounded-full ${st.color}`}>{st.label}</span>
             <p className="text-xs text-text-muted mt-1">{u.type}{u.area ? ` • ${u.area} م²` : ''}</p>
             {featuresList.length > 0 && <p className="text-xs text-text-muted mt-1">{featuresList.join(' • ')}</p>}
+            {u.status === 'RENTED' && activeContract && (
+                <p className="text-xs mt-1">
+                    الإيجار الشهري: <span className="font-bold text-primary">{formatCurrency(activeContract.rent)}</span>
+                </p>
+            )}
             <div className="flex items-center justify-between mt-2">
                 <p className="text-sm font-bold text-primary">{formatCurrency(u.rentDefault)}</p>
                 {utilCount > 0 && <span className="text-xs bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded-full">{utilCount} مرافق</span>}
             </div>
+            {u.status === 'AVAILABLE' && (
+                <button
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        navigate(`/contracts?action=add&unitId=${u.id}`);
+                    }}
+                    className="btn btn-secondary w-full mt-2 text-xs"
+                >
+                    إضافة عقد جديد
+                </button>
+            )}
             {(u.waterMeter || u.electricityMeter) && (
                 <p className="text-xs text-text-muted mt-1">
                     {u.waterMeter && `💧 ${u.waterMeter}`} {u.electricityMeter && `⚡ ${u.electricityMeter}`}
@@ -486,6 +561,16 @@ const UnitDetailView: React.FC<{ unit: Unit; property: Property; onBack: () => v
     const unitRecords = useMemo(() => utilityRecords.filter(r => r.unitId === unit.id), [utilityRecords, unit.id]);
     const filtered = useMemo(() => activeType === 'ALL' ? unitRecords : unitRecords.filter(r => r.type === activeType), [unitRecords, activeType]);
     const sorted = useMemo(() => [...filtered].sort((a, b) => b.month.localeCompare(a.month)), [filtered]);
+    const runningTotalsByType = useMemo(() => {
+        const totalsMap = new Map<string, number>();
+        const runningById = new Map<string, number>();
+        [...sorted].reverse().forEach(record => {
+            const current = (totalsMap.get(record.type) || 0) + (record.amount || 0);
+            totalsMap.set(record.type, current);
+            runningById.set(record.id, current);
+        });
+        return runningById;
+    }, [sorted]);
 
     const totals = useMemo(() => {
         const byType: Record<string, { count: number; amount: number; consumption: number }> = {};
@@ -585,6 +670,10 @@ const UnitDetailView: React.FC<{ unit: Unit; property: Property; onBack: () => v
                                     <div><span className="text-text-muted">استهلاك:</span> <strong>{Math.max(0, r.currentReading - r.previousReading)} وحدة</strong></div>
                                     <div><span className="text-text-muted">المبلغ:</span> <strong className="text-primary">{formatCurrency(r.amount, currency)}</strong></div>
                                 </div>
+                                <p className="text-xs mt-2">
+                                    الإجمالي التراكمي ({UTILITY_TYPE_AR[r.type as UtilityType]}):{' '}
+                                    <span className="font-bold">{formatCurrency(runningTotalsByType.get(r.id) || 0, currency)}</span>
+                                </p>
                                 {r.notes && <p className="text-xs mt-2 opacity-75">{r.notes}</p>}
                             </div>
                             {r.billImageUrl && r.billImageMime?.startsWith('image/') && (

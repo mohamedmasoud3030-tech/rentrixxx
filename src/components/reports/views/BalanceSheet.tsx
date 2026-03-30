@@ -1,116 +1,103 @@
-import React, { useMemo, useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
+import { Wallet } from 'lucide-react';
 import { useApp } from '../../../contexts/AppContext';
 import Card from '../../ui/Card';
 import { formatCurrency, formatDate } from '../../../utils/helpers';
-import {
-  FileText, BarChart3, TrendingUp, Wallet, TrendingDown, Users,
-  PieChart, ArrowUp, ArrowDown, Banknote, Percent,
-  Building2, CalendarRange, Filter, Zap
-} from 'lucide-react';
-import { UtilityRecord, UtilityType, UTILITY_TYPE_AR, UTILITY_ICON } from '../../../types';
+import { ActionBar, MiniKpi, ReportPrintableContent, SectionHeader } from '../ReportPrimitives';
 import PrintPreviewModal from '../../shared/PrintPreviewModal';
-import { ActionBar, CHART_COLORS, MiniKpi, ReportPrintableContent, SectionHeader } from '../ReportPrimitives';
-import {
-  exportRentRollToPdf, exportOwnerLedgerToPdf, exportTenantStatementToPdf,
-  exportIncomeStatementToPdf, exportTrialBalanceToPdf, exportBalanceSheetToPdf,
-  exportAgedReceivablesToPdf, exportDailyCollectionToPdf, exportExpensesReportToPdf,
-  exportDepositsReportToPdf, exportMaintenanceReportToPdf, exportOverdueTenantsToPdf,
-  exportVacantUnitsToPdf, exportUtilitiesReportToPdf, exportPropertyReportToPdf
-} from '../../../services/pdfService';
-import { calculateBalanceSheetData, calculateIncomeStatementData, calculateAgedReceivables } from '../../../services/accountingService';
-import { startOfMonth, endOfMonth, subMonths, startOfYear, endOfYear, isWithinInterval, format, eachMonthOfInterval } from 'date-fns';
-import { ar } from 'date-fns/locale';
-import {
-  BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid,
-  PieChart as RechartsPie, Pie, Cell, Legend, AreaChart, Area,
-  LineChart, Line
-} from 'recharts';
-import { ReportTab } from '../ReportsSidebar';
+import { exportBalanceSheetToPdf } from '../../../services/pdfService';
+import { calculateBalanceSheetData } from '../../../services/accountingService';
 
-interface OwnerLedgerTransaction {
-  date: string;
-  details: string;
-  type: 'receipt' | 'expense' | 'settlement';
-  gross: number;
-  officeShare: number;
-  net: number;
-}
-
-interface BalanceSheetLine {
-  no: string;
-  name: string;
-  isParent: boolean;
-  balance: number;
-  children: BalanceSheetLine[];
-}
-
+const KEY = 'rentrix:report_filters:balance_sheet';
 
 const BalanceSheet: React.FC = () => {
   const { db, settings } = useApp();
   const [asOfDate, setAsOfDate] = useState(new Date().toISOString().slice(0, 10));
   const [isPrinting, setIsPrinting] = useState(false);
-  const cur = settings.operational?.currency ?? 'OMR';
-  const data = useMemo(() => calculateBalanceSheetData(db, asOfDate), [db, asOfDate]);
-  const handleExportPdf = () => exportBalanceSheetToPdf(data, settings, asOfDate);
 
-  const renderLines = (lines: BalanceSheetLine[], indent = 0) => (
+  useEffect(() => {
+    try {
+      const saved = sessionStorage.getItem(KEY);
+      if (!saved) return;
+      const parsed = JSON.parse(saved) as { asOfDate?: string };
+      if (parsed.asOfDate) setAsOfDate(parsed.asOfDate);
+    } catch {
+      // ignore
+    }
+  }, []);
+
+  useEffect(() => {
+    sessionStorage.setItem(KEY, JSON.stringify({ asOfDate }));
+  }, [asOfDate]);
+
+  const data = useMemo(() => calculateBalanceSheetData(db, asOfDate), [db, asOfDate]);
+  const discrepancy = Math.round((data.totalAssets - (data.totalLiabilities + data.totalEquity)) * 1000) / 1000;
+  const isBalanced = Math.abs(discrepancy) < 0.001;
+
+  const render = (lines: Array<{ id: string; no: string; name: string; balance: number; children: any[] }>, depth = 0): React.ReactNode => (
     <>
-      {lines.map(line => (
-        <React.Fragment key={line.no}>
-          <tr className={line.isParent ? 'font-bold bg-background' : 'hover:bg-background/50'}>
-            <td className="p-2.5 border border-border" style={{ paddingRight: `${1 + indent}rem` }}>{line.name}</td>
-            <td className={`p-2.5 border border-border font-mono ${line.balance < 0 ? 'text-red-500' : ''}`}>
-              {Math.abs(line.balance) > 0.001 ? formatCurrency(line.balance, cur) : '-'}
-            </td>
+      {lines.map((line) => (
+        <React.Fragment key={line.id}>
+          <tr>
+            <td className="px-3 py-2 border border-border" style={{ paddingRight: `${12 + depth * 14}px` }}>{line.name}</td>
+            <td className="px-3 py-2 border border-border font-mono" dir="ltr">{formatCurrency(line.balance)}</td>
           </tr>
-          {line.children && renderLines(line.children, indent + 1.5)}
+          {render(line.children || [], depth + 1)}
         </React.Fragment>
       ))}
     </>
   );
 
-  const isBalanced = Math.abs(data.totalAssets - (data.totalLiabilities + data.totalEquity)) < 0.01;
-
-  const reportContent = (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-      <div>
-        <h3 className="text-lg font-bold mb-3 flex items-center gap-2"><Wallet size={18} className="text-blue-500" /> الأصول</h3>
-        <table className="w-full text-sm border-collapse border border-border">
-          <tbody>{renderLines(data.assets)}</tbody>
-          <tfoot><tr className="font-black text-base bg-blue-50 dark:bg-blue-900/20"><td className="p-2.5 border border-border">إجمالي الأصول</td><td className="p-2.5 border border-border font-mono">{formatCurrency(data.totalAssets, cur)}</td></tr></tfoot>
-        </table>
-      </div>
-      <div>
-        <h3 className="text-lg font-bold mb-3">الالتزامات وحقوق الملكية</h3>
-        <table className="w-full text-sm border-collapse border border-border">
-          <tbody>
-            {renderLines(data.liabilities)}
-            <tr className="font-bold bg-background"><td className="p-2.5 border border-border">إجمالي الالتزامات</td><td className="p-2.5 border border-border font-mono">{formatCurrency(data.totalLiabilities, cur)}</td></tr>
-            {renderLines(data.equity)}
-            <tr className="font-bold bg-background"><td className="p-2.5 border border-border">إجمالي حقوق الملكية</td><td className="p-2.5 border border-border font-mono">{formatCurrency(data.totalEquity, cur)}</td></tr>
-          </tbody>
-          <tfoot><tr className="font-black text-base bg-blue-50 dark:bg-blue-900/20"><td className="p-2.5 border border-border">إجمالي الالتزامات وحقوق الملكية</td><td className="p-2.5 border border-border font-mono">{formatCurrency(data.totalLiabilities + data.totalEquity, cur)}</td></tr></tfoot>
-        </table>
-      </div>
+  const printable = (
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <table className="w-full text-sm border-collapse">
+        <thead><tr><th className="px-3 py-2 border border-border text-right">الأصول</th><th className="px-3 py-2 border border-border text-right">الرصيد</th></tr></thead>
+        <tbody>{render(data.assets)}</tbody>
+      </table>
+      <table className="w-full text-sm border-collapse">
+        <thead><tr><th className="px-3 py-2 border border-border text-right">الالتزامات وحقوق الملكية</th><th className="px-3 py-2 border border-border text-right">الرصيد</th></tr></thead>
+        <tbody>
+          {render(data.liabilities)}
+          {render(data.equity)}
+        </tbody>
+      </table>
     </div>
   );
 
   return (
     <Card className="p-6">
-      <SectionHeader title="الميزانية العمومية" icon={<Wallet size={20} className="text-primary" />} />
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-6">
-        <MiniKpi label="إجمالي الأصول" value={formatCurrency(data.totalAssets, cur)} icon={<ArrowUp size={16} />} color="bg-blue-100 dark:bg-blue-900/40 text-blue-600" />
-        <MiniKpi label="إجمالي الالتزامات" value={formatCurrency(data.totalLiabilities, cur)} icon={<ArrowDown size={16} />} color="bg-red-100 dark:bg-red-900/40 text-red-600" />
-        <MiniKpi label="التوازن" value={isBalanced ? 'متوازنة' : 'غير متوازنة'} icon={isBalanced ? <ArrowUp size={16} /> : <ArrowDown size={16} />} color={isBalanced ? 'bg-green-100 dark:bg-green-900/40 text-green-600' : 'bg-red-100 dark:bg-red-900/40 text-red-600'} />
+      <div dir="rtl">
+      <SectionHeader title="الميزانية العمومية" icon={<Wallet size={18} className="text-primary" />} />
+
+      <div className={`mb-4 p-3 rounded-lg border ${isBalanced ? 'bg-emerald-50 border-emerald-200 text-emerald-700' : 'bg-rose-50 border-rose-200 text-rose-700'}`}>
+        {isBalanced ? 'الميزانية متوازنة' : `خلل في الميزانية: ${Math.abs(discrepancy).toFixed(3)}`}
       </div>
-      <ActionBar onPrint={() => setIsPrinting(true)} onExport={handleExportPdf}>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
+        <MiniKpi label="إجمالي الأصول" value={formatCurrency(data.totalAssets)} icon={<Wallet size={14} />} color="bg-blue-100 text-blue-700" />
+        <MiniKpi label="إجمالي الالتزامات" value={formatCurrency(data.totalLiabilities)} icon={<Wallet size={14} />} color="bg-amber-100 text-amber-700" />
+        <MiniKpi label="إجمالي حقوق الملكية" value={formatCurrency(data.totalEquity)} icon={<Wallet size={14} />} color="bg-purple-100 text-purple-700" />
+      </div>
+
+      <ActionBar onPrint={() => setIsPrinting(true)} onExport={() => exportBalanceSheetToPdf(data, settings, asOfDate)}>
         <div>
-          <label className="block text-xs font-medium text-text-muted mb-1">حتى تاريخ</label>
-          <input type="date" value={asOfDate} onChange={e => setAsOfDate(e.target.value)} className="text-sm" />
+          <label className="block text-xs mb-1 text-text-muted">حتى تاريخ</label>
+          <input type="date" value={asOfDate} onChange={(e) => setAsOfDate(e.target.value)} />
         </div>
       </ActionBar>
-      <ReportPrintableContent title="الميزانية العمومية" date={`كما في تاريخ ${formatDate(asOfDate)}`}>{reportContent}</ReportPrintableContent>
-      {isPrinting && <PrintPreviewModal isOpen={isPrinting} onClose={() => setIsPrinting(false)} title="الميزانية العمومية"><ReportPrintableContent title="الميزانية العمومية" date={`كما في تاريخ ${formatDate(asOfDate)}`}>{reportContent}</ReportPrintableContent></PrintPreviewModal>}
+
+      <ReportPrintableContent title="الميزانية العمومية" date={`كما في ${formatDate(asOfDate)}`}>
+        {printable}
+      </ReportPrintableContent>
+
+      {isPrinting && (
+        <PrintPreviewModal isOpen={isPrinting} onClose={() => setIsPrinting(false)} title="الميزانية العمومية">
+          <ReportPrintableContent title="الميزانية العمومية" date={`كما في ${formatDate(asOfDate)}`}>
+            {printable}
+          </ReportPrintableContent>
+        </PrintPreviewModal>
+      )}
+      </div>
     </Card>
   );
 };
