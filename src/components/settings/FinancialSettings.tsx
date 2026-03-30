@@ -6,6 +6,14 @@ import { AlertTriangle, CheckCircle2 } from 'lucide-react';
 import { confirmDialog } from '../shared/confirmDialog';
 
 type AccountMappings = Settings['accounting']['accountMappings'];
+const normalizeMappings = (m: AccountMappings): AccountMappings => ({
+    ...m,
+    depositsHeld: m.depositsHeld || '2122',
+    revenue: {
+        ...m.revenue,
+        LATE_FEE: m.revenue?.LATE_FEE || m.revenue?.RENT || '4130',
+    },
+});
 
 const FinancialSettings: React.FC = () => {
     const { db, settings, updateSettings } = useApp();
@@ -14,11 +22,11 @@ const FinancialSettings: React.FC = () => {
     const [isSaving, setIsSaving] = useState(false);
 
     const [mappings, setMappings] = useState<AccountMappings>(
-        settings.accounting.accountMappings
+        normalizeMappings(settings.accounting.accountMappings)
     );
 
     useEffect(() => {
-        setMappings(settings.accounting.accountMappings);
+        setMappings(normalizeMappings(settings.accounting.accountMappings));
     }, [settings]);
 
     const leafAccounts = accounts.filter(a => !a.isParent);
@@ -36,7 +44,7 @@ const FinancialSettings: React.FC = () => {
         return Array.from(cats);
     }, [expenses]);
 
-    const setTopLevel = <K extends 'accountsReceivable' | 'ownersPayable' | 'vatPayable' | 'vatReceivable'>(key: K, value: string) => {
+    const setTopLevel = <K extends 'accountsReceivable' | 'ownersPayable' | 'vatPayable' | 'vatReceivable' | 'depositsHeld'>(key: K, value: string) => {
         setMappings(prev => ({ ...prev, [key]: value }));
     };
 
@@ -60,10 +68,12 @@ const FinancialSettings: React.FC = () => {
         };
         check('ذمم المستأجرين', mappings.accountsReceivable);
         check('ذمم الملاك', mappings.ownersPayable);
+        check('تأمينات مستلمة', mappings.depositsHeld);
         check('ضريبة القيمة المضافة (مستحق)', mappings.vatPayable);
         check('ضريبة القيمة المضافة (مدين)', mappings.vatReceivable);
         check('إيرادات الإيجار', mappings.revenue?.RENT);
         check('إيرادات عمولة المكتب', mappings.revenue?.OFFICE_COMMISSION);
+        check('إيرادات رسوم التأخير', mappings.revenue?.LATE_FEE);
         check('نقدي (صندوق)', mappings.paymentMethods?.CASH);
         check('تحويل بنكي', mappings.paymentMethods?.BANK);
         return missing;
@@ -158,6 +168,7 @@ const FinancialSettings: React.FC = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <AccountSelect label="إيرادات الإيجار" value={mappings.revenue.RENT} onChange={v => setRevenue('RENT', v)} />
                     <AccountSelect label="إيرادات عمولة المكتب" value={mappings.revenue.OFFICE_COMMISSION} onChange={v => setRevenue('OFFICE_COMMISSION', v)} />
+                    <AccountSelect label="إيرادات رسوم التأخير" value={mappings.revenue.LATE_FEE} onChange={v => setRevenue('LATE_FEE', v)} />
                 </div>
             </div>
 
@@ -166,6 +177,7 @@ const FinancialSettings: React.FC = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <AccountSelect label="ذمم المستأجرين (الحسابات المدينة)" value={mappings.accountsReceivable} onChange={v => setTopLevel('accountsReceivable', v)} />
                     <AccountSelect label="ذمم الملاك (الحسابات الدائنة)" value={mappings.ownersPayable} onChange={v => setTopLevel('ownersPayable', v)} />
+                    <AccountSelect label="تأمينات مستلمة (التزامات)" value={mappings.depositsHeld} onChange={v => setTopLevel('depositsHeld', v)} />
                     <AccountSelect label="ضريبة القيمة المضافة (مستحق)" value={mappings.vatPayable} onChange={v => setTopLevel('vatPayable', v)} />
                     <AccountSelect label="ضريبة القيمة المضافة (مدين)" value={mappings.vatReceivable} onChange={v => setTopLevel('vatReceivable', v)} />
                 </div>

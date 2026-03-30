@@ -130,11 +130,13 @@ export interface Settings {
         revenue: {
             RENT: string;
             OFFICE_COMMISSION: string;
+            LATE_FEE: string;
         },
         accountsReceivable: string;
         vatPayable: string;
         vatReceivable: string;
         ownersPayable: string;
+        depositsHeld: string;
       };
   };
   appearance: {
