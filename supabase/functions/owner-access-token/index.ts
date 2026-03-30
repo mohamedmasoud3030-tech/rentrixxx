@@ -12,10 +12,14 @@ const corsHeaders = {
 
 const encoder = new TextEncoder();
 
+
+codex/conduct-full-technical-audit-i14q4c
 const logEvent = (level: 'info' | 'warn' | 'error', message: string, meta: Record<string, unknown> = {}) => {
   console[level](JSON.stringify({ level, message, ...meta, ts: Date.now() }));
 };
 
+
+ main
 async function sign(payload: string): Promise<string> {
   const key = await crypto.subtle.importKey('raw', encoder.encode(OWNER_TOKEN_SECRET), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
   const sig = await crypto.subtle.sign('HMAC', key, encoder.encode(payload));
@@ -54,6 +58,7 @@ Deno.serve(async req => {
     const { data: profile, error: profileError } = await adminClient.from('profiles').select('role').eq('id', caller.id).single();
     if (profileError || !profile) throw new Error('Forbidden');
 
+    const client = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
     const body = await req.json();
 
     if (body?.action === 'issue') {
@@ -93,6 +98,9 @@ Deno.serve(async req => {
         adminClient.from('owners').select('id,name').eq('id', ownerId).single(),
         adminClient.from('owner_balances').select('total_income,total_expenses,commission,net_balance').eq('owner_id', ownerId).single(),
         adminClient.from('settings').select('data').eq('id', 1).single(),
+        client.from('owners').select('id,name').eq('id', ownerId).single(),
+        client.from('owner_balances').select('total_income,total_expenses,commission,net_balance').eq('owner_id', ownerId).single(),
+        client.from('settings').select('data').eq('id', 1).single(),
       ]);
       if (!owner || !stats) throw new Error('owner not found');
       const currency = settings?.data?.operational?.currency || 'OMR';
@@ -115,6 +123,7 @@ Deno.serve(async req => {
   } catch (error) {
     return new Response(JSON.stringify({ error: error instanceof Error ? error.message : 'unknown error' }), {
       status: 401,
+      status: 400,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   }
