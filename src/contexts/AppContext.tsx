@@ -286,7 +286,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     await audit('CREATE', 'users', result.id, `Created user ${user.username}`);
     await refreshData();
     return { ok: true, msg: 'تم إنشاء المستخدم. سيتلقى المستخدم رسالة تأكيد بالبريد الإلكتروني.' };
+ codex/conduct-full-technical-audit-y73z10
+  }, [audit, refreshData, db?.contracts, db?.maintenanceRecords]);
+
   }, [audit, refreshData]);
+ main
 
   const updateUser: AppContextType['auth']['updateUser'] = useCallback(async (id, updates) => {
     if (updates.username) await supabase.from('profiles').update({ username: updates.username }).eq('id', id);
