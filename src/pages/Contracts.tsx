@@ -471,6 +471,10 @@ const ContractForm: React.FC<{ isOpen: boolean, onClose: () => void, contract: C
             toast.error("يرجى ملء جميع الحقول المطلوبة (الوحدة، المستأجر، تاريخ البدء والانتهاء).");
             return;
         }
+        if (new Date(end) < new Date(start)) {
+            toast.error('تاريخ الانتهاء يجب أن يكون بعد أو مساويًا لتاريخ البدء.');
+            return;
+        }
 
         if (status === 'ACTIVE') {
             const hasBlockingMaintenance = db.maintenanceRecords.some(m =>
@@ -624,7 +628,9 @@ const ContractForm: React.FC<{ isOpen: boolean, onClose: () => void, contract: C
                                     </div>
                                     <div className="flex justify-between items-center text-xs text-text-muted">
                                         <span>{formatDateTime(tx.dateTime)}</span>
-                                        <span className={getStatusBadgeClass(tx.status)}>{tx.status === 'POSTED' ? 'مرحّل' : 'ملغي'}</span>
+                                        <span className={getStatusBadgeClass(tx.status)}>
+                                            {tx.status === 'POSTED' ? 'مرحّل' : tx.status === 'VOID' ? 'ملغي' : tx.status}
+                                        </span>
                                     </div>
                                 </div>
                             ))}
