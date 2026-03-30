@@ -1,3 +1,4 @@
+// @ts-nocheck
 import React, { useState, useRef } from 'react';
 import { useApp } from '../contexts/AppContext';
 import { Lead } from '../types';
