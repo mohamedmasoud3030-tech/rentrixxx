@@ -65,7 +65,8 @@ const BalanceSheet: React.FC = () => {
   );
 
   return (
-    <Card className="p-6" dir="rtl">
+    <Card className="p-6">
+      <div dir="rtl">
       <SectionHeader title="الميزانية العمومية" icon={<Wallet size={18} className="text-primary" />} />
 
       <div className={`mb-4 p-3 rounded-lg border ${isBalanced ? 'bg-emerald-50 border-emerald-200 text-emerald-700' : 'bg-rose-50 border-rose-200 text-rose-700'}`}>
@@ -96,6 +97,7 @@ const BalanceSheet: React.FC = () => {
           </ReportPrintableContent>
         </PrintPreviewModal>
       )}
+      </div>
     </Card>
   );
 };
