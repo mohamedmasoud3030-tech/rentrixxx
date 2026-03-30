@@ -66,6 +66,10 @@ const OwnerView: React.FC = () => {
     }
 
     const { owner, stats, currency } = payload;
+ codex/conduct-full-technical-audit-i14q4c
+    const safeCurrency = (currency || 'OMR') as 'OMR' | 'SAR' | 'EGP';
+
+ main
 
     return (
         <div className="p-6 max-w-4xl mx-auto bg-background min-h-screen" dir="rtl">
@@ -77,6 +81,17 @@ const OwnerView: React.FC = () => {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
                 <div className="p-5 bg-card rounded-lg shadow-md border-t-4 border-blue-500">
                     <p className="text-sm text-text-muted">إجمالي التحصيلات</p>
+ codex/conduct-full-technical-audit-i14q4c
+                    <p className="text-2xl font-bold text-blue-700 dark:text-blue-400 mt-2">{formatCurrency(stats.collections, safeCurrency)}</p>
+                </div>
+                <div className="p-5 bg-card rounded-lg shadow-md border-t-4 border-red-500">
+                    <p className="text-sm text-text-muted">إجمالي المصاريف والعمولة</p>
+                    <p className="text-2xl font-bold text-red-700 dark:text-red-400 mt-2">{formatCurrency(stats.expenses + stats.officeShare, safeCurrency)}</p>
+                </div>
+                <div className="p-5 bg-card rounded-lg shadow-md border-t-4 border-green-500">
+                    <p className="text-sm text-text-muted">صافي المستحق لك</p>
+                    <p className="text-2xl font-bold text-green-700 dark:text-green-400 mt-2">{formatCurrency(stats.net, safeCurrency)}</p>
+
                     <p className="text-2xl font-bold text-blue-700 dark:text-blue-400 mt-2">{formatCurrency(stats.collections, currency || 'OMR')}</p>
                 </div>
                 <div className="p-5 bg-card rounded-lg shadow-md border-t-4 border-red-500">
@@ -86,6 +101,7 @@ const OwnerView: React.FC = () => {
                 <div className="p-5 bg-card rounded-lg shadow-md border-t-4 border-green-500">
                     <p className="text-sm text-text-muted">صافي المستحق لك</p>
                     <p className="text-2xl font-bold text-green-700 dark:text-green-400 mt-2">{formatCurrency(stats.net, currency || 'OMR')}</p>
+ main
                 </div>
             </div>
         </div>
