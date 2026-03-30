@@ -906,7 +906,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       token = crypto.randomUUID();
       await supabaseData.update('owners', ownerId, { portalToken: token });
     }
-    return `${window.location.href.split('#')[0]}#/portal/${ownerId}?auth=${token}`;
+    return `${window.location.href.split('#')[0]}#/owner-view/${ownerId}?auth=${token}`;
   }, []);
 
   const buildSnapshotState = useCallback((sourceDb: Database) => {
