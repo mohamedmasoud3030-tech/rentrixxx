@@ -18,6 +18,7 @@ import {
   exportVacantUnitsToPdf, exportUtilitiesReportToPdf, exportPropertyReportToPdf
 } from '../../../services/pdfService';
 import { calculateBalanceSheetData, calculateIncomeStatementData, calculateAgedReceivables } from '../../../services/accountingService';
+import { getPostedExpensesInRange } from '../../../services/reportingService';
 import { startOfMonth, endOfMonth, subMonths, startOfYear, endOfYear, isWithinInterval, format, eachMonthOfInterval } from 'date-fns';
 import { ar } from 'date-fns/locale';
 import {
@@ -25,7 +26,7 @@ import {
   PieChart as RechartsPie, Pie, Cell, Legend, AreaChart, Area,
   LineChart, Line
 } from 'recharts';
-import { ReportTab } from './ReportsSidebar';
+import { ReportTab } from '../ReportsSidebar';
 
 interface OwnerLedgerTransaction {
   date: string;
@@ -53,7 +54,7 @@ const ExpensesReport: React.FC = () => {
   const [toDate, setToDate] = useState(new Date().toISOString().slice(0, 10));
 
   const expenses = useMemo(() => {
-    return db.expenses.filter(e => e.status !== 'VOID' && e.dateTime.slice(0, 10) >= fromDate && e.dateTime.slice(0, 10) <= toDate);
+    return getPostedExpensesInRange(db.expenses, fromDate, toDate);
   }, [db.expenses, fromDate, toDate]);
 
   const totalExpenses = expenses.reduce((s, e) => s + e.amount, 0);

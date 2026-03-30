@@ -18,6 +18,7 @@ import {
   exportVacantUnitsToPdf, exportUtilitiesReportToPdf, exportPropertyReportToPdf
 } from '../../../services/pdfService';
 import { calculateBalanceSheetData, calculateIncomeStatementData, calculateAgedReceivables } from '../../../services/accountingService';
+import { runDataIntegrityAudit } from '../../../services/auditEngine';
 import { startOfMonth, endOfMonth, subMonths, startOfYear, endOfYear, isWithinInterval, format, eachMonthOfInterval } from 'date-fns';
 import { ar } from 'date-fns/locale';
 import {
@@ -25,7 +26,7 @@ import {
   PieChart as RechartsPie, Pie, Cell, Legend, AreaChart, Area,
   LineChart, Line
 } from 'recharts';
-import { ReportTab } from './ReportsSidebar';
+import { ReportTab } from '../ReportsSidebar';
 
 interface OwnerLedgerTransaction {
   date: string;
@@ -126,6 +127,19 @@ const ReportsOverview: React.FC<{ currency: string }> = ({ currency }) => {
   }, [db.journalEntries, db.units, db.contracts, contractBalances, ownerBalances, accountTypeMap]);
 
   const cur = settings.operational?.currency ?? 'OMR';
+  const integritySummary = useMemo(() => {
+    const issues = runDataIntegrityAudit(db);
+    const errors = issues.filter(issue => issue.severity === 'ERROR');
+    const warnings = issues.filter(issue => issue.severity === 'WARNING');
+    const info = issues.filter(issue => issue.severity === 'INFO');
+    return {
+      issues,
+      errors,
+      warnings,
+      info,
+      healthScore: Math.max(0, 100 - (errors.length * 20 + warnings.length * 8 + info.length * 2)),
+    };
+  }, [db]);
 
   return (
     <div className="space-y-6">
@@ -179,6 +193,42 @@ const ReportsOverview: React.FC<{ currency: string }> = ({ currency }) => {
           </div>
         </Card>
       </div>
+
+      <Card className="p-5">
+        <SectionHeader title="فحص سلامة النظام المحاسبي" icon={<Zap size={18} className="text-primary" />} />
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+          <MiniKpi label="مؤشر السلامة" value={`${integritySummary.healthScore.toFixed(0)}%`} icon={<Percent size={18} />} color="bg-blue-100 dark:bg-blue-900/40 text-blue-700" />
+          <MiniKpi label="أخطاء حرجة" value={String(integritySummary.errors.length)} icon={<TrendingDown size={18} />} color="bg-red-100 dark:bg-red-900/40 text-red-700" />
+          <MiniKpi label="تحذيرات" value={String(integritySummary.warnings.length)} icon={<Filter size={18} />} color="bg-amber-100 dark:bg-amber-900/40 text-amber-700" />
+          <MiniKpi label="ملاحظات" value={String(integritySummary.info.length)} icon={<FileText size={18} />} color="bg-slate-100 dark:bg-slate-900/40 text-slate-700" />
+        </div>
+
+        {integritySummary.issues.length === 0 ? (
+          <div className="text-sm text-emerald-700 bg-emerald-50 dark:bg-emerald-900/30 rounded-md px-3 py-2">
+            لا توجد مشاكل سلامة بيانات حالياً. النظام المحاسبي في حالة جيدة.
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {integritySummary.issues.slice(0, 6).map(issue => (
+              <div key={issue.id} className="border border-border rounded-md p-3">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="font-semibold text-sm">{issue.title}</div>
+                  <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${
+                    issue.severity === 'ERROR'
+                      ? 'bg-red-100 text-red-700'
+                      : issue.severity === 'WARNING'
+                        ? 'bg-amber-100 text-amber-700'
+                        : 'bg-slate-100 text-slate-700'
+                  }`}>
+                    {issue.severity === 'ERROR' ? 'خطأ' : issue.severity === 'WARNING' ? 'تحذير' : 'معلومة'}
+                  </span>
+                </div>
+                <div className="text-xs text-text-muted mt-1">{issue.description}</div>
+              </div>
+            ))}
+          </div>
+        )}
+      </Card>
 
       {expenseCategories.length > 0 && (
         <Card className="p-5">

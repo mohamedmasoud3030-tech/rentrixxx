@@ -18,6 +18,7 @@ import {
   exportVacantUnitsToPdf, exportUtilitiesReportToPdf, exportPropertyReportToPdf
 } from '../../../services/pdfService';
 import { calculateBalanceSheetData, calculateIncomeStatementData, calculateAgedReceivables } from '../../../services/accountingService';
+import { getPostedReceiptsForDate } from '../../../services/reportingService';
 import { startOfMonth, endOfMonth, subMonths, startOfYear, endOfYear, isWithinInterval, format, eachMonthOfInterval } from 'date-fns';
 import { ar } from 'date-fns/locale';
 import {
@@ -25,7 +26,7 @@ import {
   PieChart as RechartsPie, Pie, Cell, Legend, AreaChart, Area,
   LineChart, Line
 } from 'recharts';
-import { ReportTab } from './ReportsSidebar';
+import { ReportTab } from '../ReportsSidebar';
 
 interface OwnerLedgerTransaction {
   date: string;
@@ -52,7 +53,7 @@ const DailyCollectionReport: React.FC = () => {
   const [isPrinting, setIsPrinting] = useState(false);
 
   const dayReceipts = useMemo(() => {
-    return db.receipts.filter(r => r.status !== 'VOID' && r.dateTime && r.dateTime.slice(0, 10) === date);
+    return getPostedReceiptsForDate(db.receipts, date);
   }, [db.receipts, date]);
 
   const totalCash = dayReceipts.filter(r => r.channel === 'CASH').reduce((s, r) => s + r.amount, 0);

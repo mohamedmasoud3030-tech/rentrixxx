@@ -231,11 +231,23 @@ svg { max-width: 100%; height: auto; }
 const PrintPreviewModal: React.FC<PrintPreviewModalProps> = ({ isOpen, onClose, title, children }) => {
     const componentRef = useRef<HTMLDivElement>(null);
 
+    const sanitizeClone = (root: HTMLElement) => {
+        root.querySelectorAll('script, iframe, object, embed').forEach(node => node.remove());
+        root.querySelectorAll('*').forEach(node => {
+            for (const attr of Array.from(node.attributes)) {
+                if (/^on/i.test(attr.name)) {
+                    node.removeAttribute(attr.name);
+                }
+            }
+        });
+        return root;
+    };
+
     const handlePrint = () => {
         const content = componentRef.current;
         if (!content) return;
 
-        const clone = content.cloneNode(true) as HTMLElement;
+        const clone = sanitizeClone(content.cloneNode(true) as HTMLElement);
 
         clone.querySelectorAll('svg').forEach(svg => {
             if (!svg.getAttribute('xmlns')) {
