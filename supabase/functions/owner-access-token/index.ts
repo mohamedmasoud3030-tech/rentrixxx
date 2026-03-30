@@ -12,6 +12,15 @@ const corsHeaders = {
 
 const encoder = new TextEncoder();
 
+class HttpError extends Error {
+  status: number;
+
+  constructor(message: string, status = 400) {
+    super(message);
+    this.status = status;
+  }
+}
+
 const logEvent = (level: 'info' | 'warn' | 'error', message: string, meta: Record<string, unknown> = {}) => {
   console[level](JSON.stringify({ level, message, ...meta, ts: Date.now() }));
 };
@@ -19,8 +28,7 @@ const logEvent = (level: 'info' | 'warn' | 'error', message: string, meta: Recor
 async function sign(payload: string): Promise<string> {
   const key = await crypto.subtle.importKey('raw', encoder.encode(OWNER_TOKEN_SECRET), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
   const sig = await crypto.subtle.sign('HMAC', key, encoder.encode(payload));
-  const b64 = btoa(String.fromCharCode(...new Uint8Array(sig))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/g, '');
-  return b64;
+  return btoa(String.fromCharCode(...new Uint8Array(sig))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/g, '');
 }
 
 async function verify(payload: string, signature: string): Promise<boolean> {
@@ -62,11 +70,10 @@ Deno.serve(async req => {
 
       const ownerFromMetadata = String(caller.user_metadata?.ownerId || caller.app_metadata?.ownerId || '');
       const isAdmin = profile.role === 'ADMIN';
-      const isOwner = ownerFromMetadata && ownerFromMetadata === ownerId;
-
+      const isOwner = ownerFromMetadata !== '' && ownerFromMetadata === ownerId;
       if (!isAdmin && !isOwner) {
         logEvent('warn', 'owner token issuance denied', { callerId: caller.id, ownerId });
-        throw new Error('Forbidden');
+        throw new HttpError('Forbidden', 403);
       }
 
       const { payload } = createToken(ownerId);
@@ -80,7 +87,7 @@ Deno.serve(async req => {
       const ownerId = String(body.ownerId || '');
       const token = String(body.token || '');
       const parts = token.split('.');
-      if (parts.length < 3) throw new Error('invalid token');
+      if (parts.length < 3) throw new HttpError('invalid token', 400);
       const payload = `${parts[0]}.${parts[1]}`;
       const signature = parts[2];
       const [tokenOwnerId, expRaw] = payload.split('.');
@@ -88,7 +95,7 @@ Deno.serve(async req => {
       if (tokenOwnerId !== ownerId || Number.isNaN(exp) || Date.now() > exp) throw new Error('token expired');
 
       const valid = await verify(payload, signature);
-      if (!valid) throw new Error('invalid signature');
+      if (!valid) throw new HttpError('invalid signature', 401);
 
       const [{ data: owner }, { data: stats }, { data: settings }] = await Promise.all([
         adminClient.from('owners').select('id,name').eq('id', ownerId).single(),
@@ -113,7 +120,7 @@ Deno.serve(async req => {
       });
     }
 
-    throw new Error('unsupported action');
+    throw new HttpError('unsupported action', 400);
   } catch (error) {
     const message = error instanceof Error ? error.message : 'unknown error';
     const status = message === 'Unauthorized' || message === 'Forbidden' ? 401 : 400;
