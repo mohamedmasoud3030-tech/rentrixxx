@@ -52,22 +52,22 @@ Deno.serve(async req => {
   try {
     const body = await req.json();
     const action = String(body?.action || '');
-    const client = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
+    const adminClient = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
 
     if (action === 'issue') {
       const authHeader = req.headers.get('Authorization');
-      if (!authHeader) throw new HttpError('Unauthorized', 401);
+      if (!authHeader) throw new Error('Unauthorized');
 
       const userClient = createClient(SUPABASE_URL, ANON_KEY, { global: { headers: { Authorization: authHeader } } });
       const { data: authData } = await userClient.auth.getUser();
       const caller = authData.user;
-      if (!caller) throw new HttpError('Unauthorized', 401);
+      if (!caller) throw new Error('Unauthorized');
 
-      const { data: profile, error: profileError } = await client.from('profiles').select('role').eq('id', caller.id).single();
-      if (profileError || !profile) throw new HttpError('Forbidden', 403);
+      const { data: profile, error: profileError } = await adminClient.from('profiles').select('role').eq('id', caller.id).single();
+      if (profileError || !profile) throw new Error('Forbidden');
 
       const ownerId = String(body.ownerId || '');
-      if (!ownerId) throw new HttpError('ownerId required', 400);
+      if (!ownerId) throw new Error('ownerId required');
 
       const ownerFromMetadata = String(caller.user_metadata?.ownerId || caller.app_metadata?.ownerId || '');
       const isAdmin = profile.role === 'ADMIN';
@@ -94,16 +94,18 @@ Deno.serve(async req => {
       const signature = parts[2];
       const [tokenOwnerId, expRaw] = payload.split('.');
       const exp = Number(expRaw);
-      if (tokenOwnerId !== ownerId || Number.isNaN(exp) || Date.now() > exp) throw new HttpError('token expired', 401);
+      if (tokenOwnerId !== ownerId || Number.isNaN(exp) || Date.now() > exp) throw new Error('token expired');
+
       const valid = await verify(payload, signature);
       if (!valid) throw new HttpError('invalid signature', 401);
 
       const [{ data: owner }, { data: stats }, { data: settings }] = await Promise.all([
-        client.from('owners').select('id,name').eq('id', ownerId).single(),
-        client.from('owner_balances').select('total_income,total_expenses,commission,net_balance').eq('owner_id', ownerId).single(),
-        client.from('settings').select('data').eq('id', 1).single(),
+        adminClient.from('owners').select('id,name').eq('id', ownerId).single(),
+        adminClient.from('owner_balances').select('total_income,total_expenses,commission,net_balance').eq('owner_id', ownerId).single(),
+        adminClient.from('settings').select('data').eq('id', 1).single(),
       ]);
-      if (!owner || !stats) throw new HttpError('owner not found', 404);
+
+      if (!owner || !stats) throw new Error('owner not found');
       const currency = settings?.data?.operational?.currency || 'OMR';
 
       return new Response(JSON.stringify({
@@ -122,8 +124,9 @@ Deno.serve(async req => {
 
     throw new HttpError('unsupported action', 400);
   } catch (error) {
-    const status = error instanceof HttpError ? error.status : 500;
-    return new Response(JSON.stringify({ error: error instanceof Error ? error.message : 'unknown error' }), {
+    const message = error instanceof Error ? error.message : 'unknown error';
+    const status = message === 'Unauthorized' || message === 'Forbidden' ? 401 : 400;
+    return new Response(JSON.stringify({ error: message }), {
       status,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
