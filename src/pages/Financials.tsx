@@ -32,8 +32,10 @@ const Financials: React.FC = () => {
         const receiptsToday = db.receipts.filter(r => r.dateTime.startsWith(today)).reduce((s, r) => s + r.amount, 0);
         const expensesMonth = db.expenses.filter(e => e.dateTime.startsWith(today.slice(0, 7))).reduce((s, e) => s + e.amount, 0);
         const totalDeposits = db.depositTxs.reduce((s, tx) => {
-            if (tx.type === 'DEPOSIT_IN') return s + tx.amount;
-            return s - tx.amount;
+            if (tx.type === 'DEPOSIT_IN' || tx.type === 'DEPOSIT_HOLD') return s + tx.amount;
+            if (tx.type === 'REFUND' || tx.type === 'DEPOSIT_RETURN') return s - tx.amount;
+            if (tx.type === 'DEPOSIT_RELEASE' || tx.type === 'DEPOSIT_OUT' || tx.type === 'DEPOSIT_DEDUCT') return s;
+            return s;
         }, 0);
         const pendingSettlements = db.ownerSettlements.length;
         const openInvoices = db.invoices.filter(inv => inv.status !== 'PAID').length;
