@@ -97,6 +97,7 @@ export const supabaseData = {
 
   async fetchRecent<T>(jsTable: string, limit = 200): Promise<T[]> {
     const sqlTable = resolveTable(jsTable);
+ codex/conduct-full-technical-audit-y73z10
     const orderCandidates = ['created_at', 'updated_at', 'ts', 'date'];
     for (const orderBy of orderCandidates) {
       const { data, error } = await supabase.from(sqlTable).select('*').order(orderBy, { ascending: false }).limit(limit);
@@ -106,6 +107,11 @@ export const supabaseData = {
     }
     logger.error(`[SupabaseData] fetchRecent ${sqlTable} all fallback order columns failed`);
     return [];
+
+    const { data, error } = await supabase.from(sqlTable).select('*').order('created_at', { ascending: false }).limit(limit);
+    if (error) { logger.error(`[SupabaseData] fetchRecent ${sqlTable}`, error); return []; }
+    return (data || []).map(row => toCamelObj(row, jsTable) as T);
+ main
   },
 
   async fetchOne<T>(jsTable: string, id: string | number): Promise<T | null> {
