@@ -5,6 +5,9 @@ import { IntegrationService } from '../services/integrationService';
 import { supabase } from '../services/supabase';
 import { toast } from 'react-hot-toast';
 import { confirmDialog } from '../components/shared/confirmDialog';
+import { adminCreateUser } from '../services/edgeFunctions';
+import { logger } from '../services/logger';
+import { postReceiptAtomic, renewContractAtomic, syncUnitStatus, voidReceiptAtomic } from '../services/antiMistakeService';
 
 const DEFAULT_GEMINI_API_KEY = (import.meta.env.VITE_GEMINI_API_KEY as string) || '';
 
@@ -80,6 +83,20 @@ const toNumber = (value: unknown): number => {
 
 const round3 = (value: number): number => Number(value.toFixed(ROUND_SCALE));
 
+const withRetry = async <T,>(fn: () => Promise<T>, retries = 2): Promise<T> => {
+  let lastError: unknown = null;
+  for (let attempt = 0; attempt <= retries; attempt += 1) {
+    try {
+      return await fn();
+    } catch (error) {
+      lastError = error;
+      if (attempt === retries) break;
+      await new Promise(resolve => setTimeout(resolve, 250 * (attempt + 1)));
+    }
+  }
+  throw lastError;
+};
+
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export const useApp = (): AppContextType => {
@@ -95,7 +112,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [governance, setGovernance] = useState<Governance | null>(null);
   const [isDataStale, setIsDataStale] = useState(true);
   const [performanceMetrics, setPerformanceMetrics] = useState<PerformanceMetrics>(initialPerformanceMetrics);
-  const refreshRef = useRef<() => Promise<void>>();
+  const refreshRef = useRef<(() => Promise<void>) | undefined>(undefined);
   const reconcileRef = useRef(false);
 
   const isReadOnly = useMemo(() => governance?.readOnly || false, [governance]);
@@ -134,17 +151,18 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const refreshData = useCallback(async () => {
     try {
-      const [allData, settingsData, govData] = await Promise.all([
+      const [allData, settingsData, govData] = await withRetry(() => Promise.all([
         supabaseData.getAllData(),
         supabaseData.getSettings(),
         supabaseData.getGovernance(),
-      ]);
+      ]), 1);
       setDb(allData);
       setSettings(settingsData || DEFAULT_SETTINGS);
       setGovernance(govData || { readOnly: false, lockedPeriods: [] });
       setIsDataStale(false);
     } catch (err) {
-      console.error('[AppContext] refreshData error:', err);
+      logger.error('[AppContext] refreshData error', err);
+      toast.error('تعذر تحديث البيانات. تم تفعيل إعادة المحاولة التلقائية.');
     }
   }, []);
 
@@ -157,8 +175,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const canAccess = useCallback((action: string) => {
     if (!currentUser) return false;
-    if (currentUser.role === 'ADMIN') return true;
-    return action === 'VIEW_FINANCIALS';
+    const capabilityMap: Record<'ADMIN' | 'USER', Set<string>> = {
+      ADMIN: new Set(['VIEW_DASHBOARD', 'VIEW_FINANCIALS', 'MANAGE_SETTINGS', 'MANAGE_USERS', 'VIEW_AUDIT_LOG', 'USE_SMART_ASSISTANT']),
+      USER: new Set(['VIEW_DASHBOARD', 'VIEW_FINANCIALS', 'USE_SMART_ASSISTANT']),
+    };
+    return capabilityMap[currentUser.role]?.has(action) || false;
   }, [currentUser]);
 
   useEffect(() => {
@@ -207,7 +228,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       await supabaseData.seedDefaults(
         DEFAULT_SETTINGS,
         DEFAULT_ACCOUNTS.map(acc => ({ ...acc, id: acc.no, createdAt: Date.now() })),
-        DEFAULT_TEMPLATES,
+        DEFAULT_TEMPLATES as unknown as Record<string, unknown>[],
         DEFAULT_SERIALS,
       );
       await refreshData();
@@ -259,13 +280,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const addUser: AppContextType['auth']['addUser'] = useCallback(async (user, pass) => {
     const email = (user as User).email || `${user.username}@rentrix.local`;
-    const { data, error } = await supabase.auth.signUp({ email, password: pass });
-    if (error || !data.user) return { ok: false, msg: error?.message || 'فشل إنشاء المستخدم' };
-    const profile = { id: data.user.id, username: user.username, role: user.role, must_change_password: true, created_at: Date.now() };
-    await supabase.from('profiles').insert(profile);
-    await audit('CREATE', 'users', data.user.id, `Created user ${user.username}`);
+    const result = await adminCreateUser({ email, password: pass, username: user.username, role: user.role });
+    await audit('CREATE', 'users', result.id, `Created user ${user.username}`);
+    await refreshData();
     return { ok: true, msg: 'تم إنشاء المستخدم. سيتلقى المستخدم رسالة تأكيد بالبريد الإلكتروني.' };
-  }, [audit]);
+  }, [audit, refreshData, db?.contracts, db?.maintenanceRecords]);
 
   const updateUser: AppContextType['auth']['updateUser'] = useCallback(async (id, updates) => {
     if (updates.username) await supabase.from('profiles').update({ username: updates.username }).eq('id', id);
@@ -465,6 +484,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         await postInvoiceJournalEntries(invoice);
       } else if (table === 'contracts') {
         await createRentInvoicesForContract(mutableEntry as unknown as Contract);
+        await syncUnitStatus((mutableEntry as unknown as Contract).unitId);
       } else if (table === 'expenses') {
         const e = mutableEntry as unknown as Expense;
         const cashAccount = mappings.paymentMethods.CASH;
@@ -530,21 +550,23 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       }
       const newNo = await supabaseData.incrementSerial('receipt');
       const newReceipt: Receipt = { ...receiptData, id: crypto.randomUUID(), createdAt: Date.now(), no: String(newNo), status: 'POSTED' as const };
-
-      await supabaseData.insert('receipts', newReceipt);
-
       const newAllocations = allocations.map(a => ({ id: crypto.randomUUID(), receiptId: newReceipt.id, ...a, createdAt: Date.now() }));
-      await supabaseData.bulkInsert('receiptAllocations', newAllocations);
 
       let totalVatCollected = 0;
+      const invoiceUpdates: Array<{ id: string; paid_amount: number; status: string }> = [];
       for (const alloc of allocations) {
         const invoices = await supabaseData.fetchWhere<Invoice>('invoices', 'id', alloc.invoiceId);
         const invoice = invoices[0];
         if (!invoice) continue;
-        const newPaid = invoice.paidAmount + alloc.amount;
-        const invoiceTotal = invoice.amount + (invoice.taxAmount || 0);
+        const invoiceTotal = round3(invoice.amount + (invoice.taxAmount || 0));
+        const invoiceRemaining = round3(invoiceTotal - invoice.paidAmount);
+        if (alloc.amount - invoiceRemaining > 0.001) {
+          toast.error(`قيمة التخصيص تتجاوز المتبقي في الفاتورة ${invoice.no}.`);
+          return;
+        }
+        const newPaid = round3(invoice.paidAmount + alloc.amount);
         const newStatus = newPaid >= invoiceTotal - 0.001 ? 'PAID' : 'PARTIALLY_PAID';
-        await supabaseData.update('invoices', invoice.id, { paidAmount: newPaid, status: newStatus });
+        invoiceUpdates.push({ id: invoice.id, paid_amount: newPaid, status: newStatus });
         if (invoice.taxAmount && invoiceTotal > 0) {
           totalVatCollected += (alloc.amount / invoiceTotal) * invoice.taxAmount;
         }
@@ -557,14 +579,23 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       const ownersPayableAccount = mappings.ownersPayable;
       const officeCommissionAccount = mappings.revenue.OFFICE_COMMISSION;
 
-      // 1. Basic Receipt Entry: Cash vs Accounts Receivable
-      await postJournalEntrySupabase({ 
-        dr: cashAccount, 
-        cr: arAccount, 
-        amount: newReceipt.amount, 
-        ref: newReceipt.id, 
-        entityType: 'CONTRACT', 
-        entityId: newReceipt.contractId 
+      const journalEntries: JournalEntry[] = [];
+      const appendVoucher = async (params: { dr: string; cr: string; amount: number; ref: string; entityType?: 'CONTRACT' | 'TENANT'; entityId?: string }) => {
+        const voucherNo = String(await supabaseData.incrementSerial('journalEntry'));
+        const now = Date.now();
+        journalEntries.push(
+          { id: crypto.randomUUID(), no: voucherNo, date: newReceipt.dateTime.slice(0, 10), accountId: params.dr, amount: round3(params.amount), type: 'DEBIT', sourceId: params.ref, entityType: params.entityType, entityId: params.entityId, createdAt: now },
+          { id: crypto.randomUUID(), no: voucherNo, date: newReceipt.dateTime.slice(0, 10), accountId: params.cr, amount: round3(params.amount), type: 'CREDIT', sourceId: params.ref, entityType: params.entityType, entityId: params.entityId, createdAt: now },
+        );
+      };
+
+      await appendVoucher({
+        dr: cashAccount,
+        cr: arAccount,
+        amount: newReceipt.amount,
+        ref: newReceipt.id,
+        entityType: 'CONTRACT',
+        entityId: newReceipt.contractId
       });
 
       // 2. Reclassification: Move Rent from Revenue to Owner Payable & Office Commission
@@ -591,7 +622,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
               const netToOwner = round3(netRent - commission);
               
               if (netToOwner > 0.001) {
-                  await postJournalEntrySupabase({ 
+                  await appendVoucher({
                     dr: revenueAccount, 
                     cr: ownersPayableAccount, 
                     amount: netToOwner, 
@@ -602,7 +633,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
               }
               
               if (commission > 0.001) {
-                  await postJournalEntrySupabase({ 
+                  await appendVoucher({
                     dr: revenueAccount, 
                     cr: officeCommissionAccount, 
                     amount: commission, 
@@ -614,19 +645,38 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           }
       }
 
+      const breakdown = await postReceiptAtomic({
+        receipt: {
+          id: newReceipt.id, no: newReceipt.no, contract_id: newReceipt.contractId, date_time: newReceipt.dateTime,
+          channel: newReceipt.channel, amount: round3(newReceipt.amount), ref: newReceipt.ref, notes: newReceipt.notes,
+          status: newReceipt.status, created_at: newReceipt.createdAt, check_number: newReceipt.checkNumber || '',
+          check_bank: newReceipt.checkBank || '', check_date: newReceipt.checkDate || '', check_status: newReceipt.checkStatus || '',
+        },
+        allocations: newAllocations.map(a => ({ id: a.id, receipt_id: a.receiptId, invoice_id: a.invoiceId, amount: round3(a.amount), created_at: a.createdAt })),
+        invoiceUpdates,
+        journalEntries: journalEntries.map(j => ({
+          id: j.id, no: j.no, date: j.date, account_id: j.accountId, amount: round3(j.amount), type: j.type, source_id: j.sourceId,
+          entity_type: j.entityType || '', entity_id: j.entityId || '', created_at: j.createdAt
+        })),
+      });
+      if (!breakdown.ok) {
+        toast.error(`فشل الترحيل الذري: ${String(breakdown.details?.message || 'خطأ غير معروف')}`);
+        return;
+      }
+
       await audit('CREATE', 'receipts', newReceipt.id, `Created receipt ${newReceipt.no} with ${allocations.length} allocations. VAT: ${totalVatCollected.toFixed(3)}, Net to Owner: ${(newReceipt.amount - totalVatCollected).toFixed(3)}`);
 
       const endTime = performance.now();
       logOperationTime('addReceipt', endTime - startTime);
       setIsDataStale(true);
       await refreshData();
-      toast.success('تم تسجيل السند وتخصيص الدفعات بنجاح!');
+      toast.success(`تم تسجيل السند بنجاح (سند + تخصيص + قيود)`);
     } catch (err: any) {
       console.error('addReceiptWithAllocations failed:', err);
       toast.error('حدث خطأ أثناء تسجيل السند: ' + (err?.message || 'خطأ غير معروف'));
       await refreshData();
     }
-  }, [isReadOnly, settings, audit, logOperationTime, postJournalEntrySupabase, refreshData, db]);
+  }, [isReadOnly, settings, audit, logOperationTime, refreshData, db]);
 
   const addManualJournalVoucher: AppContextType['financeService']['addManualJournalVoucher'] = useCallback(async (voucher) => {
     if (isReadOnly) { toast.error("النظام في وضع القراءة فقط."); return; }
@@ -652,7 +702,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const update: AppContextType['dataService']['update'] = useCallback(async (table, id, updates) => {
     try {
       if (STRICT_FINANCIAL_WRITE_TABLES.includes(table as keyof Database)) {
-        toast.error('تعديل الحركات المالية المباشرة غير مسموح بعد الترحيل. استخدم الإلغاء/التسوية.');
+        toast.error('تعديل مباشر غير مسموح. خطوات الاسترجاع: 1) إلغاء الحركة الحالية 2) مراجعة القيود العكسية 3) إعادة التسجيل بالقيم الصحيحة.');
         return;
       }
       const normalizedUpdates = TABLES_WITHOUT_UPDATED_AT.has(table as keyof Database)
@@ -660,6 +710,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         : { ...updates, updatedAt: Date.now() };
       const result = await supabaseData.update(table as string, id, normalizedUpdates);
       if (!result.ok) { toast.error(`فشل التحديث: ${result.error}`); return; }
+      if (table === 'contracts') {
+        const contractUnitId = db?.contracts?.find(c => c.id === id)?.unitId;
+        if (contractUnitId) await syncUnitStatus(contractUnitId);
+      }
+      if (table === 'maintenanceRecords') {
+        const maintenanceUnitId = db?.maintenanceRecords?.find(m => m.id === id)?.unitId;
+        if (maintenanceUnitId) await syncUnitStatus(maintenanceUnitId);
+      }
       await audit('UPDATE', String(table), id);
       if (FINANCIAL_TABLES.includes(table as keyof Database)) setIsDataStale(true);
       await refreshData();
@@ -683,6 +741,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     try {
       const ok = await supabaseData.remove(table as string, id);
       if (!ok) throw new Error('Delete failed');
+      if (table === 'contracts') {
+        const relatedUnit = db?.contracts?.find(c => c.id === id)?.unitId;
+        if (relatedUnit) await syncUnitStatus(relatedUnit);
+      }
       await audit('DELETE', String(table), id);
       if (FINANCIAL_TABLES.includes(table as keyof Database)) setIsDataStale(true);
       await refreshData();
@@ -692,7 +754,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       console.error('Delete error:', error);
       toast.error(message);
     }
-  }, [audit, refreshData]);
+  }, [audit, refreshData, db?.contracts]);
 
   const reverseAllJournalEntries = useCallback(async (sourceId: string) => {
     const entries = await supabaseData.fetchWhere<JournalEntry>('journalEntries', 'sourceId', sourceId);
@@ -710,24 +772,40 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const voidReceipt: AppContextType['financeService']['voidReceipt'] = useCallback(async (id) => {
     const startTime = performance.now();
     try {
-      await supabaseData.update('receipts', id, { status: 'VOID', voidedAt: Date.now() });
       await audit('VOID', 'receipts', id);
-
-      await reverseAllJournalEntries(id);
-      await reverseAllJournalEntries(`${id}-own`);
-      await reverseAllJournalEntries(`${id}-com`);
-      await reverseAllJournalEntries(`${id}-vat`); // In case of old receipts
-
       const allocations = await supabaseData.fetchWhere<ReceiptAllocation>('receiptAllocations', 'receiptId', id);
+      const invoiceUpdates: Array<{ id: string; paid_amount: number; status: string }> = [];
       for (const alloc of allocations) {
         const invoices = await supabaseData.fetchWhere<Invoice>('invoices', 'id', alloc.invoiceId);
         const invoice = invoices[0];
         if (!invoice) continue;
         const newPaid = Math.max(0, invoice.paidAmount - alloc.amount);
         const newStatus = newPaid <= 0.001 ? (new Date(invoice.dueDate) < new Date() ? 'OVERDUE' : 'UNPAID') : 'PARTIALLY_PAID';
-        await supabaseData.update('invoices', invoice.id, { paidAmount: newPaid, status: newStatus });
+        invoiceUpdates.push({ id: invoice.id, paid_amount: round3(newPaid), status: newStatus });
       }
-      await supabaseData.removeWhere('receiptAllocations', 'receiptId', id);
+      const sourceEntries = [
+        ...(await supabaseData.fetchWhere<JournalEntry>('journalEntries', 'sourceId', id)),
+        ...(await supabaseData.fetchWhere<JournalEntry>('journalEntries', 'sourceId', `${id}-own`)),
+        ...(await supabaseData.fetchWhere<JournalEntry>('journalEntries', 'sourceId', `${id}-com`)),
+        ...(await supabaseData.fetchWhere<JournalEntry>('journalEntries', 'sourceId', `${id}-vat`)),
+      ];
+      const reverseEntries: JournalEntry[] = sourceEntries.map(e => ({
+        ...e,
+        id: crypto.randomUUID(),
+        sourceId: `${e.sourceId}-void`,
+        type: e.type === 'DEBIT' ? 'CREDIT' : 'DEBIT',
+        createdAt: Date.now(),
+      }));
+      const atomic = await voidReceiptAtomic({
+        receiptId: id,
+        voidedAt: Date.now(),
+        invoiceUpdates,
+        reverseEntries: reverseEntries.map(j => ({
+          id: j.id, no: j.no, date: j.date, account_id: j.accountId, amount: round3(j.amount), type: j.type, source_id: j.sourceId,
+          entity_type: j.entityType || '', entity_id: j.entityId || '', created_at: j.createdAt
+        })),
+      });
+      if (!atomic.ok) throw new Error(String(atomic.details?.message || 'atomic void failed'));
 
       const endTime = performance.now();
       logOperationTime('voidReceipt', endTime - startTime);
@@ -739,7 +817,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       toast.error('حدث خطأ أثناء إلغاء السند: ' + (err?.message || 'خطأ غير معروف'));
       await refreshData();
     }
-  }, [audit, reverseAllJournalEntries, logOperationTime, refreshData]);
+  }, [audit, logOperationTime, refreshData]);
 
   const voidExpense: AppContextType['financeService']['voidExpense'] = useCallback(async (id) => {
     const startTime = performance.now();

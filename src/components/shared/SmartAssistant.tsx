@@ -3,6 +3,7 @@ import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { useApp } from '../../contexts/AppContext';
 import { Sparkles, Bot, User, X, Send } from 'lucide-react';
 import { queryAssistant } from '../../services/geminiService';
+import { logger } from '../../services/logger';
 
 interface Message {
     sender: 'user' | 'ai' | 'error';
@@ -10,13 +11,8 @@ interface Message {
 }
 
 const SmartAssistant: React.FC = () => {
-    const { settings } = useApp();
+    useApp();
     const [isOpen, setIsOpen] = useState(false);
-
-    // FIX: Corrected path to geminiApiKey
-    if (!settings.integrations.geminiApiKey) {
-        return null;
-    }
 
     return (
         <>
@@ -33,7 +29,7 @@ const SmartAssistant: React.FC = () => {
 };
 
 const AssistantModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
-    const { db, settings, ownerBalances, contractBalances } = useApp();
+    const { db, ownerBalances, contractBalances } = useApp();
     const [messages, setMessages] = useState<Message[]>([
         { sender: 'ai', text: 'أهلاً بك! أنا مساعدك الذكي. كيف يمكنني مساعدتك في تحليل بياناتك اليوم؟' }
     ]);
@@ -89,14 +85,11 @@ const AssistantModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
         setIsLoading(true);
 
         try {
-            // FIX: Corrected path to geminiApiKey
-            const responseText = await queryAssistant(settings.integrations.geminiApiKey, input, JSON.stringify(contextData));
+            const responseText = await queryAssistant('', input, JSON.stringify(contextData));
             setMessages(prev => [...prev, { sender: 'ai', text: responseText }]);
         } catch (error) {
-            console.error(error);
-            const errorMessage = (error as Error).message.includes("API key not valid")
-                ? "مفتاح API غير صالح. يرجى التحقق منه في الإعدادات."
-                : "حدث خطأ أثناء التواصل مع المساعد الذكي. يرجى المحاولة مرة أخرى.";
+            logger.error('[SmartAssistant] query failed', error);
+            const errorMessage = "حدث خطأ أثناء التواصل مع المساعد الذكي. يرجى المحاولة مرة أخرى.";
             setMessages(prev => [...prev, { sender: 'error', text: errorMessage }]);
         } finally {
             setIsLoading(false);

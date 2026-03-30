@@ -51,11 +51,11 @@ const Lands: React.FC = () => {
         const data = lands.map(l => ({
             'الموقع': l.location,
             'الفئة': l.category,
-            'المساحة': `${l.areaSize} ${l.areaUnit || 'متر'}`,
-            'السعر': formatCurrency(l.price, settings.currency),
-            'السعر للمتر': formatCurrency(l.pricePerUnit || 0, settings.currency),
+            'المساحة': `${l.area || 0} متر`,
+            'صافي المالك': formatCurrency(l.ownerPrice || 0, settings.operational.currency),
+            'عمولة المكتب': formatCurrency(l.commission || 0, settings.operational.currency),
             'الحالة': getStatusLabel(l.status),
-            'الوصف': l.description || '—',
+            'ملاحظات': l.notes || '—',
             'تاريخ الإضافة': new Date(l.createdAt).toLocaleDateString('ar')
         }));
         exportToCsv('أراضي_rentrix', data);

@@ -25,7 +25,8 @@ import {
   PieChart as RechartsPie, Pie, Cell, Legend, AreaChart, Area,
   LineChart, Line
 } from 'recharts';
-import { ReportTab } from './ReportsSidebar';
+import { ReportTab } from '../ReportsSidebar';
+import { useLocation } from 'react-router-dom';
 
 interface OwnerLedgerTransaction {
   date: string;
