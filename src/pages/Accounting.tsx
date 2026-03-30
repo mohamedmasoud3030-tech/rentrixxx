@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { useApp } from '../contexts/AppContext';
 import Card from '../components/ui/Card';
 import Modal from '../components/ui/Modal';
@@ -31,7 +32,7 @@ const Accounting: React.FC = () => {
         const balances = db.accountBalances || [];
         const accounts = db.accounts || [];
         const totals = { assets: 0, liabilities: 0, equity: 0, revenue: 0, expense: 0 };
-        
+
         balances.forEach(b => {
             const acc = accounts.find(a => a.id === b.accountId);
             if (!acc) return;
@@ -44,8 +45,27 @@ const Accounting: React.FC = () => {
         return totals;
     }, [db.accountBalances, db.accounts]);
 
+    const smartLinks = useMemo(() => {
+        const overdueInvoices = db.invoices.filter(invoice => invoice.status === 'OVERDUE').length;
+        const openInvoices = db.invoices.filter(invoice => invoice.status !== 'PAID').length;
+        const activeContracts = db.contracts.filter(contract => contract.status === 'ACTIVE').length;
+        return { overdueInvoices, openInvoices, activeContracts };
+    }, [db.invoices, db.contracts]);
+
     return (
         <div className="space-y-6">
+            <div className="rounded-2xl border border-primary/10 bg-primary/5 p-4 flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+                <div>
+                    <p className="text-xs uppercase tracking-widest text-primary font-black">Accounting Intelligence</p>
+                    <p className="text-sm font-bold mt-1">الربط المباشر مع العقود والفواتير يمنع الفجوات المحاسبية قبل الإقفال.</p>
+                    <p className="text-xs text-text-muted mt-1">عقود نشطة: <span className="font-black" dir="ltr">{smartLinks.activeContracts}</span> • فواتير مفتوحة: <span className="font-black" dir="ltr">{smartLinks.openInvoices}</span> • فواتير متأخرة: <span className="font-black text-rose-600" dir="ltr">{smartLinks.overdueInvoices}</span></p>
+                </div>
+                <div className="flex gap-2 flex-wrap">
+                    <Link to="/finance/invoices" className="btn btn-secondary text-xs font-black">عرض الفواتير</Link>
+                    <Link to="/reports" className="btn btn-primary text-xs font-black">تحليل تقارير مالي</Link>
+                </div>
+            </div>
+
             {/* Header Stats */}
             <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
                 <StatCard label="إجمالي الأصول" value={stats.assets} icon={<Wallet />} color="blue" />
