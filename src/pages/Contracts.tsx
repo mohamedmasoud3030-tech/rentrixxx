@@ -1,5 +1,7 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { useApp } from '../contexts/AppContext';
+import { renewContractAtomic } from '../services/antiMistakeService';
+import { supabaseData } from '../services/supabaseDataService';
 import { Contract, Receipt, Expense } from '../types';
 import Card from '../components/ui/Card';
 import Modal from '../components/ui/Modal';
@@ -180,26 +182,27 @@ const Contracts: React.FC = () => {
             newEnd.setFullYear(newEnd.getFullYear() + 1);
             newEnd.setDate(newEnd.getDate() - 1);
 
-            const newContract = await dataService.add('contracts', {
-                unitId: contract.unitId,
-                tenantId: contract.tenantId,
-                rent: contract.rent,
-                dueDay: contract.dueDay,
-                start: newStart.toISOString().slice(0, 10),
-                end: newEnd.toISOString().slice(0, 10),
+            const nextNo = String(await supabaseData.incrementSerial('contract'));
+            const payload = {
+                id: crypto.randomUUID(),
+                no: nextNo,
+                unit_id: contract.unitId,
+                tenant_id: contract.tenantId,
+                rent_amount: contract.rent,
+                due_day: contract.dueDay,
+                start_date: newStart.toISOString().slice(0, 10),
+                end_date: newEnd.toISOString().slice(0, 10),
                 deposit: contract.deposit,
-                status: 'ACTIVE' as const,
-                sponsorName: contract.sponsorName || '',
-                sponsorId: contract.sponsorId || '',
-                sponsorPhone: contract.sponsorPhone || '',
-            });
-
-            if (!newContract) {
-                toast.error('فشل إنشاء العقد الجديد. لم يتم تغيير العقد الحالي.');
+                sponsor_name: contract.sponsorName || '',
+                sponsor_id: contract.sponsorId || '',
+                sponsor_phone: contract.sponsorPhone || '',
+                created_at: Date.now(),
+            };
+            const result = await renewContractAtomic(contract.id, payload);
+            if (!result.ok) {
+                toast.error(`فشل التجديد: ${String(result.details?.message || 'خطأ غير معروف')}`);
                 return;
             }
-
-            await dataService.update('contracts', contract.id, { status: 'ENDED' as const });
             toast.success('تم تجديد العقد بنجاح! العقد القديم أصبح منتهياً والعقد الجديد نشط.');
         } catch (err: unknown) {
             console.error('Contract renewal failed:', err);
@@ -470,6 +473,13 @@ const ContractForm: React.FC<{ isOpen: boolean, onClose: () => void, contract: C
         }
 
         if (status === 'ACTIVE') {
+            const hasBlockingMaintenance = db.maintenanceRecords.some(m =>
+                m.unitId === unitId && ['NEW', 'IN_PROGRESS'].includes(m.status)
+            );
+            if (hasBlockingMaintenance) {
+                toast.error('لا يمكن تفعيل عقد لوحدة لديها طلبات صيانة معلّقة.');
+                return;
+            }
             const tenantHasActiveContract = contracts.some(c =>
                 c.tenantId === tenantId && c.status === 'ACTIVE' && c.id !== contract?.id
             );
