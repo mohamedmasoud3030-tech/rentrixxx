@@ -1,19 +1,32 @@
 import React, { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import { useApp } from '../contexts/AppContext';
-import { Invoice, Unit } from '../types';
+import { Invoice } from '../types';
 import Card from '../components/ui/Card';
 import Modal from '../components/ui/Modal';
 import { formatCurrency, formatDate, getStatusBadgeClass, exportToCsv, INVOICE_STATUS_AR, INVOICE_TYPE_AR } from '../utils/helpers';
 import NumberInput from '../components/ui/NumberInput';
-import { 
-    ReceiptText, RefreshCw, Download, CheckSquare, Square, 
-    CheckCircle, MessageCircle, FileText, Plus, Search, 
-    Filter, AlertCircle, Clock, CheckCircle2, MoreVertical, 
-    Trash2, Edit2, Share2, Printer, ArrowUpRight, ArrowDownRight, Wallet
-} from 'lucide-react';
+import { ReceiptText, RefreshCw, Download, CheckSquare, Square, MessageCircle, FileText, Plus, Search, AlertCircle, Clock, CheckCircle2, ArrowUpRight, Wallet } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 import { exportInvoiceToPdf } from '../services/pdfService';
+
+type InvoiceFiltersState = {
+    status: 'all' | 'unpaid' | 'overdue' | 'paid';
+    type: 'all' | 'RENT' | 'LATE_FEE' | 'UTILITY' | 'OTHER';
+    dateFrom: string;
+    dateTo: string;
+    search: string;
+};
+
+const STORAGE_KEY = 'rentrix:invoices_filters';
+
+const defaultFilters: InvoiceFiltersState = {
+    status: 'all',
+    type: 'all',
+    dateFrom: '',
+    dateTo: '',
+    search: '',
+};
 
 const Invoices: React.FC = () => {
     const { db, financeService, settings, dataService } = useApp();
@@ -21,21 +34,22 @@ const Invoices: React.FC = () => {
     const navigate = useNavigate();
 
     const [isMonthlyLoading, setIsMonthlyLoading] = useState(false);
-    const [isLateFeeLoading, setIsLateFeeLoading] = useState(false);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingInvoice, setEditingInvoice] = useState<Invoice | null>(null);
     const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
-    const [searchTerm, setSearchTerm] = useState('');
+    const [filters, setFilters] = useState<InvoiceFiltersState>(() => {
+        try {
+            const stored = sessionStorage.getItem(STORAGE_KEY);
+            return stored ? { ...defaultFilters, ...JSON.parse(stored) } : defaultFilters;
+        } catch {
+            return defaultFilters;
+        }
+    });
+    const [quickPayInvoice, setQuickPayInvoice] = useState<Invoice | null>(null);
 
-    const filters = [
-        { key: 'all', label: 'الكل' },
-        { key: 'unpaid', label: 'غير مدفوعة' },
-        { key: 'overdue', label: 'متأخرة' },
-        { key: 'paid', label: 'مدفوعة' },
-    ];
-    
-    const [activeFilter, setActiveFilter] = useState('all');
-    const todayIso = new Date().toISOString().slice(0, 10);
+    useEffect(() => {
+        sessionStorage.setItem(STORAGE_KEY, JSON.stringify(filters));
+    }, [filters]);
 
     const getInvoiceTotal = useCallback((invoice: Invoice) => (invoice.amount || 0) + (invoice.taxAmount || 0), []);
     const getInvoiceRemaining = useCallback((invoice: Invoice) => Math.max(0, getInvoiceTotal(invoice) - (invoice.paidAmount || 0)), [getInvoiceTotal]);
@@ -43,57 +57,70 @@ const Invoices: React.FC = () => {
         const total = getInvoiceTotal(invoice);
         const paid = invoice.paidAmount || 0;
         if (paid >= total - 0.001) return 'PAID';
-        if (invoice.dueDate < todayIso) return 'OVERDUE';
+        const graceDays = settings.operational?.lateFee?.graceDays ?? 0;
+        const dueWithGrace = new Date(invoice.dueDate);
+        dueWithGrace.setDate(dueWithGrace.getDate() + graceDays);
+        if (dueWithGrace < new Date()) return 'OVERDUE';
         if (paid > 0.001) return 'PARTIALLY_PAID';
         return 'UNPAID';
-    }, [getInvoiceTotal, todayIso]);
+    }, [getInvoiceTotal, settings.operational?.lateFee?.graceDays]);
 
     useEffect(() => {
         const params = new URLSearchParams(location.search);
-        const filterParam = params.get('filter') || 'all';
-        if (filters.some(f => f.key === filterParam)) {
-            setActiveFilter(filterParam);
+        const filterParam = params.get('filter');
+        if (filterParam && ['all', 'unpaid', 'overdue', 'paid'].includes(filterParam)) {
+            setFilters(prev => ({ ...prev, status: filterParam as InvoiceFiltersState['status'] }));
         }
     }, [location.search]);
 
-    const handleFilterChange = (filterKey: string) => {
-        setActiveFilter(filterKey);
-        navigate(`/finance/invoices?filter=${filterKey}`);
-    };
+    const invoicesWithDetails = useMemo(() => {
+        return db.invoices
+            .filter(inv => {
+                const effectiveStatus = getEffectiveStatus(inv);
+                if (filters.status === 'unpaid') return ['UNPAID', 'PARTIALLY_PAID'].includes(effectiveStatus);
+                if (filters.status === 'overdue') return effectiveStatus === 'OVERDUE';
+                if (filters.status === 'paid') return effectiveStatus === 'PAID';
+                return true;
+            })
+            .filter(inv => {
+                if (filters.type === 'all') return true;
+                if (filters.type === 'OTHER') return !['RENT', 'LATE_FEE', 'UTILITY'].includes(inv.type);
+                return inv.type === filters.type;
+            })
+            .filter(inv => (!filters.dateFrom || inv.dueDate >= filters.dateFrom) && (!filters.dateTo || inv.dueDate <= filters.dateTo))
+            .filter(inv => {
+                if (!filters.search.trim()) return true;
+                const contract = db.contracts.find(c => c.id === inv.contractId);
+                const tenant = contract ? db.tenants.find(t => t.id === contract.tenantId) : null;
+                return inv.no.includes(filters.search) || tenant?.name.includes(filters.search);
+            })
+            .map(inv => {
+                const contract = db.contracts.find(c => c.id === inv.contractId);
+                const tenant = contract ? db.tenants.find(t => t.id === contract.tenantId) : null;
+                const unit = contract ? db.units.find(u => u.id === contract.unitId) : null;
+                const property = unit ? db.properties.find(p => p.id === unit.propertyId) : null;
+                return {
+                    ...inv,
+                    tenant,
+                    unit,
+                    propertyName: property?.name || '',
+                    total: getInvoiceTotal(inv),
+                    remaining: getInvoiceRemaining(inv),
+                    effectiveStatus: getEffectiveStatus(inv),
+                };
+            })
+            .sort((a, b) => new Date(b.dueDate).getTime() - new Date(a.dueDate).getTime());
+    }, [db, filters, getEffectiveStatus, getInvoiceRemaining, getInvoiceTotal]);
 
     const stats = useMemo(() => {
-        const unpaid = db.invoices
-            .filter(i => ['UNPAID', 'PARTIALLY_PAID'].includes(getEffectiveStatus(i)))
-            .reduce((s, i) => s + getInvoiceRemaining(i), 0);
-        const overdue = db.invoices
-            .filter(i => getEffectiveStatus(i) === 'OVERDUE')
-            .reduce((s, i) => s + getInvoiceRemaining(i), 0);
-        const collectedThisMonth = db.receipts.filter(r => r.dateTime.startsWith(new Date().toISOString().slice(0, 7))).reduce((s, r) => s + r.amount, 0);
+        const unpaid = db.invoices.filter(i => ['UNPAID', 'PARTIALLY_PAID'].includes(getEffectiveStatus(i))).reduce((s, i) => s + getInvoiceRemaining(i), 0);
+        const overdue = db.invoices.filter(i => getEffectiveStatus(i) === 'OVERDUE').reduce((s, i) => s + getInvoiceRemaining(i), 0);
+        const month = new Date().toISOString().slice(0, 7);
+        const collectedThisMonth = db.receipts
+            .filter(r => r.status === 'POSTED' && r.dateTime.startsWith(month))
+            .reduce((s, r) => s + r.amount, 0);
         return { unpaid, overdue, collectedThisMonth };
     }, [db.invoices, db.receipts, getEffectiveStatus, getInvoiceRemaining]);
-
-    const handleGenerateInvoices = async () => {
-        setIsMonthlyLoading(true);
-        const count = await financeService.generateMonthlyInvoices();
-        toast.success(`تم إصدار ${count} فاتورة جديدة بنجاح.`);
-        setIsMonthlyLoading(false);
-    };
-
-    const handleGenerateLateFees = async () => {
-        setIsLateFeeLoading(true);
-        const count = await financeService.generateLateFees();
-        toast.success(`تم إصدار ${count} فاتورة رسوم تأخير جديدة.`);
-        setIsLateFeeLoading(false);
-    };
-
-    const handleOpenModal = (invoice: Invoice | null = null) => {
-        setEditingInvoice(invoice);
-        setIsModalOpen(true);
-    };
-    const handleCloseModal = () => {
-        setEditingInvoice(null);
-        setIsModalOpen(false);
-    };
 
     const toggleSelect = (id: string) => {
         setSelectedIds(prev => {
@@ -103,232 +130,171 @@ const Invoices: React.FC = () => {
         });
     };
 
-    const toggleSelectAll = () => {
-        if (selectedIds.size === invoicesWithDetails.length) {
-            setSelectedIds(new Set());
-        } else {
-            setSelectedIds(new Set(invoicesWithDetails.map(i => i.id)));
-        }
-    };
-
-    const handleBulkMarkOverdue = async () => {
-        if (selectedIds.size === 0) { toast.error('لم يتم اختيار أي فاتورة.'); return; }
-        const toMark = invoicesWithDetails.filter(i => selectedIds.has(i.id) && (i.status === 'UNPAID' || i.status === 'PARTIALLY_PAID'));
-        if (toMark.length === 0) { toast.error('الفواتير المختارة لا تقبل التحديث.'); return; }
-        for (const inv of toMark) {
-            await dataService.update('invoices', inv.id, { status: 'OVERDUE' as Invoice['status'] });
-        }
-        toast.success(`تم تعليم ${toMark.length} فاتورة كمتأخرة.`);
-        setSelectedIds(new Set());
-    };
-
     const handleBulkSendWhatsApp = () => {
-        const selected = invoicesWithDetails.filter(i => selectedIds.has(i.id));
-        if (selected.length === 0) { toast.error('لم يتم اختيار أي فاتورة.'); return; }
+        const selected = invoicesWithDetails.filter(i => selectedIds.has(i.id)).filter(i => i.effectiveStatus === 'OVERDUE');
+        if (selected.length === 0) {
+            toast.error('اختر فواتير متأخرة أولاً.');
+            return;
+        }
         let sent = 0;
         for (const inv of selected) {
             const phone = inv.tenant?.phone;
             if (!phone) continue;
-            const currency = settings.operational?.currency ?? 'OMR';
-            const balance = formatCurrency(getInvoiceRemaining(inv), currency);
-            const msg = encodeURIComponent(
-                `مرحباً ${inv.tenant?.name}،\nهذا تذكير بفاتورتك رقم ${inv.no} بمبلغ ${balance} مستحقة بتاريخ ${formatDate(inv.dueDate)}.\nيُرجى سداد المبلغ في أقرب وقت.\nشكراً — نظام Rentrix`
-            );
-            const cleanPhone = phone.replace(/\D/g, '');
-            window.open(`https://wa.me/${cleanPhone}?text=${msg}`, '_blank');
+            const msg = encodeURIComponent(`مرحباً ${inv.tenant?.name}،\nتذكير: فاتورتك رقم ${inv.no} متأخرة بمبلغ ${formatCurrency(inv.remaining, settings.operational?.currency ?? 'OMR')}.`);
+            window.open(`https://wa.me/${phone.replace(/\D/g, '')}?text=${msg}`, '_blank');
             sent++;
         }
-        if (sent > 0) {
-            toast.success(`تم فتح واتساب لـ ${sent} مستأجر.`);
-        } else {
-            toast.error('لا تتوفر أرقام هاتف للمستأجرين المختارين.');
-        }
+        sent ? toast.success(`تم فتح واتساب لـ ${sent} مستأجر.`) : toast.error('لا توجد أرقام صالحة.');
         setSelectedIds(new Set());
     };
 
-    const invoicesWithDetails = useMemo(() => {
-        let filteredInvoices = db.invoices;
-        if (activeFilter !== 'all') {
-            filteredInvoices = db.invoices.filter(inv => {
-                const effectiveStatus = getEffectiveStatus(inv);
-                if (activeFilter === 'unpaid') return ['UNPAID', 'PARTIALLY_PAID'].includes(effectiveStatus);
-                if (activeFilter === 'overdue') return effectiveStatus === 'OVERDUE';
-                if (activeFilter === 'paid') return effectiveStatus === 'PAID';
-                return true;
-            });
-        }
-        
-        if (searchTerm) {
-            filteredInvoices = filteredInvoices.filter(inv => {
-                const contract = db.contracts.find(c => c.id === inv.contractId);
-                const tenant = contract ? db.tenants.find(t => t.id === contract.tenantId) : null;
-                return inv.no.includes(searchTerm) || tenant?.name.includes(searchTerm);
-            });
-        }
-    
-        return filteredInvoices.map(inv => {
-            const contract = db.contracts.find(c => c.id === inv.contractId);
-            const tenant = contract ? db.tenants.find(t => t.id === contract.tenantId) : null;
-            const unit = contract ? db.units.find(u => u.id === contract.unitId) : null;
-            const property = unit ? db.properties.find(p => p.id === unit.propertyId) : null;
-            const total = getInvoiceTotal(inv);
-            const remaining = getInvoiceRemaining(inv);
-            const effectiveStatus = getEffectiveStatus(inv);
-            return { ...inv, tenant, unit, propertyName: property?.name || '', total, remaining, effectiveStatus };
-        }).sort((a, b) => new Date(b.dueDate).getTime() - new Date(a.dueDate).getTime());
-    }, [db.invoices, db.contracts, db.tenants, db.units, db.properties, activeFilter, searchTerm, getInvoiceTotal, getInvoiceRemaining, getEffectiveStatus]);
+    const handleGenerateInvoices = async () => {
+        setIsMonthlyLoading(true);
+        const count = await financeService.generateMonthlyInvoices();
+        toast.success(`تم إصدار ${count} فاتورة جديدة.`);
+        setIsMonthlyLoading(false);
+    };
 
     const currency = settings.operational?.currency ?? 'OMR';
 
     return (
         <div className="space-y-6">
-            {/* Quick Stats */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <StatCard label="مستحقات غير محصلة" value={stats.unpaid} icon={<Clock className="text-amber-500" />} color="amber" />
                 <StatCard label="فواتير متأخرة" value={stats.overdue} icon={<AlertCircle className="text-rose-500" />} color="rose" />
                 <StatCard label="تحصيلات الشهر" value={stats.collectedThisMonth} icon={<ArrowUpRight className="text-emerald-500" />} color="emerald" />
             </div>
 
-            <Card className="p-0 overflow-hidden border-none shadow-xl bg-card/50 backdrop-blur-sm">
-                <div className="flex flex-col md:flex-row md:items-center justify-between p-4 border-b border-border gap-4">
-                    <div className="flex bg-background/50 p-1 rounded-xl border border-border overflow-x-auto self-start">
-                        {filters.map(filter => (
-                            <TabButton 
-                                key={filter.key}
-                                active={activeFilter === filter.key} 
-                                onClick={() => handleFilterChange(filter.key)} 
-                                label={filter.label} 
-                                icon={filter.key === 'overdue' ? <AlertCircle size={14} /> : filter.key === 'paid' ? <CheckCircle2 size={14} /> : <ReceiptText size={14} />}
-                            />
+            <Card className="p-0 overflow-hidden border-none shadow-xl bg-card/50">
+                <div className="flex flex-col gap-3 p-4 border-b border-border">
+                    <div className="flex flex-wrap gap-2">
+                        {[
+                            { key: 'all', label: 'الكل' },
+                            { key: 'unpaid', label: 'غير مدفوعة' },
+                            { key: 'overdue', label: 'متأخرة' },
+                            { key: 'paid', label: 'مدفوعة' },
+                        ].map(filter => (
+                            <button key={filter.key} onClick={() => setFilters(prev => ({ ...prev, status: filter.key as InvoiceFiltersState['status'] }))} className={`px-4 py-2 rounded-lg text-sm ${filters.status === filter.key ? 'bg-primary text-white' : 'bg-background'}`}>{filter.label}</button>
                         ))}
                     </div>
-                    <div className="flex gap-2 w-full md:w-auto">
-                        <button onClick={handleGenerateInvoices} disabled={isMonthlyLoading} className="btn btn-primary flex-1 md:flex-none flex items-center justify-center gap-2 shadow-lg shadow-primary/20">
-                            {isMonthlyLoading ? <RefreshCw size={16} className="animate-spin" /> : <Plus size={16} />}
-                            إصدار فواتير الإيجار
+
+                    <div className="grid md:grid-cols-4 gap-2">
+                        <div className="relative">
+                            <Search className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted" size={16} />
+                            <input placeholder="بحث..." className="w-full pr-9" value={filters.search} onChange={e => setFilters(prev => ({ ...prev, search: e.target.value }))} />
+                        </div>
+                        <select value={filters.type} onChange={e => setFilters(prev => ({ ...prev, type: e.target.value as InvoiceFiltersState['type'] }))}>
+                            <option value="all">الكل</option>
+                            <option value="RENT">إيجار</option>
+                            <option value="LATE_FEE">رسوم تأخير</option>
+                            <option value="UTILITY">مرافق</option>
+                            <option value="OTHER">أخرى</option>
+                        </select>
+                        <input type="date" value={filters.dateFrom} onChange={e => setFilters(prev => ({ ...prev, dateFrom: e.target.value }))} />
+                        <input type="date" value={filters.dateTo} onChange={e => setFilters(prev => ({ ...prev, dateTo: e.target.value }))} />
+                    </div>
+
+                    <div className="flex flex-wrap gap-2">
+                        <button onClick={handleGenerateInvoices} disabled={isMonthlyLoading} className="btn btn-primary">
+                            {isMonthlyLoading ? <RefreshCw size={16} className="animate-spin" /> : <Plus size={16} />} إصدار فواتير الإيجار
                         </button>
+                        <button onClick={() => setIsModalOpen(true)} className="btn btn-secondary"><Plus size={16} /> إضافة فاتورة يدوية</button>
+                        <button onClick={handleBulkSendWhatsApp} className="btn btn-ghost"><MessageCircle size={16} /> إرسال تذكير واتساب للمتأخرين</button>
+                        <button onClick={() => exportToCsv('فواتير_rentrix', invoicesWithDetails)} className="btn btn-ghost"><Download size={16} /> تصدير</button>
                     </div>
                 </div>
 
-                <div className="p-6 space-y-4">
-                    <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                        <div className="relative flex-1 max-w-md w-full">
-                            <Search className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted" size={18} />
-                            <input
-                                type="text"
-                                placeholder="بحث برقم الفاتورة أو اسم المستأجر..."
-                                className="w-full pr-10 py-2.5 bg-background border border-border rounded-xl focus:ring-2 focus:ring-primary/20 transition-all outline-none text-sm"
-                                value={searchTerm}
-                                onChange={(e) => setSearchTerm(e.target.value)}
-                            />
-                        </div>
-                        <div className="flex gap-2">
-                            <button onClick={() => handleOpenModal()} className="btn btn-secondary flex items-center gap-2">
-                                <Plus size={16} /> إضافة فاتورة يدوية
-                            </button>
-                            <button onClick={() => exportToCsv('فواتير_rentrix', invoicesWithDetails.map(inv => ({
-                                'رقم الفاتورة': inv.no,
-                                'المستأجر': inv.tenant?.name || '',
-                                'الوحدة': inv.unit?.name || '',
-                                'العقار': inv.propertyName || '',
-                                'النوع': INVOICE_TYPE_AR[inv.type],
-                                'تاريخ الاستحقاق': inv.dueDate,
-                                'المبلغ': inv.total,
-                                'المدفوع': inv.paidAmount,
-                                'المتبقي': inv.remaining,
-                                'الحالة': INVOICE_STATUS_AR[inv.effectiveStatus],
-                            })))} className="btn btn-ghost border border-border flex items-center gap-2">
-                                <Download size={16} /> تصدير
-                            </button>
-                        </div>
-                    </div>
-
-                    {selectedIds.size > 0 && (
-                        <div className="flex items-center gap-3 p-3 bg-primary/5 border border-primary/20 rounded-2xl animate-in fade-in slide-in-from-top-2">
-                            <span className="text-xs font-black text-primary px-3 py-1 bg-white rounded-full shadow-sm">تم اختيار {selectedIds.size} فاتورة</span>
-                            <div className="h-4 w-px bg-primary/20 mx-1"></div>
-                            <button onClick={handleBulkMarkOverdue} className="text-xs font-bold text-amber-600 hover:bg-amber-50 px-3 py-1.5 rounded-xl transition-all flex items-center gap-1.5">
-                                <AlertCircle size={14} /> تعليم كمتأخرة
-                            </button>
-                            <button onClick={handleBulkSendWhatsApp} className="text-xs font-bold text-emerald-600 hover:bg-emerald-50 px-3 py-1.5 rounded-xl transition-all flex items-center gap-1.5">
-                                <MessageCircle size={14} /> إرسال واتساب
-                            </button>
-                            <button onClick={() => setSelectedIds(new Set())} className="text-xs font-bold text-text-muted hover:bg-background px-3 py-1.5 rounded-xl transition-all">إلغاء</button>
-                        </div>
-                    )}
-
-                    <div className="overflow-x-auto border border-border rounded-2xl">
-                        <table className="w-full text-sm text-right">
-                            <thead className="bg-background text-text-muted text-[10px] uppercase tracking-wider">
-                                <tr>
-                                    <th className="px-4 py-4 w-10">
-                                        <button onClick={toggleSelectAll} className="flex items-center justify-center p-2 hover:bg-background rounded-lg transition-all">
-                                            {selectedIds.size === invoicesWithDetails.length && invoicesWithDetails.length > 0
-                                                ? <CheckSquare size={18} className="text-primary" />
-                                                : <Square size={18} className="text-text-muted" />
-                                            }
-                                        </button>
-                                    </th>
-                                    <th className="px-6 py-4 font-black">رقم الفاتورة</th>
-                                    <th className="px-6 py-4 font-black">المستأجر / الوحدة</th>
-                                    <th className="px-6 py-4 font-black">النوع</th>
-                                    <th className="px-6 py-4 font-black">تاريخ الاستحقاق</th>
-                                    <th className="px-6 py-4 font-black text-left">المبلغ</th>
-                                    <th className="px-6 py-4 font-black text-left">المتبقي</th>
-                                    <th className="px-6 py-4 font-black text-center">الحالة</th>
-                                    <th className="px-6 py-4 font-black text-center">الإجراءات</th>
+                <div className="p-4 overflow-x-auto">
+                    <table className="w-full text-sm text-right">
+                        <thead className="text-xs text-text-muted">
+                            <tr>
+                                <th className="px-2 py-2 w-10"></th>
+                                <th className="px-2 py-2">رقم</th>
+                                <th className="px-2 py-2">المستأجر/الوحدة</th>
+                                <th className="px-2 py-2">النوع</th>
+                                <th className="px-2 py-2">الاستحقاق</th>
+                                <th className="px-2 py-2">المبلغ</th>
+                                <th className="px-2 py-2">المتبقي</th>
+                                <th className="px-2 py-2">الحالة</th>
+                                <th className="px-2 py-2">إجراءات</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {invoicesWithDetails.map(inv => (
+                                <tr key={inv.id} className="border-t border-border hover:bg-background/50">
+                                    <td className="px-2 py-2" onClick={() => toggleSelect(inv.id)}>{selectedIds.has(inv.id) ? <CheckSquare size={16} className="text-primary" /> : <Square size={16} />}</td>
+                                    <td className="px-2 py-2 font-mono">{inv.no}</td>
+                                    <td className="px-2 py-2">{inv.tenant?.name || '-'}<div className="text-xs text-text-muted">{inv.unit?.name || '-'}</div></td>
+                                    <td className="px-2 py-2">{INVOICE_TYPE_AR[inv.type] || inv.type}</td>
+                                    <td className="px-2 py-2">{formatDate(inv.dueDate)}</td>
+                                    <td className="px-2 py-2" dir="ltr">{formatCurrency(inv.total, currency)}</td>
+                                    <td className="px-2 py-2 text-rose-600" dir="ltr">{inv.remaining > 0 ? formatCurrency(inv.remaining, currency) : '—'}</td>
+                                    <td className="px-2 py-2"><span className={`px-2 py-1 rounded text-[10px] border ${getStatusBadgeClass(inv.effectiveStatus)}`}>{INVOICE_STATUS_AR[inv.effectiveStatus]}</span></td>
+                                    <td className="px-2 py-2">
+                                        <div className="flex gap-1">
+                                            <button onClick={() => setQuickPayInvoice(inv)} className="p-2 rounded bg-emerald-50 text-emerald-700" title="تسجيل دفع"><Wallet size={15} /></button>
+                                            <button onClick={() => { setEditingInvoice(inv); setIsModalOpen(true); }} className="p-2 rounded bg-blue-50 text-blue-700"><FileText size={15} /></button>
+                                            <button onClick={() => exportInvoiceToPdf(inv, db)} className="p-2 rounded bg-background"><Download size={15} /></button>
+                                        </div>
+                                    </td>
                                 </tr>
-                            </thead>
-                            <tbody className="divide-y divide-border/50 bg-card/30">
-                                {invoicesWithDetails.map(inv => (
-                                    <tr key={inv.id} className={`hover:bg-primary/5 transition-colors group ${selectedIds.has(inv.id) ? 'bg-primary/5' : ''}`}>
-                                        <td className="px-4 py-4" onClick={() => toggleSelect(inv.id)}>
-                                            <div className="flex items-center justify-center">
-                                                {selectedIds.has(inv.id)
-                                                    ? <CheckSquare size={18} className="text-primary" />
-                                                    : <Square size={18} className="text-text-muted opacity-50 group-hover:opacity-100 transition-opacity" />
-                                                }
-                                            </div>
-                                        </td>
-                                        <td className="px-6 py-4 font-mono font-bold text-primary" onClick={() => handleOpenModal(inv)}>{inv.no}</td>
-                                        <td className="px-6 py-4" onClick={() => handleOpenModal(inv)}>
-                                            <div className="flex flex-col">
-                                                <span className="font-bold">{inv.tenant?.name || '—'}</span>
-                                                <span className="text-[10px] text-text-muted">{inv.propertyName} — {inv.unit?.name}</span>
-                                            </div>
-                                        </td>
-                                        <td className="px-6 py-4 text-xs font-bold" onClick={() => handleOpenModal(inv)}>{INVOICE_TYPE_AR[inv.type]}</td>
-                                        <td className="px-6 py-4 text-text-muted" onClick={() => handleOpenModal(inv)}>{formatDate(inv.dueDate)}</td>
-                                        <td className="px-6 py-4 font-bold text-left" dir="ltr" onClick={() => handleOpenModal(inv)}>{formatCurrency(inv.total, currency)}</td>
-                                        <td className="px-6 py-4 font-black text-rose-600 text-left" dir="ltr" onClick={() => handleOpenModal(inv)}>
-                                            {inv.remaining > 0 ? formatCurrency(inv.remaining, currency) : '—'}
-                                        </td>
-                                        <td className="px-6 py-4 text-center" onClick={() => handleOpenModal(inv)}>
-                                            <span className={`px-2 py-1 rounded-lg text-[10px] font-bold border ${getStatusBadgeClass(inv.effectiveStatus)}`}>
-                                                {INVOICE_STATUS_AR[inv.effectiveStatus]}
-                                            </span>
-                                        </td>
-                                        <td className="px-6 py-4 text-center">
-                                            <div className="flex items-center justify-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                <button 
-                                                    onClick={() => { try { exportInvoiceToPdf(inv, db); toast.success('تم تصدير PDF'); } catch(e) { toast.error('خطأ'); } }}
-                                                    className="p-2 text-text-muted hover:text-primary hover:bg-primary/10 rounded-xl"
-                                                    title="تصدير PDF"
-                                                >
-                                                    <FileText size={16} />
-                                                </button>
-                                                <button onClick={() => handleOpenModal(inv)} className="p-2 text-text-muted hover:text-primary hover:bg-primary/10 rounded-xl"><Edit2 size={16} /></button>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
+                            ))}
+                        </tbody>
+                    </table>
                 </div>
             </Card>
-            {isModalOpen && <InvoiceForm isOpen={isModalOpen} onClose={handleCloseModal} invoice={editingInvoice} />}
+
+            {isModalOpen && <InvoiceForm isOpen={isModalOpen} onClose={() => { setIsModalOpen(false); setEditingInvoice(null); }} invoice={editingInvoice} />}
+            {quickPayInvoice && (
+                <QuickPayModal
+                    invoice={quickPayInvoice}
+                    onClose={() => setQuickPayInvoice(null)}
+                    onSaved={async (amount, channel) => {
+                        const contractId = quickPayInvoice.contractId;
+                        await dataService.add('receipts', {
+                            contractId,
+                            dateTime: new Date().toISOString(),
+                            channel,
+                            amount,
+                            ref: '',
+                            notes: `سداد فاتورة ${quickPayInvoice.no}`,
+                            status: 'POSTED',
+                        });
+                        toast.success('تم تسجيل الدفعة بنجاح');
+                        setQuickPayInvoice(null);
+                    }}
+                />
+            )}
         </div>
+    );
+};
+
+const QuickPayModal: React.FC<{ invoice: Invoice; onClose: () => void; onSaved: (amount: number, channel: 'CASH' | 'BANK' | 'POS' | 'CHECK' | 'OTHER') => Promise<void> }> = ({ invoice, onClose, onSaved }) => {
+    const total = (invoice.amount || 0) + (invoice.taxAmount || 0);
+    const remaining = Math.max(0, total - (invoice.paidAmount || 0));
+    const [amount, setAmount] = useState(remaining);
+    const [channel, setChannel] = useState<'CASH' | 'BANK' | 'POS' | 'CHECK' | 'OTHER'>('CASH');
+    const [saving, setSaving] = useState(false);
+
+    return (
+        <Modal isOpen onClose={onClose} title="تسجيل دفع">
+            <div className="space-y-4">
+                <div className="text-sm">رقم الفاتورة: <span className="font-mono">{invoice.no}</span></div>
+                <div className="text-sm">المبلغ المتبقي: {formatCurrency(remaining)}</div>
+                <NumberInput value={amount} onChange={setAmount} />
+                <select value={channel} onChange={e => setChannel(e.target.value as typeof channel)}>
+                    <option value="CASH">نقد</option>
+                    <option value="BANK">بنك</option>
+                    <option value="POS">نقطة بيع</option>
+                    <option value="CHECK">شيك</option>
+                    <option value="OTHER">أخرى</option>
+                </select>
+                <div className="flex gap-2 justify-end">
+                    <button className="btn btn-ghost" onClick={onClose}>إلغاء</button>
+                    <button className="btn btn-primary" disabled={saving || amount <= 0} onClick={async () => { setSaving(true); await onSaved(amount, channel); setSaving(false); }}>حفظ</button>
+                </div>
+            </div>
+        </Modal>
     );
 };
 
@@ -339,11 +305,11 @@ const StatCard: React.FC<{ label: string; value: number; icon: React.ReactNode; 
         emerald: 'text-emerald-600 bg-emerald-50 border-emerald-100',
     };
     return (
-        <div className={`p-4 rounded-2xl border ${colorClasses[color]} flex items-center justify-between shadow-sm hover:shadow-md transition-all`}>
+        <div className={`p-4 rounded-2xl border ${colorClasses[color]} flex items-center justify-between`}>
             <div className="flex items-center gap-3">
-                <div className="p-3 bg-white/50 rounded-xl shadow-inner">{icon}</div>
+                <div className="p-3 bg-white/50 rounded-xl">{icon}</div>
                 <div>
-                    <p className="text-[10px] font-black uppercase tracking-widest opacity-70">{label}</p>
+                    <p className="text-[10px] font-black opacity-70">{label}</p>
                     <p className="text-xl font-black" dir="ltr">{formatCurrency(value)}</p>
                 </div>
             </div>
@@ -352,19 +318,7 @@ const StatCard: React.FC<{ label: string; value: number; icon: React.ReactNode; 
     );
 };
 
-const TabButton: React.FC<{ active: boolean; onClick: () => void; icon: React.ReactNode; label: string }> = ({ active, onClick, icon, label }) => (
-    <button
-        onClick={onClick}
-        className={`flex items-center gap-2 px-6 py-2 rounded-lg text-sm font-bold transition-all whitespace-nowrap ${
-            active ? 'bg-primary text-white shadow-md' : 'text-text-muted hover:text-text hover:bg-background'
-        }`}
-    >
-        {icon}
-        {label}
-    </button>
-);
-
-const InvoiceForm: React.FC<{ isOpen: boolean, onClose: () => void, invoice: Invoice | null }> = ({ isOpen, onClose, invoice }) => {
+const InvoiceForm: React.FC<{ isOpen: boolean; onClose: () => void; invoice: Invoice | null }> = ({ isOpen, onClose, invoice }) => {
     const { db, dataService } = useApp();
     const [unitId, setUnitId] = useState('');
     const [dueDate, setDueDate] = useState('');
@@ -374,110 +328,61 @@ const InvoiceForm: React.FC<{ isOpen: boolean, onClose: () => void, invoice: Inv
     const [isSaving, setIsSaving] = useState(false);
     const isSavingRef = useRef(false);
 
-    const isReadOnly = invoice && (invoice.type === 'RENT' || invoice.type === 'LATE_FEE');
-
-    const unitsWithProperties = useMemo(() => {
-        return db.units.map(u => {
-            const property = db.properties.find(p => p.id === u.propertyId);
-            return { ...u, propertyName: property?.name || '' };
-        }).sort((a,b) => a.propertyName.localeCompare(b.propertyName) || a.name.localeCompare(b.name));
-    }, [db.units, db.properties]);
-    
-    const activeContractForUnit = useMemo(() => {
-        if (!unitId) return null;
-        return db.contracts.find(c => c.unitId === unitId && c.status === 'ACTIVE');
-    }, [unitId, db.contracts]);
+    const activeContractForUnit = useMemo(() => db.contracts.find(c => c.unitId === unitId && c.status === 'ACTIVE'), [unitId, db.contracts]);
 
     useEffect(() => {
-        if (isOpen) {
-            if (invoice) {
-                const contract = db.contracts.find(c => c.id === invoice.contractId);
-                setUnitId(contract?.unitId || '');
-                setDueDate(invoice.dueDate);
-                setAmount(invoice.amount);
-                setType(invoice.type);
-                setNotes(invoice.notes);
-            } else {
-                setUnitId(unitsWithProperties[0]?.id || '');
-                setDueDate(new Date().toISOString().slice(0, 10));
-                setAmount(0);
-                setType('UTILITY');
-                setNotes('');
-            }
+        if (!isOpen) return;
+        if (invoice) {
+            const contract = db.contracts.find(c => c.id === invoice.contractId);
+            setUnitId(contract?.unitId || '');
+            setDueDate(invoice.dueDate);
+            setAmount(invoice.amount);
+            setType(invoice.type);
+            setNotes(invoice.notes);
+        } else {
+            setUnitId(db.units[0]?.id || '');
+            setDueDate(new Date().toISOString().slice(0, 10));
+            setAmount(0);
+            setType('UTILITY');
+            setNotes('');
         }
-    }, [isOpen, invoice, unitsWithProperties, db.contracts]);
+    }, [isOpen, invoice, db]);
 
     const handleSubmit = useCallback(async (e: React.FormEvent) => {
         e.preventDefault();
-        if (isReadOnly) return;
-        if (isSavingRef.current) return;
-        if (!unitId || amount <= 0) { toast.error("بيانات غير مكتملة."); return; }
-        if (!activeContractForUnit) { toast.error("الوحدة شاغرة حالياً."); return; }
-
+        if (isSavingRef.current || !activeContractForUnit || amount <= 0) return;
         isSavingRef.current = true;
         setIsSaving(true);
         try {
-            const data = {
-                contractId: activeContractForUnit.id,
-                dueDate,
-                amount,
-                paidAmount: invoice ? invoice.paidAmount : 0,
-                status: invoice ? invoice.status : 'UNPAID',
-                type,
-                notes,
-            };
-            if (invoice) await dataService.update('invoices', invoice.id, data); else await dataService.add('invoices', data);
+            const data = { contractId: activeContractForUnit.id, dueDate, amount, paidAmount: invoice ? invoice.paidAmount : 0, status: invoice ? invoice.status : 'UNPAID', type, notes };
+            if (invoice) await dataService.update('invoices', invoice.id, data);
+            else await dataService.add('invoices', data);
             onClose();
-        } finally { isSavingRef.current = false; setIsSaving(false); }
-    }, [isReadOnly, unitId, amount, activeContractForUnit, dueDate, invoice, type, notes, dataService, onClose]);
+        } finally {
+            isSavingRef.current = false;
+            setIsSaving(false);
+        }
+    }, [activeContractForUnit, amount, dataService, dueDate, invoice, notes, onClose, type]);
 
     return (
-        <Modal isOpen={isOpen} onClose={onClose} title={isReadOnly ? "تفاصيل الفاتورة" : (invoice ? "تعديل الفاتورة" : "إنشاء فاتورة يدوية")}>
-            <form onSubmit={handleSubmit} className="space-y-6 p-1">
-                <div className="space-y-1.5">
-                    <label className="text-xs font-black text-text-muted">الوحدة العقارية</label>
-                    <select value={unitId} onChange={e => setUnitId(e.target.value)} required disabled={isReadOnly}>
-                        <option value="">-- اختر الوحدة --</option>
-                        {unitsWithProperties.map(u => (
-                            <option key={u.id} value={u.id}>{u.propertyName} - {u.name}</option>
-                        ))}
-                    </select>
+        <Modal isOpen={isOpen} onClose={onClose} title={invoice ? 'تعديل الفاتورة' : 'إنشاء فاتورة يدوية'}>
+            <form onSubmit={handleSubmit} className="space-y-4">
+                <select value={unitId} onChange={e => setUnitId(e.target.value)}>
+                    {db.units.map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
+                </select>
+                <select value={type} onChange={e => setType(e.target.value as Invoice['type'])}>
+                    <option value="RENT">إيجار</option>
+                    <option value="UTILITY">مرافق</option>
+                    <option value="MAINTENANCE">صيانة</option>
+                    <option value="LATE_FEE">رسوم تأخير</option>
+                </select>
+                <input type="date" value={dueDate} onChange={e => setDueDate(e.target.value)} />
+                <NumberInput value={amount} onChange={setAmount} />
+                <textarea value={notes} onChange={e => setNotes(e.target.value)} />
+                <div className="flex gap-2 justify-end">
+                    <button type="button" onClick={onClose} className="btn btn-ghost">إلغاء</button>
+                    <button type="submit" className="btn btn-primary" disabled={isSaving}>حفظ</button>
                 </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-1.5">
-                        <label className="text-xs font-black text-text-muted">نوع الفاتورة</label>
-                        <select value={type} onChange={e => setType(e.target.value as Invoice['type'])} disabled={isReadOnly}>
-                            <option value="RENT">إيجار</option>
-                            <option value="UTILITY">خدمات (كهرباء/ماء)</option>
-                            <option value="MAINTENANCE">صيانة</option>
-                            <option value="LATE_FEE">رسوم تأخير</option>
-                        </select>
-                    </div>
-                    <div className="space-y-1.5">
-                        <label className="text-xs font-black text-text-muted">تاريخ الاستحقاق</label>
-                        <input type="date" value={dueDate} onChange={e => setDueDate(e.target.value)} required disabled={isReadOnly} />
-                    </div>
-                </div>
-
-                <div className="space-y-1.5">
-                    <label className="text-xs font-black text-text-muted">المبلغ الإجمالي</label>
-                    <NumberInput value={amount} onChange={setAmount} required disabled={isReadOnly} className="text-2xl font-black text-primary" />
-                </div>
-
-                <div className="space-y-1.5">
-                    <label className="text-xs font-black text-text-muted">ملاحظات الفاتورة</label>
-                    <textarea value={notes} onChange={e => setNotes(e.target.value)} rows={3} placeholder="اكتب تفاصيل إضافية تظهر في الفاتورة..." required disabled={isReadOnly} />
-                </div>
-
-                {!isReadOnly && (
-                    <div className="flex gap-3 pt-4 border-t border-border">
-                        <button type="button" onClick={onClose} className="btn btn-ghost flex-1 py-3" disabled={isSaving}>إلغاء</button>
-                        <button type="submit" className="btn btn-primary flex-1 py-3 shadow-lg shadow-primary/20" disabled={isSaving || !activeContractForUnit}>
-                            {isSaving ? 'جاري الحفظ...' : 'حفظ الفاتورة'}
-                        </button>
-                    </div>
-                )}
             </form>
         </Modal>
     );
