@@ -12,6 +12,15 @@ const corsHeaders = {
 
 const encoder = new TextEncoder();
 
+class HttpError extends Error {
+  status: number;
+
+  constructor(message: string, status = 400) {
+    super(message);
+    this.status = status;
+  }
+}
+
 const logEvent = (level: 'info' | 'warn' | 'error', message: string, meta: Record<string, unknown> = {}) => {
   console[level](JSON.stringify({ level, message, ...meta, ts: Date.now() }));
 };
@@ -40,22 +49,22 @@ Deno.serve(async req => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
 
   try {
-    const authHeader = req.headers.get('Authorization');
-    if (!authHeader) throw new Error('Unauthorized');
-
-    const userClient = createClient(SUPABASE_URL, ANON_KEY, { global: { headers: { Authorization: authHeader } } });
+    const body = await req.json();
+    const action = String(body?.action || '');
     const adminClient = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
 
-    const { data: authData } = await userClient.auth.getUser();
-    const caller = authData.user;
-    if (!caller) throw new Error('Unauthorized');
+    if (action === 'issue') {
+      const authHeader = req.headers.get('Authorization');
+      if (!authHeader) throw new Error('Unauthorized');
 
-    const { data: profile, error: profileError } = await adminClient.from('profiles').select('role').eq('id', caller.id).single();
-    if (profileError || !profile) throw new Error('Forbidden');
+      const userClient = createClient(SUPABASE_URL, ANON_KEY, { global: { headers: { Authorization: authHeader } } });
+      const { data: authData } = await userClient.auth.getUser();
+      const caller = authData.user;
+      if (!caller) throw new Error('Unauthorized');
 
-    const body = await req.json();
+      const { data: profile, error: profileError } = await adminClient.from('profiles').select('role').eq('id', caller.id).single();
+      if (profileError || !profile) throw new Error('Forbidden');
 
-    if (body?.action === 'issue') {
       const ownerId = String(body.ownerId || '');
       if (!ownerId) throw new Error('ownerId required');
 
@@ -64,7 +73,7 @@ Deno.serve(async req => {
       const isOwner = ownerFromMetadata !== '' && ownerFromMetadata === ownerId;
       if (!isAdmin && !isOwner) {
         logEvent('warn', 'owner token issuance denied', { callerId: caller.id, ownerId });
-        throw new Error('Forbidden');
+        throw new HttpError('Forbidden', 403);
       }
 
       const { payload } = createToken(ownerId);
@@ -74,12 +83,11 @@ Deno.serve(async req => {
       });
     }
 
-    if (body?.action === 'verify') {
+    if (action === 'verify') {
       const ownerId = String(body.ownerId || '');
       const token = String(body.token || '');
       const parts = token.split('.');
-      if (parts.length < 3) throw new Error('invalid token');
-
+      if (parts.length < 3) throw new HttpError('invalid token', 400);
       const payload = `${parts[0]}.${parts[1]}`;
       const signature = parts[2];
       const [tokenOwnerId, expRaw] = payload.split('.');
@@ -87,7 +95,7 @@ Deno.serve(async req => {
       if (tokenOwnerId !== ownerId || Number.isNaN(exp) || Date.now() > exp) throw new Error('token expired');
 
       const valid = await verify(payload, signature);
-      if (!valid) throw new Error('invalid signature');
+      if (!valid) throw new HttpError('invalid signature', 401);
 
       const [{ data: owner }, { data: stats }, { data: settings }] = await Promise.all([
         adminClient.from('owners').select('id,name').eq('id', ownerId).single(),
@@ -112,10 +120,10 @@ Deno.serve(async req => {
       });
     }
 
-    throw new Error('unsupported action');
+    throw new HttpError('unsupported action', 400);
   } catch (error) {
     const message = error instanceof Error ? error.message : 'unknown error';
-    const status = message === 'Unauthorized' ? 401 : message === 'Forbidden' ? 403 : 400;
+    const status = message === 'Unauthorized' || message === 'Forbidden' ? 401 : 400;
     return new Response(JSON.stringify({ error: message }), {
       status,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
