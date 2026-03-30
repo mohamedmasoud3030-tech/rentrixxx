@@ -7,6 +7,7 @@ import Card from '../components/ui/Card';
 import { Wallet, ReceiptText, Wrench, Calculator, BookOpen } from 'lucide-react';
 import GeneralLedger from './GeneralLedger';
 import Accounting from './Accounting';
+import FinanceIntelligenceHub from '../components/finance/FinanceIntelligenceHub';
 
 const FinanceTab: React.FC<{ to: string, icon: React.ReactNode, label: string }> = ({ to, icon, label }) => (
     <NavLink
@@ -47,7 +48,7 @@ const Finance: React.FC = () => {
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
                     <h1 className="text-3xl font-black tracking-tight text-primary">الإدارة المالية</h1>
-                    <p className="text-text-muted text-sm mt-1">تتبع الفواتير، السندات، والقيود المحاسبية بدقة واحترافية</p>
+                    <p className="text-text-muted text-sm mt-1">منصة موحدة للحسابات والمالية تربط العقود والفواتير والسندات والتقارير بذكاء</p>
                 </div>
                 <div className="flex items-center gap-3">
                     <div className="px-4 py-2 bg-emerald-50 border border-emerald-100 rounded-2xl flex items-center gap-2">
@@ -56,6 +57,8 @@ const Finance: React.FC = () => {
                     </div>
                 </div>
             </div>
+
+            <FinanceIntelligenceHub />
 
             {/* Navigation Tabs */}
             <Card className="p-1.5 overflow-hidden border-none shadow-lg bg-card/50 backdrop-blur-md sticky top-4 z-10">
