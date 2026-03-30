@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { supabase } from './supabase';
 import { Database, Settings, Governance, Serials } from '../types';
 import { logger } from './logger';

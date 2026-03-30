@@ -25,7 +25,24 @@ import {
   PieChart as RechartsPie, Pie, Cell, Legend, AreaChart, Area,
   LineChart, Line
 } from 'recharts';
-import { ReportTab } from './ReportsSidebar';
+import { ReportTab } from '../ReportsSidebar';
+
+const UNIT_TYPE_AR: Record<string, string> = {
+  APARTMENT: 'شقة',
+  STUDIO: 'استوديو',
+  VILLA: 'فيلا',
+  SHOP: 'محل',
+  OFFICE: 'مكتب',
+  WAREHOUSE: 'مخزن',
+};
+
+const FLOOR_AR: Record<string, string> = {
+  GROUND: 'أرضي',
+  FIRST: 'الأول',
+  SECOND: 'الثاني',
+  THIRD: 'الثالث',
+  ROOF: 'السطح',
+};
 
 interface OwnerLedgerTransaction {
   date: string;

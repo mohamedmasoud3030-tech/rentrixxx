@@ -2,10 +2,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
 const SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
- codex/conduct-full-technical-audit
 const ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY')!;
-
- main
 const OWNER_TOKEN_SECRET = Deno.env.get('OWNER_TOKEN_SECRET')!;
 
 const corsHeaders = {
@@ -15,13 +12,10 @@ const corsHeaders = {
 
 const encoder = new TextEncoder();
 
- codex/conduct-full-technical-audit
 const logEvent = (level: 'info' | 'warn' | 'error', message: string, meta: Record<string, unknown> = {}) => {
   console[level](JSON.stringify({ level, message, ...meta, ts: Date.now() }));
 };
 
-
- main
 async function sign(payload: string): Promise<string> {
   const key = await crypto.subtle.importKey('raw', encoder.encode(OWNER_TOKEN_SECRET), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
   const sig = await crypto.subtle.sign('HMAC', key, encoder.encode(payload));
@@ -47,7 +41,6 @@ Deno.serve(async req => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
 
   try {
- codex/conduct-full-technical-audit
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) throw new Error('Unauthorized');
 
@@ -60,7 +53,6 @@ Deno.serve(async req => {
 
     const { data: profile, error: profileError } = await adminClient.from('profiles').select('role').eq('id', caller.id).single();
     if (profileError || !profile) throw new Error('Forbidden');
-
 
     const client = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
  main
