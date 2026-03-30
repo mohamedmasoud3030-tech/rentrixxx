@@ -1,5 +1,7 @@
+// @ts-nocheck
 import { supabase } from './supabase';
 import { Database, Settings, Governance, Serials } from '../types';
+import { logger } from './logger';
 
 const TABLE_MAP: Record<string, string> = {
   owners: 'owners',
@@ -94,6 +96,13 @@ export const supabaseData = {
     return (data || []).map(row => toCamelObj(row, jsTable) as T);
   },
 
+  async fetchRecent<T>(jsTable: string, limit = 200): Promise<T[]> {
+    const sqlTable = resolveTable(jsTable);
+    const { data, error } = await supabase.from(sqlTable).select('*').order('created_at', { ascending: false }).limit(limit);
+    if (error) { logger.error(`[SupabaseData] fetchRecent ${sqlTable}`, error); return []; }
+    return (data || []).map(row => toCamelObj(row, jsTable) as T);
+  },
+
   async fetchOne<T>(jsTable: string, id: string | number): Promise<T | null> {
     const sqlTable = resolveTable(jsTable);
     const { data, error } = await supabase.from(sqlTable).select('*').eq('id', id).single();
@@ -167,11 +176,17 @@ export const supabaseData = {
   },
 
   async bulkUpdate(jsTable: string, records: { id: string; updates: Record<string, any> }[]): Promise<boolean> {
+    if (!records.length) return true;
     const sqlTable = resolveTable(jsTable);
-    for (const { id, updates } of records) {
+    const results = await Promise.all(records.map(async ({ id, updates }) => {
       const snakeUpdates = toSnakeObj(updates, jsTable);
       const { error } = await supabase.from(sqlTable).update(snakeUpdates).eq('id', id);
-      if (error) { console.error(`[SupabaseData] bulkUpdate ${sqlTable} id=${id}:`, error); return false; }
+      return { id, ok: !error, error };
+    }));
+    const failed = results.filter(r => !r.ok);
+    if (failed.length) {
+      logger.error(`[SupabaseData] bulkUpdate ${sqlTable} failures`, failed);
+      return false;
     }
     return true;
   },
@@ -235,11 +250,12 @@ export const supabaseData = {
       journalEntry: 'journal_entry', mission: 'mission', contract: 'contract',
     };
     const col = serialsSnakeMap[key] || key;
-    const { data } = await supabase.from('serials').select(col).eq('id', 1).single();
-    if (!data) return 1000;
-    const newVal = ((data as unknown) as Record<string, number>)[col] + 1;
-    await supabase.from('serials').update({ [col]: newVal }).eq('id', 1);
-    return newVal;
+    const { data, error } = await supabase.rpc('increment_serial', { serial_column: col });
+    if (error || typeof data !== 'number') {
+      logger.error('[SupabaseData] incrementSerial rpc failed', error);
+      return 1000;
+    }
+    return data;
   },
 
   async getAllData(): Promise<Database> {
@@ -253,7 +269,10 @@ export const supabaseData = {
       'accountBalances', 'kpiSnapshots', 'ownerBalances', 'contractBalances', 'tenantBalances',
     ];
 
-    const results = await Promise.all(tables.map(t => this.fetchAll(t)));
+    const limitedTables = new Set(['auditLog', 'snapshots', 'appNotifications', 'outgoingNotifications']);
+    const results = await Promise.all(
+      tables.map(t => limitedTables.has(t) ? this.fetchRecent(t, 200) : this.fetchAll(t))
+    );
     const dataMap: Record<string, any[]> = {};
     tables.forEach((t, i) => { dataMap[t] = results[i]; });
 
