@@ -5,7 +5,6 @@ import { useApp } from './contexts/AppContext';
 import Layout from './components/print/layout/Layout';
 import Login from './pages/Login';
 import ChangePassword from './pages/ChangePassword';
-import OwnerPortal from './pages/OwnerPortal';
 import OwnerView from './pages/OwnerView';
 import { Toaster } from 'react-hot-toast';
 
@@ -25,6 +24,7 @@ import Commissions from './pages/Commissions';
 import Maintenance from './pages/Maintenance';
 import AuditLog from './pages/AuditLog';
 import SmartAssistant from './pages/SmartAssistant';
+import ProtectedRoute from './components/shared/ProtectedRoute';
 
 const hexToHsl = (hex: string): string => {
     hex = hex.replace('#', '');
@@ -120,7 +120,6 @@ const App: React.FC = () => {
       <Suspense fallback={<PageLoader />}>
         <Routes>
           {/* Public Routes */}
-          <Route path="/portal/:ownerId" element={<OwnerPortal />} />
           <Route path="/owner-view/:ownerId" element={<OwnerView />} />
 
           {!auth.currentUser ? (
@@ -142,7 +141,7 @@ const App: React.FC = () => {
               <Route path="/maintenance" element={<Maintenance />} />
 
               {/* Finance Hub (Unified) */}
-              <Route path="/finance/*" element={<Finance />} />
+              <Route path="/finance/*" element={<ProtectedRoute capability="VIEW_FINANCIALS"><Finance /></ProtectedRoute>} />
 
               {/* CRM & Growth */}
               <Route path="/leads" element={<Leads />} />
@@ -152,11 +151,11 @@ const App: React.FC = () => {
               
               {/* Analytics & Admin Hub */}
               <Route path="/reports" element={<Reports />} />
-              <Route path="/smart-assistant" element={<SmartAssistant />} />
+              <Route path="/smart-assistant" element={<ProtectedRoute capability="USE_SMART_ASSISTANT"><SmartAssistant /></ProtectedRoute>} />
               {auth.currentUser.role === 'ADMIN' && (
                 <>
-                  <Route path="/audit-log" element={<AuditLog />} />
-                  <Route path="/settings/*" element={<Settings />} />
+                  <Route path="/audit-log" element={<ProtectedRoute capability="VIEW_AUDIT_LOG"><AuditLog /></ProtectedRoute>} />
+                  <Route path="/settings/*" element={<ProtectedRoute capability="MANAGE_SETTINGS"><Settings /></ProtectedRoute>} />
                 </>
               )}
               

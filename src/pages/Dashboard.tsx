@@ -86,7 +86,7 @@ const QuickSearch = () => {
 const Dashboard: React.FC = () => {
     const { db, settings, contractBalances, ownerBalances } = useApp();
     const navigate = useNavigate();
-    const currency = settings.operational?.currency ?? 'OMR';
+    const currency = (settings.operational?.currency ?? 'OMR') as 'OMR' | 'SAR' | 'EGP';
 
     const contracts = db.contracts || [];
     const receipts = db.receipts || [];
@@ -511,7 +511,7 @@ const DashboardRevenueChart: React.FC<{ receipts: ReceiptType[]; expenses: Expen
                         <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
                         <XAxis dataKey="name" fontSize={12} />
                         <YAxis fontSize={11} tickFormatter={(v) => v > 0 ? `${(v / 1000).toFixed(0)}k` : '0'} />
-                        <Tooltip formatter={(value: number) => formatCurrency(value, currency)} />
+                        <Tooltip formatter={(value: number) => formatCurrency(value, currency as 'OMR' | 'SAR' | 'EGP')} />
                         <Area type="monotone" dataKey="revenue" name="الإيرادات" stroke="#10b981" fill="url(#dashRevGrad)" strokeWidth={2} />
                         <Area type="monotone" dataKey="expenses" name="المصروفات" stroke="#ef4444" fill="url(#dashExpGrad)" strokeWidth={2} />
                     </AreaChart>
