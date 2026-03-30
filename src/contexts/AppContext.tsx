@@ -7,10 +7,7 @@ import { toast } from 'react-hot-toast';
 import { confirmDialog } from '../components/shared/confirmDialog';
 import { adminCreateUser } from '../services/edgeFunctions';
 import { logger } from '../services/logger';
- codex/conduct-full-technical-audit-utj7f7
 import { postReceiptAtomic, renewContractAtomic, syncUnitStatus, voidReceiptAtomic } from '../services/antiMistakeService';
-
- main
 
 const DEFAULT_GEMINI_API_KEY = (import.meta.env.VITE_GEMINI_API_KEY as string) || '';
 
@@ -115,7 +112,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [governance, setGovernance] = useState<Governance | null>(null);
   const [isDataStale, setIsDataStale] = useState(true);
   const [performanceMetrics, setPerformanceMetrics] = useState<PerformanceMetrics>(initialPerformanceMetrics);
-  const refreshRef = useRef<() => Promise<void>>();
+  const refreshRef = useRef<(() => Promise<void>) | undefined>(undefined);
   const reconcileRef = useRef(false);
 
   const isReadOnly = useMemo(() => governance?.readOnly || false, [governance]);
@@ -180,9 +177,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (!currentUser) return false;
     const capabilityMap: Record<'ADMIN' | 'USER', Set<string>> = {
       ADMIN: new Set(['VIEW_DASHBOARD', 'VIEW_FINANCIALS', 'MANAGE_SETTINGS', 'MANAGE_USERS', 'VIEW_AUDIT_LOG', 'USE_SMART_ASSISTANT']),
- codex/conduct-full-technical-audit-utj7f7
       USER: new Set(['VIEW_DASHBOARD', 'VIEW_FINANCIALS', 'USE_SMART_ASSISTANT']),
-
       USER: new Set(['VIEW_DASHBOARD', 'VIEW_FINANCIALS']),
  main
     };
@@ -235,7 +230,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       await supabaseData.seedDefaults(
         DEFAULT_SETTINGS,
         DEFAULT_ACCOUNTS.map(acc => ({ ...acc, id: acc.no, createdAt: Date.now() })),
-        DEFAULT_TEMPLATES,
+        DEFAULT_TEMPLATES as unknown as Record<string, unknown>[],
         DEFAULT_SERIALS,
       );
       await refreshData();
@@ -291,7 +286,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     await audit('CREATE', 'users', result.id, `Created user ${user.username}`);
     await refreshData();
     return { ok: true, msg: 'تم إنشاء المستخدم. سيتلقى المستخدم رسالة تأكيد بالبريد الإلكتروني.' };
- codex/conduct-full-technical-audit-utj7f7
+ codex/conduct-full-technical-audit-y73z10
   }, [audit, refreshData, db?.contracts, db?.maintenanceRecords]);
 
   }, [audit, refreshData]);

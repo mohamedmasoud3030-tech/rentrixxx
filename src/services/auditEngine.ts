@@ -19,7 +19,7 @@ const createIssue = (
     title: string,
     description: string,
     entityType?: AuditIssue['entityType'],
-    entity?: { id: string } & Record<string, unknown>
+    entity?: { id: string; no?: string; name?: string }
 ): AuditIssue => {
     let entityIdentifier = '';
     if (entity) {

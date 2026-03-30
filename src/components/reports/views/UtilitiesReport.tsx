@@ -25,7 +25,15 @@ import {
   PieChart as RechartsPie, Pie, Cell, Legend, AreaChart, Area,
   LineChart, Line
 } from 'recharts';
-import { ReportTab } from './ReportsSidebar';
+import { ReportTab } from '../ReportsSidebar';
+
+const UTILITY_COLORS_CHART: Record<UtilityType, string> = {
+  ELECTRICITY: '#2563eb',
+  WATER: '#06b6d4',
+  INTERNET: '#7c3aed',
+  GAS: '#f59e0b',
+  OTHER: '#64748b',
+};
 
 interface OwnerLedgerTransaction {
   date: string;

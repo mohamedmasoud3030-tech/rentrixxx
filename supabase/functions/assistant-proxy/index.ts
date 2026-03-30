@@ -1,4 +1,3 @@
- codex/conduct-full-technical-audit-utj7f7
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 const GEMINI_API_KEY = Deno.env.get('GEMINI_API_KEY') || '';
@@ -7,7 +6,6 @@ const SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 const ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY')!;
 const WINDOW_MS = 60_000;
 const WINDOW_MAX = 20;
-
 const GEMINI_API_KEY = Deno.env.get('GEMINI_API_KEY') || '';
  main
 
@@ -16,19 +14,15 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
- codex/conduct-full-technical-audit-utj7f7
 const logEvent = (level: 'info' | 'warn' | 'error', message: string, meta: Record<string, unknown> = {}) => {
   console[level](JSON.stringify({ level, message, ...meta, ts: Date.now() }));
 };
 
-
- main
 Deno.serve(async req => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
 
   try {
     if (!GEMINI_API_KEY) throw new Error('Assistant is not configured');
- codex/conduct-full-technical-audit-utj7f7
 
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) {
@@ -74,8 +68,6 @@ Deno.serve(async req => {
       ts: now,
     });
 
-
- main
     const body = await req.json();
     const prompt = String(body.prompt || '').trim();
     const context = typeof body.context === 'string' ? body.context : JSON.stringify(body.context || {});
@@ -102,12 +94,10 @@ Deno.serve(async req => {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   } catch (error) {
- codex/conduct-full-technical-audit-utj7f7
     const message = error instanceof Error ? error.message : 'Unknown error';
     const status = message.includes('Rate limit') ? 429 : message === 'Unauthorized' || message === 'Forbidden' ? 403 : 400;
     return new Response(JSON.stringify({ error: message }), {
       status,
-
     return new Response(JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error' }), {
       status: 400,
  main

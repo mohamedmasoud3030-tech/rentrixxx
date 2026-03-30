@@ -25,7 +25,7 @@ begin
   return result;
 end;
 $$;
- codex/conduct-full-technical-audit-utj7f7
+ codex/conduct-full-technical-audit
 
 create table if not exists public.edge_rate_limits (
   id bigserial primary key,
