@@ -17,8 +17,10 @@ const DEFAULT_ACCOUNTS: Omit<Account, 'id'|'createdAt'>[] = [
     { no: '1112', name: 'حساب البنك', type: 'ASSET', isParent: false, parentId: '1000' },
     { no: '1201', name: 'ذمم المستأجرين', type: 'ASSET', isParent: false, parentId: '1000'},
     { no: '2121', name: 'ذمم الملاك', type: 'LIABILITY', isParent: false, parentId: null },
+    { no: '2122', name: 'تأمينات مستلمة', type: 'LIABILITY', isParent: false, parentId: null },
     { no: '4110', name: 'إيرادات الإيجارات', type: 'REVENUE', isParent: false, parentId: null },
     { no: '4120', name: 'إيرادات عمولة المكتب', type: 'REVENUE', isParent: false, parentId: null },
+    { no: '4130', name: 'إيرادات رسوم التأخير', type: 'REVENUE', isParent: false, parentId: null },
     { no: '5110', name: 'مصروفات الصيانة', type: 'EXPENSE', isParent: false, parentId: null },
     { no: '5102', name: 'مصروفات عمولات الموظفين', type: 'EXPENSE', isParent: false, parentId: null },
 ];
@@ -37,7 +39,7 @@ const DEFAULT_SETTINGS: Settings = {
         maintenance: { defaultChargedTo: 'OWNER' },
         calendarType: 'gregorian',
     },
-    accounting: { accountMappings: { paymentMethods: { CASH: '1111', BANK: '1112', POS: '1112', CHECK: '1112', OTHER: '1111' }, expenseCategories: { 'صيانة': '5110', 'عمولات موظفين': '5102', default: '5120' }, revenue: { RENT: '4110', OFFICE_COMMISSION: '4120' }, accountsReceivable: '1201', vatPayable: '2130', vatReceivable: '1130', ownersPayable: '2121' } },
+    accounting: { accountMappings: { paymentMethods: { CASH: '1111', BANK: '1112', POS: '1112', CHECK: '1112', OTHER: '1111' }, expenseCategories: { 'صيانة': '5110', 'عمولات موظفين': '5102', default: '5120' }, revenue: { RENT: '4110', OFFICE_COMMISSION: '4120', LATE_FEE: '4130' }, accountsReceivable: '1201', vatPayable: '2130', vatReceivable: '1130', ownersPayable: '2121', depositsHeld: '2122' } },
     appearance: { theme: 'light', primaryColor: '#1e3a8a' },
     backup: { autoBackup: { isEnabled: true, passphraseIsSet: false, lastBackupTime: null, lastBackupStatus: null, operationCounter: 0, operationsThreshold: 25 } },
     security: { sessionTimeout: 0 },
@@ -176,8 +178,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const canAccess = useCallback((action: string) => {
     if (!currentUser) return false;
     const capabilityMap: Record<'ADMIN' | 'USER', Set<string>> = {
-      ADMIN: new Set(['VIEW_DASHBOARD', 'VIEW_FINANCIALS', 'MANAGE_SETTINGS', 'MANAGE_USERS', 'VIEW_AUDIT_LOG', 'USE_SMART_ASSISTANT']),
-      USER: new Set(['VIEW_DASHBOARD', 'VIEW_FINANCIALS', 'USE_SMART_ASSISTANT']),
+      ADMIN: new Set([
+        'VIEW_DASHBOARD', 'VIEW_FINANCIALS', 'MANAGE_SETTINGS', 'MANAGE_USERS', 'VIEW_AUDIT_LOG', 'USE_SMART_ASSISTANT',
+        'MANAGE_PROPERTIES', 'MANAGE_TENANTS', 'MANAGE_OWNERS', 'MANAGE_CONTRACTS', 'MANAGE_MAINTENANCE', 'VIEW_REPORTS',
+      ]),
+      USER: new Set([
+        'VIEW_DASHBOARD', 'VIEW_FINANCIALS', 'USE_SMART_ASSISTANT',
+        'MANAGE_PROPERTIES', 'MANAGE_TENANTS', 'MANAGE_OWNERS', 'MANAGE_CONTRACTS', 'MANAGE_MAINTENANCE', 'VIEW_REPORTS',
+      ]),
     };
     return capabilityMap[currentUser.role]?.has(action) || false;
   }, [currentUser]);
@@ -355,7 +363,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const arAccount = mappings.accountsReceivable;
     const typeCreditMap: Record<Invoice['type'], string> = {
       RENT: mappings.revenue.RENT,
-      LATE_FEE: mappings.revenue.RENT,
+      LATE_FEE: mappings.revenue.LATE_FEE || mappings.revenue.RENT,
       MAINTENANCE: mappings.revenue.RENT,
       UTILITY: mappings.revenue.RENT,
     };
@@ -512,8 +520,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       } else if (table === 'depositTxs') {
         const d = mutableEntry as unknown as DepositTx;
         const cashAccount = mappings.paymentMethods.CASH;
-        const liabilityAccount = mappings.ownersPayable || '2121';
-        const revenueAccount = mappings.revenue.RENT;
+        const liabilityAccount = mappings.depositsHeld || '2122';
+        const revenueAccount = mappings.revenue.LATE_FEE || mappings.revenue.RENT;
         if (d.type === 'DEPOSIT_IN') {
           await postJournalEntrySupabase({ dr: cashAccount, cr: liabilityAccount, amount: d.amount, ref: d.id, entityType: 'CONTRACT', entityId: d.contractId });
         } else if (d.type === 'DEPOSIT_RETURN') {
@@ -612,12 +620,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
               if (owner.commissionType === 'RATE') {
                   commission = round3(netRent * (owner.commissionValue / 100));
               } else if (owner.commissionType === 'FIXED_MONTHLY') {
-                  // If it's fixed monthly, we only take it once? 
-                  // Or take it from the first receipt of the month?
-                  // For simplicity and to ensure the owner is credited, we'll treat it as 0 here
-                  // and assume fixed commissions are handled via manual expenses or monthly tasks.
-                  commission = 0; 
+                  commission = round3(Math.max(0, owner.commissionValue || 0));
               }
+              commission = Math.min(commission, netRent);
               
               const netToOwner = round3(netRent - commission);
               
@@ -758,16 +763,19 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const reverseAllJournalEntries = useCallback(async (sourceId: string) => {
     const entries = await supabaseData.fetchWhere<JournalEntry>('journalEntries', 'sourceId', sourceId);
-    const debits = entries.filter(e => e.type === 'DEBIT');
-    const credits = entries.filter(e => e.type === 'CREDIT');
-    const pairs: { dr: string; cr: string; amount: number }[] = [];
-    for (let i = 0; i < Math.min(debits.length, credits.length); i++) {
-      pairs.push({ dr: credits[i].accountId, cr: debits[i].accountId, amount: debits[i].amount });
-    }
-    for (const pair of pairs) {
-      await postJournalEntrySupabase({ ...pair, ref: `${sourceId}-void` });
-    }
-  }, [postJournalEntrySupabase]);
+    if (!entries.length) return;
+    const voucherNo = String(await supabaseData.incrementSerial('journalEntry'));
+    const now = Date.now();
+    const reverseEntries: JournalEntry[] = entries.map((entry) => ({
+      ...entry,
+      id: crypto.randomUUID(),
+      no: voucherNo,
+      type: entry.type === 'DEBIT' ? 'CREDIT' : 'DEBIT',
+      sourceId: `${sourceId}-void`,
+      createdAt: now,
+    }));
+    await supabaseData.bulkInsert('journalEntries', reverseEntries);
+  }, []);
 
   const voidReceipt: AppContextType['financeService']['voidReceipt'] = useCallback(async (id) => {
     const startTime = performance.now();
@@ -935,6 +943,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       }
     });
 
+    const depositBalancesMap = new Map<string, number>();
+    sourceDb.depositTxs.forEach(tx => {
+      const current = depositBalancesMap.get(tx.contractId) || 0;
+      if (tx.type === 'DEPOSIT_IN') {
+        depositBalancesMap.set(tx.contractId, round3(current + toNumber(tx.amount)));
+      } else if (tx.type === 'DEPOSIT_RETURN' || tx.type === 'DEPOSIT_DEDUCT') {
+        depositBalancesMap.set(tx.contractId, round3(current - toNumber(tx.amount)));
+      }
+    });
+
     const contractBalances: ContractBalance[] = Array.from(contractBalancesMap.entries()).map(([contractId, balance]) => {
       const contract = contractsMap.get(contractId);
       return {
@@ -942,7 +960,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         tenantId: contract?.tenantId || '',
         unitId: contract?.unitId || '',
         balance: round3(balance),
-        depositBalance: 0,
+        depositBalance: round3(Math.max(0, depositBalancesMap.get(contractId) || 0)),
         lastUpdatedAt: Date.now(),
       };
     }).filter(row => row.tenantId && row.unitId);
@@ -1122,6 +1140,27 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   }, [deriveInvoiceStatus]);
 
+  const generateContractExpiryNotifications = useCallback(async (): Promise<number> => {
+    if (!settings) return 0;
+    const alertDays = settings.operational?.contractAlertDays ?? 30;
+    const now = Date.now();
+    const activeContracts = await supabaseData.fetchWhere<Contract>('contracts', 'status', 'ACTIVE');
+    const existingNotifs = await supabaseData.fetchAll<AppNotification>('appNotifications');
+    let count = 0;
+    for (const c of activeContracts) {
+      const endDate = new Date(c.end).getTime();
+      const daysLeft = Math.ceil((endDate - now) / (1000 * 60 * 60 * 24));
+      if (daysLeft <= 0 || daysLeft > alertDays) continue;
+      const contractLink = `/contracts?contractId=${c.id}`;
+      const alreadyExists = existingNotifs.some(n => n.link === contractLink && n.type === 'CONTRACT_EXPIRING');
+      if (!alreadyExists) {
+        await supabaseData.insert('appNotifications', { id: crypto.randomUUID(), createdAt: now, isRead: false, role: 'ADMIN', type: 'CONTRACT_EXPIRING', title: `عقد ينتهي خلال ${daysLeft} يوم`, message: `عقد المستأجر سينتهي خلال ${daysLeft} يوم.`, link: contractLink });
+        count++;
+      }
+    }
+    return count;
+  }, [settings]);
+
   const syncSnapshots = useCallback(async (sourceDb?: Database | null) => {
     const currentDb = sourceDb || db || await supabaseData.getAllData();
     const snapshots = buildSnapshotState(currentDb);
@@ -1180,8 +1219,28 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         const daysLate = Math.floor((today.getTime() - new Date(inv.dueDate).getTime()) / (1000 * 60 * 60 * 24));
         if (daysLate <= (lateFeeSettings.graceDays || 0)) continue;
         const feeAmount = lateFeeSettings.type === 'PERCENTAGE_OF_RENT' ? (inv.amount * lateFeeSettings.value) / 100 : lateFeeSettings.value;
-        await add('invoices', { contractId: inv.contractId, dueDate: today.toISOString().slice(0, 10), amount: feeAmount, paidAmount: 0, status: 'UNPAID', type: 'LATE_FEE', notes: `رسوم تأخير على الفاتورة رقم ${inv.no}`, relatedInvoiceId: inv.id });
+        const newNo = await supabaseData.incrementSerial('invoice');
+        const lateFeeInvoice: Invoice = {
+          id: crypto.randomUUID(),
+          no: String(newNo),
+          contractId: inv.contractId,
+          dueDate: today.toISOString().slice(0, 10),
+          amount: round3(feeAmount),
+          paidAmount: 0,
+          status: 'UNPAID',
+          type: 'LATE_FEE',
+          notes: `رسوم تأخير على الفاتورة رقم ${inv.no}`,
+          relatedInvoiceId: inv.id,
+          createdAt: Date.now(),
+        };
+        const insertResult = await supabaseData.insert('invoices', lateFeeInvoice);
+        if (insertResult.error) continue;
+        await postInvoiceJournalEntries(lateFeeInvoice);
         count++;
+      }
+      if (count > 0) {
+        setIsDataStale(true);
+        await refreshData();
       }
       return count;
     },
@@ -1221,26 +1280,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         toast('جاري تشغيل المهام التلقائية...');
         const invoices = await generateMonthlyInvoices();
         const lateFees = await financeService.generateLateFees();
-        const notifications = await (async () => {
-          if (!settings) return 0;
-          const alertDays = settings.operational?.contractAlertDays ?? 30;
-          const now = Date.now();
-          const activeContracts = await supabaseData.fetchWhere<Contract>('contracts', 'status', 'ACTIVE');
-          const existingNotifs = await supabaseData.fetchAll<AppNotification>('appNotifications');
-          let count = 0;
-          for (const c of activeContracts) {
-            const endDate = new Date(c.end).getTime();
-            const daysLeft = Math.ceil((endDate - now) / (1000 * 60 * 60 * 24));
-            if (daysLeft <= 0 || daysLeft > alertDays) continue;
-            const contractLink = `/contracts?contractId=${c.id}`;
-            const alreadyExists = existingNotifs.some(n => n.link === contractLink);
-            if (!alreadyExists) {
-              await supabaseData.insert('appNotifications', { id: crypto.randomUUID(), createdAt: now, isRead: false, role: 'ADMIN', type: 'CONTRACT_EXPIRING', title: `عقد ينتهي خلال ${daysLeft} يوم`, message: `عقد المستأجر سينتهي خلال ${daysLeft} يوم.`, link: contractLink });
-              count++;
-            }
-          }
-          return count;
-        })();
+        const notifications = await generateContractExpiryNotifications();
         const result = { invoicesCreated: invoices, lateFeesApplied: lateFees, notificationsCreated: notifications, errors: [] };
         if (invoices + lateFees + notifications > 0) toast.success(`تم: ${invoices} فاتورة، ${lateFees} غرامة، ${notifications} إشعار`);
         else toast.success('لا توجد مهام جديدة.');
@@ -1249,22 +1289,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       },
       generateNotifications: async () => {
         if (!settings) return 0;
-        const alertDays = settings.operational?.contractAlertDays ?? 30;
         const now = Date.now();
-        const activeContracts = await supabaseData.fetchWhere<Contract>('contracts', 'status', 'ACTIVE');
         const existingNotifs = await supabaseData.fetchAll<AppNotification>('appNotifications');
-        let count = 0;
-        for (const c of activeContracts) {
-          const endDate = new Date(c.end).getTime();
-          const daysLeft = Math.ceil((endDate - now) / (1000 * 60 * 60 * 24));
-          if (daysLeft <= 0 || daysLeft > alertDays) continue;
-          const contractLink = `/contracts?contractId=${c.id}`;
-          const alreadyExists = existingNotifs.some(n => n.link === contractLink);
-          if (!alreadyExists) {
-            await supabaseData.insert('appNotifications', { id: crypto.randomUUID(), createdAt: now, isRead: false, role: 'ADMIN', type: 'CONTRACT_EXPIRING', title: `عقد ينتهي خلال ${daysLeft} يوم`, message: `عقد المستأجر سينتهي خلال ${daysLeft} يوم.`, link: contractLink });
-            count++;
-          }
-        }
+        let count = await generateContractExpiryNotifications();
         const allInvoices = await supabaseData.fetchAll<Invoice>('invoices');
         const overdueInvoices = allInvoices.filter(inv => deriveInvoiceStatus(inv) === 'OVERDUE');
         const overdueIds = new Set(overdueInvoices.map(inv => inv.id));
