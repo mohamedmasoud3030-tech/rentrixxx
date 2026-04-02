@@ -397,7 +397,10 @@ const ContractForm: React.FC<{ isOpen: boolean; onClose: () => void; contract: C
     const receipts = db.receipts || [];
     const expenses = db.expenses || [];
 
-    const availableUnits = units.filter(u => !contracts.some(c => c.unitId === u.id && c.status === 'ACTIVE' && c.id !== contract?.id));
+    const availableUnits = useMemo(
+        () => units.filter(u => !contracts.some(c => c.unitId === u.id && c.status === 'ACTIVE' && c.id !== contract?.id)),
+        [units, contracts, contract?.id]
+    );
 
     const contractTransactions = useMemo(() => {
         if (!contract) return [];
