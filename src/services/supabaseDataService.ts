@@ -114,13 +114,12 @@ export const supabaseData = {
         if (!error && data) {
           return (data || []).map(row => toCamelObj(row, jsTable) as T);
         }
-        if (error && error.message && error.message.includes('400')) {
+        if (error && (error.status === 400 || (error.message && (error.message.includes('400') || error.message.includes('Bad Request') || error.message.includes('column'))))) {
           // 400 error might mean column doesn't exist, try next column
           continue;
         }
-        if (!error) {
-          return (data || []).map(row => toCamelObj(row, jsTable) as T);
-        }
+        // If error is not 400, don't retry ordering, just return empty or try without order
+        break;
       } catch (err) {
         // Continue to next ordering candidate
         continue;
