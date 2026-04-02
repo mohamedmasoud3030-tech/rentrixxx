@@ -28,38 +28,52 @@ export const getEffectiveStatus = (
 };
 
 export const filterInvoiceByStatus = (
-  invoice: Invoice,
+  invoices: Invoice[],
   status: 'all' | 'unpaid' | 'overdue' | 'paid',
-  effectiveStatus: 'PAID' | 'UNPAID' | 'PARTIALLY_PAID' | 'OVERDUE'
-): boolean => {
-  if (status === 'unpaid') return ['UNPAID', 'PARTIALLY_PAID'].includes(effectiveStatus);
-  if (status === 'overdue') return effectiveStatus === 'OVERDUE';
-  if (status === 'paid') return effectiveStatus === 'PAID';
-  return true;
+  getStatus: (inv: Invoice) => 'PAID' | 'UNPAID' | 'PARTIALLY_PAID' | 'OVERDUE',
+  graceDays: number = 0
+): Invoice[] => {
+  return invoices.filter(inv => {
+    const effectiveStatus = getStatus(inv);
+    if (status === 'unpaid') return ['UNPAID', 'PARTIALLY_PAID'].includes(effectiveStatus);
+    if (status === 'overdue') return effectiveStatus === 'OVERDUE';
+    if (status === 'paid') return effectiveStatus === 'PAID';
+    return true;
+  });
 };
 
 export const filterInvoiceByType = (
-  invoice: Invoice,
+  invoices: Invoice[],
   type: 'all' | 'RENT' | 'LATE_FEE' | 'UTILITY' | 'OTHER'
-): boolean => {
-  if (type === 'all') return true;
-  if (type === 'OTHER') return !['RENT', 'LATE_FEE', 'UTILITY'].includes(invoice.type);
-  return invoice.type === type;
+): Invoice[] => {
+  return invoices.filter(inv => {
+    if (type === 'all') return true;
+    if (type === 'OTHER') return !['RENT', 'LATE_FEE', 'UTILITY'].includes(inv.type);
+    return inv.type === type;
+  });
 };
 
 export const filterInvoiceByDate = (
-  invoice: Invoice,
+  invoices: Invoice[],
   dateFrom: string,
   dateTo: string
-): boolean => {
-  return (!dateFrom || invoice.dueDate >= dateFrom) && (!dateTo || invoice.dueDate <= dateTo);
+): Invoice[] => {
+  return invoices.filter(inv => 
+    (!dateFrom || inv.dueDate >= dateFrom) && (!dateTo || inv.dueDate <= dateTo)
+  );
 };
 
 export const filterInvoiceBySearch = (
-  invoice: Invoice,
+  invoices: Invoice[],
   search: string,
-  tenantName?: string
-): boolean => {
-  if (!search.trim()) return true;
-  return invoice.no.includes(search) || (tenantName && tenantName.includes(search));
+  contracts: any[],
+  tenants: any[]
+): Invoice[] => {
+  if (!search.trim()) return invoices;
+  
+  return invoices.filter(inv => {
+    const contract = contracts.find(c => c.id === inv.contractId);
+    const tenant = contract ? tenants.find(t => t.id === contract.tenantId) : null;
+    return inv.no.includes(search) || tenant?.name.includes(search);
+  });
 };

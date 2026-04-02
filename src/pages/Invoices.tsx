@@ -46,21 +46,26 @@ const Invoices: React.FC = () => {
     const graceDays = settings.operational?.lateFee?.graceDays ?? 0;
 
     const invoicesWithDetails = useMemo(() => {
-        let filtered = db.invoices;
+        const invoices = db.invoices || [];
+        let filtered = invoices;
         
         // Apply filters using utility functions
         filtered = filterInvoiceByStatus(filtered, filters.status as any, (inv) => getEffectiveStatus(inv, graceDays), graceDays);
         filtered = filterInvoiceByType(filtered, filters.type as any);
         filtered = filterInvoiceByDate(filtered, filters.dateFrom, filters.dateTo);
-        filtered = filterInvoiceBySearch(filtered, filters.search, db.contracts, db.tenants);
+        filtered = filterInvoiceBySearch(filtered, filters.search, db.contracts || [], db.tenants || []);
 
         // Enrich with details
         return filtered
             .map(inv => {
-                const contract = db.contracts.find(c => c.id === inv.contractId);
-                const tenant = contract ? db.tenants.find(t => t.id === contract.tenantId) : null;
-                const unit = contract ? db.units.find(u => u.id === contract.unitId) : null;
-                const property = unit ? db.properties.find(p => p.id === unit.propertyId) : null;
+                const contracts = db.contracts || [];
+                const tenants = db.tenants || [];
+                const units = db.units || [];
+                const properties = db.properties || [];
+                const contract = contracts.find(c => c.id === inv.contractId);
+                const tenant = contract ? tenants.find(t => t.id === contract.tenantId) : null;
+                const unit = contract ? units.find(u => u.id === contract.unitId) : null;
+                const property = unit ? properties.find(p => p.id === unit.propertyId) : null;
                 return {
                     ...inv,
                     tenant,
@@ -74,7 +79,7 @@ const Invoices: React.FC = () => {
             .sort((a, b) => new Date(b.dueDate).getTime() - new Date(a.dueDate).getTime());
     }, [db.invoices, db.contracts, db.tenants, db.units, db.properties, filters, graceDays]);
 
-    const stats = useInvoiceStats(db.invoices, db.receipts, graceDays);
+    const stats = useInvoiceStats(db.invoices || [], db.receipts || [], graceDays);
 
     const toggleSelect = useCallback((id: string) => {
         setSelectedIds(prev => {
