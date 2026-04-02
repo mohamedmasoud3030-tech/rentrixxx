@@ -3,7 +3,7 @@ import { useApp } from '../contexts/AppContext';
 import { Invoice } from '../types';
 import Card from '../components/ui/Card';
 import Modal from '../components/ui/Modal';
-import { formatCurrency, formatDate, getStatusBadgeClass, exportToCsv, INVOICE_STATUS_AR, INVOICE_TYPE_AR } from '../utils/helpers';
+import { formatCurrency, formatDate, getStatusBadgeClass, exportToCsv, INVOICE_STATUS_AR, INVOICE_TYPE_AR, getInvoiceTotal, getInvoiceRemaining, getEffectiveInvoiceStatus } from '../utils/helpers';
 import NumberInput from '../components/ui/NumberInput';
 import { ReceiptText, RefreshCw, Download, CheckSquare, Square, MessageCircle, FileText, Plus, Search, AlertCircle, Clock, CheckCircle2, ArrowUpRight, Wallet } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
@@ -51,19 +51,10 @@ const Invoices: React.FC = () => {
         sessionStorage.setItem(STORAGE_KEY, JSON.stringify(filters));
     }, [filters]);
 
-    const getInvoiceTotal = useCallback((invoice: Invoice) => (invoice.amount || 0) + (invoice.taxAmount || 0), []);
-    const getInvoiceRemaining = useCallback((invoice: Invoice) => Math.max(0, getInvoiceTotal(invoice) - (invoice.paidAmount || 0)), [getInvoiceTotal]);
     const getEffectiveStatus = useCallback((invoice: Invoice): Invoice['status'] => {
-        const total = getInvoiceTotal(invoice);
-        const paid = invoice.paidAmount || 0;
-        if (paid >= total - 0.001) return 'PAID';
         const graceDays = settings.operational?.lateFee?.graceDays ?? 0;
-        const dueWithGrace = new Date(invoice.dueDate);
-        dueWithGrace.setDate(dueWithGrace.getDate() + graceDays);
-        if (dueWithGrace < new Date()) return 'OVERDUE';
-        if (paid > 0.001) return 'PARTIALLY_PAID';
-        return 'UNPAID';
-    }, [getInvoiceTotal, settings.operational?.lateFee?.graceDays]);
+        return getEffectiveInvoiceStatus(invoice, graceDays);
+    }, [settings.operational?.lateFee?.graceDays]);
 
     useEffect(() => {
         const params = new URLSearchParams(location.search);
@@ -110,7 +101,7 @@ const Invoices: React.FC = () => {
                 };
             })
             .sort((a, b) => new Date(b.dueDate).getTime() - new Date(a.dueDate).getTime());
-    }, [db, filters, getEffectiveStatus, getInvoiceRemaining, getInvoiceTotal]);
+    }, [db, filters, getEffectiveStatus]);
 
     const stats = useMemo(() => {
         const unpaid = db.invoices.filter(i => ['UNPAID', 'PARTIALLY_PAID'].includes(getEffectiveStatus(i))).reduce((s, i) => s + getInvoiceRemaining(i), 0);
@@ -120,7 +111,7 @@ const Invoices: React.FC = () => {
             .filter(r => r.status === 'POSTED' && r.dateTime.startsWith(month))
             .reduce((s, r) => s + r.amount, 0);
         return { unpaid, overdue, collectedThisMonth };
-    }, [db.invoices, db.receipts, getEffectiveStatus, getInvoiceRemaining]);
+    }, [db.invoices, db.receipts, getEffectiveStatus]);
 
     const toggleSelect = (id: string) => {
         setSelectedIds(prev => {

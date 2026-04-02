@@ -8,6 +8,7 @@ import { confirmDialog } from '../components/shared/confirmDialog';
 import { adminCreateUser } from '../services/edgeFunctions';
 import { logger } from '../services/logger';
 import { postReceiptAtomic, renewContractAtomic, syncUnitStatus, voidReceiptAtomic } from '../services/antiMistakeService';
+import { getEffectiveInvoiceStatus, getInvoiceRemaining } from '../utils/helpers';
 
 const DEFAULT_GEMINI_API_KEY = (import.meta.env.VITE_GEMINI_API_KEY as string) || '';
 
@@ -143,13 +144,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   }, []);
 
   const deriveInvoiceStatus = useCallback((invoice: Invoice) => {
-    const total = round3(toNumber(invoice.amount) + toNumber(invoice.taxAmount));
-    const paid = round3(toNumber(invoice.paidAmount));
-    if (paid >= total - 0.001) return 'PAID' as Invoice['status'];
-    if (new Date(invoice.dueDate).getTime() < Date.now()) return 'OVERDUE' as Invoice['status'];
-    if (paid > 0.001) return 'PARTIALLY_PAID' as Invoice['status'];
-    return 'UNPAID' as Invoice['status'];
-  }, []);
+    const graceDays = settings?.operational?.lateFee?.graceDays ?? 0;
+    return getEffectiveInvoiceStatus(invoice, graceDays) as Invoice['status'];
+  }, [settings?.operational?.lateFee?.graceDays]);
 
   const refreshData = useCallback(async () => {
     try {
@@ -1112,7 +1109,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             role: 'ADMIN',
             type: 'OVERDUE_BALANCE',
             title: 'فاتورة إيجار متأخرة',
-            message: `الفاتورة رقم ${invoice.no} متأخرة بمبلغ ${round3(invoice.amount - invoice.paidAmount)}`,
+            message: `الفاتورة رقم ${invoice.no} متأخرة بمبلغ ${round3(getInvoiceRemaining(invoice))}`,
             link: `/finance/invoices?invoiceId=${invoice.id}`,
           };
           await supabaseData.insert('appNotifications', notification);
@@ -1299,7 +1296,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           const link = `/finance/invoices?invoiceId=${inv.id}`;
           const exists = existingNotifs.some(n => n.link === link && n.type === 'OVERDUE_BALANCE');
           if (!exists) {
-            await supabaseData.insert('appNotifications', { id: crypto.randomUUID(), createdAt: now, isRead: false, role: 'ADMIN', type: 'OVERDUE_BALANCE', title: 'فاتورة متأخرة', message: `الفاتورة رقم ${inv.no} متأخرة بقيمة ${round3(inv.amount - inv.paidAmount)}`, link });
+            await supabaseData.insert('appNotifications', { id: crypto.randomUUID(), createdAt: now, isRead: false, role: 'ADMIN', type: 'OVERDUE_BALANCE', title: 'فاتورة متأخرة', message: `الفاتورة رقم ${inv.no} متأخرة بقيمة ${round3(getInvoiceRemaining(inv))}`, link });
             count++;
           }
         }
