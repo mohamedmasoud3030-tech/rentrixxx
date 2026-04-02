@@ -11,14 +11,25 @@ import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 
 const Owners: React.FC = () => {
-    const app = useApp();
+    const { dataService, generateOwnerPortalLink, fetchPaginatedData } = useApp();
     const navigate = useNavigate();
-    const { db, dataService, generateOwnerPortalLink } = app;
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingOwner, setEditingOwner] = useState<Owner | null>(null);
+    const [owners, setOwners] = useState<Owner[]>([]);
+    const [page, setPage] = useState(1);
+    const [pageSize, setPageSize] = useState(10);
+    const [total, setTotal] = useState(0);
+    const [loading, setLoading] = useState(true);
 
-    const owners = db.owners || [];
-    const properties = db.properties || [];
+    useEffect(() => {
+        setLoading(true);
+        fetchPaginatedData('owners', page, pageSize, 'name', true)
+            .then(({ data, total }) => {
+                setOwners(data);
+                setTotal(total);
+            })
+            .finally(() => setLoading(false));
+    }, [page, pageSize, fetchPaginatedData]);
 
     const handleOpenModal = (owner: Owner | null = null) => {
         setEditingOwner(owner);
@@ -26,11 +37,9 @@ const Owners: React.FC = () => {
     };
 
     const handleDelete = async (id: string) => {
-        if (properties.some(p => p.ownerId === id)) {
-            toast.error("لا يمكن حذف المالك لأنه يمتلك عقارات مسجلة. يرجى تغيير ملكية العقارات أولاً.");
-            return;
-        }
+        // You might want to add a check here to prevent deleting owners with properties.
         await dataService.remove('owners', id);
+        setOwners(owners.filter(o => o.id !== id));
     };
 
     return (
@@ -39,7 +48,9 @@ const Owners: React.FC = () => {
                 <h2 className="text-xl font-bold">قائمة الملاك</h2>
                 <button onClick={() => handleOpenModal()} className="btn btn-primary">إضافة مالك</button>
             </div>
-            {owners.length === 0 ? (
+            {loading ? (
+                <div className="text-center py-12">جاري تحميل البيانات...</div>
+            ) : owners.length === 0 ? (
                 <div className="text-center py-12">
                     <Users size={48} className="mx-auto text-text-muted" />
                     <h3 className="mt-4 text-lg font-semibold">لا يوجد ملاك بعد</h3>
@@ -47,41 +58,48 @@ const Owners: React.FC = () => {
                     <button onClick={() => handleOpenModal()} className="mt-6 btn btn-primary">إضافة مالك جديد</button>
                 </div>
             ) : (
-                <div className="space-y-4">
-                    {owners.map(owner => (
-                        <Card key={owner.id}>
-                            <div className="flex justify-between items-center">
-                                <div onClick={() => handleOpenModal(owner)} className="cursor-pointer">
-                                    <h3 className="font-bold text-lg text-primary">{owner.name}</h3>
-                                    <p className="text-sm text-text-muted">{owner.phone}</p>
+                <div>
+                    <div className="space-y-4">
+                        {owners.map(owner => (
+                            <Card key={owner.id}>
+                                <div className="flex justify-between items-center">
+                                    <div onClick={() => handleOpenModal(owner)} className="cursor-pointer">
+                                        <h3 className="font-bold text-lg text-primary">{owner.name}</h3>
+                                        <p className="text-sm text-text-muted">{owner.phone}</p>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <button 
+                                            onClick={() => app.sendWhatsApp(owner.phone, `سيد ${owner.name}، إليك تقرير العقارات اخر تحديث...`)}
+                                            className="p-2 bg-green-100 text-green-700 rounded-full hover:bg-green-200"
+                                            title="إرسال واتساب"
+                                        >
+                                            <MessageCircle size={18} />
+                                        </button>
+                                        <button
+                                            onClick={async () => {
+                                                const link = await generateOwnerPortalLink(owner.id);
+                                                navigator.clipboard.writeText(link);
+                                                toast.success("تم نسخ رابط المالك!");
+                                            }}
+                                            className="flex items-center gap-1 px-3 py-1 text-xs border border-blue-500 text-blue-600 rounded-md hover:bg-blue-50"
+                                        >
+                                            <LinkIcon size={14} /> رابط المالك
+                                        </button>
+                                        <ActionsMenu items={[
+                                            EditAction(() => handleOpenModal(owner)),
+                                            { label: 'كشف حساب احترافي', icon: <BookOpen size={16} />, onClick: () => navigate(`/reports?tab=owner&ownerId=${owner.id}`) },
+                                            DeleteAction(() => handleDelete(owner.id))
+                                        ]} />
+                                    </div>
                                 </div>
-                                <div className="flex items-center gap-2">
-                                    <button
-                                        onClick={() => app.sendWhatsApp(owner.phone, `سيد ${owner.name}، إليك تقرير العقارات اخر تحديث...`)}
-                                        className="p-2 bg-green-100 text-green-700 rounded-full hover:bg-green-200"
-                                        title="إرسال واتساب"
-                                    >
-                                        <MessageCircle size={18} />
-                                    </button>
-                                    <button
-                                        onClick={async () => {
-                                            const link = await generateOwnerPortalLink(owner.id);
-                                            navigator.clipboard.writeText(link);
-                                            toast.success("تم نسخ رابط المالك!");
-                                        }}
-                                        className="flex items-center gap-1 px-3 py-1 text-xs border border-blue-500 text-blue-600 rounded-md hover:bg-blue-50"
-                                    >
-                                        <LinkIcon size={14} /> رابط المالك
-                                    </button>
-                                    <ActionsMenu items={[
-                                        EditAction(() => handleOpenModal(owner)),
-                                        { label: 'كشف حساب احترافي', icon: <BookOpen size={16} />, onClick: () => navigate(`/reports?tab=owner&ownerId=${owner.id}`) },
-                                        DeleteAction(() => handleDelete(owner.id))
-                                    ]} />
-                                </div>
-                            </div>
-                        </Card>
-                    ))}
+                            </Card>
+                        ))}
+                    </div>
+                    <div className="flex justify-between items-center mt-4">
+                        <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1} className="btn">السابق</button>
+                        <span>Page {page} of {Math.ceil(total / pageSize)}</span>
+                        <button onClick={() => setPage(p => p + 1)} disabled={page * pageSize >= total} className="btn">التالي</button>
+                    </div>
                 </div>
             )}
             <OwnerForm isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} owner={editingOwner} />

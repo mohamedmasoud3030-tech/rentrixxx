@@ -3,6 +3,35 @@ import { supabase } from './supabase';
 import { Database, Settings, Governance, Serials } from '../types';
 import { logger } from './logger';
 
+// نظام cache بسيط للاستعلامات المتكررة
+const queryCache = new Map<string, { data: any; timestamp: number }>();
+const CACHE_TTL = 5 * 60 * 1000; // 5 دقائق
+
+function getCacheKey(jsTable: string, operation: string, params?: any): string {
+  return `${jsTable}:${operation}:${JSON.stringify(params || {})}`;
+}
+
+function getCachedResult<T>(key: string): T | null {
+  const cached = queryCache.get(key);
+  if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
+    return cached.data;
+  }
+  if (cached) {
+    queryCache.delete(key); // إزالة المنتهي الصلاحية
+  }
+  return null;
+}
+
+function setCachedResult(key: string, data: any): void {
+  queryCache.set(key, { data, timestamp: Date.now() });
+
+  // تنظيف الـ cache إذا أصبح كبيراً
+  if (queryCache.size > 100) {
+    const oldestKey = queryCache.keys().next().value;
+    queryCache.delete(oldestKey);
+  }
+}
+
 const TABLE_MAP: Record<string, string> = {
   owners: 'owners',
   properties: 'properties',
@@ -90,6 +119,12 @@ function resolveTable(jsTable: string): string {
 
 export const supabaseData = {
   async fetchAll<T>(jsTable: string): Promise<T[]> {
+    const cacheKey = getCacheKey(jsTable, 'fetchAll');
+    const cached = getCachedResult<T[]>(cacheKey);
+    if (cached) {
+      return cached;
+    }
+
     const sqlTable = resolveTable(jsTable);
     try {
       const { data, error } = await supabase.from(sqlTable).select('*');
@@ -97,7 +132,9 @@ export const supabaseData = {
         logger.error(`[SupabaseData] fetchAll ${sqlTable} error:`, error);
         return [];
       }
-      return (data || []).map(row => toCamelObj(row, jsTable) as T);
+      const result = (data || []).map(row => toCamelObj(row, jsTable) as T);
+      setCachedResult(cacheKey, result);
+      return result;
     } catch (err) {
       logger.error(`[SupabaseData] fetchAll ${sqlTable} exception:`, err);
       return [];
@@ -155,6 +192,8 @@ export const supabaseData = {
       console.error(`[SupabaseData] insert ${sqlTable}:`, error, snakeRecord); 
       return { data: null, error: errorMsg };
     }
+    // إزالة الـ cache للجدول
+    queryCache.delete(getCacheKey(jsTable, 'fetchAll'));
     return { data: data ? toCamelObj(data, jsTable) as T : null, error: null };
   },
 
@@ -175,6 +214,8 @@ export const supabaseData = {
       console.error(`[SupabaseData] update ${sqlTable}:`, error); 
       return { ok: false, error: errorMsg };
     }
+    // إزالة الـ cache للجدول
+    queryCache.delete(getCacheKey(jsTable, 'fetchAll'));
     return { ok: true, error: null };
   },
 
@@ -213,18 +254,30 @@ export const supabaseData = {
 
   async bulkUpdate(jsTable: string, records: { id: string; updates: Record<string, any> }[]): Promise<boolean> {
     if (!records.length) return true;
+
+    // استخدام upsert للتحديث الجماعي بدلاً من N queries منفصلة
     const sqlTable = resolveTable(jsTable);
-    const results = await Promise.all(records.map(async ({ id, updates }) => {
-      const snakeUpdates = toSnakeObj(updates, jsTable);
-      const { error } = await supabase.from(sqlTable).update(snakeUpdates).eq('id', id);
-      return { id, ok: !error, error };
+    const upsertRecords = records.map(({ id, updates }) => ({
+      id,
+      ...toSnakeObj(updates, jsTable),
+      updated_at: Date.now() // إضافة timestamp للتحديث
     }));
-    const failed = results.filter(r => !r.ok);
-    if (failed.length) {
-      logger.error(`[SupabaseData] bulkUpdate ${sqlTable} failures`, failed);
+
+    try {
+      const { error } = await supabase.from(sqlTable).upsert(upsertRecords, {
+        onConflict: 'id',
+        ignoreDuplicates: false
+      });
+
+      if (error) {
+        logger.error(`[SupabaseData] bulkUpdate ${sqlTable} error:`, error);
+        return false;
+      }
+      return true;
+    } catch (err) {
+      logger.error(`[SupabaseData] bulkUpdate ${sqlTable} exception:`, err);
       return false;
     }
-    return true;
   },
 
   async upsertMany(jsTable: string, records: Record<string, any>[]): Promise<boolean> {
@@ -292,6 +345,83 @@ export const supabaseData = {
       return 1000;
     }
     return data;
+  },
+
+  async fetchPaginated<T>(jsTable: string, page = 1, pageSize = 50, orderBy?: string, ascending = false): Promise<{ data: T[]; total: number; hasMore: boolean }> {
+    const sqlTable = resolveTable(jsTable);
+    const from = (page - 1) * pageSize;
+    const to = from + pageSize - 1;
+
+    try {
+      let query = supabase.from(sqlTable).select('*', { count: 'exact' });
+
+      if (orderBy) {
+        const snakeOrder = camelToSnake(orderBy);
+        query = query.order(snakeOrder, { ascending });
+      }
+
+      query = query.range(from, to);
+
+      const { data, error, count } = await query;
+      if (error) {
+        logger.error(`[SupabaseData] fetchPaginated ${sqlTable} error:`, error);
+        return { data: [], total: 0, hasMore: false };
+      }
+
+      const total = count || 0;
+      const hasMore = from + pageSize < total;
+
+      return {
+        data: (data || []).map(row => toCamelObj(row, jsTable) as T),
+        total,
+        hasMore
+      };
+    } catch (err) {
+      logger.error(`[SupabaseData] fetchPaginated ${sqlTable} exception:`, err);
+      return { data: [], total: 0, hasMore: false };
+    }
+  },
+
+  async fetchFiltered<T>(jsTable: string, filters: Record<string, any>, orderBy?: string, ascending = false, limit?: number): Promise<T[]> {
+    const sqlTable = resolveTable(jsTable);
+
+    try {
+      let query = supabase.from(sqlTable).select('*');
+
+      // تطبيق الفلاتر
+      Object.entries(filters).forEach(([key, value]) => {
+        if (value !== undefined && value !== null) {
+          const snakeKey = camelToSnake(key);
+          if (typeof value === 'string' && value.includes('%')) {
+            query = query.ilike(snakeKey, value);
+          } else {
+            query = query.eq(snakeKey, value);
+          }
+        }
+      });
+
+      // الترتيب
+      if (orderBy) {
+        const snakeOrder = camelToSnake(orderBy);
+        query = query.order(snakeOrder, { ascending });
+      }
+
+      // الحد
+      if (limit) {
+        query = query.limit(limit);
+      }
+
+      const { data, error } = await query;
+      if (error) {
+        logger.error(`[SupabaseData] fetchFiltered ${sqlTable} error:`, error);
+        return [];
+      }
+
+      return (data || []).map(row => toCamelObj(row, jsTable) as T);
+    } catch (err) {
+      logger.error(`[SupabaseData] fetchFiltered ${sqlTable} exception:`, err);
+      return [];
+    }
   },
 
   async getAllData(): Promise<Database> {

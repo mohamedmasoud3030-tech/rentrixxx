@@ -9,7 +9,7 @@ import { adminCreateUser } from '../services/edgeFunctions';
 import { logger } from '../services/logger';
 import { postReceiptAtomic, renewContractAtomic, syncUnitStatus, voidReceiptAtomic } from '../services/antiMistakeService';
 
-const DEFAULT_GEMINI_API_KEY = (import.meta.env.VITE_GEMINI_API_KEY as string) || '';
+const DEFAULT_GEMINI_API_KEY = '';
 
 const DEFAULT_ACCOUNTS: Omit<Account, 'id'|'createdAt'>[] = [
     { no: '1000', name: 'الأصول', type: 'ASSET', isParent: true, parentId: null },
@@ -109,13 +109,84 @@ export const useApp = (): AppContextType => {
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [currentUser, setCurrentUser] = useState<User | null | undefined>(undefined);
-  const [db, setDb] = useState<Database | null>(null);
+  const [db, setDb] = useState<Partial<Database>>({});
+
+  const fetchPaginatedData = useCallback(async <T extends keyof Database>(
+    table: T, 
+    page: number, 
+    pageSize: number, 
+    orderBy?: string, 
+    ascending?: boolean
+  ) => {
+    const { data, total } = await supabaseData.fetchPaginated(table as string, page, pageSize, orderBy, ascending);
+    setDb(prevDb => {
+      const newDb = { ...prevDb };
+      const existingData = (newDb[table] as any[]) || [];
+      const updatedData = [...existingData];
+      data.forEach(newItem => {
+        const index = updatedData.findIndex(existingItem => existingItem.id === (newItem as any).id);
+        if (index > -1) {
+          updatedData[index] = newItem;
+        } else {
+          updatedData.push(newItem);
+        }
+      });
+      (newDb[table] as any) = updatedData;
+      return newDb;
+    });
+    return { data, total };
+  }, []);
+
+  const add = useCallback(async <T extends keyof Database>(table: T, entry: any) => {
+    const newEntry = await supabaseData.insert(table as string, entry);
+    if (newEntry) {
+      setDb(prevDb => {
+        const newDb = { ...prevDb };
+        (newDb[table] as any) = [...((newDb[table] as any[]) || []), newEntry];
+        return newDb;
+      });
+    }
+    return newEntry;
+  }, []);
+
+  const update = useCallback(async <T extends keyof Database>(table: T, id: string, updates: any) => {
+    await supabaseData.update(table as string, id, updates);
+    setDb(prevDb => {
+      const newDb = { ...prevDb };
+      const tableData = (newDb[table] as any[]) || [];
+      const entryIndex = tableData.findIndex(e => e.id === id);
+      if (entryIndex > -1) {
+        tableData[entryIndex] = { ...tableData[entryIndex], ...updates };
+        (newDb[table] as any) = [...tableData];
+      }
+      return newDb;
+    });
+  }, []);
+
+  const remove = useCallback(async <T extends keyof Database>(table: T, id: string) => {
+    await supabaseData.remove(table as string, id);
+    setDb(prevDb => {
+      const newDb = { ...prevDb };
+      (newDb[table] as any) = ((newDb[table] as any[]) || []).filter(e => e.id !== id);
+      return newDb;
+    });
+  }, []);
   const [settings, setSettings] = useState<Settings | null>(null);
   const [governance, setGovernance] = useState<Governance | null>(null);
   const [isDataStale, setIsDataStale] = useState(true);
   const [performanceMetrics, setPerformanceMetrics] = useState<PerformanceMetrics>(initialPerformanceMetrics);
   const refreshRef = useRef<(() => Promise<void>) | undefined>(undefined);
   const reconcileRef = useRef(false);
+
+  const getFinancialSummary = useCallback(async () => {
+    const { data, error } = await supabase.rpc('get_financial_summary');
+    if (error) {
+      logger.error('[AppContext] Failed to get financial summary:', error);
+      toast.error('فشل في جلب ملخص البيانات المالية.');
+      return null;
+    }
+    return data;
+  }, []);
 
   const isReadOnly = useMemo(() => governance?.readOnly || false, [governance]);
 
@@ -142,6 +213,29 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     });
   }, []);
 
+  const initializeBalancesIfNeeded = useCallback(async (db: Database) => {
+    try {
+      // التحقق من وجود أرصدة وإنشاؤها إذا لم تكن موجودة
+      const contractBalancesCount = db.contractBalances?.length || 0;
+      const ownerBalancesCount = db.ownerBalances?.length || 0;
+      const tenantBalancesCount = db.tenantBalances?.length || 0;
+
+      if (contractBalancesCount === 0 || ownerBalancesCount === 0 || tenantBalancesCount === 0) {
+        logger.info('[AppContext] Initializing balance tables...');
+
+        // تشغيل RPC لإعادة حساب جميع الأرصدة
+        const { error } = await supabase.rpc('recalculate_all_balances');
+        if (error) {
+          logger.error('[AppContext] Failed to recalculate balances:', error);
+        } else {
+          logger.info('[AppContext] Balance tables initialized successfully');
+        }
+      }
+    } catch (err) {
+      logger.error('[AppContext] initializeBalancesIfNeeded error:', err);
+    }
+  }, []);
+
   const deriveInvoiceStatus = useCallback((invoice: Invoice) => {
     const total = round3(toNumber(invoice.amount) + toNumber(invoice.taxAmount));
     const paid = round3(toNumber(invoice.paidAmount));
@@ -153,15 +247,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const refreshData = useCallback(async () => {
     try {
-      const [allData, settingsData, govData] = await withRetry(() => Promise.all([
-        supabaseData.getAllData(),
+      const [settingsData, govData] = await withRetry(() => Promise.all([
         supabaseData.getSettings(),
         supabaseData.getGovernance(),
       ]), 1);
-      setDb(allData);
+      // setDb(allData); // Keep existing data, we will load on demand
       setSettings(settingsData || DEFAULT_SETTINGS);
       setGovernance(govData || { readOnly: false, lockedPeriods: [] });
       setIsDataStale(false);
+
     } catch (err) {
       logger.error('[AppContext] refreshData error', err);
       toast.error('تعذر تحديث البيانات. تم تفعيل إعادة المحاولة التلقائية.');
@@ -481,7 +575,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       }
 
       const result = await supabaseData.insert(table as string, mutableEntry);
-      if (result.error) { toast.error(`فشل في إضافة السجل: ${result.error}`); return null; }
+      if (result.error) { toast.error(`فشل في إضافة السجل: ${result.error.message}`); return null; }
       if (!result.data) { toast.error('فشل في إضافة السجل: لم يتم استرجاع البيانات'); return null; }
       
       await audit('CREATE', String(table), id);
@@ -495,7 +589,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         await syncUnitStatus((mutableEntry as unknown as Contract).unitId);
       } else if (table === 'expenses') {
         const e = mutableEntry as unknown as Expense;
-        const cashAccount = mappings.paymentMethods.CASH;
+        const cashAccount = mappings.paymentMethods[e.method] || mappings.paymentMethods.CASH;
         if (e.chargedTo === 'OWNER') {
           const ownersPayableAccount = mappings.ownersPayable || '2121';
           await postJournalEntrySupabase({ dr: ownersPayableAccount, cr: cashAccount, amount: e.amount, ref: e.id, entityType: 'CONTRACT', entityId: e.contractId || undefined });
@@ -519,7 +613,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         await postJournalEntrySupabase({ dr: ownersPayableAccount, cr: cashAccount, amount: s.amount, ref: s.id });
       } else if (table === 'depositTxs') {
         const d = mutableEntry as unknown as DepositTx;
-        const cashAccount = mappings.paymentMethods.CASH;
+        const cashAccount = mappings.paymentMethods[e.method] || mappings.paymentMethods.CASH;
         const liabilityAccount = mappings.depositsHeld || '2122';
         const revenueAccount = mappings.revenue.LATE_FEE || mappings.revenue.RENT;
         if (d.type === 'DEPOSIT_IN') {
@@ -532,7 +626,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       }
 
       await syncSnapshots();
-      await refreshData();
+      setDb(prevDb => {
+        if (!prevDb) return null;
+        const newDb = { ...prevDb };
+        (newDb[table as keyof Database] as any) = [...((newDb[table as keyof Database] as any[]) || []), mutableEntry];
+        return newDb;
+      });
       toast.success('تمت الإضافة بنجاح!');
       return mutableEntry as unknown as Database[typeof table][number];
     } catch (err: any) {
@@ -540,7 +639,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       toast.error(`خطأ أثناء الإضافة: ${err?.message || 'خطأ غير معروف'}`);
       return null;
     }
-  }, [isReadOnly, settings, audit, postJournalEntrySupabase, postInvoiceJournalEntries, createRentInvoicesForContract, refreshData]);
+  }, [isReadOnly, settings, audit, postJournalEntrySupabase, postInvoiceJournalEntries, createRentInvoicesForContract, syncSnapshots]);
 
   const addReceiptWithAllocations: AppContextType['financeService']['addReceiptWithAllocations'] = useCallback(async (receiptData, allocations) => {
     if (isReadOnly || !settings) return;
@@ -1287,6 +1386,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         await refreshData();
         return result;
       },
+      getFinancialSummary,
       generateNotifications: async () => {
         if (!settings) return 0;
         const now = Date.now();
@@ -1327,6 +1427,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       },
       generateOwnerPortalLink, canAccess, isDataStale, performanceMetrics, logOperationTime,
       ownerBalances, contractBalances, tenantBalances,
+      getFinancialSummary,
       createSnapshot: async (note) => {
         await supabaseData.insert('snapshots', { id: crypto.randomUUID(), ts: Date.now(), note, data: await supabaseData.getAllData() });
         toast.success("تم إنشاء نقطة الاستعادة بنجاح.");
