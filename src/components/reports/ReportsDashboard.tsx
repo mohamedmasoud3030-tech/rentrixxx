@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
-import { supabase } from '../services/supabase';
-import { useApp } from '../contexts/AppContext';
+import { supabase } from '../../services/supabase';
+import { useApp } from '../../contexts/AppContext';
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
   CartesianGrid, Cell, LineChart, Line, PieChart, Pie, Legend
