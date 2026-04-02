@@ -2,13 +2,26 @@
 
 ## Overview
 
-Rentrix is a comprehensive property management system for real estate. It is an Arabic-first hybrid desktop/web application built with React, Vite, and Electron. The system streamlines property, unit, tenant, contract, and financial management, including maintenance records, and offers AI-assisted analytics via Google's Gemini API. It aims to provide a robust solution for real estate management with capabilities like double-entry accounting, automated invoicing, and detailed reporting.
+Rentrix is a comprehensive Arabic-first property management system (PMS) for real estate institutions. Built with React, Vite, and Supabase, it streamlines property, unit, tenant, contract, and financial management — including maintenance records, double-entry accounting, automated invoicing, and detailed reporting. It includes an AI assistant powered by the Google Gemini API.
 
 ## User Preferences
 
 Preferred communication style: Simple, everyday language.
 
 ## Recent Fixes & Improvements
+
+**Deep Project Cleanup (Mar 28, 2026):**
+- ✅ Removed `main.py` — dummy Python file unrelated to the project
+- ✅ Removed `vercel.json` — Vercel-specific config not needed on Replit
+- ✅ Removed `supabase_drop_all.sql` — dangerous destructive SQL file
+- ✅ Removed `attached_assets/` — AI chat attachments, not part of codebase
+- ✅ Removed `src/pages/LandsAndCommissions.tsx` — orphaned page (341 lines, no imports)
+- ✅ Removed `src/services/driveSync.ts` — orphaned Google Drive service
+- ✅ Removed `src/services/googleAuth.ts` — orphaned Google OAuth service
+- ✅ Updated `src/services/geminiService.ts` — removed Electron IPC dependency, now calls Gemini API directly via `@google/genai`
+- ✅ Fixed TypeScript error in `src/pages/Lands.tsx` — missing `normalizeArabicNumerals` import
+- ✅ Fixed TypeScript errors in `src/services/financialEngine.ts` — added `Expense` import and proper type cast for `ownerId`/`propertyId` access
+- ✅ Zero TypeScript errors in `src/` after cleanup
 
 **Page Separation & UI Refactoring (Mar 27, 2026):**
 - ✅ Separated Tenants → `/tenants` (own page: `Tenants.tsx`)
@@ -86,9 +99,6 @@ Preferred communication style: Simple, everyday language.
 - **Styling**: Tailwind CSS with a custom design system supporting light/dark themes, focusing on Arabic (RTL) internationalization with Cairo font.
 - **UI Components**: Custom reusable components including Cards, Modals, Action Menus, and form elements.
 
-### Desktop Integration
-- **Electron**: Used to wrap the React application for desktop deployment, featuring secure IPC communication and a hardened Content Security Policy.
-
 ### Data Layer
 - **Database**: Supabase PostgreSQL is the primary cloud database.
 - **Data Service**: A dedicated service (`supabaseDataService.ts`) handles CRUD operations, including automatic camelCase to snake_case conversion for field and table names.
@@ -125,8 +135,6 @@ Preferred communication style: Simple, everyday language.
 - **React Router DOM 7**: Client-side routing.
 - **@supabase/supabase-js**: Supabase client for authentication and database interaction.
 - **Lucide React**: Icon library.
-- **Electron 28**: Desktop application wrapper.
-- **Electron Builder**: Desktop packaging and distribution.
 - **@google/genai**: Google Gemini API client for AI features.
 - **jsPDF** and **jspdf-autotable**: PDF generation, with custom Arabic font embedding.
 - **date-fns**: Date manipulation and formatting.
@@ -137,5 +145,3 @@ Preferred communication style: Simple, everyday language.
 - **PostCSS/Autoprefixer**: CSS processing.
 - **Supabase Cloud**: Backend-as-a-Service, including PostgreSQL database and Auth.
 - **recharts**: Interactive charting library for data visualization.
-- **Google OAuth**: For Google Drive backup sync (optional).
-- **WhatsApp Web API**: For direct messaging and automated notifications.

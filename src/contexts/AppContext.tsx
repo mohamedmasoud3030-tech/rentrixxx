@@ -1,9 +1,15 @@
 import React, { createContext, useContext, useState, useEffect, useMemo, useCallback, ReactNode, useRef } from 'react';
-import { Database, User, Settings, Owner, Property, Unit, Tenant, Contract, Receipt, Expense, MaintenanceRecord, DepositTx, AuditLogEntry, Governance, Serials, Snapshot, Invoice, ReceiptAllocation, Account, JournalEntry, NotificationTemplate, OutgoingNotification, AppContextType, PerformanceMetrics, OperationType, ContractBalance, TenantBalance, OwnerSettlement, DerivedData, AppNotification, Lead, Attachment, OwnerBalance, UtilityRecord } from '../types';
+import { Database, User, Settings, Owner, Property, Unit, Tenant, Contract, Receipt, Expense, MaintenanceRecord, DepositTx, AuditLogEntry, Governance, Serials, Snapshot, Invoice, ReceiptAllocation, Account, JournalEntry, NotificationTemplate, OutgoingNotification, AppContextType, PerformanceMetrics, OperationType, ContractBalance, TenantBalance, OwnerSettlement, DerivedData, AppNotification, Lead, Attachment, OwnerBalance, UtilityRecord, AccountBalance, KpiSnapshot } from '../types';
 import { supabaseData } from '../services/supabaseDataService';
 import { IntegrationService } from '../services/integrationService';
 import { supabase } from '../services/supabase';
 import { toast } from 'react-hot-toast';
+import { confirmDialog } from '../components/shared/confirmDialog';
+import { adminCreateUser } from '../services/edgeFunctions';
+import { logger } from '../services/logger';
+import { postReceiptAtomic, renewContractAtomic, syncUnitStatus, voidReceiptAtomic } from '../services/antiMistakeService';
+
+const DEFAULT_GEMINI_API_KEY = (import.meta.env.VITE_GEMINI_API_KEY as string) || '';
 
 const DEFAULT_ACCOUNTS: Omit<Account, 'id'|'createdAt'>[] = [
     { no: '1000', name: 'الأصول', type: 'ASSET', isParent: true, parentId: null },
@@ -11,8 +17,10 @@ const DEFAULT_ACCOUNTS: Omit<Account, 'id'|'createdAt'>[] = [
     { no: '1112', name: 'حساب البنك', type: 'ASSET', isParent: false, parentId: '1000' },
     { no: '1201', name: 'ذمم المستأجرين', type: 'ASSET', isParent: false, parentId: '1000'},
     { no: '2121', name: 'ذمم الملاك', type: 'LIABILITY', isParent: false, parentId: null },
+    { no: '2122', name: 'تأمينات مستلمة', type: 'LIABILITY', isParent: false, parentId: null },
     { no: '4110', name: 'إيرادات الإيجارات', type: 'REVENUE', isParent: false, parentId: null },
     { no: '4120', name: 'إيرادات عمولة المكتب', type: 'REVENUE', isParent: false, parentId: null },
+    { no: '4130', name: 'إيرادات رسوم التأخير', type: 'REVENUE', isParent: false, parentId: null },
     { no: '5110', name: 'مصروفات الصيانة', type: 'EXPENSE', isParent: false, parentId: null },
     { no: '5102', name: 'مصروفات عمولات الموظفين', type: 'EXPENSE', isParent: false, parentId: null },
 ];
@@ -31,11 +39,11 @@ const DEFAULT_SETTINGS: Settings = {
         maintenance: { defaultChargedTo: 'OWNER' },
         calendarType: 'gregorian',
     },
-    accounting: { accountMappings: { paymentMethods: { CASH: '1111', BANK: '1112', POS: '1112', CHECK: '1112', OTHER: '1111' }, expenseCategories: { 'صيانة': '5110', 'عمولات موظفين': '5102', default: '5120' }, revenue: { RENT: '4110', OFFICE_COMMISSION: '4120' }, accountsReceivable: '1201', vatPayable: '2130', vatReceivable: '1130', ownersPayable: '2121' } },
+    accounting: { accountMappings: { paymentMethods: { CASH: '1111', BANK: '1112', POS: '1112', CHECK: '1112', OTHER: '1111' }, expenseCategories: { 'صيانة': '5110', 'عمولات موظفين': '5102', default: '5120' }, revenue: { RENT: '4110', OFFICE_COMMISSION: '4120', LATE_FEE: '4130' }, accountsReceivable: '1201', vatPayable: '2130', vatReceivable: '1130', ownersPayable: '2121', depositsHeld: '2122' } },
     appearance: { theme: 'light', primaryColor: '#1e3a8a' },
     backup: { autoBackup: { isEnabled: true, passphraseIsSet: false, lastBackupTime: null, lastBackupStatus: null, operationCounter: 0, operationsThreshold: 25 } },
     security: { sessionTimeout: 0 },
-    integrations: { geminiApiKey: '', googleDriveSync: { isEnabled: false } },
+    integrations: { geminiApiKey: DEFAULT_GEMINI_API_KEY, googleDriveSync: { isEnabled: false } },
     documentTemplates: {
         contractClauses: [
             'يعتبر التمهيد السابق جزءًا لا يتجزأ من هذا العقد.',
@@ -56,9 +64,39 @@ const DEFAULT_SETTINGS: Settings = {
 const DEFAULT_SERIALS: Serials = { receipt: 1000, expense: 1000, maintenance: 1000, invoice: 1000, lead: 1000, ownerSettlement: 1000, journalEntry: 1000, mission: 1000, contract: 1000 };
 
 const FINANCIAL_TABLES: (keyof Database)[] = ['receipts', 'expenses', 'invoices', 'ownerSettlements', 'maintenanceRecords', 'depositTxs', 'journalEntries', 'receiptAllocations'];
+const STRICT_FINANCIAL_WRITE_TABLES: (keyof Database)[] = ['receipts', 'expenses', 'invoices', 'ownerSettlements', 'depositTxs', 'journalEntries', 'receiptAllocations'];
+const TABLES_WITHOUT_UPDATED_AT = new Set<keyof Database>([
+  'outgoingNotifications',
+  'appNotifications',
+  'notificationTemplates',
+  'snapshots',
+  'auditLog',
+]);
+const ROUND_SCALE = 3;
 
 const initialPerformanceMetrics: PerformanceMetrics = {
     addReceipt: [], addExpense: [], voidReceipt: [], voidExpense: [], generateInvoices: [], addManualJournalVoucher: [], gateChecks: []
+};
+
+const toNumber = (value: unknown): number => {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : 0;
+};
+
+const round3 = (value: number): number => Number(value.toFixed(ROUND_SCALE));
+
+const withRetry = async <T,>(fn: () => Promise<T>, retries = 2): Promise<T> => {
+  let lastError: unknown = null;
+  for (let attempt = 0; attempt <= retries; attempt += 1) {
+    try {
+      return await fn();
+    } catch (error) {
+      lastError = error;
+      if (attempt === retries) break;
+      await new Promise(resolve => setTimeout(resolve, 250 * (attempt + 1)));
+    }
+  }
+  throw lastError;
 };
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -76,7 +114,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [governance, setGovernance] = useState<Governance | null>(null);
   const [isDataStale, setIsDataStale] = useState(true);
   const [performanceMetrics, setPerformanceMetrics] = useState<PerformanceMetrics>(initialPerformanceMetrics);
-  const refreshRef = useRef<() => Promise<void>>();
+  const refreshRef = useRef<(() => Promise<void>) | undefined>(undefined);
+  const reconcileRef = useRef(false);
 
   const isReadOnly = useMemo(() => governance?.readOnly || false, [governance]);
 
@@ -103,19 +142,29 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     });
   }, []);
 
+  const deriveInvoiceStatus = useCallback((invoice: Invoice) => {
+    const total = round3(toNumber(invoice.amount) + toNumber(invoice.taxAmount));
+    const paid = round3(toNumber(invoice.paidAmount));
+    if (paid >= total - 0.001) return 'PAID' as Invoice['status'];
+    if (new Date(invoice.dueDate).getTime() < Date.now()) return 'OVERDUE' as Invoice['status'];
+    if (paid > 0.001) return 'PARTIALLY_PAID' as Invoice['status'];
+    return 'UNPAID' as Invoice['status'];
+  }, []);
+
   const refreshData = useCallback(async () => {
     try {
-      const [allData, settingsData, govData] = await Promise.all([
+      const [allData, settingsData, govData] = await withRetry(() => Promise.all([
         supabaseData.getAllData(),
         supabaseData.getSettings(),
         supabaseData.getGovernance(),
-      ]);
+      ]), 1);
       setDb(allData);
       setSettings(settingsData || DEFAULT_SETTINGS);
       setGovernance(govData || { readOnly: false, lockedPeriods: [] });
       setIsDataStale(false);
     } catch (err) {
-      console.error('[AppContext] refreshData error:', err);
+      logger.error('[AppContext] refreshData error', err);
+      toast.error('تعذر تحديث البيانات. تم تفعيل إعادة المحاولة التلقائية.');
     }
   }, []);
 
@@ -128,8 +177,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const canAccess = useCallback((action: string) => {
     if (!currentUser) return false;
-    if (currentUser.role === 'ADMIN') return true;
-    return action === 'VIEW_FINANCIALS';
+    const capabilityMap: Record<'ADMIN' | 'USER', Set<string>> = {
+      ADMIN: new Set([
+        'VIEW_DASHBOARD', 'VIEW_FINANCIALS', 'MANAGE_SETTINGS', 'MANAGE_USERS', 'VIEW_AUDIT_LOG', 'USE_SMART_ASSISTANT',
+        'MANAGE_PROPERTIES', 'MANAGE_TENANTS', 'MANAGE_OWNERS', 'MANAGE_CONTRACTS', 'MANAGE_MAINTENANCE', 'VIEW_REPORTS',
+      ]),
+      USER: new Set([
+        'VIEW_DASHBOARD', 'VIEW_FINANCIALS', 'USE_SMART_ASSISTANT',
+        'MANAGE_PROPERTIES', 'MANAGE_TENANTS', 'MANAGE_OWNERS', 'MANAGE_CONTRACTS', 'MANAGE_MAINTENANCE', 'VIEW_REPORTS',
+      ]),
+    };
+    return capabilityMap[currentUser.role]?.has(action) || false;
   }, [currentUser]);
 
   useEffect(() => {
@@ -178,7 +236,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       await supabaseData.seedDefaults(
         DEFAULT_SETTINGS,
         DEFAULT_ACCOUNTS.map(acc => ({ ...acc, id: acc.no, createdAt: Date.now() })),
-        DEFAULT_TEMPLATES,
+        DEFAULT_TEMPLATES as unknown as Record<string, unknown>[],
         DEFAULT_SERIALS,
       );
       await refreshData();
@@ -230,13 +288,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const addUser: AppContextType['auth']['addUser'] = useCallback(async (user, pass) => {
     const email = (user as User).email || `${user.username}@rentrix.local`;
-    const { data, error } = await supabase.auth.signUp({ email, password: pass });
-    if (error || !data.user) return { ok: false, msg: error?.message || 'فشل إنشاء المستخدم' };
-    const profile = { id: data.user.id, username: user.username, role: user.role, must_change_password: true, created_at: Date.now() };
-    await supabase.from('profiles').insert(profile);
-    await audit('CREATE', 'users', data.user.id, `Created user ${user.username}`);
+    const result = await adminCreateUser({ email, password: pass, username: user.username, role: user.role });
+    await audit('CREATE', 'users', result.id, `Created user ${user.username}`);
+    await refreshData();
     return { ok: true, msg: 'تم إنشاء المستخدم. سيتلقى المستخدم رسالة تأكيد بالبريد الإلكتروني.' };
-  }, [audit]);
+  }, [audit, refreshData]);
 
   const updateUser: AppContextType['auth']['updateUser'] = useCallback(async (id, updates) => {
     if (updates.username) await supabase.from('profiles').update({ username: updates.username }).eq('id', id);
@@ -245,24 +301,37 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   }, [audit]);
 
   const forcePasswordReset = useCallback(async (userId: string) => {
-    if (window.confirm('هل أنت متأكد من رغبتك في فرض إعادة تعيين كلمة المرور لهذا المستخدم؟')) {
-      await supabase.from('profiles').update({ must_change_password: true }).eq('id', userId);
-      await audit('FORCE_RESET_PASSWORD', 'users', userId);
-      if (currentUser?.id === userId) {
-        await supabase.auth.signOut();
-      }
-      toast.success('تم فرض إعادة تعيين كلمة المرور. سيتطلب تغيير كلمة المرور عند الدخول التالي.');
+    const confirmed = await confirmDialog({
+      title: 'تأكيد تصفير كلمة المرور',
+      message: 'هل أنت متأكد من رغبتك في فرض إعادة تعيين كلمة المرور لهذا المستخدم؟',
+      confirmLabel: 'تأكيد التصفير',
+      tone: 'danger',
+    });
+    if (!confirmed) return;
+
+    await supabase.from('profiles').update({ must_change_password: true }).eq('id', userId);
+    await audit('FORCE_RESET_PASSWORD', 'users', userId);
+    if (currentUser?.id === userId) {
+      await supabase.auth.signOut();
     }
+    toast.success('تم فرض إعادة تعيين كلمة المرور. سيتطلب تغيير كلمة المرور عند الدخول التالي.');
   }, [audit, currentUser]);
 
   const disableUser = useCallback(async (userId: string) => {
     if (currentUser?.id === userId) { toast.error('لا يمكنك تعطيل حسابك الخاص.'); return; }
-    if (window.confirm('هل أنت متأكد من تعطيل هذا المستخدم؟ سيتم حظر وصوله عند انتهاء الجلسة الحالية أو تحديثها.')) {
-      await supabase.from('profiles').update({ is_disabled: true }).eq('id', userId);
-      await audit('DISABLE_USER', 'users', userId);
-      await refreshData();
-      toast.success('تم تعطيل المستخدم. سيُحظر عند انتهاء جلسته أو تحديث التوكن.');
-    }
+
+    const confirmed = await confirmDialog({
+      title: 'تأكيد تعطيل المستخدم',
+      message: 'هل أنت متأكد من تعطيل هذا المستخدم؟ سيتم حظر وصوله عند انتهاء الجلسة الحالية أو تحديثها.',
+      confirmLabel: 'تعطيل المستخدم',
+      tone: 'danger',
+    });
+    if (!confirmed) return;
+
+    await supabase.from('profiles').update({ is_disabled: true }).eq('id', userId);
+    await audit('DISABLE_USER', 'users', userId);
+    await refreshData();
+    toast.success('تم تعطيل المستخدم. سيُحظر عند انتهاء جلسته أو تحديث التوكن.');
   }, [currentUser, audit, refreshData]);
 
   const enableUser = useCallback(async (userId: string) => {
@@ -272,21 +341,126 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     toast.success('تم تفعيل المستخدم بنجاح.');
   }, [audit, refreshData]);
 
-  const postJournalEntrySupabase = useCallback(async (params: { dr: string; cr: string; amount: number; ref: string; date?: string }) => {
+  const postJournalEntrySupabase = useCallback(async (params: { dr: string; cr: string; amount: number; ref: string; date?: string; entityType?: 'CONTRACT' | 'TENANT'; entityId?: string }) => {
+    // Validate entityType if provided
+    if (params.entityType && !['CONTRACT', 'TENANT'].includes(params.entityType)) {
+      throw new Error(`Invalid entityType: ${params.entityType}. Must be 'CONTRACT' or 'TENANT'`);
+    }
+    
     const now = Date.now();
     const date = params.date || new Date().toISOString().slice(0, 10);
     const voucherNo = String(await supabaseData.incrementSerial('journalEntry'));
     const entries = [
-      { id: crypto.randomUUID(), no: voucherNo, date, accountId: params.dr, amount: params.amount, type: 'DEBIT' as const, sourceId: params.ref, createdAt: now },
-      { id: crypto.randomUUID(), no: voucherNo, date, accountId: params.cr, amount: params.amount, type: 'CREDIT' as const, sourceId: params.ref, createdAt: now },
+      { id: crypto.randomUUID(), no: voucherNo, date, accountId: params.dr, amount: params.amount, type: 'DEBIT' as const, sourceId: params.ref, entityType: params.entityType, entityId: params.entityId, createdAt: now },
+      { id: crypto.randomUUID(), no: voucherNo, date, accountId: params.cr, amount: params.amount, type: 'CREDIT' as const, sourceId: params.ref, entityType: params.entityType, entityId: params.entityId, createdAt: now },
     ];
     await supabaseData.bulkInsert('journalEntries', entries);
   }, []);
+
+  const postInvoiceJournalEntries = useCallback(async (invoice: Invoice) => {
+    if (!settings) return;
+    const mappings = settings.accounting.accountMappings;
+    const arAccount = mappings.accountsReceivable;
+    const typeCreditMap: Record<Invoice['type'], string> = {
+      RENT: mappings.revenue.RENT,
+      LATE_FEE: mappings.revenue.LATE_FEE || mappings.revenue.RENT,
+      MAINTENANCE: mappings.revenue.RENT,
+      UTILITY: mappings.revenue.RENT,
+    };
+    const revenueAccount = typeCreditMap[invoice.type] || mappings.revenue.RENT;
+    const netAmount = Math.max(0, toNumber(invoice.amount));
+    const taxAmount = Math.max(0, toNumber(invoice.taxAmount));
+    if (netAmount > 0.001) {
+      await postJournalEntrySupabase({
+        dr: arAccount,
+        cr: revenueAccount,
+        amount: netAmount,
+        ref: invoice.id,
+        date: invoice.dueDate,
+        entityType: 'CONTRACT',
+        entityId: invoice.contractId,
+      });
+    }
+    if (taxAmount > 0.001 && mappings.vatPayable) {
+      await postJournalEntrySupabase({
+        dr: arAccount,
+        cr: mappings.vatPayable,
+        amount: taxAmount,
+        ref: `${invoice.id}-tax`,
+        date: invoice.dueDate,
+        entityType: 'CONTRACT',
+        entityId: invoice.contractId,
+      });
+    }
+  }, [settings, postJournalEntrySupabase]);
+
+  const createRentInvoicesForContract = useCallback(async (contract: Contract) => {
+    if (!settings) return 0;
+    const taxRate = settings.operational?.taxRate ?? 0;
+    const now = Date.now();
+    const startDate = new Date(`${contract.start}T00:00:00`);
+    const endDate = new Date(`${contract.end}T23:59:59`);
+    const lastRelevant = contract.status === 'ACTIVE'
+      ? new Date(Math.min(now, endDate.getTime()))
+      : endDate;
+    if (lastRelevant.getTime() < startDate.getTime()) return 0;
+
+    const existing = await supabaseData.fetchWhere<Invoice>('invoices', 'contractId', contract.id);
+    const existingRentYm = new Set(
+      existing
+        .filter(inv => inv.type === 'RENT')
+        .map(inv => inv.dueDate.slice(0, 7))
+    );
+
+    let createdCount = 0;
+    let cursor = new Date(startDate.getFullYear(), startDate.getMonth(), 1);
+    const endCursor = new Date(lastRelevant.getFullYear(), lastRelevant.getMonth(), 1);
+
+    while (cursor.getTime() <= endCursor.getTime()) {
+      const ym = `${cursor.getFullYear()}-${String(cursor.getMonth() + 1).padStart(2, '0')}`;
+      if (!existingRentYm.has(ym)) {
+        const daysInMonth = new Date(cursor.getFullYear(), cursor.getMonth() + 1, 0).getDate();
+        const safeDay = Math.min(Math.max(contract.dueDay || 1, 1), daysInMonth);
+        let dueDate = `${ym}-${String(safeDay).padStart(2, '0')}`;
+        if (ym === contract.start.slice(0, 7) && dueDate < contract.start) dueDate = contract.start;
+        if (dueDate <= contract.end) {
+          const taxAmount = round3((toNumber(contract.rent) * taxRate) / 100);
+          const invoiceStatus = new Date(`${dueDate}T23:59:59`).getTime() < now ? 'OVERDUE' : 'UNPAID';
+          const no = String(await supabaseData.incrementSerial('invoice'));
+          const invoice: Invoice = {
+            id: crypto.randomUUID(),
+            no,
+            contractId: contract.id,
+            dueDate,
+            amount: toNumber(contract.rent),
+            taxAmount: taxAmount > 0.001 ? taxAmount : undefined,
+            paidAmount: 0,
+            status: invoiceStatus,
+            type: 'RENT',
+            notes: `فاتورة إيجار شهر ${ym}`,
+            createdAt: Date.now(),
+          };
+          const inserted = await supabaseData.insert<Invoice>('invoices', invoice);
+          if (!inserted.error && inserted.data) {
+            await postInvoiceJournalEntries(invoice);
+            createdCount++;
+          }
+        }
+      }
+      cursor = new Date(cursor.getFullYear(), cursor.getMonth() + 1, 1);
+    }
+
+    return createdCount;
+  }, [settings, postInvoiceJournalEntries]);
 
   const add: AppContextType['dataService']['add'] = useCallback(async (table, entry) => {
     if (isReadOnly || !settings) { toast.error('لا يمكن إضافة سجلات في وضع القراءة فقط'); return null; }
     try {
       if (FINANCIAL_TABLES.includes(table as keyof Database)) setIsDataStale(true);
+      if (table === 'receipts') {
+        toast.error('إضافة سند القبض يجب أن تتم عبر خدمة التخصيصات.');
+        return null;
+      }
       const id = crypto.randomUUID();
       const now = Date.now();
       const serialKeyMap: Partial<Record<keyof Database, string>> = {
@@ -301,6 +475,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         const newNo = await supabaseData.incrementSerial(serialKey);
         mutableEntry['no'] = String(newNo);
       }
+      if (table === 'contracts') {
+        const newNo = await supabaseData.incrementSerial('contract');
+        mutableEntry['no'] = String(newNo);
+      }
 
       const result = await supabaseData.insert(table as string, mutableEntry);
       if (result.error) { toast.error(`فشل في إضافة السجل: ${result.error}`); return null; }
@@ -309,26 +487,29 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       await audit('CREATE', String(table), id);
 
       const mappings = settings.accounting?.accountMappings;
-      if (table === 'receipts') {
-        const r = mutableEntry as unknown as Receipt;
-        await postJournalEntrySupabase({ dr: mappings.paymentMethods[r.channel], cr: mappings.accountsReceivable, amount: r.amount, ref: r.id });
+      if (table === 'invoices') {
+        const invoice = mutableEntry as unknown as Invoice;
+        await postInvoiceJournalEntries(invoice);
+      } else if (table === 'contracts') {
+        await createRentInvoicesForContract(mutableEntry as unknown as Contract);
+        await syncUnitStatus((mutableEntry as unknown as Contract).unitId);
       } else if (table === 'expenses') {
         const e = mutableEntry as unknown as Expense;
         const cashAccount = mappings.paymentMethods.CASH;
         if (e.chargedTo === 'OWNER') {
           const ownersPayableAccount = mappings.ownersPayable || '2121';
-          await postJournalEntrySupabase({ dr: ownersPayableAccount, cr: cashAccount, amount: e.amount, ref: e.id });
+          await postJournalEntrySupabase({ dr: ownersPayableAccount, cr: cashAccount, amount: e.amount, ref: e.id, entityType: 'CONTRACT', entityId: e.contractId || undefined });
         } else {
           const expenseAccount = mappings.expenseCategories[e.category] || mappings.expenseCategories.default;
           const taxAmount = e.taxAmount ?? 0;
           const netAmount = e.amount - taxAmount;
           if (taxAmount > 0.001 && mappings.vatReceivable) {
             if (netAmount > 0.001) {
-              await postJournalEntrySupabase({ dr: expenseAccount, cr: cashAccount, amount: netAmount, ref: e.id });
+              await postJournalEntrySupabase({ dr: expenseAccount, cr: cashAccount, amount: netAmount, ref: e.id, entityType: 'CONTRACT', entityId: e.contractId || undefined });
             }
-            await postJournalEntrySupabase({ dr: mappings.vatReceivable, cr: cashAccount, amount: taxAmount, ref: e.id });
+            await postJournalEntrySupabase({ dr: mappings.vatReceivable, cr: cashAccount, amount: taxAmount, ref: `${e.id}-tax`, entityType: 'CONTRACT', entityId: e.contractId || undefined });
           } else {
-            await postJournalEntrySupabase({ dr: expenseAccount, cr: cashAccount, amount: e.amount, ref: e.id });
+            await postJournalEntrySupabase({ dr: expenseAccount, cr: cashAccount, amount: e.amount, ref: e.id, entityType: 'CONTRACT', entityId: e.contractId || undefined });
           }
         }
       } else if (table === 'ownerSettlements') {
@@ -336,8 +517,21 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         const cashAccount = mappings.paymentMethods[s.method === 'CASH' ? 'CASH' : 'BANK'];
         const ownersPayableAccount = mappings.ownersPayable || '2121';
         await postJournalEntrySupabase({ dr: ownersPayableAccount, cr: cashAccount, amount: s.amount, ref: s.id });
+      } else if (table === 'depositTxs') {
+        const d = mutableEntry as unknown as DepositTx;
+        const cashAccount = mappings.paymentMethods.CASH;
+        const liabilityAccount = mappings.depositsHeld || '2122';
+        const revenueAccount = mappings.revenue.LATE_FEE || mappings.revenue.RENT;
+        if (d.type === 'DEPOSIT_IN') {
+          await postJournalEntrySupabase({ dr: cashAccount, cr: liabilityAccount, amount: d.amount, ref: d.id, entityType: 'CONTRACT', entityId: d.contractId });
+        } else if (d.type === 'DEPOSIT_RETURN') {
+          await postJournalEntrySupabase({ dr: liabilityAccount, cr: cashAccount, amount: d.amount, ref: d.id, entityType: 'CONTRACT', entityId: d.contractId });
+        } else if (d.type === 'DEPOSIT_DEDUCT') {
+          await postJournalEntrySupabase({ dr: liabilityAccount, cr: revenueAccount, amount: d.amount, ref: d.id, entityType: 'CONTRACT', entityId: d.contractId });
+        }
       }
 
+      await syncSnapshots();
       await refreshData();
       toast.success('تمت الإضافة بنجاح!');
       return mutableEntry as unknown as Database[typeof table][number];
@@ -346,29 +540,41 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       toast.error(`خطأ أثناء الإضافة: ${err?.message || 'خطأ غير معروف'}`);
       return null;
     }
-  }, [isReadOnly, settings, audit, postJournalEntrySupabase, refreshData]);
+  }, [isReadOnly, settings, audit, postJournalEntrySupabase, postInvoiceJournalEntries, createRentInvoicesForContract, refreshData]);
 
   const addReceiptWithAllocations: AppContextType['financeService']['addReceiptWithAllocations'] = useCallback(async (receiptData, allocations) => {
     if (isReadOnly || !settings) return;
     const startTime = performance.now();
     try {
+      if (!allocations.length) {
+        toast.error('يجب إضافة تخصيص واحد على الأقل.');
+        return;
+      }
+      const allocationTotal = round3(allocations.reduce((sum, alloc) => sum + toNumber(alloc.amount), 0));
+      const receiptTotal = round3(toNumber(receiptData.amount));
+      if (Math.abs(allocationTotal - receiptTotal) > 0.001) {
+        toast.error('مجموع التخصيصات يجب أن يساوي مبلغ السند.');
+        return;
+      }
       const newNo = await supabaseData.incrementSerial('receipt');
       const newReceipt: Receipt = { ...receiptData, id: crypto.randomUUID(), createdAt: Date.now(), no: String(newNo), status: 'POSTED' as const };
-
-      await supabaseData.insert('receipts', newReceipt);
-
       const newAllocations = allocations.map(a => ({ id: crypto.randomUUID(), receiptId: newReceipt.id, ...a, createdAt: Date.now() }));
-      await supabaseData.bulkInsert('receiptAllocations', newAllocations);
 
       let totalVatCollected = 0;
+      const invoiceUpdates: Array<{ id: string; paid_amount: number; status: string }> = [];
       for (const alloc of allocations) {
         const invoices = await supabaseData.fetchWhere<Invoice>('invoices', 'id', alloc.invoiceId);
         const invoice = invoices[0];
         if (!invoice) continue;
-        const newPaid = invoice.paidAmount + alloc.amount;
-        const invoiceTotal = invoice.amount + (invoice.taxAmount || 0);
+        const invoiceTotal = round3(invoice.amount + (invoice.taxAmount || 0));
+        const invoiceRemaining = round3(invoiceTotal - invoice.paidAmount);
+        if (alloc.amount - invoiceRemaining > 0.001) {
+          toast.error(`قيمة التخصيص تتجاوز المتبقي في الفاتورة ${invoice.no}.`);
+          return;
+        }
+        const newPaid = round3(invoice.paidAmount + alloc.amount);
         const newStatus = newPaid >= invoiceTotal - 0.001 ? 'PAID' : 'PARTIALLY_PAID';
-        await supabaseData.update('invoices', invoice.id, { paidAmount: newPaid, status: newStatus });
+        invoiceUpdates.push({ id: invoice.id, paid_amount: newPaid, status: newStatus });
         if (invoice.taxAmount && invoiceTotal > 0) {
           totalVatCollected += (alloc.amount / invoiceTotal) * invoice.taxAmount;
         }
@@ -377,26 +583,105 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       const mappings = settings.accounting?.accountMappings;
       const cashAccount = mappings.paymentMethods[newReceipt.channel];
       const arAccount = mappings.accountsReceivable;
-      const baseAmount = newReceipt.amount - totalVatCollected;
-      if (totalVatCollected > 0.001 && mappings.vatPayable) {
-        await postJournalEntrySupabase({ dr: cashAccount, cr: arAccount, amount: baseAmount, ref: newReceipt.id });
-        await postJournalEntrySupabase({ dr: cashAccount, cr: mappings.vatPayable, amount: totalVatCollected, ref: `${newReceipt.id}-vat` });
-      } else {
-        await postJournalEntrySupabase({ dr: cashAccount, cr: arAccount, amount: newReceipt.amount, ref: newReceipt.id });
+      const revenueAccount = mappings.revenue.RENT;
+      const ownersPayableAccount = mappings.ownersPayable;
+      const officeCommissionAccount = mappings.revenue.OFFICE_COMMISSION;
+
+      const journalEntries: JournalEntry[] = [];
+      const appendVoucher = async (params: { dr: string; cr: string; amount: number; ref: string; entityType?: 'CONTRACT' | 'TENANT'; entityId?: string }) => {
+        const voucherNo = String(await supabaseData.incrementSerial('journalEntry'));
+        const now = Date.now();
+        journalEntries.push(
+          { id: crypto.randomUUID(), no: voucherNo, date: newReceipt.dateTime.slice(0, 10), accountId: params.dr, amount: round3(params.amount), type: 'DEBIT', sourceId: params.ref, entityType: params.entityType, entityId: params.entityId, createdAt: now },
+          { id: crypto.randomUUID(), no: voucherNo, date: newReceipt.dateTime.slice(0, 10), accountId: params.cr, amount: round3(params.amount), type: 'CREDIT', sourceId: params.ref, entityType: params.entityType, entityId: params.entityId, createdAt: now },
+        );
+      };
+
+      await appendVoucher({
+        dr: cashAccount,
+        cr: arAccount,
+        amount: newReceipt.amount,
+        ref: newReceipt.id,
+        entityType: 'CONTRACT',
+        entityId: newReceipt.contractId
+      });
+
+      // 2. Reclassification: Move Rent from Revenue to Owner Payable & Office Commission
+      // This happens only for RENT type receipts (which we assume all contract receipts are for now)
+      const contract = db?.contracts?.find(c => c.id === newReceipt.contractId);
+      if (contract && revenueAccount && ownersPayableAccount && officeCommissionAccount) {
+          const unit = db?.units?.find(u => u.id === contract.unitId);
+          const property = unit ? db?.properties?.find(p => p.id === unit.propertyId) : null;
+          const owner = property ? db?.owners?.find(o => o.id === property.ownerId) : null;
+          
+          if (owner) {
+              const netRent = round3(newReceipt.amount - totalVatCollected);
+              let commission = 0;
+              if (owner.commissionType === 'RATE') {
+                  commission = round3(netRent * (owner.commissionValue / 100));
+              } else if (owner.commissionType === 'FIXED_MONTHLY') {
+                  commission = round3(Math.max(0, owner.commissionValue || 0));
+              }
+              commission = Math.min(commission, netRent);
+              
+              const netToOwner = round3(netRent - commission);
+              
+              if (netToOwner > 0.001) {
+                  await appendVoucher({
+                    dr: revenueAccount, 
+                    cr: ownersPayableAccount, 
+                    amount: netToOwner, 
+                    ref: `${newReceipt.id}-own`, 
+                    entityType: 'CONTRACT', 
+                    entityId: newReceipt.contractId 
+                  });
+              }
+              
+              if (commission > 0.001) {
+                  await appendVoucher({
+                    dr: revenueAccount, 
+                    cr: officeCommissionAccount, 
+                    amount: commission, 
+                    ref: `${newReceipt.id}-com`, 
+                    entityType: 'CONTRACT', 
+                    entityId: newReceipt.contractId 
+                  });
+              }
+          }
       }
-      await audit('CREATE', 'receipts', newReceipt.id, `Created receipt ${newReceipt.no} with ${allocations.length} allocations. VAT collected: ${totalVatCollected.toFixed(2)}`);
+
+      const breakdown = await postReceiptAtomic({
+        receipt: {
+          id: newReceipt.id, no: newReceipt.no, contract_id: newReceipt.contractId, date_time: newReceipt.dateTime,
+          channel: newReceipt.channel, amount: round3(newReceipt.amount), ref: newReceipt.ref, notes: newReceipt.notes,
+          status: newReceipt.status, created_at: newReceipt.createdAt, check_number: newReceipt.checkNumber || '',
+          check_bank: newReceipt.checkBank || '', check_date: newReceipt.checkDate || '', check_status: newReceipt.checkStatus || '',
+        },
+        allocations: newAllocations.map(a => ({ id: a.id, receipt_id: a.receiptId, invoice_id: a.invoiceId, amount: round3(a.amount), created_at: a.createdAt })),
+        invoiceUpdates,
+        journalEntries: journalEntries.map(j => ({
+          id: j.id, no: j.no, date: j.date, account_id: j.accountId, amount: round3(j.amount), type: j.type, source_id: j.sourceId,
+          entity_type: j.entityType || '', entity_id: j.entityId || '', created_at: j.createdAt
+        })),
+      });
+      if (!breakdown.ok) {
+        toast.error(`فشل الترحيل الذري: ${String(breakdown.details?.message || 'خطأ غير معروف')}`);
+        return;
+      }
+
+      await audit('CREATE', 'receipts', newReceipt.id, `Created receipt ${newReceipt.no} with ${allocations.length} allocations. VAT: ${totalVatCollected.toFixed(3)}, Net to Owner: ${(newReceipt.amount - totalVatCollected).toFixed(3)}`);
 
       const endTime = performance.now();
       logOperationTime('addReceipt', endTime - startTime);
       setIsDataStale(true);
       await refreshData();
-      toast.success('تم تسجيل السند وتخصيص الدفعات بنجاح!');
+      toast.success(`تم تسجيل السند بنجاح (سند + تخصيص + قيود)`);
     } catch (err: any) {
       console.error('addReceiptWithAllocations failed:', err);
       toast.error('حدث خطأ أثناء تسجيل السند: ' + (err?.message || 'خطأ غير معروف'));
       await refreshData();
     }
-  }, [isReadOnly, settings, audit, logOperationTime, postJournalEntrySupabase, refreshData]);
+  }, [isReadOnly, settings, audit, logOperationTime, refreshData, db]);
 
   const addManualJournalVoucher: AppContextType['financeService']['addManualJournalVoucher'] = useCallback(async (voucher) => {
     if (isReadOnly) { toast.error("النظام في وضع القراءة فقط."); return; }
@@ -421,66 +706,114 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const update: AppContextType['dataService']['update'] = useCallback(async (table, id, updates) => {
     try {
-      const result = await supabaseData.update(table as string, id, { ...updates, updatedAt: Date.now() });
+      if (STRICT_FINANCIAL_WRITE_TABLES.includes(table as keyof Database)) {
+        toast.error('تعديل مباشر غير مسموح. خطوات الاسترجاع: 1) إلغاء الحركة الحالية 2) مراجعة القيود العكسية 3) إعادة التسجيل بالقيم الصحيحة.');
+        return;
+      }
+      const normalizedUpdates = TABLES_WITHOUT_UPDATED_AT.has(table as keyof Database)
+        ? { ...updates }
+        : { ...updates, updatedAt: Date.now() };
+      const result = await supabaseData.update(table as string, id, normalizedUpdates);
       if (!result.ok) { toast.error(`فشل التحديث: ${result.error}`); return; }
+      if (table === 'contracts') {
+        const contractUnitId = db?.contracts?.find(c => c.id === id)?.unitId;
+        if (contractUnitId) await syncUnitStatus(contractUnitId);
+      }
+      if (table === 'maintenanceRecords') {
+        const maintenanceUnitId = db?.maintenanceRecords?.find(m => m.id === id)?.unitId;
+        if (maintenanceUnitId) await syncUnitStatus(maintenanceUnitId);
+      }
       await audit('UPDATE', String(table), id);
       if (FINANCIAL_TABLES.includes(table as keyof Database)) setIsDataStale(true);
       await refreshData();
       toast.success('تم التحديث بنجاح!');
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'خطأ غير معروف';
       console.error('[AppContext] update error:', err);
-      toast.error(`خطأ أثناء التحديث: ${err?.message || 'خطأ غير معروف'}`);
+      toast.error(`خطأ أثناء التحديث: ${message}`);
     }
   }, [audit, refreshData]);
 
   const remove: AppContextType['dataService']['remove'] = useCallback(async (table, id) => {
-    if (window.confirm('هل أنت متأكد من الحذف؟ لا يمكن التراجع عن هذا الإجراء.')) {
-      try {
-        const ok = await supabaseData.remove(table as string, id);
-        if (!ok) throw new Error('Delete failed');
-        await audit('DELETE', String(table), id);
-        if (FINANCIAL_TABLES.includes(table as keyof Database)) setIsDataStale(true);
-        await refreshData();
-        toast.success('تم الحذف بنجاح');
-      } catch (error: unknown) {
-        console.error("Delete error:", error);
-        toast.error('حدث خطأ أثناء محاولة الحذف.');
+    const confirmed = await confirmDialog({
+      title: 'تأكيد الحذف',
+      message: 'هل أنت متأكد من الحذف؟ لا يمكن التراجع عن هذا الإجراء.',
+      confirmLabel: 'حذف نهائي',
+      tone: 'danger',
+    });
+    if (!confirmed) return;
+
+    try {
+      const ok = await supabaseData.remove(table as string, id);
+      if (!ok) throw new Error('Delete failed');
+      if (table === 'contracts') {
+        const relatedUnit = db?.contracts?.find(c => c.id === id)?.unitId;
+        if (relatedUnit) await syncUnitStatus(relatedUnit);
       }
+      await audit('DELETE', String(table), id);
+      if (FINANCIAL_TABLES.includes(table as keyof Database)) setIsDataStale(true);
+      await refreshData();
+      toast.success('تم الحذف بنجاح');
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'حدث خطأ أثناء محاولة الحذف.';
+      console.error('Delete error:', error);
+      toast.error(message);
     }
-  }, [audit, refreshData]);
+  }, [audit, refreshData, db?.contracts]);
 
   const reverseAllJournalEntries = useCallback(async (sourceId: string) => {
     const entries = await supabaseData.fetchWhere<JournalEntry>('journalEntries', 'sourceId', sourceId);
-    const debits = entries.filter(e => e.type === 'DEBIT');
-    const credits = entries.filter(e => e.type === 'CREDIT');
-    const pairs: { dr: string; cr: string; amount: number }[] = [];
-    for (let i = 0; i < Math.min(debits.length, credits.length); i++) {
-      pairs.push({ dr: credits[i].accountId, cr: debits[i].accountId, amount: debits[i].amount });
-    }
-    for (const pair of pairs) {
-      await postJournalEntrySupabase({ ...pair, ref: `${sourceId}-void` });
-    }
-  }, [postJournalEntrySupabase]);
+    if (!entries.length) return;
+    const voucherNo = String(await supabaseData.incrementSerial('journalEntry'));
+    const now = Date.now();
+    const reverseEntries: JournalEntry[] = entries.map((entry) => ({
+      ...entry,
+      id: crypto.randomUUID(),
+      no: voucherNo,
+      type: entry.type === 'DEBIT' ? 'CREDIT' : 'DEBIT',
+      sourceId: `${sourceId}-void`,
+      createdAt: now,
+    }));
+    await supabaseData.bulkInsert('journalEntries', reverseEntries);
+  }, []);
 
   const voidReceipt: AppContextType['financeService']['voidReceipt'] = useCallback(async (id) => {
     const startTime = performance.now();
     try {
-      await supabaseData.update('receipts', id, { status: 'VOID', voidedAt: Date.now() });
       await audit('VOID', 'receipts', id);
-
-      await reverseAllJournalEntries(id);
-      await reverseAllJournalEntries(`${id}-vat`);
-
       const allocations = await supabaseData.fetchWhere<ReceiptAllocation>('receiptAllocations', 'receiptId', id);
+      const invoiceUpdates: Array<{ id: string; paid_amount: number; status: string }> = [];
       for (const alloc of allocations) {
         const invoices = await supabaseData.fetchWhere<Invoice>('invoices', 'id', alloc.invoiceId);
         const invoice = invoices[0];
         if (!invoice) continue;
         const newPaid = Math.max(0, invoice.paidAmount - alloc.amount);
         const newStatus = newPaid <= 0.001 ? (new Date(invoice.dueDate) < new Date() ? 'OVERDUE' : 'UNPAID') : 'PARTIALLY_PAID';
-        await supabaseData.update('invoices', invoice.id, { paidAmount: newPaid, status: newStatus });
+        invoiceUpdates.push({ id: invoice.id, paid_amount: round3(newPaid), status: newStatus });
       }
-      await supabaseData.removeWhere('receiptAllocations', 'receiptId', id);
+      const sourceEntries = [
+        ...(await supabaseData.fetchWhere<JournalEntry>('journalEntries', 'sourceId', id)),
+        ...(await supabaseData.fetchWhere<JournalEntry>('journalEntries', 'sourceId', `${id}-own`)),
+        ...(await supabaseData.fetchWhere<JournalEntry>('journalEntries', 'sourceId', `${id}-com`)),
+        ...(await supabaseData.fetchWhere<JournalEntry>('journalEntries', 'sourceId', `${id}-vat`)),
+      ];
+      const reverseEntries: JournalEntry[] = sourceEntries.map(e => ({
+        ...e,
+        id: crypto.randomUUID(),
+        sourceId: `${e.sourceId}-void`,
+        type: e.type === 'DEBIT' ? 'CREDIT' : 'DEBIT',
+        createdAt: Date.now(),
+      }));
+      const atomic = await voidReceiptAtomic({
+        receiptId: id,
+        voidedAt: Date.now(),
+        invoiceUpdates,
+        reverseEntries: reverseEntries.map(j => ({
+          id: j.id, no: j.no, date: j.date, account_id: j.accountId, amount: round3(j.amount), type: j.type, source_id: j.sourceId,
+          entity_type: j.entityType || '', entity_id: j.entityId || '', created_at: j.createdAt
+        })),
+      });
+      if (!atomic.ok) throw new Error(String(atomic.details?.message || 'atomic void failed'));
 
       const endTime = performance.now();
       logOperationTime('voidReceipt', endTime - startTime);
@@ -492,7 +825,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       toast.error('حدث خطأ أثناء إلغاء السند: ' + (err?.message || 'خطأ غير معروف'));
       await refreshData();
     }
-  }, [audit, reverseAllJournalEntries, logOperationTime, refreshData]);
+  }, [audit, logOperationTime, refreshData]);
 
   const voidExpense: AppContextType['financeService']['voidExpense'] = useCallback(async (id) => {
     const startTime = performance.now();
@@ -517,73 +850,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const generateMonthlyInvoices: AppContextType['financeService']['generateMonthlyInvoices'] = useCallback(async () => {
     if (!settings) return 0;
     const startTime = performance.now();
-    const today = new Date();
-    const currentMonthYm = today.toISOString().slice(0, 7);
-    const monthName = today.toLocaleString('ar-EG', { month: 'long' });
-
     const activeContracts = await supabaseData.fetchWhere<Contract>('contracts', 'status', 'ACTIVE');
-    const allInvoices = await supabaseData.fetchAll<Invoice>('invoices');
-    const currentMonthInvoices = allInvoices.filter(i => i.dueDate.startsWith(currentMonthYm));
-    const allTenants = await supabaseData.fetchAll<Tenant>('tenants');
-    const allUnits = await supabaseData.fetchAll<Unit>('units');
-
     let count = 0;
-    const taxRate = settings.operational?.taxRate ?? 0;
-    const invoiceNotifications: Array<{ tenantName: string; tenantPhone: string; unitName: string; amount: number; dueDate: string }> = [];
-
-    const mappings = settings.accounting?.accountMappings;
     for (const c of activeContracts) {
-      const hasInvoice = currentMonthInvoices.some(i => i.contractId === c.id && i.type === 'RENT');
-      if (!hasInvoice) {
-        const taxAmount = (c.rent * taxRate) / 100;
-        const dueDate = `${currentMonthYm}-${String(c.dueDay).padStart(2, '0')}`;
-        const newInvoice = await add('invoices', {
-          contractId: c.id,
-          dueDate,
-          amount: c.rent, taxAmount: taxAmount > 0 ? taxAmount : undefined,
-          paidAmount: 0, status: 'UNPAID', type: 'RENT',
-          notes: `فاتورة إيجار شهر ${monthName}`,
-        }) as Invoice | null;
-        if (newInvoice && mappings) {
-          const arAccount = mappings.accountsReceivable;
-          const rentRevAccount = mappings.revenue?.RENT;
-          if (arAccount && rentRevAccount) {
-            await postJournalEntrySupabase({ dr: arAccount, cr: rentRevAccount, amount: c.rent, ref: newInvoice.id, date: dueDate });
-          }
-        }
-        count++;
-
-        const tenant = allTenants.find(t => t.id === c.tenantId);
-        const unit = allUnits.find(u => u.id === c.unitId);
-        if (tenant?.phone) {
-          invoiceNotifications.push({
-            tenantName: tenant.name, tenantPhone: tenant.phone,
-            unitName: unit?.name || '', amount: c.rent + (taxAmount > 0 ? taxAmount : 0), dueDate,
-          });
-        }
-      }
-    }
-
-    if (invoiceNotifications.length > 0) {
-      const companyName = settings.general?.company?.name || 'إدارة العقارات';
-      for (const n of invoiceNotifications) {
-        const message = `السلام عليكم ${n.tenantName}،\nنود إبلاغكم بصدور فاتورة إيجار الوحدة (${n.unitName}) لشهر ${monthName} بمبلغ ${n.amount} ر.ع.\nتاريخ الاستحقاق: ${n.dueDate}\nشاكرين تعاونكم.\n${companyName}`;
-        const phone = n.tenantPhone.replace(/\D/g, '');
-        await supabaseData.insert('outgoingNotifications', {
-          id: crypto.randomUUID(),
-          recipientName: n.tenantName,
-          recipientContact: phone,
-          message,
-          status: 'PENDING',
-          createdAt: Date.now(),
-        });
-      }
+      count += await createRentInvoicesForContract(c);
     }
 
     const endTime = performance.now();
     if (count > 0) logOperationTime('generateInvoices', endTime - startTime);
+    if (count > 0) await refreshData();
     return count;
-  }, [add, logOperationTime, settings, postJournalEntrySupabase]);
+  }, [createRentInvoicesForContract, logOperationTime, settings, refreshData]);
 
   const payoutCommission = useCallback(async (commissionId: string) => {
     if (isReadOnly) { toast.error("النظام في وضع القراءة فقط."); return; }
@@ -637,17 +914,277 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       token = crypto.randomUUID();
       await supabaseData.update('owners', ownerId, { portalToken: token });
     }
-    return `${window.location.href.split('#')[0]}#/portal/${ownerId}?auth=${token}`;
+    return `${window.location.href.split('#')[0]}#/owner-view/${ownerId}?auth=${token}`;
   }, []);
+
+  const buildSnapshotState = useCallback((sourceDb: Database) => {
+    const accountBalancesMap = new Map<string, number>();
+    sourceDb.accounts.forEach(acc => accountBalancesMap.set(acc.id, 0));
+    sourceDb.journalEntries.forEach(je => {
+      const signed = je.type === 'DEBIT' ? toNumber(je.amount) : -toNumber(je.amount);
+      accountBalancesMap.set(je.accountId, round3((accountBalancesMap.get(je.accountId) || 0) + signed));
+    });
+    const accountBalances: AccountBalance[] = Array.from(accountBalancesMap.entries()).map(([accountId, balance]) => ({ accountId, balance: round3(balance) }));
+
+    const arAccount = sourceDb.settings.accounting.accountMappings.accountsReceivable;
+    const contractsMap = new Map(sourceDb.contracts.map(c => [c.id, c]));
+    const contractBalancesMap = new Map<string, number>();
+    const tenantBalancesMap = new Map<string, number>();
+
+    sourceDb.journalEntries.forEach(je => {
+      if (je.accountId !== arAccount) return;
+      const signed = je.type === 'DEBIT' ? toNumber(je.amount) : -toNumber(je.amount);
+      if (je.entityType === 'CONTRACT' && je.entityId) {
+        contractBalancesMap.set(je.entityId, round3((contractBalancesMap.get(je.entityId) || 0) + signed));
+        const tenantId = contractsMap.get(je.entityId)?.tenantId;
+        if (tenantId) tenantBalancesMap.set(tenantId, round3((tenantBalancesMap.get(tenantId) || 0) + signed));
+      } else if (je.entityType === 'TENANT' && je.entityId) {
+        tenantBalancesMap.set(je.entityId, round3((tenantBalancesMap.get(je.entityId) || 0) + signed));
+      }
+    });
+
+    const depositBalancesMap = new Map<string, number>();
+    sourceDb.depositTxs.forEach(tx => {
+      const current = depositBalancesMap.get(tx.contractId) || 0;
+      if (tx.type === 'DEPOSIT_IN') {
+        depositBalancesMap.set(tx.contractId, round3(current + toNumber(tx.amount)));
+      } else if (tx.type === 'DEPOSIT_RETURN' || tx.type === 'DEPOSIT_DEDUCT') {
+        depositBalancesMap.set(tx.contractId, round3(current - toNumber(tx.amount)));
+      }
+    });
+
+    const contractBalances: ContractBalance[] = Array.from(contractBalancesMap.entries()).map(([contractId, balance]) => {
+      const contract = contractsMap.get(contractId);
+      return {
+        contractId,
+        tenantId: contract?.tenantId || '',
+        unitId: contract?.unitId || '',
+        balance: round3(balance),
+        depositBalance: round3(Math.max(0, depositBalancesMap.get(contractId) || 0)),
+        lastUpdatedAt: Date.now(),
+      };
+    }).filter(row => row.tenantId && row.unitId);
+
+    const tenantBalances: TenantBalance[] = Array.from(tenantBalancesMap.entries()).map(([tenantId, balance]) => ({
+      tenantId,
+      balance: round3(balance),
+      lastUpdatedAt: Date.now(),
+    }));
+
+    const receiptsMap = new Map(sourceDb.receipts.map(r => [r.id, r]));
+    const expensesMap = new Map(sourceDb.expenses.map(e => [e.id, e]));
+    const settlementsMap = new Map(sourceDb.ownerSettlements.map(s => [s.id, s]));
+    const unitsMap = new Map(sourceDb.units.map(u => [u.id, u]));
+    const propertiesMap = new Map(sourceDb.properties.map(p => [p.id, p]));
+    const ownerBalancesMap = new Map(sourceDb.owners.map(o => [o.id, { ownerId: o.id, collections: 0, expenses: 0, settlements: 0, officeShare: 0, net: 0 }]));
+    const ownersPayableAccount = sourceDb.settings.accounting.accountMappings.ownersPayable;
+    const officeCommissionAccount = sourceDb.settings.accounting.accountMappings.revenue.OFFICE_COMMISSION;
+
+    const resolveOwnerId = (sourceId: string): string | null => {
+      const cleanId = sourceId.split('-')[0];
+      const settlement = settlementsMap.get(cleanId);
+      if (settlement) return settlement.ownerId;
+      const receipt = receiptsMap.get(cleanId);
+      const expense = expensesMap.get(cleanId);
+      const contractId = receipt?.contractId || expense?.contractId;
+      if (contractId) {
+        const contract = contractsMap.get(contractId);
+        if (!contract) return null;
+        const unit = unitsMap.get(contract.unitId);
+        if (!unit) return null;
+        const property = propertiesMap.get(unit.propertyId);
+        return property?.ownerId || null;
+      }
+      if (expense?.ownerId) return expense.ownerId;
+      return null;
+    };
+
+    sourceDb.journalEntries.forEach(je => {
+      const ownerId = resolveOwnerId(je.sourceId);
+      if (!ownerId) return;
+      const ownerBalance = ownerBalancesMap.get(ownerId);
+      if (!ownerBalance) return;
+      
+      const cleanId = je.sourceId.split('-')[0];
+
+      if (je.accountId === ownersPayableAccount) {
+        const signed = je.type === 'CREDIT' ? toNumber(je.amount) : -toNumber(je.amount);
+        ownerBalance.net = round3(ownerBalance.net + signed);
+        
+        if (receiptsMap.has(cleanId)) ownerBalance.collections = round3(ownerBalance.collections + toNumber(je.amount));
+        if (expensesMap.has(cleanId)) ownerBalance.expenses = round3(ownerBalance.expenses + toNumber(je.amount));
+        if (settlementsMap.has(cleanId)) ownerBalance.settlements = round3(ownerBalance.settlements + toNumber(je.amount));
+      }
+      
+      if (je.accountId === officeCommissionAccount) {
+        const signed = je.type === 'CREDIT' ? toNumber(je.amount) : -toNumber(je.amount);
+        ownerBalance.officeShare = round3(ownerBalance.officeShare + signed);
+        // Office commission reduces what the owner gets, but the net above already includes it 
+        // if we credited the owner with (Rent - Commission).
+        // If we credit the owner with Rent and then debit them for Commission, it's different.
+        // In my new logic, I credit the owner with NetRent. So ownerBalance.net already excludes commission.
+      }
+    });
+
+    const ownerBalances: OwnerBalance[] = Array.from(ownerBalancesMap.values()).map(item => ({ ...item, net: round3(item.net) }));
+    const kpiSnapshot: KpiSnapshot = {
+      id: 'main',
+      totalOwnerNetBalance: round3(ownerBalances.reduce((sum, row) => sum + row.net, 0)),
+      totalContractARBalance: round3(contractBalances.reduce((sum, row) => sum + row.balance, 0)),
+      totalTenantARBalance: round3(tenantBalances.reduce((sum, row) => sum + row.balance, 0)),
+    };
+    return { accountBalances, contractBalances, tenantBalances, ownerBalances, kpiSnapshots: [kpiSnapshot] };
+  }, []);
+
+  const runFinancialIntegrityChecks = useCallback((sourceDb: Database) => {
+    const issues: string[] = [];
+    const allocationsByReceipt = new Map<string, number>();
+    sourceDb.receiptAllocations.forEach(alloc => {
+      allocationsByReceipt.set(alloc.receiptId, round3((allocationsByReceipt.get(alloc.receiptId) || 0) + toNumber(alloc.amount)));
+    });
+    sourceDb.receipts.filter(r => r.status === 'POSTED').forEach(receipt => {
+      const allocationTotal = allocationsByReceipt.get(receipt.id) || 0;
+      if (Math.abs(allocationTotal - toNumber(receipt.amount)) > 0.01) {
+        issues.push(`Mismatch receipt allocations ${receipt.id}`);
+      }
+    });
+
+    const receiptMap = new Map(sourceDb.receipts.map(r => [r.id, r]));
+    const paidByInvoice = new Map<string, number>();
+    sourceDb.receiptAllocations.forEach(alloc => {
+      const receipt = receiptMap.get(alloc.receiptId);
+      if (!receipt || receipt.status !== 'POSTED') return;
+      paidByInvoice.set(alloc.invoiceId, round3((paidByInvoice.get(alloc.invoiceId) || 0) + toNumber(alloc.amount)));
+    });
+    sourceDb.invoices.forEach(invoice => {
+      if (Math.abs((paidByInvoice.get(invoice.id) || 0) - toNumber(invoice.paidAmount)) > 0.01) {
+        issues.push(`Mismatch invoice paidAmount ${invoice.id}`);
+      }
+    });
+
+    const journalByVoucher = new Map<string, { debit: number; credit: number }>();
+    sourceDb.journalEntries.forEach(entry => {
+      const voucher = entry.no || entry.sourceId || 'NO_NO';
+      const state = journalByVoucher.get(voucher) || { debit: 0, credit: 0 };
+      if (entry.type === 'DEBIT') state.debit += toNumber(entry.amount);
+      if (entry.type === 'CREDIT') state.credit += toNumber(entry.amount);
+      journalByVoucher.set(voucher, state);
+      if (!entry.sourceId) issues.push(`Missing sourceId on journal entry ${entry.id}`);
+    });
+    journalByVoucher.forEach((state, voucherNo) => {
+      if (Math.abs(state.debit - state.credit) > 0.01) issues.push(`Unbalanced voucher ${voucherNo}`);
+    });
+    return issues;
+  }, []);
+
+  const syncFinancialConsistency = useCallback(async (sourceDb: Database) => {
+    if (reconcileRef.current) return sourceDb;
+    reconcileRef.current = true;
+    try {
+      const now = Date.now();
+      const nextDb: Database = { ...sourceDb, invoices: [...sourceDb.invoices], appNotifications: [...sourceDb.appNotifications] };
+      let changed = false;
+      for (let i = 0; i < nextDb.invoices.length; i++) {
+        const invoice = nextDb.invoices[i];
+        const nextStatus = deriveInvoiceStatus(invoice);
+        if (invoice.status !== nextStatus) {
+          await supabaseData.update('invoices', invoice.id, { status: nextStatus });
+          nextDb.invoices[i] = { ...invoice, status: nextStatus };
+          changed = true;
+        }
+      }
+
+      const existingOverdueNotifications = nextDb.appNotifications.filter(n => n.type === 'OVERDUE_BALANCE');
+      const overdueInvoices = nextDb.invoices.filter(inv => inv.status === 'OVERDUE');
+      const overdueIds = new Set(overdueInvoices.map(inv => inv.id));
+      const notificationByInvoiceId = new Map<string, AppNotification>();
+      existingOverdueNotifications.forEach(n => {
+        const invoiceId = n.link.split('invoiceId=')[1];
+        if (invoiceId) notificationByInvoiceId.set(invoiceId, n);
+      });
+
+      for (const invoice of overdueInvoices) {
+        if (!notificationByInvoiceId.has(invoice.id)) {
+          const notification: AppNotification = {
+            id: crypto.randomUUID(),
+            createdAt: now,
+            isRead: false,
+            role: 'ADMIN',
+            type: 'OVERDUE_BALANCE',
+            title: 'فاتورة إيجار متأخرة',
+            message: `الفاتورة رقم ${invoice.no} متأخرة بمبلغ ${round3(invoice.amount - invoice.paidAmount)}`,
+            link: `/finance/invoices?invoiceId=${invoice.id}`,
+          };
+          await supabaseData.insert('appNotifications', notification);
+          nextDb.appNotifications.push(notification);
+          changed = true;
+        }
+      }
+
+      for (const notif of existingOverdueNotifications) {
+        const invoiceId = notif.link.split('invoiceId=')[1];
+        if (!invoiceId || overdueIds.has(invoiceId)) continue;
+        await supabaseData.remove('appNotifications', notif.id);
+        nextDb.appNotifications = nextDb.appNotifications.filter(n => n.id !== notif.id);
+        changed = true;
+      }
+
+      if (changed) {
+        const refreshedInvoices = await supabaseData.fetchAll<Invoice>('invoices');
+        nextDb.invoices = refreshedInvoices;
+        return nextDb;
+      }
+      return sourceDb;
+    } finally {
+      reconcileRef.current = false;
+    }
+  }, [deriveInvoiceStatus]);
+
+  const generateContractExpiryNotifications = useCallback(async (): Promise<number> => {
+    if (!settings) return 0;
+    const alertDays = settings.operational?.contractAlertDays ?? 30;
+    const now = Date.now();
+    const activeContracts = await supabaseData.fetchWhere<Contract>('contracts', 'status', 'ACTIVE');
+    const existingNotifs = await supabaseData.fetchAll<AppNotification>('appNotifications');
+    let count = 0;
+    for (const c of activeContracts) {
+      const endDate = new Date(c.end).getTime();
+      const daysLeft = Math.ceil((endDate - now) / (1000 * 60 * 60 * 24));
+      if (daysLeft <= 0 || daysLeft > alertDays) continue;
+      const contractLink = `/contracts?contractId=${c.id}`;
+      const alreadyExists = existingNotifs.some(n => n.link === contractLink && n.type === 'CONTRACT_EXPIRING');
+      if (!alreadyExists) {
+        await supabaseData.insert('appNotifications', { id: crypto.randomUUID(), createdAt: now, isRead: false, role: 'ADMIN', type: 'CONTRACT_EXPIRING', title: `عقد ينتهي خلال ${daysLeft} يوم`, message: `عقد المستأجر سينتهي خلال ${daysLeft} يوم.`, link: contractLink });
+        count++;
+      }
+    }
+    return count;
+  }, [settings]);
+
+  const syncSnapshots = useCallback(async (sourceDb?: Database | null) => {
+    const currentDb = sourceDb || db || await supabaseData.getAllData();
+    const snapshots = buildSnapshotState(currentDb);
+    await supabaseData.upsertMany('accountBalances', snapshots.accountBalances as unknown as Record<string, unknown>[]);
+    await supabaseData.upsertMany('ownerBalances', snapshots.ownerBalances as unknown as Record<string, unknown>[]);
+    await supabaseData.upsertMany('contractBalances', snapshots.contractBalances as unknown as Record<string, unknown>[]);
+    await supabaseData.upsertMany('tenantBalances', snapshots.tenantBalances as unknown as Record<string, unknown>[]);
+    await supabaseData.upsertMany('kpiSnapshots', snapshots.kpiSnapshots as unknown as Record<string, unknown>[]);
+    return { ...currentDb, ...snapshots };
+  }, [db, buildSnapshotState]);
 
   const rebuildSnapshotsFromJournal = useCallback(async () => {
     toast('بدء إعادة الحساب الكاملة...');
     const startTime = performance.now();
+    const currentDb = db || await supabaseData.getAllData();
+    const snapshots = await syncSnapshots(currentDb);
+    const issues = runFinancialIntegrityChecks({ ...currentDb, ...snapshots });
+    if (issues.length) toast.error(`تم اكتشاف ${issues.length} مشكلة تكامل مالي. راجع السجل.`);
+    if (issues.length) console.error('[FinancialIntegrityIssues]', issues);
     await refreshData();
     const endTime = performance.now();
     toast.success(`اكتملت إعادة الحساب في ${(endTime - startTime).toFixed(2)} مللي ثانية.`);
     return { duration: endTime - startTime };
-  }, [refreshData]);
+  }, [db, runFinancialIntegrityChecks, refreshData, syncSnapshots]);
 
   const emptyDb: Database = {
     settings: DEFAULT_SETTINGS, auth: { users: [] }, owners: [], properties: [], units: [],
@@ -682,12 +1219,47 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         const daysLate = Math.floor((today.getTime() - new Date(inv.dueDate).getTime()) / (1000 * 60 * 60 * 24));
         if (daysLate <= (lateFeeSettings.graceDays || 0)) continue;
         const feeAmount = lateFeeSettings.type === 'PERCENTAGE_OF_RENT' ? (inv.amount * lateFeeSettings.value) / 100 : lateFeeSettings.value;
-        await add('invoices', { contractId: inv.contractId, dueDate: today.toISOString().slice(0, 10), amount: feeAmount, paidAmount: 0, status: 'UNPAID', type: 'LATE_FEE', notes: `رسوم تأخير على الفاتورة رقم ${inv.no}`, relatedInvoiceId: inv.id });
+        const newNo = await supabaseData.incrementSerial('invoice');
+        const lateFeeInvoice: Invoice = {
+          id: crypto.randomUUID(),
+          no: String(newNo),
+          contractId: inv.contractId,
+          dueDate: today.toISOString().slice(0, 10),
+          amount: round3(feeAmount),
+          paidAmount: 0,
+          status: 'UNPAID',
+          type: 'LATE_FEE',
+          notes: `رسوم تأخير على الفاتورة رقم ${inv.no}`,
+          relatedInvoiceId: inv.id,
+          createdAt: Date.now(),
+        };
+        const insertResult = await supabaseData.insert('invoices', lateFeeInvoice);
+        if (insertResult.error) continue;
+        await postInvoiceJournalEntries(lateFeeInvoice);
         count++;
+      }
+      if (count > 0) {
+        setIsDataStale(true);
+        await refreshData();
       }
       return count;
     },
   };
+
+  useEffect(() => {
+    if (!db || reconcileRef.current) return;
+    const runSync = async () => {
+      const synced = await syncFinancialConsistency(db);
+      if (synced !== db) {
+        setDb(synced);
+      }
+      const issues = runFinancialIntegrityChecks(synced);
+      if (issues.length) console.error('[FinancialIntegrityIssues][Periodic]', issues);
+    };
+    runSync();
+    const intervalId = window.setInterval(runSync, 5 * 60 * 1000);
+    return () => window.clearInterval(intervalId);
+  }, [db, runFinancialIntegrityChecks, syncFinancialConsistency]);
 
   return (
     <AppContext.Provider value={{
@@ -708,28 +1280,33 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         toast('جاري تشغيل المهام التلقائية...');
         const invoices = await generateMonthlyInvoices();
         const lateFees = await financeService.generateLateFees();
-        const result = { invoicesCreated: invoices, lateFeesApplied: lateFees, notificationsCreated: 0, errors: [] };
-        if (invoices + lateFees > 0) toast.success(`تم: ${invoices} فاتورة، ${lateFees} غرامة`);
+        const notifications = await generateContractExpiryNotifications();
+        const result = { invoicesCreated: invoices, lateFeesApplied: lateFees, notificationsCreated: notifications, errors: [] };
+        if (invoices + lateFees + notifications > 0) toast.success(`تم: ${invoices} فاتورة، ${lateFees} غرامة، ${notifications} إشعار`);
         else toast.success('لا توجد مهام جديدة.');
+        await refreshData();
         return result;
       },
       generateNotifications: async () => {
         if (!settings) return 0;
-        const alertDays = settings.operational?.contractAlertDays ?? 30;
         const now = Date.now();
-        const activeContracts = await supabaseData.fetchWhere<Contract>('contracts', 'status', 'ACTIVE');
         const existingNotifs = await supabaseData.fetchAll<AppNotification>('appNotifications');
-        let count = 0;
-        for (const c of activeContracts) {
-          const endDate = new Date(c.end).getTime();
-          const daysLeft = Math.ceil((endDate - now) / (1000 * 60 * 60 * 24));
-          if (daysLeft <= 0 || daysLeft > alertDays) continue;
-          const contractLink = `/contracts?contractId=${c.id}`;
-          const alreadyExists = existingNotifs.some(n => n.link === contractLink);
-          if (!alreadyExists) {
-            await supabaseData.insert('appNotifications', { id: crypto.randomUUID(), createdAt: now, isRead: false, role: 'ADMIN', type: 'CONTRACT_EXPIRING', title: `عقد ينتهي خلال ${daysLeft} يوم`, message: `عقد المستأجر سينتهي خلال ${daysLeft} يوم.`, link: contractLink });
+        let count = await generateContractExpiryNotifications();
+        const allInvoices = await supabaseData.fetchAll<Invoice>('invoices');
+        const overdueInvoices = allInvoices.filter(inv => deriveInvoiceStatus(inv) === 'OVERDUE');
+        const overdueIds = new Set(overdueInvoices.map(inv => inv.id));
+        for (const inv of overdueInvoices) {
+          const link = `/finance/invoices?invoiceId=${inv.id}`;
+          const exists = existingNotifs.some(n => n.link === link && n.type === 'OVERDUE_BALANCE');
+          if (!exists) {
+            await supabaseData.insert('appNotifications', { id: crypto.randomUUID(), createdAt: now, isRead: false, role: 'ADMIN', type: 'OVERDUE_BALANCE', title: 'فاتورة متأخرة', message: `الفاتورة رقم ${inv.no} متأخرة بقيمة ${round3(inv.amount - inv.paidAmount)}`, link });
             count++;
           }
+        }
+        for (const notif of existingNotifs.filter(n => n.type === 'OVERDUE_BALANCE')) {
+          const invoiceId = notif.link.split('invoiceId=')[1];
+          if (!invoiceId || overdueIds.has(invoiceId)) continue;
+          await supabaseData.remove('appNotifications', notif.id);
         }
         await refreshData();
         return count;

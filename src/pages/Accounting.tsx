@@ -1,454 +1,317 @@
-import React, { useState, useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
+import { BookOpen, Calculator, Download, FilePen, HeartPulse, Wallet, Scale, PieChart, TrendingUp, TrendingDown } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { useApp } from '../contexts/AppContext';
 import Card from '../components/ui/Card';
 import Modal from '../components/ui/Modal';
+import ManualVoucherForm from '../components/finance/ManualVoucherForm';
 import { Account } from '../types';
-import { formatCurrency } from '../utils/helpers';
-import NumberInput from '../components/ui/NumberInput';
-import { PlusCircle, Trash2, Edit2, BookOpen, FilePen, Scale } from 'lucide-react';
-import { toast } from 'react-hot-toast';
+import { formatCurrency, exportToCsv, formatDate } from '../utils/helpers';
+import {
+  calculateGeneralLedgerForAccount,
+  calculateTrialBalanceData,
+  getAccountingHealthCheck,
+} from '../services/accountingService';
+import { exportTrialBalanceToPdf } from '../services/pdfService';
 
+const round3 = (value: number): number => Math.round((Number.isFinite(value) ? value : 0) * 1000) / 1000;
 type AccountingTab = 'chart' | 'voucher' | 'trial';
 
-const ACCOUNT_TYPE_LABELS: Record<string, string> = {
-    ASSET: 'أصول',
-    LIABILITY: 'التزامات',
-    EQUITY: 'حقوق الملكية',
-    REVENUE: 'إيرادات',
-    EXPENSE: 'مصروفات',
+const labelByType: Record<Account['type'], string> = {
+  ASSET: 'الأصول',
+  LIABILITY: 'الالتزامات',
+  EQUITY: 'حقوق الملكية',
+  REVENUE: 'الإيرادات',
+  EXPENSE: 'المصروفات',
 };
-
-const ChartOfAccounts: React.FC = () => {
-    const { db, dataService } = useApp();
-    const accounts = db.accounts || [];
-    const accountBalances = db.accountBalances || [];
-    const [isModalOpen, setIsModalOpen] = useState(false);
-    const [editingAccount, setEditingAccount] = useState<Account | null>(null);
-    const [expandedTypes, setExpandedTypes] = useState<Set<string>>(new Set(['ASSET', 'LIABILITY', 'EQUITY', 'REVENUE', 'EXPENSE']));
-
-    const balanceMap = useMemo(() =>
-        new Map(accountBalances.map(ab => [ab.accountId, ab.balance])),
-        [accountBalances]
-    );
-
-    const grouped = useMemo(() => {
-        const types: Record<string, Account[]> = { ASSET: [], LIABILITY: [], EQUITY: [], REVENUE: [], EXPENSE: [] };
-        accounts.forEach(acc => {
-            if (types[acc.type]) types[acc.type].push(acc);
-        });
-        return types;
-    }, [accounts]);
-
-    const toggleType = (type: string) => {
-        setExpandedTypes(prev => {
-            const next = new Set(prev);
-            if (next.has(type)) next.delete(type); else next.add(type);
-            return next;
-        });
-    };
-
-    const handleDelete = async (acc: Account) => {
-        if (window.confirm(`هل تريد حذف الحساب "${acc.name}"؟`)) {
-            await dataService.remove('accounts', acc.id);
-        }
-    };
-
-    return (
-        <div>
-            <div className="flex justify-between items-center mb-4">
-                <h3 className="text-lg font-bold">دليل الحسابات</h3>
-                <button
-                    className="btn btn-primary flex items-center gap-2"
-                    onClick={() => { setEditingAccount(null); setIsModalOpen(true); }}
-                >
-                    <PlusCircle size={16} /> إضافة حساب
-                </button>
-            </div>
-            <div className="space-y-3">
-                {Object.entries(ACCOUNT_TYPE_LABELS).map(([type, label]) => {
-                    const accs = grouped[type] || [];
-                    const expanded = expandedTypes.has(type);
-                    const typeTotal = accs.reduce((s, a) => s + (balanceMap.get(a.id) || 0), 0);
-                    return (
-                        <div key={type} className="border border-border rounded-lg overflow-hidden">
-                            <button
-                                className="w-full flex items-center justify-between px-4 py-3 bg-background font-bold text-sm hover:bg-background/80 transition-colors"
-                                onClick={() => toggleType(type)}
-                            >
-                                <span>{label} ({accs.length})</span>
-                                <div className="flex items-center gap-4">
-                                    <span className="text-text-muted text-xs font-normal">
-                                        الرصيد: {formatCurrency(typeTotal)}
-                                    </span>
-                                    <span>{expanded ? '▲' : '▼'}</span>
-                                </div>
-                            </button>
-                            {expanded && (
-                                <table className="w-full text-sm">
-                                    <thead className="text-text-muted border-t border-border">
-                                        <tr>
-                                            <th className="px-4 py-2 text-right">رقم الحساب</th>
-                                            <th className="px-4 py-2 text-right">اسم الحساب</th>
-                                            <th className="px-4 py-2 text-right">الرصيد</th>
-                                            <th className="px-4 py-2 text-right">إجراءات</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {accs.length === 0 && (
-                                            <tr><td colSpan={4} className="px-4 py-3 text-text-muted text-center">لا توجد حسابات</td></tr>
-                                        )}
-                                        {accs.map(acc => (
-                                            <tr key={acc.id} className="border-t border-border hover:bg-background/50">
-                                                <td className="px-4 py-2 font-mono text-primary">{acc.no}</td>
-                                                <td className="px-4 py-2">{acc.name} {acc.isParent && <span className="text-xs text-text-muted ml-1">(أساسي)</span>}</td>
-                                                <td className="px-4 py-2 font-bold">{formatCurrency(balanceMap.get(acc.id) || 0)}</td>
-                                                <td className="px-4 py-2">
-                                                    <div className="flex gap-2">
-                                                        <button
-                                                            onClick={() => { setEditingAccount(acc); setIsModalOpen(true); }}
-                                                            className="p-1 text-text-muted hover:text-primary"
-                                                        >
-                                                            <Edit2 size={14} />
-                                                        </button>
-                                                        <button
-                                                            onClick={() => handleDelete(acc)}
-                                                            className="p-1 text-text-muted hover:text-red-500"
-                                                        >
-                                                            <Trash2 size={14} />
-                                                        </button>
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                            )}
-                        </div>
-                    );
-                })}
-            </div>
-            {isModalOpen && (
-                <AccountForm
-                    isOpen={isModalOpen}
-                    onClose={() => setIsModalOpen(false)}
-                    account={editingAccount}
-                    accounts={accounts}
-                />
-            )}
-        </div>
-    );
-};
-
-const AccountForm: React.FC<{ isOpen: boolean; onClose: () => void; account: Account | null; accounts: Account[] }> = ({ isOpen, onClose, account, accounts }) => {
-    const { dataService } = useApp();
-    const [data, setData] = useState<Partial<Account>>(
-        account || { type: 'ASSET', isParent: false, parentId: null }
-    );
-
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-        const { name, value, type } = e.target;
-        if (type === 'checkbox') {
-            setData(prev => ({ ...prev, [name]: (e.target as HTMLInputElement).checked }));
-        } else {
-            setData(prev => ({ ...prev, [name]: value }));
-        }
-    };
-
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        if (!data.no || !data.name || !data.type) return toast.error('يرجى تعبئة جميع الحقول المطلوبة.');
-        if (account) {
-            await dataService.update('accounts', account.id, data);
-        } else {
-            await dataService.add('accounts', data as any);
-        }
-        onClose();
-    };
-
-    const parentAccounts = accounts.filter(a => a.isParent && a.type === data.type);
-
-    return (
-        <Modal isOpen={isOpen} onClose={onClose} title={account ? 'تعديل حساب' : 'إضافة حساب جديد'}>
-            <form onSubmit={handleSubmit} className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                    <input name="no" value={data.no || ''} onChange={handleChange} placeholder="رقم الحساب" required />
-                    <input name="name" value={data.name || ''} onChange={handleChange} placeholder="اسم الحساب" required />
-                </div>
-                <select name="type" value={data.type} onChange={handleChange} required>
-                    {Object.entries(ACCOUNT_TYPE_LABELS).map(([k, v]) => (
-                        <option key={k} value={k}>{v}</option>
-                    ))}
-                </select>
-                <div className="flex items-center gap-2">
-                    <input type="checkbox" name="isParent" id="isParent" checked={!!data.isParent} onChange={handleChange} />
-                    <label htmlFor="isParent" className="text-sm">حساب رئيسي (أبوي)</label>
-                </div>
-                {!data.isParent && parentAccounts.length > 0 && (
-                    <select name="parentId" value={data.parentId || ''} onChange={handleChange}>
-                        <option value="">— بدون حساب أبوي —</option>
-                        {parentAccounts.map(a => (
-                            <option key={a.id} value={a.id}>{a.no} - {a.name}</option>
-                        ))}
-                    </select>
-                )}
-                <div className="flex justify-end gap-2 pt-4 border-t">
-                    <button type="button" onClick={onClose} className="btn btn-ghost">إلغاء</button>
-                    <button type="submit" className="btn btn-primary">حفظ</button>
-                </div>
-            </form>
-        </Modal>
-    );
-};
-
-interface VoucherLine {
-    accountId: string;
-    debit: number;
-    credit: number;
-}
-
-const ManualVoucher: React.FC = () => {
-    const { db, financeService } = useApp();
-    const accounts = db.accounts || [];
-    const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
-    const [notes, setNotes] = useState('');
-    const [lines, setLines] = useState<VoucherLine[]>([
-        { accountId: '', debit: 0, credit: 0 },
-        { accountId: '', debit: 0, credit: 0 },
-    ]);
-    const [loading, setLoading] = useState(false);
-
-    const totalDebits = lines.reduce((s, l) => s + (l.debit || 0), 0);
-    const totalCredits = lines.reduce((s, l) => s + (l.credit || 0), 0);
-    const isBalanced = Math.abs(totalDebits - totalCredits) < 0.001 && totalDebits > 0;
-
-    const updateLine = (index: number, field: keyof VoucherLine, value: string | number) => {
-        setLines(prev => {
-            const next = [...prev];
-            next[index] = { ...next[index], [field]: value };
-            return next;
-        });
-    };
-
-    const addLine = () => setLines(prev => [...prev, { accountId: '', debit: 0, credit: 0 }]);
-    const removeLine = (i: number) => setLines(prev => prev.filter((_, idx) => idx !== i));
-
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        if (!isBalanced) return toast.error('القيد غير متوازن.');
-        setLoading(true);
-        try {
-            await financeService.addManualJournalVoucher({ date, notes, lines });
-            setLines([{ accountId: '', debit: 0, credit: 0 }, { accountId: '', debit: 0, credit: 0 }]);
-            setNotes('');
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    return (
-        <div>
-            <h3 className="text-lg font-bold mb-4">القيد اليدوي</h3>
-            <form onSubmit={handleSubmit} className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                    <div>
-                        <label className="block text-sm text-text-muted mb-1">التاريخ</label>
-                        <input type="date" value={date} onChange={e => setDate(e.target.value)} required />
-                    </div>
-                    <div>
-                        <label className="block text-sm text-text-muted mb-1">البيان</label>
-                        <input value={notes} onChange={e => setNotes(e.target.value)} placeholder="وصف القيد..." />
-                    </div>
-                </div>
-
-                <div className="overflow-x-auto">
-                    <table className="w-full text-sm">
-                        <thead className="text-text-muted">
-                            <tr>
-                                <th className="px-3 py-2 text-right">الحساب</th>
-                                <th className="px-3 py-2 text-right">مدين</th>
-                                <th className="px-3 py-2 text-right">دائن</th>
-                                <th className="px-3 py-2"></th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {lines.map((line, i) => (
-                                <tr key={i} className="border-t border-border">
-                                    <td className="px-3 py-2 min-w-[200px]">
-                                        <select
-                                            value={line.accountId}
-                                            onChange={e => updateLine(i, 'accountId', e.target.value)}
-                                            required
-                                        >
-                                            <option value="">— اختر الحساب —</option>
-                                            {accounts.filter(a => !a.isParent).map(a => (
-                                                <option key={a.id} value={a.id}>{a.no} - {a.name}</option>
-                                            ))}
-                                        </select>
-                                    </td>
-                                    <td className="px-3 py-2">
-                                        <NumberInput value={line.debit || ''} onChange={v => updateLine(i, 'debit', v)} />
-                                    </td>
-                                    <td className="px-3 py-2">
-                                        <NumberInput value={line.credit || ''} onChange={v => updateLine(i, 'credit', v)} />
-                                    </td>
-                                    <td className="px-3 py-2">
-                                        {lines.length > 2 && (
-                                            <button type="button" onClick={() => removeLine(i)} className="text-red-500 hover:text-red-700">
-                                                <Trash2 size={14} />
-                                            </button>
-                                        )}
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                        <tfoot>
-                            <tr className="border-t-2 border-border font-bold">
-                                <td className="px-3 py-2">الإجمالي</td>
-                                <td className="px-3 py-2 text-blue-600">{totalDebits.toFixed(3)}</td>
-                                <td className="px-3 py-2 text-green-600">{totalCredits.toFixed(3)}</td>
-                                <td></td>
-                            </tr>
-                        </tfoot>
-                    </table>
-                </div>
-
-                <div className="flex items-center justify-between">
-                    <button type="button" onClick={addLine} className="btn btn-ghost btn-sm flex items-center gap-1">
-                        <PlusCircle size={14} /> إضافة سطر
-                    </button>
-                    <div className="flex items-center gap-3">
-                        {!isBalanced && totalDebits > 0 && (
-                            <span className="text-red-500 text-sm font-bold">
-                                القيد غير متوازن (الفرق: {Math.abs(totalDebits - totalCredits).toFixed(3)})
-                            </span>
-                        )}
-                        {isBalanced && (
-                            <span className="text-green-500 text-sm font-bold">✓ القيد متوازن</span>
-                        )}
-                        <button
-                            type="submit"
-                            disabled={!isBalanced || loading}
-                            className="btn btn-primary"
-                        >
-                            {loading ? 'جاري الحفظ...' : 'حفظ القيد'}
-                        </button>
-                    </div>
-                </div>
-            </form>
-        </div>
-    );
-};
-
-const TrialBalance: React.FC = () => {
-    const { db } = useApp();
-    const accounts = db.accounts || [];
-    const accountBalances = db.accountBalances || [];
-
-    const accountsMap = useMemo(() => new Map(accounts.map(a => [a.id, a])), [accounts]);
-
-    type TrialRow = { id: string; no: string; name: string; type: 'ASSET' | 'LIABILITY' | 'EQUITY' | 'REVENUE' | 'EXPENSE'; debit: number; credit: number };
-
-    const rows = useMemo<TrialRow[]>(() => {
-        return accountBalances
-            .map(ab => {
-                const acc = accountsMap.get(ab.accountId);
-                if (!acc || ab.balance === 0) return null;
-                return {
-                    id: ab.accountId,
-                    no: acc.no,
-                    name: acc.name,
-                    type: acc.type,
-                    debit: ab.balance > 0 ? ab.balance : 0,
-                    credit: ab.balance < 0 ? Math.abs(ab.balance) : 0,
-                };
-            })
-            .filter((r): r is TrialRow => r !== null)
-            .sort((a, b) => a.no.localeCompare(b.no));
-    }, [accountBalances, accountsMap]);
-
-    const totalDebit = rows.reduce((s, r) => s + r.debit, 0);
-    const totalCredit = rows.reduce((s, r) => s + r.credit, 0);
-
-    return (
-        <div>
-            <h3 className="text-lg font-bold mb-4">ميزان المراجعة</h3>
-            <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                    <thead className="bg-background text-text-muted">
-                        <tr>
-                            <th className="px-4 py-3 text-right">رقم الحساب</th>
-                            <th className="px-4 py-3 text-right">اسم الحساب</th>
-                            <th className="px-4 py-3 text-right">مدين</th>
-                            <th className="px-4 py-3 text-right">دائن</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {rows.length === 0 && (
-                            <tr><td colSpan={4} className="px-4 py-8 text-center text-text-muted">لا توجد بيانات. قم بإعادة بناء اللقطات أولاً.</td></tr>
-                        )}
-                        {rows.map(r => (
-                            <tr key={r.id} className="border-t border-border hover:bg-background/50">
-                                <td className="px-4 py-2 font-mono text-primary">{r.no}</td>
-                                <td className="px-4 py-2">{r.name}</td>
-                                <td className="px-4 py-2 text-blue-600">{r.debit > 0 ? formatCurrency(r.debit) : '-'}</td>
-                                <td className="px-4 py-2 text-green-600">{r.credit > 0 ? formatCurrency(r.credit) : '-'}</td>
-                            </tr>
-                        ))}
-                    </tbody>
-                    <tfoot>
-                        <tr className="border-t-2 border-border font-bold bg-background">
-                            <td colSpan={2} className="px-4 py-3">الإجمالي</td>
-                            <td className="px-4 py-3 text-blue-600">{formatCurrency(totalDebit)}</td>
-                            <td className="px-4 py-3 text-green-600">{formatCurrency(totalCredit)}</td>
-                        </tr>
-                        <tr className="border-t border-border">
-                            <td colSpan={4} className="px-4 py-2 text-center">
-                                {Math.abs(totalDebit - totalCredit) < 0.01 ? (
-                                    <span className="text-green-600 font-bold">✓ الميزان متوازن</span>
-                                ) : (
-                                    <span className="text-red-600 font-bold">⚠ الميزان غير متوازن (الفرق: {formatCurrency(Math.abs(totalDebit - totalCredit))})</span>
-                                )}
-                            </td>
-                        </tr>
-                    </tfoot>
-                </table>
-            </div>
-        </div>
-    );
-};
-
-const TABS: { id: AccountingTab; label: string; icon: React.ReactNode }[] = [
-    { id: 'chart', label: 'دليل الحسابات', icon: <BookOpen size={16} /> },
-    { id: 'voucher', label: 'القيد اليدوي', icon: <FilePen size={16} /> },
-    { id: 'trial', label: 'ميزان المراجعة', icon: <Scale size={16} /> },
-];
 
 const Accounting: React.FC = () => {
-    const [activeTab, setActiveTab] = useState<AccountingTab>('chart');
+  const { db } = useApp();
+  const [activeTab, setActiveTab] = useState<AccountingTab>('chart');
+  const [showHealth, setShowHealth] = useState(false);
 
-    return (
-        <Card>
-            <div className="flex gap-2 mb-6 border-b border-border pb-4 flex-wrap">
-                {TABS.map(tab => (
-                    <button
-                        key={tab.id}
-                        onClick={() => setActiveTab(tab.id)}
-                        className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-all ${
-                            activeTab === tab.id
-                                ? 'bg-primary text-white shadow'
-                                : 'text-text-muted hover:bg-background'
-                        }`}
-                    >
-                        {tab.icon}
-                        {tab.label}
-                    </button>
-                ))}
+  const stats = useMemo(() => {
+    const accountMap = new Map(db.accounts.map((a) => [a.id, a]));
+    const totals = { assets: 0, liabilities: 0, equity: 0, revenue: 0, expense: 0 };
+
+    for (const b of db.accountBalances || []) {
+      const acc = accountMap.get(b.accountId);
+      if (!acc) continue;
+      if (acc.type === 'ASSET') totals.assets += b.balance;
+      else if (acc.type === 'LIABILITY') totals.liabilities += -b.balance;
+      else if (acc.type === 'EQUITY') totals.equity += -b.balance;
+      else if (acc.type === 'REVENUE') totals.revenue += -b.balance;
+      else if (acc.type === 'EXPENSE') totals.expense += b.balance;
+    }
+
+    return {
+      assets: round3(totals.assets),
+      liabilities: round3(totals.liabilities),
+      equity: round3(totals.equity),
+      revenue: round3(totals.revenue),
+      expense: round3(totals.expense),
+    };
+  }, [db.accounts, db.accountBalances]);
+
+  const health = useMemo(() => getAccountingHealthCheck(db), [db]);
+
+  return (
+    <div className="space-y-4" dir="rtl">
+      <div className="rounded-xl border border-primary/20 p-4 bg-primary/5 flex items-center justify-between flex-wrap gap-2">
+        <div>
+          <h1 className="font-black text-lg">المحاسبة</h1>
+          <p className="text-xs text-text-muted">مركز القيود، دليل الحسابات، وميزان المراجعة.</p>
+        </div>
+        <Link to="/reports?tab=trial_balance" className="btn btn-secondary">الانتقال للتقارير</Link>
+      </div>
+
+      <div className="grid grid-cols-2 md:grid-cols-6 gap-3">
+        <Stat label="الأصول" value={stats.assets} icon={<Wallet size={15} />} />
+        <Stat label="الالتزامات" value={stats.liabilities} icon={<Scale size={15} />} />
+        <Stat label="حقوق الملكية" value={stats.equity} icon={<PieChart size={15} />} />
+        <Stat label="الإيرادات" value={stats.revenue} icon={<TrendingUp size={15} />} />
+        <Stat label="المصروفات" value={stats.expense} icon={<TrendingDown size={15} />} />
+        <button onClick={() => setShowHealth(true)} className={`rounded-xl border p-3 text-right ${health.isBalanced ? 'border-emerald-200 bg-emerald-50' : 'border-rose-200 bg-rose-50'}`}>
+          <p className="text-xs font-bold mb-1">Health Check</p>
+          <p className={`font-black text-sm ${health.isBalanced ? 'text-emerald-700' : 'text-rose-700'}`}>{health.isBalanced ? '✔ متوازن' : '⚠ غير متوازن'}</p>
+        </button>
+      </div>
+
+      <Card className="p-0 overflow-hidden">
+        <div className="p-3 border-b border-border flex gap-2">
+          <Tab active={activeTab === 'chart'} onClick={() => setActiveTab('chart')} icon={<BookOpen size={16} />} text="دليل الحسابات" />
+          <Tab active={activeTab === 'voucher'} onClick={() => setActiveTab('voucher')} icon={<FilePen size={16} />} text="قيد يدوي" />
+          <Tab active={activeTab === 'trial'} onClick={() => setActiveTab('trial')} icon={<Calculator size={16} />} text="ميزان المراجعة" />
+        </div>
+        <div className="p-4">
+          {activeTab === 'chart' && <ChartOfAccounts />}
+          {activeTab === 'voucher' && <ManualVoucherTab />}
+          {activeTab === 'trial' && <TrialBalanceTab />}
+        </div>
+      </Card>
+
+      <Modal isOpen={showHealth} onClose={() => setShowHealth(false)} title="تفاصيل الفحص المحاسبي">
+        <div className="space-y-2 text-sm">
+          <p>الحالة: <span className={health.isBalanced ? 'text-emerald-600 font-black' : 'text-rose-600 font-black'}>{health.isBalanced ? 'متوازن' : 'غير متوازن'}</span></p>
+          <p>الفرق: <span dir="ltr" className="font-mono">{health.discrepancy.toFixed(3)}</span></p>
+          <p>عدد القيود: <span dir="ltr" className="font-mono">{health.journalCount}</span></p>
+          <p>عدد الحسابات: <span dir="ltr" className="font-mono">{health.accountCount}</span></p>
+        </div>
+      </Modal>
+    </div>
+  );
+};
+
+const Stat: React.FC<{ label: string; value: number; icon: React.ReactNode }> = ({ label, value, icon }) => (
+  <div className="rounded-xl border border-border p-3 bg-card text-center">
+    <div className="opacity-60 mb-1 inline-flex">{icon}</div>
+    <p className="text-[11px] font-bold text-text-muted">{label}</p>
+    <p className="font-black" dir="ltr">{formatCurrency(value)}</p>
+  </div>
+);
+
+const Tab: React.FC<{ active: boolean; onClick: () => void; icon: React.ReactNode; text: string }> = ({ active, onClick, icon, text }) => (
+  <button onClick={onClick} className={`px-3 py-2 rounded-lg text-sm font-bold flex items-center gap-2 ${active ? 'bg-primary text-white' : 'hover:bg-background'}`}>
+    {icon}{text}
+  </button>
+);
+
+const ChartOfAccounts: React.FC = () => {
+  const { db } = useApp();
+  const [account, setAccount] = useState<Account | null>(null);
+  const [startDate, setStartDate] = useState(new Date(new Date().getFullYear(), 0, 1).toISOString().slice(0, 10));
+  const [endDate, setEndDate] = useState(new Date().toISOString().slice(0, 10));
+  const [expanded, setExpanded] = useState<Record<string, boolean>>({ ASSET: true, LIABILITY: true, EQUITY: true, REVENUE: true, EXPENSE: true });
+
+  const sums = useMemo(() => {
+    const m = new Map<string, { debit: number; credit: number }>();
+    for (const je of db.journalEntries) {
+      const current = m.get(je.accountId) ?? { debit: 0, credit: 0 };
+      if (je.type === 'DEBIT') current.debit = round3(current.debit + je.amount);
+      if (je.type === 'CREDIT') current.credit = round3(current.credit + je.amount);
+      m.set(je.accountId, current);
+    }
+    return m;
+  }, [db.journalEntries]);
+
+  const accountBalance = (acc: Account) => {
+    const sum = sums.get(acc.id) ?? { debit: 0, credit: 0 };
+    if (acc.type === 'ASSET' || acc.type === 'EXPENSE') return round3(sum.debit - sum.credit);
+    return round3(sum.credit - sum.debit);
+  };
+
+  const grouped = useMemo(() => {
+    const groups: Record<Account['type'], Account[]> = { ASSET: [], LIABILITY: [], EQUITY: [], REVENUE: [], EXPENSE: [] };
+    for (const acc of db.accounts) groups[acc.type].push(acc);
+    return groups;
+  }, [db.accounts]);
+
+  const exportGroupCsv = (type: Account['type']) => {
+    const rows = grouped[type].map((acc) => ({
+      'رقم الحساب': acc.no,
+      'اسم الحساب': acc.name,
+      'النوع': labelByType[acc.type],
+      'الرصيد': accountBalance(acc).toFixed(3),
+    }));
+    exportToCsv(`accounts_${type.toLowerCase()}`, rows);
+  };
+
+  const accountLines = useMemo(() => {
+    if (!account) return [];
+    return calculateGeneralLedgerForAccount(db, account.id, startDate, endDate);
+  }, [db, account, startDate, endDate]);
+
+  return (
+    <div className="space-y-3">
+      {Object.keys(grouped).map((type) => {
+        const key = type as Account['type'];
+        return (
+          <div key={key} className="border border-border rounded-xl overflow-hidden">
+            <div className="p-3 bg-background/60 flex items-center justify-between">
+              <button className="font-black" onClick={() => setExpanded((p) => ({ ...p, [key]: !p[key] }))}>{labelByType[key]}</button>
+              <button className="btn btn-ghost" onClick={() => exportGroupCsv(key)}><Download size={14} /> تحميل CSV</button>
             </div>
-            {activeTab === 'chart' && <ChartOfAccounts />}
-            {activeTab === 'voucher' && <ManualVoucher />}
-            {activeTab === 'trial' && <TrialBalance />}
-        </Card>
-    );
+            {expanded[key] && (
+              <table className="w-full text-sm">
+                <thead className="text-xs text-text-muted">
+                  <tr>
+                    <th className="px-3 py-2 text-right">رقم</th>
+                    <th className="px-3 py-2 text-right">الحساب</th>
+                    <th className="px-3 py-2 text-right">الرصيد</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border/60">
+                  {grouped[key].map((acc) => (
+                    <tr key={acc.id} className="cursor-pointer hover:bg-background/40" onClick={() => setAccount(acc)}>
+                      <td className="px-3 py-2 font-mono">{acc.no}</td>
+                      <td className="px-3 py-2">{acc.name}</td>
+                      <td className="px-3 py-2 font-mono" dir="ltr">{formatCurrency(accountBalance(acc))}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
+        );
+      })}
+
+      <Modal isOpen={!!account} onClose={() => setAccount(null)} title={`حركة الحساب: ${account?.name || ''}`}>
+        <div className="grid grid-cols-2 gap-2 mb-3">
+          <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
+          <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
+        </div>
+        <div className="max-h-[50vh] overflow-auto border border-border rounded-lg">
+          <table className="w-full text-sm">
+            <thead className="text-xs text-text-muted bg-background">
+              <tr>
+                <th className="px-2 py-2 text-right">تاريخ</th>
+                <th className="px-2 py-2 text-right">رقم قيد</th>
+                <th className="px-2 py-2 text-right">مدين (Debit)</th>
+                <th className="px-2 py-2 text-right">دائن (Credit)</th>
+                <th className="px-2 py-2 text-right">رصيد متراكم</th>
+              </tr>
+            </thead>
+            <tbody>
+              {accountLines.map((line) => (
+                <tr key={line.id}>
+                  <td className="px-2 py-2">{formatDate(line.date)}</td>
+                  <td className="px-2 py-2 font-bold">{line.no}</td>
+                  <td className="px-2 py-2" dir="ltr">{line.debit ? formatCurrency(line.debit) : '-'}</td>
+                  <td className="px-2 py-2" dir="ltr">{line.credit ? formatCurrency(line.credit) : '-'}</td>
+                  <td className="px-2 py-2" dir="ltr">{formatCurrency(line.runningBalance)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </Modal>
+    </div>
+  );
+};
+
+const ManualVoucherTab: React.FC = () => {
+  const { financeService } = useApp();
+  return (
+    <ManualVoucherForm
+      onSubmit={async (payload) => {
+        await financeService.addManualJournalVoucher(payload);
+      }}
+    />
+  );
+};
+
+const TrialBalanceTab: React.FC = () => {
+  const { db, settings } = useApp();
+  const [endDate, setEndDate] = useState(new Date().toISOString().slice(0, 10));
+  const result = useMemo(() => calculateTrialBalanceData(db, endDate), [db, endDate]);
+
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center justify-between bg-background/50 rounded-xl p-3 border border-border">
+        <div className="flex items-center gap-2">
+          <HeartPulse size={18} className={result.isBalanced ? 'text-emerald-600' : 'text-rose-600'} />
+          <p className={`font-black ${result.isBalanced ? 'text-emerald-700' : 'text-rose-700'}`}>
+            {result.isBalanced ? 'متوازن' : `غير متوازن — الفرق ${Math.abs(result.totalDebit - result.totalCredit).toFixed(3)}`}
+          </p>
+        </div>
+        <div className="flex items-end gap-2">
+          <div>
+            <label className="text-xs text-text-muted block">حتى تاريخ</label>
+            <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
+          </div>
+          <button
+            className="btn btn-secondary"
+            onClick={() =>
+              exportTrialBalanceToPdf(
+                {
+                  lines: result.lines.map((line) => ({ no: line.no, name: line.name, debit: line.totalDebit, credit: line.totalCredit })),
+                  totalDebit: result.totalDebit,
+                  totalCredit: result.totalCredit,
+                },
+                settings,
+                endDate,
+              )
+            }
+          >
+            <Download size={14} /> PDF
+          </button>
+        </div>
+      </div>
+
+      <div className="overflow-x-auto border border-border rounded-xl">
+        <table className="w-full text-sm">
+          <thead className="text-xs text-text-muted bg-background">
+            <tr>
+              <th className="px-3 py-2 text-right">رقم</th>
+              <th className="px-3 py-2 text-right">الحساب</th>
+              <th className="px-3 py-2 text-right">إجمالي مدين (Debit)</th>
+              <th className="px-3 py-2 text-right">إجمالي دائن (Credit)</th>
+              <th className="px-3 py-2 text-right">صافي الرصيد</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-border/60">
+            {result.lines.map((line) => (
+              <tr key={line.id}>
+                <td className="px-3 py-2 font-mono">{line.no}</td>
+                <td className="px-3 py-2">{line.name}</td>
+                <td className="px-3 py-2 font-mono" dir="ltr">{formatCurrency(line.totalDebit)}</td>
+                <td className="px-3 py-2 font-mono" dir="ltr">{formatCurrency(line.totalCredit)}</td>
+                <td className="px-3 py-2 font-mono" dir="ltr">{formatCurrency(line.netBalance)}</td>
+              </tr>
+            ))}
+          </tbody>
+          <tfoot className="bg-background/60 font-black">
+            <tr>
+              <td colSpan={2} className="px-3 py-2">الإجمالي</td>
+              <td className="px-3 py-2 font-mono" dir="ltr">{formatCurrency(result.totalDebit)}</td>
+              <td className="px-3 py-2 font-mono" dir="ltr">{formatCurrency(result.totalCredit)}</td>
+              <td></td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    </div>
+  );
 };
 
 export default Accounting;

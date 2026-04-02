@@ -21,12 +21,25 @@ const STORAGE_KEY_LAST_RUN = 'rentrix_automation_last_run_date';
 const STORAGE_KEY_RUN_LOG = 'rentrix_automation_run_log';
 const STORAGE_KEY_CONFIG = 'rentrix_automation_config';
 
-export const getAutomationConfig = (): AutomationTaskConfig => {
+const defaultConfig: AutomationTaskConfig = {
+    invoices: true,
+    lateFees: true,
+    notifications: true,
+    snapshots: false,
+};
+
+export const getAutomationConfig = (settings?: Settings): AutomationTaskConfig => {
+    const settingsAutomation = (settings as Settings & { automation?: AutomationTaskConfig } | undefined)?.automation;
+    if (settingsAutomation) return settingsAutomation;
+
     try {
         const stored = localStorage.getItem(STORAGE_KEY_CONFIG);
         if (stored) return JSON.parse(stored);
-    } catch {}
-    return { invoices: true, lateFees: true, notifications: true, snapshots: false };
+    } catch {
+        // ignore parse errors
+    }
+
+    return defaultConfig;
 };
 
 export const saveAutomationConfig = (config: AutomationTaskConfig): void => {
@@ -37,7 +50,9 @@ export const getAutomationRunLog = (): AutomationRunResult[] => {
     try {
         const stored = localStorage.getItem(STORAGE_KEY_RUN_LOG);
         if (stored) return JSON.parse(stored);
-    } catch {}
+    } catch {
+        // ignore parse errors
+    }
     return [];
 };
 
@@ -59,16 +74,16 @@ export const autoGenerateMonthlyInvoices = async (db: Database): Promise<number>
     const year = now.getFullYear();
     const month = now.getMonth() + 1;
     const monthKey = `${year}-${String(month).padStart(2, '0')}`;
+    const today = getTodayStr();
 
-    const activeContracts = db.contracts.filter(c => c.status === 'ACTIVE');
+    const activeContracts = db.contracts.filter(c => c.status === 'ACTIVE' && c.end >= today);
     if (activeContracts.length === 0) return 0;
 
-    const existingInvoicesThisMonth = db.invoices.filter(inv => {
-        return inv.dueDate && inv.dueDate.startsWith(monthKey) && inv.type === 'RENT';
-    });
+    const existingInvoicesThisMonth = db.invoices.filter(inv => inv.dueDate?.startsWith(monthKey) && inv.type === 'RENT');
     const existingContractIds = new Set(existingInvoicesThisMonth.map(i => i.contractId));
 
     let count = 0;
+    let nextSerial = await supabaseData.incrementSerial('invoice');
 
     for (const contract of activeContracts) {
         if (existingContractIds.has(contract.id)) continue;
@@ -78,11 +93,9 @@ export const autoGenerateMonthlyInvoices = async (db: Database): Promise<number>
         const safeDay = Math.min(dueDay, daysInMonth);
         const dueDate = `${monthKey}-${String(safeDay).padStart(2, '0')}`;
 
-        const newNo = await supabaseData.incrementSerial('invoice');
-
         const newInvoice: Invoice = {
             id: crypto.randomUUID(),
-            no: String(newNo),
+            no: String(nextSerial++),
             contractId: contract.id,
             dueDate,
             amount: contract.rent,
@@ -92,6 +105,7 @@ export const autoGenerateMonthlyInvoices = async (db: Database): Promise<number>
             notes: `فاتورة إيجار شهر ${monthKey}`,
             createdAt: Date.now(),
         };
+
         await supabaseData.insert('invoices', newInvoice);
         count++;
     }
@@ -105,8 +119,7 @@ export const autoApplyLateFees = async (db: Database, settings: Settings): Promi
 
     const today = new Date();
     const overdueInvoices = db.invoices.filter(inv =>
-        (inv.status === 'OVERDUE' || (inv.status === 'UNPAID' && new Date(inv.dueDate) < today)) &&
-        inv.type === 'RENT'
+        (inv.status === 'OVERDUE' || (inv.status === 'UNPAID' && new Date(inv.dueDate) < today)) && inv.type === 'RENT'
     );
 
     const existingLateFeeSourceIds = new Set(
@@ -125,9 +138,10 @@ export const autoApplyLateFees = async (db: Database, settings: Settings): Promi
         const graceDays = lateFeeSettings.graceDays || 0;
         if (daysLate <= graceDays) continue;
 
-        const feeAmount = lateFeeSettings.type === 'PERCENTAGE_OF_RENT'
-            ? (inv.amount * lateFeeSettings.value) / 100
-            : lateFeeSettings.value;
+        const feeAmount =
+            lateFeeSettings.type === 'PERCENTAGE_OF_RENT'
+                ? (inv.amount * lateFeeSettings.value) / 100
+                : lateFeeSettings.value;
 
         const newNo = await supabaseData.incrementSerial('invoice');
 
@@ -144,6 +158,7 @@ export const autoApplyLateFees = async (db: Database, settings: Settings): Promi
             relatedInvoiceId: inv.id,
             createdAt: Date.now(),
         };
+
         await supabaseData.insert('invoices', feeInvoice);
         count++;
     }
@@ -186,8 +201,7 @@ export const autoGenerateNotifications = async (db: Database, settings: Settings
     }
 
     const overdueInvoices = db.invoices.filter(inv =>
-        (inv.status === 'OVERDUE' || (inv.status === 'UNPAID' && new Date(inv.dueDate) < new Date())) &&
-        inv.type === 'RENT'
+        (inv.status === 'OVERDUE' || (inv.status === 'UNPAID' && new Date(inv.dueDate) < new Date())) && inv.type === 'RENT'
     );
 
     for (const inv of overdueInvoices) {
@@ -201,7 +215,7 @@ export const autoGenerateNotifications = async (db: Database, settings: Settings
                 isRead: false,
                 role: 'ADMIN',
                 type: 'OVERDUE_BALANCE',
-                title: `فاتورة إيجار متأخرة`,
+                title: 'فاتورة إيجار متأخرة',
                 message: `الفاتورة رقم ${inv.no} متأخرة بمبلغ ${inv.amount - inv.paidAmount}`,
                 link: `/finance/invoices?invoiceId=${inv.id}`,
             });
@@ -222,10 +236,11 @@ export const runDailyAutomation = async (
     config?: AutomationTaskConfig
 ): Promise<AutomationRunResult | null> => {
     const today = getTodayStr();
-    const lastRun = getLastRunDate();
-    if (lastRun === today) return null;
+    if (getLastRunDate() === today) {
+        return null;
+    }
 
-    const taskConfig = config ?? getAutomationConfig();
+    const taskConfig = config ?? getAutomationConfig(settings);
     const result: AutomationRunResult = {
         ts: Date.now(),
         invoicesCreated: 0,
@@ -235,20 +250,12 @@ export const runDailyAutomation = async (
     };
 
     try {
-        if (taskConfig.invoices) {
-            result.invoicesCreated = await autoGenerateMonthlyInvoices(db);
-        }
-        if (taskConfig.lateFees) {
-            result.lateFeesApplied = await autoApplyLateFees(db, settings);
-        }
-        if (taskConfig.notifications) {
-            result.notificationsCreated = await autoGenerateNotifications(db, settings);
-        }
-        if (taskConfig.snapshots) {
-            result.snapshotsRebuilt = await autoRebuildSnapshots();
-        }
-    } catch (e: any) {
-        result.error = e?.message || 'خطأ غير معروف';
+        if (taskConfig.invoices) result.invoicesCreated = await autoGenerateMonthlyInvoices(db);
+        if (taskConfig.lateFees) result.lateFeesApplied = await autoApplyLateFees(db, settings);
+        if (taskConfig.notifications) result.notificationsCreated = await autoGenerateNotifications(db, settings);
+        if (taskConfig.snapshots) result.snapshotsRebuilt = await autoRebuildSnapshots();
+    } catch (e: unknown) {
+        result.error = e instanceof Error ? e.message : 'خطأ غير معروف';
     }
 
     localStorage.setItem(STORAGE_KEY_LAST_RUN, today);
@@ -262,7 +269,7 @@ export const runManualAutomation = async (
     settings: Settings,
     config?: AutomationTaskConfig
 ): Promise<AutomationRunResult> => {
-    const taskConfig = config ?? getAutomationConfig();
+    const taskConfig = config ?? getAutomationConfig(settings);
     const result: AutomationRunResult = {
         ts: Date.now(),
         invoicesCreated: 0,
@@ -272,24 +279,14 @@ export const runManualAutomation = async (
     };
 
     try {
-        if (taskConfig.invoices) {
-            result.invoicesCreated = await autoGenerateMonthlyInvoices(db);
-        }
-        if (taskConfig.lateFees) {
-            result.lateFeesApplied = await autoApplyLateFees(db, settings);
-        }
-        if (taskConfig.notifications) {
-            result.notificationsCreated = await autoGenerateNotifications(db, settings);
-        }
-        if (taskConfig.snapshots) {
-            result.snapshotsRebuilt = await autoRebuildSnapshots();
-        }
-    } catch (e: any) {
-        result.error = e?.message || 'خطأ غير معروف';
+        if (taskConfig.invoices) result.invoicesCreated = await autoGenerateMonthlyInvoices(db);
+        if (taskConfig.lateFees) result.lateFeesApplied = await autoApplyLateFees(db, settings);
+        if (taskConfig.notifications) result.notificationsCreated = await autoGenerateNotifications(db, settings);
+        if (taskConfig.snapshots) result.snapshotsRebuilt = await autoRebuildSnapshots();
+    } catch (e: unknown) {
+        result.error = e instanceof Error ? e.message : 'خطأ غير معروف';
     }
 
-    localStorage.setItem(STORAGE_KEY_LAST_RUN, getTodayStr());
     appendRunLog(result);
-
     return result;
 };

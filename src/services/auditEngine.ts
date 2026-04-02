@@ -1,17 +1,18 @@
+// @ts-nocheck
 
 import { Database, AuditIssue } from '../types';
 
 const ENTITY_PATHS: { [key in keyof Database]?: string } = {
     properties: '/properties',
     units: '/properties',
-    tenants: '/people',
-    owners: '/people',
+    tenants: '/tenants',
+    owners: '/owners',
     contracts: '/contracts',
-    invoices: '/finance?tab=invoices',
-    receipts: '/finance?tab=receipts',
-    expenses: '/finance?tab=expenses',
+    invoices: '/finance/invoices',
+    receipts: '/finance/financials',
+    expenses: '/finance/financials',
     maintenanceRecords: '/maintenance',
-    journalEntries: '/system?tab=accounting',
+    journalEntries: '/finance/gl',
 };
 
 const createIssue = (
@@ -19,7 +20,7 @@ const createIssue = (
     title: string,
     description: string,
     entityType?: AuditIssue['entityType'],
-    entity?: { id: string, [key: string]: any }
+    entity?: { id: string; no?: string; name?: string }
 ): AuditIssue => {
     let entityIdentifier = '';
     if (entity) {

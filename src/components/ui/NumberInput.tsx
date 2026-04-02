@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { toEnglishDigits } from '../../utils/helpers';
+import { normalizeLocalizedNumber } from '../../utils/helpers';
 
 interface NumberInputProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'onChange' | 'value' | 'type'> {
   value: number | string | undefined;
@@ -20,30 +20,28 @@ const NumberInput: React.FC<NumberInputProps> = ({
 
   useEffect(() => {
     const numVal = value === undefined || value === '' || isNaN(Number(value)) ? '' : String(value);
-    if (numVal === '' || numVal === '0' && display === '') {
-      return;
-    }
-    if (!display || Number(display) !== Number(numVal)) {
-      setDisplay(numVal === '0' ? '' : numVal);
+    if (numVal !== display) {
+      setDisplay(numVal);
     }
   }, [value]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const raw = e.target.value;
-    const english = toEnglishDigits(raw);
-    const normalized = english.replace(/,/g, '.');
+    const normalized = normalizeLocalizedNumber(raw);
 
     const negativePart = allowNegative ? '-?' : '';
     const pattern = allowDecimal
       ? new RegExp(`^${negativePart}[0-9]*(\\.[0-9]*)?$`)
       : new RegExp(`^${negativePart}[0-9]*$`);
 
+    // Allow empty and allow minus sign for negatives
     if (normalized === '' || normalized === '-') {
       setDisplay(raw);
       onChange(0);
       return;
     }
 
+    // Only accept if matches pattern
     if (!pattern.test(normalized)) return;
 
     setDisplay(raw);
@@ -52,13 +50,13 @@ const NumberInput: React.FC<NumberInputProps> = ({
   };
 
   const handleBlur = () => {
-    const english = toEnglishDigits(display);
-    const normalized = english.replace(/,/g, '.');
+    const normalized = normalizeLocalizedNumber(display);
     const parsed = parseFloat(normalized);
-    if (isNaN(parsed)) {
+    if (isNaN(parsed) || normalized === '' || normalized === '-') {
       setDisplay('');
       onChange(0);
     } else {
+      // Keep display as normalized number
       setDisplay(String(parsed));
     }
   };
@@ -75,7 +73,7 @@ const NumberInput: React.FC<NumberInputProps> = ({
       dir="ltr"
       style={{
         textAlign: 'right',
-        ...((rest as any).style || {}),
+        ...(rest.style || {}),
       }}
     />
   );

@@ -1,5 +1,6 @@
 import React from 'react';
 import { useApp } from '../../contexts/AppContext';
+import { CompanyInfo } from '../../types';
 
 interface DocumentHeaderProps {
   subtitle?: string;
@@ -37,7 +38,7 @@ const logoBlockStyle: React.CSSProperties = {
   alignItems: 'flex-start',
 };
 
-const ContactBlock: React.FC<{ company: any }> = ({ company }) => (
+const ContactBlock: React.FC<{ company: CompanyInfo }> = ({ company }) => (
   <div style={contactBlockStyle}>
     <p style={{ margin: 0 }}>{company.address}</p>
     <p style={{ margin: 0 }}>هاتف: {company.phone}{company.phone2 ? ` / ${company.phone2}` : ''}</p>
@@ -97,7 +98,7 @@ const DocumentHeader: React.FC<DocumentHeaderProps> = ({ subtitle, docTitle, doc
   );
 };
 
-export const DocumentHeaderInline: React.FC<{ company: any; logoUrl?: string; subtitle?: string; docTitle?: string; docNo?: string; docDate?: string }> = ({ company, logoUrl, subtitle, docTitle, docNo, docDate }) => (
+export const DocumentHeaderInline: React.FC<{ company: CompanyInfo; logoUrl?: string; subtitle?: string; docTitle?: string; docNo?: string; docDate?: string }> = ({ company, logoUrl, subtitle, docTitle, docNo, docDate }) => (
   <div style={{ marginBottom: '24px' }}>
     <div style={headerRowStyle}>
       <ContactBlock company={company} />

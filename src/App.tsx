@@ -5,14 +5,12 @@ import { useApp } from './contexts/AppContext';
 import Layout from './components/print/layout/Layout';
 import Login from './pages/Login';
 import ChangePassword from './pages/ChangePassword';
-import OwnerPortal from './pages/OwnerPortal';
 import OwnerView from './pages/OwnerView';
 import { Toaster } from 'react-hot-toast';
 
 // Static imports for stability and to prevent Error #130
 import Dashboard from './pages/Dashboard';
 import Properties from './pages/Properties';
-import People from './pages/People';
 import Tenants from './pages/Tenants';
 import Owners from './pages/Owners';
 import Contracts from './pages/Contracts';
@@ -26,6 +24,7 @@ import Commissions from './pages/Commissions';
 import Maintenance from './pages/Maintenance';
 import AuditLog from './pages/AuditLog';
 import SmartAssistant from './pages/SmartAssistant';
+import ProtectedRoute from './components/shared/ProtectedRoute';
 
 const hexToHsl = (hex: string): string => {
     hex = hex.replace('#', '');
@@ -60,17 +59,15 @@ const PageLoader: React.FC = () => (
 const ROUTE_META: Record<string, { title: string; description: string }> = {
     '/': { title: 'لوحة التحكم', description: 'نظرة شاملة على أداء المحفظة العقارية والمؤشرات الرئيسية' },
     '/properties': { title: 'العقارات والوحدات', description: 'إدارة العقارات والوحدات والوحدات الفرعية المؤجرة' },
-    '/people': { title: 'المستأجرون والملاك', description: 'إدارة بيانات المستأجرين والملاك والتواصل معهم' },
     '/tenants': { title: 'المستأجرون', description: 'إدارة بيانات المستأجرين والتواصل معهم' },
     '/owners': { title: 'الملاك', description: 'إدارة بيانات الملاك وعمولاتهم' },
     '/maintenance': { title: 'الصيانة', description: 'إدارة طلبات الصيانة ومتابعة حالتها' },
     '/contracts': { title: 'العقود', description: 'عرض وإدارة عقود الإيجار النشطة والمنتهية' },
     '/finance/invoices': { title: 'الفواتير', description: 'إدارة الفواتير الشهرية ومتابعة المدفوعات المتأخرة' },
-    '/finance/receipts': { title: 'سندات القبض', description: 'سندات قبض المبالغ المدفوعة وتوزيعها على الفواتير' },
-    '/finance/expenses': { title: 'المصروفات', description: 'تتبع وتصنيف مصروفات العقارات والوحدات' },
-    '/finance/settlements': { title: 'التسويات', description: 'تسويات الملاك ومطابقة الحسابات' },
-    '/finance/deposits': { title: 'الودائع', description: 'إدارة ودائع الضمان وتتبع حالتها' },
-    '/finance/ledger': { title: 'دفتر الأستاذ', description: 'القيود المحاسبية والسجل المالي التفصيلي' },
+    '/finance/financials': { title: 'السندات والمصروفات', description: 'سندات القبض والمصروفات والودائع وتسويات الملاك' },
+    '/finance/maintenance': { title: 'صيانة مالية', description: 'متابعة طلبات الصيانة والقيود المرتبطة بها' },
+    '/finance/gl': { title: 'الأستاذ العام', description: 'القيود المحاسبية والسجل المالي التفصيلي' },
+    '/finance/accounting': { title: 'دليل الحسابات', description: 'إدارة دليل الحسابات والقيد اليدوي وميزان المراجعة' },
     '/reports': { title: 'التقارير والتحليلات', description: 'تقارير الأداء المالي والإشغال والتحليلات الذكية' },
     '/leads': { title: 'العملاء المحتملون', description: 'إدارة العملاء المحتملين ومتابعة خط الفرص العقارية' },
     '/communication': { title: 'مركز التواصل', description: 'قوالب الرسائل والإشعارات للمستأجرين والملاك' },
@@ -113,7 +110,7 @@ const App: React.FC = () => {
     }
   }, [settings, location.pathname]);
 
-  if (settings === undefined || auth.currentUser === undefined) {
+  if (settings == null || auth.currentUser === undefined) {
     return <PageLoader />;
   }
 
@@ -123,8 +120,8 @@ const App: React.FC = () => {
       <Suspense fallback={<PageLoader />}>
         <Routes>
           {/* Public Routes */}
-          <Route path="/portal/:ownerId" element={<OwnerPortal />} />
           <Route path="/owner-view/:ownerId" element={<OwnerView />} />
+          <Route path="/portal/:ownerId" element={<OwnerView />} />
 
           {!auth.currentUser ? (
             <>
@@ -139,14 +136,13 @@ const App: React.FC = () => {
               
               {/* Operation Hub */}
               <Route path="/properties" element={<Properties />} />
-              <Route path="/people" element={<People />} />
               <Route path="/tenants" element={<Tenants />} />
               <Route path="/owners" element={<Owners />} />
               <Route path="/contracts" element={<Contracts />} />
               <Route path="/maintenance" element={<Maintenance />} />
 
               {/* Finance Hub (Unified) */}
-              <Route path="/finance/*" element={<Finance />} />
+              <Route path="/finance/*" element={<ProtectedRoute capability="VIEW_FINANCIALS"><Finance /></ProtectedRoute>} />
 
               {/* CRM & Growth */}
               <Route path="/leads" element={<Leads />} />
@@ -156,11 +152,11 @@ const App: React.FC = () => {
               
               {/* Analytics & Admin Hub */}
               <Route path="/reports" element={<Reports />} />
-              <Route path="/smart-assistant" element={<SmartAssistant />} />
+              <Route path="/smart-assistant" element={<ProtectedRoute capability="USE_SMART_ASSISTANT"><SmartAssistant /></ProtectedRoute>} />
               {auth.currentUser.role === 'ADMIN' && (
                 <>
-                  <Route path="/audit-log" element={<AuditLog />} />
-                  <Route path="/settings/*" element={<Settings />} />
+                  <Route path="/audit-log" element={<ProtectedRoute capability="VIEW_AUDIT_LOG"><AuditLog /></ProtectedRoute>} />
+                  <Route path="/settings/*" element={<ProtectedRoute capability="MANAGE_SETTINGS"><Settings /></ProtectedRoute>} />
                 </>
               )}
               

@@ -231,11 +231,23 @@ svg { max-width: 100%; height: auto; }
 const PrintPreviewModal: React.FC<PrintPreviewModalProps> = ({ isOpen, onClose, title, children }) => {
     const componentRef = useRef<HTMLDivElement>(null);
 
+    const sanitizeClone = (root: HTMLElement) => {
+        root.querySelectorAll('script, iframe, object, embed').forEach(node => node.remove());
+        root.querySelectorAll('*').forEach(node => {
+            for (const attr of Array.from(node.attributes)) {
+                if (/^on/i.test(attr.name)) {
+                    node.removeAttribute(attr.name);
+                }
+            }
+        });
+        return root;
+    };
+
     const handlePrint = () => {
         const content = componentRef.current;
         if (!content) return;
 
-        const clone = content.cloneNode(true) as HTMLElement;
+        const clone = sanitizeClone(content.cloneNode(true) as HTMLElement);
 
         clone.querySelectorAll('svg').forEach(svg => {
             if (!svg.getAttribute('xmlns')) {
@@ -277,22 +289,22 @@ const PrintPreviewModal: React.FC<PrintPreviewModalProps> = ({ isOpen, onClose, 
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 bg-black bg-opacity-75 z-50 flex justify-center items-center p-4">
-            <div className="bg-slate-200 dark:bg-slate-900 rounded-lg shadow-xl w-full max-w-4xl h-[95vh] flex flex-col">
-                <div className="bg-white dark:bg-slate-800 p-3 flex justify-between items-center rounded-t-lg border-b border-slate-200 dark:border-slate-700">
-                    <h3 className="text-lg font-bold">{title}</h3>
-                    <div className="flex items-center gap-4">
-                        <button onClick={handlePrint} className="flex items-center gap-2 px-4 py-2 rounded-md bg-primary text-white">
+        <div className="fixed inset-0 bg-black bg-opacity-75 z-50 flex justify-center items-center p-2 sm:p-4 md:p-6">
+            <div className="bg-slate-200 dark:bg-slate-900 rounded-xl shadow-xl w-full max-w-6xl h-[97vh] sm:h-[95vh] flex flex-col">
+                <div className="bg-white dark:bg-slate-800 p-3 sm:p-4 flex justify-between items-center rounded-t-xl border-b border-slate-200 dark:border-slate-700">
+                    <h3 className="text-base sm:text-lg font-bold">{title}</h3>
+                    <div className="flex items-center gap-2 sm:gap-4">
+                        <button onClick={handlePrint} className="flex items-center gap-2 px-3 sm:px-4 min-h-[40px] rounded-lg bg-primary text-white text-sm font-bold">
                             <Printer size={18} />
                             طباعة / حفظ PDF
                         </button>
-                        <button onClick={onClose} className="text-slate-500 hover:text-slate-800 dark:hover:text-slate-200">
-                            <X size={24} />
+                        <button onClick={onClose} className="text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 w-10 h-10 inline-flex items-center justify-center rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700">
+                            <X size={22} />
                         </button>
                     </div>
                 </div>
-                <div className="p-5 overflow-y-auto flex-1">
-                    <div ref={componentRef} className="bg-card text-text shadow-lg mx-auto p-8">
+                <div className="p-3 sm:p-5 md:p-6 overflow-y-auto flex-1">
+                    <div ref={componentRef} className="bg-card text-text shadow-lg mx-auto p-4 sm:p-6 md:p-8 w-full max-w-[1080px]">
                         {children}
                     </div>
                 </div>

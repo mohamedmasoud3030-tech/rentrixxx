@@ -128,8 +128,9 @@ const AppearanceSettings: React.FC = () => {
             toast.success('تم حفظ إعدادات المظهر.');
             setLogoFile(null);
             setStampFile(null);
-        } catch (err: any) {
-            toast.error('فشل حفظ إعدادات المظهر: ' + (err?.message || 'خطأ غير معروف'));
+        } catch (err: unknown) {
+            const message = err instanceof Error ? err.message : 'خطأ غير معروف';
+            toast.error(`فشل حفظ إعدادات المظهر: ${message}`);
         } finally {
             setIsSaving(false);
         }

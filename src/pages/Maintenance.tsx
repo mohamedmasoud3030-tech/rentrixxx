@@ -1,23 +1,74 @@
-
-
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useApp } from '../contexts/AppContext';
 import { MaintenanceRecord, Expense, Invoice } from '../types';
 import Card from '../components/ui/Card';
 import Modal from '../components/ui/Modal';
 import ActionsMenu, { EditAction, DeleteAction } from '../components/shared/ActionsMenu';
-import { formatCurrency, formatDate, getStatusBadgeClass, normalizeArabicNumerals } from '../utils/helpers';
+import { formatCurrency, formatDate, getStatusBadgeClass, normalizeArabicNumerals, exportToCsv } from '../utils/helpers';
 import HardGateBanner from '../components/shared/HardGateBanner';
 import SearchFilterBar from '../components/shared/SearchFilterBar';
 import { toast } from 'react-hot-toast';
-import { Wrench, Clock, Loader2, CheckCircle, DollarSign } from 'lucide-react';
+import { Wrench, Clock, Loader2, CheckCircle, DollarSign, Download } from 'lucide-react';
+import { useSearchParams } from 'react-router-dom';
+
+const MAINTENANCE_FILTER_KEY = 'rentrix:maintenance_filter';
+
+type MaintenanceStatusFilter = 'ALL' | MaintenanceRecord['status'];
+
+const statusTabs: { value: MaintenanceStatusFilter; label: string }[] = [
+    { value: 'ALL', label: 'الكل' },
+    { value: 'NEW', label: 'جديد' },
+    { value: 'IN_PROGRESS', label: 'قيد التنفيذ' },
+    { value: 'COMPLETED', label: 'مكتمل' },
+    { value: 'CLOSED', label: 'مغلق' },
+];
+
+const priorityBadgeClass: Record<string, string> = {
+    URGENT: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300',
+    HIGH: 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300',
+    MEDIUM: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300',
+    LOW: 'bg-gray-100 text-gray-700 dark:bg-gray-700/30 dark:text-gray-300',
+};
+
+const priorityLabel: Record<string, string> = {
+    URGENT: 'عاجلة',
+    HIGH: 'عالية',
+    MEDIUM: 'متوسطة',
+    LOW: 'منخفضة',
+};
 
 const Maintenance: React.FC = () => {
-    // FIX: Use dataService for data manipulation
-    const { db, dataService } = useApp();
+    const { db, dataService, settings } = useApp();
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingRecord, setEditingRecord] = useState<MaintenanceRecord | null>(null);
     const [searchTerm, setSearchTerm] = useState('');
+    const [statusFilter, setStatusFilter] = useState<MaintenanceStatusFilter>('ALL');
+    const [fromDate, setFromDate] = useState('');
+    const [toDate, setToDate] = useState('');
+    const [searchParams] = useSearchParams();
+    const prefilledUnitId = searchParams.get('unitId') || '';
+
+    useEffect(() => {
+        const saved = sessionStorage.getItem(MAINTENANCE_FILTER_KEY);
+        if (!saved) return;
+        try {
+            const parsed = JSON.parse(saved) as { status?: MaintenanceStatusFilter; fromDate?: string; toDate?: string };
+            if (parsed.status && ['ALL', 'NEW', 'IN_PROGRESS', 'COMPLETED', 'CLOSED'].includes(parsed.status)) {
+                setStatusFilter(parsed.status);
+            }
+            if (parsed.fromDate) setFromDate(parsed.fromDate);
+            if (parsed.toDate) setToDate(parsed.toDate);
+        } catch {
+            // noop
+        }
+    }, []);
+
+    useEffect(() => {
+        sessionStorage.setItem(
+            MAINTENANCE_FILTER_KEY,
+            JSON.stringify({ status: statusFilter, fromDate, toDate }),
+        );
+    }, [statusFilter, fromDate, toDate]);
 
     const handleOpenModal = (record: MaintenanceRecord | null = null) => {
         setEditingRecord(record);
@@ -33,7 +84,7 @@ const Maintenance: React.FC = () => {
         if (!db) return;
         const record = db.maintenanceRecords.find(r => r.id === id);
         if (record?.expenseId || record?.invoiceId) {
-            toast.error("لا يمكن حذف طلب الصيانة هذا لأنه مرتبط بحركة مالية. يرجى إلغاء المصروف أو الفاتورة أولاً.");
+            toast.error('لا يمكن حذف طلب الصيانة هذا لأنه مرتبط بحركة مالية. يرجى إلغاء المصروف أو الفاتورة أولاً.');
             return;
         }
         await dataService.remove('maintenanceRecords', id);
@@ -44,12 +95,28 @@ const Maintenance: React.FC = () => {
 
     const filteredRecords = useMemo(() => {
         if (!db) return [];
-        return db.maintenanceRecords.filter(rec => {
-            const unit = db.units.find(u => u.id === rec.unitId);
-            return rec.no.includes(searchTerm) || rec.description.includes(searchTerm) || unit?.name.includes(searchTerm);
-        }).sort((a,b) => new Date(b.requestDate).getTime() - new Date(a.requestDate).getTime());
-    }, [db, searchTerm]);
-    
+        const q = normalizeArabicNumerals(searchTerm).trim();
+        return db.maintenanceRecords
+            .filter(rec => {
+                const unit = db.units.find(u => u.id === rec.unitId);
+                const normalizedNo = normalizeArabicNumerals(rec.no || '');
+                const normalizedDescription = normalizeArabicNumerals(rec.description || '');
+                const normalizedUnitName = normalizeArabicNumerals(unit?.name || '');
+                const statusMatch = statusFilter === 'ALL' || rec.status === statusFilter;
+                const fromMatch = !fromDate || rec.requestDate >= fromDate;
+                const toMatch = !toDate || rec.requestDate <= toDate;
+                const queryMatch =
+                    !q || normalizedNo.includes(q) || normalizedDescription.includes(q) || normalizedUnitName.includes(q);
+                return statusMatch && fromMatch && toMatch && queryMatch;
+            })
+            .sort((a, b) => new Date(b.requestDate).getTime() - new Date(a.requestDate).getTime());
+    }, [db, searchTerm, statusFilter, fromDate, toDate]);
+
+    const filteredTotalCost = useMemo(
+        () => filteredRecords.reduce((sum, record) => sum + (record.cost || 0), 0),
+        [filteredRecords],
+    );
+
     const maintenanceStats = useMemo(() => {
         if (!db) return { total: 0, newCount: 0, inProgress: 0, completed: 0, totalCost: 0 };
         const records = db.maintenanceRecords;
@@ -91,28 +158,83 @@ const Maintenance: React.FC = () => {
                 </div>
                 <div className="bg-card rounded-xl border border-border p-3 text-center">
                     <DollarSign size={18} className="mx-auto mb-1 text-red-500" />
-                    <p className="text-lg font-black text-red-600" dir="ltr">{formatCurrency(maintenanceStats.totalCost, db.settings.operational.currency)}</p>
+                    <p className="text-lg font-black text-red-600" dir="ltr">{formatCurrency(maintenanceStats.totalCost, settings.operational.currency)}</p>
                     <p className="text-[10px] text-text-muted">إجمالي التكاليف</p>
                 </div>
             </div>
 
             <Card>
-                <div className="flex justify-between items-center mb-4">
+                <div className="flex flex-wrap gap-3 justify-between items-center mb-4">
                     <h2 className="text-xl font-bold">طلبات الصيانة</h2>
-                    <button onClick={() => handleOpenModal()} className="btn btn-primary">إضافة طلب صيانة</button>
+                    <div className="flex gap-2">
+                        <button
+                            onClick={() => {
+                                const data = filteredRecords.map(r => ({
+                                    'رقم الطلب': r.no,
+                                    الوحدة: db.units.find(u => u.id === r.unitId)?.name || '—',
+                                    'تاريخ الطلب': formatDate(r.requestDate),
+                                    الوصف: r.description || '—',
+                                    'مكلّف إلى': r.assignedTo || '—',
+                                    الأولوية: priorityLabel[r.priority || 'LOW'] || 'منخفضة',
+                                    التكلفة: formatCurrency(r.cost || 0, settings.operational.currency),
+                                    الحالة:
+                                        r.status === 'NEW'
+                                            ? 'جديد'
+                                            : r.status === 'IN_PROGRESS'
+                                              ? 'قيد التنفيذ'
+                                              : r.status === 'COMPLETED'
+                                                ? 'مكتمل'
+                                                : 'مغلق',
+                                }));
+                                exportToCsv('طلبات_صيانة_rentrix', data);
+                            }}
+                            className="btn btn-secondary flex items-center gap-2"
+                        >
+                            <Download size={14} /> تصدير CSV
+                        </button>
+                        <button onClick={() => handleOpenModal()} className="btn btn-primary">إضافة طلب صيانة</button>
+                    </div>
                 </div>
-                <SearchFilterBar searchTerm={searchTerm} onSearchChange={setSearchTerm} placeholder="بحث برقم الطلب، الوصف، أو اسم الوحدة..." />
-                <div className="overflow-x-auto">
+                <SearchFilterBar
+                    searchTerm={searchTerm}
+                    onSearchChange={setSearchTerm}
+                    placeholder="بحث برقم الطلب، الوصف، أو اسم الوحدة..."
+                />
+                <div className="flex flex-wrap items-center gap-2 mt-3">
+                    {statusTabs.map(tab => (
+                        <button
+                            key={tab.value}
+                            onClick={() => setStatusFilter(tab.value)}
+                            className={`btn text-sm ${statusFilter === tab.value ? 'btn-primary' : 'btn-ghost'}`}
+                        >
+                            {tab.label}
+                        </button>
+                    ))}
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-3">
+                    <div>
+                        <label className="block text-xs text-text-muted mb-1">من تاريخ الطلب</label>
+                        <input type="date" value={fromDate} onChange={e => setFromDate(e.target.value)} />
+                    </div>
+                    <div>
+                        <label className="block text-xs text-text-muted mb-1">إلى تاريخ الطلب</label>
+                        <input type="date" value={toDate} onChange={e => setToDate(e.target.value)} />
+                    </div>
+                </div>
+                <div className="overflow-x-auto mt-4">
                     <table className="w-full text-sm text-right border-collapse border border-border">
                         <thead className="text-xs uppercase bg-background text-text">
                             <tr>
-                                <th scope="col" className="px-6 py-3 border border-border">رقم الطلب</th>
-                                <th scope="col" className="px-6 py-3 border border-border">الوحدة</th>
-                                <th scope="col" className="px-6 py-3 border border-border">تاريخ الطلب</th>
-                                <th scope="col" className="px-6 py-3 border border-border">المصروف/الفاتورة</th>
-                                <th scope="col" className="px-6 py-3 border border-border">التكلفة</th>
-                                <th scope="col" className="px-6 py-3 border border-border">الحالة</th>
-                                <th scope="col" className="px-6 py-3 border border-border">إجراءات</th>
+                                <th scope="col" className="px-4 py-3 border border-border">رقم الطلب</th>
+                                <th scope="col" className="px-4 py-3 border border-border">الوحدة</th>
+                                <th scope="col" className="px-4 py-3 border border-border">تاريخ الطلب</th>
+                                <th scope="col" className="px-4 py-3 border border-border">مُكلَّف إلى</th>
+                                <th scope="col" className="px-4 py-3 border border-border">الأولوية</th>
+                                <th scope="col" className="px-4 py-3 border border-border">المصروف/الفاتورة</th>
+                                <th scope="col" className="px-4 py-3 border border-border">التكلفة</th>
+                                <th scope="col" className="px-4 py-3 border border-border">الحالة</th>
+                                <th scope="col" className="px-4 py-3 border border-border">تاريخ الإنجاز</th>
+                                <th scope="col" className="px-4 py-3 border border-border">إجراءات</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -122,28 +244,37 @@ const Maintenance: React.FC = () => {
                                 const linkedExpense = rec.expenseId ? expensesMap.get(rec.expenseId) : null;
                                 const linkedInvoice = rec.invoiceId ? invoicesMap.get(rec.invoiceId) : null;
                                 const linkedDoc = linkedExpense || linkedInvoice;
+                                const completionDate = rec.completionDate || (rec.completedAt ? new Date(rec.completedAt).toISOString().slice(0, 10) : '');
                                 return (
                                     <tr key={rec.id} onClick={() => handleOpenModal(rec)} className="bg-card hover:bg-background cursor-pointer">
-                                        <td className="px-6 py-4 font-mono border border-border">{rec.no}</td>
-                                        <td className="px-6 py-4 font-medium text-text border border-border">
+                                        <td className="px-4 py-3 font-mono border border-border">{rec.no}</td>
+                                        <td className="px-4 py-3 font-medium text-text border border-border">
                                             {unit?.name} <span className="text-xs text-text-muted">({property?.name})</span>
                                         </td>
-                                        <td className="px-6 py-4 border border-border">{formatDate(rec.requestDate)}</td>
-                                        <td className="px-6 py-4 font-mono text-xs border border-border">{linkedDoc ? (linkedDoc as Invoice | Expense).no : '—'}</td>
-                                        {/* FIX: Corrected path to currency settings */}
-                                        <td className="px-6 py-4 border border-border">{formatCurrency(rec.cost, db.settings.operational.currency)}</td>
-                                        <td className="px-6 py-4 border border-border">
+                                        <td className="px-4 py-3 border border-border">{formatDate(rec.requestDate)}</td>
+                                        <td className="px-4 py-3 border border-border">{rec.assignedTo || '—'}</td>
+                                        <td className="px-4 py-3 border border-border">
+                                            <span className={`px-2 py-1 text-xs rounded-full ${priorityBadgeClass[rec.priority || 'LOW']}`}>
+                                                {priorityLabel[rec.priority || 'LOW']}
+                                            </span>
+                                        </td>
+                                        <td className="px-4 py-3 font-mono text-xs border border-border">{linkedDoc ? (linkedDoc as Invoice | Expense).no : '—'}</td>
+                                        <td className="px-4 py-3 border border-border">{formatCurrency(rec.cost || 0, settings.operational.currency)}</td>
+                                        <td className="px-4 py-3 border border-border">
                                             <span className={`px-2 py-1 text-xs rounded-full ${getStatusBadgeClass(rec.status)}`}>
                                                 {rec.status === 'NEW' ? 'جديد' : rec.status === 'IN_PROGRESS' ? 'قيد التنفيذ' : rec.status === 'COMPLETED' ? 'مكتمل' : 'مغلق'}
                                             </span>
                                         </td>
-                                        <td className="px-6 py-4 border border-border">
-                                            <div onClick={(e) => e.stopPropagation()}>
-                                                <ActionsMenu items={[
+                                        <td className="px-4 py-3 border border-border">
+                                            {['COMPLETED', 'CLOSED'].includes(rec.status) && completionDate ? formatDate(completionDate) : '—'}
+                                        </td>
+                                        <td className="px-4 py-3 border border-border" onClick={e => e.stopPropagation()}>
+                                            <ActionsMenu
+                                                items={[
                                                     EditAction(() => handleOpenModal(rec)),
                                                     DeleteAction(() => handleDelete(rec.id)),
-                                                ]} />
-                                            </div>
+                                                ]}
+                                            />
                                         </td>
                                     </tr>
                                 );
@@ -151,22 +282,33 @@ const Maintenance: React.FC = () => {
                         </tbody>
                     </table>
                 </div>
+                <div className="mt-4 pt-3 border-t border-border flex justify-end">
+                    <p className="text-sm font-bold">
+                        إجمالي تكاليف الفترة المفلترة: <span className="text-primary">{formatCurrency(filteredTotalCost, settings.operational.currency)}</span>
+                    </p>
+                </div>
             </Card>
-            <MaintenanceForm isOpen={isModalOpen} onClose={handleCloseModal} record={editingRecord} />
+            <MaintenanceForm
+                isOpen={isModalOpen}
+                onClose={handleCloseModal}
+                record={editingRecord}
+                prefilledUnitId={prefilledUnitId}
+            />
         </div>
     );
 };
 
-
-const MaintenanceForm: React.FC<{ isOpen: boolean, onClose: () => void, record: MaintenanceRecord | null }> = ({ isOpen, onClose, record }) => {
-    // FIX: Use dataService for data manipulation
-    const { db, dataService } = useApp();
+const MaintenanceForm: React.FC<{ isOpen: boolean; onClose: () => void; record: MaintenanceRecord | null; prefilledUnitId?: string }> = ({ isOpen, onClose, record, prefilledUnitId }) => {
+    const { db, dataService, settings } = useApp();
     const [unitId, setUnitId] = useState('');
     const [requestDate, setRequestDate] = useState('');
     const [description, setDescription] = useState('');
     const [status, setStatus] = useState<MaintenanceRecord['status']>('NEW');
     const [cost, setCost] = useState(0);
     const [chargedTo, setChargedTo] = useState<MaintenanceRecord['chargedTo']>('OWNER');
+    const [priority, setPriority] = useState<'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT'>('MEDIUM');
+    const [assignedTo, setAssignedTo] = useState('');
+    const [completionDate, setCompletionDate] = useState('');
     const [isSaving, setIsSaving] = useState(false);
     const isSavingRef = useRef(false);
 
@@ -177,25 +319,30 @@ const MaintenanceForm: React.FC<{ isOpen: boolean, onClose: () => void, record: 
             setRequestDate(record.requestDate);
             setDescription(record.description);
             setStatus(record.status);
-            setCost(record.cost);
+            setCost(record.cost || 0);
             setChargedTo(record.chargedTo);
+            setPriority(record.priority || 'MEDIUM');
+            setAssignedTo(record.assignedTo || '');
+            setCompletionDate(record.completionDate || (record.completedAt ? new Date(record.completedAt).toISOString().slice(0, 10) : ''));
         } else {
-            setUnitId(db.units[0]?.id || '');
+            setUnitId(prefilledUnitId || db.units[0]?.id || '');
             setRequestDate(new Date().toISOString().slice(0, 10));
             setDescription('');
             setStatus('NEW');
             setCost(0);
-            // FIX: Corrected path to maintenance settings
-            setChargedTo(db.settings.operational.maintenance.defaultChargedTo);
+            setChargedTo(settings.operational.maintenance.defaultChargedTo);
+            setPriority('MEDIUM');
+            setAssignedTo('');
+            setCompletionDate('');
         }
-    }, [record, isOpen, db]);
+    }, [record, isOpen, db, prefilledUnitId, settings.operational.maintenance.defaultChargedTo]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (isSavingRef.current) return;
         if (!db) return;
         if (!unitId || !description) {
-            toast.error("الوحدة والوصف مطلوبان.");
+            toast.error('الوحدة والوصف مطلوبان.');
             return;
         }
 
@@ -204,18 +351,28 @@ const MaintenanceForm: React.FC<{ isOpen: boolean, onClose: () => void, record: 
         try {
             if (record) {
                 if ((record.expenseId || record.invoiceId) && (record.status !== status || record.cost !== cost || record.chargedTo !== chargedTo)) {
-                    toast.error("لا يمكن تعديل البيانات المالية لطلب صيانة مرتبط بالفعل بحركة مالية. لإجراء تغيير، يجب إلغاء المصروف أو الفاتورة أولاً.");
+                    toast.error('لا يمكن تعديل البيانات المالية لطلب صيانة مرتبط بالفعل بحركة مالية. لإجراء تغيير، يجب إلغاء المصروف أو الفاتورة أولاً.');
                     return;
                 }
 
                 const isNewlyCompleted = ['COMPLETED', 'CLOSED'].includes(status) && !['COMPLETED', 'CLOSED'].includes(record.status) && cost > 0;
-                let updates: Partial<MaintenanceRecord> = { unitId, requestDate, description, status, cost, chargedTo };
+                const updates: Partial<MaintenanceRecord> = {
+                    unitId,
+                    requestDate,
+                    description,
+                    status,
+                    cost,
+                    chargedTo,
+                    priority,
+                    assignedTo: assignedTo || undefined,
+                    completionDate: ['COMPLETED', 'CLOSED'].includes(status) ? (completionDate || new Date().toISOString().slice(0, 10)) : undefined,
+                };
 
                 if (isNewlyCompleted) {
                     const activeContract = db.contracts.find(c => c.unitId === unitId && c.status === 'ACTIVE');
                     if (chargedTo === 'TENANT') {
                         if (!activeContract) {
-                            toast.error("لا يمكن تحميل التكلفة على المستأجر لعدم وجود عقد نشط لهذه الوحدة.");
+                            toast.error('لا يمكن تحميل التكلفة على المستأجر لعدم وجود عقد نشط لهذه الوحدة.');
                             return;
                         }
                         const newInvoice = await dataService.add('invoices', {
@@ -250,7 +407,17 @@ const MaintenanceForm: React.FC<{ isOpen: boolean, onClose: () => void, record: 
                 }
                 await dataService.update('maintenanceRecords', record.id, updates);
             } else {
-                await dataService.add('maintenanceRecords', { unitId, requestDate, description, status, cost, chargedTo });
+                await dataService.add('maintenanceRecords', {
+                    unitId,
+                    requestDate,
+                    description,
+                    status,
+                    cost,
+                    chargedTo,
+                    priority,
+                    assignedTo: assignedTo || undefined,
+                    completionDate: ['COMPLETED', 'CLOSED'].includes(status) ? (completionDate || new Date().toISOString().slice(0, 10)) : undefined,
+                });
             }
             onClose();
         } finally {
@@ -258,29 +425,33 @@ const MaintenanceForm: React.FC<{ isOpen: boolean, onClose: () => void, record: 
             setIsSaving(false);
         }
     };
-    
+
     if (!db) return null;
 
     return (
-        <Modal isOpen={isOpen} onClose={onClose} title={record ? "تعديل طلب صيانة" : "إضافة طلب صيانة"}>
+        <Modal isOpen={isOpen} onClose={onClose} title={record ? 'تعديل طلب صيانة' : 'إضافة طلب صيانة'}>
             <form onSubmit={handleSubmit} className="space-y-4">
-                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                         <label className="block text-sm font-medium mb-1">الوحدة</label>
                         <select value={unitId} onChange={e => setUnitId(e.target.value)} required>
-                           {db.units.map(u => <option key={u.id} value={u.id}>{u.name} ({db.properties.find(p=>p.id === u.propertyId)?.name})</option>)}
+                            {db.units.map(u => (
+                                <option key={u.id} value={u.id}>
+                                    {u.name} ({db.properties.find(p => p.id === u.propertyId)?.name})
+                                </option>
+                            ))}
                         </select>
                     </div>
                     <div>
                         <label className="block text-sm font-medium mb-1">تاريخ الطلب</label>
                         <input type="date" value={requestDate} onChange={e => setRequestDate(e.target.value)} required />
                     </div>
-                 </div>
-                 <div>
+                </div>
+                <div>
                     <label className="block text-sm font-medium mb-1">الوصف</label>
                     <textarea value={description} onChange={e => setDescription(e.target.value)} required rows={3} />
-                 </div>
-                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div>
                         <label className="block text-sm font-medium mb-1">الحالة</label>
                         <select value={status} onChange={e => setStatus(e.target.value as MaintenanceRecord['status'])}>
@@ -291,21 +462,46 @@ const MaintenanceForm: React.FC<{ isOpen: boolean, onClose: () => void, record: 
                         </select>
                     </div>
                     <div>
-                        <label className="block text-sm font-medium mb-1">التكلفة</label>
+                        <label className="block text-sm font-medium mb-1">التكلفة ({settings.operational.currency})</label>
                         <input type="number" value={cost} onChange={e => setCost(Number(normalizeArabicNumerals(e.target.value)))} />
                     </div>
                     <div>
                         <label className="block text-sm font-medium mb-1">تحميل على</label>
                         <select value={chargedTo} onChange={e => setChargedTo(e.target.value as MaintenanceRecord['chargedTo'])}>
-                           <option value="OWNER">المالك</option>
-                           <option value="OFFICE">المكتب</option>
-                           <option value="TENANT">المستأجر</option>
+                            <option value="OWNER">المالك</option>
+                            <option value="OFFICE">المكتب</option>
+                            <option value="TENANT">المستأجر</option>
                         </select>
                     </div>
-                 </div>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                        <label className="block text-sm font-medium mb-1">الأولوية</label>
+                        <select value={priority} onChange={e => setPriority(e.target.value as 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT')}>
+                            <option value="LOW">منخفضة</option>
+                            <option value="MEDIUM">متوسطة</option>
+                            <option value="HIGH">عالية</option>
+                            <option value="URGENT">عاجلة</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium mb-1">مُكلَّف إلى</label>
+                        <input value={assignedTo} onChange={e => setAssignedTo(e.target.value)} placeholder="اسم الفني / المقاول" />
+                    </div>
+                    {['COMPLETED', 'CLOSED'].includes(status) && (
+                        <div>
+                            <label className="block text-sm font-medium mb-1">تاريخ الإنجاز</label>
+                            <input type="date" value={completionDate} onChange={e => setCompletionDate(e.target.value)} />
+                        </div>
+                    )}
+                </div>
                 <div className="flex justify-end gap-3 pt-4 mt-4 border-t border-border">
-                    <button type="button" onClick={onClose} className="btn btn-ghost" disabled={isSaving}>إلغاء</button>
-                    <button type="submit" className="btn btn-primary" disabled={isSaving}>{isSaving ? 'جاري الحفظ...' : 'حفظ'}</button>
+                    <button type="button" onClick={onClose} className="btn btn-ghost" disabled={isSaving}>
+                        إلغاء
+                    </button>
+                    <button type="submit" className="btn btn-primary" disabled={isSaving}>
+                        {isSaving ? 'جاري الحفظ...' : 'حفظ'}
+                    </button>
                 </div>
             </form>
         </Modal>

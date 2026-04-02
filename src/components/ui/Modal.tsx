@@ -10,10 +10,10 @@ interface ModalProps {
 }
 
 const sizeMap = {
-  sm: 'max-w-lg',
-  md: 'max-w-2xl',
-  lg: 'max-w-3xl',
-  xl: 'max-w-5xl',
+  sm: 'sm:max-w-xl',
+  md: 'sm:max-w-3xl',
+  lg: 'sm:max-w-4xl',
+  xl: 'sm:max-w-6xl',
 };
 
 const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children, size = 'lg' }) => {
@@ -37,7 +37,7 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children, size = 
 
   return (
     <div
-      className="fixed inset-0 z-50 flex flex-col justify-end sm:justify-center sm:items-center sm:p-4"
+      className="fixed inset-0 z-50 flex flex-col justify-end sm:justify-center sm:items-center p-0 sm:p-4 md:p-6"
       style={{ background: 'rgba(0, 0, 0, 0.55)', backdropFilter: 'blur(4px)' }}
       onClick={onClose}
     >
@@ -46,8 +46,8 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children, size = 
         className={`
           bg-card text-text w-full flex flex-col
           rounded-t-3xl sm:rounded-2xl
-          max-h-[92vh]
-          sm:${sizeMap[size]}
+          max-h-[96vh] sm:max-h-[92vh]
+          ${sizeMap[size]}
         `}
         style={{ boxShadow: '0 -8px 40px rgba(0,0,0,0.25), 0 0 0 1px hsl(var(--color-border))' }}
         onClick={(e) => e.stopPropagation()}
@@ -58,18 +58,18 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children, size = 
         </div>
 
         {/* Header */}
-        <div className="flex justify-between items-center px-5 py-3 sm:px-6 sm:py-4 border-b border-border flex-shrink-0">
-          <h3 className="text-base sm:text-lg font-black text-text">{title}</h3>
+        <div className="flex justify-between items-center px-4 py-3 sm:px-6 sm:py-4 border-b border-border flex-shrink-0">
+          <h3 className="text-[15px] sm:text-lg font-black text-text">{title}</h3>
           <button
             onClick={onClose}
-            className="flex items-center justify-center w-9 h-9 rounded-xl hover:bg-background text-text-muted hover:text-text transition-colors active:scale-95"
+            className="flex items-center justify-center w-10 h-10 rounded-xl hover:bg-background text-text-muted hover:text-text transition-colors active:scale-95"
           >
-            <X size={18} />
+            <X size={19} />
           </button>
         </div>
 
         {/* Body */}
-        <div className="p-4 sm:p-6 overflow-y-auto flex-1">
+        <div className="p-4 sm:p-6 md:p-7 overflow-y-auto flex-1">
           {children}
         </div>
       </div>

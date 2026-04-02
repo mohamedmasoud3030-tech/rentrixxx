@@ -1,9 +1,8 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { useApp } from '../contexts/AppContext';
-import { Sparkles, Bot, User, X, Send, AlertCircle, Settings } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { Sparkles, Bot, User, X, Send } from 'lucide-react';
 import { queryAssistant } from '../services/geminiService';
-import Card from '../components/ui/Card';
+import { logger } from '../services/logger';
 
 interface Message {
     sender: 'user' | 'ai' | 'error';
@@ -11,30 +10,8 @@ interface Message {
 }
 
 const SmartAssistant: React.FC = () => {
-    const { settings } = useApp();
-    const navigate = useNavigate();
+    useApp();
     const [isOpen, setIsOpen] = useState(false);
-
-    if (!settings.integrations.geminiApiKey) {
-        return (
-            <div className="space-y-6">
-                <Card className="p-8 text-center">
-                    <div className="flex justify-center mb-4">
-                        <AlertCircle size={48} className="text-yellow-500" />
-                    </div>
-                    <h2 className="text-2xl font-bold mb-3">المساعد الذكي غير مفعل</h2>
-                    <p className="text-text-muted mb-6">لاستخدام المساعد الذكي المدعوم بـ Google Gemini، يجب تفعيل مفتاح API أولاً.</p>
-                    <button
-                        onClick={() => navigate('/settings')}
-                        className="flex items-center justify-center gap-2 mx-auto px-6 py-3 bg-primary text-white rounded-lg font-bold hover:bg-opacity-90"
-                    >
-                        <Settings size={18} />
-                        انتقل إلى الإعدادات
-                    </button>
-                </Card>
-            </div>
-        );
-    }
 
     return (
         <>
@@ -51,7 +28,7 @@ const SmartAssistant: React.FC = () => {
 };
 
 const AssistantModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
-    const { db, settings, ownerBalances, contractBalances } = useApp();
+    const { db, ownerBalances, contractBalances } = useApp();
     const [messages, setMessages] = useState<Message[]>([
         { sender: 'ai', text: 'أهلاً بك! أنا مساعدك الذكي. كيف يمكنني مساعدتك في تحليل بياناتك اليوم؟' }
     ]);
@@ -107,13 +84,11 @@ const AssistantModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
         setIsLoading(true);
 
         try {
-            const responseText = await queryAssistant(settings.integrations.geminiApiKey, input, JSON.stringify(contextData));
+            const responseText = await queryAssistant('', input, JSON.stringify(contextData));
             setMessages(prev => [...prev, { sender: 'ai', text: responseText }]);
         } catch (error) {
-            console.error(error);
-            const errorMessage = (error as Error).message.includes("API key not valid")
-                ? "مفتاح API غير صالح. يرجى التحقق منه في الإعدادات."
-                : "حدث خطأ أثناء التواصل مع المساعد الذكي. يرجى المحاولة مرة أخرى.";
+            logger.error('[SmartAssistantPage] query failed', error);
+            const errorMessage = "حدث خطأ أثناء التواصل مع المساعد الذكي. يرجى المحاولة مرة أخرى.";
             setMessages(prev => [...prev, { sender: 'error', text: errorMessage }]);
         } finally {
             setIsLoading(false);
