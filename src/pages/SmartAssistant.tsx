@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { useApp } from '../contexts/AppContext';
-import { Sparkles, Bot, User, X, Send } from 'lucide-react';
+import { Bot, User, X, Send } from 'lucide-react';
 import { queryAssistant } from '../services/geminiService';
 import { logger } from '../services/logger';
 
@@ -10,21 +10,7 @@ interface Message {
 }
 
 const SmartAssistant: React.FC = () => {
-    useApp();
-    const [isOpen, setIsOpen] = useState(false);
-
-    return (
-        <>
-            <button
-                onClick={() => setIsOpen(true)}
-                className="fixed bottom-6 left-6 bg-primary text-white w-14 h-14 rounded-full shadow-lg flex items-center justify-center z-50 hover:bg-opacity-90 transition-transform transform hover:scale-110"
-                aria-label="افتح المساعد الذكي"
-            >
-                <Sparkles size={24} />
-            </button>
-            {isOpen && <AssistantModal onClose={() => setIsOpen(false)} />}
-        </>
-    );
+    return <AssistantModal onClose={() => window.history.back()} />;
 };
 
 const AssistantModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
@@ -96,58 +82,74 @@ const AssistantModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
     };
     
     return (
-        <div className="fixed bottom-24 left-6 w-96 h-[60vh] bg-card shadow-2xl rounded-lg z-50 flex flex-col border border-border">
-            <header className="flex justify-between items-center p-3 border-b border-border">
-                <div className="flex items-center gap-2">
-                    <Bot className="text-primary" />
-                    <h3 className="font-bold text-text">المساعد الذكي</h3>
-                </div>
-                <button onClick={onClose} className="text-text-muted hover:text-text"><X size={20} /></button>
-            </header>
-            <main className="flex-1 overflow-y-auto p-4 space-y-4">
-                {messages.map((msg, index) => (
-                    <div key={index} className={`flex items-start gap-2.5 ${msg.sender === 'user' ? 'justify-end' : ''}`}>
-                         {msg.sender !== 'user' && <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0"><Bot size={18} className="text-primary"/></div>}
-                        <div className={`p-3 rounded-lg max-w-[80%] ${
-                            msg.sender === 'ai' ? 'bg-background text-text' :
-                            msg.sender === 'user' ? 'bg-primary text-white' :
-                            'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300'
-                        }`}>
-                            <p className="text-sm">{msg.text}</p>
-                        </div>
-                         {msg.sender === 'user' && <div className="w-8 h-8 rounded-full bg-secondary/20 flex items-center justify-center flex-shrink-0"><User size={18} className="text-secondary"/></div>}
-                    </div>
-                ))}
-                 {isLoading && (
-                    <div className="flex items-start gap-2.5">
-                        <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0"><Bot size={18} className="text-primary"/></div>
-                        <div className="p-3 rounded-lg bg-background text-text">
-                           <div className="flex items-center gap-2 text-sm">
-                                <div className="w-2 h-2 bg-primary rounded-full animate-pulse"></div>
-                                <div className="w-2 h-2 bg-primary rounded-full animate-pulse [animation-delay:0.2s]"></div>
-                                <div className="w-2 h-2 bg-primary rounded-full animate-pulse [animation-delay:0.4s]"></div>
-                           </div>
+        <div className="min-h-screen bg-background p-4">
+            <div className="max-w-4xl mx-auto">
+                <header className="flex justify-between items-center mb-6">
+                    <div className="flex items-center gap-3">
+                        <Bot className="text-primary" size={32} />
+                        <div>
+                            <h1 className="text-2xl font-bold text-text">المساعد الذكي</h1>
+                            <p className="text-text-muted">اسأل عن أي شيء في بياناتك</p>
                         </div>
                     </div>
-                 )}
-                <div ref={messagesEndRef} />
-            </main>
-            <footer className="p-3 border-t border-border">
-                <div className="relative">
-                    <input
-                        type="text"
-                        value={input}
-                        onChange={e => setInput(e.target.value)}
-                        onKeyPress={e => e.key === 'Enter' && handleSend()}
-                        placeholder="اسأل عن أي شيء في بياناتك..."
-                        className="w-full rounded-md border border-border bg-background py-2 pl-10 pr-4 focus:outline-none focus:ring-2 focus:ring-primary"
-                        disabled={isLoading}
-                    />
-                    <button onClick={handleSend} disabled={isLoading} className="absolute left-2 top-1/2 -translate-y-1/2 text-primary disabled:text-text-muted">
-                        <Send size={20} />
+                    <button onClick={onClose} className="text-text-muted hover:text-text p-2">
+                        <X size={24} />
                     </button>
+                </header>
+                
+                <div className="bg-card border border-border rounded-lg shadow-sm h-[70vh] flex flex-col">
+                    <div className="flex-1 overflow-y-auto p-6 space-y-4">
+                        {messages.map((msg, index) => (
+                            <div key={index} className={`flex items-start gap-3 ${msg.sender === 'user' ? 'justify-end' : ''}`}>
+                                {msg.sender !== 'user' && <Bot className="text-primary mt-1 flex-shrink-0" size={20} />}
+                                <div className={`max-w-[70%] p-4 rounded-lg ${
+                                    msg.sender === 'ai' ? 'bg-background text-text' :
+                                    msg.sender === 'user' ? 'bg-primary text-white' :
+                                    'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300'
+                                }`}>
+                                    <p className="text-sm leading-relaxed">{msg.text}</p>
+                                </div>
+                                {msg.sender === 'user' && <User className="text-secondary mt-1 flex-shrink-0" size={20} />}
+                            </div>
+                        ))}
+                        {isLoading && (
+                            <div className="flex items-start gap-3">
+                                <Bot className="text-primary mt-1 flex-shrink-0" size={20} />
+                                <div className="p-4 rounded-lg bg-background text-text">
+                                    <div className="flex items-center gap-2">
+                                        <div className="w-2 h-2 bg-primary rounded-full animate-pulse"></div>
+                                        <div className="w-2 h-2 bg-primary rounded-full animate-pulse [animation-delay:0.2s]"></div>
+                                        <div className="w-2 h-2 bg-primary rounded-full animate-pulse [animation-delay:0.4s]"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                        <div ref={messagesEndRef} />
+                    </div>
+                    
+                    <div className="p-6 border-t border-border">
+                        <div className="flex gap-3">
+                            <input
+                                type="text"
+                                value={input}
+                                onChange={e => setInput(e.target.value)}
+                                onKeyPress={e => e.key === 'Enter' && handleSend()}
+                                placeholder="اسأل عن أي شيء في بياناتك..."
+                                className="flex-1 rounded-md border border-border bg-background py-3 px-4 focus:outline-none focus:ring-2 focus:ring-primary"
+                                disabled={isLoading}
+                            />
+                            <button 
+                                onClick={handleSend} 
+                                disabled={isLoading || !input.trim()} 
+                                className="bg-primary text-white px-6 py-3 rounded-md hover:bg-opacity-90 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                            >
+                                <Send size={18} />
+                                إرسال
+                            </button>
+                        </div>
+                    </div>
                 </div>
-            </footer>
+            </div>
         </div>
     );
 };
