@@ -7,11 +7,11 @@ import { AlertCircle, Clock, ArrowUpRight } from 'lucide-react';
 import { useLocation } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 import { exportInvoiceToPdf } from '../services/pdfService';
-import StatCard from '../components/invoices/StatCard';
-import QuickPayModal from '../components/invoices/QuickPayModal';
-import InvoiceForm from '../components/invoices/InvoiceForm';
-import InvoiceFilters from '../components/invoices/InvoiceFilters';
-import InvoiceTable from '../components/invoices/InvoiceTable';
+import { StatCard } from '../components/invoices/StatCard';
+import { QuickPayModal } from '../components/invoices/QuickPayModal';
+import { InvoiceForm } from '../components/invoices/InvoiceForm';
+import { InvoiceFilters } from '../components/invoices/InvoiceFilters';
+import { InvoiceTable } from '../components/invoices/InvoiceTable';
 import { useInvoiceFilters, useInvoiceStats } from '../hooks';
 import {
     getInvoiceTotal,
