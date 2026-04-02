@@ -91,21 +91,52 @@ function resolveTable(jsTable: string): string {
 export const supabaseData = {
   async fetchAll<T>(jsTable: string): Promise<T[]> {
     const sqlTable = resolveTable(jsTable);
-    const { data, error } = await supabase.from(sqlTable).select('*');
-    if (error) { console.error(`[SupabaseData] fetchAll ${sqlTable}:`, error); return []; }
-    return (data || []).map(row => toCamelObj(row, jsTable) as T);
+    try {
+      const { data, error } = await supabase.from(sqlTable).select('*');
+      if (error) {
+        logger.error(`[SupabaseData] fetchAll ${sqlTable} error:`, error);
+        return [];
+      }
+      return (data || []).map(row => toCamelObj(row, jsTable) as T);
+    } catch (err) {
+      logger.error(`[SupabaseData] fetchAll ${sqlTable} exception:`, err);
+      return [];
+    }
   },
 
   async fetchRecent<T>(jsTable: string, limit = 200): Promise<T[]> {
     const sqlTable = resolveTable(jsTable);
     const orderCandidates = ['created_at', 'updated_at', 'ts', 'date'];
+    
     for (const orderBy of orderCandidates) {
-      const { data, error } = await supabase.from(sqlTable).select('*').order(orderBy, { ascending: false }).limit(limit);
-      if (!error) {
-        return (data || []).map(row => toCamelObj(row, jsTable) as T);
+      try {
+        const { data, error } = await supabase.from(sqlTable).select('*').order(orderBy, { ascending: false }).limit(limit);
+        if (!error && data) {
+          return (data || []).map(row => toCamelObj(row, jsTable) as T);
+        }
+        if (error && error.message && error.message.includes('400')) {
+          // 400 error might mean column doesn't exist, try next column
+          continue;
+        }
+        if (!error) {
+          return (data || []).map(row => toCamelObj(row, jsTable) as T);
+        }
+      } catch (err) {
+        // Continue to next ordering candidate
+        continue;
       }
     }
-    logger.error(`[SupabaseData] fetchRecent ${sqlTable} all fallback order columns failed`);
+    
+    // Final fallback: try without ordering
+    try {
+      const { data, error } = await supabase.from(sqlTable).select('*').limit(limit);
+      if (!error && data) {
+        return (data || []).map(row => toCamelObj(row, jsTable) as T);
+      }
+    } catch (err) {
+      logger.error(`[SupabaseData] fetchRecent ${sqlTable} failed with error:`, err);
+    }
+    
     return [];
   },
 
