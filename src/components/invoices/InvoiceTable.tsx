@@ -1,5 +1,5 @@
 import React from 'react';
-import { Wallet, FileText, Download, CheckSquare, Square } from 'lucide-react';
+import { Wallet, FileText, Download, CheckSquare, Square, Trash2 } from 'lucide-react';
 import { formatCurrency, formatDate, getStatusBadgeClass, INVOICE_STATUS_AR, INVOICE_TYPE_AR } from '../../utils/helpers';
 import { InvoiceWithDetails } from '../../utils/invoices/types';
 import { exportInvoiceToPdf } from '../../services/pdfService';
@@ -10,6 +10,7 @@ interface InvoiceTableProps {
   onSelectToggle: (id: string) => void;
   onQuickPay: (invoice: InvoiceWithDetails) => void;
   onEdit: (invoice: InvoiceWithDetails) => void;
+  onDelete: (invoice: InvoiceWithDetails) => void;
   db: any;
 }
 
@@ -19,6 +20,7 @@ export const InvoiceTable: React.FC<InvoiceTableProps> = ({
   onSelectToggle,
   onQuickPay,
   onEdit,
+  onDelete,
   db,
 }) => {
   return (
@@ -96,6 +98,13 @@ export const InvoiceTable: React.FC<InvoiceTableProps> = ({
                       title="تصدير PDF"
                     >
                       <Download size={14} />
+                    </button>
+                    <button
+                      onClick={() => onDelete(inv)}
+                      className="p-2 rounded bg-rose-50 text-rose-700 hover:bg-rose-100 transition-colors"
+                      title="حذف"
+                    >
+                      <Trash2 size={14} />
                     </button>
                   </div>
                 </td>

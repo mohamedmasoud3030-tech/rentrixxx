@@ -12,6 +12,7 @@ import { QuickPayModal } from '../components/invoices/QuickPayModal';
 import { InvoiceForm } from '../components/invoices/InvoiceForm';
 import { InvoiceFilters } from '../components/invoices/InvoiceFilters';
 import { InvoiceTable } from '../components/invoices/InvoiceTable';
+import { DeleteConfirmationModal } from '../components/shared/DeleteConfirmationModal';
 import { useInvoiceFilters, useInvoiceStats } from '../hooks';
 import {
     getInvoiceTotal,
@@ -33,6 +34,7 @@ const Invoices: React.FC = () => {
     const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
     const [quickPayInvoice, setQuickPayInvoice] = useState<Invoice | null>(null);
     const [isMonthlyLoading, setIsMonthlyLoading] = useState(false);
+    const [deletingInvoice, setDeletingInvoice] = useState<Invoice | null>(null);
 
     // Handle filter from URL parameter
     useEffect(() => {
@@ -127,6 +129,19 @@ const Invoices: React.FC = () => {
         }
     }, [financeService]);
 
+    const handleDeleteInvoice = useCallback(async () => {
+        if (!deletingInvoice) return;
+        
+        try {
+            await dataService.delete('invoices', deletingInvoice.id);
+            toast.success('تم حذف الفاتورة بنجاح');
+            setDeletingInvoice(null);
+        } catch (error) {
+            toast.error('حدث خطأ عند حذف الفاتورة');
+            console.error(error);
+        }
+    }, [deletingInvoice, dataService]);
+
     const currency = settings.operational?.currency ?? 'OMR';
 
     return (
@@ -170,13 +185,14 @@ const Invoices: React.FC = () => {
                 <InvoiceTable
                     invoices={invoicesWithDetails}
                     selectedIds={selectedIds}
-                    onToggleSelect={toggleSelect}
+                    onSelectToggle={toggleSelect}
                     onQuickPay={setQuickPayInvoice}
                     onEdit={(inv) => {
                         setEditingInvoice(inv);
                         setIsModalOpen(true);
                     }}
-                    currency={currency}
+                    onDelete={(inv) => setDeletingInvoice(inv as any)}
+                    db={db}
                 />
             </Card>
 
@@ -216,6 +232,13 @@ const Invoices: React.FC = () => {
                     }}
                 />
             )}
+            <DeleteConfirmationModal
+                isOpen={!!deletingInvoice}
+                title="حذف الفاتورة"
+                message={`هل أنت متأكد من رغبتك في حذف الفاتورة رقم ${deletingInvoice?.no}؟ لا يمكن التراجع عن هذا الإجراء.`}
+                onConfirm={handleDeleteInvoice}
+                onCancel={() => setDeletingInvoice(null)}
+            />
         </div>
     );
 };
