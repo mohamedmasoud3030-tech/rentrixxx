@@ -25,22 +25,38 @@ type FinancialTab = 'receipts' | 'expenses' | 'deposits' | 'settlements';
 
 const Financials: React.FC = () => {
     const [activeTab, setActiveTab] = useState<FinancialTab>('receipts');
-    const { db } = useApp();
+    const { db, getFinancialSummary } = useApp();
+    const [financialSummary, setFinancialSummary] = useState<{ receiptsToday: number; expensesMonth: number; totalDeposits: number; pendingSettlements: number; openInvoices: number } | null>(null);
+    const [loadingSummary, setLoadingSummary] = useState(true);
+    const [errorSummary, setErrorSummary] = useState<string | null>(null);
 
-    const stats = useMemo(() => {
-        const today = new Date().toISOString().slice(0, 10);
-        const receiptsToday = db.receipts.filter(r => r.dateTime.startsWith(today)).reduce((s, r) => s + r.amount, 0);
-        const expensesMonth = db.expenses.filter(e => e.dateTime.startsWith(today.slice(0, 7))).reduce((s, e) => s + e.amount, 0);
-        const totalDeposits = db.depositTxs.reduce((s, tx) => {
-            if (tx.type === 'DEPOSIT_IN') return s + tx.amount;
-            if (tx.type === 'DEPOSIT_RETURN') return s - tx.amount;
-            return s;
-        }, 0);
-        const pendingSettlements = db.ownerSettlements.length;
-        const openInvoices = db.invoices.filter(inv => inv.status !== 'PAID').length;
+    const refreshFinancialSummary = useCallback(async () => {
+      try {
+        setLoadingSummary(true);
+        setErrorSummary(null);
+        const summary = await getFinancialSummary();
+        if (summary) {
+          setFinancialSummary({
+            receiptsToday: summary.receiptsToday || 0,
+            expensesMonth: summary.expensesMonth || 0,
+            totalDeposits: summary.totalDeposits || 0,
+            pendingSettlements: summary.pendingSettlements || 0,
+            openInvoices: summary.openInvoices || 0,
+          });
+        }
+      } catch (err) {
+        setErrorSummary('فشل في جلب الملخص المالي');
+        console.error('Financial summary error:', err);
+      } finally {
+        setLoadingSummary(false);
+      }
+    }, [getFinancialSummary]);
 
-        return { receiptsToday, expensesMonth, totalDeposits, pendingSettlements, openInvoices };
-    }, [db.receipts, db.expenses, db.depositTxs, db.ownerSettlements, db.invoices]);
+    useEffect(() => {
+      refreshFinancialSummary();
+    }, [refreshFinancialSummary]);
+
+    const stats = financialSummary || { receiptsToday: 0, expensesMonth: 0, totalDeposits: 0, pendingSettlements: 0, openInvoices: 0 };
 
     return (
         <div className="space-y-6">
@@ -52,7 +68,10 @@ const Financials: React.FC = () => {
                     <p className="text-sm font-bold mt-1">السندات والمصروفات مرتبطة تلقائيًا بدورة الفاتورة والعقد لضبط التدفق النقدي.</p>
                     <p className="text-xs text-text-muted mt-1">الفواتير المفتوحة الآن: <span className="font-black" dir="ltr">{stats.openInvoices}</span></p>
                 </div>
-                <div className="flex gap-2 flex-wrap">
+                <div className="flex gap-2 flex-wrap items-center">
+                    <button onClick={refreshFinancialSummary} disabled={loadingSummary} className="btn btn-secondary text-xs font-black flex items-center gap-1">
+                        {loadingSummary ? <span>جاري التحديث...</span> : <><ArrowUpRight size={12} /> تحديث</>}
+                    </button>
                     <Link to="/finance/invoices" className="btn btn-secondary text-xs font-black">سير الفوترة</Link>
                     <Link to="/reports" className="btn btn-primary text-xs font-black">تقرير التدفقات</Link>
                 </div>
@@ -139,19 +158,35 @@ const TabButton: React.FC<{ active: boolean; onClick: () => void; icon: React.Re
 );
 
 const ReceiptsView: React.FC = () => {
-    const { db, financeService } = useApp();
+    const { db, financeService, fetchPaginatedData } = useApp();
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [printingReceipt, setPrintingReceipt] = useState<Receipt | null>(null);
     const [searchTerm, setSearchTerm] = useState('');
     const [whatsAppContext, setWhatsAppContext] = useState<any | null>(null);
+    const [receipts, setReceipts] = useState<Receipt[]>([]);
+    const [page, setPage] = useState(1);
+    const [pageSize, setPageSize] = useState(10);
+    const [total, setTotal] = useState(0);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        const fetchData = async () => {
+            setLoading(true);
+            const { data, total } = await fetchPaginatedData('receipts', page, pageSize, 'dateTime', false);
+            setReceipts(data);
+            setTotal(total);
+            setLoading(false);
+        };
+        fetchData();
+    }, [page, pageSize, fetchPaginatedData]);
 
     const filteredReceipts = useMemo(() => {
-        return db.receipts.filter(r => {
+        return receipts.filter(r => {
             const contract = db.contracts.find(c => c.id === r.contractId);
             const tenant = contract ? db.tenants.find(t => t.id === contract.tenantId) : null;
             return r.no.includes(searchTerm) || tenant?.name.includes(searchTerm);
-        }).sort((a,b) => new Date(b.dateTime).getTime() - new Date(a.dateTime).getTime());
-    }, [db.receipts, db.contracts, db.tenants, searchTerm]);
+        });
+    }, [receipts, db.contracts, db.tenants, searchTerm]);
 
     const receiptDataForPrint = useMemo(() => {
         if (!printingReceipt) return null;
@@ -217,63 +252,80 @@ const ReceiptsView: React.FC = () => {
                 </div>
             </div>
 
-            <div className="overflow-x-auto border border-border rounded-2xl">
-                <table className="w-full text-sm text-right">
-                    <thead className="bg-background text-text-muted text-[10px] uppercase tracking-wider">
-                        <tr>
-                            <th className="px-6 py-4 font-black">رقم السند</th>
-                            <th className="px-6 py-4 font-black">التاريخ</th>
-                            <th className="px-6 py-4 font-black">المستأجر</th>
-                            <th className="px-6 py-4 font-black">المبلغ</th>
-                            <th className="px-6 py-4 font-black">طريقة الدفع</th>
-                            <th className="px-6 py-4 font-black">الحالة</th>
-                            <th className="px-6 py-4 font-black text-center">الإجراءات</th>
-                        </tr>
-                    </thead>
-                    <tbody className="divide-y divide-border/50 bg-card/30">
-                        {filteredReceipts.map(r => {
-                            const contract = db.contracts.find(c => c.id === r.contractId);
-                            const tenant = contract ? db.tenants.find(t => t.id === contract.tenantId) : null;
-                            return (
-                                <tr key={r.id} className="hover:bg-primary/5 transition-colors group">
-                                    <td className="px-6 py-4 font-mono font-bold text-primary">{r.no}</td>
-                                    <td className="px-6 py-4 text-text-muted">{formatDateTime(r.dateTime)}</td>
-                                    <td className="px-6 py-4 font-bold">{tenant?.name || '—'}</td>
-                                    <td className="px-6 py-4 font-black text-emerald-600" dir="ltr">{formatCurrency(r.amount, db.settings.operational.currency)}</td>
-                                    <td className="px-6 py-4">
-                                        <div className="flex items-center gap-2">
-                                            {getChannelIcon(r.channel)}
-                                            <span className="text-xs font-bold">{CHANNEL_AR[r.channel as keyof typeof CHANNEL_AR] || r.channel}</span>
-                                        </div>
-                                    </td>
-                                    <td className="px-6 py-4">
-                                        <span className={`px-2 py-1 rounded-lg text-[10px] font-bold ${r.status === 'POSTED' ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' : 'bg-rose-50 text-rose-600 border border-rose-100'}`}>
-                                            {RECEIPT_STATUS_AR[r.status as keyof typeof RECEIPT_STATUS_AR] || r.status}
-                                        </span>
-                                    </td>
-                                    <td className="px-6 py-4">
-                                        <div className="flex items-center justify-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                            <button onClick={() => setPrintingReceipt(r)} className="p-2 text-text-muted hover:text-primary hover:bg-primary/10 rounded-xl" title="طباعة"><Printer size={16} /></button>
-                                            <button onClick={() => setWhatsAppContext({ recipient: tenant, type: 'receipt', data: { receipt: r } })} className="p-2 text-text-muted hover:text-emerald-600 hover:bg-emerald-50 rounded-xl" title="واتساب"><MessageCircle size={16} /></button>
-                                            <button
-                                                onClick={() => {
-                                                    if (r.status === 'VOID') return;
-                                                    financeService.voidReceipt(r.id);
-                                                }}
-                                                disabled={r.status === 'VOID'}
-                                                className="p-2 text-text-muted hover:text-rose-600 hover:bg-rose-50 rounded-xl disabled:opacity-40 disabled:cursor-not-allowed"
-                                                title={r.status === 'VOID' ? 'تم الإلغاء مسبقًا' : 'إلغاء'}
-                                            >
-                                                <XCircle size={16} />
-                                            </button>
-                                        </div>
-                                    </td>
+            {loading ? (
+                <div className="text-center py-12">جاري تحميل البيانات...</div>
+            ) : filteredReceipts.length === 0 ? (
+                <div className="text-center py-12 text-text-muted">
+                    <ReceiptIcon size={32} className="mx-auto mb-2" />
+                    <p className="font-bold">لا توجد سندات قبض</p>
+                    <p className="text-sm">لم يتم العثور على سندات قبض مطابقة لبحثك.</p>
+                </div>
+            ) : (
+                <>
+                    <div className="overflow-x-auto border border-border rounded-2xl">
+                        <table className="w-full text-sm text-right">
+                            <thead className="bg-background text-text-muted text-[10px] uppercase tracking-wider">
+                                <tr>
+                                    <th className="px-6 py-4 font-black">رقم السند</th>
+                                    <th className="px-6 py-4 font-black">التاريخ</th>
+                                    <th className="px-6 py-4 font-black">المستأجر</th>
+                                    <th className="px-6 py-4 font-black">المبلغ</th>
+                                    <th className="px-6 py-4 font-black">طريقة الدفع</th>
+                                    <th className="px-6 py-4 font-black">الحالة</th>
+                                    <th className="px-6 py-4 font-black text-center">الإجراءات</th>
                                 </tr>
-                            );
-                        })}
-                    </tbody>
-                </table>
-            </div>
+                            </thead>
+                            <tbody className="divide-y divide-border/50 bg-card/30">
+                                {filteredReceipts.map(r => {
+                                    const contract = db.contracts.find(c => c.id === r.contractId);
+                                    const tenant = contract ? db.tenants.find(t => t.id === contract.tenantId) : null;
+                                    return (
+                                        <tr key={r.id} className="hover:bg-primary/5 transition-colors group">
+                                            <td className="px-6 py-4 font-mono font-bold text-primary">{r.no}</td>
+                                            <td className="px-6 py-4 text-text-muted">{formatDateTime(r.dateTime)}</td>
+                                            <td className="px-6 py-4 font-bold">{tenant?.name || '—'}</td>
+                                            <td className="px-6 py-4 font-black text-emerald-600" dir="ltr">{formatCurrency(r.amount, db.settings.operational.currency)}</td>
+                                            <td className="px-6 py-4">
+                                                <div className="flex items-center gap-2">
+                                                    {getChannelIcon(r.channel)}
+                                                    <span className="text-xs font-bold">{CHANNEL_AR[r.channel as keyof typeof CHANNEL_AR] || r.channel}</span>
+                                                </div>
+                                            </td>
+                                            <td className="px-6 py-4">
+                                                <span className={`px-2 py-1 rounded-lg text-[10px] font-bold ${r.status === 'POSTED' ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' : 'bg-rose-50 text-rose-600 border border-rose-100'}`}>
+                                                    {RECEIPT_STATUS_AR[r.status as keyof typeof RECEIPT_STATUS_AR] || r.status}
+                                                </span>
+                                            </td>
+                                            <td className="px-6 py-4">
+                                                <div className="flex items-center justify-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                    <button onClick={() => setPrintingReceipt(r)} className="p-2 text-text-muted hover:text-primary hover:bg-primary/10 rounded-xl" title="طباعة"><Printer size={16} /></button>
+                                                    <button onClick={() => setWhatsAppContext({ recipient: tenant, type: 'receipt', data: { receipt: r } })} className="p-2 text-text-muted hover:text-emerald-600 hover:bg-emerald-50 rounded-xl" title="واتساب"><MessageCircle size={16} /></button>
+                                                    <button
+                                                        onClick={() => {
+                                                            if (r.status === 'VOID') return;
+                                                            financeService.voidReceipt(r.id);
+                                                        }}
+                                                        disabled={r.status === 'VOID'}
+                                                        className="p-2 text-text-muted hover:text-rose-600 hover:bg-rose-50 rounded-xl disabled:opacity-40 disabled:cursor-not-allowed"
+                                                        title={r.status === 'VOID' ? 'تم الإلغاء مسبقًا' : 'إلغاء'}
+                                                    >
+                                                        <XCircle size={16} />
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    );
+                                })}
+                            </tbody>
+                        </table>
+                    </div>
+                    <div className="flex justify-between items-center mt-4">
+                        <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1} className="btn">السابق</button>
+                        <span className="text-sm font-bold">صفحة {page} من {Math.ceil(total / pageSize)}</span>
+                        <button onClick={() => setPage(p => p + 1)} disabled={page * pageSize >= total} className="btn">التالي</button>
+                    </div>
+                </>
+            )}
 
             {isModalOpen && <ReceiptForm isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} receipt={null} />}
             {printingReceipt && receiptDataForPrint && (
@@ -287,16 +339,31 @@ const ReceiptsView: React.FC = () => {
 };
 
 const ExpensesView: React.FC = () => {
-    const { db, financeService } = useApp();
+    const { db, financeService, fetchPaginatedData } = useApp();
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
     const [printingExpense, setPrintingExpense] = useState<Expense | null>(null);
     const [searchTerm, setSearchTerm] = useState('');
+    const [expenses, setExpenses] = useState<Expense[]>([]);
+    const [page, setPage] = useState(1);
+    const [pageSize, setPageSize] = useState(10);
+    const [total, setTotal] = useState(0);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        const fetchData = async () => {
+            setLoading(true);
+            const { data, total } = await fetchPaginatedData('expenses', page, pageSize, 'dateTime', false);
+            setExpenses(data);
+            setTotal(total);
+            setLoading(false);
+        };
+        fetchData();
+    }, [page, pageSize, fetchPaginatedData]);
 
     const filteredExpenses = useMemo(() => {
-        return db.expenses.filter(e => e.no.includes(searchTerm) || e.category.includes(searchTerm) || e.notes.includes(searchTerm))
-                         .sort((a,b) => new Date(b.dateTime).getTime() - new Date(a.dateTime).getTime());
-    }, [db.expenses, searchTerm]);
+        return expenses.filter(e => e.no.includes(searchTerm) || e.category.includes(searchTerm) || e.notes.includes(searchTerm))
+    }, [expenses, searchTerm]);
 
     const handleExportExpensesCsv = () => {
         const rows = filteredExpenses.map(e => ({
@@ -333,56 +400,73 @@ const ExpensesView: React.FC = () => {
                 </div>
             </div>
 
-            <div className="overflow-x-auto border border-border rounded-2xl">
-                <table className="w-full text-sm text-right">
-                    <thead className="bg-background text-text-muted text-[10px] uppercase tracking-wider">
-                        <tr>
-                            <th className="px-6 py-4 font-black">رقم السند</th>
-                            <th className="px-6 py-4 font-black">التاريخ</th>
-                            <th className="px-6 py-4 font-black">التصنيف</th>
-                            <th className="px-6 py-4 font-black">المبلغ</th>
-                            <th className="px-6 py-4 font-black">الحالة</th>
-                            <th className="px-6 py-4 font-black text-center">الإجراءات</th>
-                        </tr>
-                    </thead>
-                    <tbody className="divide-y divide-border/50 bg-card/30">
-                        {filteredExpenses.map(e => (
-                            <tr key={e.id} className="hover:bg-primary/5 transition-colors group">
-                                <td className="px-6 py-4 font-mono font-bold text-primary">{e.no}</td>
-                                <td className="px-6 py-4 text-text-muted">{formatDateTime(e.dateTime)}</td>
-                                <td className="px-6 py-4 font-bold">{e.category}</td>
-                                <td className="px-6 py-4 font-black text-rose-600" dir="ltr">{formatCurrency(e.amount, db.settings.operational.currency)}</td>
-                                <td className="px-6 py-4">
-                                    <span className={`px-2 py-1 rounded-lg text-[10px] font-bold ${e.status === 'POSTED' ? 'bg-blue-50 text-blue-600 border border-blue-100' : 'bg-rose-50 text-rose-600 border border-rose-100'}`}>
-                                        {EXPENSE_STATUS_AR[e.status as keyof typeof EXPENSE_STATUS_AR] || e.status}
-                                    </span>
-                                </td>
-                                <td className="px-6 py-4">
-                                    <div className="flex items-center justify-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                        <button onClick={() => { setEditingExpense(e); setIsModalOpen(true); }} className="p-2 text-text-muted hover:text-primary hover:bg-primary/10 rounded-xl" title="تعديل"><Edit2 size={16} /></button>
-                                        <button onClick={() => setPrintingExpense(e)} className="p-2 text-text-muted hover:text-primary hover:bg-primary/10 rounded-xl" title="طباعة"><Printer size={16} /></button>
-                                        <button onClick={() => {
-                                            try { exportExpenseToPdf(e, db); toast.success('تم تصدير المصروف بصيغة PDF'); } 
-                                            catch (err) { toast.error('خطأ في تصدير PDF'); }
-                                        }} className="p-2 text-text-muted hover:text-blue-600 hover:bg-blue-50 rounded-xl" title="تصدير PDF"><FileText size={16} /></button>
-                                        <button
-                                            onClick={() => {
-                                                if (e.status === 'VOID') return;
-                                                financeService.voidExpense(e.id);
-                                            }}
-                                            disabled={e.status === 'VOID'}
-                                            className="p-2 text-text-muted hover:text-rose-600 hover:bg-rose-50 rounded-xl disabled:opacity-40 disabled:cursor-not-allowed"
-                                            title={e.status === 'VOID' ? 'تم الإلغاء مسبقًا' : 'إلغاء'}
-                                        >
-                                            <XCircle size={16} />
-                                        </button>
-                                    </div>
-                                </td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
-            </div>
+            {loading ? (
+                <div className="text-center py-12">جاري تحميل البيانات...</div>
+            ) : filteredExpenses.length === 0 ? (
+                <div className="text-center py-12 text-text-muted">
+                    <ArrowDownRight size={32} className="mx-auto mb-2" />
+                    <p className="font-bold">لا توجد مصروفات</p>
+                    <p className="text-sm">لم يتم العثور على مصروفات مطابقة لبحثك.</p>
+                </div>
+            ) : (
+                <>
+                    <div className="overflow-x-auto border border-border rounded-2xl">
+                        <table className="w-full text-sm text-right">
+                            <thead className="bg-background text-text-muted text-[10px] uppercase tracking-wider">
+                                <tr>
+                                    <th className="px-6 py-4 font-black">رقم السند</th>
+                                    <th className="px-6 py-4 font-black">التاريخ</th>
+                                    <th className="px-6 py-4 font-black">التصنيف</th>
+                                    <th className="px-6 py-4 font-black">المبلغ</th>
+                                    <th className="px-6 py-4 font-black">الحالة</th>
+                                    <th className="px-6 py-4 font-black text-center">الإجراءات</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-border/50 bg-card/30">
+                                {filteredExpenses.map(e => (
+                                    <tr key={e.id} className="hover:bg-primary/5 transition-colors group">
+                                        <td className="px-6 py-4 font-mono font-bold text-primary">{e.no}</td>
+                                        <td className="px-6 py-4 text-text-muted">{formatDateTime(e.dateTime)}</td>
+                                        <td className="px-6 py-4 font-bold">{e.category}</td>
+                                        <td className="px-6 py-4 font-black text-rose-600" dir="ltr">{formatCurrency(e.amount, db.settings.operational.currency)}</td>
+                                        <td className="px-6 py-4">
+                                            <span className={`px-2 py-1 rounded-lg text-[10px] font-bold ${e.status === 'POSTED' ? 'bg-blue-50 text-blue-600 border border-blue-100' : 'bg-rose-50 text-rose-600 border border-rose-100'}`}>
+                                                {EXPENSE_STATUS_AR[e.status as keyof typeof EXPENSE_STATUS_AR] || e.status}
+                                            </span>
+                                        </td>
+                                        <td className="px-6 py-4">
+                                            <div className="flex items-center justify-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                <button onClick={() => { setEditingExpense(e); setIsModalOpen(true); }} className="p-2 text-text-muted hover:text-primary hover:bg-primary/10 rounded-xl" title="تعديل"><Edit2 size={16} /></button>
+                                                <button onClick={() => setPrintingExpense(e)} className="p-2 text-text-muted hover:text-primary hover:bg-primary/10 rounded-xl" title="طباعة"><Printer size={16} /></button>
+                                                <button onClick={() => {
+                                                    try { exportExpenseToPdf(e, db); toast.success('تم تصدير المصروف بصيغة PDF'); } 
+                                                    catch (err) { toast.error('خطأ في تصدير PDF'); }
+                                                }} className="p-2 text-text-muted hover:text-blue-600 hover:bg-blue-50 rounded-xl" title="تصدير PDF"><FileText size={16} /></button>
+                                                <button
+                                                    onClick={() => {
+                                                        if (e.status === 'VOID') return;
+                                                        financeService.voidExpense(e.id);
+                                                    }}
+                                                    disabled={e.status === 'VOID'}
+                                                    className="p-2 text-text-muted hover:text-rose-600 hover:bg-rose-50 rounded-xl disabled:opacity-40 disabled:cursor-not-allowed"
+                                                    title={e.status === 'VOID' ? 'تم الإلغاء مسبقًا' : 'إلغاء'}
+                                                >
+                                                    <XCircle size={16} />
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                    <div className="flex justify-between items-center mt-4">
+                        <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1} className="btn">السابق</button>
+                        <span className="text-sm font-bold">صفحة {page} من {Math.ceil(total / pageSize)}</span>
+                        <button onClick={() => setPage(p => p + 1)} disabled={page * pageSize >= total} className="btn">التالي</button>
+                    </div>
+                </>
+            )}
             {isModalOpen && <ExpenseForm isOpen={isModalOpen} onClose={() => { setIsModalOpen(false); setEditingExpense(null); }} expense={editingExpense} />}
             {printingExpense && (
                 <PrintPreviewModal isOpen={!!printingExpense} onClose={() => setPrintingExpense(null)} title="طباعة سند صرف">
@@ -394,73 +478,145 @@ const ExpensesView: React.FC = () => {
 };
 
 const DepositsView: React.FC = () => {
-    const { db, dataService } = useApp();
+    const { db, dataService, fetchPaginatedData } = useApp();
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [searchTerm, setSearchTerm] = useState('');
+    const [deposits, setDeposits] = useState<DepositTx[]>([]);
+    const [page, setPage] = useState(1);
+    const [pageSize, setPageSize] = useState(10);
+    const [total, setTotal] = useState(0);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        const fetchData = async () => {
+            setLoading(true);
+            const { data, total } = await fetchPaginatedData('depositTxs', page, pageSize, 'date', false);
+            setDeposits(data);
+            setTotal(total);
+            setLoading(false);
+        };
+        fetchData();
+    }, [page, pageSize, fetchPaginatedData]);
+
+    const filteredDeposits = useMemo(() => {
+        return deposits.filter(tx => {
+            const contract = db.contracts.find(c => c.id === tx.contractId);
+            const tenant = contract ? db.tenants.find(t => t.id === contract.tenantId) : null;
+            return tenant?.name.includes(searchTerm) || (tx.note && tx.note.includes(searchTerm));
+        });
+    }, [deposits, db.contracts, db.tenants, searchTerm]);
+
     return (
         <div className="space-y-4">
-            <div className="flex justify-between items-center">
-                <h3 className="text-lg font-black">حركات الودائع والتأمينات</h3>
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                <div className="relative flex-1 max-w-md w-full">
+                    <Search className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted" size={18} />
+                    <input
+                        type="text"
+                        placeholder="بحث باسم المستأجر أو الملاحظات..."
+                        className="w-full pr-10 py-2.5 bg-background border border-border rounded-xl focus:ring-2 focus:ring-primary/20 transition-all outline-none text-sm"
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                    />
+                </div>
                 <button onClick={() => setIsModalOpen(true)} className="btn btn-primary flex items-center gap-2 shadow-lg shadow-primary/20">
                     <Plus size={16} /> إضافة حركة وديعة
                 </button>
             </div>
-            <div className="overflow-x-auto border border-border rounded-2xl">
-                <table className="w-full text-sm text-right">
-                    <thead className="bg-background text-text-muted text-[10px] uppercase tracking-wider">
-                        <tr>
-                            <th className="px-6 py-4 font-black">التاريخ</th>
-                            <th className="px-6 py-4 font-black">العقد / المستأجر</th>
-                            <th className="px-6 py-4 font-black">النوع</th>
-                            <th className="px-6 py-4 font-black">المبلغ</th>
-                            <th className="px-6 py-4 font-black text-center">الإجراءات</th>
-                        </tr>
-                    </thead>
-                    <tbody className="divide-y divide-border/50 bg-card/30">
-                        {db.depositTxs.map(tx => {
-                            const contract = db.contracts.find(c => c.id === tx.contractId);
-                            const tenant = contract ? db.tenants.find(t => t.id === contract.tenantId) : null;
-                            const typeMap = {
-                                'DEPOSIT_IN': { label: 'إيداع جديد', color: 'bg-emerald-50 text-emerald-600 border-emerald-100' },
-                                'DEPOSIT_DEDUCT': { label: 'خصم إصلاحات', color: 'bg-rose-50 text-rose-600 border-rose-100' },
-                                'DEPOSIT_RETURN': { label: 'إرجاع للمستأجر', color: 'bg-blue-50 text-blue-600 border-blue-100' }
-                            };
-                            const typeInfo = typeMap[tx.type];
-                            return (
-                                <tr key={tx.id} className="hover:bg-primary/5 transition-colors group">
-                                    <td className="px-6 py-4 text-text-muted">{formatDate(tx.date)}</td>
-                                    <td className="px-6 py-4 font-bold">{tenant?.name || '—'}</td>
-                                    <td className="px-6 py-4">
-                                        <span className={`px-2 py-1 rounded-lg text-[10px] font-bold border ${typeInfo.color}`}>
-                                            {typeInfo.label}
-                                        </span>
-                                    </td>
-                                    <td className="px-6 py-4 font-black" dir="ltr">{formatCurrency(tx.amount, db.settings.operational.currency)}</td>
-                                    <td className="px-6 py-4 text-center">
-                                        <button onClick={async () => await dataService.remove('depositTxs', tx.id)} className="p-2 text-text-muted hover:text-rose-600 hover:bg-rose-50 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity">
-                                            <Trash2 size={16} />
-                                        </button>
-                                    </td>
+            
+            {loading ? (
+                <div className="text-center py-12">جاري تحميل البيانات...</div>
+            ) : filteredDeposits.length === 0 ? (
+                <div className="text-center py-12 text-text-muted">
+                    <PiggyBank size={32} className="mx-auto mb-2" />
+                    <p className="font-bold">لا توجد حركات ودائع</p>
+                    <p className="text-sm">لم يتم العثور على حركات مطابقة لبحثك.</p>
+                </div>
+            ) : (
+                <>
+                    <div className="overflow-x-auto border border-border rounded-2xl">
+                        <table className="w-full text-sm text-right">
+                            <thead className="bg-background text-text-muted text-[10px] uppercase tracking-wider">
+                                <tr>
+                                    <th className="px-6 py-4 font-black">التاريخ</th>
+                                    <th className="px-6 py-4 font-black">العقد / المستأجر</th>
+                                    <th className="px-6 py-4 font-black">النوع</th>
+                                    <th className="px-6 py-4 font-black">المبلغ</th>
+                                    <th className="px-6 py-4 font-black text-center">الإجراءات</th>
                                 </tr>
-                            );
-                        })}
-                    </tbody>
-                </table>
-            </div>
+                            </thead>
+                            <tbody className="divide-y divide-border/50 bg-card/30">
+                                {filteredDeposits.map(tx => {
+                                    const contract = db.contracts.find(c => c.id === tx.contractId);
+                                    const tenant = contract ? db.tenants.find(t => t.id === contract.tenantId) : null;
+                                    const typeMap = {
+                                        'DEPOSIT_IN': { label: 'إيداع جديد', color: 'bg-emerald-50 text-emerald-600 border-emerald-100' },
+                                        'DEPOSIT_DEDUCT': { label: 'خصم إصلاحات', color: 'bg-rose-50 text-rose-600 border-rose-100' },
+                                        'DEPOSIT_RETURN': { label: 'إرجاع للمستأجر', color: 'bg-blue-50 text-blue-600 border-blue-100' }
+                                    };
+                                    const typeInfo = typeMap[tx.type];
+                                    return (
+                                        <tr key={tx.id} className="hover:bg-primary/5 transition-colors group">
+                                            <td className="px-6 py-4 text-text-muted">{formatDate(tx.date)}</td>
+                                            <td className="px-6 py-4 font-bold">{tenant?.name || '—'}</td>
+                                            <td className="px-6 py-4">
+                                                <span className={`px-2 py-1 rounded-lg text-[10px] font-bold border ${typeInfo.color}`}>
+                                                    {typeInfo.label}
+                                                </span>
+                                            </td>
+                                            <td className="px-6 py-4 font-black" dir="ltr">{formatCurrency(tx.amount, db.settings.operational.currency)}</td>
+                                            <td className="px-6 py-4 text-center">
+                                                <button onClick={async () => await dataService.remove('depositTxs', tx.id)} className="p-2 text-text-muted hover:text-rose-600 hover:bg-rose-50 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity">
+                                                    <Trash2 size={16} />
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    );
+                                })}
+                            </tbody>
+                        </table>
+                    </div>
+                    <div className="flex justify-between items-center mt-4">
+                        <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1} className="btn">السابق</button>
+                        <span className="text-sm font-bold">صفحة {page} من {Math.ceil(total / pageSize)}</span>
+                        <button onClick={() => setPage(p => p + 1)} disabled={page * pageSize >= total} className="btn">التالي</button>
+                    </div>
+                </>
+            )}
             {isModalOpen && <DepositTxForm isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />}
         </div>
     );
 };
 
 const OwnerSettlementsView: React.FC = () => {
-    const { db, dataService } = useApp();
+    const { db, dataService, fetchPaginatedData } = useApp();
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingSettlement, setEditingSettlement] = useState<OwnerSettlement | null>(null);
     const [searchTerm, setSearchTerm] = useState('');
+    const [settlements, setSettlements] = useState<OwnerSettlement[]>([]);
+    const [owners, setOwners] = useState<any[]>([]); // Using any to match db.owners usage
+    const [page, setPage] = useState(1);
+    const [pageSize, setPageSize] = useState(10);
+    const [total, setTotal] = useState(0);
+    const [loading, setLoading] = useState(true);
 
-    const filtered = useMemo(() => db.ownerSettlements.filter(s => {
-        const owner = db.owners.find(o => o.id === s.ownerId);
+    useEffect(() => {
+        const fetchData = async () => {
+            setLoading(true);
+            const settlementsRes = await fetchPaginatedData('ownerSettlements', page, pageSize, 'date', false);
+            const ownersRes = await fetchPaginatedData('owners', 1, 1000); // Fetch all for now
+            setSettlements(settlementsRes.data);
+            setTotal(settlementsRes.total);
+            setOwners(ownersRes.data);
+            setLoading(false);
+        };
+        fetchData();
+    }, [page, pageSize, fetchPaginatedData]);
+
+    const filtered = useMemo(() => settlements.filter(s => {
+        const owner = owners.find(o => o.id === s.ownerId);
         return s.no.includes(searchTerm) || owner?.name.includes(searchTerm);
-    }), [db.ownerSettlements, db.owners, searchTerm]);
+    }), [settlements, owners, searchTerm]);
 
     return (
         <div className="space-y-4">
@@ -480,38 +636,55 @@ const OwnerSettlementsView: React.FC = () => {
                 </button>
             </div>
 
-            <div className="overflow-x-auto border border-border rounded-2xl">
-                <table className="w-full text-sm text-right">
-                    <thead className="bg-background text-text-muted text-[10px] uppercase tracking-wider">
-                        <tr>
-                            <th className="px-6 py-4 font-black">رقم التسوية</th>
-                            <th className="px-6 py-4 font-black">التاريخ</th>
-                            <th className="px-6 py-4 font-black">المالك</th>
-                            <th className="px-6 py-4 font-black">المبلغ</th>
-                            <th className="px-6 py-4 font-black text-center">الإجراءات</th>
-                        </tr>
-                    </thead>
-                    <tbody className="divide-y divide-border/50 bg-card/30">
-                        {filtered.map(s => {
-                            const owner = db.owners.find(o => o.id === s.ownerId);
-                            return (
-                                <tr key={s.id} className="hover:bg-primary/5 transition-colors group">
-                                    <td className="px-6 py-4 font-mono font-bold text-primary">{s.no}</td>
-                                    <td className="px-6 py-4 text-text-muted">{formatDate(s.date)}</td>
-                                    <td className="px-6 py-4 font-bold">{owner?.name || '—'}</td>
-                                    <td className="px-6 py-4 font-black text-emerald-600" dir="ltr">{formatCurrency(s.amount, db.settings.operational.currency)}</td>
-                                    <td className="px-6 py-4 text-center">
-                                        <div className="flex items-center justify-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                            <button onClick={() => { setEditingSettlement(s); setIsModalOpen(true); }} className="p-2 text-text-muted hover:text-primary hover:bg-primary/10 rounded-xl"><Edit2 size={16} /></button>
-                                            <button onClick={async () => await dataService.remove('ownerSettlements', s.id)} className="p-2 text-text-muted hover:text-rose-600 hover:bg-rose-50 rounded-xl"><Trash2 size={16} /></button>
-                                        </div>
-                                    </td>
+            {loading ? (
+                <div className="text-center py-12">جاري تحميل البيانات...</div>
+            ) : filtered.length === 0 ? (
+                <div className="text-center py-12 text-text-muted">
+                    <UserCheck size={32} className="mx-auto mb-2" />
+                    <p className="font-bold">لا توجد تسويات</p>
+                    <p className="text-sm">لم يتم العثور على تسويات مطابقة لبحثك.</p>
+                </div>
+            ) : (
+                <>
+                    <div className="overflow-x-auto border border-border rounded-2xl">
+                        <table className="w-full text-sm text-right">
+                            <thead className="bg-background text-text-muted text-[10px] uppercase tracking-wider">
+                                <tr>
+                                    <th className="px-6 py-4 font-black">رقم التسوية</th>
+                                    <th className="px-6 py-4 font-black">التاريخ</th>
+                                    <th className="px-6 py-4 font-black">المالك</th>
+                                    <th className="px-6 py-4 font-black">المبلغ</th>
+                                    <th className="px-6 py-4 font-black text-center">الإجراءات</th>
                                 </tr>
-                            );
-                        })}
-                    </tbody>
-                </table>
-            </div>
+                            </thead>
+                            <tbody className="divide-y divide-border/50 bg-card/30">
+                                {filtered.map(s => {
+                                    const owner = owners.find(o => o.id === s.ownerId);
+                                    return (
+                                        <tr key={s.id} className="hover:bg-primary/5 transition-colors group">
+                                            <td className="px-6 py-4 font-mono font-bold text-primary">{s.no}</td>
+                                            <td className="px-6 py-4 text-text-muted">{formatDate(s.date)}</td>
+                                            <td className="px-6 py-4 font-bold">{owner?.name || '—'}</td>
+                                            <td className="px-6 py-4 font-black text-emerald-600" dir="ltr">{formatCurrency(s.amount, db.settings.operational.currency)}</td>
+                                            <td className="px-6 py-4 text-center">
+                                                <div className="flex items-center justify-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                    <button onClick={() => { setEditingSettlement(s); setIsModalOpen(true); }} className="p-2 text-text-muted hover:text-primary hover:bg-primary/10 rounded-xl" title="تعديل"><Edit2 size={16} /></button>
+                                                    <button onClick={async () => await dataService.remove('ownerSettlements', s.id)} className="p-2 text-text-muted hover:text-rose-600 hover:bg-rose-50 rounded-xl" title="حذف"><Trash2 size={16} /></button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    );
+                                })}
+                            </tbody>
+                        </table>
+                    </div>
+                    <div className="flex justify-between items-center mt-4">
+                        <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1} className="btn">السابق</button>
+                        <span className="text-sm font-bold">صفحة {page} من {Math.ceil(total / pageSize)}</span>
+                        <button onClick={() => setPage(p => p + 1)} disabled={page * pageSize >= total} className="btn">التالي</button>
+                    </div>
+                </>
+            )}
             {isModalOpen && <OwnerSettlementForm isOpen={isModalOpen} onClose={() => { setIsModalOpen(false); setEditingSettlement(null); }} settlement={editingSettlement} />}
         </div>
     );
