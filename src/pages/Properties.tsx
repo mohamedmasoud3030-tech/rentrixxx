@@ -436,8 +436,8 @@ const UtilityRecordForm: React.FC<{
                     </select>
                 </div>
                 <div>
-                    <label className="block text-sm font-medium mb-1">صورة الفاتورة</label>
-                    <input type="file" accept="image/*,application/pdf" ref={fileRef} onChange={handleImageUpload} className="hidden" disabled={isSaving} />
+                    <label htmlFor="bill-image-upload" className="block text-sm font-medium mb-1">صورة الفاتورة</label>
+                    <input id="bill-image-upload" type="file" accept="image/*,application/pdf" ref={fileRef} onChange={handleImageUpload} className="hidden" disabled={isSaving} />
                     {billImageUrl ? (
                         <div className="border border-border rounded-lg p-2 flex items-center justify-between">
                             {billImageMime?.startsWith('image/') && <img src={billImageUrl} alt="فاتورة" className="h-16 w-auto rounded object-cover" />}

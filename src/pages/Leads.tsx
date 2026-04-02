@@ -168,24 +168,24 @@ const LeadForm: React.FC<{ isOpen: boolean, onClose: () => void, lead: Lead | nu
             <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                        <label className="block text-sm font-medium mb-1">الاسم</label>
-                        <input type="text" value={name} onChange={e => setName(e.target.value)} required />
+                        <label htmlFor="lead-name" className="block text-sm font-medium mb-1">الاسم</label>
+                        <input id="lead-name" type="text" value={name} onChange={e => setName(e.target.value)} required />
                     </div>
                     <div>
-                        <label className="block text-sm font-medium mb-1">الهاتف</label>
-                        <input type="tel" value={phone} onChange={e => setPhone(e.target.value)} required />
+                        <label htmlFor="lead-phone" className="block text-sm font-medium mb-1">الهاتف</label>
+                        <input id="lead-phone" type="tel" value={phone} onChange={e => setPhone(e.target.value)} required />
                     </div>
                     <div>
-                        <label className="block text-sm font-medium mb-1">البريد الإلكتروني</label>
-                        <input type="email" value={email} onChange={e => setEmail(e.target.value)} />
+                        <label htmlFor="lead-email" className="block text-sm font-medium mb-1">البريد الإلكتروني</label>
+                        <input id="lead-email" type="email" value={email} onChange={e => setEmail(e.target.value)} />
                     </div>
                     <div>
-                        <label className="block text-sm font-medium mb-1">نوع الوحدة المطلوبة</label>
-                        <input type="text" value={desiredUnitType} onChange={e => setDesiredUnitType(e.target.value)} placeholder="مثال: شقة غرفتين"/>
+                        <label htmlFor="lead-unittype" className="block text-sm font-medium mb-1">نوع الوحدة المطلوبة</label>
+                        <input id="lead-unittype" type="text" value={desiredUnitType} onChange={e => setDesiredUnitType(e.target.value)} placeholder="مثال: شقة غرفتين"/>
                     </div>
                     <div>
-                        <label className="block text-sm font-medium mb-1">أقل ميزانية ({settings.operational?.currency ?? 'OMR'})</label>
-                        <input type="number" value={minBudget || ''} onChange={e => setMinBudget(Number(normalizeArabicNumerals(e.target.value)) || undefined)} />
+                        <label htmlFor="lead-minbudget" className="block text-sm font-medium mb-1">أقل ميزانية ({settings.operational?.currency ?? 'OMR'})</label>
+                        <input id="lead-minbudget" type="number" value={minBudget || ''} onChange={e => setMinBudget(Number(normalizeArabicNumerals(e.target.value)) || undefined)} />
                     </div>
                      <div>
                         <label className="block text-sm font-medium mb-1">أعلى ميزانية ({settings.operational?.currency ?? 'OMR'})</label>

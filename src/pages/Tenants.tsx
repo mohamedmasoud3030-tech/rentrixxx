@@ -354,8 +354,8 @@ const TenantForm: React.FC<{ isOpen: boolean, onClose: () => void, tenant: Tenan
                 <div className="space-y-4">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                            <label className="block text-sm font-medium mb-1">الاسم</label>
-                            <input type="text" value={name} onChange={e => setName(e.target.value)} required />
+                            <label htmlFor="tenant-name" className="block text-sm font-medium mb-1">الاسم</label>
+                            <input id="tenant-name" type="text" value={name} onChange={e => setName(e.target.value)} required />
                         </div>
                         <div>
                             <label className="block text-sm font-medium mb-1">نوع المستأجر</label>
@@ -365,25 +365,25 @@ const TenantForm: React.FC<{ isOpen: boolean, onClose: () => void, tenant: Tenan
                             </select>
                         </div>
                         <div>
-                            <label className="block text-sm font-medium mb-1">الهاتف</label>
-                            <input type="text" value={phone} onChange={e => setPhone(e.target.value)} />
+                            <label htmlFor="tenant-phone" className="block text-sm font-medium mb-1">الهاتف</label>
+                            <input id="tenant-phone" type="text" value={phone} onChange={e => setPhone(e.target.value)} />
                         </div>
                         <div>
-                            <label className="block text-sm font-medium mb-1">البريد الإلكتروني</label>
-                            <input type="email" value={email} onChange={e => setEmail(e.target.value)} />
+                            <label htmlFor="tenant-email" className="block text-sm font-medium mb-1">البريد الإلكتروني</label>
+                            <input id="tenant-email" type="email" value={email} onChange={e => setEmail(e.target.value)} />
                         </div>
                         <div>
-                            <label className="block text-sm font-medium mb-1">رقم الهوية</label>
-                            <input type="text" value={idNo} onChange={e => setIdNo(e.target.value)} />
+                            <label htmlFor="tenant-idno" className="block text-sm font-medium mb-1">رقم الهوية</label>
+                            <input id="tenant-idno" type="text" value={idNo} onChange={e => setIdNo(e.target.value)} />
                         </div>
                         <div>
-                            <label className="block text-sm font-medium mb-1">الجنسية</label>
-                            <input type="text" value={nationality} onChange={e => setNationality(e.target.value)} />
+                            <label htmlFor="tenant-nationality" className="block text-sm font-medium mb-1">الجنسية</label>
+                            <input id="tenant-nationality" type="text" value={nationality} onChange={e => setNationality(e.target.value)} />
                         </div>
                         {tenantType === 'COMPANY' && (
                             <div>
-                                <label className="block text-sm font-medium mb-1">رقم السجل التجاري</label>
-                                <input type="text" value={crNumber} onChange={e => setCrNumber(e.target.value)} />
+                                <label htmlFor="tenant-crnumber" className="block text-sm font-medium mb-1">رقم السجل التجاري</label>
+                                <input id="tenant-crnumber" type="text" value={crNumber} onChange={e => setCrNumber(e.target.value)} />
                             </div>
                         )}
                         <div>
@@ -399,22 +399,22 @@ const TenantForm: React.FC<{ isOpen: boolean, onClose: () => void, tenant: Tenan
                     <h4 className="font-bold text-sm text-text-muted pt-2 border-t border-border">العنوان</h4>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div className="md:col-span-3">
-                            <label className="block text-sm font-medium mb-1">العنوان</label>
-                            <input type="text" value={address} onChange={e => setAddress(e.target.value)} />
+                            <label htmlFor="tenant-address" className="block text-sm font-medium mb-1">العنوان</label>
+                            <input id="tenant-address" type="text" value={address} onChange={e => setAddress(e.target.value)} />
                         </div>
                         <div>
-                            <label className="block text-sm font-medium mb-1">الرمز البريدي</label>
-                            <input type="text" value={postalCode} onChange={e => setPostalCode(e.target.value)} />
+                            <label htmlFor="tenant-postalcode" className="block text-sm font-medium mb-1">الرمز البريدي</label>
+                            <input id="tenant-postalcode" type="text" value={postalCode} onChange={e => setPostalCode(e.target.value)} />
                         </div>
                         <div>
-                            <label className="block text-sm font-medium mb-1">صندوق البريد</label>
-                            <input type="text" value={poBox} onChange={e => setPoBox(e.target.value)} />
+                            <label htmlFor="tenant-pobox" className="block text-sm font-medium mb-1">صندوق البريد</label>
+                            <input id="tenant-pobox" type="text" value={poBox} onChange={e => setPoBox(e.target.value)} />
                         </div>
                     </div>
 
                     <div>
-                        <label className="block text-sm font-medium mb-1">ملاحظات</label>
-                        <textarea value={notes} onChange={e => setNotes(e.target.value)} />
+                        <label htmlFor="tenant-notes" className="block text-sm font-medium mb-1">ملاحظات</label>
+                        <textarea id="tenant-notes" value={notes} onChange={e => setNotes(e.target.value)} />
                     </div>
                 </div>
 

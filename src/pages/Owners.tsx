@@ -183,17 +183,17 @@ const OwnerForm: React.FC<{ isOpen: boolean, onClose: () => void, owner: Owner |
                         <h3 className="text-md font-semibold mb-3 border-b border-border pb-2">المعلومات الأساسية</h3>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
                             <div>
-                                <label className="block text-sm font-medium mb-1">الاسم</label>
-                                <input type="text" value={name} onChange={e => setName(e.target.value)} required />
+                                <label htmlFor="owner-name" className="block text-sm font-medium mb-1">الاسم</label>
+                                <input id="owner-name" type="text" value={name} onChange={e => setName(e.target.value)} required />
                             </div>
                             <div>
-                                <label className="block text-sm font-medium mb-1">الهاتف</label>
-                                <input type="text" value={phone} onChange={e => setPhone(e.target.value)} />
+                                <label htmlFor="owner-phone" className="block text-sm font-medium mb-1">الهاتف</label>
+                                <input id="owner-phone" type="text" value={phone} onChange={e => setPhone(e.target.value)} />
                             </div>
                         </div>
                         <div className="mt-4">
-                            <label className="block text-sm font-medium mb-1">العنوان</label>
-                            <input type="text" value={address} onChange={e => setAddress(e.target.value)} />
+                            <label htmlFor="owner-address" className="block text-sm font-medium mb-1">العنوان</label>
+                            <input id="owner-address" type="text" value={address} onChange={e => setAddress(e.target.value)} />
                         </div>
                     </div>
 
@@ -224,12 +224,12 @@ const OwnerForm: React.FC<{ isOpen: boolean, onClose: () => void, owner: Owner |
                         <h3 className="text-md font-semibold mb-3 border-b border-border pb-2">المعلومات البنكية</h3>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
                             <div>
-                                <label className="block text-sm font-medium mb-1">اسم البنك</label>
-                                <input type="text" value={bankName} onChange={e => setBankName(e.target.value)} />
+                                <label htmlFor="owner-bankname" className="block text-sm font-medium mb-1">اسم البنك</label>
+                                <input id="owner-bankname" type="text" value={bankName} onChange={e => setBankName(e.target.value)} />
                             </div>
                             <div>
-                                <label className="block text-sm font-medium mb-1">رقم الحساب</label>
-                                <input type="text" value={bankAccountNumber} onChange={e => setBankAccountNumber(e.target.value)} />
+                                <label htmlFor="owner-bankaccount" className="block text-sm font-medium mb-1">رقم الحساب</label>
+                                <input id="owner-bankaccount" type="text" value={bankAccountNumber} onChange={e => setBankAccountNumber(e.target.value)} />
                             </div>
                         </div>
                     </div>
