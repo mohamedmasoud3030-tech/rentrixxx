@@ -12,6 +12,7 @@
     "src/services/auditEngine.ts",
     "src/contexts/authContext.tsx",
     "src/contexts/financeContext.tsx",
-    "src/contexts/operationsContext.tsx"
+    "src/contexts/operationsContext.tsx",
+    "src/agents/**/*.ts"
   ]
 }
