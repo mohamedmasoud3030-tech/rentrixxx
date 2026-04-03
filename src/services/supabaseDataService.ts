@@ -361,10 +361,13 @@ export const supabaseData = {
     const to = from + pageSize - 1;
 
     try {
-      let query = supabase.from(sqlTable).select('*', { count: 'exact' });
+      let query = applyContractsVisibility(
+        supabase.from(sqlTable).select('*', { count: 'exact' }),
+        jsTable,
+      );
 
       if (orderBy) {
-        const snakeOrder = camelToSnake(orderBy);
+        const snakeOrder = SPECIAL_FIELD_MAP[jsTable]?.[orderBy] ?? camelToSnake(orderBy);
         query = query.order(snakeOrder, { ascending });
       }
 
