@@ -3,11 +3,17 @@ export interface Attachment {
   id: string;
   entityType: 'TENANT' | 'CONTRACT' | 'RECEIPT' | 'EXPENSE' | 'OWNER' | 'PROPERTY' | 'UNIT' | 'UTILITY';
   entityId: string;
-  name: string;
-  mime: string;
-  size: number;
-  dataUrl: string; // base64
-  createdAt: number;
+  fileName?: string;
+  fileSize?: number;
+  mimeType?: string;
+  storagePath?: string;
+  uploadedBy?: string;
+  createdAt: number | string;
+  // Legacy columns (transition period only)
+  name?: string;
+  mime?: string;
+  size?: number;
+  dataUrl?: string; // deprecated: base64
 }
 
 export type UtilityType = 'WATER' | 'ELECTRICITY' | 'GAS' | 'INTERNET' | 'OTHER';
@@ -39,7 +45,7 @@ export interface UtilityRecord {
   unitPrice: number;
   amount: number; // calculated: consumption * unitPrice
   paidBy: 'TENANT' | 'OWNER' | 'OFFICE';
-  billImageUrl?: string; // base64 image of bill
+  billImageUrl?: string; // storage path (legacy may still be base64)
   billImageMime?: string;
   notes?: string;
   createdAt: number;

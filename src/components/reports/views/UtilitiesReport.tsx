@@ -26,6 +26,7 @@ import {
   LineChart, Line
 } from 'recharts';
 import { ReportTab } from '../ReportsSidebar';
+import { getAttachmentUrl } from '../../../services/attachmentService';
 
 const UTILITY_COLORS_CHART: Record<UtilityType, string> = {
   ELECTRICITY: '#2563eb',
@@ -51,6 +52,34 @@ interface BalanceSheetLine {
   balance: number;
   children: BalanceSheetLine[];
 }
+
+const UtilityAttachmentLink: React.FC<{ path: string }> = ({ path }) => {
+  const [signedUrl, setSignedUrl] = useState('');
+
+  useEffect(() => {
+    let active = true;
+    const load = async () => {
+      if (!path) return;
+      if (path.startsWith('data:')) {
+        setSignedUrl(path);
+        return;
+      }
+      try {
+        const url = await getAttachmentUrl(path);
+        if (active) setSignedUrl(url);
+      } catch {
+        if (active) setSignedUrl('');
+      }
+    };
+    void load();
+    return () => {
+      active = false;
+    };
+  }, [path]);
+
+  if (!signedUrl) return <span>-</span>;
+  return <a href={signedUrl} target="_blank" rel="noopener noreferrer" className="text-blue-600 text-xs underline">عرض</a>;
+};
 
 
 const UtilitiesReport: React.FC = () => {
@@ -159,7 +188,7 @@ const UtilitiesReport: React.FC = () => {
               <td className="px-3 py-2 border border-border font-bold">{formatCurrency(r.amount, cur)}</td>
               <td className="px-3 py-2 border border-border">{r.paidBy === 'TENANT' ? 'مستأجر' : r.paidBy === 'OWNER' ? 'مالك' : 'مكتب'}</td>
               <td className="px-3 py-2 border border-border text-center">
-                {r.billImageUrl ? <a href={r.billImageUrl} target="_blank" rel="noopener noreferrer" className="text-blue-600 text-xs underline">عرض</a> : '-'}
+                {r.billImageUrl ? <UtilityAttachmentLink path={r.billImageUrl} /> : '-'}
               </td>
             </tr>
           );

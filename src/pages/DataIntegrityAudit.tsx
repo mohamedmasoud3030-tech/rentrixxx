@@ -5,6 +5,8 @@ import { runDataIntegrityAudit } from '../services/auditEngine';
 import Card from '../components/ui/Card';
 import { AlertTriangle, AlertCircle, Info, RefreshCw, ChevronsRight, SearchCheck } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { migrateAttachments } from '../utils/migrateAttachments';
+import { toast } from 'react-hot-toast';
 
 const IssueCard: React.FC<{ issue: AuditIssue }> = ({ issue }) => {
     const icons = {
@@ -43,9 +45,10 @@ const IssueCard: React.FC<{ issue: AuditIssue }> = ({ issue }) => {
 
 
 const DataIntegrityAudit: React.FC = () => {
-    const { db } = useApp();
+    const { db, auth } = useApp();
     const [issues, setIssues] = useState<AuditIssue[]>([]);
     const [isLoading, setIsLoading] = useState(false);
+    const [isMigratingAttachments, setIsMigratingAttachments] = useState(false);
     const [lastRun, setLastRun] = useState<Date | null>(null);
 
     const handleRunAudit = () => {
@@ -63,6 +66,23 @@ const DataIntegrityAudit: React.FC = () => {
     const warnings = issues.filter(i => i.severity === 'WARNING');
     const infos = issues.filter(i => i.severity === 'INFO');
 
+    const handleMigrateAttachments = async () => {
+        if (auth.currentUser?.role !== 'ADMIN') {
+            toast.error('هذه العملية متاحة للمدير فقط.');
+            return;
+        }
+        setIsMigratingAttachments(true);
+        try {
+            const migratedCount = await migrateAttachments();
+            toast.success(`اكتملت الهجرة. عدد العناصر المعالجة: ${migratedCount}`);
+        } catch (error) {
+            console.error(error);
+            toast.error('فشلت عملية ترحيل المرفقات.');
+        } finally {
+            setIsMigratingAttachments(false);
+        }
+    };
+
     return (
         <Card>
             <div className="flex flex-wrap justify-between items-center mb-4 gap-4">
@@ -75,10 +95,15 @@ const DataIntegrityAudit: React.FC = () => {
                     </p>
                 </div>
                 <div className="flex-shrink-0">
-                    <button onClick={handleRunAudit} disabled={isLoading} className="btn btn-primary flex items-center gap-2">
-                        <RefreshCw size={16} className={isLoading ? 'animate-spin' : ''} />
-                        {isLoading ? 'جاري الفحص...' : 'بدء فحص النظام'}
-                    </button>
+                    <div className="flex items-center gap-2">
+                        <button onClick={handleRunAudit} disabled={isLoading} className="btn btn-primary flex items-center gap-2">
+                            <RefreshCw size={16} className={isLoading ? 'animate-spin' : ''} />
+                            {isLoading ? 'جاري الفحص...' : 'بدء فحص النظام'}
+                        </button>
+                        <button onClick={handleMigrateAttachments} disabled={isMigratingAttachments || auth.currentUser?.role !== 'ADMIN'} className="btn btn-secondary">
+                            {isMigratingAttachments ? 'جاري ترحيل المرفقات...' : 'Migrate Attachments'}
+                        </button>
+                    </div>
                 </div>
             </div>
            
