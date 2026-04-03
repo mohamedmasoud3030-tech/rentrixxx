@@ -37,7 +37,7 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children, size = 
 
   return (
     <div
-      className="fixed inset-0 z-50 flex flex-col justify-end sm:justify-center sm:items-center p-0 sm:p-4 md:p-6"
+      className="fixed inset-0 z-50 flex flex-col justify-end p-0 sm:items-center sm:justify-center sm:p-4 md:p-6"
       style={{ background: 'rgba(0, 0, 0, 0.55)', backdropFilter: 'blur(4px)' }}
       onClick={onClose}
     >
@@ -47,6 +47,7 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children, size = 
           bg-card text-text w-full flex flex-col
           rounded-t-3xl sm:rounded-2xl
           max-h-[96vh] sm:max-h-[92vh]
+          sm:w-[min(100%,_96vw)]
           ${sizeMap[size]}
         `}
         style={{ boxShadow: '0 -8px 40px rgba(0,0,0,0.25), 0 0 0 1px hsl(var(--color-border))' }}
@@ -59,17 +60,17 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children, size = 
 
         {/* Header */}
         <div className="flex justify-between items-center px-4 py-3 sm:px-6 sm:py-4 border-b border-border flex-shrink-0">
-          <h3 className="text-[15px] sm:text-lg font-black text-text">{title}</h3>
+          <h3 className="text-base sm:text-lg font-extrabold text-text">{title}</h3>
           <button
             onClick={onClose}
-            className="flex items-center justify-center w-10 h-10 rounded-xl hover:bg-background text-text-muted hover:text-text transition-colors active:scale-95"
+            className="flex items-center justify-center w-10 h-10 rounded-xl border border-border bg-card hover:bg-background text-text-muted hover:text-text transition-colors active:scale-95"
           >
             <X size={19} />
           </button>
         </div>
 
         {/* Body */}
-        <div className="p-4 sm:p-6 md:p-7 overflow-y-auto flex-1">
+        <div className="p-4 sm:p-6 overflow-y-auto flex-1">
           {children}
         </div>
       </div>

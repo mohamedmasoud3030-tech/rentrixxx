@@ -32,7 +32,7 @@ export const DeleteConfirmationModal: React.FC<DeleteConfirmationModalProps> = (
 
   return (
     <Modal isOpen={isOpen} onClose={onCancel} title={title}>
-      <div className="space-y-4">
+      <div className="modal-content">
         <div className="flex gap-3 items-start bg-rose-50 border border-rose-200 rounded-lg p-3">
           <AlertTriangle className="text-rose-600 flex-shrink-0 mt-0.5" size={20} />
           <p className="text-sm text-rose-800">{message}</p>
@@ -40,7 +40,7 @@ export const DeleteConfirmationModal: React.FC<DeleteConfirmationModalProps> = (
         
         <p className="text-xs text-text-muted">هذا الإجراء لا يمكن التراجع عنه.</p>
 
-        <div className="flex gap-2 justify-end">
+        <div className="modal-actions">
           <button
             onClick={onCancel}
             disabled={loading || isLoading}

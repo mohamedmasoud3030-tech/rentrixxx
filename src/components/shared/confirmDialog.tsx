@@ -36,9 +36,9 @@ const ConfirmDialogHost: React.FC<ConfirmDialogOptions & { onResolve: (value: bo
 
   return (
     <Modal isOpen={isOpen} onClose={() => closeWith(false)} title={title} size="sm">
-      <div className="space-y-5">
+      <div className="modal-content">
         <p className="text-sm leading-7 text-text">{message}</p>
-        <div className="flex items-center justify-end gap-2 border-t border-border pt-4">
+        <div className="modal-actions">
           <button type="button" onClick={() => closeWith(false)} className="btn btn-ghost">
             {cancelLabel}
           </button>

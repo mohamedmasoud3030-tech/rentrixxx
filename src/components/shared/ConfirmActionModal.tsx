@@ -26,9 +26,9 @@ const ConfirmActionModal: React.FC<ConfirmActionModalProps> = ({
 }) => {
   return (
     <Modal isOpen={isOpen} onClose={onClose} title={title} size="sm">
-      <div className="space-y-5">
+      <div className="modal-content">
         <p className="text-sm leading-7 text-text">{message}</p>
-        <div className="flex items-center justify-end gap-2 border-t border-border pt-4">
+        <div className="modal-actions">
           <button type="button" onClick={onClose} className="btn btn-ghost" disabled={isLoading}>
             {cancelLabel}
           </button>

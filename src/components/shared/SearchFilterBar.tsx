@@ -10,8 +10,8 @@ interface SearchFilterBarProps {
 
 const SearchFilterBar: React.FC<SearchFilterBarProps> = ({ searchTerm, onSearchChange, placeholder = "بحث...", children }) => {
     return (
-        <div className="mb-4 flex flex-wrap gap-4 items-center">
-            <div className="relative flex-grow">
+        <div className="mb-4 rounded-xl border border-border bg-card p-3 sm:p-4 shadow-sm flex flex-col gap-3 sm:flex-row sm:items-center">
+            <div className="relative w-full sm:flex-1">
                 <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-5 w-5 text-text-muted" />
                 <input
                     id="search-input"
@@ -20,10 +20,10 @@ const SearchFilterBar: React.FC<SearchFilterBarProps> = ({ searchTerm, onSearchC
                     value={searchTerm}
                     onChange={(e) => onSearchChange(e.target.value)}
                     placeholder={placeholder}
-                    className="w-full rounded-md border border-border bg-card py-2 pl-3 pr-10 focus:outline-none focus:ring-2 focus:ring-primary"
+                    className="w-full pr-10"
                 />
             </div>
-            {children}
+            {children ? <div className="w-full sm:w-auto">{children}</div> : null}
         </div>
     );
 };

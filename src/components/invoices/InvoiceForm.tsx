@@ -81,62 +81,64 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({ isOpen, onClose, invoi
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title={invoice ? 'تعديل الفاتورة' : 'إنشاء فاتورة يدوية'}>
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div>
-          <label htmlFor="invoice-unit" className="block text-sm font-medium mb-1">
-            الوحدة
-          </label>
-          <select
-            id="invoice-unit"
-            value={unitId}
-            onChange={e => setUnitId(e.target.value)}
-          >
-            <option value="">اختر وحدة</option>
-            {db.units.map(u => (
-              <option key={u.id} value={u.id}>
-                {u.name}
-              </option>
-            ))}
-          </select>
+      <form onSubmit={handleSubmit} className="modal-content">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label htmlFor="invoice-unit" className="block text-sm font-medium mb-1">
+              الوحدة
+            </label>
+            <select
+              id="invoice-unit"
+              value={unitId}
+              onChange={e => setUnitId(e.target.value)}
+            >
+              <option value="">اختر وحدة</option>
+              {db.units.map(u => (
+                <option key={u.id} value={u.id}>
+                  {u.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label htmlFor="invoice-type" className="block text-sm font-medium mb-1">
+              النوع
+            </label>
+            <select
+              id="invoice-type"
+              value={type}
+              onChange={e => setType(e.target.value as Invoice['type'])}
+            >
+              <option value="RENT">إيجار</option>
+              <option value="UTILITY">مرافق</option>
+              <option value="MAINTENANCE">صيانة</option>
+              <option value="LATE_FEE">رسوم تأخير</option>
+            </select>
+          </div>
+
+          <div>
+            <label htmlFor="invoice-duedate" className="block text-sm font-medium mb-1">
+              تاريخ الاستحقاق
+            </label>
+            <input
+              id="invoice-duedate"
+              type="date"
+              value={dueDate}
+              onChange={e => setDueDate(e.target.value)}
+            />
+          </div>
+
+          <div>
+            <label htmlFor="invoice-amount" className="block text-sm font-medium mb-1">
+              المبلغ
+            </label>
+            <NumberInput value={amount} onChange={setAmount} />
+          </div>
         </div>
 
         <div>
-          <label htmlFor="invoice-type" className="block text-sm font-medium mb-1">
-            النوع
-          </label>
-          <select
-            id="invoice-type"
-            value={type}
-            onChange={e => setType(e.target.value as Invoice['type'])}
-          >
-            <option value="RENT">إيجار</option>
-            <option value="UTILITY">مرافق</option>
-            <option value="MAINTENANCE">صيانة</option>
-            <option value="LATE_FEE">رسوم تأخير</option>
-          </select>
-        </div>
-
-        <div>
-          <label htmlFor="invoice-duedate" className="block text-sm font-medium mb-1">
-            تاريخ الاستحقاق
-          </label>
-          <input
-            id="invoice-duedate"
-            type="date"
-            value={dueDate}
-            onChange={e => setDueDate(e.target.value)}
-          />
-        </div>
-
-        <div>
-          <label htmlFor="invoice-amount" className="block text-sm font-medium mb-1">
-            المبلغ
-          </label>
-          <NumberInput value={amount} onChange={setAmount} />
-        </div>
-
-        <div>
-          <label htmlFor="invoice-notes" className="block text-sm font-medium mb-1">
+          <label htmlFor="invoice-notes" className="block text-sm font-medium mb-1.5">
             ملاحظات
           </label>
           <textarea
@@ -148,7 +150,7 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({ isOpen, onClose, invoi
           />
         </div>
 
-        <div className="flex gap-2 justify-end pt-4">
+        <div className="modal-actions">
           <button type="button" onClick={onClose} className="btn btn-ghost">
             إلغاء
           </button>
