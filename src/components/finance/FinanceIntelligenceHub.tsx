@@ -64,7 +64,7 @@ const FinanceIntelligenceHub: React.FC = () => {
       subtitle: `من أصل ${intelligence.totalActiveContracts} عقد نشط`,
       tone: 'text-amber-700 bg-amber-50 border-amber-100',
       icon: <FileWarning size={18} />,
-      href: '/finance/invoices',
+      href: '/financial/invoices',
       cta: 'استكمال إصدار فواتير العقود',
     },
     {
@@ -73,7 +73,7 @@ const FinanceIntelligenceHub: React.FC = () => {
       subtitle: `إجمالي متأخرات ${formatCurrency(intelligence.overdueAmount)}`,
       tone: 'text-rose-700 bg-rose-50 border-rose-100',
       icon: <AlertTriangle size={18} />,
-      href: '/finance/invoices',
+      href: '/financial/invoices',
       cta: 'متابعة التحصيل والتحويل لسندات قبض',
     },
     {
@@ -82,7 +82,7 @@ const FinanceIntelligenceHub: React.FC = () => {
       subtitle: 'تحتاج توزيع على فواتير العقود المفتوحة',
       tone: 'text-blue-700 bg-blue-50 border-blue-100',
       icon: <Receipt size={18} />,
-      href: '/finance/financials',
+      href: '/financial/receipts',
       cta: 'مراجعة السندات وتخصيصها',
     },
     {
@@ -91,7 +91,7 @@ const FinanceIntelligenceHub: React.FC = () => {
       subtitle: 'عقود لها فواتير غير مسددة أو جزئية',
       tone: 'text-emerald-700 bg-emerald-50 border-emerald-100',
       icon: <Link2 size={18} />,
-      href: '/finance/accounting',
+      href: '/financial/accounting',
       cta: 'مراجعة القيود والحركات المرتبطة',
     },
   ];
@@ -105,7 +105,7 @@ const FinanceIntelligenceHub: React.FC = () => {
           <p className="text-sm text-text-muted mt-1">قراءة شهر {intelligence.month} لالتقاط الفجوات التشغيلية قبل ترحيلها للتقارير.</p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <Link to="/finance/invoices" className="btn btn-secondary text-xs font-black flex items-center gap-2">
+          <Link to="/financial/invoices" className="btn btn-secondary text-xs font-black flex items-center gap-2">
             <ScrollText size={14} /> سير الفواتير
           </Link>
           <Link to="/reports" className="btn btn-primary text-xs font-black flex items-center gap-2">

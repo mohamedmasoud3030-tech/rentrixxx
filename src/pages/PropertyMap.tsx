@@ -161,7 +161,7 @@ const UnitDetailModal: React.FC<{ unit: UnitWithDetails, onClose: () => void }> 
                             <FileText size={16} /> عرض العقد
                         </button>
                     )}
-                     <button onClick={() => handleNavigate('/finance/maintenance')} className="flex items-center gap-2 px-4 py-2 rounded-md border border-border">
+                     <button onClick={() => handleNavigate('/financial/maintenance')} className="flex items-center gap-2 px-4 py-2 rounded-md border border-border">
                         <Wrench size={16} /> إضافة صيانة
                     </button>
                 </div>

@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useApp } from '../contexts/AppContext';
 import { Owner } from '../types';
 import Card from '../components/ui/Card';
@@ -9,9 +9,10 @@ import { MessageCircle, Users, BookOpen, Link as LinkIcon } from 'lucide-react';
 import NumberInput from '../components/ui/NumberInput';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
+import { ROUTES } from '../routes/modules';
 
 const Owners: React.FC = () => {
-    const { dataService, generateOwnerPortalLink, fetchPaginatedData } = useApp();
+    const { dataService, generateOwnerPortalLink, fetchPaginatedData, sendWhatsApp } = useApp();
     const navigate = useNavigate();
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingOwner, setEditingOwner] = useState<Owner | null>(null);
@@ -69,7 +70,7 @@ const Owners: React.FC = () => {
                                     </div>
                                     <div className="flex items-center gap-2">
                                         <button 
-                                            onClick={() => app.sendWhatsApp(owner.phone, `سيد ${owner.name}، إليك تقرير العقارات اخر تحديث...`)}
+                                            onClick={() => sendWhatsApp(owner.phone, `سيد ${owner.name}، إليك تقرير العقارات اخر تحديث...`)}
                                             className="p-2 bg-green-100 text-green-700 rounded-full hover:bg-green-200"
                                             title="إرسال واتساب"
                                         >
@@ -88,6 +89,7 @@ const Owners: React.FC = () => {
                                         <ActionsMenu items={[
                                             EditAction(() => handleOpenModal(owner)),
                                             { label: 'كشف حساب احترافي', icon: <BookOpen size={16} />, onClick: () => navigate(`/reports?tab=owner&ownerId=${owner.id}`) },
+                                            { label: 'Owners Hub', icon: <Users size={16} />, onClick: () => navigate(ROUTES.ownerHub(owner.id)) },
                                             DeleteAction(() => handleDelete(owner.id))
                                         ]} />
                                     </div>

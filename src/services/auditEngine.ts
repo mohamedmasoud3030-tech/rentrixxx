@@ -6,11 +6,11 @@ const ENTITY_PATHS: { [key in keyof Database]?: string } = {
     tenants: '/tenants',
     owners: '/owners',
     contracts: '/contracts',
-    invoices: '/finance/invoices',
-    receipts: '/finance/financials',
-    expenses: '/finance/financials',
+    invoices: '/financial/invoices',
+    receipts: '/financial/receipts',
+    expenses: '/financial/expenses',
     maintenanceRecords: '/maintenance',
-    journalEntries: '/finance/gl',
+    journalEntries: '/financial/gl',
 };
 
 const createIssue = (
