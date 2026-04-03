@@ -10,6 +10,28 @@ type PdfRow = Record<string, any>;
 type PdfCell = { content: string; colSpan?: number; styles?: Record<string, unknown> };
 type AutoTableDoc = jsPDF & { autoTable: (opts: Record<string, unknown>) => void; lastAutoTable?: { finalY: number } };
 const asAutoTableDoc = (doc: jsPDF) => doc as AutoTableDoc;
+const FALLBACK_FONT = 'helvetica';
+const ARABIC_FONT = 'Cairo';
+
+const getActiveFont = (doc: jsPDF): string => {
+    try {
+        const font = doc.getFont?.();
+        return (font?.fontName || FALLBACK_FONT) as string;
+    } catch {
+        return FALLBACK_FONT;
+    }
+};
+
+const getTableStyle = (doc: jsPDF, fontSize = 10) => ({
+    font: getActiveFont(doc),
+    halign: 'right' as const,
+    fontSize,
+});
+
+const safeText = (value: unknown, fallback = '-'): string => {
+    const text = typeof value === 'string' ? value.trim() : String(value ?? '').trim();
+    return text || fallback;
+};
 
 
 // Helper to create a jsPDF instance with Arabic font support and a standard header
@@ -20,33 +42,32 @@ const getArabicDoc = (title: string, subtitle: string, settings: Settings) => {
         // Add Cairo font for Arabic support
         if (cairoFontBase64) {
             doc.addFileToVFS('Cairo-Regular.ttf', cairoFontBase64);
-            doc.addFont('Cairo-Regular.ttf', 'Cairo', 'normal');
-            doc.setFont('Cairo');
+            doc.addFont('Cairo-Regular.ttf', ARABIC_FONT, 'normal');
+            doc.setFont(ARABIC_FONT);
         } else {
-            doc.setFont('helvetica');
+            doc.setFont(FALLBACK_FONT);
         }
 
         // Header
         doc.setFontSize(16);
-        // FIX: Corrected path to company settings
-        doc.text(settings.general.company.name, 105, 15, { align: 'center' });
+        doc.text(safeText(settings.general?.company?.name, 'Rentrix'), 105, 15, { align: 'center' });
         doc.setFontSize(12);
-        doc.text(title, 105, 22, { align: 'center' });
+        doc.text(safeText(title), 105, 22, { align: 'center' });
         doc.setFontSize(10);
-        doc.text(subtitle, 105, 28, { align: 'center' });
+        doc.text(safeText(subtitle), 105, 28, { align: 'center' });
 
         return doc;
     } catch (error) {
         console.error('Error creating PDF document:', error);
         // Fallback to basic PDF without Arabic font
         const doc = new jsPDF();
-        doc.setFont('helvetica');
+        doc.setFont(FALLBACK_FONT);
         doc.setFontSize(16);
-        doc.text(settings.general.company.name, 105, 15, { align: 'center' });
+        doc.text(safeText(settings.general?.company?.name, 'Rentrix'), 105, 15, { align: 'center' });
         doc.setFontSize(12);
-        doc.text(title, 105, 22, { align: 'center' });
+        doc.text(safeText(title), 105, 22, { align: 'center' });
         doc.setFontSize(10);
-        doc.text(subtitle, 105, 28, { align: 'center' });
+        doc.text(safeText(subtitle), 105, 28, { align: 'center' });
         return doc;
     }
 };
@@ -83,7 +104,7 @@ export const exportRentRollToPdf = (units: PdfRow[], totals: PdfRow, settings: S
         head,
         body,
         startY: 35,
-        styles: { font: 'Cairo', halign: 'right' },
+        styles: getTableStyle(doc),
         headStyles: { fillColor: [30, 80, 130], fontStyle: 'bold' },
         footStyles: { fillColor: [230, 230, 230], textColor: 0, fontStyle: 'bold' },
     });
@@ -133,7 +154,7 @@ export const exportOwnerLedgerToPdf = (transactions: PdfRow[], totals: PdfRow, s
         body,
         foot: [footerRow],
         startY: 35,
-        styles: { font: 'Cairo', halign: 'right' },
+        styles: getTableStyle(doc),
         headStyles: { fillColor: [30, 80, 130], fontStyle: 'bold' },
         footStyles: { fillColor: [230, 230, 230], textColor: 0, fontStyle: 'bold' },
     });
@@ -168,7 +189,7 @@ export const exportTenantStatementToPdf = (statementData: { tenant?: PdfRow; uni
             { content: 'الرصيد النهائي المستحق', colSpan: 4, styles: { halign: 'center', fontStyle: 'bold' } }
         ]],
         startY: 45,
-        styles: { font: 'Cairo', halign: 'right' },
+        styles: getTableStyle(doc),
         headStyles: { fillColor: [30, 80, 130], fontStyle: 'bold' },
         footStyles: { fillColor: [230, 230, 230], textColor: 0, fontStyle: 'bold' },
     });
@@ -190,7 +211,7 @@ export const exportIncomeStatementToPdf = (pnlData: { totalRevenue: number; tota
             [{ content: 'صافي الربح / (الخسارة)', styles: { fontStyle: 'bold', fillColor: '#e2e8f0' } }, { content: formatCurrency(pnlData.netIncome, settings.operational.currency), styles: { fontStyle: 'bold' } }],
         ],
         theme: 'grid',
-        styles: { font: 'Cairo', halign: 'right' },
+        styles: getTableStyle(doc),
     });
 
     doc.save('Income_Statement.pdf');
@@ -221,7 +242,7 @@ export const exportTrialBalanceToPdf = (data: { lines: PdfRow[]; totalCredit: nu
         body,
         foot: footer,
         startY: 35,
-        styles: { font: 'Cairo', halign: 'right' },
+        styles: getTableStyle(doc),
         headStyles: { fillColor: [30, 80, 130], fontStyle: 'bold' },
         footStyles: { fillColor: [230, 230, 230], textColor: 0, fontStyle: 'bold' },
     });
@@ -333,7 +354,7 @@ export const exportInvoiceToPdf = (invoice: Invoice, db: Database) => {
                 invoice.notes || `فاتورة ${invoice.type}`
             ]],
             startY: 55,
-            styles: { font: 'Cairo', halign: 'right' },
+            styles: getTableStyle(doc),
             headStyles: { fillColor: [30, 80, 130], fontStyle: 'bold' },
         });
 
@@ -353,13 +374,14 @@ export const exportInvoiceToPdf = (invoice: Invoice, db: Database) => {
 export const exportBalanceSheetToPdf = (data: { assets: PdfRow[]; liabilities: PdfRow[]; equity: PdfRow[]; totalAssets: number; totalLiabilities: number; totalEquity: number }, settings: Settings, date: string) => {
     const doc = getArabicDoc('الميزانية العمومية', `كما في تاريخ ${formatDate(date)}`, settings);
     let y = 35;
+    const activeFont = getActiveFont(doc);
 
     const drawSection = (title: string, items: PdfRow[], indent = 0) => {
         doc.setFontSize(12);
-        doc.setFont('Cairo', 'bold');
+        doc.setFont(activeFont, 'bold');
         doc.text(title, 200, y, { align: 'right' });
         y += 7;
-        doc.setFont('Cairo', 'normal');
+        doc.setFont(activeFont, 'normal');
         doc.setFontSize(10);
         items.forEach(item => {
             doc.text(item.name, 200 - indent * 5, y, { align: 'right' });
@@ -374,7 +396,7 @@ export const exportBalanceSheetToPdf = (data: { assets: PdfRow[]; liabilities: P
 
     drawSection('الأصول', data.assets);
     doc.setFontSize(12);
-    doc.setFont('Cairo', 'bold');
+    doc.setFont(activeFont, 'bold');
     doc.text('إجمالي الأصول', 200, y, { align: 'right' });
     // FIX: Corrected path to currency settings
     doc.text(formatCurrency(data.totalAssets, settings.operational.currency), 50, y, { align: 'right' });
@@ -382,7 +404,7 @@ export const exportBalanceSheetToPdf = (data: { assets: PdfRow[]; liabilities: P
     
     drawSection('الالتزامات وحقوق الملكية', [...data.liabilities, ...data.equity]);
     doc.setFontSize(12);
-    doc.setFont('Cairo', 'bold');
+    doc.setFont(activeFont, 'bold');
     doc.text('إجمالي الالتزامات وحقوق الملكية', 200, y, { align: 'right' });
     // FIX: Corrected path to currency settings
     doc.text(formatCurrency(data.totalLiabilities + data.totalEquity, settings.operational.currency), 50, y, { align: 'right' });
@@ -418,7 +440,7 @@ export const exportAgedReceivablesToPdf = (data: { lines: PdfRow[]; totals: PdfR
         body,
         foot: footer,
         startY: 35,
-        styles: { font: 'Cairo', halign: 'right' },
+        styles: getTableStyle(doc),
         headStyles: { fillColor: [30, 80, 130], fontStyle: 'bold' },
         footStyles: { fillColor: [230, 230, 230], textColor: 0, fontStyle: 'bold' },
     });
@@ -428,7 +450,8 @@ export const exportAgedReceivablesToPdf = (data: { lines: PdfRow[]; totals: PdfR
 
 const HEAD_STYLE = { fillColor: [30, 80, 130] as [number, number, number], fontStyle: 'bold' as const };
 const FOOT_STYLE = { fillColor: [230, 230, 230] as [number, number, number], textColor: 0, fontStyle: 'bold' as const };
-const TABLE_STYLE = { font: 'Cairo', halign: 'right' as const, fontSize: 9 };
+const TABLE_STYLE = { halign: 'right' as const, fontSize: 9 };
+const tableStyleFor = (doc: jsPDF, fontSize = TABLE_STYLE.fontSize) => ({ ...TABLE_STYLE, font: getActiveFont(doc), fontSize });
 
 export const exportDailyCollectionToPdf = (receipts: PdfRow[], totals: { cash: number; bank: number; check: number; total: number }, settings: Settings, date: string) => {
     const cur = settings.operational.currency;
@@ -464,7 +487,7 @@ export const exportDailyCollectionToPdf = (receipts: PdfRow[], totals: { cash: n
 
     asAutoTableDoc(doc).autoTable({
         head, body, startY: 38,
-        styles: TABLE_STYLE,
+        styles: tableStyleFor(doc),
         headStyles: HEAD_STYLE,
     });
     doc.save(`Daily_Collection_${date}.pdf`);
@@ -484,7 +507,7 @@ export const exportExpensesReportToPdf = (expenses: Expense[], byCategory: [stri
             head: [['المبلغ', 'الفئة']],
             body: catBody,
             startY: 35,
-            styles: TABLE_STYLE,
+            styles: tableStyleFor(doc),
             headStyles: { ...HEAD_STYLE, fillColor: [100, 50, 50] },
         });
     }
@@ -502,7 +525,7 @@ export const exportExpensesReportToPdf = (expenses: Expense[], byCategory: [stri
 
     asAutoTableDoc(doc).autoTable({
         head, body, startY: detailY,
-        styles: TABLE_STYLE,
+        styles: tableStyleFor(doc),
         headStyles: HEAD_STYLE,
         footStyles: FOOT_STYLE,
     });
@@ -534,7 +557,7 @@ export const exportDepositsReportToPdf = (contracts: PdfRow[], totalDeposits: nu
 
     asAutoTableDoc(doc).autoTable({
         head, body, startY: 40,
-        styles: TABLE_STYLE,
+        styles: tableStyleFor(doc),
         headStyles: HEAD_STYLE,
     });
     doc.save('Deposits_Report.pdf');
@@ -561,7 +584,7 @@ export const exportMaintenanceReportToPdf = (records: PdfRow[], totalCost: numbe
 
     asAutoTableDoc(doc).autoTable({
         head, body, startY: 35,
-        styles: TABLE_STYLE,
+        styles: tableStyleFor(doc),
         headStyles: HEAD_STYLE,
     });
     doc.save('Maintenance_Report.pdf');
@@ -591,7 +614,7 @@ export const exportOverdueTenantsToPdf = (overdue: PdfRow[], totalOverdue: numbe
 
     asAutoTableDoc(doc).autoTable({
         head, body, startY: 40,
-        styles: TABLE_STYLE,
+        styles: tableStyleFor(doc),
         headStyles: HEAD_STYLE,
         didParseCell: (data: PdfRow) => {
             if (data.section === 'body' && data.column.index === 1) {
@@ -627,7 +650,7 @@ export const exportVacantUnitsToPdf = (units: PdfRow[], totalPotentialRent: numb
 
     asAutoTableDoc(doc).autoTable({
         head, body, startY: 40,
-        styles: { ...TABLE_STYLE, fontSize: 8 },
+        styles: tableStyleFor(doc, 8),
         headStyles: HEAD_STYLE,
     });
     doc.save('Vacant_Units.pdf');
@@ -667,7 +690,7 @@ export const exportUtilitiesReportToPdf = (records: PdfRow[], totalAmount: numbe
 
     asAutoTableDoc(doc).autoTable({
         head, body, startY: y + 5,
-        styles: { ...TABLE_STYLE, fontSize: 8 },
+        styles: tableStyleFor(doc, 8),
         headStyles: HEAD_STYLE,
     });
     doc.save('Utilities_Report.pdf');
@@ -698,7 +721,7 @@ export const exportPropertyReportToPdf = (property: PdfRow, owner: PdfRow, units
 
     asAutoTableDoc(doc).autoTable({
         head, body, startY: y + 5,
-        styles: TABLE_STYLE,
+        styles: tableStyleFor(doc),
         headStyles: HEAD_STYLE,
         didParseCell: (data: PdfRow) => {
             if (data.section === 'body' && data.column.index === 3) {
