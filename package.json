@@ -11,7 +11,7 @@
     "test:prepare": "rm -rf .tmp-tests && npx tsc -p tsconfig.tests.json",
     "test": "npm run test:unit && npm run test:service && npm run test:critical",
     "test:unit": "npm run test:prepare && node --test .tmp-tests/tests/unit/status.test.js",
-    "test:service": "npm run test:prepare && node --test .tmp-tests/tests/service/validation.test.js",
+    "test:service": "npm run test:prepare && node --test .tmp-tests/tests/service/validation.test.js .tmp-tests/tests/service/security-validation.test.js",
     "test:critical": "npm run test:prepare && node --test .tmp-tests/tests/critical/critical-flows.test.js",
     "ci": "npm run preflight && npm run typecheck && npm run lint && npm run test && npm run build",
     "preflight": "node scripts/preflight.mjs"
