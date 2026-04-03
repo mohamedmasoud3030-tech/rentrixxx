@@ -6,6 +6,7 @@ import { WORKFLOW_STATUS } from '../../../constants/status';
 import { normalizeWorkflowStatus } from '../../../utils/status';
 import { getLastRunDate } from '../../../services/automationService';
 import { createSidebarConfig, type SidebarNavItem } from './sidebarConfig';
+import { AR_LABELS } from '../../../config/labels.ar';
 
 interface SidebarProps {
   sidebarOpen: boolean;
@@ -153,7 +154,7 @@ const Sidebar: React.FC<SidebarProps> = ({ sidebarOpen, setSidebarOpen }) => {
               type="button"
               onClick={() => toggleItem(item.id)}
               className={`${isRtl ? 'mr-auto' : 'ml-auto'} inline-flex h-6 w-6 items-center justify-center rounded-md text-text-muted transition-colors hover:text-text`}
-              aria-label={isExpanded ? `Collapse ${item.label}` : `Expand ${item.label}`}
+              aria-label={isExpanded ? `${AR_LABELS.collapse} ${item.label}` : `${AR_LABELS.expand} ${item.label}`}
             >
               <ChevronDown size={16} className={`transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`} />
             </button>
@@ -177,7 +178,7 @@ const Sidebar: React.FC<SidebarProps> = ({ sidebarOpen, setSidebarOpen }) => {
       style={{ boxShadow: 'var(--shadow-sidebar)' }}
       role="dialog"
       aria-modal={sidebarOpen ? 'true' : undefined}
-      aria-label="Main navigation"
+      aria-label={AR_LABELS.rentrixNavigationHub}
     >
       <div className="flex items-center gap-3 border-b border-border px-4 py-4">
         <div
@@ -191,7 +192,7 @@ const Sidebar: React.FC<SidebarProps> = ({ sidebarOpen, setSidebarOpen }) => {
         </div>
         <div className="min-w-0 flex-1">
           <span className="block truncate text-base font-black text-text">{companyName}</span>
-          <span className="block text-xs text-text-muted">Rentrix Navigation Hub</span>
+          <span className="block text-xs text-text-muted">{AR_LABELS.rentrixNavigationHub}</span>
         </div>
         <button
           onClick={() => setSidebarOpen(false)}

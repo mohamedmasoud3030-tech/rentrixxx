@@ -3,6 +3,7 @@ import { useParams } from 'react-router-dom';
 import Card from '../components/ui/Card';
 import { useApp } from '../contexts/AppContext';
 import { formatCurrency } from '../utils/helpers';
+import { AR_LABELS } from '../config/labels.ar';
 
 const OwnersHub: React.FC = () => {
   const { ownerId } = useParams<{ ownerId: string }>();
@@ -42,7 +43,7 @@ const OwnersHub: React.FC = () => {
   return (
     <div className="space-y-6">
       <Card>
-        <h1 className="text-2xl font-black text-primary">Owners Hub — {owner.name}</h1>
+        <h1 className="text-2xl font-black text-primary">{AR_LABELS.ownersHub} — {owner.name}</h1>
         <p className="text-sm text-text-muted mt-1">عرض موحد للعقود والعقارات والفواتير والمدفوعات والمتأخرات.</p>
       </Card>
 

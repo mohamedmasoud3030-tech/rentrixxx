@@ -7,6 +7,7 @@ import { AlertTriangle, AlertCircle, Info, RefreshCw, ChevronsRight, SearchCheck
 import { Link } from 'react-router-dom';
 import { migrateAttachments } from '../utils/migrateAttachments';
 import { toast } from 'react-hot-toast';
+import { AR_LABELS } from '../config/labels.ar';
 
 const IssueCard: React.FC<{ issue: AuditIssue }> = ({ issue }) => {
     const icons = {
@@ -101,7 +102,7 @@ const DataIntegrityAudit: React.FC = () => {
                             {isLoading ? 'جاري الفحص...' : 'بدء فحص النظام'}
                         </button>
                         <button onClick={handleMigrateAttachments} disabled={isMigratingAttachments || auth.currentUser?.role !== 'ADMIN'} className="btn btn-secondary">
-                            {isMigratingAttachments ? 'جاري ترحيل المرفقات...' : 'Migrate Attachments'}
+                            {isMigratingAttachments ? 'جاري ترحيل المرفقات...' : AR_LABELS.migrateAttachments}
                         </button>
                     </div>
                 </div>
