@@ -359,16 +359,20 @@ export interface MaintenanceRecord {
     unitId: string;
     requestDate: string; // YYYY-MM-DD
     description: string;
-    status: 'NEW' | 'IN_PROGRESS' | 'COMPLETED' | 'CLOSED';
+    status: 'PENDING' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED';
     priority?: 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT';
     assignedTo?: string;
     cost: number;
     chargedTo: 'OWNER' | 'OFFICE' | 'TENANT';
+    estimatedCost?: number;
+    actualCost?: number;
     completionDate?: string; // YYYY-MM-DD
     expenseId?: string;
     invoiceId?: string;
     createdAt: number;
     completedAt?: number;
+    cancelledAt?: string;
+    cancellationReason?: string;
 }
 
 export interface DepositTx {
