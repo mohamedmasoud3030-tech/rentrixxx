@@ -1,14 +1,15 @@
-
 import React, { useState, useMemo } from 'react';
 import { useApp } from '../contexts/AppContext';
-import { AuditIssue, Snapshot } from '../types';
-import { runDataIntegrityAudit } from '../services/auditEngine';
+import { Snapshot } from '../types';
+import { exportAuditCsv } from '../services/auditEngine';
 import Card from '../components/ui/Card';
 import ConfirmActionModal from '../components/shared/ConfirmActionModal';
-import { AlertTriangle, AlertCircle, Info, RefreshCw, ChevronsRight, SearchCheck, PlusCircle, RotateCcw, XCircle, Search } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { PlusCircle, RotateCcw, XCircle, Search, Download } from 'lucide-react';
 import { formatDateTime } from '../utils/helpers';
 import { toast } from 'react-hot-toast';
+
+const ACTION_FILTER_OPTIONS = ['CREATE', 'UPDATE', 'DELETE', 'VOID', 'LOGIN', 'LOGOUT'];
+const ENTITY_FILTER_OPTIONS = ['contracts', 'receipts', 'invoices', 'users', 'settings'];
 
 // Helper function for styling actions
 const getActionClass = (action: string) => {
@@ -26,6 +27,9 @@ const AuditLog: React.FC = () => {
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedUser, setSelectedUser] = useState('all');
     const [selectedAction, setSelectedAction] = useState('all');
+    const [selectedEntity, setSelectedEntity] = useState('all');
+    const [startDate, setStartDate] = useState('');
+    const [endDate, setEndDate] = useState('');
     const [snapshotToRestore, setSnapshotToRestore] = useState<Snapshot | null>(null);
 
     const handleCreateSnapshot = () => {
@@ -47,22 +51,53 @@ const AuditLog: React.FC = () => {
     };
 
     const uniqueUsers = useMemo(() => ['all', ...Array.from(new Set((db.auditLog || []).map(log => log.username)))], [db.auditLog]);
-    const uniqueActions = useMemo(() => ['all', ...Array.from(new Set((db.auditLog || []).map(log => log.action)))], [db.auditLog]);
 
     const filteredLog = useMemo(() => {
         const auditLog = db.auditLog || [];
         return auditLog.filter(log => {
-            const matchesSearch = searchTerm === '' || log.entityId.includes(searchTerm) || log.note.toLowerCase().includes(searchTerm.toLowerCase());
+            const matchesSearch =
+                searchTerm === '' ||
+                log.entityId.includes(searchTerm) ||
+                log.note.toLowerCase().includes(searchTerm.toLowerCase());
             const matchesUser = selectedUser === 'all' || log.username === selectedUser;
             const matchesAction = selectedAction === 'all' || log.action === selectedAction;
-            return matchesSearch && matchesUser && matchesAction;
+            const matchesEntity = selectedEntity === 'all' || log.entity === selectedEntity;
+
+            const logDate = new Date(log.ts);
+            const startDateObj = startDate ? new Date(`${startDate}T00:00:00`) : null;
+            const endDateObj = endDate ? new Date(`${endDate}T23:59:59.999`) : null;
+            const matchesStartDate = !startDateObj || logDate >= startDateObj;
+            const matchesEndDate = !endDateObj || logDate <= endDateObj;
+
+            return matchesSearch && matchesUser && matchesAction && matchesEntity && matchesStartDate && matchesEndDate;
         });
-    }, [db.auditLog, searchTerm, selectedUser, selectedAction]);
+    }, [db.auditLog, searchTerm, selectedUser, selectedAction, selectedEntity, startDate, endDate]);
+
+    const handleExportCsv = () => {
+        if (filteredLog.length === 0) {
+            toast.error('لا توجد بيانات لتصديرها.');
+            return;
+        }
+
+        const csv = exportAuditCsv(filteredLog);
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `audit-log-${new Date().toISOString().slice(0, 10)}.csv`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+    };
     
     const resetFilters = () => {
         setSearchTerm('');
         setSelectedUser('all');
         setSelectedAction('all');
+        setSelectedEntity('all');
+        setStartDate('');
+        setEndDate('');
     };
 
     return (
@@ -100,7 +135,13 @@ const AuditLog: React.FC = () => {
             </Card>
 
             <Card>
-                <h2 className="text-xl font-bold mb-4">سجل تدقيق العمليات</h2>
+                <div className="flex items-center justify-between gap-3 mb-4">
+                    <h2 className="text-xl font-bold">سجل تدقيق العمليات</h2>
+                    <button onClick={handleExportCsv} className="btn btn-secondary flex items-center gap-2">
+                        <Download size={16} />
+                        تصدير CSV
+                    </button>
+                </div>
                 <p className="text-sm text-text-muted mb-6">هنا يمكنك مراقبة جميع العمليات التي تحدث في النظام بدقة (إنشاء، تعديل، حذف، ...إلخ). استخدم الفلاتر للبحث عن حركات معينة.</p>
                 
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6 p-4 border border-border rounded-md">
@@ -116,6 +157,14 @@ const AuditLog: React.FC = () => {
                          <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-5 w-5 text-text-muted mt-2.5" />
                     </div>
                     <div>
+                         <label className="text-xs text-text-muted">من تاريخ</label>
+                        <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} className="w-full" />
+                    </div>
+                    <div>
+                         <label className="text-xs text-text-muted">إلى تاريخ</label>
+                        <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} className="w-full" />
+                    </div>
+                    <div>
                          <label className="text-xs text-text-muted">فلترة بالمستخدم</label>
                         <select value={selectedUser} onChange={e => setSelectedUser(e.target.value)}>
                             {uniqueUsers.map((user: string) => <option key={user} value={user}>{user === 'all' ? 'كل المستخدمين' : user}</option>)}
@@ -124,10 +173,18 @@ const AuditLog: React.FC = () => {
                     <div>
                          <label className="text-xs text-text-muted">فلترة بالإجراء</label>
                         <select value={selectedAction} onChange={e => setSelectedAction(e.target.value)}>
-                            {uniqueActions.map((action: string) => <option key={action} value={action}>{action === 'all' ? 'كل الإجراءات' : action}</option>)}
+                            <option value="all">كل الإجراءات</option>
+                            {ACTION_FILTER_OPTIONS.map(action => <option key={action} value={action}>{action}</option>)}
                         </select>
                     </div>
-                    {(searchTerm || selectedUser !== 'all' || selectedAction !== 'all') && (
+                    <div>
+                        <label className="text-xs text-text-muted">فلترة بالكيان</label>
+                        <select value={selectedEntity} onChange={e => setSelectedEntity(e.target.value)}>
+                            <option value="all">كل الكيانات</option>
+                            {ENTITY_FILTER_OPTIONS.map(entity => <option key={entity} value={entity}>{entity}</option>)}
+                        </select>
+                    </div>
+                    {(searchTerm || selectedUser !== 'all' || selectedAction !== 'all' || selectedEntity !== 'all' || startDate || endDate) && (
                         <div className="md:col-span-4">
                             <button onClick={resetFilters} className="w-full md:w-auto btn btn-ghost flex items-center justify-center gap-2 text-sm">
                                 <XCircle size={16} /> تصفية الفلاتر
