@@ -7,8 +7,17 @@ export const validateRequiredString = (value: string, fieldName: string): string
 };
 
 export const validatePasswordStrength = (password: string): void => {
-  if (!password || password.trim().length < 8) {
+  const safePassword = password?.trim() ?? '';
+
+  if (safePassword.length < 8) {
     throw new Error('كلمة المرور يجب أن تكون 8 أحرف على الأقل');
+  }
+
+  const hasLetter = /[A-Za-z]/.test(safePassword);
+  const hasNumber = /\d/.test(safePassword);
+
+  if (!hasLetter || !hasNumber) {
+    throw new Error('كلمة المرور يجب أن تحتوي على أحرف وأرقام');
   }
 };
 
