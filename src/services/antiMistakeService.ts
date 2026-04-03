@@ -1,10 +1,20 @@
 import { supabase } from './supabase';
 import { logger } from './logger';
+import {
+  postReceiptAtomic as postReceiptAtomicFromReceiptService,
+  type ReceiptPostingPayload,
+  type ReceiptPostingResult,
+} from './receiptService';
 
 export interface OperationBreakdown {
   ok: boolean;
   step: string;
   details?: Record<string, unknown>;
+}
+
+// Backward compatibility: keep old import path working until all callers are migrated.
+export async function postReceiptAtomic(payload: ReceiptPostingPayload): Promise<ReceiptPostingResult> {
+  return postReceiptAtomicFromReceiptService(payload);
 }
 
 export async function voidReceiptAtomic(payload: {
