@@ -9,7 +9,7 @@ if (missing.length > 0) {
 
 let output = '';
 try {
-  output = execSync('npx supabase db diff --linked --schema public', {
+  output = execSync('supabase db diff --linked --schema public', {
     encoding: 'utf8',
     stdio: ['ignore', 'pipe', 'pipe'],
     env: {
