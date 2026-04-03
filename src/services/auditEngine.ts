@@ -1,5 +1,3 @@
-// @ts-nocheck
-
 import { Database, AuditIssue } from '../types';
 
 const ENTITY_PATHS: { [key in keyof Database]?: string } = {
