@@ -22,6 +22,7 @@ import { WhatsAppComposerModal } from '../components/shared/WhatsAppComposerModa
 import { ReceiptPrint } from '../components/print/PrintTemplate';
 import { toast } from 'react-hot-toast';
 import { exportExpenseToPdf } from '../services/pdfService';
+import { AR_LABELS } from '../config/labels.ar';
 
 type FinancialTab = 'receipts' | 'expenses' | 'deposits' | 'settlements';
 
@@ -70,7 +71,7 @@ const Financials: React.FC<{ initialTab?: FinancialTab }> = ({ initialTab = 'rec
             
             <div className="rounded-2xl border border-blue-100 bg-blue-50/70 p-4 flex flex-col lg:flex-row lg:items-center justify-between gap-3">
                 <div>
-                    <p className="text-xs uppercase tracking-widest text-blue-700 font-black">Cashflow Orchestration</p>
+                    <p className="text-xs uppercase tracking-widest text-blue-700 font-black">{AR_LABELS.cashflowOrchestration}</p>
                     <p className="text-sm font-bold mt-1">السندات والمصروفات مرتبطة تلقائيًا بدورة الفاتورة والعقد لضبط التدفق النقدي.</p>
                     <p className="text-xs text-text-muted mt-1">الفواتير المفتوحة الآن: <span className="font-black" dir="ltr">{stats.openInvoices}</span></p>
                 </div>
@@ -115,8 +116,8 @@ const Financials: React.FC<{ initialTab?: FinancialTab }> = ({ initialTab = 'rec
             <Card className="p-0 overflow-hidden border-none shadow-xl bg-card/50 backdrop-blur-sm">
                 <div className="flex flex-col md:flex-row md:items-center justify-between p-4 border-b border-border gap-4">
                     <div className="flex bg-background/50 p-1 rounded-xl border border-border overflow-x-auto">
-                        <TabButton active={activeTab === 'receipts'} onClick={() => setActiveTab('receipts')} icon={<ReceiptIcon size={16} />} label="Receipts" />
-                        <TabButton active={activeTab === 'expenses'} onClick={() => setActiveTab('expenses')} icon={<ArrowDownRight size={16} />} label="Expenses" />
+                        <TabButton active={activeTab === 'receipts'} onClick={() => setActiveTab('receipts')} icon={<ReceiptIcon size={16} />} label={AR_LABELS.receipts} />
+                        <TabButton active={activeTab === 'expenses'} onClick={() => setActiveTab('expenses')} icon={<ArrowDownRight size={16} />} label={AR_LABELS.expenses} />
                         <TabButton active={activeTab === 'deposits'} onClick={() => setActiveTab('deposits')} icon={<PiggyBank size={16} />} label="الودائع" />
                         <TabButton active={activeTab === 'settlements'} onClick={() => setActiveTab('settlements')} icon={<UserCheck size={16} />} label="تسويات الملاك" />
                     </div>

@@ -10,6 +10,7 @@ import NumberInput from '../components/ui/NumberInput';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 import { ROUTES } from '../routes/modules';
+import { AR_LABELS } from '../config/labels.ar';
 
 const Owners: React.FC = () => {
     const { dataService, generateOwnerPortalLink, fetchPaginatedData, sendWhatsApp } = useApp();
@@ -89,7 +90,7 @@ const Owners: React.FC = () => {
                                         <ActionsMenu items={[
                                             EditAction(() => handleOpenModal(owner)),
                                             { label: 'كشف حساب احترافي', icon: <BookOpen size={16} />, onClick: () => navigate(`/reports?tab=owner&ownerId=${owner.id}`) },
-                                            { label: 'Owners Hub', icon: <Users size={16} />, onClick: () => navigate(ROUTES.ownerHub(owner.id)) },
+                                            { label: AR_LABELS.ownersHub, icon: <Users size={16} />, onClick: () => navigate(ROUTES.ownerHub(owner.id)) },
                                             DeleteAction(() => handleDelete(owner.id))
                                         ]} />
                                     </div>
@@ -99,7 +100,7 @@ const Owners: React.FC = () => {
                     </div>
                     <div className="flex justify-between items-center mt-4">
                         <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1} className="btn">السابق</button>
-                        <span>Page {page} of {Math.ceil(total / pageSize)}</span>
+                        <span>{AR_LABELS.page} {page} {AR_LABELS.of} {Math.ceil(total / pageSize)}</span>
                         <button onClick={() => setPage(p => p + 1)} disabled={page * pageSize >= total} className="btn">التالي</button>
                     </div>
                 </div>
