@@ -1,33 +1,33 @@
 
-import React, { useEffect, Suspense } from 'react';
+import React, { lazy, useEffect, Suspense } from 'react';
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { useApp } from './contexts/AppContext';
 import Layout from './components/print/layout/Layout';
 import Login from './pages/Login';
-import ChangePassword from './pages/ChangePassword';
 import OwnerView from './pages/OwnerView';
 import { Toaster } from 'react-hot-toast';
 
-// Static imports for stability and to prevent Error #130
-import Dashboard from './pages/Dashboard';
-import Properties from './pages/Properties';
-import Tenants from './pages/Tenants';
-import Owners from './pages/Owners';
-import Contracts from './pages/Contracts';
-import Finance from './pages/Finance';
-import Reports from './pages/Reports';
-import Settings from './pages/System';
-import Leads from './pages/Leads';
-import CommunicationHub from './pages/CommunicationHub';
-import Lands from './pages/Lands';
-import Commissions from './pages/Commissions';
-import Maintenance from './pages/Maintenance';
-import AuditLog from './pages/AuditLog';
-import SmartAssistant from './pages/SmartAssistant';
 import ProtectedRoute from './components/shared/ProtectedRoute';
-import OwnersHub from './pages/OwnersHub';
 import { LEGACY_FINANCIAL_ALIASES } from './routes/modules';
 import { NAVIGATION_META } from './config/navigationMeta';
+
+const ChangePassword = lazy(() => import('./pages/ChangePassword'));
+const Dashboard = lazy(() => import('./pages/Dashboard'));
+const Properties = lazy(() => import('./pages/Properties'));
+const Tenants = lazy(() => import('./pages/Tenants'));
+const Owners = lazy(() => import('./pages/Owners'));
+const OwnersHub = lazy(() => import('./pages/OwnersHub'));
+const Contracts = lazy(() => import('./pages/Contracts'));
+const Maintenance = lazy(() => import('./pages/Maintenance'));
+const Finance = lazy(() => import('./pages/Finance'));
+const Leads = lazy(() => import('./pages/Leads'));
+const CommunicationHub = lazy(() => import('./pages/CommunicationHub'));
+const Lands = lazy(() => import('./pages/Lands'));
+const Commissions = lazy(() => import('./pages/Commissions'));
+const Reports = lazy(() => import('./pages/Reports'));
+const SmartAssistant = lazy(() => import('./pages/SmartAssistant'));
+const AuditLog = lazy(() => import('./pages/AuditLog'));
+const Settings = lazy(() => import('./pages/System'));
 
 const hexToHsl = (hex: string): string => {
     hex = hex.replace('#', '');

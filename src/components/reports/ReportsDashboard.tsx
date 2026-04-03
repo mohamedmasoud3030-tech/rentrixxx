@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect, useMemo, useRef } from 'react';
+import React, { Suspense, useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import { supabase } from '../../services/supabase';
 import { useApp } from '../../contexts/AppContext';
 import {
@@ -55,6 +55,18 @@ const AGING_COLORS = ['#10b981','#3b82f6','#f59e0b','#ef4444','#991b1b'];
 const Spinner = () => (
   <div className="flex items-center justify-center py-16">
     <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin"/>
+  </div>
+);
+
+const ReportsSkeleton: React.FC = () => (
+  <div className="animate-pulse space-y-4">
+    <div className="h-8 w-44 rounded-lg bg-background" />
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+      <div className="h-24 rounded-xl bg-background" />
+      <div className="h-24 rounded-xl bg-background" />
+      <div className="h-24 rounded-xl bg-background" />
+    </div>
+    <div className="h-72 rounded-xl bg-background" />
   </div>
 );
 
@@ -754,7 +766,7 @@ const ReportsDashboard: React.FC = () => {
           <span className="text-sm font-black text-text">{currentLabel}</span>
         </div>
         <div className="bg-card border border-border rounded-2xl p-5">
-          {renderContent()}
+          <Suspense fallback={<ReportsSkeleton />}>{renderContent()}</Suspense>
         </div>
       </main>
     </div>
