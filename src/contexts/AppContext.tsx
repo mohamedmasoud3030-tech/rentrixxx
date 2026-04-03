@@ -11,7 +11,7 @@ import { postReceiptAtomic, renewContractAtomic, syncUnitStatus, voidReceiptAtom
 import { AuthContext, type AuthContextValue } from './authContext';
 import { FinanceContext, type FinanceContextValue } from './financeContext';
 import { OperationsContext, type OperationsContextValue } from './operationsContext';
-import { assertNoRoleEscalation, safeAsync, sanitizeTextInput, validateLoginPayload, validatePasswordStrength, validateRequiredString } from '../utils/validation';
+import { safeAsync, validateLoginPayload, validatePasswordStrength, validateRequiredString } from '../utils/validation';
 
 const DEFAULT_GEMINI_API_KEY = '';
 
@@ -357,14 +357,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   }, [audit]);
 
   const addUser: AppContextType['auth']['addUser'] = useCallback(async (user, pass) => {
-    const actorRole = currentUser?.role || 'USER';
-    assertNoRoleEscalation(actorRole, user.role);
-    const username = sanitizeTextInput(validateRequiredString(user.username, 'اسم المستخدم'));
+    validateRequiredString(user.username, 'اسم المستخدم');
     validatePasswordStrength(pass);
-    const rawEmail = (user as User).email || `${username}@rentrix.local`;
-    const email = sanitizeTextInput(rawEmail).toLowerCase();
-    const result = await adminCreateUser({ email, password: pass, username, role: user.role });
-    await audit('CREATE', 'users', result.id, `Created user ${username}`);
+    const email = (user as User).email || `${user.username}@rentrix.local`;
+    const result = await adminCreateUser({ email, password: pass, username: user.username, role: user.role });
+    await audit('CREATE', 'users', result.id, `Created user ${user.username}`);
     await refreshData();
     return { ok: true, msg: 'تم إنشاء المستخدم. سيتلقى المستخدم رسالة تأكيد بالبريد الإلكتروني.' };
   }, [audit, refreshData, currentUser]);

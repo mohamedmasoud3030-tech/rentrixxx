@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { safeAsync, validateLoginPayload, validatePasswordStrength, validateRequiredString } from '../../src/utils/validation.ts';
+import { safeAsync, validateLoginPayload, validatePasswordStrength, validateRequiredString } from '../../src/utils/validation';
 
 test('validateRequiredString trims and validates', () => {
   assert.equal(validateRequiredString(' abc ', 'field'), 'abc');
@@ -9,7 +9,7 @@ test('validateRequiredString trims and validates', () => {
 
 test('validatePasswordStrength enforces minimum length', () => {
   assert.throws(() => validatePasswordStrength('1234567'));
-  assert.doesNotThrow(() => validatePasswordStrength('abc12345'));
+  assert.doesNotThrow(() => validatePasswordStrength('12345678'));
 });
 
 test('validateLoginPayload returns clean credentials', () => {

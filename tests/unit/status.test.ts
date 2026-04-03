@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { WORKFLOW_STATUS } from '../../src/constants/status.ts';
-import { isWorkflowStatus, normalizeWorkflowStatus } from '../../src/utils/status.ts';
+import { WORKFLOW_STATUS } from '../../src/constants/status';
+import { isWorkflowStatus, normalizeWorkflowStatus } from '../../src/utils/status';
 
 test('normalizes legacy statuses', () => {
   assert.equal(normalizeWorkflowStatus('PENDING'), WORKFLOW_STATUS.Pending);
