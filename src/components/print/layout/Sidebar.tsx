@@ -17,8 +17,16 @@ const Sidebar: React.FC<SidebarProps> = ({ sidebarOpen, setSidebarOpen }) => {
   const { auth, settings, db } = useApp();
   const { pathname } = useLocation();
   const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>({});
-  const lastRunDate = getLastRunDate();
+  const [lastRunDate, setLastRunDate] = useState<string | null>(null);
   const [expandedItems, setExpandedItems] = useState<Record<string, boolean>>({});
+
+  useEffect(() => {
+    const loadLastRunDate = async () => {
+      const value = await getLastRunDate();
+      setLastRunDate(value);
+    };
+    void loadLastRunDate();
+  }, []);
 
   const isRtl = useMemo(() => {
     if (typeof document === 'undefined') return true;
