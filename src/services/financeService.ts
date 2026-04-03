@@ -100,3 +100,66 @@ export const applyBalanceRule = (balance: number, min = 0): number => {
   const rounded = round3(balance);
   return rounded < min ? min : rounded;
 };
+
+export interface InvoiceAgingBucket {
+  count: number;
+  totalAmount: number;
+}
+
+export interface InvoiceAgingSummary {
+  current: InvoiceAgingBucket;
+  overdue_1_30: InvoiceAgingBucket;
+  overdue_31_60: InvoiceAgingBucket;
+  overdue_61_90: InvoiceAgingBucket;
+  overdue_90_plus: InvoiceAgingBucket;
+}
+
+export const getInvoiceAgingSummary = (invoices: Invoice[]): InvoiceAgingSummary => {
+  const summary: InvoiceAgingSummary = {
+    current: { count: 0, totalAmount: 0 },
+    overdue_1_30: { count: 0, totalAmount: 0 },
+    overdue_31_60: { count: 0, totalAmount: 0 },
+    overdue_61_90: { count: 0, totalAmount: 0 },
+    overdue_90_plus: { count: 0, totalAmount: 0 },
+  };
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  invoices.forEach((invoice) => {
+    const dueDate = new Date(invoice.dueDate);
+    dueDate.setHours(0, 0, 0, 0);
+
+    const overdueDays = Math.floor((today.getTime() - dueDate.getTime()) / (24 * 60 * 60 * 1000));
+    const totalAmount = round3((invoice.amount || 0) + (invoice.taxAmount || 0));
+
+    if (overdueDays <= 0) {
+      summary.current.count += 1;
+      summary.current.totalAmount = round3(summary.current.totalAmount + totalAmount);
+      return;
+    }
+
+    if (overdueDays <= 30) {
+      summary.overdue_1_30.count += 1;
+      summary.overdue_1_30.totalAmount = round3(summary.overdue_1_30.totalAmount + totalAmount);
+      return;
+    }
+
+    if (overdueDays <= 60) {
+      summary.overdue_31_60.count += 1;
+      summary.overdue_31_60.totalAmount = round3(summary.overdue_31_60.totalAmount + totalAmount);
+      return;
+    }
+
+    if (overdueDays <= 90) {
+      summary.overdue_61_90.count += 1;
+      summary.overdue_61_90.totalAmount = round3(summary.overdue_61_90.totalAmount + totalAmount);
+      return;
+    }
+
+    summary.overdue_90_plus.count += 1;
+    summary.overdue_90_plus.totalAmount = round3(summary.overdue_90_plus.totalAmount + totalAmount);
+  });
+
+  return summary;
+};
