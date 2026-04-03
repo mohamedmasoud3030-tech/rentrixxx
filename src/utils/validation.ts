@@ -13,7 +13,7 @@ export const validatePasswordStrength = (password: string): void => {
 };
 
 export const validateLoginPayload = (email: string, password: string): { email: string; password: string } => {
-  const safeEmail = validateRequiredString(email, 'البريد الإلكتروني');
+  const safeEmail = validateRequiredString(email, 'البريد الإلكتروني').toLowerCase();
   const safePassword = validateRequiredString(password, 'كلمة المرور');
   return { email: safeEmail, password: safePassword };
 };
@@ -24,5 +24,25 @@ export const safeAsync = async <T>(fn: () => Promise<T>, fallbackMessage: string
   } catch (error) {
     if (error instanceof Error) throw error;
     throw new Error(fallbackMessage);
+  }
+};
+
+export const validateNonNegativeNumber = (value: number, fieldName: string): number => {
+  if (!Number.isFinite(value) || value < 0) {
+    throw new Error(`${fieldName} must be a non-negative number`);
+  }
+  return value;
+};
+
+export const sanitizeTextInput = (value: string): string => {
+  return value
+    .replace(/[\u0000-\u001f\u007f]/g, '')
+    .replace(/[<>]/g, '')
+    .trim();
+};
+
+export const assertNoRoleEscalation = (currentRole: string, requestedRole: string): void => {
+  if (currentRole === 'USER' && requestedRole !== 'USER') {
+    throw new Error('لا يمكن ترقية مستخدم من خلال هذه العملية');
   }
 };

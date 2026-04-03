@@ -223,6 +223,33 @@ export function sanitizePhoneNumber(phone: string): string {
 
 export const safeLabel = (map: {[key: string]: string}, key: string, fallback: string) => map[key] || fallback;
 
+export const INVOICE_ROUNDING_EPSILON = 0.001;
+
+export function getInvoiceTotal(invoice: { amount?: number; taxAmount?: number }): number {
+  return Number((Number(invoice.amount || 0) + Number(invoice.taxAmount || 0)).toFixed(3));
+}
+
+export function getInvoiceRemaining(invoice: { amount?: number; taxAmount?: number; paidAmount?: number }): number {
+  const total = getInvoiceTotal(invoice);
+  const paid = Number(invoice.paidAmount || 0);
+  return Math.max(0, Number((total - paid).toFixed(3)));
+}
+
+export function getEffectiveInvoiceStatus(
+  invoice: { dueDate: string; amount?: number; taxAmount?: number; paidAmount?: number },
+  graceDays = 0,
+  now: Date = new Date(),
+): 'UNPAID' | 'PAID' | 'PARTIALLY_PAID' | 'OVERDUE' {
+  const total = getInvoiceTotal(invoice);
+  const paid = Number(invoice.paidAmount || 0);
+  if (paid >= total - INVOICE_ROUNDING_EPSILON) return 'PAID';
+  const dueWithGrace = new Date(invoice.dueDate);
+  dueWithGrace.setDate(dueWithGrace.getDate() + Math.max(0, graceDays || 0));
+  if (dueWithGrace.getTime() < now.getTime()) return 'OVERDUE';
+  if (paid > INVOICE_ROUNDING_EPSILON) return 'PARTIALLY_PAID';
+  return 'UNPAID';
+}
+
 export function exportToCsv(filename: string, rows: Record<string, string | number | null | undefined>[]): void {
     if (!rows.length) return;
     const headers = Object.keys(rows[0]);

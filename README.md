@@ -2,16 +2,30 @@
 <img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
 </div>
 
-# Run and deploy your AI Studio app
+# Rentrix
 
-This contains everything you need to run your app locally.
+Production-ready SaaS for property, contracts, maintenance, and financial operations.
 
-View your app in AI Studio: https://ai.studio/apps/drive/1alJ-MvO-G0lf_foNUPQqHoatluSQS7DW
+## Local setup
 
-## Run Locally
+**Prerequisites**
+- Node.js 20+
+- npm 10+
 
-**Prerequisites:**  Node.js
+1. Install dependencies deterministically:
+   ```bash
+   npm ci
+   ```
+2. Run preflight checks:
+   ```bash
+   npm run preflight
+   ```
+3. Start dev server:
+   ```bash
+   npm run dev
+   ```
 
+## Required environment variables
 
 1. Install dependencies:
    `npm install`
