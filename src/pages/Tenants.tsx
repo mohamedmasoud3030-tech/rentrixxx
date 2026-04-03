@@ -7,7 +7,7 @@ import ActionsMenu, { EditAction, DeleteAction } from '../components/shared/Acti
 import AttachmentsManager from '../components/shared/AttachmentsManager';
 import { MessageCircle, Users, BookOpen, Download, ArrowRight, FileText, Home, Phone, Mail, MapPin, CreditCard } from 'lucide-react';
 import { WhatsAppComposerModal } from '../components/shared/WhatsAppComposerModal';
-import { formatDate, formatCurrency, exportToCsv, TENANT_STATUS_AR, CHANNEL_AR, normalizeArabicNumerals } from '../utils/helpers';
+import { formatDate, formatCurrency, exportToCsv, TENANT_STATUS_AR, CHANNEL_AR, normalizeArabicNumerals, getEffectiveInvoiceStatus } from '../utils/helpers';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 
@@ -20,6 +20,41 @@ const Tenants: React.FC = () => {
 
     const tenants = db.tenants || [];
     const contracts = db.contracts || [];
+    const invoices = db.invoices || [];
+    const today = new Date().toISOString().slice(0, 10);
+    const graceDays = db.settings?.operational?.lateFee?.graceDays ?? 0;
+
+    const overdueTenantIds = useMemo(() => {
+        const overdueContractIds = new Set(
+            invoices
+                .filter(i => getEffectiveInvoiceStatus(i, graceDays) === 'OVERDUE' && i.dueDate <= today)
+                .map(i => i.contractId),
+        );
+        return new Set(contracts.filter(c => overdueContractIds.has(c.id)).map(c => c.tenantId));
+    }, [invoices, contracts, today, graceDays]);
+
+    const activeTenantIds = useMemo(() => new Set(contracts.filter(c => c.status === 'ACTIVE').map(c => c.tenantId)), [contracts]);
+
+    const filteredTenants = useMemo(() => {
+        const q = normalizeArabicNumerals(searchTerm).trim().toLowerCase();
+        return tenants.filter(t => {
+            const statusMatch = statusFilter === 'ALL' || t.status === statusFilter;
+            const queryMatch =
+                !q ||
+                normalizeArabicNumerals(t.name || '').toLowerCase().includes(q) ||
+                normalizeArabicNumerals(t.phone || '').toLowerCase().includes(q) ||
+                normalizeArabicNumerals(t.idNo || '').toLowerCase().includes(q);
+            return statusMatch && queryMatch;
+        });
+    }, [tenants, searchTerm, statusFilter]);
+
+    const stats = useMemo(() => {
+        const total = tenants.length;
+        const active = tenants.filter(t => t.status === 'ACTIVE').length;
+        const overdue = tenants.filter(t => overdueTenantIds.has(t.id)).length;
+        const noActiveContract = tenants.filter(t => !activeTenantIds.has(t.id)).length;
+        return { total, active, overdue, noActiveContract };
+    }, [tenants, overdueTenantIds, activeTenantIds]);
 
     if (selectedTenant) {
         return <TenantDetailView tenant={selectedTenant} onBack={() => setSelectedTenant(null)} />;

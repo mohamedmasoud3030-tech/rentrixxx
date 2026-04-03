@@ -1,8 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { WORKFLOW_STATUS } from '../../src/constants/status.ts';
-import { getStatusBadgeClass } from '../../src/utils/helpers.ts';
-import { normalizeWorkflowStatus } from '../../src/utils/status.ts';
+import { WORKFLOW_STATUS } from '../../src/constants/status';
+import { getStatusBadgeClass } from '../../src/utils/helpers';
+import { normalizeWorkflowStatus } from '../../src/utils/status';
 
 test('communication flow maps pending/completed to expected badge buckets', () => {
   const pending = normalizeWorkflowStatus('PENDING');
