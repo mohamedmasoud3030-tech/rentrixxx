@@ -126,10 +126,6 @@ const Contracts: React.FC = () => {
     const handleDelete = async (id: string) => {
         const targetContract = contracts.find(c => c.id === id);
         if (!targetContract) return;
-        if (targetContract.status === 'ACTIVE') {
-            toast.error('لا يمكن حذف عقد نشط.');
-            return;
-        }
         await dataService.remove('contracts', id);
     };
 
