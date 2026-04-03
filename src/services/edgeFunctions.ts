@@ -2,6 +2,7 @@ import { supabase } from './supabase';
 import { getAppEnv } from '../config/env';
 import { logger } from './logger';
 import type { AutomationResult } from '../types/automation';
+import type { User } from '../types';
 
 const env = getAppEnv();
 
@@ -33,7 +34,7 @@ export async function verifyOwnerAccessToken(ownerId: string, token: string): Pr
   return data as OwnerPortalPayload;
 }
 
-export async function adminCreateUser(payload: { email: string; password: string; username: string; role: 'ADMIN' | 'USER' }): Promise<{ id: string }> {
+export async function adminCreateUser(payload: { email: string; password: string; username: string; role: User['role'] }): Promise<{ id: string }> {
   const { data, error } = await supabase.functions.invoke('admin-create-user', { body: payload });
   if (error || !data?.id) {
     logger.error('[EdgeFunction] admin-create-user failed', error || data);
