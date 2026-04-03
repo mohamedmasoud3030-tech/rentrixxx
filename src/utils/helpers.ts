@@ -187,11 +187,13 @@ export function getStatusBadgeClass(status: string): string {
         case 'ACTIVE':
         case 'POSTED':
         case 'COMPLETED':
+        case 'Completed':
         case 'RENTED':
         case 'PAID':
             return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300';
         case 'INACTIVE':
         case 'PENDING':
+        case 'Pending':
         case 'IN_PROGRESS':
         case 'ON_HOLD':
         case 'PARTIALLY_PAID':

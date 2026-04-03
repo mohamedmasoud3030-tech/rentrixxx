@@ -46,11 +46,12 @@ const AuditLog: React.FC = () => {
         setSnapshotToRestore(null);
     };
 
-    const uniqueUsers = useMemo(() => ['all', ...Array.from(new Set(db.auditLog.map(log => log.username)))], [db.auditLog]);
-    const uniqueActions = useMemo(() => ['all', ...Array.from(new Set(db.auditLog.map(log => log.action)))], [db.auditLog]);
+    const uniqueUsers = useMemo(() => ['all', ...Array.from(new Set((db.auditLog || []).map(log => log.username)))], [db.auditLog]);
+    const uniqueActions = useMemo(() => ['all', ...Array.from(new Set((db.auditLog || []).map(log => log.action)))], [db.auditLog]);
 
     const filteredLog = useMemo(() => {
-        return db.auditLog.filter(log => {
+        const auditLog = db.auditLog || [];
+        return auditLog.filter(log => {
             const matchesSearch = searchTerm === '' || log.entityId.includes(searchTerm) || log.note.toLowerCase().includes(searchTerm.toLowerCase());
             const matchesUser = selectedUser === 'all' || log.username === selectedUser;
             const matchesAction = selectedAction === 'all' || log.action === selectedAction;
@@ -79,8 +80,8 @@ const AuditLog: React.FC = () => {
                     هذه الأداة بمثابة "زر تراجع كبير" للنظام. استخدمها قبل العمليات الكبيرة للتمكن من استعادة النظام بالكامل إلى حالة سابقة عند حدوث خطأ كبير.
                 </p>
                 <div className="space-y-3 max-h-64 overflow-y-auto pr-2">
-                    {db.snapshots.length > 0 ? (
-                        db.snapshots.map(snapshot => (
+                    {(db.snapshots || []).length > 0 ? (
+                        (db.snapshots || []).map(snapshot => (
                             <div key={snapshot.id} className="bg-background rounded-md p-3 flex justify-between items-center">
                                 <div>
                                     <p className="font-bold">{snapshot.note}</p>

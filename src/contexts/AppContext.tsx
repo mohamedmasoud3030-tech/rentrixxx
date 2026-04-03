@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useMemo, useCallback, ReactNode, useRef } from 'react';
-import { Database, User, Settings, Owner, Property, Unit, Tenant, Contract, Receipt, Expense, MaintenanceRecord, DepositTx, AuditLogEntry, Governance, Serials, Snapshot, Invoice, ReceiptAllocation, Account, JournalEntry, NotificationTemplate, OutgoingNotification, AppContextType, PerformanceMetrics, OperationType, ContractBalance, TenantBalance, OwnerSettlement, DerivedData, AppNotification, Lead, Attachment, OwnerBalance, UtilityRecord, AccountBalance, KpiSnapshot } from '../types';
+import { Database, User, Settings, Owner, Property, Unit, Tenant, Contract, Receipt, Expense, MaintenanceRecord, DepositTx, AuditLogEntry, Governance, Serials, Snapshot, Invoice, ReceiptAllocation, Account, JournalEntry, NotificationTemplate, OutgoingNotification, AppContextType, PerformanceMetrics, OperationType, ContractBalance, TenantBalance, OwnerSettlement, DerivedData, AppNotification, Lead, Attachment, OwnerBalance, UtilityRecord, AccountBalance, KpiSnapshot, Commission } from '../types';
 import { supabaseData } from '../services/supabaseDataService';
 import { IntegrationService } from '../services/integrationService';
 import { supabase } from '../services/supabase';
@@ -10,7 +10,7 @@ import { logger } from '../services/logger';
 import { postReceiptAtomic, renewContractAtomic, syncUnitStatus, voidReceiptAtomic } from '../services/antiMistakeService';
 import { getEffectiveInvoiceStatus, getInvoiceRemaining } from '../utils/helpers';
 
-const DEFAULT_GEMINI_API_KEY = (import.meta.env.VITE_GEMINI_API_KEY as string) || '';
+const DEFAULT_GEMINI_API_KEY = '';
 
 const DEFAULT_ACCOUNTS: Omit<Account, 'id'|'createdAt'>[] = [
     { no: '1000', name: 'الأصول', type: 'ASSET', isParent: true, parentId: null },
@@ -85,6 +85,7 @@ const toNumber = (value: unknown): number => {
 };
 
 const round3 = (value: number): number => Number(value.toFixed(ROUND_SCALE));
+type EntityWithId = { id: string };
 
 const withRetry = async <T,>(fn: () => Promise<T>, retries = 2): Promise<T> => {
   let lastError: unknown = null;
@@ -110,13 +111,50 @@ export const useApp = (): AppContextType => {
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [currentUser, setCurrentUser] = useState<User | null | undefined>(undefined);
-  const [db, setDb] = useState<Database | null>(null);
+  const [db, setDb] = useState<Partial<Database>>({});
+
+  const fetchPaginatedData = useCallback(async <T extends keyof Database>(
+    table: T, 
+    page: number, 
+    pageSize: number, 
+    orderBy?: string, 
+    ascending?: boolean
+  ) => {
+    const { data, total } = await supabaseData.fetchPaginated(table as string, page, pageSize, orderBy, ascending);
+    setDb(prevDb => {
+      const newDb = { ...prevDb };
+      const existingData = ((newDb[table] as EntityWithId[] | undefined) || []);
+      const updatedData = [...existingData];
+      data.forEach(newItem => {
+        const index = updatedData.findIndex(existingItem => existingItem.id === (newItem as EntityWithId).id);
+        if (index > -1) {
+          updatedData[index] = newItem as EntityWithId;
+        } else {
+          updatedData.push(newItem as EntityWithId);
+        }
+      });
+      (newDb[table] as Database[T]) = updatedData as Database[T];
+      return newDb;
+    });
+    return { data, total };
+  }, []);
+
   const [settings, setSettings] = useState<Settings | null>(null);
   const [governance, setGovernance] = useState<Governance | null>(null);
   const [isDataStale, setIsDataStale] = useState(true);
   const [performanceMetrics, setPerformanceMetrics] = useState<PerformanceMetrics>(initialPerformanceMetrics);
   const refreshRef = useRef<(() => Promise<void>) | undefined>(undefined);
   const reconcileRef = useRef(false);
+
+  const getFinancialSummary = useCallback(async () => {
+    const { data, error } = await supabase.rpc('get_financial_summary');
+    if (error) {
+      logger.error('[AppContext] Failed to get financial summary:', error);
+      toast.error('فشل في جلب ملخص البيانات المالية.');
+      return null;
+    }
+    return data;
+  }, []);
 
   const isReadOnly = useMemo(() => governance?.readOnly || false, [governance]);
 
@@ -143,6 +181,29 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     });
   }, []);
 
+  const initializeBalancesIfNeeded = useCallback(async (db: Database) => {
+    try {
+      // التحقق من وجود أرصدة وإنشاؤها إذا لم تكن موجودة
+      const contractBalancesCount = db.contractBalances?.length || 0;
+      const ownerBalancesCount = db.ownerBalances?.length || 0;
+      const tenantBalancesCount = db.tenantBalances?.length || 0;
+
+      if (contractBalancesCount === 0 || ownerBalancesCount === 0 || tenantBalancesCount === 0) {
+        logger.info('[AppContext] Initializing balance tables...');
+
+        // تشغيل RPC لإعادة حساب جميع الأرصدة
+        const { error } = await supabase.rpc('recalculate_all_balances');
+        if (error) {
+          logger.error('[AppContext] Failed to recalculate balances:', error);
+        } else {
+          logger.info('[AppContext] Balance tables initialized successfully');
+        }
+      }
+    } catch (err) {
+      logger.error('[AppContext] initializeBalancesIfNeeded error:', err);
+    }
+  }, []);
+
   const deriveInvoiceStatus = useCallback((invoice: Invoice) => {
     const graceDays = settings?.operational?.lateFee?.graceDays ?? 0;
     return getEffectiveInvoiceStatus(invoice, graceDays) as Invoice['status'];
@@ -150,15 +211,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const refreshData = useCallback(async () => {
     try {
-      const [allData, settingsData, govData] = await withRetry(() => Promise.all([
-        supabaseData.getAllData(),
+      const [settingsData, govData] = await withRetry(() => Promise.all([
         supabaseData.getSettings(),
         supabaseData.getGovernance(),
       ]), 1);
-      setDb(allData);
+      // setDb(allData); // Keep existing data, we will load on demand
       setSettings(settingsData || DEFAULT_SETTINGS);
       setGovernance(govData || { readOnly: false, lockedPeriods: [] });
       setIsDataStale(false);
+
     } catch (err) {
       logger.error('[AppContext] refreshData error', err);
       toast.error('تعذر تحديث البيانات. تم تفعيل إعادة المحاولة التلقائية.');
@@ -243,7 +304,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const login = useCallback(async (email: string, password: string) => {
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+      const credentials = validateLoginPayload(email, password);
+      const { data, error } = await safeAsync(
+        () => supabase.auth.signInWithPassword(credentials),
+        'تعذر تسجيل الدخول حالياً',
+      );
       if (error || !data.user) return { ok: false, msg: 'البريد الإلكتروني أو كلمة المرور غير صحيحة' };
       let { data: profile } = await supabase.from('profiles').select('*').eq('id', data.user.id).single();
       if (!profile) {
@@ -275,6 +340,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   }, [currentUser, audit]);
 
   const changePassword: AppContextType['auth']['changePassword'] = useCallback(async (userId, newPass) => {
+    validatePasswordStrength(newPass);
     const { error } = await supabase.auth.updateUser({ password: newPass });
     if (error) return { ok: false, msg: error.message };
     await supabase.from('profiles').update({ must_change_password: false }).eq('id', userId);
@@ -284,6 +350,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   }, [audit]);
 
   const addUser: AppContextType['auth']['addUser'] = useCallback(async (user, pass) => {
+    validateRequiredString(user.username, 'اسم المستخدم');
+    validatePasswordStrength(pass);
     const email = (user as User).email || `${user.username}@rentrix.local`;
     const result = await adminCreateUser({ email, password: pass, username: user.username, role: user.role });
     await audit('CREATE', 'users', result.id, `Created user ${user.username}`);
@@ -529,15 +597,21 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       }
 
       await syncSnapshots();
-      await refreshData();
+      setDb(prevDb => {
+        if (!prevDb) return null;
+        const newDb = { ...prevDb };
+        const currentRows = ((newDb[table as keyof Database] as EntityWithId[] | undefined) || []);
+        (newDb[table as keyof Database] as unknown as EntityWithId[]) = [...currentRows, mutableEntry as EntityWithId];
+        return newDb;
+      });
       toast.success('تمت الإضافة بنجاح!');
       return mutableEntry as unknown as Database[typeof table][number];
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('[AppContext] add error:', err);
-      toast.error(`خطأ أثناء الإضافة: ${err?.message || 'خطأ غير معروف'}`);
+      toast.error(`خطأ أثناء الإضافة: ${err instanceof Error ? err.message : 'خطأ غير معروف'}`);
       return null;
     }
-  }, [isReadOnly, settings, audit, postJournalEntrySupabase, postInvoiceJournalEntries, createRentInvoicesForContract, refreshData]);
+  }, [isReadOnly, settings, audit, postJournalEntrySupabase, postInvoiceJournalEntries, createRentInvoicesForContract, syncSnapshots]);
 
   const addReceiptWithAllocations: AppContextType['financeService']['addReceiptWithAllocations'] = useCallback(async (receiptData, allocations) => {
     if (isReadOnly || !settings) return;
@@ -673,9 +747,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       setIsDataStale(true);
       await refreshData();
       toast.success(`تم تسجيل السند بنجاح (سند + تخصيص + قيود)`);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('addReceiptWithAllocations failed:', err);
-      toast.error('حدث خطأ أثناء تسجيل السند: ' + (err?.message || 'خطأ غير معروف'));
+      toast.error('حدث خطأ أثناء تسجيل السند: ' + (err instanceof Error ? err.message : 'خطأ غير معروف'));
       await refreshData();
     }
   }, [isReadOnly, settings, audit, logOperationTime, refreshData, db]);
@@ -817,9 +891,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       setIsDataStale(true);
       await refreshData();
       toast.success('تم إلغاء السند وتحديث الفواتير بنجاح.');
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('voidReceipt failed:', err);
-      toast.error('حدث خطأ أثناء إلغاء السند: ' + (err?.message || 'خطأ غير معروف'));
+      toast.error('حدث خطأ أثناء إلغاء السند: ' + (err instanceof Error ? err.message : 'خطأ غير معروف'));
       await refreshData();
     }
   }, [audit, logOperationTime, refreshData]);
@@ -837,9 +911,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       setIsDataStale(true);
       await refreshData();
       toast.success('تم إلغاء المصروف بنجاح.');
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('voidExpense failed:', err);
-      toast.error('حدث خطأ أثناء إلغاء المصروف: ' + (err?.message || 'خطأ غير معروف'));
+      toast.error('حدث خطأ أثناء إلغاء المصروف: ' + (err instanceof Error ? err.message : 'خطأ غير معروف'));
       await refreshData();
     }
   }, [audit, reverseAllJournalEntries, logOperationTime, refreshData]);
@@ -861,14 +935,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const payoutCommission = useCallback(async (commissionId: string) => {
     if (isReadOnly) { toast.error("النظام في وضع القراءة فقط."); return; }
-    const commission = await supabaseData.fetchOne<any>('commissions', commissionId);
+    const commission = await supabaseData.fetchOne<Commission>('commissions', commissionId);
     if (!commission) throw new Error("Commission not found.");
     if (commission.status === 'PAID') throw new Error("Already paid.");
 
     const newExpense = await add('expenses', {
       dateTime: new Date().toISOString(), category: 'عمولات موظفين',
       amount: commission.amount, status: 'POSTED', chargedTo: 'OFFICE',
-      payee: commission.staffName || 'Unknown', notes: `صرف عمولة`,
+      payee: commission.staffId || 'Unknown', notes: `صرف عمولة`,
       contractId: null, ref: `COMM-${commissionId.slice(0, 6)}`,
     });
 
@@ -1197,6 +1271,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const activeDb = db || emptyDb;
   const activeSettings = settings || DEFAULT_SETTINGS;
+  const authValue: AuthContextValue = {
+    auth: { currentUser: currentUser ?? null, login, logout, changePassword, addUser, updateUser, forcePasswordReset, disableUser, enableUser },
+    canAccess,
+  };
 
   const dataService: AppContextType['dataService'] = { add, update, remove };
   const financeService: AppContextType['financeService'] = {
@@ -1242,6 +1320,63 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       return count;
     },
   };
+  const financeValue: FinanceContextValue = {
+    financeService,
+    getFinancialSummary,
+    rebuildSnapshotsFromJournal,
+    ownerBalances,
+    contractBalances,
+    tenantBalances,
+  };
+  const operationsValue: OperationsContextValue = {
+    settings: activeSettings,
+    updateSettings: async (s) => {
+      const ok = await supabaseData.updateSettingsPartial(s);
+      if (!ok) {
+        throw new Error('فشل تحديث الإعدادات في قاعدة البيانات');
+      }
+      const newSettings = await supabaseData.getSettings();
+      if (newSettings) setSettings(newSettings);
+      await audit('UPDATE', 'settings', 'main', `Updated settings: ${Object.keys(s).join(', ')}`);
+    },
+    dataService,
+    runManualAutomation: async () => {
+      toast('جاري تشغيل المهام التلقائية...');
+      const invoices = await generateMonthlyInvoices();
+      const lateFees = await financeService.generateLateFees();
+      const notifications = await generateContractExpiryNotifications();
+      const result = { invoicesCreated: invoices, lateFeesApplied: lateFees, notificationsCreated: notifications, errors: [] };
+      if (invoices + lateFees + notifications > 0) toast.success(`تم: ${invoices} فاتورة، ${lateFees} غرامة، ${notifications} إشعار`);
+      else toast.success('لا توجد مهام جديدة.');
+      await refreshData();
+      return result;
+    },
+    generateNotifications: async () => {
+      if (!settings) return 0;
+      const now = Date.now();
+      const existingNotifs = await supabaseData.fetchAll<AppNotification>('appNotifications');
+      let count = await generateContractExpiryNotifications();
+      const allInvoices = await supabaseData.fetchAll<Invoice>('invoices');
+      const overdueInvoices = allInvoices.filter(inv => deriveInvoiceStatus(inv) === 'OVERDUE');
+      const overdueIds = new Set(overdueInvoices.map(inv => inv.id));
+      for (const inv of overdueInvoices) {
+        const link = `/finance/invoices?invoiceId=${inv.id}`;
+        const exists = existingNotifs.some(n => n.link === link && n.type === 'OVERDUE_BALANCE');
+        if (!exists) {
+          await supabaseData.insert('appNotifications', { id: crypto.randomUUID(), createdAt: now, isRead: false, role: 'ADMIN', type: 'OVERDUE_BALANCE', title: 'فاتورة متأخرة', message: `الفاتورة رقم ${inv.no} متأخرة بقيمة ${round3(inv.amount - inv.paidAmount)}`, link });
+          count++;
+        }
+      }
+      for (const notif of existingNotifs.filter(n => n.type === 'OVERDUE_BALANCE')) {
+        const invoiceId = notif.link.split('invoiceId=')[1];
+        if (!invoiceId || overdueIds.has(invoiceId)) continue;
+        await supabaseData.remove('appNotifications', notif.id);
+      }
+      await refreshData();
+      return count;
+    },
+    updateNotificationTemplate,
+  };
 
   useEffect(() => {
     if (!db || reconcileRef.current) return;
@@ -1259,19 +1394,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   }, [db, runFinancialIntegrityChecks, syncFinancialConsistency]);
 
   return (
-    <AppContext.Provider value={{
+    <AuthContext.Provider value={authValue}>
+      <FinanceContext.Provider value={financeValue}>
+        <OperationsContext.Provider value={operationsValue}>
+          <AppContext.Provider value={{
       db: activeDb,
-      auth: { currentUser: currentUser ?? null, login, logout, changePassword, addUser, updateUser, forcePasswordReset, disableUser, enableUser },
+      auth: authValue.auth,
       settings: activeSettings,
-      updateSettings: async (s) => {
-        const ok = await supabaseData.updateSettingsPartial(s);
-        if (!ok) {
-          throw new Error('فشل تحديث الإعدادات في قاعدة البيانات');
-        }
-        const newSettings = await supabaseData.getSettings();
-        if (newSettings) setSettings(newSettings);
-        await audit('UPDATE', 'settings', 'main', `Updated settings: ${Object.keys(s).join(', ')}`);
-      },
+      updateSettings: operationsValue.updateSettings,
       rebuildSnapshotsFromJournal, isReadOnly, dataService, financeService,
       runManualAutomation: async () => {
         toast('جاري تشغيل المهام التلقائية...');
@@ -1330,7 +1460,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       },
       sendWhatsApp: (phone: string, message: string) => IntegrationService.sendWhatsApp(phone, message),
     }}>
-      {children}
-    </AppContext.Provider>
+            {children}
+          </AppContext.Provider>
+        </OperationsContext.Provider>
+      </FinanceContext.Provider>
+    </AuthContext.Provider>
   );
 };
