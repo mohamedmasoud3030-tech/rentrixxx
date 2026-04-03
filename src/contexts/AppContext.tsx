@@ -357,13 +357,20 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     await audit('CREATE', 'users', result.id, `Created user ${user.username}`);
     await refreshData();
     return { ok: true, msg: 'تم إنشاء المستخدم. سيتلقى المستخدم رسالة تأكيد بالبريد الإلكتروني.' };
-  }, [audit, refreshData]);
+  }, [audit, refreshData, currentUser]);
 
   const updateUser: AppContextType['auth']['updateUser'] = useCallback(async (id, updates) => {
-    if (updates.username) await supabase.from('profiles').update({ username: updates.username }).eq('id', id);
-    if (updates.role) await supabase.from('profiles').update({ role: updates.role }).eq('id', id);
+    const actorRole = currentUser?.role || 'USER';
+    if (updates.username) {
+      const username = sanitizeTextInput(validateRequiredString(updates.username, 'اسم المستخدم'));
+      await supabase.from('profiles').update({ username }).eq('id', id);
+    }
+    if (updates.role) {
+      assertNoRoleEscalation(actorRole, updates.role);
+      await supabase.from('profiles').update({ role: updates.role }).eq('id', id);
+    }
     await audit('UPDATE', 'users', id, `Updated user details`);
-  }, [audit]);
+  }, [audit, currentUser]);
 
   const forcePasswordReset = useCallback(async (userId: string) => {
     const confirmed = await confirmDialog({

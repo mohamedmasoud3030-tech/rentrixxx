@@ -1,4 +1,4 @@
-import { LEGACY_WORKFLOW_STATUS, WORKFLOW_STATUS, type WorkflowStatus } from '../constants/status';
+import { LEGACY_WORKFLOW_STATUS, WORKFLOW_STATUS, type WorkflowStatus } from '../constants/status.ts';
 
 export const normalizeWorkflowStatus = (status: string | null | undefined): WorkflowStatus => {
   if (!status) return WORKFLOW_STATUS.Pending;
