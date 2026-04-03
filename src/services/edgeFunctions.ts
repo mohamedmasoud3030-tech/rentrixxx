@@ -1,5 +1,9 @@
 import { supabase } from './supabase';
+import { getAppEnv } from '../config/env';
 import { logger } from './logger';
+import type { AutomationResult } from '../types/automation';
+
+const env = getAppEnv();
 
 export interface OwnerPortalPayload {
   owner: { id: string; name: string };
@@ -47,4 +51,26 @@ export async function askAssistant(prompt: string, context: unknown): Promise<st
     throw new Error('تعذر الاتصال بالمساعد الذكي.');
   }
   return data.text as string;
+}
+
+export async function runAutomationScheduler(payload?: { dryRun?: boolean }): Promise<AutomationResult> {
+  const { data: { session } } = await supabase.auth.getSession();
+  const accessToken = session?.access_token;
+
+  const response = await fetch(`${env.supabaseUrl}/functions/v1/automation-scheduler`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      apikey: env.supabaseAnonKey,
+      ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+    },
+    body: JSON.stringify(payload || {}),
+  });
+
+  const data = await response.json() as AutomationResult;
+  if (!response.ok) {
+    throw new Error(data.errors?.join(' | ') || 'فشل تشغيل وظيفة الأتمتة');
+  }
+
+  return data;
 }
