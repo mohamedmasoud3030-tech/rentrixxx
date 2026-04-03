@@ -83,7 +83,7 @@ const UserForm: React.FC<{ isOpen: boolean; onClose: () => void; user: User | nu
     const [username, setUsername] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
-    const [role, setRole] = useState<'USER' | 'ADMIN'>('USER');
+    const [role, setRole] = useState<User['role']>('USER');
 
     useEffect(() => {
         if (user) {
@@ -137,8 +137,11 @@ const UserForm: React.FC<{ isOpen: boolean; onClose: () => void; user: User | nu
                     />
                 )}
                 <select id="role" name="role" value={role} onChange={e => setRole(e.target.value as User['role'])}>
-                    <option value="USER">مستخدم</option>
-                    <option value="ADMIN">مدير</option>
+                    <option value="ADMIN">مدير النظام</option>
+                    <option value="MANAGER">مدير العمليات</option>
+                    <option value="ACCOUNTANT">محاسب</option>
+                    <option value="VIEWER">مشاهد فقط</option>
+                    <option value="USER">مستخدم عام</option>
                 </select>
                 {!user && (
                     <input
