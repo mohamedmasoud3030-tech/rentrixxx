@@ -6,6 +6,8 @@ import Card from '../components/ui/Card';
 import { getStatusBadgeClass, sanitizePhoneNumber } from '../utils/helpers';
 import { Send, MessageSquare, Copy, Check, Trash2 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
+import { WORKFLOW_STATUS } from '../constants/status';
+import { normalizeWorkflowStatus } from '../utils/status';
 
 const CommunicationHub: React.FC = () => {
     // FIX: Use dataService for data manipulation
@@ -25,7 +27,11 @@ const CommunicationHub: React.FC = () => {
     };
 
     const handleMarkAsSent = async (id: string) => {
-        await dataService.update('outgoingNotifications', id, { status: 'SENT' });
+        try {
+            await dataService.update('outgoingNotifications', id, { status: WORKFLOW_STATUS.Completed });
+        } catch (error) {
+            toast.error(error instanceof Error ? error.message : 'فشل تحديث حالة الإشعار.');
+        }
     };
 
     const handleSendWhatsApp = (notification: OutgoingNotification) => {
@@ -66,13 +72,16 @@ const CommunicationHub: React.FC = () => {
             </p>
 
             <div className="space-y-4">
-                {notifications.map(n => (
+                {notifications.map(n => {
+                    const normalizedStatus = normalizeWorkflowStatus(n.status);
+                    const isPending = normalizedStatus === WORKFLOW_STATUS.Pending;
+                    return (
                     <div key={n.id} className="border border-border rounded-lg p-4">
                         <div className="flex justify-between items-start gap-4">
                             <div>
                                 <div className="flex items-center gap-3">
-                                    <span className={`px-2 py-1 text-xs rounded-full ${getStatusBadgeClass(n.status === 'SENT' ? 'PAID' : 'UNPAID')}`}>
-                                        {n.status === 'PENDING' ? 'جاهز للإرسال' : 'تم الإرسال'}
+                                    <span className={`px-2 py-1 text-xs rounded-full ${getStatusBadgeClass(isPending ? 'UNPAID' : 'PAID')}`}>
+                                        {isPending ? 'جاهز للإرسال' : 'تم الإرسال'}
                                     </span>
                                     <span className="font-bold">{n.recipientName}</span>
                                     <span className="text-sm text-text-muted font-mono">{n.recipientContact}</span>
@@ -84,7 +93,7 @@ const CommunicationHub: React.FC = () => {
                                     <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg>
                                     إرسال واتساب
                                 </button>
-                                {n.status === 'PENDING' && (
+                                {isPending && (
                                      <button onClick={() => handleMarkAsSent(n.id)} className="text-xs flex items-center gap-1 bg-gray-100 text-gray-800 dark:bg-slate-700 dark:text-slate-200 px-2 py-1 rounded-md">
                                         <Check size={14} /> تأشير كمرسل
                                     </button>
@@ -98,7 +107,8 @@ const CommunicationHub: React.FC = () => {
                             </div>
                         </div>
                     </div>
-                ))}
+                    );
+                })}
                  {notifications.length === 0 && (
                     <div className="text-center py-10">
                         <p className="text-text-muted">لا توجد إشعارات حاليًا.</p>

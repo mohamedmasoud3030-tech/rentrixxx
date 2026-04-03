@@ -504,7 +504,7 @@ export interface NotificationTemplate {
 export interface OutgoingNotification {
     id: string;
     createdAt: number;
-    status: 'PENDING' | 'SENT';
+    status: 'Pending' | 'Completed' | 'PENDING' | 'SENT' | 'COMPLETED';
     recipientName: string;
     recipientContact: string; // phone number
     message: string;
