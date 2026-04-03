@@ -26,3 +26,10 @@ export const safeAsync = async <T>(fn: () => Promise<T>, fallbackMessage: string
     throw new Error(fallbackMessage);
   }
 };
+
+export const validateNonNegativeNumber = (value: number, fieldName: string): number => {
+  if (!Number.isFinite(value) || value < 0) {
+    throw new Error(`${fieldName} must be a non-negative number`);
+  }
+  return value;
+};
