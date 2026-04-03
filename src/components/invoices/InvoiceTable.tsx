@@ -24,19 +24,19 @@ export const InvoiceTable: React.FC<InvoiceTableProps> = ({
   db,
 }) => {
   return (
-    <div className="overflow-x-auto">
-      <table className="w-full text-sm text-right">
+    <div className="table-shell">
+      <table className="w-full min-w-[860px] text-sm text-right">
         <thead className="text-xs text-text-muted border-b border-border bg-background/50">
           <tr>
             <th className="px-2 py-3 w-10 font-semibold"></th>
-            <th className="px-2 py-3 font-semibold">رقم</th>
-            <th className="px-2 py-3 font-semibold">المستأجر/الوحدة</th>
-            <th className="px-2 py-3 font-semibold">النوع</th>
-            <th className="px-2 py-3 font-semibold">الاستحقاق</th>
-            <th className="px-2 py-3 font-semibold">المبلغ</th>
-            <th className="px-2 py-3 font-semibold">المتبقي</th>
-            <th className="px-2 py-3 font-semibold">الحالة</th>
-            <th className="px-2 py-3 font-semibold">إجراءات</th>
+            <th className="px-2 py-3 font-semibold whitespace-nowrap">رقم</th>
+            <th className="px-2 py-3 font-semibold whitespace-nowrap">المستأجر/الوحدة</th>
+            <th className="px-2 py-3 font-semibold whitespace-nowrap">النوع</th>
+            <th className="px-2 py-3 font-semibold whitespace-nowrap">الاستحقاق</th>
+            <th className="px-2 py-3 font-semibold whitespace-nowrap">المبلغ</th>
+            <th className="px-2 py-3 font-semibold whitespace-nowrap">المتبقي</th>
+            <th className="px-2 py-3 font-semibold whitespace-nowrap">الحالة</th>
+            <th className="px-2 py-3 font-semibold whitespace-nowrap">إجراءات</th>
           </tr>
         </thead>
         <tbody>
@@ -80,28 +80,28 @@ export const InvoiceTable: React.FC<InvoiceTableProps> = ({
                   <div className="flex gap-1">
                     <button
                       onClick={() => onQuickPay(inv)}
-                      className="p-2 rounded bg-emerald-50 text-emerald-700 hover:bg-emerald-100 transition-colors"
+                      className="icon-btn icon-btn-success"
                       title="تسجيل دفع"
                     >
                       <Wallet size={14} />
                     </button>
                     <button
                       onClick={() => onEdit(inv)}
-                      className="p-2 rounded bg-blue-50 text-blue-700 hover:bg-blue-100 transition-colors"
+                      className="icon-btn icon-btn-info"
                       title="تعديل"
                     >
                       <FileText size={14} />
                     </button>
                     <button
                       onClick={() => exportInvoiceToPdf(inv as any, db)}
-                      className="p-2 rounded bg-background hover:bg-background/80 transition-colors"
+                      className="icon-btn"
                       title="تصدير PDF"
                     >
                       <Download size={14} />
                     </button>
                     <button
                       onClick={() => onDelete(inv)}
-                      className="p-2 rounded bg-rose-50 text-rose-700 hover:bg-rose-100 transition-colors"
+                      className="icon-btn icon-btn-danger"
                       title="حذف"
                     >
                       <Trash2 size={14} />

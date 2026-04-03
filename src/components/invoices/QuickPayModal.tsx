@@ -30,20 +30,30 @@ export const QuickPayModal: React.FC<QuickPayModalProps> = ({ invoice, onClose, 
 
   return (
     <Modal isOpen onClose={onClose} title="تسجيل دفع">
-      <div className="space-y-4">
-        <div className="text-sm">
-          رقم الفاتورة: <span className="font-mono">{invoice.no}</span>
+      <div className="modal-content">
+        <div className="modal-section text-sm space-y-2">
+          <div>
+            رقم الفاتورة: <span className="font-mono">{invoice.no}</span>
+          </div>
+          <div>المبلغ المتبقي: {formatCurrency(remaining)}</div>
         </div>
-        <div className="text-sm">المبلغ المتبقي: {formatCurrency(remaining)}</div>
-        <NumberInput value={amount} onChange={setAmount} />
-        <select value={channel} onChange={e => setChannel(e.target.value as typeof channel)}>
-          <option value="CASH">نقد</option>
-          <option value="BANK">بنك</option>
-          <option value="POS">نقطة بيع</option>
-          <option value="CHECK">شيك</option>
-          <option value="OTHER">أخرى</option>
-        </select>
-        <div className="flex gap-2 justify-end">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label htmlFor="quick-pay-amount" className="block text-sm font-semibold mb-1.5">المبلغ</label>
+            <NumberInput id="quick-pay-amount" value={amount} onChange={setAmount} />
+          </div>
+          <div>
+            <label htmlFor="quick-pay-channel" className="block text-sm font-semibold mb-1.5">طريقة الدفع</label>
+            <select id="quick-pay-channel" value={channel} onChange={e => setChannel(e.target.value as typeof channel)}>
+              <option value="CASH">نقد</option>
+              <option value="BANK">بنك</option>
+              <option value="POS">نقطة بيع</option>
+              <option value="CHECK">شيك</option>
+              <option value="OTHER">أخرى</option>
+            </select>
+          </div>
+        </div>
+        <div className="modal-actions">
           <button className="btn btn-ghost" onClick={onClose}>
             إلغاء
           </button>
