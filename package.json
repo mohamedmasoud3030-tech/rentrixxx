@@ -13,7 +13,8 @@
     "test:unit": "npm run test:prepare && node --test .tmp-tests/tests/unit/status.test.js",
     "test:service": "npm run test:prepare && node --test .tmp-tests/tests/service/validation.test.js",
     "test:critical": "npm run test:prepare && node --test .tmp-tests/tests/critical/critical-flows.test.js",
-    "ci": "npm run typecheck && npm run lint && npm run test && npm run build"
+    "ci": "npm run preflight && npm run typecheck && npm run lint && npm run test && npm run build",
+    "preflight": "node scripts/preflight.mjs"
   },
   "author": "Mohamed Masoud",
   "license": "UNLICENSED",
@@ -37,6 +38,7 @@
     "autoprefixer": "^10.4.19",
     "postcss": "^8.4.39",
     "tailwindcss": "^3.4.6",
-    "vite": "^5.3.4"
+    "vite": "^5.3.4",
+    "typescript": "^5.8.3"
   }
 }
