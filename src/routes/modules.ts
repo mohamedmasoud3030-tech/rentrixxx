@@ -12,6 +12,7 @@ export const ROUTES = {
   communication: '/communication',
   lands: '/lands',
   commissions: '/commissions',
+  // Users route: intentional sub-module — see docs/architecture/ADR-001
   settings: '/settings',
   auditLog: '/audit-log',
   smartAssistant: '/smart-assistant',
