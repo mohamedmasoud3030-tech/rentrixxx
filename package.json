@@ -5,7 +5,15 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "dist": "npm run build"
+    "dist": "npm run build",
+    "typecheck": "npx tsc -p tsconfig.typecheck.json --noEmit",
+    "lint": "node scripts/lint-check.mjs",
+    "test:prepare": "rm -rf .tmp-tests && npx tsc -p tsconfig.tests.json",
+    "test": "npm run test:unit && npm run test:service && npm run test:critical",
+    "test:unit": "npm run test:prepare && node --test .tmp-tests/tests/unit/status.test.js",
+    "test:service": "npm run test:prepare && node --test .tmp-tests/tests/service/validation.test.js",
+    "test:critical": "npm run test:prepare && node --test .tmp-tests/tests/critical/critical-flows.test.js",
+    "ci": "npm run typecheck && npm run lint && npm run test && npm run build"
   },
   "author": "Mohamed Masoud",
   "license": "UNLICENSED",
