@@ -1,5 +1,6 @@
 import { supabaseData } from './supabaseDataService';
 import { Database, Settings, Invoice } from '../types';
+import { AutomationResult } from '../types/automation';
 
 export interface AutomationTaskConfig {
     invoices: boolean;
@@ -8,21 +9,12 @@ export interface AutomationTaskConfig {
     snapshots: boolean;
 }
 
-export interface AutomationRunResult {
-    ts: number;
-    invoicesCreated: number;
-    lateFeesApplied: number;
-    notificationsCreated: number;
-    snapshotsRebuilt: boolean;
-    error?: string;
-}
-
 const STORAGE_KEY_LAST_RUN = 'rentrix_automation_last_run_date';
 const STORAGE_KEY_RUN_LOG = 'rentrix_automation_run_log';
 const STORAGE_KEY_CONFIG = 'rentrix_automation_config';
 const DAILY_RUN_LOCK_TIMEOUT_MS = 5 * 60 * 1000;
 
-let inFlightDailyRun: Promise<AutomationRunResult | null> | null = null;
+let inFlightDailyRun: Promise<AutomationResult | null> | null = null;
 
 const defaultConfig: AutomationTaskConfig = {
     invoices: true,
@@ -53,17 +45,44 @@ export const saveAutomationConfig = (config: AutomationTaskConfig): void => {
     }
 };
 
-export const getAutomationRunLog = (): AutomationRunResult[] => {
+const normalizeRunLogResult = (value: unknown): AutomationResult | null => {
+    if (!value || typeof value !== 'object') return null;
+    const raw = value as Record<string, unknown>;
+
+    const errorsFromLegacy = typeof raw.error === 'string' && raw.error.trim().length > 0
+        ? raw.error.split('|').map(segment => segment.trim()).filter(Boolean)
+        : [];
+    const errors = Array.isArray(raw.errors)
+        ? raw.errors.map(error => String(error)).filter(Boolean)
+        : errorsFromLegacy;
+
+    const ts = typeof raw.ts === 'string' ? raw.ts : new Date(Number(raw.ts) || Date.now()).toISOString();
+
+    return {
+        success: typeof raw.success === 'boolean' ? raw.success : errors.length === 0,
+        errors,
+        snapshotsRebuilt: Number(raw.snapshotsRebuilt) || (raw.snapshotsRebuilt ? 1 : 0),
+        lateFeesApplied: Number(raw.lateFeesApplied) || 0,
+        notificationsSent: Number(raw.notificationsSent ?? raw.notificationsCreated) || 0,
+        ts,
+    };
+};
+
+export const getAutomationRunLog = (): AutomationResult[] => {
     try {
         const stored = localStorage.getItem(STORAGE_KEY_RUN_LOG);
-        if (stored) return JSON.parse(stored);
+        if (stored) {
+            const parsed = JSON.parse(stored);
+            if (!Array.isArray(parsed)) return [];
+            return parsed.map(normalizeRunLogResult).filter((item): item is AutomationResult => item !== null);
+        }
     } catch {
         // ignore parse errors
     }
     return [];
 };
 
-const appendRunLog = (result: AutomationRunResult): void => {
+const appendRunLog = (result: AutomationResult): void => {
     const log = getAutomationRunLog();
     log.unshift(result);
     if (log.length > 10) log.length = 10;
@@ -297,7 +316,7 @@ export const runDailyAutomation = async (
     db: Database,
     settings: Settings,
     config?: AutomationTaskConfig
-): Promise<AutomationRunResult | null> => {
+): Promise<AutomationResult | null> => {
     if (inFlightDailyRun) return inFlightDailyRun;
 
     const today = getTodayStr();
@@ -309,19 +328,19 @@ export const runDailyAutomation = async (
     inFlightDailyRun = (async () => {
         setInProgressRunLock(today);
         const taskConfig = config ?? getAutomationConfig(settings);
-        const result: AutomationRunResult = {
-            ts: Date.now(),
-            invoicesCreated: 0,
+        const result: AutomationResult = {
+            ts: new Date().toISOString(),
+            success: true,
+            errors: [],
             lateFeesApplied: 0,
-            notificationsCreated: 0,
-            snapshotsRebuilt: false,
+            notificationsSent: 0,
+            snapshotsRebuilt: 0,
         };
 
-        const errors: string[] = [];
-        const collectError = (label: string, message: string) => errors.push(`${label}: ${message}`);
+        const collectError = (label: string, message: string) => result.errors.push(`${label}: ${message}`);
 
         await runTask(taskConfig.invoices, () => autoGenerateMonthlyInvoices(db), value => {
-            result.invoicesCreated = Number(value) || 0;
+            void value;
         }, message => collectError('invoices', message));
 
         await runTask(taskConfig.lateFees, () => autoApplyLateFees(db, settings), value => {
@@ -329,16 +348,14 @@ export const runDailyAutomation = async (
         }, message => collectError('lateFees', message));
 
         await runTask(taskConfig.notifications, () => autoGenerateNotifications(db, settings), value => {
-            result.notificationsCreated = Number(value) || 0;
+            result.notificationsSent = Number(value) || 0;
         }, message => collectError('notifications', message));
 
         await runTask(taskConfig.snapshots, () => autoRebuildSnapshots(), value => {
-            result.snapshotsRebuilt = Boolean(value);
+            result.snapshotsRebuilt = value ? 1 : 0;
         }, message => collectError('snapshots', message));
 
-        if (errors.length > 0) {
-            result.error = errors.join(' | ');
-        }
+        result.success = result.errors.length === 0;
 
         setLastRunDate(today);
         appendRunLog(result);
@@ -357,21 +374,21 @@ export const runManualAutomation = async (
     db: Database,
     settings: Settings,
     config?: AutomationTaskConfig
-): Promise<AutomationRunResult> => {
+): Promise<AutomationResult> => {
     const taskConfig = config ?? getAutomationConfig(settings);
-    const result: AutomationRunResult = {
-        ts: Date.now(),
-        invoicesCreated: 0,
+    const result: AutomationResult = {
+        ts: new Date().toISOString(),
+        success: true,
+        errors: [],
         lateFeesApplied: 0,
-        notificationsCreated: 0,
-        snapshotsRebuilt: false,
+        notificationsSent: 0,
+        snapshotsRebuilt: 0,
     };
 
-    const errors: string[] = [];
-    const collectError = (label: string, message: string) => errors.push(`${label}: ${message}`);
+    const collectError = (label: string, message: string) => result.errors.push(`${label}: ${message}`);
 
     await runTask(taskConfig.invoices, () => autoGenerateMonthlyInvoices(db), value => {
-        result.invoicesCreated = Number(value) || 0;
+        void value;
     }, message => collectError('invoices', message));
 
     await runTask(taskConfig.lateFees, () => autoApplyLateFees(db, settings), value => {
@@ -379,16 +396,14 @@ export const runManualAutomation = async (
     }, message => collectError('lateFees', message));
 
     await runTask(taskConfig.notifications, () => autoGenerateNotifications(db, settings), value => {
-        result.notificationsCreated = Number(value) || 0;
+        result.notificationsSent = Number(value) || 0;
     }, message => collectError('notifications', message));
 
     await runTask(taskConfig.snapshots, () => autoRebuildSnapshots(), value => {
-        result.snapshotsRebuilt = Boolean(value);
+        result.snapshotsRebuilt = value ? 1 : 0;
     }, message => collectError('snapshots', message));
 
-    if (errors.length > 0) {
-        result.error = errors.join(' | ');
-    }
+    result.success = result.errors.length === 0;
 
     appendRunLog(result);
     return result;
