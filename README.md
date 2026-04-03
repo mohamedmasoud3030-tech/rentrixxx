@@ -27,54 +27,19 @@ Production-ready SaaS for property, contracts, maintenance, and financial operat
 
 ## Required environment variables
 
-For strict runtime/deployment validation, set:
-- `VITE_SUPABASE_URL`
-- `VITE_SUPABASE_ANON_KEY`
+1. Install dependencies:
+   `npm install`
+2. Set environment variables in `.env.local`:
+   - `VITE_SUPABASE_URL`
+   - `VITE_SUPABASE_ANON_KEY`
+   - optional: `VITE_ERROR_TRACKER_DSN`, `VITE_RELEASE_VERSION`, `VITE_LOG_LEVEL`
+3. Run the app:
+   `npm run dev`
 
-To enforce strict env checks in preflight:
-```bash
-PREFLIGHT_STRICT_ENV=1 npm run preflight
-```
+## Launch hardening checks
 
-## CI pipeline contract
-
-CI is expected to run in this order:
-
-```bash
-npm ci
-npm run preflight
-npm run typecheck
-npm run lint
-npm run test
-npm run build
-```
-
-This avoids global-tool drift and ensures reproducible installs.
-
-## Tooling dependencies used by scripts
-
-The project scripts rely on local devDependencies, including:
-- `typescript` (for `typecheck` / `test:prepare`)
-- `vite` (for `dev` / `build`)
-
-## Agent scheduling integration
-
-The Contract Monitoring Agent supports:
-- Manual runs with stored execution records
-- Scheduled/background runs (lightweight `setInterval` scheduler)
-- History retrieval for dashboards/logging
-
-Entry points:
-- `src/agents/orchestration/agentScheduler.ts`
-- `src/agents/orchestration/contractMonitoringWorkflow.ts`
-
-## Common CI/CD failure scenarios
-
-1. **`tsc` missing in CI**
-   - Fix: ensure `typescript` is present in `devDependencies` and lockfile, then run `npm ci`.
-
-2. **Preflight fails for missing binaries**
-   - Fix: run `npm ci` first (do not rely on global installs).
-
-3. **Preflight strict env failure**
-   - Fix: define `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` in CI/deployment secrets.
+- Run full gate locally:
+  - `npm run ci`
+- Deployment readiness checklist:
+  - `npm run readiness`
+  - `npm run readiness:strict` (fails on missing required envs)

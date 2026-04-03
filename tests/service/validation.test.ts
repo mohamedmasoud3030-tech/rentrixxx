@@ -9,7 +9,7 @@ test('validateRequiredString trims and validates', () => {
 
 test('validatePasswordStrength enforces minimum length', () => {
   assert.throws(() => validatePasswordStrength('1234567'));
-  assert.doesNotThrow(() => validatePasswordStrength('12345678'));
+  assert.doesNotThrow(() => validatePasswordStrength('abc12345'));
 });
 
 test('validateLoginPayload returns clean credentials', () => {

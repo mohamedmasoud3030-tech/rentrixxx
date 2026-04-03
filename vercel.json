@@ -21,11 +21,7 @@
   ],
   "rewrites": [
     {
-      "source": "/(?!.*\\.)",
-      "destination": "/"
-    },
-    {
-      "source": "/((?!\\.).*?)(?:\\.html)?/?$",
+      "source": "/((?!.*\\.).*)",
       "destination": "/"
     }
   ]

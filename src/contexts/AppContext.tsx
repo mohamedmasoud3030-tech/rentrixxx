@@ -8,10 +8,7 @@ import { confirmDialog } from '../components/shared/confirmDialog';
 import { adminCreateUser } from '../services/edgeFunctions';
 import { logger } from '../services/logger';
 import { postReceiptAtomic, renewContractAtomic, syncUnitStatus, voidReceiptAtomic } from '../services/antiMistakeService';
-import { AuthContext, type AuthContextValue } from './authContext';
-import { FinanceContext, type FinanceContextValue } from './financeContext';
-import { OperationsContext, type OperationsContextValue } from './operationsContext';
-import { safeAsync, validateLoginPayload, validatePasswordStrength, validateRequiredString } from '../utils/validation';
+import { getEffectiveInvoiceStatus, getInvoiceRemaining } from '../utils/helpers';
 
 const DEFAULT_GEMINI_API_KEY = '';
 
@@ -208,13 +205,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   }, []);
 
   const deriveInvoiceStatus = useCallback((invoice: Invoice) => {
-    const total = round3(toNumber(invoice.amount) + toNumber(invoice.taxAmount));
-    const paid = round3(toNumber(invoice.paidAmount));
-    if (paid >= total - 0.001) return 'PAID' as Invoice['status'];
-    if (new Date(invoice.dueDate).getTime() < Date.now()) return 'OVERDUE' as Invoice['status'];
-    if (paid > 0.001) return 'PARTIALLY_PAID' as Invoice['status'];
-    return 'UNPAID' as Invoice['status'];
-  }, []);
+    const graceDays = settings?.operational?.lateFee?.graceDays ?? 0;
+    return getEffectiveInvoiceStatus(invoice, graceDays) as Invoice['status'];
+  }, [settings?.operational?.lateFee?.graceDays]);
 
   const refreshData = useCallback(async () => {
     try {
@@ -364,13 +357,20 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     await audit('CREATE', 'users', result.id, `Created user ${user.username}`);
     await refreshData();
     return { ok: true, msg: 'تم إنشاء المستخدم. سيتلقى المستخدم رسالة تأكيد بالبريد الإلكتروني.' };
-  }, [audit, refreshData]);
+  }, [audit, refreshData, currentUser]);
 
   const updateUser: AppContextType['auth']['updateUser'] = useCallback(async (id, updates) => {
-    if (updates.username) await supabase.from('profiles').update({ username: updates.username }).eq('id', id);
-    if (updates.role) await supabase.from('profiles').update({ role: updates.role }).eq('id', id);
+    const actorRole = currentUser?.role || 'USER';
+    if (updates.username) {
+      const username = sanitizeTextInput(validateRequiredString(updates.username, 'اسم المستخدم'));
+      await supabase.from('profiles').update({ username }).eq('id', id);
+    }
+    if (updates.role) {
+      assertNoRoleEscalation(actorRole, updates.role);
+      await supabase.from('profiles').update({ role: updates.role }).eq('id', id);
+    }
     await audit('UPDATE', 'users', id, `Updated user details`);
-  }, [audit]);
+  }, [audit, currentUser]);
 
   const forcePasswordReset = useCallback(async (userId: string) => {
     const confirmed = await confirmDialog({
@@ -1190,7 +1190,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             role: 'ADMIN',
             type: 'OVERDUE_BALANCE',
             title: 'فاتورة إيجار متأخرة',
-            message: `الفاتورة رقم ${invoice.no} متأخرة بمبلغ ${round3(invoice.amount - invoice.paidAmount)}`,
+            message: `الفاتورة رقم ${invoice.no} متأخرة بمبلغ ${round3(getInvoiceRemaining(invoice))}`,
             link: `/finance/invoices?invoiceId=${invoice.id}`,
           };
           await supabaseData.insert('appNotifications', notification);
@@ -1410,10 +1410,42 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       settings: activeSettings,
       updateSettings: operationsValue.updateSettings,
       rebuildSnapshotsFromJournal, isReadOnly, dataService, financeService,
-      runManualAutomation: operationsValue.runManualAutomation,
-      getFinancialSummary,
-      generateNotifications: operationsValue.generateNotifications,
-      updateNotificationTemplate: operationsValue.updateNotificationTemplate, lockPeriod, unlockPeriod,
+      runManualAutomation: async () => {
+        toast('جاري تشغيل المهام التلقائية...');
+        const invoices = await generateMonthlyInvoices();
+        const lateFees = await financeService.generateLateFees();
+        const notifications = await generateContractExpiryNotifications();
+        const result = { invoicesCreated: invoices, lateFeesApplied: lateFees, notificationsCreated: notifications, errors: [] };
+        if (invoices + lateFees + notifications > 0) toast.success(`تم: ${invoices} فاتورة، ${lateFees} غرامة، ${notifications} إشعار`);
+        else toast.success('لا توجد مهام جديدة.');
+        await refreshData();
+        return result;
+      },
+      generateNotifications: async () => {
+        if (!settings) return 0;
+        const now = Date.now();
+        const existingNotifs = await supabaseData.fetchAll<AppNotification>('appNotifications');
+        let count = await generateContractExpiryNotifications();
+        const allInvoices = await supabaseData.fetchAll<Invoice>('invoices');
+        const overdueInvoices = allInvoices.filter(inv => deriveInvoiceStatus(inv) === 'OVERDUE');
+        const overdueIds = new Set(overdueInvoices.map(inv => inv.id));
+        for (const inv of overdueInvoices) {
+          const link = `/finance/invoices?invoiceId=${inv.id}`;
+          const exists = existingNotifs.some(n => n.link === link && n.type === 'OVERDUE_BALANCE');
+          if (!exists) {
+            await supabaseData.insert('appNotifications', { id: crypto.randomUUID(), createdAt: now, isRead: false, role: 'ADMIN', type: 'OVERDUE_BALANCE', title: 'فاتورة متأخرة', message: `الفاتورة رقم ${inv.no} متأخرة بقيمة ${round3(getInvoiceRemaining(inv))}`, link });
+            count++;
+          }
+        }
+        for (const notif of existingNotifs.filter(n => n.type === 'OVERDUE_BALANCE')) {
+          const invoiceId = notif.link.split('invoiceId=')[1];
+          if (!invoiceId || overdueIds.has(invoiceId)) continue;
+          await supabaseData.remove('appNotifications', notif.id);
+        }
+        await refreshData();
+        return count;
+      },
+      updateNotificationTemplate, lockPeriod, unlockPeriod,
       setReadOnly: async (ro) => {
         const updated = { ...(governance || { readOnly: false, lockedPeriods: [] }), readOnly: ro };
         await supabaseData.saveGovernance(updated);

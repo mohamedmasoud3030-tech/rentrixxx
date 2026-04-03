@@ -1,3 +1,6 @@
+import { getAppEnv } from '../config/env';
+import { errorTracker } from './errorTracker';
+
 export type LogLevel = 'debug' | 'info' | 'warn' | 'error';
 
 const LEVEL_WEIGHT: Record<LogLevel, number> = {
@@ -7,8 +10,18 @@ const LEVEL_WEIGHT: Record<LogLevel, number> = {
   error: 40,
 };
 
-const envLevel = (import.meta.env.VITE_LOG_LEVEL as LogLevel | undefined) ?? (import.meta.env.DEV ? 'debug' : 'warn');
-const threshold = LEVEL_WEIGHT[envLevel] ?? LEVEL_WEIGHT.warn;
+const resolveLogLevel = (): LogLevel => {
+  try {
+    const fromEnv = getAppEnv().logLevel;
+    if (fromEnv) return fromEnv;
+  } catch {
+    // fallback during early boot
+  }
+
+  return import.meta.env.DEV ? 'debug' : 'warn';
+};
+
+const threshold = LEVEL_WEIGHT[resolveLogLevel()] ?? LEVEL_WEIGHT.warn;
 
 const shouldLog = (level: LogLevel): boolean => LEVEL_WEIGHT[level] >= threshold;
 
@@ -35,7 +48,9 @@ export const logger = {
   },
   error(message: string, meta?: unknown) {
     if (!shouldLog('error')) return;
+    const payload = formatPayload(message, meta);
     // eslint-disable-next-line no-console
-    console.error(...formatPayload(message, meta));
+    console.error(...payload);
+    errorTracker.capture(meta ?? message, { area: 'logger', action: message });
   },
 };
