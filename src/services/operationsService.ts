@@ -136,6 +136,69 @@ export interface SoftDeleteResult {
   blockedBy?: 'invoices' | 'receipts' | 'both';
 }
 
+export interface TerminateContractResult {
+  success: boolean;
+  error?: string;
+}
+
+export async function terminateContract(contractId: string, reason: string): Promise<TerminateContractResult> {
+  const normalizedReason = reason.trim();
+  if (!normalizedReason) {
+    return { success: false, error: 'سبب الإنهاء مطلوب.' };
+  }
+
+  const { count: unpaidInvoices, error: unpaidInvoicesError } = await supabase
+    .from('invoices')
+    .select('id', { count: 'exact', head: true })
+    .eq('contract_id', contractId)
+    .neq('status', 'PAID');
+
+  if (unpaidInvoicesError) {
+    return { success: false, error: unpaidInvoicesError.message || 'تعذر التحقق من الفواتير.' };
+  }
+
+  if ((unpaidInvoices ?? 0) > 0) {
+    return { success: false, error: 'لا يمكن إنهاء العقد لوجود فواتير غير مسددة.' };
+  }
+
+  const terminatedAt = new Date().toISOString();
+  const updatePayload = {
+    status: 'TERMINATED',
+    terminated_at: terminatedAt,
+    termination_reason: normalizedReason,
+    updated_at: Date.now(),
+  };
+
+  const { error: updateError } = await supabase
+    .from('contracts')
+    .update(updatePayload)
+    .eq('id', contractId);
+
+  if (updateError) {
+    return { success: false, error: updateError.message || 'تعذر إنهاء العقد.' };
+  }
+
+  const { error: auditError } = await supabase.from('audit_log').insert({
+    id: crypto.randomUUID(),
+    ts: Date.now(),
+    user_id: 'system',
+    username: 'system',
+    action: 'TERMINATE_CONTRACT',
+    entity: 'contracts',
+    entity_id: contractId,
+    note: normalizedReason,
+  });
+
+  if (auditError) {
+    return {
+      success: false,
+      error: auditError.message || 'تم إنهاء العقد ولكن فشل تسجيل السجل الرقابي.',
+    };
+  }
+
+  return { success: true };
+}
+
 export async function softDeleteContract(contractId: string): Promise<SoftDeleteResult> {
   const [{ count: invoiceCount, error: invoicesError }, { count: receiptCount, error: receiptsError }] = await Promise.all([
     supabase.from('invoices').select('id', { count: 'exact', head: true }).eq('contract_id', contractId),

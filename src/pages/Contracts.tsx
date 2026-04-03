@@ -2,6 +2,7 @@ import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { useApp } from '../contexts/AppContext';
 import { renewContractAtomic } from '../services/antiMistakeService';
 import { checkUnitMaintenanceBlock, type MaintenanceBlockResult } from '../services/operationsService';
+import { getContractStatusSummary, getContractsExpiringSoon } from '../services/contractMonitoringService';
 import { supabaseData } from '../services/supabaseDataService';
 import { Contract, Receipt, Expense } from '../types';
 import Card from '../components/ui/Card';
@@ -214,6 +215,13 @@ const Contracts: React.FC = () => {
         return { active, expiring, totalOverdueBalance, totalMonthlyRent };
     }, [contracts, contractBalances, db.settings]);
 
+    const statusSummary = useMemo(() => getContractStatusSummary(contracts), [contracts]);
+
+    const expiringSoonIds = useMemo(() => {
+        const alertDays = db.settings.operational?.contractAlertDays ?? 30;
+        return new Set(getContractsExpiringSoon(contracts, alertDays).map(contract => contract.id));
+    }, [contracts, db.settings]);
+
     const handleExportCsv = () => {
         const rows = filteredContracts.map(c => {
             const unit = units.find(u => u.id === c.unitId);
@@ -236,6 +244,27 @@ const Contracts: React.FC = () => {
     return (
         <div className="space-y-6">
             <HardGateBanner />
+
+            <Card>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-center">
+                    <div className="rounded-lg border border-border p-3">
+                        <p className="text-lg font-black">{statusSummary.active}</p>
+                        <p className="text-xs text-text-muted">عقود نشطة</p>
+                    </div>
+                    <div className="rounded-lg border border-amber-200 bg-amber-50/40 p-3">
+                        <p className="text-lg font-black text-amber-600">{statusSummary.expiringSoon}</p>
+                        <p className="text-xs text-text-muted">ينتهي قريباً</p>
+                    </div>
+                    <div className="rounded-lg border border-red-200 bg-red-50/40 p-3">
+                        <p className="text-lg font-black text-red-600">{statusSummary.expired}</p>
+                        <p className="text-xs text-text-muted">منتهية</p>
+                    </div>
+                    <div className="rounded-lg border border-slate-200 bg-slate-50/40 p-3">
+                        <p className="text-lg font-black text-slate-700">{statusSummary.draft}</p>
+                        <p className="text-xs text-text-muted">مسودة</p>
+                    </div>
+                </div>
+            </Card>
 
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                 <div className="bg-card rounded-xl border border-border p-3 text-center">
@@ -331,7 +360,16 @@ const Contracts: React.FC = () => {
                                                     {formatCurrency(balance, db.settings.operational.currency)}
                                                 </td>
                                                 <td className="px-4 py-3">
-                                                    <span className={`px-2 py-1 text-xs rounded-full border ${getStatusBadgeClass(c.status)}`}>{CONTRACT_STATUS_AR[c.status] || c.status}</span>
+                                                    <div className="inline-flex items-center gap-2">
+                                                        <span className={`px-2 py-1 text-xs rounded-full border ${getStatusBadgeClass(c.status)}`}>{CONTRACT_STATUS_AR[c.status] || c.status}</span>
+                                                        {expiringSoonIds.has(c.id) && (
+                                                            <span
+                                                                className="inline-block h-2.5 w-2.5 rounded-full bg-amber-500"
+                                                                title="العقد ينتهي قريباً"
+                                                                aria-label="العقد ينتهي قريباً"
+                                                            />
+                                                        )}
+                                                    </div>
                                                 </td>
                                                 <td className="px-4 py-3" onClick={e => e.stopPropagation()}>
                                                     <ActionsMenu items={[
