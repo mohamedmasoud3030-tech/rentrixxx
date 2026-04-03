@@ -12,6 +12,7 @@ import { confirmDialog } from '../components/shared/confirmDialog';
 import { adminCreateUser } from '../services/edgeFunctions';
 import { logger } from '../services/logger';
 import { postReceiptAtomic, renewContractAtomic, syncUnitStatus, voidReceiptAtomic } from '../services/antiMistakeService';
+import { calcVAT } from '../services/financeService';
 import { getEffectiveInvoiceStatus, getInvoiceRemaining } from '../utils/helpers';
 import { runManualAutomation as runManualAutomationService } from '../services/automationService';
 
@@ -501,7 +502,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         let dueDate = `${ym}-${String(safeDay).padStart(2, '0')}`;
         if (ym === contract.start.slice(0, 7) && dueDate < contract.start) dueDate = contract.start;
         if (dueDate <= contract.end) {
-          const taxAmount = round3((toNumber(contract.rent) * taxRate) / 100);
+          const { vat: taxAmount } = calcVAT(toNumber(contract.rent), taxRate);
           const invoiceStatus = new Date(`${dueDate}T23:59:59`).getTime() < now ? 'OVERDUE' : 'UNPAID';
           const no = String(await supabaseData.incrementSerial('invoice'));
           const invoice: Invoice = {
@@ -642,6 +643,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       const newNo = await supabaseData.incrementSerial('receipt');
       const newReceipt: Receipt = { ...receiptData, id: crypto.randomUUID(), createdAt: Date.now(), no: String(newNo), status: 'POSTED' as const };
       const newAllocations = allocations.map(a => ({ id: crypto.randomUUID(), receiptId: newReceipt.id, ...a, createdAt: Date.now() }));
+
+      const allocationSum = round3(newAllocations.reduce((sum, alloc) => sum + toNumber(alloc.amount), 0));
+      const receiptAmount = round3(toNumber(newReceipt.amount));
+      if (allocationSum !== receiptAmount) {
+        toast.error('مجموع التوزيعات لا يساوي إجمالي الإيصال');
+        return;
+      }
 
       let totalVatCollected = 0;
       const invoiceUpdates: Array<{ id: string; paid_amount: number; status: string }> = [];

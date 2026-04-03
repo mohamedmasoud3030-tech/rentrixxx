@@ -23,6 +23,7 @@ import { ReceiptPrint } from '../components/print/PrintTemplate';
 import { toast } from 'react-hot-toast';
 import { exportExpenseToPdf } from '../services/pdfService';
 import { AR_LABELS } from '../config/labels.ar';
+import { distributeAmount } from '../services/financeService';
 
 type FinancialTab = 'receipts' | 'expenses' | 'deposits' | 'settlements';
 
@@ -769,12 +770,22 @@ const ReceiptForm: React.FC<{ isOpen: boolean, onClose: () => void, receipt: Rec
 
     const autoDistributeAllocations = (totalAmount: number, invoices: (Invoice & { remaining: number })[]) => {
         const next: Record<string, number> = {};
+        const safeTotal = Number(totalAmount) || 0;
+        if (safeTotal <= 0 || invoices.length === 0) return next;
+
         let remainingAmount = Number(totalAmount) || 0;
+        const rawApplied: number[] = [];
         for (const invoice of invoices) {
             if (remainingAmount <= 0) break;
             const applied = Math.min(remainingAmount, invoice.remaining);
-            if (applied > 0) next[invoice.id] = Number(applied.toFixed(3));
+            rawApplied.push(applied > 0 ? applied : 0);
             remainingAmount -= applied;
+        }
+        const roundedApplied = distributeAmount(safeTotal, rawApplied);
+        for (let index = 0; index < roundedApplied.length; index += 1) {
+            if (roundedApplied[index] > 0) {
+                next[invoices[index].id] = roundedApplied[index];
+            }
         }
         return next;
     };
@@ -799,8 +810,12 @@ const ReceiptForm: React.FC<{ isOpen: boolean, onClose: () => void, receipt: Rec
         if (!dateTime) { toast.error('تاريخ السند مطلوب.'); return; }
         if (channel === 'CHECK' && !checkNumber) { toast.error('يرجى إدخال رقم الشيك.'); return; }
         if (openInvoicesForContract.length === 0) { toast.error('لا توجد فواتير مفتوحة.'); return; }
-        const normalizedAllocations = Object.entries(allocations)
-            .map(([invoiceId, value]) => ({ invoiceId, amount: Number((Number(value) || 0).toFixed(3)) }))
+        const allocationEntries = Object.entries(allocations)
+            .map(([invoiceId, value]) => ({ invoiceId, amount: Number(value) || 0 }))
+            .filter(item => item.amount > 0.001);
+        const normalizedAmounts = distributeAmount(amount, allocationEntries.map(item => item.amount));
+        const normalizedAllocations = allocationEntries
+            .map((item, index) => ({ invoiceId: item.invoiceId, amount: normalizedAmounts[index] }))
             .filter(item => item.amount > 0.001);
         if (!normalizedAllocations.length) { toast.error('يجب إدخال تخصيص واحد.'); return; }
         if (Math.abs(totalAllocated - amount) > 0.01) { toast.error('المجموع غير متطابق.'); return; }
@@ -858,7 +873,7 @@ const ReceiptForm: React.FC<{ isOpen: boolean, onClose: () => void, receipt: Rec
                                     value={allocations[invoice.id] || ''}
                                     onChange={(value) => {
                                         const nextValue = Math.min(Math.max(0, Number(value) || 0), invoice.remaining);
-                                        setAllocations(prev => ({ ...prev, [invoice.id]: Number(nextValue.toFixed(3)) }));
+                                        setAllocations(prev => ({ ...prev, [invoice.id]: nextValue }));
                                     }}
                                     disabled={isSaving}
                                 />
