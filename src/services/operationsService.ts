@@ -101,6 +101,34 @@ export const transitionMaintenanceStatus = (
   return allowed[current]?.includes(next) ? next : current;
 };
 
+export interface MaintenanceBlockResult {
+  blocked: boolean;
+  count: number;
+  requests: Array<{
+    id: string;
+    title: string;
+    priority: string;
+    status: string;
+  }>;
+}
+
+export async function checkUnitMaintenanceBlock(unitId: string): Promise<MaintenanceBlockResult> {
+  const { data, error } = await supabase.rpc('check_unit_maintenance_block', {
+    p_unit_id: unitId,
+  });
+
+  if (error) {
+    throw new Error(error.message || 'تعذر التحقق من طلبات الصيانة.');
+  }
+
+  const payload = (data || {}) as Partial<MaintenanceBlockResult>;
+  return {
+    blocked: payload.blocked === true,
+    count: Number(payload.count || 0),
+    requests: Array.isArray(payload.requests) ? payload.requests : [],
+  };
+}
+
 
 export interface SoftDeleteResult {
   success: boolean;

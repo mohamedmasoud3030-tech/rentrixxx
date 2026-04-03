@@ -11,7 +11,7 @@ import { toast } from 'react-hot-toast';
 import { confirmDialog } from '../components/shared/confirmDialog';
 import { adminCreateUser } from '../services/edgeFunctions';
 import { logger } from '../services/logger';
-import { postReceiptAtomic, syncUnitStatus, voidReceiptAtomic } from '../services/antiMistakeService';
+import { postReceiptAtomic, renewContractAtomic, voidReceiptAtomic } from '../services/antiMistakeService';
 import { calcVAT } from '../services/financeService';
 import { getEffectiveInvoiceStatus, getInvoiceRemaining } from '../utils/helpers';
 import { runManualAutomation as runManualAutomationService } from '../services/automationService';
@@ -571,7 +571,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         await postInvoiceJournalEntries(invoice);
       } else if (table === 'contracts') {
         await createRentInvoicesForContract(mutableEntry as unknown as Contract);
-        await syncUnitStatus((mutableEntry as unknown as Contract).unitId);
       } else if (table === 'expenses') {
         const e = mutableEntry as unknown as Expense;
         const cashAccount = mappings.paymentMethods.CASH;
@@ -807,14 +806,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         : { ...updates, updatedAt: Date.now() };
       const result = await supabaseData.update(table as string, id, normalizedUpdates);
       if (!result.ok) { toast.error(`فشل التحديث: ${result.error}`); return; }
-      if (table === 'contracts') {
-        const contractUnitId = db?.contracts?.find(c => c.id === id)?.unitId;
-        if (contractUnitId) await syncUnitStatus(contractUnitId);
-      }
-      if (table === 'maintenanceRecords') {
-        const maintenanceUnitId = db?.maintenanceRecords?.find(m => m.id === id)?.unitId;
-        if (maintenanceUnitId) await syncUnitStatus(maintenanceUnitId);
-      }
       await audit('UPDATE', String(table), id);
       if (FINANCIAL_TABLES.includes(table as keyof Database)) setIsDataStale(true);
       await refreshData();
@@ -849,8 +840,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           return;
         }
 
-        const relatedUnit = db?.contracts?.find(c => c.id === id)?.unitId;
-        if (relatedUnit) await syncUnitStatus(relatedUnit);
         await audit('SOFT_DELETE', String(table), id);
         await refreshData();
         toast.success('تم حذف العقد بنجاح (حذف منطقي).');
