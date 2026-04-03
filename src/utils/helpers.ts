@@ -206,6 +206,8 @@ export function getStatusBadgeClass(status: string): string {
         case 'VOID':
         case 'BLACKLIST':
         case 'CLOSED':
+        case 'CANCELLED':
+        case 'CANCELED':
         case 'OVERDUE':
         case 'NOT_INTERESTED':
             return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300';

@@ -77,7 +77,7 @@ export const runDataIntegrityAudit = (db: Database): AuditIssue[] => {
     // SECTION 2: WARNINGS (Data Flow & Quality)
     // ===========================================
     db.maintenanceRecords.forEach(mr => {
-        if (['COMPLETED', 'CLOSED'].includes(mr.status) && mr.cost > 0 && !mr.expenseId && !mr.invoiceId) {
+        if (mr.status === 'COMPLETED' && mr.cost > 0 && !mr.expenseId && !mr.invoiceId) {
             issues.push(createIssue('WARNING', 'انقطاع التدفق المالي للصيانة', `طلب الصيانة المكتمل #${mr.no} بتكلفة ${mr.cost} لم يتم إنشاء مصروف أو فاتورة له. التكلفة لن تنعكس في أي تقرير مالي.`, 'maintenanceRecords', mr));
         }
     });
