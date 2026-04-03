@@ -1,6 +1,6 @@
 import { sanitizePhoneNumber } from '../utils/helpers';
 import { toast } from 'react-hot-toast';
-import { createOwnerAccessToken } from './edgeFunctions';
+import { createOwnerPortalUrl } from './edgeFunctions';
 import { logger } from './logger';
 
 export const IntegrationService = {
@@ -20,9 +20,5 @@ export const IntegrationService = {
         toast('تم بدء المزامنة السحابية (محاكاة).');
     },
 
-    generateOwnerLink: async (ownerId: string) => {
-        const baseUrl = window.location.href.split('#')[0];
-        const token = await createOwnerAccessToken(ownerId);
-        return `${baseUrl}#/owner-view/${ownerId}?auth=${encodeURIComponent(token)}`;
-    },
+    generateOwnerLink: async (ownerId: string) => createOwnerPortalUrl(ownerId),
 };

@@ -1009,12 +1009,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const generateOwnerPortalLink = useCallback(async (ownerId: string): Promise<string> => {
     const owner = await supabaseData.fetchOne<Owner>('owners', ownerId);
     if (!owner) return '';
-    let token = owner.portalToken;
-    if (!token) {
-      token = crypto.randomUUID();
-      await supabaseData.update('owners', ownerId, { portalToken: token });
-    }
-    return `${window.location.href.split('#')[0]}#/owner-view/${ownerId}?auth=${token}`;
+    return createOwnerPortalUrl(ownerId);
   }, []);
 
   const buildSnapshotState = useCallback((sourceDb: Database) => {
