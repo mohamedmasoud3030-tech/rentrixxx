@@ -66,14 +66,11 @@ const Finance: React.FC = () => {
             {/* Navigation Tabs */}
             <Card className="p-1.5 overflow-hidden border-none shadow-lg bg-card/50 backdrop-blur-md sticky top-4 z-10">
                 <nav className="flex items-center gap-1 overflow-x-auto whitespace-nowrap scrollbar-hide">
-                    <FinanceTab to={`${financeBasePath}/invoices`} icon={<ReceiptText size={20}/>} label="الفواتير" />
-                    <FinanceTab to={`${financeBasePath}/payments`} icon={<Wallet size={20}/>} label="المدفوعات" />
-                    <FinanceTab to={`${financeBasePath}/expenses`} icon={<Wallet size={20}/>} label="المصروفات" />
-                    <FinanceTab to={`${financeBasePath}/receipts`} icon={<Wallet size={20}/>} label="سندات القبض" />
-                    <FinanceTab to={`${financeBasePath}/arrears`} icon={<Wallet size={20}/>} label="المتأخرات" />
-                    <FinanceTab to={`${financeBasePath}/maintenance`} icon={<Wrench size={20}/>} label="الصيانة" />
-                    <FinanceTab to={`${financeBasePath}/gl`} icon={<Calculator size={20}/>} label="الأستاذ العام" />
-                    <FinanceTab to={`${financeBasePath}/accounting`} icon={<BookOpen size={20}/>} label="دليل الحسابات" />
+                    <FinanceTab to="/finance/invoices" icon={<ReceiptText size={20}/>} label="Invoices" />
+                    <FinanceTab to="/finance/financials" icon={<Wallet size={20}/>} label="Payments & Expenses" />
+                    <FinanceTab to="/finance/maintenance" icon={<Wrench size={20}/>} label="الصيانة" />
+                    <FinanceTab to="/finance/gl" icon={<Calculator size={20}/>} label="الأستاذ العام" />
+                    <FinanceTab to="/finance/accounting" icon={<BookOpen size={20}/>} label="دليل الحسابات" />
                 </nav>
             </Card>
 
