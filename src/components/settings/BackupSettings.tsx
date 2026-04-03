@@ -1,19 +1,19 @@
-import React, { useRef } from 'react';
+import React, { useRef, useState } from 'react';
 import { useApp } from '../../contexts/AppContext';
-import { exportToJson, importFromJson } from '../../services/backupService';
+import { createBackupFile, importFromJson, validateBackupFile } from '../../services/backupService';
 import { confirmDialog } from '../shared/confirmDialog';
 import { toast } from 'react-hot-toast';
-import { Database, Download } from 'lucide-react';
+import { Download } from 'lucide-react';
 
 const BackupSettings: React.FC = () => {
-    const { createBackup, restoreBackup } = useApp();
+    const { restoreBackup } = useApp();
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const [validationErrors, setValidationErrors] = useState<string[]>([]);
 
     const handleBackup = async () => {
         try {
-            const data = await createBackup();
-            exportToJson(JSON.parse(data), `Rentrix_Backup_${new Date().toISOString().slice(0,10)}.json`);
-            toast.success("تم تنزيل نسخة احتياطية بنجاح.");
+            await createBackupFile();
+            toast.success("تم إنشاء النسخة الاحتياطية وتنزيلها بنجاح.");
         } catch (error) {
             toast.error("فشل إنشاء النسخة الاحتياطية.");
             console.error(error);
@@ -28,25 +28,36 @@ const BackupSettings: React.FC = () => {
         const file = event.target.files?.[0];
         if (!file) return;
 
-        const confirmed = await confirmDialog({
-            title: 'تأكيد استعادة النسخة الاحتياطية',
-            message: 'تحذير! سيؤدي استعادة نسخة احتياطية إلى استبدال جميع البيانات الحالية. هل أنت متأكد من المتابعة؟',
-            confirmLabel: 'استعادة الآن',
-            tone: 'danger',
-        });
-        if (!confirmed) return;
-
         try {
-            const data = await importFromJson(file);
-            const dataString = JSON.stringify(data);
+            const parsedData = await importFromJson(file);
+            const validation = validateBackupFile(parsedData);
+
+            if (!validation.valid) {
+                setValidationErrors(validation.errors);
+                toast.error('الملف غير صالح للاستعادة.');
+                return;
+            }
+
+            setValidationErrors([]);
+
+            const confirmed = await confirmDialog({
+                title: 'تأكيد استعادة النسخة الاحتياطية',
+                message: 'تحذير! سيؤدي استعادة نسخة احتياطية إلى استبدال جميع البيانات الحالية. هل أنت متأكد من المتابعة؟',
+                confirmLabel: 'استعادة الآن',
+                tone: 'danger',
+            });
+            if (!confirmed) return;
+
+            const payload = parsedData as { data: unknown };
+            const dataString = JSON.stringify(payload.data);
             await restoreBackup(dataString);
             // The app will reload automatically after restore
         } catch (error) {
             toast.error("فشل استعادة النسخة الاحتياطية. تأكد من أن الملف صحيح.");
             console.error(error);
+        } finally {
+            if(event.target) event.target.value = '';
         }
-        // Reset file input
-        if(event.target) event.target.value = '';
     };
 
     return (
@@ -59,7 +70,7 @@ const BackupSettings: React.FC = () => {
                     قم بتنزيل نسخة كاملة من قاعدة بياناتك بصيغة JSON. احتفظ بهذا الملف في مكان آمن لاستعادة النظام عند الحاجة.
                  </p>
                  <button onClick={handleBackup} className="btn btn-primary flex items-center gap-2">
-                    <Download size={16}/> تنزيل نسخة احتياطية الآن
+                    <Download size={16}/> إنشاء نسخة احتياطية
                 </button>
              </div>
 
@@ -78,6 +89,16 @@ const BackupSettings: React.FC = () => {
                     accept=".json"
                     onChange={handleRestore}
                 />
+                {validationErrors.length > 0 && (
+                    <div className="rounded-md border border-red-500/50 bg-red-500/10 p-3 text-sm text-red-600">
+                        <p className="font-bold mb-1">أخطاء التحقق من الملف:</p>
+                        <ul className="list-disc pr-5 space-y-1">
+                            {validationErrors.map(err => (
+                                <li key={err}>{err}</li>
+                            ))}
+                        </ul>
+                    </div>
+                )}
              </div>
         </div>
     );

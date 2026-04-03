@@ -74,7 +74,7 @@ const Topbar: React.FC<TopbarProps> = ({ setSidebarOpen }) => {
 
           {/* User Info + Logout */}
           <div className="flex items-center gap-2">
-            <div className="hidden lg:block text-right">
+            <div className="hidden lg:block text-start">
               <span className="block text-sm font-bold text-text leading-tight">{username}</span>
               <span className="block text-xs text-text-muted">{role}</span>
             </div>

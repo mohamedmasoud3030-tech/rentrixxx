@@ -17,6 +17,7 @@ import { getEffectiveInvoiceStatus, getInvoiceRemaining } from '../utils/helpers
 import { runManualAutomation as runManualAutomationService } from '../services/automationService';
 import { softDeleteContract } from '../services/operationsService';
 import { notificationService } from '../services/notificationService';
+import { ROLE_CAPABILITIES, type Capability } from '../config/rbac';
 
 const DEFAULT_GEMINI_API_KEY = '';
 
@@ -243,17 +244,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const canAccess = useCallback((action: string) => {
     if (!currentUser) return false;
-    const capabilityMap: Record<'ADMIN' | 'USER', Set<string>> = {
-      ADMIN: new Set([
-        'VIEW_DASHBOARD', 'VIEW_FINANCIALS', 'MANAGE_SETTINGS', 'MANAGE_USERS', 'VIEW_AUDIT_LOG', 'USE_SMART_ASSISTANT',
-        'MANAGE_PROPERTIES', 'MANAGE_TENANTS', 'MANAGE_OWNERS', 'MANAGE_CONTRACTS', 'MANAGE_MAINTENANCE', 'VIEW_REPORTS',
-      ]),
-      USER: new Set([
-        'VIEW_DASHBOARD', 'VIEW_FINANCIALS', 'USE_SMART_ASSISTANT',
-        'MANAGE_PROPERTIES', 'MANAGE_TENANTS', 'MANAGE_OWNERS', 'MANAGE_CONTRACTS', 'MANAGE_MAINTENANCE', 'VIEW_REPORTS',
-      ]),
-    };
-    return capabilityMap[currentUser.role]?.has(action) || false;
+    return ROLE_CAPABILITIES[currentUser.role]?.has(action as Capability) || false;
   }, [currentUser]);
 
   useEffect(() => {
@@ -270,7 +261,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           setCurrentUser({
             id: session.user.id, username: profile.username || session.user.email!.split('@')[0],
             email: session.user.email || '', hash: '', salt: '',
-            role: (profile.role as 'ADMIN' | 'USER') || 'USER',
+            role: (profile.role as User['role']) || 'USER',
             mustChange: profile.must_change_password || false, createdAt: profile.created_at || Date.now(),
             isDisabled: false,
           });
@@ -330,7 +321,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         await supabase.auth.signOut();
         return { ok: false, msg: 'هذا الحساب معطّل. تواصل مع مدير النظام.' };
       }
-      const user: User = { id: data.user.id, username: profile.username || data.user.email!.split('@')[0], email: data.user.email || '', hash: '', salt: '', role: (profile.role as 'ADMIN' | 'USER') || 'USER', mustChange: profile.must_change_password || false, createdAt: profile.created_at || Date.now(), isDisabled: false };
+      const user: User = { id: data.user.id, username: profile.username || data.user.email!.split('@')[0], email: data.user.email || '', hash: '', salt: '', role: (profile.role as User['role']) || 'USER', mustChange: profile.must_change_password || false, createdAt: profile.created_at || Date.now(), isDisabled: false };
       setCurrentUser(user);
       await audit('LOGIN', 'SESSION', user.id);
       return { ok: true, msg: 'Ok', mustChange: user.mustChange };

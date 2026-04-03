@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect, useMemo, useRef } from 'react';
+import React, { Suspense, useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import { supabase } from '../../services/supabase';
 import { useApp } from '../../contexts/AppContext';
 import {
@@ -65,15 +65,15 @@ const Spinner = () => (
   </div>
 );
 
-const DashboardSkeleton = () => (
-  <div className="space-y-3 animate-pulse">
-    <div className="h-5 w-40 rounded bg-background" />
-    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-      {Array.from({ length: 8 }).map((_, idx) => (
-        <div key={idx} className="h-24 rounded-2xl border border-border bg-background" />
-      ))}
+const ReportsSkeleton: React.FC = () => (
+  <div className="animate-pulse space-y-4">
+    <div className="h-8 w-44 rounded-lg bg-background" />
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+      <div className="h-24 rounded-xl bg-background" />
+      <div className="h-24 rounded-xl bg-background" />
+      <div className="h-24 rounded-xl bg-background" />
     </div>
-    <div className="h-80 rounded-2xl border border-border bg-background" />
+    <div className="h-72 rounded-xl bg-background" />
   </div>
 );
 
@@ -787,7 +787,7 @@ const ReportsDashboard: React.FC<DashboardProps> = ({ currency: currencyProp, ow
           <span className="text-sm font-black text-text">{currentLabel}</span>
         </div>
         <div className="bg-card border border-border rounded-2xl p-5">
-          {dashboardLoading ? <DashboardSkeleton/> : renderContent()}
+          <Suspense fallback={<ReportsSkeleton />}>{renderContent()}</Suspense>
         </div>
       </main>
     </div>
