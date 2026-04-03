@@ -1,20 +1,18 @@
 import {
   Bell,
   Building2,
-  CircleDollarSign,
-  ClipboardList,
   FileText,
   LayoutGrid,
-  Receipt,
   Settings,
   Users,
   UserCheck,
   WalletCards,
   BarChart2,
   Wrench,
-  CreditCard,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
+import { NAVIGATION_META } from '../../../config/navigationMeta';
+import { FINANCIAL_ROUTES } from '../../../routes/modules';
 
 export type SidebarBadgeKey =
   | 'expiringContracts'
@@ -34,7 +32,13 @@ export interface SidebarNavItem {
 export const LAST_FINANCE_TAB_KEY = 'rentrix:last-finance-tab';
 
 const getDefaultFinancePath = () =>
-  window.localStorage.getItem(LAST_FINANCE_TAB_KEY) || '/finance/invoices';
+  window.localStorage.getItem(LAST_FINANCE_TAB_KEY) || FINANCIAL_ROUTES.invoices;
+
+const withMeta = (path: string) => ({
+  label: NAVIGATION_META[path]?.title ?? path,
+  icon: NAVIGATION_META[path]?.icon,
+  path,
+});
 
 export const createSidebarConfig = (): SidebarNavItem[] => {
   const financeRoot = getDefaultFinancePath();
@@ -42,54 +46,48 @@ export const createSidebarConfig = (): SidebarNavItem[] => {
   return [
     {
       id: 'dashboard',
-      label: 'Dashboard',
+      ...withMeta('/'),
       icon: LayoutGrid,
-      path: '/',
     },
     {
       id: 'owners',
-      label: 'Owners',
+      ...withMeta('/owners'),
       icon: UserCheck,
-      path: '/owners',
     },
     {
       id: 'contracts',
-      label: 'Contracts',
+      ...withMeta('/contracts'),
       icon: FileText,
-      path: '/contracts',
       badgeKey: 'expiringContracts',
     },
     {
       id: 'properties',
-      label: 'Properties',
+      ...withMeta('/properties'),
       icon: Building2,
-      path: '/properties',
     },
     {
       id: 'financial',
-      label: 'Financial',
+      label: NAVIGATION_META['/financial'].title,
       icon: WalletCards,
       path: financeRoot,
       badgeKey: 'overdueInvoices',
       children: [
-        { id: 'financial-invoices', label: 'Invoices', icon: Receipt, path: '/finance/invoices' },
-        { id: 'financial-payments', label: 'Payments', icon: CreditCard, path: '/finance/financials' },
-        { id: 'financial-expenses', label: 'Expenses', icon: CircleDollarSign, path: '/finance/financials' },
-        { id: 'financial-receipts', label: 'Receipts', icon: ClipboardList, path: '/finance/financials' },
-        { id: 'financial-arrears', label: 'Arrears', icon: FileText, path: '/finance/invoices?status=OVERDUE' },
+        { id: 'financial-invoices', ...withMeta(FINANCIAL_ROUTES.invoices) },
+        { id: 'financial-payments', ...withMeta(FINANCIAL_ROUTES.payments) },
+        { id: 'financial-expenses', ...withMeta(FINANCIAL_ROUTES.expenses) },
+        { id: 'financial-receipts', ...withMeta(FINANCIAL_ROUTES.receipts) },
+        { id: 'financial-arrears', ...withMeta(FINANCIAL_ROUTES.arrears), path: `${FINANCIAL_ROUTES.invoices}?status=OVERDUE` },
       ],
     },
     {
       id: 'reports',
-      label: 'Reports',
+      ...withMeta('/reports'),
       icon: BarChart2,
-      path: '/reports',
     },
     {
       id: 'notifications',
-      label: 'Notifications',
+      ...withMeta('/communication'),
       icon: Bell,
-      path: '/communication',
       badgeKey: 'pendingNotifications',
     },
     {
@@ -98,8 +96,8 @@ export const createSidebarConfig = (): SidebarNavItem[] => {
       icon: Wrench,
       path: '/maintenance',
       children: [
-        { id: 'operations-maintenance', label: 'Maintenance', icon: Wrench, path: '/maintenance' },
-        { id: 'operations-tenants', label: 'Tenants', icon: Users, path: '/tenants' },
+        { id: 'operations-maintenance', ...withMeta('/maintenance'), icon: Wrench },
+        { id: 'operations-tenants', ...withMeta('/tenants'), icon: Users },
       ],
     },
     {
@@ -111,7 +109,7 @@ export const createSidebarConfig = (): SidebarNavItem[] => {
     },
     {
       id: 'settings',
-      label: 'Settings',
+      ...withMeta('/settings'),
       icon: Settings,
       path: '/settings/general',
       adminOnly: true,
