@@ -1,5 +1,5 @@
 import { supabaseData } from './supabaseDataService';
-import type { AppNotification, NotificationType } from '../types';
+import type { AppNotification, Contract, NotificationType } from '../types';
 import { safeAsync, validateRequiredString } from '../utils/validation';
 
 export interface NotificationCreateInput {
@@ -9,9 +9,23 @@ export interface NotificationCreateInput {
   link: string;
 }
 
+export interface ContractExpiryInput {
+  contracts: Contract[];
+  now: number;
+  alertDays: number;
+}
+
 export interface NotificationService {
   createAppNotification: (input: NotificationCreateInput) => Promise<AppNotification>;
 }
+
+export const getExpiringContracts = ({ contracts, now, alertDays }: ContractExpiryInput): Contract[] => {
+  return contracts.filter(contract => {
+    const endDate = new Date(contract.end).getTime();
+    const daysLeft = Math.ceil((endDate - now) / (1000 * 60 * 60 * 24));
+    return daysLeft > 0 && daysLeft <= alertDays;
+  });
+};
 
 export const notificationService: NotificationService = {
   async createAppNotification(input: NotificationCreateInput): Promise<AppNotification> {
