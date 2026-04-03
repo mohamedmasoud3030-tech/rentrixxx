@@ -9,6 +9,7 @@ import { useApp } from '../../../contexts/AppContext';
 import { WORKFLOW_STATUS } from '../../../constants/status';
 import { normalizeWorkflowStatus } from '../../../utils/status';
 import { getLastRunDate } from '../../../services/automationService';
+import { ROUTES, FINANCIAL_ROUTES } from '../../../routes/modules';
 
 interface NavLinkItem {
   path: string;
@@ -23,7 +24,12 @@ interface SidebarProps {
   setSidebarOpen: (open: boolean) => void;
 }
 
-const getPreferredFinancePath = () => window.localStorage.getItem('rentrix:last-finance-tab') || '/finance/invoices';
+const getPreferredFinancePath = () => {
+  const savedPath = window.localStorage.getItem('rentrix:last-finance-tab');
+  if (savedPath?.startsWith('/financial/')) return savedPath;
+  if (savedPath?.startsWith('/finance/')) return savedPath.replace('/finance/', '/financial/');
+  return FINANCIAL_ROUTES.invoices;
+};
 
 const navGroups: { title: string; links: NavLinkItem[] }[] = [
   {
@@ -35,11 +41,11 @@ const navGroups: { title: string; links: NavLinkItem[] }[] = [
   {
     title: 'العمليات التشغيلية',
     links: [
-      { path: '/properties', label: 'إدارة العقارات', icon: Building2 },
-      { path: '/tenants', label: 'المستأجرون', icon: Users, badgeKey: 'expiringContracts' },
-      { path: '/owners', label: 'الملاك', icon: UserCheck },
-      { path: '/contracts', label: 'العقود', icon: FileText },
-      { path: '/maintenance', label: 'الصيانة', icon: Wrench },
+      { path: ROUTES.properties, label: 'إدارة العقارات', icon: Building2 },
+      { path: ROUTES.tenants, label: 'المستأجرون', icon: Users, badgeKey: 'expiringContracts' },
+      { path: ROUTES.owners, label: 'الملاك', icon: UserCheck },
+      { path: ROUTES.contracts, label: 'العقود', icon: FileText },
+      { path: ROUTES.maintenance, label: 'الصيانة', icon: Wrench },
     ],
   },
   {
@@ -51,24 +57,24 @@ const navGroups: { title: string; links: NavLinkItem[] }[] = [
   {
     title: 'التسويق والتطوير',
     links: [
-      { path: '/leads', label: 'العملاء المحتملون', icon: UserPlus, badgeKey: 'newLeads' },
-      { path: '/lands', label: 'الأراضي', icon: MapIcon },
-      { path: '/commissions', label: 'العمولات', icon: DollarSign },
-      { path: '/communication', label: 'مركز التواصل', icon: MessageSquare, badgeKey: 'pendingNotifications' },
+      { path: ROUTES.leads, label: 'العملاء المحتملون', icon: UserPlus, badgeKey: 'newLeads' },
+      { path: ROUTES.lands, label: 'الأراضي', icon: MapIcon },
+      { path: ROUTES.commissions, label: 'العمولات', icon: DollarSign },
+      { path: ROUTES.communication, label: 'مركز التواصل', icon: MessageSquare, badgeKey: 'pendingNotifications' },
     ],
   },
   {
     title: 'التحليل والإدارة',
     links: [
-      { path: '/reports', label: 'التقارير', icon: BarChart2 },
-      { path: '/smart-assistant', label: 'المساعد الذكي', icon: Bot },
-      { path: '/audit-log', label: 'سجل المراجعة', icon: ScrollText, adminOnly: true },
+      { path: ROUTES.reports, label: 'التقارير', icon: BarChart2 },
+      { path: ROUTES.smartAssistant, label: 'المساعد الذكي', icon: Bot },
+      { path: ROUTES.auditLog, label: 'سجل المراجعة', icon: ScrollText, adminOnly: true },
     ],
   },
   {
     title: 'الإدارة والنظام',
     links: [
-      { path: '/settings', label: 'الإعدادات', icon: Settings, adminOnly: true },
+      { path: ROUTES.settings, label: 'الإعدادات', icon: Settings, adminOnly: true },
     ],
   },
 ];

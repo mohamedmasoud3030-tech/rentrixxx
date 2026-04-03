@@ -25,6 +25,8 @@ import Maintenance from './pages/Maintenance';
 import AuditLog from './pages/AuditLog';
 import SmartAssistant from './pages/SmartAssistant';
 import ProtectedRoute from './components/shared/ProtectedRoute';
+import OwnersHub from './pages/OwnersHub';
+import { LEGACY_FINANCIAL_ALIASES } from './routes/modules';
 
 const hexToHsl = (hex: string): string => {
     hex = hex.replace('#', '');
@@ -63,11 +65,14 @@ const ROUTE_META: Record<string, { title: string; description: string }> = {
     '/owners': { title: 'الملاك', description: 'إدارة بيانات الملاك وعمولاتهم' },
     '/maintenance': { title: 'الصيانة', description: 'إدارة طلبات الصيانة ومتابعة حالتها' },
     '/contracts': { title: 'العقود', description: 'عرض وإدارة عقود الإيجار النشطة والمنتهية' },
-    '/finance/invoices': { title: 'الفواتير', description: 'إدارة الفواتير الشهرية ومتابعة المدفوعات المتأخرة' },
-    '/finance/financials': { title: 'السندات والمصروفات', description: 'سندات القبض والمصروفات والودائع وتسويات الملاك' },
-    '/finance/maintenance': { title: 'صيانة مالية', description: 'متابعة طلبات الصيانة والقيود المرتبطة بها' },
-    '/finance/gl': { title: 'الأستاذ العام', description: 'القيود المحاسبية والسجل المالي التفصيلي' },
-    '/finance/accounting': { title: 'دليل الحسابات', description: 'إدارة دليل الحسابات والقيد اليدوي وميزان المراجعة' },
+    '/financial/invoices': { title: 'الفواتير', description: 'إدارة الفواتير الشهرية ومتابعة المدفوعات المتأخرة' },
+    '/financial/payments': { title: 'المدفوعات', description: 'إدارة المدفوعات ومراقبة التحصيل النقدي' },
+    '/financial/expenses': { title: 'المصروفات', description: 'متابعة مصروفات العقارات والمكاتب' },
+    '/financial/receipts': { title: 'سندات القبض', description: 'سندات القبض وتدفقات التحصيل' },
+    '/financial/arrears': { title: 'المتأخرات', description: 'متابعة الفواتير المتأخرة والمبالغ المستحقة' },
+    '/financial/maintenance': { title: 'صيانة مالية', description: 'متابعة طلبات الصيانة والقيود المرتبطة بها' },
+    '/financial/gl': { title: 'الأستاذ العام', description: 'القيود المحاسبية والسجل المالي التفصيلي' },
+    '/financial/accounting': { title: 'دليل الحسابات', description: 'إدارة دليل الحسابات والقيد اليدوي وميزان المراجعة' },
     '/reports': { title: 'التقارير والتحليلات', description: 'تقارير الأداء المالي والإشغال والتحليلات الذكية' },
     '/leads': { title: 'العملاء المحتملون', description: 'إدارة العملاء المحتملين ومتابعة خط الفرص العقارية' },
     '/communication': { title: 'مركز التواصل', description: 'قوالب الرسائل والإشعارات للمستأجرين والملاك' },
@@ -138,11 +143,15 @@ const App: React.FC = () => {
               <Route path="/properties" element={<Properties />} />
               <Route path="/tenants" element={<Tenants />} />
               <Route path="/owners" element={<Owners />} />
+              <Route path="/owners/:ownerId/hub" element={<OwnersHub />} />
               <Route path="/contracts" element={<Contracts />} />
               <Route path="/maintenance" element={<Maintenance />} />
 
               {/* Finance Hub (Unified) */}
-              <Route path="/finance/*" element={<ProtectedRoute capability="VIEW_FINANCIALS"><Finance /></ProtectedRoute>} />
+              <Route path="/financial/*" element={<ProtectedRoute capability="VIEW_FINANCIALS"><Finance /></ProtectedRoute>} />
+              {Object.entries(LEGACY_FINANCIAL_ALIASES).map(([legacyPath, nextPath]) => (
+                <Route key={legacyPath} path={legacyPath} element={<Navigate to={nextPath} replace />} />
+              ))}
 
               {/* CRM & Growth */}
               <Route path="/leads" element={<Leads />} />

@@ -144,7 +144,7 @@ const Notifications: React.FC = () => {
                                             const isRead = itemId in readLog;
                                             return (
                                                 <Link
-                                                    to="/finance/invoices?filter=overdue"
+                                                    to="/financial/invoices?filter=overdue"
                                                     onClick={() => { setIsOpen(false); markOneRead(itemId); }}
                                                     key={inv.id}
                                                     className={`flex items-start gap-3 px-4 py-3 text-sm border-b border-border/50 last:border-0 transition-colors ${isRead ? 'opacity-60' : 'bg-danger-bg/20 hover:bg-danger-bg/40'}`}

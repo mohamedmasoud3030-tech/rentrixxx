@@ -8,6 +8,7 @@ import { Wallet, ReceiptText, Wrench, Calculator, BookOpen } from 'lucide-react'
 import GeneralLedger from './GeneralLedger';
 import Accounting from './Accounting';
 import FinanceIntelligenceHub from '../components/finance/FinanceIntelligenceHub';
+import Arrears from './financial/Arrears';
 
 const FinanceTab: React.FC<{ to: string, icon: React.ReactNode, label: string }> = ({ to, icon, label }) => (
     <NavLink
@@ -30,17 +31,19 @@ const LAST_FINANCE_TAB_KEY = 'rentrix:last-finance-tab';
 
 const Finance: React.FC = () => {
     const location = useLocation();
+    const financeBasePath = location.pathname.startsWith('/financial') ? '/financial' : '/finance';
 
     useEffect(() => {
-        if (location.pathname.startsWith('/finance/') && location.pathname !== '/finance') {
+        if ((location.pathname.startsWith('/finance/') || location.pathname.startsWith('/financial/')) && location.pathname !== '/finance' && location.pathname !== '/financial') {
             window.localStorage.setItem(LAST_FINANCE_TAB_KEY, location.pathname);
         }
     }, [location.pathname]);
 
     const defaultFinancePath = useMemo(() => {
         const savedPath = window.localStorage.getItem(LAST_FINANCE_TAB_KEY);
-        return savedPath && savedPath.startsWith('/finance/') ? savedPath : '/finance/invoices';
-    }, []);
+        const isSupportedSavedPath = savedPath && (savedPath.startsWith('/finance/') || savedPath.startsWith('/financial/'));
+        return isSupportedSavedPath ? savedPath : `${financeBasePath}/invoices`;
+    }, [financeBasePath]);
 
     return (
         <div className="space-y-8 animate-in fade-in duration-500">
@@ -63,11 +66,14 @@ const Finance: React.FC = () => {
             {/* Navigation Tabs */}
             <Card className="p-1.5 overflow-hidden border-none shadow-lg bg-card/50 backdrop-blur-md sticky top-4 z-10">
                 <nav className="flex items-center gap-1 overflow-x-auto whitespace-nowrap scrollbar-hide">
-                    <FinanceTab to="/finance/invoices" icon={<ReceiptText size={20}/>} label="الفواتير" />
-                    <FinanceTab to="/finance/financials" icon={<Wallet size={20}/>} label="السندات والمصروفات" />
-                    <FinanceTab to="/finance/maintenance" icon={<Wrench size={20}/>} label="الصيانة" />
-                    <FinanceTab to="/finance/gl" icon={<Calculator size={20}/>} label="الأستاذ العام" />
-                    <FinanceTab to="/finance/accounting" icon={<BookOpen size={20}/>} label="دليل الحسابات" />
+                    <FinanceTab to={`${financeBasePath}/invoices`} icon={<ReceiptText size={20}/>} label="الفواتير" />
+                    <FinanceTab to={`${financeBasePath}/payments`} icon={<Wallet size={20}/>} label="المدفوعات" />
+                    <FinanceTab to={`${financeBasePath}/expenses`} icon={<Wallet size={20}/>} label="المصروفات" />
+                    <FinanceTab to={`${financeBasePath}/receipts`} icon={<Wallet size={20}/>} label="سندات القبض" />
+                    <FinanceTab to={`${financeBasePath}/arrears`} icon={<Wallet size={20}/>} label="المتأخرات" />
+                    <FinanceTab to={`${financeBasePath}/maintenance`} icon={<Wrench size={20}/>} label="الصيانة" />
+                    <FinanceTab to={`${financeBasePath}/gl`} icon={<Calculator size={20}/>} label="الأستاذ العام" />
+                    <FinanceTab to={`${financeBasePath}/accounting`} icon={<BookOpen size={20}/>} label="دليل الحسابات" />
                 </nav>
             </Card>
 
@@ -75,7 +81,11 @@ const Finance: React.FC = () => {
             <div className="min-h-[60vh]">
                 <Routes>
                     <Route path="invoices" element={<Invoices />} />
-                    <Route path="financials" element={<Financials />} />
+                    <Route path="payments" element={<Financials initialTab="receipts" />} />
+                    <Route path="expenses" element={<Financials initialTab="expenses" />} />
+                    <Route path="receipts" element={<Financials initialTab="receipts" />} />
+                    <Route path="financials" element={<Navigate to="../receipts" replace />} />
+                    <Route path="arrears" element={<Arrears />} />
                     <Route path="maintenance" element={<Maintenance />} />
                     <Route path="gl" element={<GeneralLedger />} />
                     <Route path="accounting" element={<Accounting />} />

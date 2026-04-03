@@ -94,7 +94,7 @@ const Dashboard: React.FC = () => {
 
     const alerts = [
         { key: 'contracts', title: 'عقود تنتهي قريباً', detail: `${stats.expiringContracts.length} عقد`, path: '/contracts' },
-        { key: 'invoices', title: 'فواتير متأخرة', detail: `${stats.overdueCount} فاتورة`, path: '/finance/invoices' },
+        { key: 'invoices', title: 'فواتير متأخرة', detail: `${stats.overdueCount} فاتورة`, path: '/financial/invoices' },
         { key: 'maintenance', title: 'صيانة معلقة', detail: `${stats.pendingMaintenance} طلب`, path: '/properties' },
     ];
 

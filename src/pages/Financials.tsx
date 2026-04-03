@@ -25,8 +25,8 @@ import { exportExpenseToPdf } from '../services/pdfService';
 
 type FinancialTab = 'receipts' | 'expenses' | 'deposits' | 'settlements';
 
-const Financials: React.FC = () => {
-    const [activeTab, setActiveTab] = useState<FinancialTab>('receipts');
+const Financials: React.FC<{ initialTab?: FinancialTab }> = ({ initialTab = 'receipts' }) => {
+    const [activeTab, setActiveTab] = useState<FinancialTab>(initialTab);
     const { db, getFinancialSummary } = useApp();
     const [financialSummary, setFinancialSummary] = useState<{ receiptsToday: number; expensesMonth: number; totalDeposits: number; pendingSettlements: number; openInvoices: number } | null>(null);
     const [loadingSummary, setLoadingSummary] = useState(true);
@@ -58,6 +58,10 @@ const Financials: React.FC = () => {
       refreshFinancialSummary();
     }, [refreshFinancialSummary]);
 
+    useEffect(() => {
+      setActiveTab(initialTab);
+    }, [initialTab]);
+
     const stats = financialSummary || { receiptsToday: 0, expensesMonth: 0, totalDeposits: 0, pendingSettlements: 0, openInvoices: 0 };
 
     return (
@@ -74,7 +78,7 @@ const Financials: React.FC = () => {
                     <button onClick={refreshFinancialSummary} disabled={loadingSummary} className="btn btn-secondary text-xs font-black flex items-center gap-1">
                         {loadingSummary ? <span>جاري التحديث...</span> : <><ArrowUpRight size={12} /> تحديث</>}
                     </button>
-                    <Link to="/finance/invoices" className="btn btn-secondary text-xs font-black">سير الفوترة</Link>
+                    <Link to="/financial/invoices" className="btn btn-secondary text-xs font-black">سير الفوترة</Link>
                     <Link to="/reports" className="btn btn-primary text-xs font-black">تقرير التدفقات</Link>
                 </div>
             </div>
