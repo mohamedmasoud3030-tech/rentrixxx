@@ -2,9 +2,11 @@ import React, { useCallback, useMemo, useState, useEffect } from 'react';
 import { useApp } from '../contexts/AppContext';
 import { Invoice } from '../types';
 import Card from '../components/ui/Card';
-import { formatCurrency, exportToCsv, INVOICE_STATUS_AR, INVOICE_TYPE_AR } from '../utils/helpers';
-import { AlertCircle, Clock, ArrowUpRight } from 'lucide-react';
-import { useLocation } from 'react-router-dom';
+import Modal from '../components/ui/Modal';
+import { formatCurrency, formatDate, getStatusBadgeClass, exportToCsv, INVOICE_STATUS_AR, INVOICE_TYPE_AR, getInvoiceTotal, getInvoiceRemaining, getEffectiveInvoiceStatus } from '../utils/helpers';
+import NumberInput from '../components/ui/NumberInput';
+import { ReceiptText, RefreshCw, Download, CheckSquare, Square, MessageCircle, FileText, Plus, Search, AlertCircle, Clock, CheckCircle2, ArrowUpRight, Wallet } from 'lucide-react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 import { exportInvoiceToPdf } from '../services/pdfService';
 import { StatCard } from '../components/invoices/StatCard';
@@ -36,7 +38,15 @@ const Invoices: React.FC = () => {
     const [isMonthlyLoading, setIsMonthlyLoading] = useState(false);
     const [deletingInvoice, setDeletingInvoice] = useState<Invoice | null>(null);
 
-    // Handle filter from URL parameter
+    useEffect(() => {
+        sessionStorage.setItem(STORAGE_KEY, JSON.stringify(filters));
+    }, [filters]);
+
+    const getEffectiveStatus = useCallback((invoice: Invoice): Invoice['status'] => {
+        const graceDays = settings.operational?.lateFee?.graceDays ?? 0;
+        return getEffectiveInvoiceStatus(invoice, graceDays);
+    }, [settings.operational?.lateFee?.graceDays]);
+
     useEffect(() => {
         const params = new URLSearchParams(location.search);
         const filterParam = params.get('filter');
@@ -79,9 +89,17 @@ const Invoices: React.FC = () => {
                 };
             })
             .sort((a, b) => new Date(b.dueDate).getTime() - new Date(a.dueDate).getTime());
-    }, [db.invoices, db.contracts, db.tenants, db.units, db.properties, filters, graceDays]);
+    }, [db, filters, getEffectiveStatus]);
 
-    const stats = useInvoiceStats(db.invoices || [], db.receipts || [], graceDays);
+    const stats = useMemo(() => {
+        const unpaid = db.invoices.filter(i => ['UNPAID', 'PARTIALLY_PAID'].includes(getEffectiveStatus(i))).reduce((s, i) => s + getInvoiceRemaining(i), 0);
+        const overdue = db.invoices.filter(i => getEffectiveStatus(i) === 'OVERDUE').reduce((s, i) => s + getInvoiceRemaining(i), 0);
+        const month = new Date().toISOString().slice(0, 7);
+        const collectedThisMonth = db.receipts
+            .filter(r => r.status === 'POSTED' && r.dateTime.startsWith(month))
+            .reduce((s, r) => s + r.amount, 0);
+        return { unpaid, overdue, collectedThisMonth };
+    }, [db.invoices, db.receipts, getEffectiveStatus]);
 
     const toggleSelect = useCallback((id: string) => {
         setSelectedIds(prev => {
