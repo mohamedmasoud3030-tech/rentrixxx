@@ -12,6 +12,7 @@ type AutoTableDoc = jsPDF & { autoTable: (opts: Record<string, unknown>) => void
 const asAutoTableDoc = (doc: jsPDF) => doc as AutoTableDoc;
 const FALLBACK_FONT = 'helvetica';
 const ARABIC_FONT = 'Cairo';
+const ARABIC_FONT_FALLBACKS = ['Cairo', 'Amiri', 'NotoNaskhArabic', 'NotoSansArabic', 'helvetica'];
 
 const getActiveFont = (doc: jsPDF): string => {
     try {
@@ -25,6 +26,9 @@ const getActiveFont = (doc: jsPDF): string => {
 const getTableStyle = (doc: jsPDF, fontSize = 10) => ({
     font: getActiveFont(doc),
     halign: 'right' as const,
+    overflow: 'linebreak' as const,
+    cellWidth: 'wrap' as const,
+    valign: 'middle' as const,
     fontSize,
 });
 
@@ -47,14 +51,40 @@ const getArabicDoc = (title: string, subtitle: string, settings: Settings) => {
         } else {
             doc.setFont(FALLBACK_FONT);
         }
+        const activeFont = getActiveFont(doc);
+        if (!ARABIC_FONT_FALLBACKS.includes(activeFont)) {
+            doc.setFont(FALLBACK_FONT);
+        }
+
+        const pageWidth = doc.internal.pageSize.getWidth();
+        const pageHeight = doc.internal.pageSize.getHeight();
 
         // Header
         doc.setFontSize(16);
-        doc.text(safeText(settings.general?.company?.name, 'Rentrix'), 105, 15, { align: 'center' });
+        doc.text(safeText(settings.general?.company?.name, 'Rentrix'), pageWidth / 2, 14, { align: 'center' });
         doc.setFontSize(12);
-        doc.text(safeText(title), 105, 22, { align: 'center' });
+        doc.text(safeText(title), pageWidth / 2, 20, { align: 'center' });
         doc.setFontSize(10);
-        doc.text(safeText(subtitle), 105, 28, { align: 'center' });
+        doc.text(safeText(subtitle), pageWidth / 2, 26, { align: 'center' });
+        doc.setDrawColor(203, 213, 225);
+        doc.line(12, 30, pageWidth - 12, 30);
+
+        (doc as unknown as { autoTableSetDefaults?: (opts: Record<string, unknown>) => void }).autoTableSetDefaults?.({
+            theme: 'grid',
+            margin: { left: 10, right: 10 },
+            showHead: 'everyPage',
+            rowPageBreak: 'avoid',
+            styles: getTableStyle(doc, 9),
+            headStyles: { fillColor: [30, 80, 130], fontStyle: 'bold' },
+            footStyles: { fillColor: [230, 230, 230], textColor: 0, fontStyle: 'bold' },
+            didDrawPage: () => {
+                const pageCurrent = doc.getCurrentPageInfo?.().pageNumber || 1;
+                const pageTotal = doc.getNumberOfPages();
+                doc.setFontSize(8);
+                doc.text(`صفحة ${pageCurrent} / ${pageTotal}`, pageWidth - 10, pageHeight - 6, { align: 'right' });
+                doc.text(safeText(settings.general?.company?.name, 'Rentrix'), 10, pageHeight - 6, { align: 'left' });
+            },
+        });
 
         return doc;
     } catch (error) {
@@ -451,7 +481,14 @@ export const exportAgedReceivablesToPdf = (data: { lines: PdfRow[]; totals: PdfR
 const HEAD_STYLE = { fillColor: [30, 80, 130] as [number, number, number], fontStyle: 'bold' as const };
 const FOOT_STYLE = { fillColor: [230, 230, 230] as [number, number, number], textColor: 0, fontStyle: 'bold' as const };
 const TABLE_STYLE = { halign: 'right' as const, fontSize: 9 };
-const tableStyleFor = (doc: jsPDF, fontSize = TABLE_STYLE.fontSize) => ({ ...TABLE_STYLE, font: getActiveFont(doc), fontSize });
+const tableStyleFor = (doc: jsPDF, fontSize = TABLE_STYLE.fontSize) => ({
+    ...TABLE_STYLE,
+    font: getActiveFont(doc),
+    fontSize,
+    overflow: 'linebreak' as const,
+    cellWidth: 'wrap' as const,
+    valign: 'middle' as const,
+});
 
 export const exportDailyCollectionToPdf = (receipts: PdfRow[], totals: { cash: number; bank: number; check: number; total: number }, settings: Settings, date: string) => {
     const cur = settings.operational.currency;

@@ -234,7 +234,8 @@ input:focus, select:focus, textarea:focus {
         padding: 0;
         line-height: 1.8;
         font-size: 11pt;
-        font-family: 'Cairo', 'Arial', sans-serif;
+        font-family: 'Cairo', 'Noto Sans Arabic', 'Tahoma', 'Arial', sans-serif;
+        direction: rtl;
     }
 
     .print-only {
@@ -434,25 +435,21 @@ input:focus, select:focus, textarea:focus {
     }
 
     /* RTL Text Alignment */
-    body[dir="rtl"] .print-header-left {
-        text-align: left;
-    }
-
-    body[dir="rtl"] .print-header-right {
-        text-align: right;
-    }
-
+    body[dir="rtl"] .print-header-left { text-align: right; }
+    body[dir="rtl"] .print-header-right { text-align: left; }
     body[dir="rtl"] .print-table th,
-    body[dir="rtl"] .print-table td {
-        text-align: left;
-    }
+    body[dir="rtl"] .print-table td { text-align: right; }
+    body[dir="rtl"] .summary-label { text-align: right; }
+    body[dir="rtl"] .summary-value { text-align: left; }
 
-    body[dir="rtl"] .summary-label {
-        text-align: left;
-    }
-
-    body[dir="rtl"] .summary-value {
-        text-align: right;
+    .print-table thead { display: table-header-group; }
+    .print-table tfoot { display: table-footer-group; }
+    .print-table tr, .print-table td, .print-table th {
+        page-break-inside: avoid;
+        break-inside: avoid;
+        word-break: break-word;
+        overflow-wrap: anywhere;
+        vertical-align: top;
     }
 }
 
