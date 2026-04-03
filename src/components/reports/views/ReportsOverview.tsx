@@ -28,6 +28,15 @@ import {
 } from 'recharts';
 import { ReportTab } from '../ReportsSidebar';
 
+const formatOmaniRiyal = (value: number) => `${value.toFixed(3)} ر.ع`;
+const formatDisplayDate = (value: string | Date) => {
+  const date = typeof value === 'string' ? new Date(value) : value;
+  const day = String(date.getDate()).padStart(2, '0');
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const year = date.getFullYear();
+  return `${day}/${month}/${year}`;
+};
+
 interface OwnerLedgerTransaction {
   date: string;
   details: string;
@@ -126,7 +135,6 @@ const ReportsOverview: React.FC<{ currency: string }> = ({ currency }) => {
     return { revenue, expenses, net: revenue - expenses, totalReceivables, totalOwnerPayables, occupancyRate };
   }, [db.journalEntries, db.units, db.contracts, contractBalances, ownerBalances, accountTypeMap]);
 
-  const cur = settings.operational?.currency ?? 'OMR';
   const integritySummary = useMemo(() => {
     const issues = runDataIntegrityAudit(db);
     const errors = issues.filter(issue => issue.severity === 'ERROR');
@@ -144,13 +152,14 @@ const ReportsOverview: React.FC<{ currency: string }> = ({ currency }) => {
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
-        <MiniKpi label="إيرادات الشهر" value={formatCurrency(summaryKpis.revenue, cur)} icon={<ArrowUp size={18} />} color="bg-emerald-100 dark:bg-emerald-900/40 text-emerald-600" />
-        <MiniKpi label="مصروفات الشهر" value={formatCurrency(summaryKpis.expenses, cur)} icon={<ArrowDown size={18} />} color="bg-red-100 dark:bg-red-900/40 text-red-600" />
-        <MiniKpi label="صافي الشهر" value={formatCurrency(summaryKpis.net, cur)} icon={<Banknote size={18} />} color="bg-blue-100 dark:bg-blue-900/40 text-blue-600" />
-        <MiniKpi label="الذمم المدينة" value={formatCurrency(summaryKpis.totalReceivables, cur)} icon={<Users size={18} />} color="bg-amber-100 dark:bg-amber-900/40 text-amber-600" />
-        <MiniKpi label="مستحقات الملاك" value={formatCurrency(summaryKpis.totalOwnerPayables, cur)} icon={<Wallet size={18} />} color="bg-purple-100 dark:bg-purple-900/40 text-purple-600" />
+        <MiniKpi label="إيرادات الشهر" value={formatOmaniRiyal(summaryKpis.revenue)} icon={<ArrowUp size={18} />} color="bg-emerald-100 dark:bg-emerald-900/40 text-emerald-600" />
+        <MiniKpi label="مصروفات الشهر" value={formatOmaniRiyal(summaryKpis.expenses)} icon={<ArrowDown size={18} />} color="bg-red-100 dark:bg-red-900/40 text-red-600" />
+        <MiniKpi label="صافي الشهر" value={formatOmaniRiyal(summaryKpis.net)} icon={<Banknote size={18} />} color="bg-blue-100 dark:bg-blue-900/40 text-blue-600" />
+        <MiniKpi label="الذمم المدينة" value={formatOmaniRiyal(summaryKpis.totalReceivables)} icon={<Users size={18} />} color="bg-amber-100 dark:bg-amber-900/40 text-amber-600" />
+        <MiniKpi label="مستحقات الملاك" value={formatOmaniRiyal(summaryKpis.totalOwnerPayables)} icon={<Wallet size={18} />} color="bg-purple-100 dark:bg-purple-900/40 text-purple-600" />
         <MiniKpi label="نسبة الإشغال" value={`${summaryKpis.occupancyRate.toFixed(0)}%`} icon={<Percent size={18} />} color="bg-indigo-100 dark:bg-indigo-900/40 text-indigo-600" />
       </div>
+      <div className="text-xs text-text-muted">تاريخ التقرير: {formatDisplayDate(new Date())}</div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <Card className="lg:col-span-2 p-5">
@@ -171,7 +180,7 @@ const ReportsOverview: React.FC<{ currency: string }> = ({ currency }) => {
                 <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
                 <XAxis dataKey="name" fontSize={12} />
                 <YAxis fontSize={11} tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`} />
-                <Tooltip formatter={(value: number) => formatCurrency(value, cur)} />
+                <Tooltip formatter={(value: number) => formatOmaniRiyal(value)} />
                 <Area type="monotone" dataKey="revenue" name="الإيرادات" stroke="#10b981" fill="url(#colorRevenue)" strokeWidth={2} />
                 <Area type="monotone" dataKey="expenses" name="المصروفات" stroke="#ef4444" fill="url(#colorExpenses)" strokeWidth={2} />
               </AreaChart>
@@ -239,7 +248,7 @@ const ReportsOverview: React.FC<{ currency: string }> = ({ currency }) => {
                 <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
                 <XAxis type="number" fontSize={11} tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`} />
                 <YAxis type="category" dataKey="name" fontSize={12} width={100} />
-                <Tooltip formatter={(value: number) => formatCurrency(value, cur)} />
+                <Tooltip formatter={(value: number) => formatOmaniRiyal(value)} />
                 <Bar dataKey="value" name="المبلغ" fill="#3b82f6" radius={[0, 4, 4, 0]} />
               </BarChart>
             </ResponsiveContainer>
@@ -256,7 +265,7 @@ const ReportsOverview: React.FC<{ currency: string }> = ({ currency }) => {
                 <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
                 <XAxis dataKey="name" fontSize={12} />
                 <YAxis fontSize={11} />
-                <Tooltip formatter={(value: number) => formatCurrency(value, cur)} />
+                <Tooltip formatter={(value: number) => formatOmaniRiyal(value)} />
                 <Bar dataKey="net" name="صافي الدخل" radius={[4, 4, 0, 0]}>
                   {monthlyTrend.map((entry, i) => <Cell key={i} fill={entry.net >= 0 ? '#10b981' : '#ef4444'} />)}
                 </Bar>
