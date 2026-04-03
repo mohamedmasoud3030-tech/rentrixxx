@@ -8,6 +8,10 @@ on:
 jobs:
   verify:
     runs-on: ubuntu-latest
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+      SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -38,15 +42,11 @@ jobs:
         run: supabase link --project-ref "$SUPABASE_PROJECT_REF"
 
       - name: Schema drift check
-        if: ${{ secrets.SUPABASE_ACCESS_TOKEN != '' && secrets.SUPABASE_PROJECT_REF != '' && secrets.SUPABASE_DB_PASSWORD != '' }}
-        env:
-          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
-          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
-          SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
+        if: ${{ env.SUPABASE_ACCESS_TOKEN != '' && env.SUPABASE_PROJECT_REF != '' && env.SUPABASE_DB_PASSWORD != '' }}
         run: npm run schema:drift:check
 
       - name: Skip Supabase checks when secrets are unavailable
-        if: ${{ secrets.SUPABASE_ACCESS_TOKEN == '' || secrets.SUPABASE_PROJECT_REF == '' || secrets.SUPABASE_DB_PASSWORD == '' }}
+        if: ${{ env.SUPABASE_ACCESS_TOKEN == '' || env.SUPABASE_PROJECT_REF == '' || env.SUPABASE_DB_PASSWORD == '' }}
         run: echo "Skipping Supabase link/schema drift checks because required secrets are not set for this run."
 
       - name: Typecheck
