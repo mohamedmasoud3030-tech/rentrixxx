@@ -1,17 +1,25 @@
 import { useCallback } from 'react';
-import type { Invoice, Settings } from '../types';
-import { deriveInvoiceStatus, getInvoiceOutstanding, round3, toNumber } from '../services/financeService';
+import type { Contract, Invoice, Settings } from '../types';
+import { computeLateFeeAmount, deriveArrearsForOwner, deriveInvoiceStatus } from '../services/financeService';
 
 export interface UseFinanceResult {
-  round3: (value: number) => number;
-  toNumber: (value: unknown) => number;
-  deriveInvoiceStatus: (invoice: Invoice) => Invoice['status'];
-  getInvoiceOutstanding: (invoice: Invoice) => number;
+  computeLateFeesForContract: (contract: Contract) => number;
+  deriveArrearsForOwner: (ownerContractIds: string[]) => number;
+  getInvoiceStatus: (invoice: Invoice) => Invoice['status'];
 }
 
-export const useFinance = (settings: Settings | null): UseFinanceResult => {
-  const deriveStatus = useCallback((invoice: Invoice) => deriveInvoiceStatus(invoice, settings), [settings]);
-  const outstanding = useCallback((invoice: Invoice) => getInvoiceOutstanding(invoice), []);
+export const useFinance = (settings: Settings | null, invoices: Invoice[] = [], contracts: Contract[] = []): UseFinanceResult => {
+  const computeLateFeesForContract = useCallback((contract: Contract) => {
+    const lateFeeConfig = settings?.operational.lateFee;
+    if (!lateFeeConfig) return 0;
+    return computeLateFeeAmount(contract.rent, lateFeeConfig);
+  }, [settings]);
 
-  return { round3, toNumber, deriveInvoiceStatus: deriveStatus, getInvoiceOutstanding: outstanding };
+  const deriveOwnerArrears = useCallback((ownerContractIds: string[]) => {
+    return deriveArrearsForOwner(contracts, invoices, ownerContractIds);
+  }, [contracts, invoices]);
+
+  const getInvoiceStatus = useCallback((invoice: Invoice) => deriveInvoiceStatus(invoice, settings), [settings]);
+
+  return { computeLateFeesForContract, deriveArrearsForOwner: deriveOwnerArrears, getInvoiceStatus };
 };

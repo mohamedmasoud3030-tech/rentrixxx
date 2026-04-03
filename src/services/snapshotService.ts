@@ -5,6 +5,7 @@ import type {
   Database,
   KpiSnapshot,
   OwnerBalance,
+  Snapshot,
   TenantBalance,
 } from '../types';
 import { round3, toNumber } from './financeService';
@@ -76,6 +77,23 @@ export const buildSnapshotState = (sourceDb: Database): {
   };
 
   return { accountBalances, contractBalances, tenantBalances, ownerBalances, kpiSnapshots: [kpiSnapshot] };
+};
+
+export const createSnapshotPayload = (db: Database, note: string, userId: string): Snapshot => ({
+  id: crypto.randomUUID(),
+  ts: Date.now(),
+  note,
+  userId,
+  data: JSON.stringify(db),
+});
+
+export const shouldTriggerBackup = (operationCounter: number, threshold: number, enabled: boolean): boolean => {
+  return enabled && threshold > 0 && operationCounter >= threshold;
+};
+
+export const restoreSnapshotData = (snapshot: Snapshot): Database => {
+  const parsed = JSON.parse(snapshot.data) as Database;
+  return parsed;
 };
 
 export const findMissingOverdueNotifications = (invoices: Database['invoices'], notifications: AppNotification[]): string[] => {

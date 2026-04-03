@@ -1,5 +1,5 @@
 import { supabaseData } from './supabaseDataService';
-import type { AppNotification, Contract, NotificationType } from '../types';
+import type { AppNotification, Contract, Database, NotificationType } from '../types';
 import { safeAsync, validateRequiredString } from '../utils/validation';
 
 export interface NotificationCreateInput {
@@ -7,12 +7,20 @@ export interface NotificationCreateInput {
   title: string;
   message: string;
   link: string;
+  role?: AppNotification['role'];
 }
 
 export interface ContractExpiryInput {
   contracts: Contract[];
   now: number;
   alertDays: number;
+}
+
+export interface NotificationTemplateInput {
+  type: NotificationType;
+  contractNo?: string;
+  tenantName?: string;
+  amountDue?: number;
 }
 
 export interface NotificationService {
@@ -27,13 +35,44 @@ export const getExpiringContracts = ({ contracts, now, alertDays }: ContractExpi
   });
 };
 
+export const buildNotificationTemplate = ({ type, contractNo, tenantName, amountDue }: NotificationTemplateInput): Pick<AppNotification, 'title' | 'message'> => {
+  if (type === 'CONTRACT_EXPIRING') {
+    return {
+      title: 'تنبيه قرب انتهاء العقد',
+      message: `العقد ${contractNo || ''} للمستأجر ${tenantName || ''} على وشك الانتهاء.`,
+    };
+  }
+
+  if (type === 'OVERDUE_BALANCE') {
+    return {
+      title: 'تنبيه مديونية متأخرة',
+      message: `يوجد مبلغ متأخر بقيمة ${amountDue?.toFixed(3) || '0.000'} ر.ع.`,
+    };
+  }
+
+  return {
+    title: 'إشعار جديد',
+    message: 'لديك إشعار جديد في النظام.',
+  };
+};
+
+export const computeUnreadCount = (notifications: AppNotification[]): number => {
+  return notifications.filter(notification => !notification.isRead).length;
+};
+
+export const shouldDispatchNotification = (type: NotificationType, db: Pick<Database, 'contracts' | 'invoices'>): boolean => {
+  if (type === 'CONTRACT_EXPIRING') return db.contracts.length > 0;
+  if (type === 'OVERDUE_BALANCE') return db.invoices.some(invoice => invoice.status === 'OVERDUE');
+  return true;
+};
+
 export const notificationService: NotificationService = {
   async createAppNotification(input: NotificationCreateInput): Promise<AppNotification> {
     const payload: AppNotification = {
       id: crypto.randomUUID(),
       createdAt: Date.now(),
       isRead: false,
-      role: 'ADMIN',
+      role: input.role || 'ADMIN',
       type: input.type,
       title: validateRequiredString(input.title, 'Notification title'),
       message: validateRequiredString(input.message, 'Notification message'),
