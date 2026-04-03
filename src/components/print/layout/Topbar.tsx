@@ -3,28 +3,11 @@ import { useApp } from '../../../contexts/AppContext';
 import { Sun, Moon, LogOut, Menu } from 'lucide-react';
 import Notifications from './Notifications';
 import { useLocation } from 'react-router-dom';
+import { NAVIGATION_META } from '../../../config/navigationMeta';
 
 interface TopbarProps {
   setSidebarOpen: (open: boolean) => void;
 }
-
-const PAGE_TITLES: Record<string, string> = {
-  '/': 'لوحة التحكم',
-  '/properties': 'إدارة العقارات',
-  '/tenants': 'المستأجرون',
-  '/owners': 'الملاك',
-  '/contracts': 'العقود',
-  '/maintenance': 'الصيانة',
-  '/finance': 'Invoices & Payments',
-  '/leads': 'العملاء المحتملون',
-  '/lands': 'الأراضي',
-  '/commissions': 'العمولات',
-  '/communication': 'مركز التواصل',
-  '/reports': 'التقارير',
-  '/smart-assistant': 'المساعد الذكي',
-  '/audit-log': 'سجل المراجعة',
-  '/settings': 'الإعدادات',
-};
 
 const Topbar: React.FC<TopbarProps> = ({ setSidebarOpen }) => {
   const { auth, settings, updateSettings } = useApp();
@@ -41,10 +24,11 @@ const Topbar: React.FC<TopbarProps> = ({ setSidebarOpen }) => {
   const username = auth.currentUser?.username || '';
   const role = auth.currentUser?.role === 'ADMIN' ? 'مدير النظام' : 'مستخدم';
 
-  const pageKey = Object.keys(PAGE_TITLES)
+  const pageKey = Object.keys(NAVIGATION_META)
     .filter(k => k !== '/')
+    .sort((a, b) => b.length - a.length)
     .find(k => pathname.startsWith(k)) ?? (pathname === '/' ? '/' : null);
-  const pageTitle = pageKey ? PAGE_TITLES[pageKey] : '';
+  const pageTitle = pageKey ? NAVIGATION_META[pageKey]?.titleAr ?? '' : '';
 
   return (
     <header

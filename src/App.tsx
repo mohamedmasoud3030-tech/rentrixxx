@@ -27,6 +27,7 @@ import SmartAssistant from './pages/SmartAssistant';
 import ProtectedRoute from './components/shared/ProtectedRoute';
 import OwnersHub from './pages/OwnersHub';
 import { LEGACY_FINANCIAL_ALIASES } from './routes/modules';
+import { NAVIGATION_META } from './config/navigationMeta';
 
 const hexToHsl = (hex: string): string => {
     hex = hex.replace('#', '');
@@ -58,30 +59,11 @@ const PageLoader: React.FC = () => (
     </div>
 );
 
-const ROUTE_META: Record<string, { title: string; description: string }> = {
-    '/': { title: 'لوحة التحكم', description: 'نظرة شاملة على أداء المحفظة العقارية والمؤشرات الرئيسية' },
-    '/properties': { title: 'العقارات والوحدات', description: 'إدارة العقارات والوحدات والوحدات الفرعية المؤجرة' },
-    '/tenants': { title: 'المستأجرون', description: 'إدارة بيانات المستأجرين والتواصل معهم' },
-    '/owners': { title: 'الملاك', description: 'إدارة بيانات الملاك وعمولاتهم' },
-    '/maintenance': { title: 'الصيانة', description: 'إدارة طلبات الصيانة ومتابعة حالتها' },
-    '/contracts': { title: 'العقود', description: 'عرض وإدارة عقود الإيجار النشطة والمنتهية' },
-    '/financial/invoices': { title: 'الفواتير', description: 'إدارة الفواتير الشهرية ومتابعة المدفوعات المتأخرة' },
-    '/financial/payments': { title: 'المدفوعات', description: 'إدارة المدفوعات ومراقبة التحصيل النقدي' },
-    '/financial/expenses': { title: 'المصروفات', description: 'متابعة مصروفات العقارات والمكاتب' },
-    '/financial/receipts': { title: 'سندات القبض', description: 'سندات القبض وتدفقات التحصيل' },
-    '/financial/arrears': { title: 'المتأخرات', description: 'متابعة الفواتير المتأخرة والمبالغ المستحقة' },
-    '/financial/maintenance': { title: 'صيانة مالية', description: 'متابعة طلبات الصيانة والقيود المرتبطة بها' },
-    '/financial/gl': { title: 'الأستاذ العام', description: 'القيود المحاسبية والسجل المالي التفصيلي' },
-    '/financial/accounting': { title: 'دليل الحسابات', description: 'إدارة دليل الحسابات والقيد اليدوي وميزان المراجعة' },
-    '/reports': { title: 'التقارير والتحليلات', description: 'تقارير الأداء المالي والإشغال والتحليلات الذكية' },
-    '/leads': { title: 'العملاء المحتملون', description: 'إدارة العملاء المحتملين ومتابعة خط الفرص العقارية' },
-    '/communication': { title: 'مركز التواصل', description: 'قوالب الرسائل والإشعارات للمستأجرين والملاك' },
-    '/lands': { title: 'الأراضي', description: 'إدارة عروض وصفقات الأراضي' },
-    '/commissions': { title: 'العمولات', description: 'إدارة عمولات الموظفين والوسطاء العقاريين' },
-    '/settings': { title: 'الإعدادات', description: 'إعدادات النظام والمظهر والمستخدمين والتكاملات' },
-    '/audit-log': { title: 'سجل المراجعة', description: 'سجل شامل لجميع العمليات والأحداث في النظام' },
-    '/smart-assistant': { title: 'المساعد الذكي', description: 'مساعد ذكاء اصطناعي لتحليل البيانات والإجابة على استفساراتك' },
-};
+const ROUTE_META: Record<string, { title: string; description: string }> = Object.fromEntries(
+  Object.entries(NAVIGATION_META)
+    .filter(([, meta]) => typeof meta.description === 'string')
+    .map(([path, meta]) => [path, { title: meta.titleAr, description: meta.description as string }])
+);
 
 const App: React.FC = () => {
   const { settings, auth } = useApp();
@@ -95,7 +77,10 @@ const App: React.FC = () => {
         document.documentElement.setAttribute('data-theme', theme);
         const matchedKey = ROUTE_META[location.pathname]
             ? location.pathname
-            : Object.keys(ROUTE_META).find(k => k !== '/' && location.pathname.startsWith(k)) || '/';
+            : Object.keys(ROUTE_META)
+              .filter(k => k !== '/')
+              .sort((a, b) => b.length - a.length)
+              .find(k => location.pathname.startsWith(k)) || '/';
         const routeMeta = ROUTE_META[matchedKey];
         document.title = routeMeta ? `${routeMeta.title} — ${companyName}` : companyName;
         const descEl = document.querySelector('meta[name="description"]');
