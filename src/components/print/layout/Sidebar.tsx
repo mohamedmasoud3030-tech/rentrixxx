@@ -1,8 +1,8 @@
-import React, { useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import {
     LayoutGrid, Building2, Users, UserCheck, FileText, Banknote,
-    BarChart2, Settings, UserPlus, MessageSquare, Map as MapIcon, DollarSign, Bot, ScrollText, Wrench, X, LogOut
+    BarChart2, Settings, UserPlus, MessageSquare, Map as MapIcon, DollarSign, Bot, ScrollText, Wrench, X, LogOut, ChevronDown
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { useApp } from '../../../contexts/AppContext';
@@ -45,7 +45,7 @@ const navGroups: { title: string; links: NavLinkItem[] }[] = [
   {
     title: 'المركز المالي',
     links: [
-      { path: getPreferredFinancePath(), label: 'الحسابات والمالية', icon: Banknote, badgeKey: 'overdueInvoices' },
+      { path: getPreferredFinancePath(), label: 'Invoices & Payments', icon: Banknote, badgeKey: 'overdueInvoices' },
     ],
   },
   {
@@ -76,7 +76,9 @@ const navGroups: { title: string; links: NavLinkItem[] }[] = [
 const Sidebar: React.FC<SidebarProps> = ({ sidebarOpen, setSidebarOpen }) => {
   const { auth, settings, db } = useApp();
   const { pathname } = useLocation();
+  const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>({});
   const lastRunDate = getLastRunDate();
+  const isRtl = typeof document !== 'undefined' && document.documentElement.dir === 'rtl';
 
   const badges = useMemo(() => {
     const now = new Date();
@@ -97,13 +99,48 @@ const Sidebar: React.FC<SidebarProps> = ({ sidebarOpen, setSidebarOpen }) => {
   };
 
   const companyName = settings.general?.company?.name ?? 'Rentrix';
+  const getGroupKey = (title: string) => `group:${title}`;
+
+  useEffect(() => {
+    if (!sidebarOpen) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setSidebarOpen(false);
+    };
+    document.addEventListener('keydown', onKeyDown);
+    return () => document.removeEventListener('keydown', onKeyDown);
+  }, [setSidebarOpen, sidebarOpen]);
+
+  useEffect(() => {
+    if (!sidebarOpen) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [sidebarOpen]);
+
+  useEffect(() => {
+    const activeGroup = navGroups.find(group =>
+      group.links.some(link => isLinkActive(link.path)),
+    );
+    if (!activeGroup) return;
+    const key = getGroupKey(activeGroup.title);
+    setCollapsedGroups(prev => ({ ...prev, [key]: false }));
+  }, [pathname]);
 
   return (
     <aside
-      className={`absolute right-0 top-0 z-50 flex h-screen w-72 flex-col overflow-y-hidden bg-sidebar-bg border-l border-border duration-300 ease-in-out lg:static lg:translate-x-0 ${
-        sidebarOpen ? 'translate-x-0' : 'translate-x-full'
+      className={`absolute top-0 z-50 flex h-screen w-72 flex-col overflow-y-hidden bg-sidebar-bg border-border duration-300 ease-in-out lg:static lg:translate-x-0 ${
+        isRtl ? 'right-0 border-l' : 'left-0 border-r'
+      } ${
+        sidebarOpen
+          ? 'translate-x-0'
+          : (isRtl ? 'translate-x-full' : '-translate-x-full')
       }`}
       style={{ boxShadow: 'var(--shadow-sidebar)' }}
+      role="dialog"
+      aria-modal={sidebarOpen ? 'true' : undefined}
+      aria-label="Main navigation"
     >
       {/* Logo / Brand */}
       <div className="flex items-center gap-3 px-4 py-4 border-b border-border">
@@ -135,13 +172,24 @@ const Sidebar: React.FC<SidebarProps> = ({ sidebarOpen, setSidebarOpen }) => {
           {navGroups.map(group => {
             const visibleLinks = group.links.filter(link => !link.adminOnly || auth.currentUser?.role === 'ADMIN');
             if (visibleLinks.length === 0) return null;
+            const groupKey = getGroupKey(group.title);
+            const isCollapsed = collapsedGroups[groupKey] ?? false;
 
             return (
               <div key={group.title} className="mb-5">
-                <h3 className="mb-2 px-3 text-[10px] font-black text-text-muted uppercase tracking-[0.18em] opacity-60">
-                  {group.title}
-                </h3>
-                <ul className="flex flex-col gap-0.5">
+                <button
+                  type="button"
+                  onClick={() => setCollapsedGroups(prev => ({ ...prev, [groupKey]: !isCollapsed }))}
+                  className="mb-2 w-full px-3 flex items-center gap-2 text-[10px] font-black text-text-muted uppercase tracking-[0.18em] opacity-80 hover:opacity-100 transition-opacity"
+                  aria-expanded={!isCollapsed}
+                >
+                  <ChevronDown
+                    size={14}
+                    className={`transition-transform duration-200 ${isCollapsed ? '-rotate-90' : 'rotate-0'}`}
+                  />
+                  <span>{group.title}</span>
+                </button>
+                <ul className={`flex flex-col gap-0.5 overflow-hidden transition-all duration-200 ${isCollapsed ? 'max-h-0 opacity-0' : 'max-h-[560px] opacity-100'}`}>
                   {visibleLinks.map(link => {
                     const active = isLinkActive(link.path);
                     return (
@@ -168,6 +216,7 @@ const Sidebar: React.FC<SidebarProps> = ({ sidebarOpen, setSidebarOpen }) => {
                             }
                           }}
                           onClick={() => setSidebarOpen(false)}
+                          aria-current={active ? 'page' : undefined}
                         >
                           <link.icon
                             size={17}
@@ -175,12 +224,12 @@ const Sidebar: React.FC<SidebarProps> = ({ sidebarOpen, setSidebarOpen }) => {
                           />
                           <span>{link.label}</span>
                           {link.badgeKey && badges[link.badgeKey] > 0 && (
-                            <span className="mr-auto min-w-[20px] h-5 flex items-center justify-center rounded-full bg-red-500 text-white text-[10px] font-black px-1.5">
+                            <span className={`${isRtl ? 'mr-auto' : 'ml-auto'} min-w-[20px] h-5 flex items-center justify-center rounded-full bg-red-500 text-white text-[10px] font-black px-1.5`}>
                               {badges[link.badgeKey]}
                             </span>
                           )}
                           {active && !link.badgeKey && (
-                            <span className="mr-auto w-1.5 h-1.5 rounded-full bg-current opacity-80" />
+                            <span className={`${isRtl ? 'mr-auto' : 'ml-auto'} w-1.5 h-1.5 rounded-full bg-current opacity-80`} />
                           )}
                         </NavLink>
                       </li>

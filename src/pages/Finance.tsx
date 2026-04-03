@@ -63,8 +63,8 @@ const Finance: React.FC = () => {
             {/* Navigation Tabs */}
             <Card className="p-1.5 overflow-hidden border-none shadow-lg bg-card/50 backdrop-blur-md sticky top-4 z-10">
                 <nav className="flex items-center gap-1 overflow-x-auto whitespace-nowrap scrollbar-hide">
-                    <FinanceTab to="/finance/invoices" icon={<ReceiptText size={20}/>} label="الفواتير" />
-                    <FinanceTab to="/finance/financials" icon={<Wallet size={20}/>} label="السندات والمصروفات" />
+                    <FinanceTab to="/finance/invoices" icon={<ReceiptText size={20}/>} label="Invoices" />
+                    <FinanceTab to="/finance/financials" icon={<Wallet size={20}/>} label="Payments & Expenses" />
                     <FinanceTab to="/finance/maintenance" icon={<Wrench size={20}/>} label="الصيانة" />
                     <FinanceTab to="/finance/gl" icon={<Calculator size={20}/>} label="الأستاذ العام" />
                     <FinanceTab to="/finance/accounting" icon={<BookOpen size={20}/>} label="دليل الحسابات" />
