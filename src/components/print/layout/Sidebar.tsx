@@ -15,6 +15,7 @@ interface SidebarProps {
 const Sidebar: React.FC<SidebarProps> = ({ sidebarOpen, setSidebarOpen }) => {
   const { auth, settings, db } = useApp();
   const { pathname } = useLocation();
+  const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>({});
   const lastRunDate = getLastRunDate();
   const [expandedItems, setExpandedItems] = useState<Record<string, boolean>>({});
 
@@ -69,6 +70,34 @@ const Sidebar: React.FC<SidebarProps> = ({ sidebarOpen, setSidebarOpen }) => {
   }, [pathname, navItems]);
 
   const companyName = settings.general?.company?.name ?? 'Rentrix';
+  const getGroupKey = (title: string) => `group:${title}`;
+
+  useEffect(() => {
+    if (!sidebarOpen) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setSidebarOpen(false);
+    };
+    document.addEventListener('keydown', onKeyDown);
+    return () => document.removeEventListener('keydown', onKeyDown);
+  }, [setSidebarOpen, sidebarOpen]);
+
+  useEffect(() => {
+    if (!sidebarOpen) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [sidebarOpen]);
+
+  useEffect(() => {
+    const activeGroup = navGroups.find(group =>
+      group.links.some(link => isLinkActive(link.path)),
+    );
+    if (!activeGroup) return;
+    const key = getGroupKey(activeGroup.title);
+    setCollapsedGroups(prev => ({ ...prev, [key]: false }));
+  }, [pathname]);
 
   const toggleItem = (itemId: string) => {
     setExpandedItems(prev => ({ ...prev, [itemId]: !prev[itemId] }));
@@ -146,6 +175,9 @@ const Sidebar: React.FC<SidebarProps> = ({ sidebarOpen, setSidebarOpen }) => {
         sidebarOpen ? 'translate-x-0' : 'translate-x-full'
       }`}
       style={{ boxShadow: 'var(--shadow-sidebar)' }}
+      role="dialog"
+      aria-modal={sidebarOpen ? 'true' : undefined}
+      aria-label="Main navigation"
     >
       <div className="flex items-center gap-3 border-b border-border px-4 py-4">
         <div

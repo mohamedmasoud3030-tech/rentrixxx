@@ -15,7 +15,7 @@ const PAGE_TITLES: Record<string, string> = {
   '/owners': 'الملاك',
   '/contracts': 'العقود',
   '/maintenance': 'الصيانة',
-  '/finance': 'الحسابات والمالية',
+  '/finance': 'Invoices & Payments',
   '/leads': 'العملاء المحتملون',
   '/lands': 'الأراضي',
   '/commissions': 'العمولات',

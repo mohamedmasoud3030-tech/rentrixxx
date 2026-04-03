@@ -111,8 +111,8 @@ const Financials: React.FC = () => {
             <Card className="p-0 overflow-hidden border-none shadow-xl bg-card/50 backdrop-blur-sm">
                 <div className="flex flex-col md:flex-row md:items-center justify-between p-4 border-b border-border gap-4">
                     <div className="flex bg-background/50 p-1 rounded-xl border border-border overflow-x-auto">
-                        <TabButton active={activeTab === 'receipts'} onClick={() => setActiveTab('receipts')} icon={<ReceiptIcon size={16} />} label="سندات القبض" />
-                        <TabButton active={activeTab === 'expenses'} onClick={() => setActiveTab('expenses')} icon={<ArrowDownRight size={16} />} label="المصروفات" />
+                        <TabButton active={activeTab === 'receipts'} onClick={() => setActiveTab('receipts')} icon={<ReceiptIcon size={16} />} label="Receipts" />
+                        <TabButton active={activeTab === 'expenses'} onClick={() => setActiveTab('expenses')} icon={<ArrowDownRight size={16} />} label="Expenses" />
                         <TabButton active={activeTab === 'deposits'} onClick={() => setActiveTab('deposits')} icon={<PiggyBank size={16} />} label="الودائع" />
                         <TabButton active={activeTab === 'settlements'} onClick={() => setActiveTab('settlements')} icon={<UserCheck size={16} />} label="تسويات الملاك" />
                     </div>
