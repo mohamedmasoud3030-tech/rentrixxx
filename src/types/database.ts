@@ -13,7 +13,6 @@ export interface OwnersRow {
   notes: string;
   commission_type: 'RATE' | 'FIXED_MONTHLY';
   commission_value: number;
-  portal_token: string | null;
   is_demo: boolean | null;
   created_at: number;
   updated_at: number | null;

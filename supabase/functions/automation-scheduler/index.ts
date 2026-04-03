@@ -10,6 +10,21 @@ import {
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
 const SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 
+const ALLOWED_ORIGINS = (Deno.env.get('ALLOWED_ORIGINS') || '')
+  .split(',')
+  .map(origin => origin.trim())
+  .filter(Boolean);
+
+const getCorsHeaders = (origin: string | null): Record<string, string> => {
+  const allowOrigin = origin && ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0] || 'null';
+  return {
+    'Access-Control-Allow-Origin': allowOrigin,
+    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+    Vary: 'Origin',
+  };
+};
+
 const adminClient = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
 
 type ContractRow = {
@@ -253,8 +268,9 @@ const persistAutomationRun = async (result: AutomationResult): Promise<void> => 
 };
 
 Deno.serve(async req => {
+  const corsHeaders = getCorsHeaders(req.headers.get('origin'));
   if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type' } });
+    return new Response('ok', { headers: corsHeaders });
   }
 
   try {
@@ -274,7 +290,7 @@ Deno.serve(async req => {
     }
 
     return new Response(JSON.stringify(result), {
-      headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 200,
     });
   } catch (error: unknown) {
@@ -295,7 +311,7 @@ Deno.serve(async req => {
     }
 
     return new Response(JSON.stringify(failedResult), {
-      headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 500,
     });
   }
