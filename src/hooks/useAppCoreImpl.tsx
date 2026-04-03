@@ -11,7 +11,8 @@ import { toast } from 'react-hot-toast';
 import { confirmDialog } from '../components/shared/confirmDialog';
 import { adminCreateUser } from '../services/edgeFunctions';
 import { logger } from '../services/logger';
-import { postReceiptAtomic, renewContractAtomic, syncUnitStatus, voidReceiptAtomic } from '../services/antiMistakeService';
+import { renewContractAtomic, syncUnitStatus, voidReceiptAtomic } from '../services/antiMistakeService';
+import { postReceiptAtomic } from '../services/receiptService';
 import { getEffectiveInvoiceStatus, getInvoiceRemaining } from '../utils/helpers';
 import { runManualAutomation as runManualAutomationService } from '../services/automationService';
 
@@ -262,7 +263,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           if (profile.is_disabled) {
             await supabase.auth.signOut();
             setCurrentUser(null);
-            return;
+            return { success: false, error: 'يجب إضافة تخصيص واحد على الأقل.' };
           }
           setCurrentUser({
             id: session.user.id, username: profile.username || session.user.email!.split('@')[0],
@@ -626,25 +627,25 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   }, [isReadOnly, settings, audit, postJournalEntrySupabase, postInvoiceJournalEntries, createRentInvoicesForContract, syncSnapshots]);
 
   const addReceiptWithAllocations: AppContextType['financeService']['addReceiptWithAllocations'] = useCallback(async (receiptData, allocations) => {
-    if (isReadOnly || !settings) return;
+    if (isReadOnly || !settings) return { success: false, error: 'النظام في وضع القراءة فقط.' };
     const startTime = performance.now();
     try {
       if (!allocations.length) {
-        toast.error('يجب إضافة تخصيص واحد على الأقل.');
-        return;
+        const message = 'يجب إضافة تخصيص واحد على الأقل.';
+        toast.error(message);
+        return { success: false, error: message };
       }
       const allocationTotal = round3(allocations.reduce((sum, alloc) => sum + toNumber(alloc.amount), 0));
       const receiptTotal = round3(toNumber(receiptData.amount));
       if (Math.abs(allocationTotal - receiptTotal) > 0.001) {
         toast.error('مجموع التخصيصات يجب أن يساوي مبلغ السند.');
-        return;
+        return { success: false, error: 'مجموع التخصيصات يجب أن يساوي مبلغ السند.' };
       }
       const newNo = await supabaseData.incrementSerial('receipt');
       const newReceipt: Receipt = { ...receiptData, id: crypto.randomUUID(), createdAt: Date.now(), no: String(newNo), status: 'POSTED' as const };
       const newAllocations = allocations.map(a => ({ id: crypto.randomUUID(), receiptId: newReceipt.id, ...a, createdAt: Date.now() }));
 
       let totalVatCollected = 0;
-      const invoiceUpdates: Array<{ id: string; paid_amount: number; status: string }> = [];
       for (const alloc of allocations) {
         const invoices = await supabaseData.fetchWhere<Invoice>('invoices', 'id', alloc.invoiceId);
         const invoice = invoices[0];
@@ -652,12 +653,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         const invoiceTotal = round3(invoice.amount + (invoice.taxAmount || 0));
         const invoiceRemaining = round3(invoiceTotal - invoice.paidAmount);
         if (alloc.amount - invoiceRemaining > 0.001) {
-          toast.error(`قيمة التخصيص تتجاوز المتبقي في الفاتورة ${invoice.no}.`);
-          return;
+          const message = `قيمة التخصيص تتجاوز المتبقي في الفاتورة ${invoice.no}.`;
+          toast.error(message);
+          return { success: false, error: message };
         }
-        const newPaid = round3(invoice.paidAmount + alloc.amount);
-        const newStatus = newPaid >= invoiceTotal - 0.001 ? 'PAID' : 'PARTIALLY_PAID';
-        invoiceUpdates.push({ id: invoice.id, paid_amount: newPaid, status: newStatus });
         if (invoice.taxAmount && invoiceTotal > 0) {
           totalVatCollected += (alloc.amount / invoiceTotal) * invoice.taxAmount;
         }
@@ -741,15 +740,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           check_bank: newReceipt.checkBank || '', check_date: newReceipt.checkDate || '', check_status: newReceipt.checkStatus || '',
         },
         allocations: newAllocations.map(a => ({ id: a.id, receipt_id: a.receiptId, invoice_id: a.invoiceId, amount: round3(a.amount), created_at: a.createdAt })),
-        invoiceUpdates,
         journalEntries: journalEntries.map(j => ({
           id: j.id, no: j.no, date: j.date, account_id: j.accountId, amount: round3(j.amount), type: j.type, source_id: j.sourceId,
           entity_type: j.entityType || '', entity_id: j.entityId || '', created_at: j.createdAt
         })),
       });
-      if (!breakdown.ok) {
-        toast.error(`فشل الترحيل الذري: ${String(breakdown.details?.message || 'خطأ غير معروف')}`);
-        return;
+      if (!breakdown.success) {
+        const message = breakdown.error || 'خطأ غير معروف';
+        toast.error(`فشل الترحيل الذري: ${message}`);
+        return { success: false, error: message };
       }
 
       await audit('CREATE', 'receipts', newReceipt.id, `Created receipt ${newReceipt.no} with ${allocations.length} allocations. VAT: ${totalVatCollected.toFixed(3)}, Net to Owner: ${(newReceipt.amount - totalVatCollected).toFixed(3)}`);
@@ -759,10 +758,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       setIsDataStale(true);
       await refreshData();
       toast.success(`تم تسجيل السند بنجاح (سند + تخصيص + قيود)`);
+      return { success: true, receiptNo: newReceipt.no, allocatedTotal: allocationTotal };
     } catch (err: unknown) {
       console.error('addReceiptWithAllocations failed:', err);
       toast.error('حدث خطأ أثناء تسجيل السند: ' + (err instanceof Error ? err.message : 'خطأ غير معروف'));
       await refreshData();
+      return { success: false, error: err instanceof Error ? err.message : 'خطأ غير معروف' };
     }
   }, [isReadOnly, settings, audit, logOperationTime, refreshData, db]);
 
@@ -865,7 +866,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     try {
       await audit('VOID', 'receipts', id);
       const allocations = await supabaseData.fetchWhere<ReceiptAllocation>('receiptAllocations', 'receiptId', id);
-      const invoiceUpdates: Array<{ id: string; paid_amount: number; status: string }> = [];
       for (const alloc of allocations) {
         const invoices = await supabaseData.fetchWhere<Invoice>('invoices', 'id', alloc.invoiceId);
         const invoice = invoices[0];
@@ -907,6 +907,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       console.error('voidReceipt failed:', err);
       toast.error('حدث خطأ أثناء إلغاء السند: ' + (err instanceof Error ? err.message : 'خطأ غير معروف'));
       await refreshData();
+      return { success: false, error: err instanceof Error ? err.message : 'خطأ غير معروف' };
     }
   }, [audit, logOperationTime, refreshData]);
 
@@ -927,6 +928,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       console.error('voidExpense failed:', err);
       toast.error('حدث خطأ أثناء إلغاء المصروف: ' + (err instanceof Error ? err.message : 'خطأ غير معروف'));
       await refreshData();
+      return { success: false, error: err instanceof Error ? err.message : 'خطأ غير معروف' };
     }
   }, [audit, reverseAllJournalEntries, logOperationTime, refreshData]);
 
@@ -961,6 +963,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (newExpense) {
       await supabaseData.update('commissions', commissionId, { status: 'PAID', expenseId: newExpense.id, paidAt: Date.now() });
       await refreshData();
+      return { success: false, error: err instanceof Error ? err.message : 'خطأ غير معروف' };
     }
   }, [isReadOnly, add, refreshData]);
 
