@@ -53,3 +53,5 @@
 - Supabase (PostgreSQL + Auth + Edge Functions)
 - Tailwind CSS + shadcn/ui
 - Deployed on Vercel
+
+<!-- CI verified -->
