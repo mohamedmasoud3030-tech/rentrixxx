@@ -12,6 +12,10 @@ try {
   output = execSync('npx supabase db diff --linked --schema public', {
     encoding: 'utf8',
     stdio: ['ignore', 'pipe', 'pipe'],
+    env: {
+      ...process.env,
+      SUPABASE_ACCESS_TOKEN: process.env.SUPABASE_ACCESS_TOKEN,
+    },
   }).trim();
 } catch (error) {
   console.error('❌ Failed to run `supabase db diff --linked --schema public`.');
