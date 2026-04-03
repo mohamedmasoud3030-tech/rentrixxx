@@ -13,6 +13,7 @@ import { adminCreateUser } from '../services/edgeFunctions';
 import { logger } from '../services/logger';
 import { postReceiptAtomic, renewContractAtomic, syncUnitStatus, voidReceiptAtomic } from '../services/antiMistakeService';
 import { getEffectiveInvoiceStatus, getInvoiceRemaining } from '../utils/helpers';
+import { runManualAutomation as runManualAutomationService } from '../services/automationService';
 
 const DEFAULT_GEMINI_API_KEY = '';
 
@@ -1353,12 +1354,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     dataService,
     runManualAutomation: async () => {
       toast('جاري تشغيل المهام التلقائية...');
-      const invoices = await generateMonthlyInvoices();
-      const lateFees = await financeService.generateLateFees();
-      const notifications = await generateContractExpiryNotifications();
-      const result = { invoicesCreated: invoices, lateFeesApplied: lateFees, notificationsCreated: notifications, errors: [] };
-      if (invoices + lateFees + notifications > 0) toast.success(`تم: ${invoices} فاتورة، ${lateFees} غرامة، ${notifications} إشعار`);
-      else toast.success('لا توجد مهام جديدة.');
+      const result = await runManualAutomationService(activeDb, activeSettings);
+      if (!result.success) {
+        toast.error(`حدث خطأ في الأتمتة: ${result.errors.join(' | ')}`);
+      } else if (result.lateFeesApplied + result.notificationsSent + result.snapshotsRebuilt > 0) {
+        toast.success(`اكتمل التشغيل: ${result.lateFeesApplied} غرامة، ${result.notificationsSent} إشعار، ${result.snapshotsRebuilt} لقطات`);
+      } else {
+        toast.success('اكتمل التشغيل. لم تكن هناك مهام جديدة.');
+      }
       await refreshData();
       return result;
     },
@@ -1416,12 +1419,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       rebuildSnapshotsFromJournal, isReadOnly, dataService, financeService,
       runManualAutomation: async () => {
         toast('جاري تشغيل المهام التلقائية...');
-        const invoices = await generateMonthlyInvoices();
-        const lateFees = await financeService.generateLateFees();
-        const notifications = await generateContractExpiryNotifications();
-        const result = { invoicesCreated: invoices, lateFeesApplied: lateFees, notificationsCreated: notifications, errors: [] };
-        if (invoices + lateFees + notifications > 0) toast.success(`تم: ${invoices} فاتورة، ${lateFees} غرامة، ${notifications} إشعار`);
-        else toast.success('لا توجد مهام جديدة.');
+        const result = await runManualAutomationService(activeDb, activeSettings);
+        if (!result.success) {
+          toast.error(`حدث خطأ في الأتمتة: ${result.errors.join(' | ')}`);
+        } else if (result.lateFeesApplied + result.notificationsSent + result.snapshotsRebuilt > 0) {
+          toast.success(`اكتمل التشغيل: ${result.lateFeesApplied} غرامة، ${result.notificationsSent} إشعار، ${result.snapshotsRebuilt} لقطات`);
+        } else {
+          toast.success('اكتمل التشغيل. لم تكن هناك مهام جديدة.');
+        }
         await refreshData();
         return result;
       },
