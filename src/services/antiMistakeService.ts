@@ -1,5 +1,10 @@
 import { supabase } from './supabase';
 import { logger } from './logger';
+import {
+  postReceiptAtomic as postReceiptAtomicFromReceiptService,
+  type ReceiptPostingPayload,
+  type ReceiptPostingResult,
+} from './receiptService';
 
 export interface OperationBreakdown {
   ok: boolean;
