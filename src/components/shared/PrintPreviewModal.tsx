@@ -9,10 +9,9 @@ interface PrintPreviewModalProps {
 }
 
 const PRINT_STYLES = `
-@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap');
 * { margin: 0; padding: 0; box-sizing: border-box; }
 html, body {
-    font-family: 'Cairo', sans-serif;
+    font-family: 'Cairo', 'Noto Naskh Arabic', 'Noto Sans Arabic', 'Tahoma', 'Arial', sans-serif;
     direction: rtl;
     color: #1e293b;
     background: white;
@@ -21,7 +20,7 @@ html, body {
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
 }
-@page { size: A4; margin: 12mm; }
+@page { size: A4; margin: 14mm 12mm 16mm; }
 
 .print\\:hidden { display: none !important; }
 
@@ -29,8 +28,23 @@ h1, h2, h3, h4 { margin-bottom: 0.75rem; color: #1e3a8a; }
 h3 { font-size: 1.1rem; }
 h4 { font-size: 0.95rem; }
 
-table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
-th, td { border: 1px solid #cbd5e1; padding: 6px 10px; text-align: right; }
+table {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed;
+    font-size: 0.82rem;
+    page-break-inside: auto;
+    break-inside: auto;
+}
+thead { display: table-header-group; }
+tfoot { display: table-footer-group; }
+tr, td, th {
+    break-inside: avoid;
+    page-break-inside: avoid;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+}
+th, td { border: 1px solid #cbd5e1; padding: 6px 10px; text-align: right; vertical-align: top; }
 thead tr, .bg-background { background-color: #f1f5f9 !important; }
 tfoot tr { background-color: #e2e8f0 !important; font-weight: 700; }
 tbody tr:nth-child(even) { background-color: #f8fafc; }
@@ -220,11 +234,32 @@ svg { max-width: 100%; height: auto; }
 }
 
 .page-break { page-break-after: always; break-after: page; }
+.print-doc {
+    min-height: calc(297mm - 30mm);
+    display: flex;
+    flex-direction: column;
+}
+.print-doc__header {
+    border-bottom: 2px solid #1e3a8a;
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+}
+.print-doc__body {
+    flex: 1;
+}
+.print-doc__footer {
+    border-top: 1px solid #cbd5e1;
+    margin-top: 14px;
+    padding-top: 8px;
+    color: #475569;
+    font-size: 11px;
+}
 
 @media print {
     body { margin: 0 !important; padding: 0 !important; }
     .no-print, .print\\:hidden { display: none !important; }
     * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+    .print-doc { min-height: 0; }
 }
 `;
 

@@ -15,6 +15,7 @@ import PrintPreviewModal from '../components/shared/PrintPreviewModal';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { exportContractToPdf } from '../services/pdfService';
 import { toast } from 'react-hot-toast';
+import { DocumentHeaderInline } from '../components/shared/DocumentHeader';
 
 type ContractFilter = 'ALL' | 'ACTIVE' | 'ENDED' | 'TERMINATED' | 'SUSPENDED';
 
@@ -36,21 +37,36 @@ const getNewEndDate = (newStart: Date, frequency?: string) => {
 };
 
 const ContractPrintable: React.FC<{ contract: Contract }> = ({ contract }) => {
-    const { db } = useApp();
+    const { db, settings } = useApp();
     const tenant = db.tenants.find(t => t.id === contract.tenantId);
     const unit = db.units.find(u => u.id === contract.unitId);
     const property = unit ? db.properties.find(p => p.id === unit.propertyId) : null;
+    const company = settings.general.company;
+    const logo = settings.appearance?.logoDataUrl;
 
     return (
-        <div className="bg-card text-text text-sm leading-relaxed p-4" dir="rtl">
-            <h2 className="text-2xl font-bold text-center underline mb-6">عقد إيجار</h2>
-            <div className="space-y-2">
-                <p>رقم العقد: {contract.no || contract.id}</p>
-                <p>المستأجر: {tenant?.name || '-'}</p>
-                <p>الوحدة: {unit?.name || '-'} - {property?.name || '-'}</p>
-                <p>بداية العقد: {formatDate(contract.start)}</p>
-                <p>نهاية العقد: {formatDate(contract.end)}</p>
-                <p>الإيجار: {formatCurrency(contract.rent, db.settings.operational.currency)}</p>
+        <div className="bg-card text-text text-sm leading-relaxed p-4 print-doc" dir="rtl">
+            <div className="print-doc__header">
+                <DocumentHeaderInline
+                    company={company}
+                    logoUrl={logo}
+                    docTitle="عقد إيجار"
+                    docNo={contract.no || contract.id}
+                    docDate={formatDate(contract.createdAt)}
+                />
+            </div>
+            <div className="space-y-2 print-doc__body">
+                <p><strong>المستأجر:</strong> {tenant?.name || '-'}</p>
+                <p><strong>الوحدة:</strong> {unit?.name || '-'} - {property?.name || '-'}</p>
+                <p><strong>بداية العقد:</strong> {formatDate(contract.start)}</p>
+                <p><strong>نهاية العقد:</strong> {formatDate(contract.end)}</p>
+                <p><strong>الإيجار:</strong> {formatCurrency(contract.rent, db.settings.operational.currency)}</p>
+            </div>
+            <div className="print-doc__footer">
+                <div className="flex justify-between text-xs">
+                    <span>توقيع المؤجر: __________________</span>
+                    <span>توقيع المستأجر: __________________</span>
+                </div>
             </div>
         </div>
     );

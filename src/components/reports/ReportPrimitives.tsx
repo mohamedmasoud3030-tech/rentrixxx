@@ -10,9 +10,19 @@ export const ReportPrintableContent: React.FC<{ title: string; date: string; chi
   const company = settings.general.company;
   const logo = settings.appearance?.logoDataUrl;
   return (
-    <div>
-      <DocumentHeaderInline company={company} logoUrl={logo} docTitle={title} docDate={date} />
-      {children}
+    <div className="print-doc" dir="rtl">
+      <div className="print-doc__header">
+        <DocumentHeaderInline company={company} logoUrl={logo} docTitle={title} docDate={date} />
+      </div>
+      <div className="print-doc__body">
+        {children}
+      </div>
+      <div className="print-doc__footer">
+        <div className="flex justify-between items-center text-xs">
+          <span>تم إنشاء المستند بواسطة Rentrix</span>
+          <span>{company.name}</span>
+        </div>
+      </div>
     </div>
   );
 };
