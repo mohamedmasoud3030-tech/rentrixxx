@@ -1,11 +1,14 @@
 import { useCallback, useEffect, useState } from 'react';
 import type { Database } from '../types';
+import { supabaseData } from '../services/supabaseDataService';
 
 export interface UseDataLoaderResult {
   data: Partial<Database>;
   isLoading: boolean;
   isError: boolean;
   refresh: () => Promise<void>;
+  loadTable: <T extends keyof Database>(table: T) => Promise<Database[T]>;
+  loadTableWhere: <T extends keyof Database>(table: T, column: string, value: unknown) => Promise<Database[T]>;
   addEntity: <T extends keyof Database>(table: T, entity: Database[T][number]) => void;
   updateEntity: <T extends keyof Database>(table: T, id: string, updates: Partial<Database[T][number]>) => void;
   removeEntity: <T extends keyof Database>(table: T, id: string) => void;
@@ -36,6 +39,39 @@ export const useDataLoader = (
     void refresh();
   }, [refresh]);
 
+  const loadTable = useCallback(async <T extends keyof Database>(table: T): Promise<Database[T]> => {
+    const pageSize = 500;
+    let page = 1;
+    let hasMore = true;
+    const rows: Database[T][number][] = [];
+
+    while (hasMore) {
+      const { data: pageData, hasMore: pageHasMore } = await supabaseData.fetchPaginated<Database[T][number]>(
+        table as string,
+        page,
+        pageSize,
+      );
+      rows.push(...pageData);
+      hasMore = pageHasMore;
+      page += 1;
+    }
+
+    const tableData = rows as Database[T];
+    setData(prev => ({ ...prev, [table]: tableData }));
+    return tableData;
+  }, []);
+
+  const loadTableWhere = useCallback(async <T extends keyof Database>(
+    table: T,
+    column: string,
+    value: unknown,
+  ): Promise<Database[T]> => {
+    const filtered = await supabaseData.fetchWhere<Database[T][number]>(table as string, column, value);
+    const tableData = filtered as Database[T];
+    setData(prev => ({ ...prev, [table]: tableData }));
+    return tableData;
+  }, []);
+
   const addEntity = useCallback(<T extends keyof Database>(table: T, entity: Database[T][number]) => {
     setData(prev => {
       const current = (prev[table] as Database[T]) || ([] as unknown as Database[T]);
@@ -58,5 +94,5 @@ export const useDataLoader = (
     });
   }, []);
 
-  return { data, isLoading, isError, refresh, addEntity, updateEntity, removeEntity };
+  return { data, isLoading, isError, refresh, loadTable, loadTableWhere, addEntity, updateEntity, removeEntity };
 };
