@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { assertNoRoleEscalation, sanitizeTextInput, validateLoginPayload, validatePasswordStrength } from '../../src/utils/validation.ts';
+import { assertNoRoleEscalation, sanitizeTextInput, validateLoginPayload, validatePasswordStrength } from '../../src/utils/validation';
 
 test('sanitizeTextInput strips control chars and angle brackets', () => {
   assert.equal(sanitizeTextInput(' <script>alert(1)</script>\u0000 '), 'scriptalert(1)/script');

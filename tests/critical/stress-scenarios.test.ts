@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { normalizeWorkflowStatus } from '../../src/utils/status.ts';
+import { normalizeWorkflowStatus } from '../../src/utils/status';
 
 test('stress: status normalization remains stable over large mixed input', () => {
   const seed = ['PENDING', 'SENT', 'COMPLETED', 'Pending', 'Completed', 'unknown', '', '  pending  '];
