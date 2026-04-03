@@ -10,13 +10,16 @@ import { WhatsAppComposerModal } from '../components/shared/WhatsAppComposerModa
 import { formatDate, formatCurrency, exportToCsv, TENANT_STATUS_AR, CHANNEL_AR, normalizeArabicNumerals, getEffectiveInvoiceStatus } from '../utils/helpers';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
+import { buildRentReminderMessage } from '../services/whatsappService';
 
 const Tenants: React.FC = () => {
-    const { db, dataService } = useApp();
+    const { db, dataService, tenantBalances } = useApp();
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingTenant, setEditingTenant] = useState<Tenant | null>(null);
     const [whatsAppContext, setWhatsAppContext] = useState<any | null>(null);
     const [selectedTenant, setSelectedTenant] = useState<Tenant | null>(null);
+    const [searchTerm, setSearchTerm] = useState('');
+    const [statusFilter, setStatusFilter] = useState<'ALL' | Tenant['status']>('ALL');
 
     const tenants = db.tenants || [];
     const contracts = db.contracts || [];
@@ -77,6 +80,25 @@ const Tenants: React.FC = () => {
         });
     };
 
+    const handleOpenReminderModal = (tenant: Tenant) => {
+        if (!tenant.phone) {
+            toast.error('لا يوجد رقم هاتف لهذا المستأجر.');
+            return;
+        }
+        const balance = tenantBalances[tenant.id]?.balance ?? 0;
+        setWhatsAppContext({
+            recipient: { name: tenant.name, phone: tenant.phone },
+            type: 'tenant',
+            initialMessage: buildRentReminderMessage(tenant.name, balance),
+            data: { tenant }
+        });
+    };
+
+    const formatOmrBalance = (balance: number): string => `${balance.toLocaleString('en-US', {
+        minimumFractionDigits: 3,
+        maximumFractionDigits: 3,
+    })} ر.ع`;
+
     const handleCloseModals = () => {
         setIsModalOpen(false);
         setWhatsAppContext(null);
@@ -102,6 +124,19 @@ const Tenants: React.FC = () => {
                     <button onClick={() => handleOpenModal()} className="btn btn-primary">إضافة مستأجر</button>
                 </div>
             </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
+                <input
+                    value={searchTerm}
+                    onChange={e => setSearchTerm(e.target.value)}
+                    placeholder="بحث بالاسم / الهاتف / الهوية"
+                />
+                <select value={statusFilter} onChange={e => setStatusFilter(e.target.value as 'ALL' | Tenant['status'])}>
+                    <option value="ALL">كل الحالات</option>
+                    <option value="ACTIVE">نشط</option>
+                    <option value="INACTIVE">غير نشط</option>
+                    <option value="BLACKLIST">قائمة سوداء</option>
+                </select>
+            </div>
             {tenants.length === 0 ? (
                 <div className="text-center py-12">
                     <Users size={48} className="mx-auto text-text-muted" />
@@ -118,11 +153,16 @@ const Tenants: React.FC = () => {
                                 <th scope="col" className="px-6 py-3 border border-border">الهاتف</th>
                                 <th scope="col" className="px-6 py-3 border border-border">رقم الهوية</th>
                                 <th scope="col" className="px-6 py-3 border border-border">الحالة</th>
+                                <th scope="col" className="px-6 py-3 border border-border">الرصيد</th>
                                 <th scope="col" className="px-6 py-3 border border-border">إجراءات</th>
                             </tr>
                         </thead>
                         <tbody>
-                            {tenants.map(t => (
+                            {filteredTenants.map(t => {
+                                const hasContract = contracts.some(c => c.tenantId === t.id);
+                                const balance = tenantBalances[t.id]?.balance ?? 0;
+                                const balanceColor = !hasContract ? 'text-gray-500' : balance > 0 ? 'text-red-600' : 'text-green-600';
+                                return (
                                 <tr key={t.id} className="bg-card hover:bg-background">
                                     <td className="px-6 py-4 font-medium text-primary border border-border cursor-pointer hover:underline" onClick={() => setSelectedTenant(t)}>{t.name}</td>
                                     <td className="px-6 py-4 border border-border">{t.phone}</td>
@@ -132,16 +172,24 @@ const Tenants: React.FC = () => {
                                             {TENANT_STATUS_AR[t.status] || t.status}
                                         </span>
                                     </td>
+                                    <td className={`px-6 py-4 border border-border font-bold ${balanceColor}`}>
+                                        {hasContract ? formatOmrBalance(balance) : 'لا يوجد عقد'}
+                                    </td>
                                     <td className="px-6 py-4 border border-border">
-                                        <ActionsMenu items={[
-                                            { label: 'عرض التفاصيل', icon: <FileText size={16} />, onClick: () => setSelectedTenant(t) },
-                                            EditAction(() => handleOpenModal(t)),
-                                            { label: 'مراسلة واتساب', icon: <MessageCircle size={16} />, onClick: () => handleOpenWhatsAppModal(t) },
-                                            DeleteAction(() => handleDelete(t.id)),
-                                        ]} />
+                                        <div className="flex items-center justify-end gap-2">
+                                            <button className="btn btn-secondary btn-sm" onClick={() => handleOpenReminderModal(t)}>
+                                                إرسال تذكير
+                                            </button>
+                                            <ActionsMenu items={[
+                                                { label: 'عرض التفاصيل', icon: <FileText size={16} />, onClick: () => setSelectedTenant(t) },
+                                                EditAction(() => handleOpenModal(t)),
+                                                { label: 'مراسلة واتساب', icon: <MessageCircle size={16} />, onClick: () => handleOpenWhatsAppModal(t) },
+                                                DeleteAction(() => handleDelete(t.id)),
+                                            ]} />
+                                        </div>
                                     </td>
                                 </tr>
-                            ))}
+                            )})}
                         </tbody>
                     </table>
                 </div>

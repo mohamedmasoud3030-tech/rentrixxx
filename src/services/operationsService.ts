@@ -92,13 +92,98 @@ export const transitionMaintenanceStatus = (
   next: MaintenanceRecord['status'],
 ): MaintenanceRecord['status'] => {
   const allowed: Record<MaintenanceRecord['status'], MaintenanceRecord['status'][]> = {
-    OPEN: ['IN_PROGRESS', 'DONE', 'CANCELED'],
-    IN_PROGRESS: ['DONE', 'CANCELED'],
-    DONE: ['DONE'],
-    CANCELED: ['CANCELED'],
+    PENDING: ['IN_PROGRESS', 'CANCELLED'],
+    IN_PROGRESS: ['COMPLETED', 'CANCELLED'],
+    COMPLETED: ['COMPLETED'],
+    CANCELLED: ['CANCELLED'],
   };
 
   return allowed[current]?.includes(next) ? next : current;
+};
+
+export interface UpdateMaintenanceStatusExtra {
+  currentStatus: MaintenanceRecord['status'];
+  cancellationReason?: string;
+  actor?: {
+    userId: string;
+    username: string;
+  };
+}
+
+export async function updateMaintenanceStatus(
+  id: string,
+  status: MaintenanceRecord['status'],
+  extra?: UpdateMaintenanceStatusExtra,
+): Promise<{ success: boolean; error?: string }> {
+  const currentStatus = extra?.currentStatus;
+  if (!currentStatus) {
+    return { success: false, error: 'الحالة الحالية مطلوبة للتحقق من انتقال الحالة.' };
+  }
+
+  const transitioned = transitionMaintenanceStatus(currentStatus, status);
+  if (transitioned !== status) {
+    return { success: false, error: 'انتقال حالة الصيانة غير مسموح.' };
+  }
+
+  const updates: Partial<MaintenanceRecord> = { status };
+  if (status === 'COMPLETED') {
+    updates.completedAt = Date.now();
+    updates.cancelledAt = undefined;
+    updates.cancellationReason = undefined;
+  } else if (status === 'CANCELLED') {
+    updates.cancelledAt = new Date().toISOString();
+    updates.cancellationReason = (extra?.cancellationReason || '').trim() || 'تم الإلغاء بدون سبب محدد';
+  }
+
+  const { error } = await supabase.from('maintenance_records').update(updates).eq('id', id);
+  if (error) {
+    return { success: false, error: error.message || 'تعذر تحديث حالة الصيانة.' };
+  }
+
+  const actor = extra?.actor;
+  const { error: auditError } = await supabase.from('audit_log').insert({
+    id: crypto.randomUUID(),
+    ts: Date.now(),
+    user_id: actor?.userId || 'system',
+    username: actor?.username || 'system',
+    action: 'MAINTENANCE_STATUS_UPDATED',
+    entity: 'maintenance',
+    entity_id: id,
+    note: `Maintenance status changed from ${currentStatus} to ${status}`,
+  });
+
+  if (auditError) {
+    return { success: false, error: auditError.message || 'تم تحديث الحالة ولكن فشل تسجيل الأثر.' };
+  }
+
+  return { success: true };
+}
+
+export const getMaintenanceSummary = (records: MaintenanceRecord[]) => {
+  return records.reduce(
+    (summary, record) => {
+      const amount = record.actualCost ?? record.cost ?? record.estimatedCost ?? 0;
+      if (record.status === 'PENDING') summary.pending += 1;
+      if (record.status === 'IN_PROGRESS') summary.inProgress += 1;
+      if (record.status === 'COMPLETED') summary.completed += 1;
+      if (record.status === 'CANCELLED') summary.cancelled += 1;
+      summary.totalCost += amount;
+      if (record.chargedTo === 'OWNER') summary.ownerCost += amount;
+      if (record.chargedTo === 'TENANT') summary.tenantCost += amount;
+      if (record.chargedTo === 'OFFICE') summary.officeCost += amount;
+      return summary;
+    },
+    {
+      pending: 0,
+      inProgress: 0,
+      completed: 0,
+      cancelled: 0,
+      totalCost: 0,
+      ownerCost: 0,
+      tenantCost: 0,
+      officeCost: 0,
+    },
+  );
 };
 
 export interface MaintenanceBlockResult {
@@ -134,6 +219,69 @@ export interface SoftDeleteResult {
   success: boolean;
   error?: string;
   blockedBy?: 'invoices' | 'receipts' | 'both';
+}
+
+export interface TerminateContractResult {
+  success: boolean;
+  error?: string;
+}
+
+export async function terminateContract(contractId: string, reason: string): Promise<TerminateContractResult> {
+  const normalizedReason = reason.trim();
+  if (!normalizedReason) {
+    return { success: false, error: 'سبب الإنهاء مطلوب.' };
+  }
+
+  const { count: unpaidInvoices, error: unpaidInvoicesError } = await supabase
+    .from('invoices')
+    .select('id', { count: 'exact', head: true })
+    .eq('contract_id', contractId)
+    .neq('status', 'PAID');
+
+  if (unpaidInvoicesError) {
+    return { success: false, error: unpaidInvoicesError.message || 'تعذر التحقق من الفواتير.' };
+  }
+
+  if ((unpaidInvoices ?? 0) > 0) {
+    return { success: false, error: 'لا يمكن إنهاء العقد لوجود فواتير غير مسددة.' };
+  }
+
+  const terminatedAt = new Date().toISOString();
+  const updatePayload = {
+    status: 'TERMINATED',
+    terminated_at: terminatedAt,
+    termination_reason: normalizedReason,
+    updated_at: Date.now(),
+  };
+
+  const { error: updateError } = await supabase
+    .from('contracts')
+    .update(updatePayload)
+    .eq('id', contractId);
+
+  if (updateError) {
+    return { success: false, error: updateError.message || 'تعذر إنهاء العقد.' };
+  }
+
+  const { error: auditError } = await supabase.from('audit_log').insert({
+    id: crypto.randomUUID(),
+    ts: Date.now(),
+    user_id: 'system',
+    username: 'system',
+    action: 'TERMINATE_CONTRACT',
+    entity: 'contracts',
+    entity_id: contractId,
+    note: normalizedReason,
+  });
+
+  if (auditError) {
+    return {
+      success: false,
+      error: auditError.message || 'تم إنهاء العقد ولكن فشل تسجيل السجل الرقابي.',
+    };
+  }
+
+  return { success: true };
 }
 
 export async function softDeleteContract(contractId: string): Promise<SoftDeleteResult> {

@@ -40,9 +40,9 @@ const Lands: React.FC = () => {
 
     const getStatusLabel = (status: string) => {
         switch (status) {
-            case 'AVAILABLE': return 'متاحة';
-            case 'RESERVED': return 'محجوزة';
-            case 'SOLD': return 'مباعة';
+            case 'AVAILABLE': return 'متاح';
+            case 'RESERVED': return 'محجوز';
+            case 'SOLD': return 'مباع';
             default: return status;
         }
     };
@@ -61,6 +61,10 @@ const Lands: React.FC = () => {
         exportToCsv('أراضي_rentrix', data);
     };
 
+    const formatOmr = (value: number) => `${(Number.isFinite(value) ? value : 0).toFixed(3)} ر.ع`;
+    const totalValue = lands.reduce((sum, land) => sum + (land.currentValue ?? land.ownerPrice ?? 0), 0);
+    const availableCount = lands.filter(land => land.status === 'AVAILABLE').length;
+
     return (
         <Card>
             <div className="flex justify-between items-center mb-6">
@@ -72,6 +76,21 @@ const Lands: React.FC = () => {
                     <button onClick={() => handleOpenModal()} className="btn btn-primary flex items-center gap-2">
                         <PlusCircle size={16} /> إضافة أرض جديدة
                     </button>
+                </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                <div className="bg-background border border-border rounded-lg p-3">
+                    <p className="text-xs text-text-muted">إجمالي الأراضي</p>
+                    <p className="text-xl font-bold text-text">{lands.length}</p>
+                </div>
+                <div className="bg-background border border-border rounded-lg p-3">
+                    <p className="text-xs text-text-muted">القيمة الإجمالية</p>
+                    <p className="text-xl font-bold text-primary">{formatOmr(totalValue)}</p>
+                </div>
+                <div className="bg-background border border-border rounded-lg p-3">
+                    <p className="text-xs text-text-muted">متاح للبيع</p>
+                    <p className="text-xl font-bold text-emerald-600">{availableCount}</p>
                 </div>
             </div>
 
@@ -117,6 +136,10 @@ const Lands: React.FC = () => {
                                     <div className="flex justify-between text-sm">
                                         <span className="text-text-muted">عمولة المكتب:</span>
                                         <span className="text-primary font-bold">{formatCurrency(land.commission)}</span>
+                                    </div>
+                                    <div className="flex justify-between text-sm">
+                                        <span className="text-text-muted">القيمة الحالية:</span>
+                                        <span className="text-text font-semibold">{formatOmr(land.currentValue ?? land.ownerPrice ?? 0)}</span>
                                     </div>
                                 </div>
 
@@ -170,12 +193,16 @@ const LandForm: React.FC<{ isOpen: boolean, onClose: () => void, land: Land | nu
                 await dataService.update('lands', land.id, data);
             } else {
                 const newLand: Omit<Land, 'id' | 'createdAt' | 'updatedAt'> = {
+                    no: data.no || data.plotNo || '',
                     plotNo: data.plotNo || '',
                     name: data.name || '',
                     location: data.location || '',
                     area: data.area || 0,
+                    ownerId: data.ownerId || '',
                     category: (data.category as Land['category']) || 'سكني',
                     status: (data.status as Land['status']) || 'AVAILABLE',
+                    purchasePrice: data.purchasePrice || data.ownerPrice || 0,
+                    currentValue: data.currentValue || data.ownerPrice || 0,
                     ownerPrice: data.ownerPrice || 0,
                     commission: data.commission || 0,
                     notes: data.notes || '',

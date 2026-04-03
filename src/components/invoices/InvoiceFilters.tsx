@@ -78,10 +78,10 @@ export const InvoiceFilters: React.FC<InvoiceFiltersProps> = ({
       <div className="grid md:grid-cols-4 gap-2">
         {/* Search */}
         <div className="relative">
-          <Search className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted" size={16} />
+          <Search className="absolute start-3 top-1/2 -translate-y-1/2 text-text-muted" size={16} />
           <input
             placeholder="بحث برقم الفاتورة أو اسم المستأجر..."
-            className="w-full pr-9"
+            className="w-full ps-9"
             value={filters.search}
             onChange={e => onSearchChange(e.target.value)}
           />

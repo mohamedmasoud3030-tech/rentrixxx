@@ -1,4 +1,4 @@
-import { Database, AuditIssue } from '../types';
+import { Database, AuditIssue, AuditLogEntry } from '../types';
 
 const ENTITY_PATHS: { [key in keyof Database]?: string } = {
     properties: '/properties',
@@ -39,6 +39,71 @@ const createIssue = (
     };
 };
 
+const formatAuditCsvDate = (ts: number): string => {
+    const date = new Date(ts);
+    const dd = String(date.getDate()).padStart(2, '0');
+    const mm = String(date.getMonth() + 1).padStart(2, '0');
+    const yyyy = date.getFullYear();
+    const hh = String(date.getHours()).padStart(2, '0');
+    const min = String(date.getMinutes()).padStart(2, '0');
+    return `${dd}/${mm}/${yyyy} ${hh}:${min}`;
+};
+
+const escapeCsv = (value: unknown): string => {
+    const text = String(value ?? '');
+    return `"${text.replace(/"/g, '""')}"`;
+};
+
+export const hasRequiredAuditFields = (entry: Partial<AuditLogEntry>): entry is AuditLogEntry => {
+    return Boolean(
+        entry.id &&
+        typeof entry.ts === 'number' &&
+        entry.userId &&
+        entry.username &&
+        entry.action &&
+        entry.entity &&
+        entry.entityId &&
+        typeof entry.note === 'string'
+    );
+};
+
+export const getAuditSummary = (logs: AuditLogEntry[]) => {
+    const byUser = new Map<string, number>();
+    const byAction = new Map<string, number>();
+    const byEntity = new Map<string, number>();
+
+    logs.forEach(log => {
+        byUser.set(log.username, (byUser.get(log.username) || 0) + 1);
+        byAction.set(log.action, (byAction.get(log.action) || 0) + 1);
+        byEntity.set(log.entity, (byEntity.get(log.entity) || 0) + 1);
+    });
+
+    return {
+        totalActions: logs.length,
+        byUser,
+        byAction,
+        byEntity,
+    };
+};
+
+export const exportAuditCsv = (logs: AuditLogEntry[]): string => {
+    const headers = ['التاريخ', 'المستخدم', 'الإجراء', 'الكيان', 'المعرف', 'الملاحظة'];
+    const rows = logs.map(log => [
+        formatAuditCsvDate(log.ts),
+        log.username,
+        log.action,
+        log.entity,
+        log.entityId,
+        log.note,
+    ]);
+
+    const csv = [headers, ...rows]
+        .map(row => row.map(cell => escapeCsv(cell)).join(','))
+        .join('\n');
+
+    return `\uFEFF${csv}`;
+};
+
 export const runDataIntegrityAudit = (db: Database): AuditIssue[] => {
     const issues: AuditIssue[] = [];
 
@@ -77,7 +142,7 @@ export const runDataIntegrityAudit = (db: Database): AuditIssue[] => {
     // SECTION 2: WARNINGS (Data Flow & Quality)
     // ===========================================
     db.maintenanceRecords.forEach(mr => {
-        if (['COMPLETED', 'CLOSED'].includes(mr.status) && mr.cost > 0 && !mr.expenseId && !mr.invoiceId) {
+        if (mr.status === 'COMPLETED' && mr.cost > 0 && !mr.expenseId && !mr.invoiceId) {
             issues.push(createIssue('WARNING', 'انقطاع التدفق المالي للصيانة', `طلب الصيانة المكتمل #${mr.no} بتكلفة ${mr.cost} لم يتم إنشاء مصروف أو فاتورة له. التكلفة لن تنعكس في أي تقرير مالي.`, 'maintenanceRecords', mr));
         }
     });

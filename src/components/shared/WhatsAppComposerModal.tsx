@@ -11,6 +11,7 @@ import { toast } from 'react-hot-toast';
 interface ComposerContext {
     recipient: { name: string, phone: string };
     type: 'tenant' | 'owner' | 'receipt';
+    initialMessage?: string;
     data: {
         tenant?: Tenant;
         receipt?: Receipt;
@@ -51,7 +52,7 @@ export const WhatsAppComposerModal: React.FC<WhatsAppComposerModalProps> = ({ is
     useEffect(() => {
         if (isOpen) {
             setTemplateKey('custom');
-            setMessage('');
+            setMessage(context?.initialMessage || '');
         }
     }, [isOpen, context]);
 

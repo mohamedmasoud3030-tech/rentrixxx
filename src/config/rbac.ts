@@ -1,0 +1,55 @@
+export const CAPABILITIES = [
+  'VIEW_DASHBOARD',
+  'VIEW_FINANCIALS',
+  'MANAGE_SETTINGS',
+  'MANAGE_USERS',
+  'VIEW_AUDIT_LOG',
+  'USE_SMART_ASSISTANT',
+  'MANAGE_PROPERTIES',
+  'MANAGE_TENANTS',
+  'MANAGE_OWNERS',
+  'MANAGE_CONTRACTS',
+  'MANAGE_MAINTENANCE',
+  'VIEW_REPORTS',
+] as const;
+
+export type Capability = (typeof CAPABILITIES)[number];
+export type AppRole = 'ADMIN' | 'USER' | 'ACCOUNTANT' | 'MANAGER' | 'VIEWER';
+
+const ADMIN_CAPABILITIES = new Set<Capability>(CAPABILITIES);
+
+export const ROLE_CAPABILITIES: Record<AppRole, Set<Capability>> = {
+  ADMIN: ADMIN_CAPABILITIES,
+  ACCOUNTANT: new Set<Capability>([
+    'VIEW_DASHBOARD',
+    'VIEW_FINANCIALS',
+    'VIEW_REPORTS',
+    'MANAGE_MAINTENANCE',
+  ]),
+  MANAGER: new Set<Capability>([
+    'VIEW_DASHBOARD',
+    'VIEW_FINANCIALS',
+    'MANAGE_PROPERTIES',
+    'MANAGE_TENANTS',
+    'MANAGE_OWNERS',
+    'MANAGE_CONTRACTS',
+    'MANAGE_MAINTENANCE',
+    'VIEW_REPORTS',
+  ]),
+  VIEWER: new Set<Capability>([
+    'VIEW_DASHBOARD',
+    'VIEW_REPORTS',
+    'VIEW_FINANCIALS',
+  ]),
+  USER: new Set<Capability>([
+    'VIEW_DASHBOARD',
+    'VIEW_FINANCIALS',
+    'USE_SMART_ASSISTANT',
+    'MANAGE_PROPERTIES',
+    'MANAGE_TENANTS',
+    'MANAGE_OWNERS',
+    'MANAGE_CONTRACTS',
+    'MANAGE_MAINTENANCE',
+    'VIEW_REPORTS',
+  ]),
+};
