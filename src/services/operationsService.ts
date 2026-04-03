@@ -39,6 +39,54 @@ export const terminateContractState = (contract: Contract, endDate: string): Con
   updatedAt: Date.now(),
 });
 
+export interface RenewContractAtomicResult {
+  success: boolean;
+  oldContractId?: string;
+  newContractId?: string;
+  error?: string;
+}
+
+type RenewContractAtomicRpcResponse = {
+  success?: boolean;
+  old_contract_id?: string;
+  new_contract_id?: string;
+  error?: string;
+};
+
+export async function renewContractAtomic(
+  oldContractId: string,
+  newContract: Record<string, unknown>,
+): Promise<RenewContractAtomicResult> {
+  const { data, error } = await supabase.rpc('renew_contract_atomic', {
+    p_old_contract_id: oldContractId,
+    p_new_contract: newContract,
+  });
+
+  if (error) {
+    return {
+      success: false,
+      oldContractId,
+      error: error.message || 'فشل تنفيذ تجديد العقد.',
+    };
+  }
+
+  const payload = (data || {}) as RenewContractAtomicRpcResponse;
+  if (!payload.success) {
+    return {
+      success: false,
+      oldContractId: payload.old_contract_id || oldContractId,
+      newContractId: payload.new_contract_id,
+      error: payload.error || 'فشل تنفيذ تجديد العقد.',
+    };
+  }
+
+  return {
+    success: true,
+    oldContractId: payload.old_contract_id || oldContractId,
+    newContractId: payload.new_contract_id,
+  };
+}
+
 export const transitionMaintenanceStatus = (
   current: MaintenanceRecord['status'],
   next: MaintenanceRecord['status'],

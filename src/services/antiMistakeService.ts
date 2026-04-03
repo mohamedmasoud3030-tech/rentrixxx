@@ -31,18 +31,6 @@ export async function voidReceiptAtomic(payload: {
   return { ok: true, step: 'void_receipt_atomic', details: (data || {}) as Record<string, unknown> };
 }
 
-export async function renewContractAtomic(oldContractId: string, newContract: Record<string, unknown>): Promise<OperationBreakdown> {
-  const { data, error } = await supabase.rpc('renew_contract_atomic', {
-    p_old_contract_id: oldContractId,
-    p_new_contract: newContract,
-  });
-  if (error) {
-    logger.error('[AntiMistake] renewContractAtomic failed', error);
-    return { ok: false, step: 'renew_contract_atomic', details: { message: error.message } };
-  }
-  return { ok: true, step: 'renew_contract_atomic', details: (data || {}) as Record<string, unknown> };
-}
-
 export async function syncUnitStatus(unitId: string): Promise<void> {
   const { error } = await supabase.rpc('sync_unit_status', { p_unit_id: unitId });
   if (error) logger.warn('[AntiMistake] syncUnitStatus failed', error);

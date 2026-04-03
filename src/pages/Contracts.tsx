@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { useApp } from '../contexts/AppContext';
-import { renewContractAtomic } from '../services/antiMistakeService';
+import { renewContractAtomic } from '../services/operationsService';
 import { supabaseData } from '../services/supabaseDataService';
 import { Contract, Receipt, Expense } from '../types';
 import Card from '../components/ui/Card';
@@ -154,10 +154,24 @@ const Contracts: React.FC = () => {
                 created_at: Date.now(),
             };
             const result = await renewContractAtomic(contract.id, payload);
-            if (!result.ok) {
-                toast.error(`فشل التجديد: ${String(result.details?.message || 'خطأ غير معروف')}`);
+            if (!result.success) {
+                const rawError = String(result.error || 'خطأ غير معروف');
+                if (rawError.includes('Unit already has another ACTIVE contract')) {
+                    toast.error('تعذر تجديد العقد: الوحدة لديها عقد نشط آخر.');
+                    return;
+                }
+                if (rawError.includes('Original contract is not ACTIVE')) {
+                    toast.error('تعذر تجديد العقد: العقد الأصلي ليس في حالة نشطة.');
+                    return;
+                }
+                toast.error(`فشل التجديد: ${rawError}`);
                 return;
             }
+
+            await Promise.all([
+                supabaseData.fetchAll<Contract>('contracts'),
+                supabaseData.fetchAll('contractBalances'),
+            ]);
             toast.success('تم تجديد العقد بنجاح.');
         } catch (err: unknown) {
             toast.error(err instanceof Error ? err.message : 'فشل التجديد');

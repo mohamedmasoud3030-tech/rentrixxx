@@ -11,7 +11,7 @@ import { toast } from 'react-hot-toast';
 import { confirmDialog } from '../components/shared/confirmDialog';
 import { adminCreateUser } from '../services/edgeFunctions';
 import { logger } from '../services/logger';
-import { postReceiptAtomic, renewContractAtomic, syncUnitStatus, voidReceiptAtomic } from '../services/antiMistakeService';
+import { postReceiptAtomic, syncUnitStatus, voidReceiptAtomic } from '../services/antiMistakeService';
 import { calcVAT } from '../services/financeService';
 import { getEffectiveInvoiceStatus, getInvoiceRemaining } from '../utils/helpers';
 import { runManualAutomation as runManualAutomationService } from '../services/automationService';
