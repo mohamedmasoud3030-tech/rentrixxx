@@ -20,6 +20,9 @@ export interface AutomationRunResult {
 const STORAGE_KEY_LAST_RUN = 'rentrix_automation_last_run_date';
 const STORAGE_KEY_RUN_LOG = 'rentrix_automation_run_log';
 const STORAGE_KEY_CONFIG = 'rentrix_automation_config';
+const DAILY_RUN_LOCK_TIMEOUT_MS = 5 * 60 * 1000;
+
+let inFlightDailyRun: Promise<AutomationRunResult | null> | null = null;
 
 const defaultConfig: AutomationTaskConfig = {
     invoices: true,
@@ -43,7 +46,11 @@ export const getAutomationConfig = (settings?: Settings): AutomationTaskConfig =
 };
 
 export const saveAutomationConfig = (config: AutomationTaskConfig): void => {
-    localStorage.setItem(STORAGE_KEY_CONFIG, JSON.stringify(config));
+    try {
+        localStorage.setItem(STORAGE_KEY_CONFIG, JSON.stringify(config));
+    } catch {
+        // best-effort persistence only
+    }
 };
 
 export const getAutomationRunLog = (): AutomationRunResult[] => {
@@ -60,14 +67,70 @@ const appendRunLog = (result: AutomationRunResult): void => {
     const log = getAutomationRunLog();
     log.unshift(result);
     if (log.length > 10) log.length = 10;
-    localStorage.setItem(STORAGE_KEY_RUN_LOG, JSON.stringify(log));
+    try {
+        localStorage.setItem(STORAGE_KEY_RUN_LOG, JSON.stringify(log));
+    } catch {
+        // ignore storage errors in restricted/private contexts
+    }
 };
 
 export const getLastRunDate = (): string | null => {
-    return localStorage.getItem(STORAGE_KEY_LAST_RUN);
+    try {
+        return localStorage.getItem(STORAGE_KEY_LAST_RUN);
+    } catch {
+        return null;
+    }
 };
 
 const getTodayStr = (): string => new Date().toISOString().slice(0, 10);
+const getLockKey = (day: string): string => `${day}|running`;
+
+const setLastRunDate = (date: string): void => {
+    try {
+        localStorage.setItem(STORAGE_KEY_LAST_RUN, date);
+    } catch {
+        // best-effort write
+    }
+};
+
+const setInProgressRunLock = (day: string): void => {
+    setLastRunDate(getLockKey(day));
+};
+
+const clearInProgressRunLock = (day: string): void => {
+    if (getLastRunDate() === getLockKey(day)) {
+        setLastRunDate('');
+        try {
+            localStorage.removeItem(STORAGE_KEY_LAST_RUN);
+        } catch {
+            // ignore
+        }
+    }
+};
+
+const isFreshInProgressLock = (value: string | null): boolean => {
+    if (!value?.endsWith('|running')) return false;
+    const day = value.slice(0, 10);
+    if (!day) return false;
+    const lockDayTs = new Date(`${day}T00:00:00Z`).getTime();
+    if (Number.isNaN(lockDayTs)) return false;
+    return Date.now() - lockDayTs < DAILY_RUN_LOCK_TIMEOUT_MS;
+};
+
+const runTask = async (
+    shouldRun: boolean,
+    task: () => Promise<number | boolean>,
+    onSuccess: (value: number | boolean) => void,
+    onError: (message: string) => void
+): Promise<void> => {
+    if (!shouldRun) return;
+    try {
+        const value = await task();
+        onSuccess(value);
+    } catch (e: unknown) {
+        onError(e instanceof Error ? e.message : 'خطأ غير معروف');
+    }
+};
 
 export const autoGenerateMonthlyInvoices = async (db: Database): Promise<number> => {
     const now = new Date();
@@ -235,33 +298,59 @@ export const runDailyAutomation = async (
     settings: Settings,
     config?: AutomationTaskConfig
 ): Promise<AutomationRunResult | null> => {
+    if (inFlightDailyRun) return inFlightDailyRun;
+
     const today = getTodayStr();
-    if (getLastRunDate() === today) {
+    const lastRun = getLastRunDate();
+    if (lastRun === today || isFreshInProgressLock(lastRun)) {
         return null;
     }
 
-    const taskConfig = config ?? getAutomationConfig(settings);
-    const result: AutomationRunResult = {
-        ts: Date.now(),
-        invoicesCreated: 0,
-        lateFeesApplied: 0,
-        notificationsCreated: 0,
-        snapshotsRebuilt: false,
-    };
+    inFlightDailyRun = (async () => {
+        setInProgressRunLock(today);
+        const taskConfig = config ?? getAutomationConfig(settings);
+        const result: AutomationRunResult = {
+            ts: Date.now(),
+            invoicesCreated: 0,
+            lateFeesApplied: 0,
+            notificationsCreated: 0,
+            snapshotsRebuilt: false,
+        };
+
+        const errors: string[] = [];
+        const collectError = (label: string, message: string) => errors.push(`${label}: ${message}`);
+
+        await runTask(taskConfig.invoices, () => autoGenerateMonthlyInvoices(db), value => {
+            result.invoicesCreated = Number(value) || 0;
+        }, message => collectError('invoices', message));
+
+        await runTask(taskConfig.lateFees, () => autoApplyLateFees(db, settings), value => {
+            result.lateFeesApplied = Number(value) || 0;
+        }, message => collectError('lateFees', message));
+
+        await runTask(taskConfig.notifications, () => autoGenerateNotifications(db, settings), value => {
+            result.notificationsCreated = Number(value) || 0;
+        }, message => collectError('notifications', message));
+
+        await runTask(taskConfig.snapshots, () => autoRebuildSnapshots(), value => {
+            result.snapshotsRebuilt = Boolean(value);
+        }, message => collectError('snapshots', message));
+
+        if (errors.length > 0) {
+            result.error = errors.join(' | ');
+        }
+
+        setLastRunDate(today);
+        appendRunLog(result);
+        return result;
+    })();
 
     try {
-        if (taskConfig.invoices) result.invoicesCreated = await autoGenerateMonthlyInvoices(db);
-        if (taskConfig.lateFees) result.lateFeesApplied = await autoApplyLateFees(db, settings);
-        if (taskConfig.notifications) result.notificationsCreated = await autoGenerateNotifications(db, settings);
-        if (taskConfig.snapshots) result.snapshotsRebuilt = await autoRebuildSnapshots();
-    } catch (e: unknown) {
-        result.error = e instanceof Error ? e.message : 'خطأ غير معروف';
+        return await inFlightDailyRun;
+    } finally {
+        inFlightDailyRun = null;
+        clearInProgressRunLock(today);
     }
-
-    localStorage.setItem(STORAGE_KEY_LAST_RUN, today);
-    appendRunLog(result);
-
-    return result;
 };
 
 export const runManualAutomation = async (
@@ -278,13 +367,27 @@ export const runManualAutomation = async (
         snapshotsRebuilt: false,
     };
 
-    try {
-        if (taskConfig.invoices) result.invoicesCreated = await autoGenerateMonthlyInvoices(db);
-        if (taskConfig.lateFees) result.lateFeesApplied = await autoApplyLateFees(db, settings);
-        if (taskConfig.notifications) result.notificationsCreated = await autoGenerateNotifications(db, settings);
-        if (taskConfig.snapshots) result.snapshotsRebuilt = await autoRebuildSnapshots();
-    } catch (e: unknown) {
-        result.error = e instanceof Error ? e.message : 'خطأ غير معروف';
+    const errors: string[] = [];
+    const collectError = (label: string, message: string) => errors.push(`${label}: ${message}`);
+
+    await runTask(taskConfig.invoices, () => autoGenerateMonthlyInvoices(db), value => {
+        result.invoicesCreated = Number(value) || 0;
+    }, message => collectError('invoices', message));
+
+    await runTask(taskConfig.lateFees, () => autoApplyLateFees(db, settings), value => {
+        result.lateFeesApplied = Number(value) || 0;
+    }, message => collectError('lateFees', message));
+
+    await runTask(taskConfig.notifications, () => autoGenerateNotifications(db, settings), value => {
+        result.notificationsCreated = Number(value) || 0;
+    }, message => collectError('notifications', message));
+
+    await runTask(taskConfig.snapshots, () => autoRebuildSnapshots(), value => {
+        result.snapshotsRebuilt = Boolean(value);
+    }, message => collectError('snapshots', message));
+
+    if (errors.length > 0) {
+        result.error = errors.join(' | ');
     }
 
     appendRunLog(result);

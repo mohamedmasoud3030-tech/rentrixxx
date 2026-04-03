@@ -64,45 +64,48 @@ const AttachmentsManager: React.FC<AttachmentsManagerProps> = ({ entityType, ent
         const files = event.target.files;
         if (!files || files.length === 0) return;
         setUploading(true);
-
-        for (let i = 0; i < files.length; i++) {
-            const file = files[i];
-            if (file.size > MAX_FILE_MB * 1024 * 1024) {
-                toast.error(`الملف "${file.name}" أكبر من ${MAX_FILE_MB} ميجابايت.`);
-                continue;
-            }
-            try {
-                let dataUrl: string;
-                let finalSize = file.size;
-
-                if (file.type.startsWith('image/')) {
-                    dataUrl = await compressImage(file);
-                    const approxBytes = Math.round((dataUrl.length * 3) / 4);
-                    const savedPct = Math.round((1 - approxBytes / file.size) * 100);
-                    finalSize = approxBytes;
-                    if (savedPct > 5) {
-                        toast.success(`تم ضغط الصورة — وُفِّر ${savedPct}% من الحجم`);
-                    }
-                } else {
-                    dataUrl = await fileToBase64(file);
+        try {
+            for (let i = 0; i < files.length; i++) {
+                const file = files[i];
+                if (file.size > MAX_FILE_MB * 1024 * 1024) {
+                    toast.error(`الملف "${file.name}" أكبر من ${MAX_FILE_MB} ميجابايت.`);
+                    continue;
                 }
+                try {
+                    let dataUrl: string;
+                    let finalSize = file.size;
+                    let mime = file.type || 'application/octet-stream';
 
-                await dataService.add('attachments', {
-                    entityType,
-                    entityId,
-                    name: file.name,
-                    mime: file.type.startsWith('image/') ? 'image/jpeg' : file.type,
-                    size: finalSize,
-                    dataUrl,
-                });
-            } catch (error) {
-                console.error('Error processing file', error);
-                toast.error(`حدث خطأ أثناء رفع الملف "${file.name}".`);
+                    if (file.type.startsWith('image/')) {
+                        dataUrl = await compressImage(file);
+                        mime = dataUrl.startsWith('data:image/png') ? 'image/png' : 'image/jpeg';
+                        const approxBytes = Math.round((dataUrl.length * 3) / 4);
+                        const savedPct = Math.round((1 - approxBytes / file.size) * 100);
+                        finalSize = approxBytes;
+                        if (savedPct > 5) {
+                            toast.success(`تم ضغط الصورة — وُفِّر ${savedPct}% من الحجم`);
+                        }
+                    } else {
+                        dataUrl = await fileToBase64(file);
+                    }
+
+                    await dataService.add('attachments', {
+                        entityType,
+                        entityId,
+                        name: file.name,
+                        mime,
+                        size: finalSize,
+                        dataUrl,
+                    });
+                } catch (error) {
+                    console.error('Error processing file', error);
+                    toast.error(`حدث خطأ أثناء رفع الملف "${file.name}".`);
+                }
             }
+        } finally {
+            setUploading(false);
+            if (fileInputRef.current) fileInputRef.current.value = '';
         }
-
-        setUploading(false);
-        if (fileInputRef.current) fileInputRef.current.value = '';
     };
 
     const handleView = (dataUrl: string, mime: string) => {
