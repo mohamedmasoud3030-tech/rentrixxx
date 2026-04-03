@@ -12,11 +12,6 @@ export interface OperationBreakdown {
   details?: Record<string, unknown>;
 }
 
-// Backward compatibility: keep old import path working until all callers are migrated.
-export async function postReceiptAtomic(payload: ReceiptPostingPayload): Promise<ReceiptPostingResult> {
-  return postReceiptAtomicFromReceiptService(payload);
-}
-
 export async function voidReceiptAtomic(payload: {
   receiptId: string;
   voidedAt: number;

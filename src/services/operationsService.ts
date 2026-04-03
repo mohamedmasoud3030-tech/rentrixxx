@@ -1,3 +1,4 @@
+import { supabase } from './supabase';
 import type { Contract, MaintenanceRecord } from '../types';
 
 export interface AutomationSummary {
@@ -51,3 +52,53 @@ export const transitionMaintenanceStatus = (
 
   return allowed[current]?.includes(next) ? next : current;
 };
+
+
+export interface SoftDeleteResult {
+  success: boolean;
+  error?: string;
+  blockedBy?: 'invoices' | 'receipts' | 'both';
+}
+
+export async function softDeleteContract(contractId: string): Promise<SoftDeleteResult> {
+  const [{ count: invoiceCount, error: invoicesError }, { count: receiptCount, error: receiptsError }] = await Promise.all([
+    supabase.from('invoices').select('id', { count: 'exact', head: true }).eq('contract_id', contractId),
+    supabase.from('receipts').select('id', { count: 'exact', head: true }).eq('contract_id', contractId),
+  ]);
+
+  if (invoicesError || receiptsError) {
+    return {
+      success: false,
+      error: invoicesError?.message || receiptsError?.message || 'تعذر التحقق من ارتباطات العقد.',
+    };
+  }
+
+  const hasInvoices = (invoiceCount ?? 0) > 0;
+  const hasReceipts = (receiptCount ?? 0) > 0;
+
+  if (hasInvoices || hasReceipts) {
+    const blockedBy: SoftDeleteResult['blockedBy'] = hasInvoices && hasReceipts
+      ? 'both'
+      : hasInvoices
+        ? 'invoices'
+        : 'receipts';
+
+    return {
+      success: false,
+      blockedBy,
+      error: 'لا يمكن حذف العقد — يوجد فواتير أو مدفوعات مرتبطة.',
+    };
+  }
+
+  const { error } = await supabase
+    .from('contracts')
+    .update({ deleted_at: new Date().toISOString(), updated_at: Date.now() })
+    .eq('id', contractId)
+    .is('deleted_at', null);
+
+  if (error) {
+    return { success: false, error: error.message || 'تعذر حذف العقد.' };
+  }
+
+  return { success: true };
+}

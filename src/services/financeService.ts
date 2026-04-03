@@ -10,6 +10,55 @@ export const toNumber = (value: unknown): number => {
 
 export const round3 = (value: number): number => Number(value.toFixed(ROUND_SCALE));
 
+// ROUNDING STANDARD FOR RENTRIX:
+// All intermediate calculations use full precision (no rounding).
+// Round ONLY at the final display/storage step.
+// VAT is always calculated on the net amount, then rounded once.
+// Allocations: sum of parts must exactly equal the whole
+//   (use largest-remainder method for the last allocation).
+export function calcVAT(
+  netAmount: number,
+  vatRate: number,
+): { net: number; vat: number; gross: number } {
+  const vat = Math.round((netAmount * vatRate / 100) * 1000) / 1000;
+  return {
+    net: netAmount,
+    vat,
+    gross: Math.round((netAmount + vat) * 1000) / 1000,
+  };
+}
+
+export function distributeAmount(
+  total: number,
+  parts: number[],
+): number[] {
+  if (!Number.isFinite(total) || total <= 0 || parts.length === 0) return parts.map(() => 0);
+
+  const scale = 1000;
+  const safeParts = parts.map(p => (Number.isFinite(p) && p > 0 ? p : 0));
+  const sumParts = safeParts.reduce((a, b) => a + b, 0);
+  if (sumParts <= 0) return parts.map(() => 0);
+
+  const scaledTotal = Math.round(total * scale);
+  const rawScaled = safeParts.map(p => (p / sumParts) * scaledTotal);
+  const floors = rawScaled.map(Math.floor);
+  let remainderUnits = scaledTotal - floors.reduce((a, b) => a + b, 0);
+
+  const rankedIndices = rawScaled
+    .map((value, index) => ({ index, remainder: value - floors[index] }))
+    .sort((a, b) => b.remainder - a.remainder || a.index - b.index)
+    .map(item => item.index);
+
+  let cursor = 0;
+  while (remainderUnits > 0) {
+    floors[rankedIndices[cursor % rankedIndices.length]] += 1;
+    remainderUnits -= 1;
+    cursor += 1;
+  }
+
+  return floors.map(value => value / scale);
+}
+
 export const deriveInvoiceStatus = (invoice: Invoice, settings: Settings | null): Invoice['status'] => {
   const graceDays = settings?.operational?.lateFee?.graceDays ?? 0;
   return getEffectiveInvoiceStatus(invoice, graceDays) as Invoice['status'];

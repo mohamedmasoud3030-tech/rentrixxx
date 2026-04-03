@@ -11,10 +11,11 @@ import { toast } from 'react-hot-toast';
 import { confirmDialog } from '../components/shared/confirmDialog';
 import { adminCreateUser } from '../services/edgeFunctions';
 import { logger } from '../services/logger';
-import { renewContractAtomic, syncUnitStatus, voidReceiptAtomic } from '../services/antiMistakeService';
-import { postReceiptAtomic } from '../services/receiptService';
+import { postReceiptAtomic, renewContractAtomic, syncUnitStatus, voidReceiptAtomic } from '../services/antiMistakeService';
+import { calcVAT } from '../services/financeService';
 import { getEffectiveInvoiceStatus, getInvoiceRemaining } from '../utils/helpers';
 import { runManualAutomation as runManualAutomationService } from '../services/automationService';
+import { softDeleteContract } from '../services/operationsService';
 
 const DEFAULT_GEMINI_API_KEY = '';
 
@@ -502,7 +503,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         let dueDate = `${ym}-${String(safeDay).padStart(2, '0')}`;
         if (ym === contract.start.slice(0, 7) && dueDate < contract.start) dueDate = contract.start;
         if (dueDate <= contract.end) {
-          const taxAmount = round3((toNumber(contract.rent) * taxRate) / 100);
+          const { vat: taxAmount } = calcVAT(toNumber(contract.rent), taxRate);
           const invoiceStatus = new Date(`${dueDate}T23:59:59`).getTime() < now ? 'OVERDUE' : 'UNPAID';
           const no = String(await supabaseData.incrementSerial('invoice'));
           const invoice: Invoice = {
@@ -644,6 +645,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       const newNo = await supabaseData.incrementSerial('receipt');
       const newReceipt: Receipt = { ...receiptData, id: crypto.randomUUID(), createdAt: Date.now(), no: String(newNo), status: 'POSTED' as const };
       const newAllocations = allocations.map(a => ({ id: crypto.randomUUID(), receiptId: newReceipt.id, ...a, createdAt: Date.now() }));
+
+      const allocationSum = round3(newAllocations.reduce((sum, alloc) => sum + toNumber(alloc.amount), 0));
+      const receiptAmount = round3(toNumber(newReceipt.amount));
+      if (allocationSum !== receiptAmount) {
+        toast.error('مجموع التوزيعات لا يساوي إجمالي الإيصال');
+        return;
+      }
 
       let totalVatCollected = 0;
       for (const alloc of allocations) {
@@ -819,21 +827,38 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   }, [audit, refreshData]);
 
   const remove: AppContextType['dataService']['remove'] = useCallback(async (table, id) => {
+    const isContractDelete = table === 'contracts';
     const confirmed = await confirmDialog({
       title: 'تأكيد الحذف',
-      message: 'هل أنت متأكد من الحذف؟ لا يمكن التراجع عن هذا الإجراء.',
-      confirmLabel: 'حذف نهائي',
+      message: isContractDelete
+        ? 'هل أنت متأكد من حذف العقد؟ سيتم إخفاؤه فقط (حذف منطقي) ولا يمكن استرجاعه من الواجهة.'
+        : 'هل أنت متأكد من الحذف؟ لا يمكن التراجع عن هذا الإجراء.',
+      confirmLabel: isContractDelete ? 'حذف العقد' : 'حذف نهائي',
       tone: 'danger',
     });
     if (!confirmed) return;
 
     try {
-      const ok = await supabaseData.remove(table as string, id);
-      if (!ok) throw new Error('Delete failed');
-      if (table === 'contracts') {
+      if (isContractDelete) {
+        const result = await softDeleteContract(id);
+        if (!result.success) {
+          const blockedMessage = result.blockedBy
+            ? 'لا يمكن حذف العقد — يوجد فواتير أو مدفوعات مرتبطة.'
+            : (result.error || 'تعذر حذف العقد.');
+          toast.error(blockedMessage);
+          return;
+        }
+
         const relatedUnit = db?.contracts?.find(c => c.id === id)?.unitId;
         if (relatedUnit) await syncUnitStatus(relatedUnit);
+        await audit('SOFT_DELETE', String(table), id);
+        await refreshData();
+        toast.success('تم حذف العقد بنجاح (حذف منطقي).');
+        return;
       }
+
+      const ok = await supabaseData.remove(table as string, id);
+      if (!ok) throw new Error('Delete failed');
       await audit('DELETE', String(table), id);
       if (FINANCIAL_TABLES.includes(table as keyof Database)) setIsDataStale(true);
       await refreshData();
