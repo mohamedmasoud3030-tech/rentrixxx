@@ -27,10 +27,11 @@ const PropertyMap: React.FC = () => {
     const propertiesWithUnits = useMemo(() => {
         if (!db) return [];
         const unitsWithDetails: UnitWithDetails[] = db.units.map(unit => {
+            // unit.status is auto-synced by DB trigger — do not set manually
+            const isOccupied = unit.status === 'RENTED';
+            let status: UnitStatus = isOccupied ? 'occupied' : 'vacant';
             const activeContract = db.contracts.find(c => c.unitId === unit.id && c.status === 'ACTIVE');
-            if (!activeContract) {
-                return { ...unit, status: 'vacant' as UnitStatus };
-            }
+            if (!isOccupied || !activeContract) return { ...unit, status };
 
             const contractData = contractBalances[activeContract.id];
             const tenant = db.tenants.find(t => t.id === activeContract.tenantId);
@@ -38,7 +39,6 @@ const PropertyMap: React.FC = () => {
             alertDate.setDate(alertDate.getDate() + (settings.operational?.contractAlertDays ?? 30));
             const isExpiring = new Date(activeContract.end) <= alertDate;
 
-            let status: UnitStatus = 'occupied';
             if (contractData?.balance > 0) status = 'overdue';
             else if (isExpiring) status = 'expiring';
 

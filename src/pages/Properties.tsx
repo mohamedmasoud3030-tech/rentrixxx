@@ -95,6 +95,7 @@ const PropertiesListView: React.FC = () => {
     }, [dataService, units]);
 
     const stats = useMemo(() => {
+        // unit.status is auto-synced by DB trigger — do not set manually
         const totalUnits = units.length;
         const rented = units.filter(u => u.status === 'RENTED').length;
         const available = units.filter(u => u.status === 'AVAILABLE').length;

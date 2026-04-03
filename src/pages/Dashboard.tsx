@@ -47,6 +47,7 @@ const Dashboard: React.FC = () => {
 
         const activeContracts = db.contracts.filter((c: Contract) => c.status === 'ACTIVE');
         const totalUnits = db.units.length;
+        // unit.status is auto-synced by DB trigger — do not set manually
         const vacantUnits = db.units.filter(u => u.status === 'AVAILABLE').length;
         const occupancyRate = totalUnits > 0 ? ((totalUnits - vacantUnits) / totalUnits) * 100 : 0;
 

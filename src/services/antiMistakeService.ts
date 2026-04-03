@@ -1,10 +1,5 @@
 import { supabase } from './supabase';
 import { logger } from './logger';
-import {
-  postReceiptAtomic as postReceiptAtomicFromReceiptService,
-  type ReceiptPostingPayload,
-  type ReceiptPostingResult,
-} from './receiptService';
 
 export interface OperationBreakdown {
   ok: boolean;
@@ -41,9 +36,4 @@ export async function renewContractAtomic(oldContractId: string, newContract: Re
     return { ok: false, step: 'renew_contract_atomic', details: { message: error.message } };
   }
   return { ok: true, step: 'renew_contract_atomic', details: (data || {}) as Record<string, unknown> };
-}
-
-export async function syncUnitStatus(unitId: string): Promise<void> {
-  const { error } = await supabase.rpc('sync_unit_status', { p_unit_id: unitId });
-  if (error) logger.warn('[AntiMistake] syncUnitStatus failed', error);
 }
