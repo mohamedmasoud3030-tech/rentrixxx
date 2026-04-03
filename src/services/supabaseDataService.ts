@@ -117,6 +117,14 @@ function resolveTable(jsTable: string): string {
   return TABLE_MAP[jsTable] || camelToSnake(jsTable);
 }
 
+
+function applyContractsVisibility<T extends { is: (column: string, value: null) => T }>(query: T, jsTable: string): T {
+  if (jsTable === 'contracts') {
+    return query.is('deleted_at', null);
+  }
+  return query;
+}
+
 export const supabaseData = {
   async fetchAll<T>(jsTable: string): Promise<T[]> {
     const cacheKey = getCacheKey(jsTable, 'fetchAll');
@@ -127,7 +135,7 @@ export const supabaseData = {
 
     const sqlTable = resolveTable(jsTable);
     try {
-      const { data, error } = await supabase.from(sqlTable).select('*');
+      const { data, error } = await applyContractsVisibility(supabase.from(sqlTable).select('*'), jsTable);
       if (error) {
         logger.error(`[SupabaseData] fetchAll ${sqlTable} error:`, error);
         return [];
@@ -147,7 +155,7 @@ export const supabaseData = {
     
     for (const orderBy of orderCandidates) {
       try {
-        const { data, error } = await supabase.from(sqlTable).select('*').order(orderBy, { ascending: false }).limit(limit);
+        const { data, error } = await applyContractsVisibility(supabase.from(sqlTable).select('*'), jsTable).order(orderBy, { ascending: false }).limit(limit);
         if (!error && data) {
           return (data || []).map(row => toCamelObj(row, jsTable) as T);
         }
@@ -165,7 +173,7 @@ export const supabaseData = {
     
     // Final fallback: try without ordering
     try {
-      const { data, error } = await supabase.from(sqlTable).select('*').limit(limit);
+      const { data, error } = await applyContractsVisibility(supabase.from(sqlTable).select('*'), jsTable).limit(limit);
       if (!error && data) {
         return (data || []).map(row => toCamelObj(row, jsTable) as T);
       }
@@ -178,7 +186,7 @@ export const supabaseData = {
 
   async fetchOne<T>(jsTable: string, id: string | number): Promise<T | null> {
     const sqlTable = resolveTable(jsTable);
-    const { data, error } = await supabase.from(sqlTable).select('*').eq('id', id).single();
+    const { data, error } = await applyContractsVisibility(supabase.from(sqlTable).select('*').eq('id', id), jsTable).single();
     if (error) { console.error(`[SupabaseData] fetchOne ${sqlTable}:`, error); return null; }
     return data ? toCamelObj(data, jsTable) as T : null;
   },
@@ -239,7 +247,7 @@ export const supabaseData = {
     const snakeCol = jsTable && SPECIAL_FIELD_MAP[jsTable]?.[column]
       ? SPECIAL_FIELD_MAP[jsTable][column]
       : camelToSnake(column);
-    const { data, error } = await supabase.from(sqlTable).select('*').eq(snakeCol, value);
+    const { data, error } = await applyContractsVisibility(supabase.from(sqlTable).select('*').eq(snakeCol, value), jsTable);
     if (error) { console.error(`[SupabaseData] fetchWhere ${sqlTable}:`, error); return []; }
     return (data || []).map(row => toCamelObj(row, jsTable) as T);
   },
