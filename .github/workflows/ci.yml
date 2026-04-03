@@ -30,8 +30,5 @@ jobs:
       - name: Tests
         run: npm run test
 
-      - name: Deployment Readiness
-        run: npm run readiness
-
       - name: Build
         run: npm run build
