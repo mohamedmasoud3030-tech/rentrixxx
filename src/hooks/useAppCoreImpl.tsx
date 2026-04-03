@@ -16,6 +16,7 @@ import { calcVAT } from '../services/financeService';
 import { getEffectiveInvoiceStatus, getInvoiceRemaining } from '../utils/helpers';
 import { runManualAutomation as runManualAutomationService } from '../services/automationService';
 import { softDeleteContract } from '../services/operationsService';
+import { notificationService } from '../services/notificationService';
 
 const DEFAULT_GEMINI_API_KEY = '';
 
@@ -1235,26 +1236,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   }, [deriveInvoiceStatus]);
 
-  const generateContractExpiryNotifications = useCallback(async (): Promise<number> => {
+  const generateNotifications = useCallback(async () => {
     if (!settings) return 0;
-    const alertDays = settings.operational?.contractAlertDays ?? 30;
-    const now = Date.now();
-    const activeContracts = await supabaseData.fetchWhere<Contract>('contracts', 'status', 'ACTIVE');
-    const existingNotifs = await supabaseData.fetchAll<AppNotification>('appNotifications');
-    let count = 0;
-    for (const c of activeContracts) {
-      const endDate = new Date(c.end).getTime();
-      const daysLeft = Math.ceil((endDate - now) / (1000 * 60 * 60 * 24));
-      if (daysLeft <= 0 || daysLeft > alertDays) continue;
-      const contractLink = `/contracts?contractId=${c.id}`;
-      const alreadyExists = existingNotifs.some(n => n.link === contractLink && n.type === 'CONTRACT_EXPIRING');
-      if (!alreadyExists) {
-        await supabaseData.insert('appNotifications', { id: crypto.randomUUID(), createdAt: now, isRead: false, role: 'ADMIN', type: 'CONTRACT_EXPIRING', title: `عقد ينتهي خلال ${daysLeft} يوم`, message: `عقد المستأجر سينتهي خلال ${daysLeft} يوم.`, link: contractLink });
-        count++;
-      }
+    const generationResult = await notificationService.generateAllNotifications(activeDb, settings);
+    if (generationResult.total > 0) {
+      setIsDataStale(true);
+      await refreshData();
     }
-    return count;
-  }, [settings]);
+    return generationResult.total;
+  }, [activeDb, refreshData, settings]);
 
   const generateNotifications = useCallback(async () => {
     if (!settings) return 0;
