@@ -23,6 +23,7 @@ src/agents/
     financialAgent.ts
     maintenanceAgent.ts
   orchestration/
+    agentScheduler.ts
     contractMonitoringWorkflow.ts
     integrationPoints.ts
   tools/
@@ -35,14 +36,29 @@ src/agents/
 - Contract monitoring domain logic: `src/services/contractMonitoringService.ts`
 - Notification persistence abstraction: `src/services/notificationService.ts`
 
+## Execution Modes
+
+- **Manual trigger**: `triggerContractMonitoringManuallyWithHistory(runtimeSource)`
+- **Scheduled trigger**: `createContractMonitoringScheduler(runtimeSource, { intervalMs })`
+- **Execution logs/history**: `getAgentJobHistory()`
+
+All executions use the existing `runAgent` pipeline via `runContractMonitoringWorkflow`.
+
 ## Example Execution Flow
 
 ```ts
 import {
-  triggerContractMonitoringManually,
-  buildContractMonitoringConsumption,
+  createContractMonitoringScheduler,
+  triggerContractMonitoringManuallyWithHistory,
+  getAgentJobHistory,
 } from './agents';
 
-const workflow = await triggerContractMonitoringManually({ db, settings });
-const consumption = buildContractMonitoringConsumption(workflow);
+await triggerContractMonitoringManuallyWithHistory(runtimeSource);
+
+const scheduler = createContractMonitoringScheduler(runtimeSource, {
+  intervalMs: 24 * 60 * 60 * 1000,
+});
+scheduler.start();
+
+const history = getAgentJobHistory();
 ```

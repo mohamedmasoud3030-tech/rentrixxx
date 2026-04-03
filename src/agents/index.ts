@@ -25,3 +25,15 @@ export {
 } from './orchestration/integrationPoints';
 
 export type { AgentErrorCode } from './core/errors';
+
+
+export {
+  createContractMonitoringScheduler,
+  getAgentJobHistory,
+  runContractMonitoringJob,
+  triggerContractMonitoringManuallyWithHistory,
+  type AgentJobRecord,
+  type AgentRuntimeSource,
+  type AgentScheduleController,
+  type ContractMonitoringScheduleConfig,
+} from './orchestration/agentScheduler';
