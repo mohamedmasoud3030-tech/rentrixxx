@@ -7,25 +7,6 @@ export interface OperationBreakdown {
   details?: Record<string, unknown>;
 }
 
-export async function postReceiptAtomic(payload: {
-  receipt: Record<string, unknown>;
-  allocations: Record<string, unknown>[];
-  invoiceUpdates: Record<string, unknown>[];
-  journalEntries: Record<string, unknown>[];
-}): Promise<OperationBreakdown> {
-  const { data, error } = await supabase.rpc('post_receipt_atomic', {
-    p_receipt: payload.receipt,
-    p_allocations: payload.allocations,
-    p_invoice_updates: payload.invoiceUpdates,
-    p_journal_entries: payload.journalEntries,
-  });
-  if (error) {
-    logger.error('[AntiMistake] postReceiptAtomic failed', error);
-    return { ok: false, step: 'post_receipt_atomic', details: { message: error.message } };
-  }
-  return { ok: true, step: 'post_receipt_atomic', details: (data || {}) as Record<string, unknown> };
-}
-
 export async function voidReceiptAtomic(payload: {
   receiptId: string;
   voidedAt: number;

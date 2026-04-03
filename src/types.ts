@@ -724,7 +724,7 @@ export interface AppContextType {
     remove: <T extends keyof Database | 'users'>(table: T, id: string) => Promise<void>;
   };
   financeService: {
-    addReceiptWithAllocations: (receiptData: Omit<Receipt, 'id' | 'createdAt' | 'no' | 'status'>, allocations: { invoiceId: string, amount: number }[]) => Promise<void>;
+    addReceiptWithAllocations: (receiptData: Omit<Receipt, 'id' | 'createdAt' | 'no' | 'status'>, allocations: { invoiceId: string, amount: number }[]) => Promise<{ success: boolean; receiptNo?: string; allocatedTotal?: number; error?: string }>;
     addManualJournalVoucher: (voucher: { date: string; notes: string; lines: { accountId: string; debit: number; credit: number }[] }) => Promise<void>;
     voidReceipt: (id: string) => Promise<void>;
     voidExpense: (id: string) => Promise<void>;
