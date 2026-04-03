@@ -15,6 +15,7 @@ import { postReceiptAtomic, renewContractAtomic, syncUnitStatus, voidReceiptAtom
 import { calcVAT } from '../services/financeService';
 import { getEffectiveInvoiceStatus, getInvoiceRemaining } from '../utils/helpers';
 import { runManualAutomation as runManualAutomationService } from '../services/automationService';
+import { softDeleteContract } from '../services/operationsService';
 
 const DEFAULT_GEMINI_API_KEY = '';
 
@@ -826,21 +827,38 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   }, [audit, refreshData]);
 
   const remove: AppContextType['dataService']['remove'] = useCallback(async (table, id) => {
+    const isContractDelete = table === 'contracts';
     const confirmed = await confirmDialog({
       title: 'تأكيد الحذف',
-      message: 'هل أنت متأكد من الحذف؟ لا يمكن التراجع عن هذا الإجراء.',
-      confirmLabel: 'حذف نهائي',
+      message: isContractDelete
+        ? 'هل أنت متأكد من حذف العقد؟ سيتم إخفاؤه فقط (حذف منطقي) ولا يمكن استرجاعه من الواجهة.'
+        : 'هل أنت متأكد من الحذف؟ لا يمكن التراجع عن هذا الإجراء.',
+      confirmLabel: isContractDelete ? 'حذف العقد' : 'حذف نهائي',
       tone: 'danger',
     });
     if (!confirmed) return;
 
     try {
-      const ok = await supabaseData.remove(table as string, id);
-      if (!ok) throw new Error('Delete failed');
-      if (table === 'contracts') {
+      if (isContractDelete) {
+        const result = await softDeleteContract(id);
+        if (!result.success) {
+          const blockedMessage = result.blockedBy
+            ? 'لا يمكن حذف العقد — يوجد فواتير أو مدفوعات مرتبطة.'
+            : (result.error || 'تعذر حذف العقد.');
+          toast.error(blockedMessage);
+          return;
+        }
+
         const relatedUnit = db?.contracts?.find(c => c.id === id)?.unitId;
         if (relatedUnit) await syncUnitStatus(relatedUnit);
+        await audit('SOFT_DELETE', String(table), id);
+        await refreshData();
+        toast.success('تم حذف العقد بنجاح (حذف منطقي).');
+        return;
       }
+
+      const ok = await supabaseData.remove(table as string, id);
+      if (!ok) throw new Error('Delete failed');
       await audit('DELETE', String(table), id);
       if (FINANCIAL_TABLES.includes(table as keyof Database)) setIsDataStale(true);
       await refreshData();

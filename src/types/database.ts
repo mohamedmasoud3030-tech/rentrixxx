@@ -91,6 +91,7 @@ export interface ContractsRow {
   sponsor_id: string | null;
   sponsor_phone: string | null;
   is_demo: boolean | null;
+  deleted_at: string | null;
   created_at: number;
   updated_at: number | null;
 }
