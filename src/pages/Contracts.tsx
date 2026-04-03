@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { useApp } from '../contexts/AppContext';
 import { renewContractAtomic } from '../services/antiMistakeService';
+import { checkUnitMaintenanceBlock, type MaintenanceBlockResult } from '../services/operationsService';
 import { supabaseData } from '../services/supabaseDataService';
 import { Contract, Receipt, Expense } from '../types';
 import Card from '../components/ui/Card';
@@ -400,6 +401,8 @@ const ContractForm: React.FC<{ isOpen: boolean; onClose: () => void; contract: C
     const [sponsorId, setSponsorId] = useState('');
     const [sponsorPhone, setSponsorPhone] = useState('');
     const [isSaving, setIsSaving] = useState(false);
+    const [isCheckingMaintenance, setIsCheckingMaintenance] = useState(false);
+    const [maintenanceBlock, setMaintenanceBlock] = useState<MaintenanceBlockResult | null>(null);
     const isSavingRef = useRef(false);
 
     const contracts = db.contracts || [];
@@ -456,6 +459,37 @@ const ContractForm: React.FC<{ isOpen: boolean; onClose: () => void; contract: C
         }
     }, [contract, isOpen, defaultUnitId, availableUnits, tenants]);
 
+    useEffect(() => {
+        let canceled = false;
+
+        const runCheck = async () => {
+            if (!isOpen || !!contract || !unitId) {
+                setMaintenanceBlock(null);
+                setIsCheckingMaintenance(false);
+                return;
+            }
+
+            setIsCheckingMaintenance(true);
+            try {
+                const result = await checkUnitMaintenanceBlock(unitId);
+                if (!canceled) setMaintenanceBlock(result);
+            } catch (err: unknown) {
+                if (!canceled) {
+                    setMaintenanceBlock(null);
+                    toast.error(err instanceof Error ? err.message : 'تعذر التحقق من طلبات الصيانة.');
+                }
+            } finally {
+                if (!canceled) setIsCheckingMaintenance(false);
+            }
+        };
+
+        void runCheck();
+
+        return () => {
+            canceled = true;
+        };
+    }, [isOpen, contract, unitId]);
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (isSavingRef.current) return;
@@ -463,6 +497,14 @@ const ContractForm: React.FC<{ isOpen: boolean; onClose: () => void; contract: C
         const deposit = parseLocalizedNumber(depositInput);
         if (!unitId || !tenantId || !start || !end || !Number.isFinite(rent) || rent <= 0) {
             toast.error('تحقق من الحقول المطلوبة.');
+            return;
+        }
+        if (!contract && maintenanceBlock?.blocked) {
+            toast.error('لا يمكن إنشاء عقد — يوجد طلبات صيانة حرجة مفتوحة على هذه الوحدة');
+            return;
+        }
+        if (!contract && isCheckingMaintenance) {
+            toast.error('يرجى الانتظار حتى اكتمال التحقق من طلبات الصيانة.');
             return;
         }
 
@@ -512,6 +554,19 @@ const ContractForm: React.FC<{ isOpen: boolean; onClose: () => void; contract: C
                     </div>
                 </div>
 
+                {!contract && maintenanceBlock?.blocked && (
+                    <div className="rounded-lg border border-red-300 bg-red-50 p-3 text-red-700">
+                        <p className="font-bold mb-2">لا يمكن إنشاء عقد — يوجد طلبات صيانة حرجة مفتوحة على هذه الوحدة</p>
+                        <ul className="list-disc pr-5 space-y-1 text-sm">
+                            {maintenanceBlock.requests.map((request) => (
+                                <li key={request.id}>
+                                    {request.title} — الأولوية: {request.priority}
+                                </li>
+                            ))}
+                        </ul>
+                    </div>
+                )}
+
                 {contract && <AttachmentsManager entityType="CONTRACT" entityId={contract.id} />}
 
                 {contract && contractTransactions.length > 0 && (
@@ -533,7 +588,13 @@ const ContractForm: React.FC<{ isOpen: boolean; onClose: () => void; contract: C
 
                 <div className="flex justify-end gap-3 pt-4 mt-4 border-t border-border">
                     <button type="button" onClick={onClose} className="btn btn-ghost" disabled={isSaving}>إلغاء</button>
-                    <button type="submit" className="btn btn-primary" disabled={isSaving}>{isSaving ? 'جاري الحفظ...' : 'حفظ'}</button>
+                    <button
+                        type="submit"
+                        className="btn btn-primary"
+                        disabled={isSaving || (!contract && (isCheckingMaintenance || maintenanceBlock?.blocked))}
+                    >
+                        {isSaving ? 'جاري الحفظ...' : 'حفظ العقد'}
+                    </button>
                 </div>
             </form>
         </Modal>
