@@ -1,20 +1,20 @@
-// @ts-nocheck
 import { supabase } from './supabase';
 import { Database, Settings, Governance, Serials } from '../types';
 import { logger } from './logger';
+import type { GovernanceRow, SerialsRow, SettingsRow, UsersRow } from '../types/database';
 
 // نظام cache بسيط للاستعلامات المتكررة
-const queryCache = new Map<string, { data: any; timestamp: number }>();
+const queryCache = new Map<string, { data: unknown; timestamp: number }>();
 const CACHE_TTL = 5 * 60 * 1000; // 5 دقائق
 
-function getCacheKey(jsTable: string, operation: string, params?: any): string {
+function getCacheKey(jsTable: string, operation: string, params?: unknown): string {
   return `${jsTable}:${operation}:${JSON.stringify(params || {})}`;
 }
 
 function getCachedResult<T>(key: string): T | null {
   const cached = queryCache.get(key);
   if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
-    return cached.data;
+    return cached.data as T;
   }
   if (cached) {
     queryCache.delete(key); // إزالة المنتهي الصلاحية
@@ -22,7 +22,7 @@ function getCachedResult<T>(key: string): T | null {
   return null;
 }
 
-function setCachedResult(key: string, data: any): void {
+function setCachedResult(key: string, data: unknown): void {
   queryCache.set(key, { data, timestamp: Date.now() });
 
   // تنظيف الـ cache إذا أصبح كبيراً
@@ -92,10 +92,10 @@ function snakeToCamel(str: string): string {
   return str.replace(/_([a-z])/g, (_, letter) => letter.toUpperCase());
 }
 
-function toSnakeObj(obj: Record<string, any>, tableName?: string): Record<string, any> {
-  const result: Record<string, any> = {};
+function toSnakeObj(obj: object, tableName?: string): Record<string, unknown> {
+  const result: Record<string, unknown> = {};
   const specialMap = tableName ? SPECIAL_FIELD_MAP[tableName] : undefined;
-  for (const [key, value] of Object.entries(obj)) {
+  for (const [key, value] of Object.entries(obj as Record<string, unknown>)) {
     if (value === undefined) continue;
     const snakeKey = specialMap?.[key] ?? camelToSnake(key);
     result[snakeKey] = value;
@@ -103,8 +103,8 @@ function toSnakeObj(obj: Record<string, any>, tableName?: string): Record<string
   return result;
 }
 
-function toCamelObj(obj: Record<string, any>, tableName?: string): Record<string, any> {
-  const result: Record<string, any> = {};
+function toCamelObj(obj: Record<string, unknown>, tableName?: string): Record<string, unknown> {
+  const result: Record<string, unknown> = {};
   const reverseMap = tableName ? REVERSE_SPECIAL_MAP[tableName] : undefined;
   for (const [key, value] of Object.entries(obj)) {
     const camelKey = reverseMap?.[key] ?? snakeToCamel(key);
@@ -151,7 +151,7 @@ export const supabaseData = {
         if (!error && data) {
           return (data || []).map(row => toCamelObj(row, jsTable) as T);
         }
-        if (error && (error.status === 400 || (error.message && (error.message.includes('400') || error.message.includes('Bad Request') || error.message.includes('column'))))) {
+        if (error && (error.message.includes('400') || error.message.includes('Bad Request') || error.message.includes('column'))) {
           // 400 error might mean column doesn't exist, try next column
           continue;
         }
@@ -183,7 +183,7 @@ export const supabaseData = {
     return data ? toCamelObj(data, jsTable) as T : null;
   },
 
-  async insert<T>(jsTable: string, record: Record<string, any>): Promise<{ data: T | null; error: string | null }> {
+  async insert<T>(jsTable: string, record: object): Promise<{ data: T | null; error: string | null }> {
     const sqlTable = resolveTable(jsTable);
     const snakeRecord = toSnakeObj(record, jsTable);
     const { data, error } = await supabase.from(sqlTable).insert(snakeRecord).select().single();
@@ -197,7 +197,7 @@ export const supabaseData = {
     return { data: data ? toCamelObj(data, jsTable) as T : null, error: null };
   },
 
-  async upsert<T>(jsTable: string, record: Record<string, any>): Promise<T | null> {
+  async upsert<T>(jsTable: string, record: object): Promise<T | null> {
     const sqlTable = resolveTable(jsTable);
     const snakeRecord = toSnakeObj(record, jsTable);
     const { data, error } = await supabase.from(sqlTable).upsert(snakeRecord).select().single();
@@ -205,7 +205,7 @@ export const supabaseData = {
     return data ? toCamelObj(data, jsTable) as T : null;
   },
 
-  async update(jsTable: string, id: string | number, updates: Record<string, any>): Promise<{ ok: boolean; error: string | null }> {
+  async update(jsTable: string, id: string | number, updates: object): Promise<{ ok: boolean; error: string | null }> {
     const sqlTable = resolveTable(jsTable);
     const snakeUpdates = toSnakeObj(updates, jsTable);
     const { error } = await supabase.from(sqlTable).update(snakeUpdates).eq('id', id);
@@ -244,7 +244,7 @@ export const supabaseData = {
     return (data || []).map(row => toCamelObj(row, jsTable) as T);
   },
 
-  async bulkInsert<T>(jsTable: string, records: Record<string, any>[]): Promise<T[]> {
+  async bulkInsert<T>(jsTable: string, records: object[]): Promise<T[]> {
     const sqlTable = resolveTable(jsTable);
     const snakeRecords = records.map(r => toSnakeObj(r, jsTable));
     const { data, error } = await supabase.from(sqlTable).insert(snakeRecords).select();
@@ -252,7 +252,7 @@ export const supabaseData = {
     return (data || []).map(row => toCamelObj(row, jsTable) as T);
   },
 
-  async bulkUpdate(jsTable: string, records: { id: string; updates: Record<string, any> }[]): Promise<boolean> {
+  async bulkUpdate(jsTable: string, records: { id: string; updates: object }[]): Promise<boolean> {
     if (!records.length) return true;
 
     // استخدام upsert للتحديث الجماعي بدلاً من N queries منفصلة
@@ -280,7 +280,7 @@ export const supabaseData = {
     }
   },
 
-  async upsertMany(jsTable: string, records: Record<string, any>[]): Promise<boolean> {
+  async upsertMany(jsTable: string, records: object[]): Promise<boolean> {
     if (!records.length) return true;
     const sqlTable = resolveTable(jsTable);
     const snakeRecords = records.map(r => toSnakeObj(r, jsTable));
@@ -290,9 +290,9 @@ export const supabaseData = {
   },
 
   async getSettings(): Promise<Settings | null> {
-    const { data, error } = await supabase.from('settings').select('data').eq('id', 1).single();
+    const { data, error } = await supabase.from('settings').select('data').eq('id', 1).single<SettingsRow>();
     if (error || !data) return null;
-    return data.data as Settings;
+    return data.data as unknown as Settings;
   },
 
   async saveSettings(settings: Settings): Promise<boolean> {
@@ -309,7 +309,7 @@ export const supabaseData = {
   },
 
   async getGovernance(): Promise<Governance | null> {
-    const { data, error } = await supabase.from('governance').select('*').eq('id', 1).single();
+    const { data, error } = await supabase.from('governance').select('*').eq('id', 1).single<GovernanceRow>();
     if (error || !data) return null;
     return { readOnly: data.read_only, lockedPeriods: data.locked_periods || [] };
   },
@@ -323,7 +323,7 @@ export const supabaseData = {
   },
 
   async getSerials(): Promise<Serials | null> {
-    const { data, error } = await supabase.from('serials').select('*').eq('id', 1).single();
+    const { data, error } = await supabase.from('serials').select('*').eq('id', 1).single<SerialsRow>();
     if (error || !data) return null;
     return {
       receipt: data.receipt, expense: data.expense, maintenance: data.maintenance,
@@ -382,7 +382,7 @@ export const supabaseData = {
     }
   },
 
-  async fetchFiltered<T>(jsTable: string, filters: Record<string, any>, orderBy?: string, ascending = false, limit?: number): Promise<T[]> {
+  async fetchFiltered<T>(jsTable: string, filters: Record<string, unknown>, orderBy?: string, ascending = false, limit?: number): Promise<T[]> {
     const sqlTable = resolveTable(jsTable);
 
     try {
@@ -439,7 +439,7 @@ export const supabaseData = {
     const results = await Promise.all(
       tables.map(t => limitedTables.has(t) ? this.fetchRecent(t, 200) : this.fetchAll(t))
     );
-    const dataMap: Record<string, any[]> = {};
+    const dataMap: Record<string, unknown[]> = {};
     tables.forEach((t, i) => { dataMap[t] = results[i]; });
 
     const [settings, governance, serials] = await Promise.all([
@@ -449,7 +449,7 @@ export const supabaseData = {
     ]);
 
     const { data: profileRows } = await supabase.from('profiles').select('*');
-    const users = (profileRows || []).map((p: Record<string, unknown>) => ({
+    const users = ((profileRows || []) as UsersRow[]).map((p) => ({
       id: p.id, username: p.username || '', email: '', hash: '', salt: '',
       role: p.role || 'USER', mustChange: p.must_change_password || false,
       createdAt: p.created_at || Date.now(),
@@ -459,40 +459,40 @@ export const supabaseData = {
     return {
       settings: settings || {} as Settings,
       auth: { users },
-      owners: dataMap.owners || [],
-      properties: dataMap.properties || [],
-      units: dataMap.units || [],
-      tenants: dataMap.tenants || [],
-      contracts: dataMap.contracts || [],
-      invoices: dataMap.invoices || [],
-      receipts: dataMap.receipts || [],
-      receiptAllocations: dataMap.receiptAllocations || [],
-      expenses: dataMap.expenses || [],
-      maintenanceRecords: dataMap.maintenanceRecords || [],
-      depositTxs: dataMap.depositTxs || [],
-      auditLog: dataMap.auditLog || [],
+      owners: (dataMap.owners || []) as Database['owners'],
+      properties: (dataMap.properties || []) as Database['properties'],
+      units: (dataMap.units || []) as Database['units'],
+      tenants: (dataMap.tenants || []) as Database['tenants'],
+      contracts: (dataMap.contracts || []) as Database['contracts'],
+      invoices: (dataMap.invoices || []) as Database['invoices'],
+      receipts: (dataMap.receipts || []) as Database['receipts'],
+      receiptAllocations: (dataMap.receiptAllocations || []) as Database['receiptAllocations'],
+      expenses: (dataMap.expenses || []) as Database['expenses'],
+      maintenanceRecords: (dataMap.maintenanceRecords || []) as Database['maintenanceRecords'],
+      depositTxs: (dataMap.depositTxs || []) as Database['depositTxs'],
+      auditLog: (dataMap.auditLog || []) as Database['auditLog'],
       governance: governance || { readOnly: false, lockedPeriods: [] },
-      ownerSettlements: dataMap.ownerSettlements || [],
+      ownerSettlements: (dataMap.ownerSettlements || []) as Database['ownerSettlements'],
       serials: serials || { receipt: 1000, expense: 1000, maintenance: 1000, invoice: 1000, lead: 1000, ownerSettlement: 1000, journalEntry: 1000, mission: 1000, contract: 1000 },
-      snapshots: dataMap.snapshots || [],
-      accounts: dataMap.accounts || [],
-      journalEntries: dataMap.journalEntries || [],
+      snapshots: (dataMap.snapshots || []) as Database['snapshots'],
+      accounts: (dataMap.accounts || []) as Database['accounts'],
+      journalEntries: (dataMap.journalEntries || []) as Database['journalEntries'],
       autoBackups: [],
-      ownerBalances: dataMap.ownerBalances || [],
-      accountBalances: dataMap.accountBalances || [],
-      kpiSnapshots: dataMap.kpiSnapshots || [],
-      contractBalances: dataMap.contractBalances || [],
-      tenantBalances: dataMap.tenantBalances || [],
-      notificationTemplates: dataMap.notificationTemplates || [],
-      outgoingNotifications: dataMap.outgoingNotifications || [],
-      appNotifications: dataMap.appNotifications || [],
-      leads: dataMap.leads || [],
-      lands: dataMap.lands || [],
-      commissions: dataMap.commissions || [],
-      missions: dataMap.missions || [],
-      budgets: dataMap.budgets || [],
-      attachments: dataMap.attachments || [],
-      utilityRecords: dataMap.utilityRecords || [],
+      ownerBalances: (dataMap.ownerBalances || []) as Database['ownerBalances'],
+      accountBalances: (dataMap.accountBalances || []) as Database['accountBalances'],
+      kpiSnapshots: (dataMap.kpiSnapshots || []) as Database['kpiSnapshots'],
+      contractBalances: (dataMap.contractBalances || []) as Database['contractBalances'],
+      tenantBalances: (dataMap.tenantBalances || []) as Database['tenantBalances'],
+      notificationTemplates: (dataMap.notificationTemplates || []) as Database['notificationTemplates'],
+      outgoingNotifications: (dataMap.outgoingNotifications || []) as Database['outgoingNotifications'],
+      appNotifications: (dataMap.appNotifications || []) as Database['appNotifications'],
+      leads: (dataMap.leads || []) as Database['leads'],
+      lands: (dataMap.lands || []) as Database['lands'],
+      commissions: (dataMap.commissions || []) as Database['commissions'],
+      missions: (dataMap.missions || []) as Database['missions'],
+      budgets: (dataMap.budgets || []) as Database['budgets'],
+      attachments: (dataMap.attachments || []) as Database['attachments'],
+      utilityRecords: (dataMap.utilityRecords || []) as Database['utilityRecords'],
     };
   },
 
@@ -509,7 +509,7 @@ export const supabaseData = {
 
     const { data: serialData } = await supabase.from('serials').select('id').eq('id', 1).single();
     if (!serialData) {
-      const snakeSerials: Record<string, any> = { id: 1 };
+      const snakeSerials: Record<string, unknown> = { id: 1 };
       for (const [k, v] of Object.entries(defaultSerials)) {
         const snakeKey = camelToSnake(k);
         snakeSerials[snakeKey] = v;
@@ -531,13 +531,21 @@ export const supabaseData = {
   },
 };
 
-function deepMerge<T extends Record<string, unknown>, U extends Record<string, unknown>>(target: T, source: U): T & U {
-  const output = { ...target };
-  for (const key in source) {
-    if (source[key] && typeof source[key] === 'object' && !Array.isArray(source[key])) {
-      output[key] = deepMerge(target[key] || {}, source[key]);
+function deepMerge(target: Record<string, unknown>, source: Record<string, unknown>): Record<string, unknown> {
+  const output: Record<string, unknown> = { ...target };
+  for (const [key, sourceValue] of Object.entries(source)) {
+    const targetValue = output[key];
+    if (
+      sourceValue &&
+      typeof sourceValue === 'object' &&
+      !Array.isArray(sourceValue) &&
+      targetValue &&
+      typeof targetValue === 'object' &&
+      !Array.isArray(targetValue)
+    ) {
+      output[key] = deepMerge(targetValue as Record<string, unknown>, sourceValue as Record<string, unknown>);
     } else {
-      output[key] = source[key];
+      output[key] = sourceValue;
     }
   }
   return output;
