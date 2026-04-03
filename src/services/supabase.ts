@@ -1,16 +1,17 @@
 import { createClient } from '@supabase/supabase-js';
+import { getAppEnv, maskSecret } from '../config/env';
 import { logger } from './logger';
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string;
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string;
+const env = getAppEnv();
 
-if (!supabaseUrl || !supabaseAnonKey) {
-    logger.error('[Supabase] Missing credentials – check VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY');
-}
+logger.info('[Supabase] Initializing client', {
+  url: env.supabaseUrl,
+  anonKeyMasked: maskSecret(env.supabaseAnonKey),
+});
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-    auth: {
-        persistSession: true,
-        autoRefreshToken: true,
-    },
+export const supabase = createClient(env.supabaseUrl, env.supabaseAnonKey, {
+  auth: {
+    persistSession: true,
+    autoRefreshToken: true,
+  },
 });

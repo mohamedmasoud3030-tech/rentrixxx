@@ -1,0 +1,17 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "jsx": "react-jsx"
+  },
+  "include": [
+    "src/vite-env.d.ts",
+    "src/constants/status.ts",
+    "src/utils/status.ts",
+    "src/utils/validation.ts",
+    "src/services/auditEngine.ts",
+    "src/contexts/authContext.tsx",
+    "src/contexts/financeContext.tsx",
+    "src/contexts/operationsContext.tsx"
+  ]
+}

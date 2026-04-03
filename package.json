@@ -5,7 +5,17 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "dist": "npm run build"
+    "dist": "npm run build",
+    "typecheck": "node scripts/typecheck.mjs",
+    "lint": "node scripts/lint-check.mjs",
+    "test": "npm run test:unit && npm run test:service && npm run test:critical && npm run test:stress",
+    "test:unit": "node --experimental-transform-types --experimental-specifier-resolution=node --test tests/unit/status.test.ts",
+    "test:service": "node --experimental-transform-types --experimental-specifier-resolution=node --test tests/service/validation.test.ts tests/service/security-validation.test.ts",
+    "test:critical": "node --experimental-transform-types --experimental-specifier-resolution=node --test tests/critical/critical-flows.test.ts",
+    "test:stress": "node --experimental-transform-types --experimental-specifier-resolution=node --test tests/critical/stress-scenarios.test.ts",
+    "readiness": "node scripts/deployment-readiness.mjs",
+    "readiness:strict": "node scripts/deployment-readiness.mjs --strict",
+    "ci": "npm run typecheck && npm run lint && npm run test && npm run readiness && npm run build"
   },
   "author": "Mohamed Masoud",
   "license": "UNLICENSED",

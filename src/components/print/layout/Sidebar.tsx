@@ -6,6 +6,8 @@ import {
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { useApp } from '../../../contexts/AppContext';
+import { WORKFLOW_STATUS } from '../../../constants/status';
+import { normalizeWorkflowStatus } from '../../../utils/status';
 import { getLastRunDate } from '../../../services/automationService';
 
 interface NavLinkItem {
@@ -83,7 +85,9 @@ const Sidebar: React.FC<SidebarProps> = ({ sidebarOpen, setSidebarOpen }) => {
     const expiringContracts = db.contracts.filter(c => c.status === 'ACTIVE' && new Date(c.end) <= futureDate).length;
     const overdueInvoices = db.invoices.filter(i => i.status === 'OVERDUE' || (i.status === 'UNPAID' && new Date(i.dueDate) < now)).length;
     const newLeads = db.leads.filter(l => l.status === 'NEW').length;
-    const pendingNotifications = db.outgoingNotifications.filter(n => n.status === 'PENDING').length;
+    const pendingNotifications = db.outgoingNotifications.filter(
+      (n) => normalizeWorkflowStatus(n.status) === WORKFLOW_STATUS.Pending,
+    ).length;
     return { expiringContracts, overdueInvoices, newLeads, pendingNotifications } as Record<string, number>;
   }, [db, settings]);
 

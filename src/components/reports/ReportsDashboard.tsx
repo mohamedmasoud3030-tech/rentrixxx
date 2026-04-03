@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect, useRef } from 'react';
+import React, { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import { supabase } from '../../services/supabase';
 import { useApp } from '../../contexts/AppContext';
 import {
@@ -14,6 +14,22 @@ type ReportId =
 
 interface DateRange { from: string; to: string }
 type LoadState = 'idle' | 'loading' | 'done' | 'error';
+interface OverdueReportRow {
+  tenant_name: string;
+  tenant_phone?: string;
+  property_name: string;
+  unit_name: string;
+  invoice_no: string;
+  due_date: string;
+  days_overdue: number;
+  remaining: number;
+}
+
+interface OverdueReportData {
+  total: number;
+  count: number;
+  rows: OverdueReportRow[];
+}
 
 // ─── Helpers ─────────────────────────────────────────────────
 const fmt = (n: number, currency = 'OMR') =>
@@ -393,7 +409,7 @@ const AgedReceivablesView: React.FC<{ currency: string }> = ({ currency }) => {
 
 // 5. المتأخرون
 const OverdueView: React.FC<{ currency: string }> = ({ currency }) => {
-  const [data, setData] = useState<any>(null);
+  const [data, setData] = useState<OverdueReportData | null>(null);
   const [state, setState] = useState<LoadState>('idle');
   const [search, setSearch] = useState('');
 
@@ -401,13 +417,21 @@ const OverdueView: React.FC<{ currency: string }> = ({ currency }) => {
     setState('loading');
     const { data: d, error } = await supabase.rpc('rpt_overdue_invoices', { p_as_of: today() });
     if (error) { setState('error'); return; }
-    setData(d); setState('done');
+    setData(d as OverdueReportData); setState('done');
   }, []);
 
   useEffect(() => { load(); }, []);
 
-  const rows = (data?.rows || []).filter((r: any) =>
-    !search || r.tenant_name?.includes(search) || r.unit_name?.includes(search) || r.property_name?.includes(search)
+  const rows = useMemo(
+    () => (data?.rows || []).filter((r) =>
+      !search || r.tenant_name?.includes(search) || r.unit_name?.includes(search) || r.property_name?.includes(search)
+    ),
+    [data?.rows, search],
+  );
+  const overdue90Count = useMemo(() => rows.filter((r) => r.days_overdue > 90).length, [rows]);
+  const averageOverdueDays = useMemo(
+    () => (rows.length ? Math.round(rows.reduce((sum, row) => sum + row.days_overdue, 0) / rows.length) : null),
+    [rows],
   );
 
   return (
@@ -418,14 +442,14 @@ const OverdueView: React.FC<{ currency: string }> = ({ currency }) => {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             <KPI label="إجمالي المتأخرات"  value={fmt(data.total, currency)} color="text-red-600"/>
             <KPI label="عدد الفواتير"       value={String(data.count)}/>
-            <KPI label="المتأخرون > 90 يوم" value={String(rows.filter((r:any) => r.days_overdue > 90).length)} color="text-red-700"/>
-            <KPI label="متوسط أيام التأخر"  value={rows.length ? String(Math.round(rows.reduce((s:number, r:any) => s + r.days_overdue, 0) / rows.length)) + ' يوم' : '—'}/>
+            <KPI label="المتأخرون > 90 يوم" value={String(overdue90Count)} color="text-red-700"/>
+            <KPI label="متوسط أيام التأخر"  value={averageOverdueDays !== null ? `${averageOverdueDays} يوم` : '—'}/>
           </div>
           <input value={search} onChange={e => setSearch(e.target.value)} placeholder="بحث باسم المستأجر أو الوحدة..."
             className="w-full text-sm border border-border rounded-xl px-4 py-2.5 bg-card outline-none focus:ring-2 focus:ring-primary/20"/>
           <Tbl
             heads={['المستأجر','الهاتف','العقار','الوحدة','الفاتورة','تاريخ الاستحقاق','التأخر','المستحق']}
-            rows={rows.map((r: any) => [
+            rows={rows.map((r) => [
               r.tenant_name,
               <a href={`https://wa.me/${(r.tenant_phone||'').replace(/\D/g,'')}`} target="_blank" className="text-emerald-600 text-xs">{r.tenant_phone}</a>,
               r.property_name,
