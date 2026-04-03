@@ -173,7 +173,7 @@ export interface MaintenanceRequestsRow {
 export interface UsersRow {
   id: string;
   username: string;
-  role: 'ADMIN' | 'USER';
+  role: 'ADMIN' | 'USER' | 'ACCOUNTANT' | 'MANAGER' | 'VIEWER';
   must_change_password: boolean;
   is_disabled: boolean;
   created_at: number;

@@ -61,7 +61,7 @@ export interface User {
   email: string;
   hash: string;
   salt: string;
-  role: 'ADMIN' | 'USER';
+  role: 'ADMIN' | 'USER' | 'ACCOUNTANT' | 'MANAGER' | 'VIEWER';
   mustChange: boolean;
   createdAt: number;
   isDemo?: boolean;

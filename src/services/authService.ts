@@ -1,15 +1,5 @@
 import type { User } from '../types';
-
-const CAPABILITY_MAP: Record<'ADMIN' | 'USER', Set<string>> = {
-  ADMIN: new Set([
-    'VIEW_DASHBOARD', 'VIEW_FINANCIALS', 'MANAGE_SETTINGS', 'MANAGE_USERS', 'VIEW_AUDIT_LOG', 'USE_SMART_ASSISTANT',
-    'MANAGE_PROPERTIES', 'MANAGE_TENANTS', 'MANAGE_OWNERS', 'MANAGE_CONTRACTS', 'MANAGE_MAINTENANCE', 'VIEW_REPORTS',
-  ]),
-  USER: new Set([
-    'VIEW_DASHBOARD', 'VIEW_FINANCIALS', 'USE_SMART_ASSISTANT',
-    'MANAGE_PROPERTIES', 'MANAGE_TENANTS', 'MANAGE_OWNERS', 'MANAGE_CONTRACTS', 'MANAGE_MAINTENANCE', 'VIEW_REPORTS',
-  ]),
-};
+import { ROLE_CAPABILITIES, type AppRole, type Capability } from '../config/rbac';
 
 export interface SupabaseSessionLike {
   user?: {
@@ -21,7 +11,7 @@ export interface SupabaseSessionLike {
 export interface ProfileLike {
   id: string;
   username?: string | null;
-  role?: 'ADMIN' | 'USER' | null;
+  role?: AppRole | null;
   must_change_password?: boolean | null;
   created_at?: number | null;
   is_disabled?: boolean | null;
@@ -29,15 +19,16 @@ export interface ProfileLike {
 
 export const canUserAccess = (user: User | null | undefined, action: string): boolean => {
   if (!user) return false;
-  return CAPABILITY_MAP[user.role]?.has(action) ?? false;
+  return ROLE_CAPABILITIES[user.role]?.has(action as Capability) ?? false;
 };
 
 export const isSessionValid = (session: SupabaseSessionLike | null | undefined): boolean => {
   return Boolean(session?.user?.id);
 };
 
-export const resolveRole = (profile: Pick<ProfileLike, 'role'> | null | undefined): 'ADMIN' | 'USER' => {
-  return profile?.role === 'ADMIN' ? 'ADMIN' : 'USER';
+export const resolveRole = (profile: Pick<ProfileLike, 'role'> | null | undefined): AppRole => {
+  const role = profile?.role;
+  return role && role in ROLE_CAPABILITIES ? role : 'USER';
 };
 
 export const mustChangePassword = (profile: Pick<ProfileLike, 'must_change_password'> | null | undefined): boolean => {
