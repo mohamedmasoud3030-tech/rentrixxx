@@ -132,9 +132,10 @@ export function toGregorian(hijriDay: number, hijriMonth: number, hijriYear: num
 
 // Format date with calendar type option
 export function formatDateWithType(dateString: string, calendarType: 'gregorian' | 'hijri' = 'gregorian'): string {
-  if (!dateString) return 'â€”';
+  if (!dateString) return '—';
   try {
     const date = new Date(dateString);
+    if (Number.isNaN(date.getTime())) return dateString;
     
     if (calendarType === 'hijri') {
       const hijri = toHijri(date);
@@ -159,9 +160,10 @@ export function formatDate(dateString: string): string {
 }
 
 export function formatDateTime(dateTimeString: string): string {
-    if (!dateTimeString) return 'â€”';
+    if (!dateTimeString) return '—';
     try {
         const date = new Date(dateTimeString);
+        if (Number.isNaN(date.getTime())) return dateTimeString;
         const formattedDate = formatDate(dateTimeString);
         const time = date.toLocaleTimeString('ar-EG', { hour: 'numeric', minute: 'numeric', hour12: true });
         return `${formattedDate} ${time}`;
@@ -171,9 +173,10 @@ export function formatDateTime(dateTimeString: string): string {
 }
 
 export function formatDateTimeWithType(dateTimeString: string, calendarType: 'gregorian' | 'hijri' = 'gregorian'): string {
-    if (!dateTimeString) return 'â€”';
+    if (!dateTimeString) return '—';
     try {
         const date = new Date(dateTimeString);
+        if (Number.isNaN(date.getTime())) return dateTimeString;
         const formattedDate = formatDateWithType(dateTimeString, calendarType);
         const time = date.toLocaleTimeString('ar-EG', { hour: 'numeric', minute: 'numeric', hour12: true });
         return `${formattedDate} ${time}`;
@@ -217,8 +220,8 @@ export function getStatusBadgeClass(status: string): string {
 
 export function sanitizePhoneNumber(phone: string): string {
   if (!phone) return '';
-  // Removes +, -, spaces, parentheses and any non-digit characters
-  return phone.replace(/[\s+()-]/g, '');
+  // Removes all non-digit characters
+  return phone.replace(/\D/g, '');
 }
 
 export const safeLabel = (map: {[key: string]: string}, key: string, fallback: string) => map[key] || fallback;

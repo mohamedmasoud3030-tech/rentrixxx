@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { WORKFLOW_STATUS } from '../../src/constants/status';
 import { isWorkflowStatus, normalizeWorkflowStatus } from '../../src/utils/status';
+import { formatDate, sanitizePhoneNumber } from '../../src/utils/helpers';
 
 test('normalizes legacy statuses', () => {
   assert.equal(normalizeWorkflowStatus('PENDING'), WORKFLOW_STATUS.Pending);
@@ -23,4 +24,12 @@ test('workflow status type guard', () => {
   assert.equal(isWorkflowStatus('Pending'), true);
   assert.equal(isWorkflowStatus('Completed'), true);
   assert.equal(isWorkflowStatus('SENT'), false);
+});
+
+test('sanitizePhoneNumber removes all non-digit characters', () => {
+  assert.equal(sanitizePhoneNumber('+968 (9123)-45ab67'), '96891234567');
+});
+
+test('formatDate returns original value for invalid dates', () => {
+  assert.equal(formatDate('not-a-date'), 'not-a-date');
 });
