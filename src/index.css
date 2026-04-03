@@ -62,8 +62,12 @@ html {
     scroll-behavior: smooth;
 }
 
+html[dir="rtl"] {
+    direction: rtl;
+}
+
 body {
-    font-family: 'Cairo', 'Noto Sans Arabic', 'Tajawal', sans-serif;
+    font-family: 'Cairo', 'Noto Kufi Arabic', 'Noto Sans Arabic', 'Tajawal', sans-serif;
     background-color: hsl(var(--color-bg));
     color: hsl(var(--color-text-primary));
     line-height: 1.6;
@@ -140,11 +144,11 @@ button, a, nav { -webkit-tap-highlight-color: transparent; -webkit-touch-callout
     }
 
     /* === TABLES === */
-    table { @apply w-full text-sm text-right; }
+    table { @apply w-full text-sm text-start; }
     thead { background: hsl(var(--color-border) / 0.4); }
     th {
         @apply px-4 sm:px-5 py-3.5 border-b border-border text-text-muted tracking-wide font-bold text-xs;
-        text-align: right;
+        text-align: start;
         letter-spacing: 0.04em;
     }
     td { @apply px-4 sm:px-5 py-3.5 sm:py-4 border-b border-border text-text; }
@@ -548,6 +552,6 @@ input[type="number"] {
 /* ── LTR number input with RTL alignment ── */
 .ltr-input {
   direction: ltr;
-  text-align: right;
-  unicode-bidi: plaintext;
+  text-align: end;
+  unicode-bidi: isolate;
 }

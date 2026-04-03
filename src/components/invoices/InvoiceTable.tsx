@@ -25,7 +25,7 @@ export const InvoiceTable: React.FC<InvoiceTableProps> = ({
 }) => {
   return (
     <div className="table-shell">
-      <table className="w-full min-w-[860px] text-sm text-right">
+      <table className="w-full min-w-[860px] text-sm text-start">
         <thead className="text-xs text-text-muted border-b border-border bg-background/50">
           <tr>
             <th className="px-2 py-3 w-10 font-semibold"></th>

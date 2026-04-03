@@ -28,11 +28,6 @@ const Sidebar: React.FC<SidebarProps> = ({ sidebarOpen, setSidebarOpen }) => {
     void loadLastRunDate();
   }, []);
 
-  const isRtl = useMemo(() => {
-    if (typeof document === 'undefined') return true;
-    return getComputedStyle(document.documentElement).direction === 'rtl';
-  }, []);
-
   const badges = useMemo(() => {
     const now = new Date();
     const alertDays = settings.operational?.contractAlertDays ?? 30;
@@ -119,7 +114,7 @@ const Sidebar: React.FC<SidebarProps> = ({ sidebarOpen, setSidebarOpen }) => {
     const active = isItemActive(item);
     const isExpanded = expandedItems[item.id] ?? active;
     const itemPadding = depth === 0 ? 'px-3' : 'px-2';
-    const nestedIndent = depth > 0 ? (isRtl ? 'mr-4' : 'ml-4') : '';
+    const nestedIndent = depth > 0 ? 'ms-4' : '';
 
     return (
       <li key={item.id} className={nestedIndent}>
@@ -142,7 +137,7 @@ const Sidebar: React.FC<SidebarProps> = ({ sidebarOpen, setSidebarOpen }) => {
               />
               <span className="truncate">{item.label}</span>
               {item.badgeKey && badges[item.badgeKey] > 0 && (
-                <span className={`${isRtl ? 'mr-auto' : 'ml-auto'} min-w-[20px] h-5 flex items-center justify-center rounded-full bg-red-500 text-white text-[10px] font-black px-1.5`}>
+                <span className="ms-auto min-w-[20px] h-5 flex items-center justify-center rounded-full bg-red-500 text-white text-[10px] font-black px-1.5">
                   {badges[item.badgeKey]}
                 </span>
               )}
@@ -161,7 +156,7 @@ const Sidebar: React.FC<SidebarProps> = ({ sidebarOpen, setSidebarOpen }) => {
             <button
               type="button"
               onClick={() => toggleItem(item.id)}
-              className={`${isRtl ? 'mr-auto' : 'ml-auto'} inline-flex h-6 w-6 items-center justify-center rounded-md text-text-muted transition-colors hover:text-text`}
+              className="ms-auto inline-flex h-6 w-6 items-center justify-center rounded-md text-text-muted transition-colors hover:text-text"
               aria-label={isExpanded ? `${AR_LABELS.collapse} ${item.label}` : `${AR_LABELS.expand} ${item.label}`}
             >
               <ChevronDown size={16} className={`transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`} />
@@ -170,7 +165,7 @@ const Sidebar: React.FC<SidebarProps> = ({ sidebarOpen, setSidebarOpen }) => {
         </div>
 
         {hasChildren && isExpanded && (
-          <ul className={`mt-1 flex flex-col gap-0.5 ${isRtl ? 'border-r pr-2' : 'border-l pl-2'} border-border/60`}>
+          <ul className="mt-1 flex flex-col gap-0.5 border-s border-border/60 ps-2">
             {item.children?.map(child => renderNavItem(child, depth + 1))}
           </ul>
         )}
@@ -180,7 +175,7 @@ const Sidebar: React.FC<SidebarProps> = ({ sidebarOpen, setSidebarOpen }) => {
 
   return (
     <aside
-      className={`absolute right-0 top-0 z-50 flex h-screen w-72 flex-col overflow-y-hidden border-l border-border bg-sidebar-bg duration-300 ease-in-out lg:static lg:translate-x-0 ${
+      className={`absolute start-0 top-0 z-50 flex h-screen w-72 flex-col overflow-y-hidden border-s border-border bg-sidebar-bg duration-300 ease-in-out lg:static lg:translate-x-0 ${
         sidebarOpen ? 'translate-x-0' : 'translate-x-full'
       }`}
       style={{ boxShadow: 'var(--shadow-sidebar)' }}
