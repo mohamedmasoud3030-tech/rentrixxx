@@ -547,15 +547,21 @@ export interface Lead {
 
 export interface Land {
     id: string;
+    no: string;
     plotNo: string;
     name: string;
     location: string;
     area: number;
+    ownerId: string;
     category: 'سكني' | 'تجاري' | 'صناعي';
     status: 'AVAILABLE' | 'RESERVED' | 'SOLD';
+    purchasePrice: number;
+    currentValue: number;
     ownerPrice: number;
     commission: number;
     notes: string;
+    lastValuationDate?: string;
+    valuationNotes?: string;
     createdAt: number;
     updatedAt?: number;
 }
@@ -563,11 +569,14 @@ export interface Land {
 export interface Commission {
     id: string;
     staffId: string;
+    contractId?: string;
+    commissionType: 'SALE' | 'RENTAL' | 'MANAGEMENT';
+    description?: string;
     type: 'SALE' | 'RENT' | 'MANAGEMENT';
     dealValue: number;
     percentage: number;
     amount: number;
-    status: 'UNPAID' | 'PAID';
+    status: 'PENDING' | 'UNPAID' | 'PAID';
     expenseId?: string; // Link to the payout expense
     createdAt: number;
     paidAt?: number;
