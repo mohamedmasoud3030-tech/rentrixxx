@@ -14,6 +14,7 @@ import { toast } from 'react-hot-toast';
 import PropertyMapView from './PropertyMap';
 import { PieChart as RechartsPie, Pie, Cell, ResponsiveContainer, Legend } from 'recharts';
 import SearchFilterBar from '../components/shared/SearchFilterBar';
+import { getAttachmentUrl, uploadAttachment } from '../services/attachmentService';
 
 interface ErrorBoundaryState { hasError: boolean; error: Error | null; }
 class ErrorBoundary extends Component<{ children: ReactNode; fallback?: ReactNode }, ErrorBoundaryState> {
@@ -395,6 +396,7 @@ const UtilityRecordForm: React.FC<{
     const [notes, setNotes] = useState(record?.notes || '');
     const [billImageUrl, setBillImageUrl] = useState(record?.billImageUrl || '');
     const [billImageMime, setBillImageMime] = useState(record?.billImageMime || '');
+    const [billPreviewUrl, setBillPreviewUrl] = useState('');
 
     React.useEffect(() => {
         if (record) {
@@ -410,6 +412,30 @@ const UtilityRecordForm: React.FC<{
         }
     }, [record, isOpen]);
 
+    React.useEffect(() => {
+        let active = true;
+        const resolvePreview = async () => {
+            if (!billImageUrl) {
+                setBillPreviewUrl('');
+                return;
+            }
+            if (billImageUrl.startsWith('data:')) {
+                setBillPreviewUrl(billImageUrl);
+                return;
+            }
+            try {
+                const signed = await getAttachmentUrl(billImageUrl);
+                if (active) setBillPreviewUrl(signed);
+            } catch {
+                if (active) setBillPreviewUrl('');
+            }
+        };
+        void resolvePreview();
+        return () => {
+            active = false;
+        };
+    }, [billImageUrl]);
+
     const [isSaving, setIsSaving] = useState(false);
     const isSavingRef = useRef(false);
 
@@ -417,13 +443,27 @@ const UtilityRecordForm: React.FC<{
     const amount = useMemo(() => consumption * unitPrice, [consumption, unitPrice]);
 
     const handleImageUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (!file) return;
-        if (file.size > 5 * 1024 * 1024) { toast.error('حجم الصورة يجب أن يكون أقل من 5MB'); return; }
-        const reader = new FileReader();
-        reader.onload = (ev) => { setBillImageUrl(ev.target?.result as string); setBillImageMime(file.type); };
-        reader.readAsDataURL(file);
-    }, []);
+        const upload = async () => {
+            const file = e.target.files?.[0];
+            if (!file) return;
+            if (!['application/pdf', 'image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
+                toast.error('نوع الملف غير مدعوم. المسموح: PDF أو JPG أو PNG أو WEBP.');
+                return;
+            }
+            if (file.size > 10 * 1024 * 1024) { toast.error('حجم الملف يجب أن يكون أقل من 10MB'); return; }
+            try {
+                const contextEntityId = record?.id || crypto.randomUUID();
+                const { path } = await uploadAttachment(file, { entityType: 'UTILITY', entityId: contextEntityId });
+                setBillImageUrl(path);
+                setBillImageMime(file.type);
+                toast.success('تم رفع المرفق بنجاح');
+            } catch (error) {
+                console.error(error);
+                toast.error('تعذر رفع مرفق الفاتورة');
+            }
+        };
+        void upload();
+    }, [record?.id]);
 
     const handleSubmit = useCallback(async (e: React.FormEvent) => {
         e.preventDefault();
@@ -523,7 +563,7 @@ const UtilityRecordForm: React.FC<{
                     <input id="bill-image-upload" type="file" accept="image/*,application/pdf" ref={fileRef} onChange={handleImageUpload} className="hidden" disabled={isSaving} />
                     {billImageUrl ? (
                         <div className="border border-border rounded-lg p-2 flex items-center justify-between">
-                            {billImageMime?.startsWith('image/') && <img src={billImageUrl} alt="فاتورة" className="h-16 w-auto rounded object-cover" />}
+                            {billImageMime?.startsWith('image/') && billPreviewUrl && <img src={billPreviewUrl} alt="فاتورة" className="h-16 w-auto rounded object-cover" />}
                             {billImageMime === 'application/pdf' && <span className="text-sm text-blue-600">📄 PDF مرفق</span>}
                             <button type="button" onClick={() => { setBillImageUrl(''); setBillImageMime(''); }} className="text-red-500 hover:text-red-700" disabled={isSaving}><Trash2 size={16} /></button>
                         </div>
@@ -544,6 +584,40 @@ const UtilityRecordForm: React.FC<{
                 </div>
             </form>
         </Modal>
+    );
+};
+
+const UtilityBillThumbnail: React.FC<{ path: string }> = ({ path }) => {
+    const [url, setUrl] = useState('');
+
+    React.useEffect(() => {
+        let active = true;
+        const loadUrl = async () => {
+            if (!path) return;
+            if (path.startsWith('data:')) {
+                setUrl(path);
+                return;
+            }
+            try {
+                const signedUrl = await getAttachmentUrl(path);
+                if (active) setUrl(signedUrl);
+            } catch {
+                if (active) setUrl('');
+            }
+        };
+        void loadUrl();
+        return () => { active = false; };
+    }, [path]);
+
+    if (!url) return null;
+
+    return (
+        <img
+            src={url}
+            alt="فاتورة"
+            className="h-16 w-16 object-cover rounded-lg border border-white/50 cursor-pointer"
+            onClick={() => window.open(url, '_blank', 'noopener,noreferrer')}
+        />
     );
 };
 
@@ -677,7 +751,7 @@ const UnitDetailView: React.FC<{ unit: Unit; property: Property; onBack: () => v
                                 {r.notes && <p className="text-xs mt-2 opacity-75">{r.notes}</p>}
                             </div>
                             {r.billImageUrl && r.billImageMime?.startsWith('image/') && (
-                                <img src={r.billImageUrl} alt="فاتورة" className="h-16 w-16 object-cover rounded-lg border border-white/50 cursor-pointer" onClick={() => window.open(r.billImageUrl, '_blank')} />
+                                <UtilityBillThumbnail path={r.billImageUrl} />
                             )}
                             <div className="shrink-0">
                                 <ActionsMenu items={[
