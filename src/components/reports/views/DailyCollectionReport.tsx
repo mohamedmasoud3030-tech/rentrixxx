@@ -18,7 +18,7 @@ import {
   exportVacantUnitsToPdf, exportUtilitiesReportToPdf, exportPropertyReportToPdf
 } from '../../../services/pdfService';
 import { calculateBalanceSheetData, calculateIncomeStatementData, calculateAgedReceivables } from '../../../services/accountingService';
-import { getPostedReceiptsForDate } from '../../../services/reportingService';
+import { getPostedReceiptsInRange } from '../../../services/reportingService';
 import { startOfMonth, endOfMonth, subMonths, startOfYear, endOfYear, isWithinInterval, format, eachMonthOfInterval } from 'date-fns';
 import { ar } from 'date-fns/locale';
 import {
@@ -53,7 +53,7 @@ const DailyCollectionReport: React.FC = () => {
   const [isPrinting, setIsPrinting] = useState(false);
 
   const dayReceipts = useMemo(() => {
-    return getPostedReceiptsForDate(db.receipts, date);
+    return getPostedReceiptsInRange(db.receipts, date, date);
   }, [db.receipts, date]);
 
   const totalCash = dayReceipts.filter(r => r.channel === 'CASH').reduce((s, r) => s + r.amount, 0);
