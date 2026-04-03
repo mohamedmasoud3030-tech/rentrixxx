@@ -1246,31 +1246,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return generationResult.total;
   }, [activeDb, refreshData, settings]);
 
-  const generateNotifications = useCallback(async () => {
-    if (!settings) return 0;
-    const now = Date.now();
-    const existingNotifs = await supabaseData.fetchAll<AppNotification>('appNotifications');
-    let count = await generateContractExpiryNotifications();
-    const allInvoices = await supabaseData.fetchAll<Invoice>('invoices');
-    const overdueInvoices = allInvoices.filter(inv => deriveInvoiceStatus(inv) === 'OVERDUE');
-    const overdueIds = new Set(overdueInvoices.map(inv => inv.id));
-    for (const inv of overdueInvoices) {
-      const link = `/finance/invoices?invoiceId=${inv.id}`;
-      const exists = existingNotifs.some(n => n.link === link && n.type === 'OVERDUE_BALANCE');
-      if (!exists) {
-        await supabaseData.insert('appNotifications', { id: crypto.randomUUID(), createdAt: now, isRead: false, role: 'ADMIN', type: 'OVERDUE_BALANCE', title: 'فاتورة متأخرة', message: `الفاتورة رقم ${inv.no} متأخرة بقيمة ${round3(inv.amount - inv.paidAmount)}`, link });
-        count++;
-      }
-    }
-    for (const notif of existingNotifs.filter(n => n.type === 'OVERDUE_BALANCE')) {
-      const invoiceId = notif.link.split('invoiceId=')[1];
-      if (!invoiceId || overdueIds.has(invoiceId)) continue;
-      await supabaseData.remove('appNotifications', notif.id);
-    }
-    await refreshData();
-    return count;
-  }, [deriveInvoiceStatus, generateContractExpiryNotifications, refreshData, settings]);
-
   const syncSnapshots = useCallback(async (sourceDb?: Database | null) => {
     const currentDb = sourceDb || db || await supabaseData.getAllData();
     const snapshots = buildSnapshotState(currentDb);
