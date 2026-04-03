@@ -13,14 +13,23 @@ export interface OwnerPortalPayload {
 }
 
 export async function createOwnerPortalUrl(ownerId: string): Promise<string> {
-  const { data, error } = await supabase.functions.invoke('owner-access-token', {
-    body: { ownerId, action: 'issue' },
-  });
-  if (error || !data?.url) {
-    logger.error('[EdgeFunction] owner-access-token issue failed', error || data);
-    throw new Error('تعذر إنشاء رابط البوابة الآمن.');
+  try {
+    const { data, error } = await supabase.functions.invoke('owner-access-token', {
+      body: { ownerId, action: 'issue' },
+    });
+
+    if (error || !data?.url) {
+      logger.error('[EdgeFunction] owner-access-token issue failed', error || data);
+      console.error('[EdgeFunction] owner-access-token issue failed', error || data);
+      return '';
+    }
+
+    return data.url as string;
+  } catch (error) {
+    logger.error('[EdgeFunction] owner-access-token issue exception', error);
+    console.error('[EdgeFunction] owner-access-token issue exception', error);
+    return '';
   }
-  return data.url as string;
 }
 
 export async function verifyOwnerAccessToken(ownerId: string, token: string): Promise<OwnerPortalPayload> {
