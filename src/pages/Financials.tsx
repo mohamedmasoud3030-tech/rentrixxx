@@ -751,6 +751,7 @@ const ReceiptForm: React.FC<{ isOpen: boolean, onClose: () => void, receipt: Rec
     const [checkStatus, setCheckStatus] = useState<Receipt['checkStatus']>('PENDING');
     const [allocations, setAllocations] = useState<Record<string, number>>({});
     const [isSaving, setIsSaving] = useState(false);
+    const [submitError, setSubmitError] = useState<string | null>(null);
     const isSavingRef = useRef(false);
 
     const openInvoicesForContract = useMemo<(Invoice & { remaining: number })[]>(() => {
@@ -791,6 +792,7 @@ const ReceiptForm: React.FC<{ isOpen: boolean, onClose: () => void, receipt: Rec
     };
 
     useEffect(() => {
+        setSubmitError(null);
         if (receipt) {
             setContractId(receipt.contractId); setDateTime(receipt.dateTime.slice(0, 16)); setChannel(receipt.channel);
             setAmount(receipt.amount); setRef(receipt.ref); setNotes(receipt.notes);
@@ -822,11 +824,18 @@ const ReceiptForm: React.FC<{ isOpen: boolean, onClose: () => void, receipt: Rec
         
         isSavingRef.current = true;
         setIsSaving(true);
+        setSubmitError(null);
         try {
             const data: Omit<Receipt, 'id' | 'no' | 'createdAt' | 'updatedAt' | 'voidedAt'> = { contractId, dateTime, channel, amount, ref, notes, status: 'POSTED' };
             if (channel === 'CHECK') { data.checkNumber = checkNumber; data.checkBank = checkBank; data.checkDate = checkDate; data.checkStatus = checkStatus; }
-            await financeService.addReceiptWithAllocations(data, normalizedAllocations);
-            onClose();
+            const result = await financeService.addReceiptWithAllocations(data, normalizedAllocations);
+            if (result.success) {
+                toast.success(`تم ترحيل السند رقم ${result.receiptNo || '-'} وتخصيص ${formatCurrency(result.allocatedTotal || 0, db.settings.operational.currency)} بنجاح.`);
+                onClose();
+            } else {
+                const errorMessage = result.error || 'حدث خطأ أثناء ترحيل السند.';
+                setSubmitError(errorMessage);
+            }
         } finally { isSavingRef.current = false; setIsSaving(false); }
     };
 
@@ -902,6 +911,15 @@ const ReceiptForm: React.FC<{ isOpen: boolean, onClose: () => void, receipt: Rec
                     <textarea value={notes} onChange={e=>setNotes(e.target.value)} rows={2} placeholder="ملاحظات إضافية..." disabled={isSaving} />
                 </div>
 
+
+                {submitError && (
+                    <div className="rounded-xl border border-rose-200 bg-rose-50 p-3 text-sm text-rose-700">
+                        <p className="font-black mb-1">فشل ترحيل سند القبض</p>
+                        <p className="font-medium">{submitError}</p>
+                        <p className="text-xs mt-2">تم الاحتفاظ بالبيانات داخل النموذج، يمكنك تعديلها وإعادة المحاولة.</p>
+                    </div>
+                )}
+
                 <div className="flex gap-3 pt-4 border-t border-border">
                     <button type="button" onClick={onClose} className="btn btn-ghost flex-1 py-3" disabled={isSaving}>إلغاء</button>
                     <button type="submit" className="btn btn-primary flex-1 py-3 shadow-lg shadow-primary/20" disabled={isSaving}>{isSaving ? 'جاري الحفظ...' : 'حفظ السند'}</button>
@@ -920,6 +938,7 @@ const ExpenseForm: React.FC<{ isOpen: boolean, onClose: () => void, expense: Exp
     const [dateTime, setDateTime] = useState(new Date().toISOString().slice(0, 16));
     const [notes, setNotes] = useState('');
     const [isSaving, setIsSaving] = useState(false);
+    const [submitError, setSubmitError] = useState<string | null>(null);
     const isSavingRef = useRef(false);
 
     useEffect(() => {
@@ -937,6 +956,7 @@ const ExpenseForm: React.FC<{ isOpen: boolean, onClose: () => void, expense: Exp
         if (!dateTime) { toast.error('تاريخ المصروف مطلوب.'); return; }
         isSavingRef.current = true;
         setIsSaving(true);
+        setSubmitError(null);
         try {
             const data = { contractId, dateTime, category, amount, status: 'POSTED' as const, chargedTo, ref: '', notes };
             if (expense) await dataService.update('expenses', expense.id, data); else await dataService.add('expenses', data);
@@ -975,6 +995,15 @@ const ExpenseForm: React.FC<{ isOpen: boolean, onClose: () => void, expense: Exp
                     </select>
                 </div>
                 <textarea value={notes} onChange={e=>setNotes(e.target.value)} rows={3} placeholder="تفاصيل المصروف..." disabled={isSaving} />
+
+                {submitError && (
+                    <div className="rounded-xl border border-rose-200 bg-rose-50 p-3 text-sm text-rose-700">
+                        <p className="font-black mb-1">فشل ترحيل سند القبض</p>
+                        <p className="font-medium">{submitError}</p>
+                        <p className="text-xs mt-2">تم الاحتفاظ بالبيانات داخل النموذج، يمكنك تعديلها وإعادة المحاولة.</p>
+                    </div>
+                )}
+
                 <div className="flex gap-3 pt-4 border-t border-border">
                     <button type="button" onClick={onClose} className="btn btn-ghost flex-1 py-3" disabled={isSaving}>إلغاء</button>
                     <button type="submit" className="btn btn-primary flex-1 py-3 shadow-lg shadow-primary/20" disabled={isSaving}>حفظ المصروف</button>
@@ -990,6 +1019,7 @@ const DepositTxForm: React.FC<{ isOpen: boolean, onClose: () => void }> = ({ isO
     const [type, setType] = useState<DepositTx['type']>('DEPOSIT_IN');
     const [amount, setAmount] = useState(0);
     const [isSaving, setIsSaving] = useState(false);
+    const [submitError, setSubmitError] = useState<string | null>(null);
     const isSavingRef = useRef(false);
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -997,6 +1027,7 @@ const DepositTxForm: React.FC<{ isOpen: boolean, onClose: () => void }> = ({ isO
         if (isSavingRef.current) return;
         isSavingRef.current = true;
         setIsSaving(true);
+        setSubmitError(null);
         try {
             await dataService.add('depositTxs', { contractId, type, amount, date: new Date().toISOString().slice(0, 10), note: '' });
             onClose();
@@ -1036,6 +1067,7 @@ const OwnerSettlementForm: React.FC<{ isOpen: boolean, onClose: () => void, sett
     const [amount, setAmount] = useState(0);
     const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
     const [isSaving, setIsSaving] = useState(false);
+    const [submitError, setSubmitError] = useState<string | null>(null);
     const isSavingRef = useRef(false);
 
     useEffect(() => { if (settlement) { setOwnerId(settlement.ownerId); setAmount(settlement.amount); setDate(settlement.date); } }, [settlement]);
@@ -1045,6 +1077,7 @@ const OwnerSettlementForm: React.FC<{ isOpen: boolean, onClose: () => void, sett
         if (isSavingRef.current) return;
         isSavingRef.current = true;
         setIsSaving(true);
+        setSubmitError(null);
         try {
             const data = { ownerId, amount, date, method: 'BANK' as const, ref: '', notes: '' };
             if (settlement) await dataService.update('ownerSettlements', settlement.id, data); else await dataService.add('ownerSettlements', data);
