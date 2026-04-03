@@ -11,15 +11,15 @@ export interface OwnerPortalPayload {
   currency: string;
 }
 
-export async function createOwnerAccessToken(ownerId: string): Promise<string> {
+export async function createOwnerPortalUrl(ownerId: string): Promise<string> {
   const { data, error } = await supabase.functions.invoke('owner-access-token', {
     body: { ownerId, action: 'issue' },
   });
-  if (error || !data?.token) {
+  if (error || !data?.url) {
     logger.error('[EdgeFunction] owner-access-token issue failed', error || data);
     throw new Error('تعذر إنشاء رابط البوابة الآمن.');
   }
-  return data.token as string;
+  return data.url as string;
 }
 
 export async function verifyOwnerAccessToken(ownerId: string, token: string): Promise<OwnerPortalPayload> {

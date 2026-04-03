@@ -1,0 +1,9 @@
+{
+  "@context": "https://schema.org",
+  "@type": "WebApplication",
+  "name": "Rentrix",
+  "description": "نظام إدارة العقارات الذكي للشركات والمكاتب العقارية",
+  "applicationCategory": "BusinessApplication",
+  "operatingSystem": "Web",
+  "inLanguage": "ar"
+}

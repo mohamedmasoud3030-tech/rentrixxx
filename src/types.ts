@@ -209,7 +209,6 @@ export interface Owner {
   commissionValue: number;
   createdAt: number;
   updatedAt?: number;
-  portalToken?: string; 
   isDemo?: boolean;
 }
 

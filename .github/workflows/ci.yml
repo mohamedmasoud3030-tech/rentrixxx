@@ -24,6 +24,13 @@ jobs:
       - name: Preflight
         run: npm run preflight
 
+      - name: Schema drift check
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+          SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
+        run: npm run schema:drift:check
+
       - name: Typecheck
         run: npm run typecheck
 

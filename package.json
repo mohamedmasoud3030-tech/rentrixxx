@@ -14,7 +14,10 @@
     "test:service": "npm run test:prepare && node --test .tmp-tests/tests/service/validation.test.js .tmp-tests/tests/service/security-validation.test.js",
     "test:critical": "npm run test:prepare && node --test .tmp-tests/tests/critical/critical-flows.test.js",
     "ci": "npm run preflight && npm run typecheck && npm run lint && npm run test && npm run build",
-    "preflight": "node scripts/preflight.mjs"
+    "preflight": "node scripts/preflight.mjs",
+    "readiness": "node scripts/deployment-readiness.mjs",
+    "readiness:strict": "node scripts/deployment-readiness.mjs --strict",
+    "schema:drift:check": "node scripts/schema-drift-check.mjs"
   },
   "author": "Mohamed Masoud",
   "license": "UNLICENSED",
