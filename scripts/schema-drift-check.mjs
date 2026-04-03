@@ -7,26 +7,17 @@ if (missing.length > 0) {
   process.exit(1);
 }
 
-const run = (command) => execSync(command, {
-  encoding: 'utf8',
-  stdio: ['ignore', 'pipe', 'pipe'],
-  env: process.env,
-});
-
-try {
-  run(`npx supabase link --project-ref ${process.env.SUPABASE_PROJECT_REF} --password ${process.env.SUPABASE_DB_PASSWORD}`);
-} catch (error) {
-  console.error('❌ Failed to link Supabase project before drift check.');
-  if (error.stderr) console.error(String(error.stderr));
-  process.exit(1);
-}
-
 let output = '';
 try {
-  output = run('npx supabase db diff --linked --schema public').trim();
+  output = execSync('npx supabase db diff --linked --schema public', {
+    encoding: 'utf8',
+    stdio: ['ignore', 'pipe', 'pipe'],
+  }).trim();
 } catch (error) {
   console.error('❌ Failed to run `supabase db diff --linked --schema public`.');
-  if (error.stderr) console.error(String(error.stderr));
+  if (error.stderr) {
+    console.error(String(error.stderr));
+  }
   process.exit(1);
 }
 
