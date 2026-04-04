@@ -132,6 +132,7 @@ export const useApp = (): AppContextType => {
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [currentUser, setCurrentUser] = useState<User | null | undefined>(undefined);
+  const [isAuthInitializing, setIsAuthInitializing] = useState(true);
   const [db, setDb] = useState<Partial<Database> | null>(EMPTY_DB);
 
   const fetchPaginatedData = useCallback(async <T extends keyof Database>(
@@ -260,29 +261,47 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   }, [currentUser]);
 
   useEffect(() => {
+    const mapSessionToUser = async (session: Awaited<ReturnType<typeof supabase.auth.getSession>>['data']['session']) => {
+      if (!session?.user) {
+        setCurrentUser(null);
+        return;
+      }
+
+      const { data: profile } = await supabase.from('profiles').select('*').eq('id', session.user.id).single();
+      if (!profile || profile.is_disabled) {
+        await supabase.auth.signOut();
+        setCurrentUser(null);
+        return;
+      }
+
+      setCurrentUser({
+        id: session.user.id,
+        username: profile.username || session.user.email?.split('@')[0] || 'user',
+        email: session.user.email || '',
+        hash: '',
+        salt: '',
+        role: (profile.role as User['role']) || 'USER',
+        mustChange: profile.must_change_password || false,
+        createdAt: profile.created_at || Date.now(),
+        isDisabled: false,
+      });
+    };
+
     const initAuth = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session?.user) {
-        const { data: profile } = await supabase.from('profiles').select('*').eq('id', session.user.id).single();
-        if (profile) {
-          if (profile.is_disabled) {
-            await supabase.auth.signOut();
-            setCurrentUser(null);
-            return { success: false, error: 'يجب إضافة تخصيص واحد على الأقل.' };
-          }
-          setCurrentUser({
-            id: session.user.id, username: profile.username || session.user.email!.split('@')[0],
-            email: session.user.email || '', hash: '', salt: '',
-            role: (profile.role as User['role']) || 'USER',
-            mustChange: profile.must_change_password || false, createdAt: profile.created_at || Date.now(),
-            isDisabled: false,
-          });
-        } else { setCurrentUser(null); }
-      } else { setCurrentUser(null); }
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        await mapSessionToUser(session);
+      } finally {
+        setIsAuthInitializing(false);
+      }
     };
     initAuth();
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (event === 'SIGNED_OUT' || !session) { setCurrentUser(null); return; }
+      if (event === 'SIGNED_IN' || event === 'USER_UPDATED') {
+        await mapSessionToUser(session);
+        return;
+      }
       if (event === 'TOKEN_REFRESHED' && session.user) {
         const { data: profile } = await supabase.from('profiles').select('is_disabled').eq('id', session.user.id).single();
         if (profile?.is_disabled) {
@@ -346,7 +365,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (currentUser) await audit('LOGOUT', 'SESSION', currentUser.id);
     await supabase.auth.signOut();
     setCurrentUser(null);
-    setDb(null);
+    setDb(EMPTY_DB);
     setSettings(null);
   }, [currentUser, audit]);
 
@@ -1307,7 +1326,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return generationResult.total;
   }, [activeDb, refreshData, settings]);
   const authValue: AuthContextValue = {
-    auth: { currentUser: currentUser ?? null, login, logout, changePassword, addUser, updateUser, forcePasswordReset, disableUser, enableUser },
+    auth: { currentUser, isInitializing: isAuthInitializing, login, logout, changePassword, addUser, updateUser, forcePasswordReset, disableUser, enableUser },
     canAccess,
   };
 

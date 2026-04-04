@@ -28,9 +28,14 @@ const Login: React.FC = () => {
     isSubmittingRef.current = true;
     setIsLoading(true);
     setError("");
-    const res = await auth.login(email, password);
-    if (!res.ok) {
-      setError(res.msg);
+    try {
+      const res = await auth.login(email, password);
+      if (!res.ok) {
+        setError(res.msg);
+      }
+    } catch {
+      setError("حدث خطأ غير متوقع أثناء تسجيل الدخول.");
+    } finally {
       isSubmittingRef.current = false;
       setIsLoading(false);
     }
@@ -129,7 +134,7 @@ const Login: React.FC = () => {
               {/* Submit Button */}
               <button
                 type="submit"
-                disabled={isLoading || !email || !password}
+                disabled={isLoading || auth.isInitializing || !email || !password}
                 className="w-full relative py-3 px-4 rx-gradient-btn font-bold rounded-xl transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-lg hover:shadow-primary/30 active:scale-95 flex items-center justify-center gap-2 group mt-2"
               >
                 <span
