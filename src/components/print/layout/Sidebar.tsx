@@ -16,7 +16,6 @@ interface SidebarProps {
 const Sidebar: React.FC<SidebarProps> = ({ sidebarOpen, setSidebarOpen }) => {
   const { auth, settings, db } = useApp();
   const { pathname } = useLocation();
-  const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>({});
   const [lastRunDate, setLastRunDate] = useState<string | null>(null);
   const [expandedItems, setExpandedItems] = useState<Record<string, boolean>>({});
 
@@ -32,9 +31,13 @@ const Sidebar: React.FC<SidebarProps> = ({ sidebarOpen, setSidebarOpen }) => {
     const now = new Date();
     const alertDays = settings.operational?.contractAlertDays ?? 30;
     const futureDate = new Date(now.getTime() + alertDays * 86400000);
-    const expiringContracts = db.contracts.filter(c => c.status === 'ACTIVE' && new Date(c.end) <= futureDate).length;
-    const overdueInvoices = db.invoices.filter(i => i.status === 'OVERDUE' || (i.status === 'UNPAID' && new Date(i.dueDate) < now)).length;
-    const pendingNotifications = db.outgoingNotifications.filter(
+    const contracts = Array.isArray(db?.contracts) ? db.contracts : [];
+    const invoices = Array.isArray(db?.invoices) ? db.invoices : [];
+    const outgoingNotifications = Array.isArray(db?.outgoingNotifications) ? db.outgoingNotifications : [];
+
+    const expiringContracts = contracts.filter(c => c.status === 'ACTIVE' && new Date(c.end) <= futureDate).length;
+    const overdueInvoices = invoices.filter(i => i.status === 'OVERDUE' || (i.status === 'UNPAID' && new Date(i.dueDate) < now)).length;
+    const pendingNotifications = outgoingNotifications.filter(
       n => normalizeWorkflowStatus(n.status) === WORKFLOW_STATUS.Pending,
     ).length;
 
@@ -74,7 +77,6 @@ const Sidebar: React.FC<SidebarProps> = ({ sidebarOpen, setSidebarOpen }) => {
   }, [pathname, navItems]);
 
   const companyName = settings.general?.company?.name ?? 'Rentrix';
-  const getGroupKey = (title: string) => `group:${title}`;
 
   useEffect(() => {
     if (!sidebarOpen) return;
@@ -93,15 +95,6 @@ const Sidebar: React.FC<SidebarProps> = ({ sidebarOpen, setSidebarOpen }) => {
       document.body.style.overflow = previousOverflow;
     };
   }, [sidebarOpen]);
-
-  useEffect(() => {
-    const activeGroup = navGroups.find(group =>
-      group.links.some(link => isLinkActive(link.path)),
-    );
-    if (!activeGroup) return;
-    const key = getGroupKey(activeGroup.title);
-    setCollapsedGroups(prev => ({ ...prev, [key]: false }));
-  }, [pathname]);
 
   const toggleItem = (itemId: string) => {
     setExpandedItems(prev => ({ ...prev, [itemId]: !prev[itemId] }));
