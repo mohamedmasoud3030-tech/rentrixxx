@@ -183,7 +183,7 @@ const Dashboard: React.FC = () => {
   ];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 bg-background min-h-full">
       <header className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
         <div>
           <h1 className="text-3xl font-black">لوحة التحكم</h1>
@@ -198,7 +198,7 @@ const Dashboard: React.FC = () => {
           title="إجمالي العقارات"
           value={String(stats.totalProperties)}
           icon={<Building2 size={18} />}
-          variant="neutral"
+          variant="error"
         />
         <KpiCard title="الوحدات المؤجرة" value={String(stats.rentedUnits)} icon={<Home size={18} />} variant="neutral" />
         <KpiCard title="الوحدات الشاغرة" value={String(stats.vacantUnits)} icon={<Home size={18} />} variant="neutral" />
@@ -228,49 +228,49 @@ const Dashboard: React.FC = () => {
         />
       </div>
 
-      <section className="bg-card p-5 rounded-2xl border border-border">
+      <section className="bg-surface-container-low p-5 rounded-xl border border-outline-variant/40">
         <h3 className="font-bold mb-3">إجراءات سريعة</h3>
         <div className="grid sm:grid-cols-2 gap-3">
           <button
             onClick={runGenerateMonthlyInvoices}
             disabled={isGeneratingInvoices}
-            className="text-right p-4 rounded-xl border border-border hover:bg-background disabled:opacity-60 disabled:cursor-not-allowed"
+            className="text-right p-4 rounded-xl bg-gradient-to-b from-[#4fdbc8] to-[#14b8a6] text-on-primary font-bold active:scale-95 transition-all shadow-lg shadow-primary/10 disabled:opacity-60 disabled:cursor-not-allowed"
           >
             <div className="flex items-center justify-between gap-2">
               <div className="font-bold">توليد فواتير الشهر</div>
               {isGeneratingInvoices ? <Loader2 className="h-4 w-4 animate-spin" /> : <FilePlus2 className="h-4 w-4" />}
             </div>
-            <div className="text-sm text-text-muted mt-1">آخر تشغيل: {formatLastRun(lastInvoiceRunAt)}</div>
+            <div className="text-xs text-on-primary/80 mt-1">آخر تشغيل: {formatLastRun(lastInvoiceRunAt)}</div>
           </button>
 
           <button
             onClick={runAutomation}
             disabled={isRunningAutomation}
-            className="text-right p-4 rounded-xl border border-border hover:bg-background disabled:opacity-60 disabled:cursor-not-allowed"
+            className="text-right p-4 rounded-xl bg-gradient-to-b from-[#4fdbc8] to-[#14b8a6] text-on-primary font-bold active:scale-95 transition-all shadow-lg shadow-primary/10 disabled:opacity-60 disabled:cursor-not-allowed"
           >
             <div className="flex items-center justify-between gap-2">
               <div className="font-bold">تشغيل الأتمتة</div>
               {isRunningAutomation ? <Loader2 className="h-4 w-4 animate-spin" /> : <PlayCircle className="h-4 w-4" />}
             </div>
-            <div className="text-sm text-text-muted mt-1">آخر تشغيل: {formatLastRun(lastAutomationRunAt)}</div>
+            <div className="text-xs text-on-primary/80 mt-1">آخر تشغيل: {formatLastRun(lastAutomationRunAt)}</div>
           </button>
         </div>
       </section>
 
-      <section className="bg-card p-5 rounded-2xl border border-border">
+      <section className="bg-surface-container-low p-5 rounded-xl border border-outline-variant/40">
         <h3 className="font-bold mb-3">التنبيهات</h3>
         <div className="grid md:grid-cols-2 gap-3">
           {alertCards.map((alert) => (
             <button
               key={alert.key}
               onClick={() => navigate(alert.path)}
-              className="text-right p-4 rounded-xl border border-border hover:bg-background"
+              className="text-right p-4 rounded-xl bg-error/10 border border-error/20 hover:bg-error/15"
             >
               <div className="flex items-center justify-between gap-2">
                 <div className="font-bold">{alert.title}</div>
                 {alert.icon}
               </div>
-              <div className="text-sm text-text-muted mt-1">{alert.detail}</div>
+              <div className="text-xs text-on-primary/80 mt-1">{alert.detail}</div>
             </button>
           ))}
         </div>
@@ -300,7 +300,7 @@ const DashboardRevenueChart: React.FC<{ receipts: ReceiptType[]; expenses: Expen
   }, [receipts, expenses]);
 
   return (
-    <div className="bg-card p-5 rounded-2xl border border-border">
+    <div className="bg-surface-container-low p-5 rounded-xl border border-outline-variant/40">
       <div className="h-52" dir="ltr">
         <ResponsiveContainer width="100%" height="100%">
           <AreaChart data={chartData}>
@@ -321,14 +321,14 @@ const KpiCard: React.FC<{
   title: string;
   value: string;
   icon: React.ReactNode;
-  variant: 'money' | 'neutral';
+  variant: 'money' | 'neutral' | 'secondary' | 'tertiary' | 'error';
 }> = ({ title, value, icon, variant }) => (
-  <div className="bg-card p-4 rounded-lg border border-border text-right">
+  <div className={`bg-surface-container-low p-5 rounded-xl border border-outline-variant/40 text-right border-r-4 ${variant === 'neutral' ? 'border-primary' : variant === 'secondary' ? 'border-secondary' : variant === 'tertiary' ? 'border-tertiary' : variant === 'error' ? 'border-error' : 'border-primary'}`}>
     <div className="flex items-center justify-between">
-      <p className="text-xs text-text-muted">{title}</p>
+      <p className="text-xs text-slate-400">{title}</p>
       <div className={variant === 'money' ? 'text-emerald-600' : 'text-primary'}>{icon}</div>
     </div>
-    <p className="text-xl font-bold mt-2" dir="ltr">
+    <p className="text-2xl font-bold mt-2 mono-data" dir="ltr">
       {value}
     </p>
   </div>

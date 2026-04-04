@@ -213,7 +213,7 @@ const Invoices: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <Card className="p-4 border border-border bg-card/50">
+      <Card className="p-4 border border-outline-variant/40 bg-surface-container-low/50">
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
           <div>
             <h2 className="text-sm font-black">لوحة أتمتة الفواتير</h2>
@@ -232,12 +232,12 @@ const Invoices: React.FC = () => {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-4">
-          <div className="rounded-xl border border-border p-3 bg-background/40">
+          <div className="rounded-xl border border-outline-variant/40 p-3 bg-background/40">
             <p className="text-xs font-bold">آخر تشغيل لتوليد فواتير الشهر</p>
             <p className="text-xs text-text-muted mt-1">{formatRunTime(monthlyLastRun)}</p>
             <p className="text-sm font-black mt-2">{monthlyLastCount === null ? 'لا توجد نتيجة بعد' : `تم إنشاء ${monthlyLastCount} فواتير`}</p>
           </div>
-          <div className="rounded-xl border border-border p-3 bg-background/40">
+          <div className="rounded-xl border border-outline-variant/40 p-3 bg-background/40">
             <p className="text-xs font-bold">آخر تشغيل لرسوم التأخير</p>
             <p className="text-xs text-text-muted mt-1">{formatRunTime(lateFeesLastRun)}</p>
             <p className="text-sm font-black mt-2">{lateFeesLastCount === null ? 'لا توجد نتيجة بعد' : `تم تطبيق الرسوم على ${lateFeesLastCount} فواتير`}</p>
@@ -245,7 +245,7 @@ const Invoices: React.FC = () => {
         </div>
       </Card>
 
-      <Card className="p-3 border border-border bg-card/50">
+      <Card className="p-3 border border-outline-variant/40 bg-surface-container-low/50">
         <div className="grid grid-cols-2 md:grid-cols-5 gap-2 text-center">
           <div className="rounded-lg bg-background/50 py-2"><p className="text-[11px] text-text-muted">إجمالي</p><p className="font-black">{invoiceStatusCounts.total}</p></div>
           <div className="rounded-lg bg-background/50 py-2"><p className="text-[11px] text-text-muted">غير مدفوعة</p><p className="font-black">{invoiceStatusCounts.unpaid}</p></div>
@@ -261,7 +261,7 @@ const Invoices: React.FC = () => {
         <StatCard title="تحصيلات الشهر" value={financialStats.collectedThisMonth} icon={<ArrowUpRight className="text-emerald-500" />} color="emerald" />
       </div>
 
-      <Card className="p-0 overflow-hidden border-none shadow-xl bg-card/50">
+      <Card className="p-0 overflow-hidden border-none shadow-xl bg-surface-container-low/50">
         <InvoiceFilters
           filters={filters}
           onStatusChange={(status) => setFilters(prev => ({ ...prev, status }))}

@@ -1,6 +1,6 @@
 import React from 'react';
 import { useApp } from '../../../contexts/AppContext';
-import { Sun, Moon, LogOut, Menu } from 'lucide-react';
+import { Sun, Moon, LogOut, Menu, Search, Bell } from 'lucide-react';
 import Notifications from './Notifications';
 import { useLocation } from 'react-router-dom';
 import { NAVIGATION_META } from '../../../config/navigationMeta';
@@ -31,66 +31,35 @@ const Topbar: React.FC<TopbarProps> = ({ setSidebarOpen }) => {
   const pageTitle = pageKey ? NAVIGATION_META[pageKey]?.titleAr ?? '' : '';
 
   return (
-    <header
-      className="sticky top-0 z-40 flex w-full bg-card border-b border-border"
-      style={{ boxShadow: '0 1px 8px -2px rgba(0,0,0,0.07)' }}
-    >
-      <div className="flex flex-grow items-center justify-between px-4 py-2 md:px-6">
-
-        {/* Mobile: hamburger + page title */}
-        <div className="lg:hidden flex items-center gap-2 flex-1 min-w-0">
-          <button
-            onClick={() => setSidebarOpen(true)}
-            className="flex items-center justify-center w-9 h-9 rounded-xl hover:bg-background text-text-muted transition-colors active:scale-95 flex-shrink-0"
-            aria-label="فتح القائمة"
-          >
+    <header className="sticky top-0 z-40 h-16 w-full bg-surface-container-low border-b border-outline-variant/40">
+      <div className="flex h-full items-center justify-between flex-row-reverse px-4 md:px-6 gap-3">
+        <div className="flex items-center gap-2 min-w-0">
+          <button onClick={() => setSidebarOpen(true)} className="lg:hidden flex items-center justify-center w-9 h-9 rounded-xl hover:bg-surface-container text-on-surface-variant transition-colors active:scale-95" aria-label="فتح القائمة">
             <Menu size={20} />
           </button>
-          <span className="text-base font-black text-text truncate">{pageTitle}</span>
+          <span className="text-base font-black text-on-surface truncate lg:hidden">{pageTitle}</span>
+          <div className="hidden lg:flex items-center min-w-[260px] relative">
+            <Search size={16} className="absolute end-3 text-on-surface-variant" />
+            <input readOnly placeholder="بحث سريع..." className="bg-[#111319] rounded-xl border-none pe-9 text-sm" />
+          </div>
         </div>
 
-        {/* Desktop: spacer */}
-        <div className="hidden lg:block flex-1" />
-
-        {/* Actions */}
-        <div className="flex items-center gap-1.5 sm:gap-2">
-          {/* Theme Toggle */}
-          <button
-            onClick={toggleTheme}
-            className="flex items-center justify-center h-9 w-9 rounded-xl hover:bg-background transition-colors active:scale-95"
-            title={currentTheme === 'dark' ? 'التبديل إلى الوضع الفاتح' : 'التبديل إلى الوضع الداكن'}
-          >
-            {currentTheme === 'dark'
-              ? <Sun className="w-[18px] h-[18px] text-text-muted" />
-              : <Moon className="w-[18px] h-[18px] text-text-muted" />
-            }
+        <div className="flex items-center gap-2">
+          <button onClick={toggleTheme} className="flex items-center justify-center h-9 w-9 rounded-xl hover:bg-surface-container transition-colors active:scale-95" title={currentTheme === 'dark' ? 'التبديل إلى الوضع الفاتح' : 'التبديل إلى الوضع الداكن'}>
+            {currentTheme === 'dark' ? <Sun className="w-[18px] h-[18px] text-on-surface-variant" /> : <Moon className="w-[18px] h-[18px] text-on-surface-variant" />}
           </button>
-
-          {/* Notifications */}
+          <button className="hidden sm:flex items-center justify-center h-9 w-9 rounded-xl hover:bg-surface-container text-on-surface-variant">
+            <Bell size={18} />
+          </button>
           <Notifications />
-
-          {/* Divider */}
-          <div className="h-7 w-px bg-border mx-0.5" />
-
-          {/* User Info + Logout */}
+          <div className="h-7 w-px bg-outline-variant/40 mx-0.5" />
           <div className="flex items-center gap-2">
             <div className="hidden lg:block text-start">
-              <span className="block text-sm font-bold text-text leading-tight">{username}</span>
-              <span className="block text-xs text-text-muted">{role}</span>
+              <span className="block text-sm font-bold text-on-surface leading-tight">{username}</span>
+              <span className="block text-xs text-on-surface-variant">{role}</span>
             </div>
-
-            <div
-              className="w-8 h-8 rounded-xl flex items-center justify-center text-white font-bold text-sm flex-shrink-0 cursor-default"
-              style={{ background: 'linear-gradient(135deg, hsl(var(--color-primary)), hsl(var(--color-primary) / 0.75))' }}
-            >
-              {username.charAt(0).toUpperCase()}
-            </div>
-
-            <button
-              onClick={auth.logout}
-              className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl hover:bg-danger-bg hover:text-danger-text transition-colors text-sm text-text-muted active:scale-95"
-              title="تسجيل الخروج"
-            >
+            <div className="w-8 h-8 rounded-xl flex items-center justify-center text-on-primary font-bold text-sm bg-gradient-to-b from-[#4fdbc8] to-[#14b8a6]">{username.charAt(0).toUpperCase()}</div>
+            <button onClick={auth.logout} className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl hover:bg-error/15 hover:text-error transition-colors text-sm text-on-surface-variant active:scale-95" title="تسجيل الخروج">
               <LogOut size={16} />
               <span className="hidden sm:inline">خروج</span>
             </button>

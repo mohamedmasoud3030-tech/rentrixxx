@@ -51,7 +51,7 @@ export const InvoiceFilters: React.FC<InvoiceFiltersProps> = ({
   };
 
   return (
-    <div className="flex flex-col gap-3 p-4 border-b border-border">
+    <div className="flex flex-col gap-3 p-4 border-b border-outline-variant/40 bg-surface-container-low">
       {/* Status Filters */}
       <div className="flex flex-wrap gap-2">
         {[
@@ -66,7 +66,7 @@ export const InvoiceFilters: React.FC<InvoiceFiltersProps> = ({
             className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
               filters.status === filter.key
                 ? 'bg-primary text-white'
-                : 'bg-background hover:bg-background/80'
+                : 'bg-surface-container-high hover:bg-surface-container-highest'
             }`}
           >
             {filter.label}
@@ -81,7 +81,7 @@ export const InvoiceFilters: React.FC<InvoiceFiltersProps> = ({
           <Search className="absolute start-3 top-1/2 -translate-y-1/2 text-text-muted" size={16} />
           <input
             placeholder="بحث برقم الفاتورة أو اسم المستأجر..."
-            className="w-full ps-9"
+            className="w-full ps-9 bg-surface-container-high border-none"
             value={filters.search}
             onChange={e => onSearchChange(e.target.value)}
           />
@@ -91,7 +91,7 @@ export const InvoiceFilters: React.FC<InvoiceFiltersProps> = ({
         <select
           value={filters.type}
           onChange={e => onTypeChange(e.target.value as InvoiceFiltersState['type'])}
-          className="rounded px-3 py-2 border border-border"
+          className="rounded-xl px-3 py-2 bg-surface-container-high border-none"
         >
           <option value="all">جميع الأنواع</option>
           <option value="RENT">إيجار</option>
@@ -105,7 +105,7 @@ export const InvoiceFilters: React.FC<InvoiceFiltersProps> = ({
           type="date"
           value={filters.dateFrom}
           onChange={e => onDateFromChange(e.target.value)}
-          className="rounded px-3 py-2 border border-border"
+          className="rounded-xl px-3 py-2 bg-surface-container-high border-none"
         />
 
         {/* Date To */}
@@ -113,7 +113,7 @@ export const InvoiceFilters: React.FC<InvoiceFiltersProps> = ({
           type="date"
           value={filters.dateTo}
           onChange={e => onDateToChange(e.target.value)}
-          className="rounded px-3 py-2 border border-border"
+          className="rounded-xl px-3 py-2 bg-surface-container-high border-none"
         />
       </div>
 
@@ -122,7 +122,7 @@ export const InvoiceFilters: React.FC<InvoiceFiltersProps> = ({
         <button
           onClick={onGenerateInvoices}
           disabled={isLoadingMonths}
-          className="btn btn-primary flex items-center gap-2"
+          className="bg-gradient-to-b from-[#4fdbc8] to-[#14b8a6] text-on-primary font-bold px-6 py-2.5 rounded-xl flex items-center gap-2 active:scale-95 transition-all shadow-lg shadow-primary/10"
         >
           {isLoadingMonths ? <RefreshCw size={16} className="animate-spin" /> : <Plus size={16} />}
           إصدار فواتير الإيجار
