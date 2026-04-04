@@ -11,7 +11,8 @@
 1. Install dependencies:
    npm ci
 
-2. Set environment variables in .env.local:
+2. Copy .env.example to .env.local and set values:
+   cp .env.example .env.local
    VITE_SUPABASE_URL=your_supabase_url
    VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
 
@@ -38,7 +39,7 @@
 | npm run ci | Full local gate (typecheck + lint + test + build) |
 | npm run preflight | Environment preflight checks |
 | npm run readiness | Deployment readiness checklist |
-| npm run readiness:strict | Readiness check (fails on missing envs) |
+| npm run readiness:strict | Strict readiness check (fails on schema/placeholders, warns for intentionally absent local secrets) |
 | npm run schema:drift:check | Check Supabase schema drift |
 
 ## CI/CD
