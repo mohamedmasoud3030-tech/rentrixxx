@@ -10,16 +10,13 @@ import { WhatsAppComposerModal } from '../components/shared/WhatsAppComposerModa
 import { formatDate, formatCurrency, exportToCsv, TENANT_STATUS_AR, CHANNEL_AR, normalizeArabicNumerals, getEffectiveInvoiceStatus } from '../utils/helpers';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
-import { buildRentReminderMessage } from '../services/whatsappService';
 
 const Tenants: React.FC = () => {
-    const { db, dataService, tenantBalances } = useApp();
+    const { db, dataService } = useApp();
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingTenant, setEditingTenant] = useState<Tenant | null>(null);
     const [whatsAppContext, setWhatsAppContext] = useState<any | null>(null);
     const [selectedTenant, setSelectedTenant] = useState<Tenant | null>(null);
-    const [searchTerm, setSearchTerm] = useState('');
-    const [statusFilter, setStatusFilter] = useState<'ALL' | Tenant['status']>('ALL');
 
     const tenants = db.tenants || [];
     const contracts = db.contracts || [];
@@ -80,25 +77,6 @@ const Tenants: React.FC = () => {
         });
     };
 
-    const handleOpenReminderModal = (tenant: Tenant) => {
-        if (!tenant.phone) {
-            toast.error('لا يوجد رقم هاتف لهذا المستأجر.');
-            return;
-        }
-        const balance = tenantBalances[tenant.id]?.balance ?? 0;
-        setWhatsAppContext({
-            recipient: { name: tenant.name, phone: tenant.phone },
-            type: 'tenant',
-            initialMessage: buildRentReminderMessage(tenant.name, balance),
-            data: { tenant }
-        });
-    };
-
-    const formatOmrBalance = (balance: number): string => `${balance.toLocaleString('en-US', {
-        minimumFractionDigits: 3,
-        maximumFractionDigits: 3,
-    })} ر.ع`;
-
     const handleCloseModals = () => {
         setIsModalOpen(false);
         setWhatsAppContext(null);
@@ -124,19 +102,6 @@ const Tenants: React.FC = () => {
                     <button onClick={() => handleOpenModal()} className="btn btn-primary">إضافة مستأجر</button>
                 </div>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
-                <input
-                    value={searchTerm}
-                    onChange={e => setSearchTerm(e.target.value)}
-                    placeholder="بحث بالاسم / الهاتف / الهوية"
-                />
-                <select value={statusFilter} onChange={e => setStatusFilter(e.target.value as 'ALL' | Tenant['status'])}>
-                    <option value="ALL">كل الحالات</option>
-                    <option value="ACTIVE">نشط</option>
-                    <option value="INACTIVE">غير نشط</option>
-                    <option value="BLACKLIST">قائمة سوداء</option>
-                </select>
-            </div>
             {tenants.length === 0 ? (
                 <div className="text-center py-12">
                     <Users size={48} className="mx-auto text-text-muted" />
@@ -146,50 +111,37 @@ const Tenants: React.FC = () => {
                 </div>
             ) : (
                 <div className="overflow-x-auto">
-                    <table className="w-full text-sm text-right border-collapse">
-                        <thead className="text-xs uppercase bg-surface-container-high/50 text-slate-400 tracking-widest">
+                    <table className="w-full text-sm text-right border-collapse border border-border">
+                        <thead className="text-xs uppercase bg-background text-text">
                             <tr>
-                                <th scope="col" className="px-6 py-3 border border-outline-variant/40">الاسم</th>
-                                <th scope="col" className="px-6 py-3 border border-outline-variant/40">الهاتف</th>
-                                <th scope="col" className="px-6 py-3 border border-outline-variant/40">رقم الهوية</th>
-                                <th scope="col" className="px-6 py-3 border border-outline-variant/40">الحالة</th>
-                                <th scope="col" className="px-6 py-3 border border-outline-variant/40">الرصيد</th>
-                                <th scope="col" className="px-6 py-3 border border-outline-variant/40">إجراءات</th>
+                                <th scope="col" className="px-6 py-3 border border-border">الاسم</th>
+                                <th scope="col" className="px-6 py-3 border border-border">الهاتف</th>
+                                <th scope="col" className="px-6 py-3 border border-border">رقم الهوية</th>
+                                <th scope="col" className="px-6 py-3 border border-border">الحالة</th>
+                                <th scope="col" className="px-6 py-3 border border-border">إجراءات</th>
                             </tr>
                         </thead>
                         <tbody>
-                            {filteredTenants.map(t => {
-                                const hasContract = contracts.some(c => c.tenantId === t.id);
-                                const balance = tenantBalances[t.id]?.balance ?? 0;
-                                const balanceColor = !hasContract ? 'text-gray-500' : balance > 0 ? 'text-red-600' : 'text-primary';
-                                return (
-                                <tr key={t.id} className="bg-surface-container-low hover:bg-surface-container-high">
-                                    <td className="px-6 py-4 font-medium text-primary border border-outline-variant/40 cursor-pointer hover:underline" onClick={() => setSelectedTenant(t)}>{t.name}</td>
-                                    <td className="px-6 py-4 border border-outline-variant/40">{t.phone}</td>
-                                    <td className="px-6 py-4 border border-outline-variant/40">{t.idNo}</td>
-                                    <td className="px-6 py-4 border border-outline-variant/40">
+                            {tenants.map(t => (
+                                <tr key={t.id} className="bg-card hover:bg-background">
+                                    <td className="px-6 py-4 font-medium text-primary border border-border cursor-pointer hover:underline" onClick={() => setSelectedTenant(t)}>{t.name}</td>
+                                    <td className="px-6 py-4 border border-border">{t.phone}</td>
+                                    <td className="px-6 py-4 border border-border">{t.idNo}</td>
+                                    <td className="px-6 py-4 border border-border">
                                         <span className={`px-2 py-1 text-xs rounded-full ${t.status === 'ACTIVE' ? 'bg-green-100 text-green-800 dark:bg-green-900/50' : 'bg-red-100 text-red-800 dark:bg-red-900/50'}`}>
                                             {TENANT_STATUS_AR[t.status] || t.status}
                                         </span>
                                     </td>
-                                    <td className={`px-6 py-4 border border-outline-variant/40 font-bold ${balanceColor}`}>
-                                        {hasContract ? formatOmrBalance(balance) : 'لا يوجد عقد'}
-                                    </td>
-                                    <td className="px-6 py-4 border border-outline-variant/40">
-                                        <div className="flex items-center justify-end gap-2">
-                                            <button className="btn btn-secondary btn-sm" onClick={() => handleOpenReminderModal(t)}>
-                                                إرسال تذكير
-                                            </button>
-                                            <ActionsMenu items={[
-                                                { label: 'عرض التفاصيل', icon: <FileText size={16} />, onClick: () => setSelectedTenant(t) },
-                                                EditAction(() => handleOpenModal(t)),
-                                                { label: 'مراسلة واتساب', icon: <MessageCircle size={16} />, onClick: () => handleOpenWhatsAppModal(t) },
-                                                DeleteAction(() => handleDelete(t.id)),
-                                            ]} />
-                                        </div>
+                                    <td className="px-6 py-4 border border-border">
+                                        <ActionsMenu items={[
+                                            { label: 'عرض التفاصيل', icon: <FileText size={16} />, onClick: () => setSelectedTenant(t) },
+                                            EditAction(() => handleOpenModal(t)),
+                                            { label: 'مراسلة واتساب', icon: <MessageCircle size={16} />, onClick: () => handleOpenWhatsAppModal(t) },
+                                            DeleteAction(() => handleDelete(t.id)),
+                                        ]} />
                                     </td>
                                 </tr>
-                            )})}
+                            ))}
                         </tbody>
                     </table>
                 </div>
@@ -241,11 +193,11 @@ const TenantDetailView: React.FC<{ tenant: Tenant; onBack: () => void }> = ({ te
                     <p className="text-xs text-text-muted">إجمالي الفوترة</p>
                 </Card>
                 <Card className="p-4 text-center">
-                    <p className="text-2xl font-bold text-primary">{formatCurrency(totalPaid, currency)}</p>
+                    <p className="text-2xl font-bold text-green-600">{formatCurrency(totalPaid, currency)}</p>
                     <p className="text-xs text-text-muted">إجمالي المدفوع</p>
                 </Card>
                 <Card className="p-4 text-center">
-                    <p className={`text-2xl font-bold ${balance > 0 ? 'text-red-600' : 'text-primary'}`}>{formatCurrency(balance, currency)}</p>
+                    <p className={`text-2xl font-bold ${balance > 0 ? 'text-red-600' : 'text-green-600'}`}>{formatCurrency(balance, currency)}</p>
                     <p className="text-xs text-text-muted">الرصيد المتبقي</p>
                 </Card>
             </div>
@@ -283,23 +235,23 @@ const TenantDetailView: React.FC<{ tenant: Tenant; onBack: () => void }> = ({ te
             <Card className="p-5">
                 <h3 className="font-bold text-lg mb-4 border-b border-border pb-2">سجل العقود ({tenantContracts.length})</h3>
                 {tenantContracts.length > 0 ? (
-                    <table className="w-full text-sm border-collapse border border-outline-variant/40">
+                    <table className="w-full text-sm border-collapse border border-border">
                         <thead><tr className="bg-background">
-                            <th className="px-4 py-2 border border-outline-variant/40">الوحدة</th>
-                            <th className="px-4 py-2 border border-outline-variant/40">البداية</th>
-                            <th className="px-4 py-2 border border-outline-variant/40">النهاية</th>
-                            <th className="px-4 py-2 border border-outline-variant/40">الإيجار</th>
-                            <th className="px-4 py-2 border border-outline-variant/40">الحالة</th>
+                            <th className="px-4 py-2 border border-border">الوحدة</th>
+                            <th className="px-4 py-2 border border-border">البداية</th>
+                            <th className="px-4 py-2 border border-border">النهاية</th>
+                            <th className="px-4 py-2 border border-border">الإيجار</th>
+                            <th className="px-4 py-2 border border-border">الحالة</th>
                         </tr></thead>
                         <tbody>{tenantContracts.map(c => {
                             const u = db.units.find(x => x.id === c.unitId);
                             return (
-                                <tr key={c.id} className="hover:bg-surface-container-high">
-                                    <td className="px-4 py-2 border border-outline-variant/40">{u?.name || '-'}</td>
-                                    <td className="px-4 py-2 border border-outline-variant/40">{formatDate(c.start)}</td>
-                                    <td className="px-4 py-2 border border-outline-variant/40">{formatDate(c.end)}</td>
-                                    <td className="px-4 py-2 border border-outline-variant/40">{formatCurrency(c.rent, currency)}</td>
-                                    <td className="px-4 py-2 border border-outline-variant/40">
+                                <tr key={c.id} className="hover:bg-background">
+                                    <td className="px-4 py-2 border border-border">{u?.name || '-'}</td>
+                                    <td className="px-4 py-2 border border-border">{formatDate(c.start)}</td>
+                                    <td className="px-4 py-2 border border-border">{formatDate(c.end)}</td>
+                                    <td className="px-4 py-2 border border-border">{formatCurrency(c.rent, currency)}</td>
+                                    <td className="px-4 py-2 border border-border">
                                         <span className={`px-2 py-0.5 text-xs rounded-full ${c.status === 'ACTIVE' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
                                             {c.status === 'ACTIVE' ? 'نشط' : c.status === 'ENDED' ? 'منتهي' : c.status}
                                         </span>
@@ -314,19 +266,19 @@ const TenantDetailView: React.FC<{ tenant: Tenant; onBack: () => void }> = ({ te
             <Card className="p-5">
                 <h3 className="font-bold text-lg mb-4 border-b border-border pb-2">آخر المدفوعات ({tenantReceipts.length})</h3>
                 {tenantReceipts.length > 0 ? (
-                    <table className="w-full text-sm border-collapse border border-outline-variant/40">
+                    <table className="w-full text-sm border-collapse border border-border">
                         <thead><tr className="bg-background">
-                            <th className="px-4 py-2 border border-outline-variant/40">الرقم</th>
-                            <th className="px-4 py-2 border border-outline-variant/40">التاريخ</th>
-                            <th className="px-4 py-2 border border-outline-variant/40">المبلغ</th>
-                            <th className="px-4 py-2 border border-outline-variant/40">طريقة الدفع</th>
+                            <th className="px-4 py-2 border border-border">الرقم</th>
+                            <th className="px-4 py-2 border border-border">التاريخ</th>
+                            <th className="px-4 py-2 border border-border">المبلغ</th>
+                            <th className="px-4 py-2 border border-border">طريقة الدفع</th>
                         </tr></thead>
                         <tbody>{tenantReceipts.slice(0, 10).map(r => (
-                            <tr key={r.id} className="hover:bg-surface-container-high">
-                                <td className="px-4 py-2 border border-outline-variant/40">{r.no}</td>
-                                <td className="px-4 py-2 border border-outline-variant/40">{formatDate(r.dateTime)}</td>
-                                <td className="px-4 py-2 border border-outline-variant/40 font-bold">{formatCurrency(r.amount, currency)}</td>
-                                <td className="px-4 py-2 border border-outline-variant/40">{CHANNEL_AR[r.channel] || r.channel}</td>
+                            <tr key={r.id} className="hover:bg-background">
+                                <td className="px-4 py-2 border border-border">{r.no}</td>
+                                <td className="px-4 py-2 border border-border">{formatDate(r.dateTime)}</td>
+                                <td className="px-4 py-2 border border-border font-bold">{formatCurrency(r.amount, currency)}</td>
+                                <td className="px-4 py-2 border border-border">{CHANNEL_AR[r.channel] || r.channel}</td>
                             </tr>
                         ))}</tbody>
                     </table>
@@ -336,19 +288,19 @@ const TenantDetailView: React.FC<{ tenant: Tenant; onBack: () => void }> = ({ te
             {tenantMaintenance.length > 0 && (
                 <Card className="p-5">
                     <h3 className="font-bold text-lg mb-4 border-b border-border pb-2">طلبات الصيانة ({tenantMaintenance.length})</h3>
-                    <table className="w-full text-sm border-collapse border border-outline-variant/40">
+                    <table className="w-full text-sm border-collapse border border-border">
                         <thead><tr className="bg-background">
-                            <th className="px-4 py-2 border border-outline-variant/40">الوصف</th>
-                            <th className="px-4 py-2 border border-outline-variant/40">التاريخ</th>
-                            <th className="px-4 py-2 border border-outline-variant/40">التكلفة</th>
-                            <th className="px-4 py-2 border border-outline-variant/40">الحالة</th>
+                            <th className="px-4 py-2 border border-border">الوصف</th>
+                            <th className="px-4 py-2 border border-border">التاريخ</th>
+                            <th className="px-4 py-2 border border-border">التكلفة</th>
+                            <th className="px-4 py-2 border border-border">الحالة</th>
                         </tr></thead>
                         <tbody>{tenantMaintenance.map(m => (
-                            <tr key={m.id} className="hover:bg-surface-container-high">
-                                <td className="px-4 py-2 border border-outline-variant/40">{m.description}</td>
-                                <td className="px-4 py-2 border border-outline-variant/40">{m.requestDate}</td>
-                                <td className="px-4 py-2 border border-outline-variant/40">{formatCurrency(m.cost || 0, currency)}</td>
-                                <td className="px-4 py-2 border border-outline-variant/40">{m.status}</td>
+                            <tr key={m.id} className="hover:bg-background">
+                                <td className="px-4 py-2 border border-border">{m.description}</td>
+                                <td className="px-4 py-2 border border-border">{m.requestDate}</td>
+                                <td className="px-4 py-2 border border-border">{formatCurrency(m.cost || 0, currency)}</td>
+                                <td className="px-4 py-2 border border-border">{m.status}</td>
                             </tr>
                         ))}</tbody>
                     </table>

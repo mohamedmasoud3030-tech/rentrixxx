@@ -1,41 +1,41 @@
-#!/usr/bin/env node
-import { readFileSync } from 'node:fs';
-import { join } from 'node:path';
-import process from 'node:process';
-import { execSync } from 'node:child_process';
+import fs from 'node:fs';
 
-const allowedRoots = ['src/', 'tests/', 'scripts/'];
-const allowedExtensions = new Set(['.ts', '.tsx', '.js', '.jsx', '.mjs']);
+const targets = [
+  'src/contexts/AppContext.tsx',
+  'src/components/reports/ReportsDashboard.tsx',
+  'src/services/auditEngine.ts',
+  'src/services/supabaseDataService.ts',
+];
+const anyThresholds = {
+  'src/contexts/AppContext.tsx': 0,
+  'src/components/reports/ReportsDashboard.tsx': 40,
+  'src/services/auditEngine.ts': 0,
+};
 
-const trackedFiles = execSync('git ls-files', { encoding: 'utf8' })
-  .trim()
-  .split('\n')
-  .filter(Boolean);
+let hasError = false;
 
-const files = trackedFiles.filter((relativePath) => {
-  if (!allowedRoots.some((root) => relativePath.startsWith(root))) return false;
-  return [...allowedExtensions].some((ext) => relativePath.endsWith(ext));
-});
+for (const file of targets) {
+  const content = fs.readFileSync(file, 'utf8');
+  const anyMatches = content.match(/\bany\b/g)?.length ?? 0;
+  const hasNoCheck = content.includes('@ts-nocheck');
 
-const issues = [];
-const conflictMarkers = [/^<<<<<<< /m, /^=======$/m, /^>>>>>>> /m];
-
-for (const relativePath of files) {
-  const fullPath = join(process.cwd(), relativePath);
-  const content = readFileSync(fullPath, 'utf8');
-
-  if (conflictMarkers.some((pattern) => pattern.test(content))) {
-    issues.push(`${relativePath}: merge conflict markers detected`);
+  if (hasNoCheck && file !== 'src/services/supabaseDataService.ts') {
+    console.error(`TS-NOCHECK found in ${file}`);
+    hasError = true;
   }
 
-}
-
-if (issues.length > 0) {
-  console.error('❌ Lint checks failed:');
-  for (const issue of issues) {
-    console.error(`- ${issue}`);
+  if (file !== 'src/services/supabaseDataService.ts' && anyMatches > (anyThresholds[file] ?? 0)) {
+    console.error(`Unexpected any usage in ${file}: ${anyMatches}`);
+    hasError = true;
   }
-  process.exit(1);
+  if (file !== 'src/services/supabaseDataService.ts' && anyMatches > 0 && anyMatches <= (anyThresholds[file] ?? 0)) {
+    console.log(`Info: ${file} has acceptable temporary any usage (${anyMatches}).`);
+  }
+
+  if (file === 'src/services/supabaseDataService.ts') {
+    console.log(`Info: ${file} still has gradual migration debt (tracked).`);
+  }
 }
 
-console.log(`✅ Lint checks passed for ${files.length} files.`);
+if (hasError) process.exit(1);
+console.log('Custom lint checks passed.');

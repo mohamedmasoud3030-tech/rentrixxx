@@ -2,7 +2,6 @@ import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { useApp } from '../contexts/AppContext';
 import { renewContractAtomic } from '../services/antiMistakeService';
 import { checkUnitMaintenanceBlock, type MaintenanceBlockResult } from '../services/operationsService';
-import { getContractStatusSummary, getContractsExpiringSoon } from '../services/contractMonitoringService';
 import { supabaseData } from '../services/supabaseDataService';
 import { Contract, Receipt, Expense } from '../types';
 import Card from '../components/ui/Card';
@@ -47,7 +46,7 @@ const ContractPrintable: React.FC<{ contract: Contract }> = ({ contract }) => {
     const logo = settings.appearance?.logoDataUrl;
 
     return (
-        <div className="bg-surface-container-low text-text text-sm leading-relaxed p-4 print-doc" dir="rtl">
+        <div className="bg-card text-text text-sm leading-relaxed p-4 print-doc" dir="rtl">
             <div className="print-doc__header">
                 <DocumentHeaderInline
                     company={company}
@@ -187,7 +186,7 @@ const Contracts: React.FC = () => {
                 if (filter === 'ACTIVE') return c.status === 'ACTIVE';
                 if (filter === 'SUSPENDED') return c.status === 'SUSPENDED';
                 if (filter === 'ENDED') return c.status === 'ENDED';
-                if (filter === 'TERMINATED') return c.status === 'TERMINATED';
+                if (filter === 'TERMINATED') return c.status === 'ENDED';
                 return true;
             })
             .filter(c => {
@@ -215,13 +214,6 @@ const Contracts: React.FC = () => {
         return { active, expiring, totalOverdueBalance, totalMonthlyRent };
     }, [contracts, contractBalances, db.settings]);
 
-    const statusSummary = useMemo(() => getContractStatusSummary(contracts), [contracts]);
-
-    const expiringSoonIds = useMemo(() => {
-        const alertDays = db.settings.operational?.contractAlertDays ?? 30;
-        return new Set(getContractsExpiringSoon(contracts, alertDays).map(contract => contract.id));
-    }, [contracts, db.settings]);
-
     const handleExportCsv = () => {
         const rows = filteredContracts.map(c => {
             const unit = units.find(u => u.id === c.unitId);
@@ -245,44 +237,23 @@ const Contracts: React.FC = () => {
         <div className="space-y-6">
             <HardGateBanner />
 
-            <Card>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-center">
-                    <div className="rounded-lg border border-outline-variant/40 p-3">
-                        <p className="text-lg font-black">{statusSummary.active}</p>
-                        <p className="text-xs text-text-muted">عقود نشطة</p>
-                    </div>
-                    <div className="rounded-lg border border-amber-200 bg-amber-50/40 p-3">
-                        <p className="text-lg font-black text-amber-600">{statusSummary.expiringSoon}</p>
-                        <p className="text-xs text-text-muted">ينتهي قريباً</p>
-                    </div>
-                    <div className="rounded-lg border border-red-200 bg-red-50/40 p-3">
-                        <p className="text-lg font-black text-red-600">{statusSummary.expired}</p>
-                        <p className="text-xs text-text-muted">منتهية</p>
-                    </div>
-                    <div className="rounded-lg border border-slate-200 bg-slate-50/40 p-3">
-                        <p className="text-lg font-black text-slate-700">{statusSummary.draft}</p>
-                        <p className="text-xs text-text-muted">مسودة</p>
-                    </div>
-                </div>
-            </Card>
-
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                <div className="bg-surface-container-low rounded-xl border border-outline-variant/40 p-3 text-center">
+                <div className="bg-card rounded-xl border border-border p-3 text-center">
                     <CheckCircle size={18} className="mx-auto mb-1 text-emerald-500" />
                     <p className="text-lg font-black">{contractStats.active}</p>
                     <p className="text-[10px] text-text-muted">عقود نشطة</p>
                 </div>
-                <div className="bg-surface-container-low rounded-xl border border-outline-variant/40 p-3 text-center">
+                <div className="bg-card rounded-xl border border-border p-3 text-center">
                     <AlertTriangle size={18} className="mx-auto mb-1 text-amber-500" />
                     <p className="text-lg font-black text-amber-600">{contractStats.expiring}</p>
                     <p className="text-[10px] text-text-muted">تنتهي قريباً</p>
                 </div>
-                <div className="bg-surface-container-low rounded-xl border border-outline-variant/40 p-3 text-center">
+                <div className="bg-card rounded-xl border border-border p-3 text-center">
                     <Clock size={18} className="mx-auto mb-1 text-red-500" />
                     <p className="text-lg font-black text-red-600" dir="ltr">{formatCurrency(contractStats.totalOverdueBalance, db.settings.operational.currency)}</p>
                     <p className="text-[10px] text-text-muted">إجمالي المتأخرات</p>
                 </div>
-                <div className="bg-surface-container-low rounded-xl border border-outline-variant/40 p-3 text-center">
+                <div className="bg-card rounded-xl border border-border p-3 text-center">
                     <Users size={18} className="mx-auto mb-1 text-blue-500" />
                     <p className="text-lg font-black text-blue-700" dir="ltr">{formatCurrency(contractStats.totalMonthlyRent, db.settings.operational.currency)}</p>
                     <p className="text-[10px] text-text-muted">إجمالي الإيجار الشهري</p>
@@ -324,7 +295,7 @@ const Contracts: React.FC = () => {
                 {filteredContracts.length === 0 ? (
                     <div className="text-center py-10 text-text-muted">لا توجد عقود مطابقة.</div>
                 ) : (
-                    <div className="overflow-x-auto border border-outline-variant/40 rounded-xl">
+                    <div className="overflow-x-auto border border-border rounded-xl">
                         <table className="w-full text-sm text-right">
                             <thead className="bg-background text-xs">
                                 <tr>
@@ -349,7 +320,7 @@ const Contracts: React.FC = () => {
 
                                     return (
                                         <React.Fragment key={c.id}>
-                                            <tr className="hover:bg-surface-container-high/60 cursor-pointer" onClick={() => setExpandedId(prev => (prev === c.id ? null : c.id))}>
+                                            <tr className="hover:bg-background/60 cursor-pointer" onClick={() => setExpandedId(prev => (prev === c.id ? null : c.id))}>
                                                 <td className="px-4 py-3 font-mono">{c.no || c.id.slice(0, 8)}</td>
                                                 <td className="px-4 py-3">
                                                     <div className="font-bold">{tenant?.name || '-'}</div>
@@ -360,16 +331,7 @@ const Contracts: React.FC = () => {
                                                     {formatCurrency(balance, db.settings.operational.currency)}
                                                 </td>
                                                 <td className="px-4 py-3">
-                                                    <div className="inline-flex items-center gap-2">
-                                                        <span className={`px-2 py-1 text-xs rounded-full border ${getStatusBadgeClass(c.status)}`}>{CONTRACT_STATUS_AR[c.status] || c.status}</span>
-                                                        {expiringSoonIds.has(c.id) && (
-                                                            <span
-                                                                className="inline-block h-2.5 w-2.5 rounded-full bg-amber-500"
-                                                                title="العقد ينتهي قريباً"
-                                                                aria-label="العقد ينتهي قريباً"
-                                                            />
-                                                        )}
-                                                    </div>
+                                                    <span className={`px-2 py-1 text-xs rounded-full border ${getStatusBadgeClass(c.status)}`}>{CONTRACT_STATUS_AR[c.status] || c.status}</span>
                                                 </td>
                                                 <td className="px-4 py-3" onClick={e => e.stopPropagation()}>
                                                     <ActionsMenu items={[
@@ -629,7 +591,7 @@ const ContractForm: React.FC<{ isOpen: boolean; onClose: () => void; contract: C
                                 <div key={tx.id} className={`p-2 rounded-md text-sm ${'channel' in tx ? 'bg-green-50 dark:bg-green-900/20' : 'bg-red-50 dark:bg-red-900/20'}`}>
                                     <div className="flex justify-between items-center">
                                         <span className="font-bold">{'channel' in tx ? `سند قبض #${tx.no}` : `مصروف #${tx.no}`}</span>
-                                        <span className={`font-bold ${'channel' in tx ? 'text-primary' : 'text-red-600'}`}>{formatCurrency(tx.amount, db.settings.operational.currency)}</span>
+                                        <span className={`font-bold ${'channel' in tx ? 'text-green-600' : 'text-red-600'}`}>{formatCurrency(tx.amount, db.settings.operational.currency)}</span>
                                     </div>
                                     <div className="flex justify-between items-center text-xs text-text-muted"><span>{formatDateTime(tx.dateTime)}</span></div>
                                 </div>

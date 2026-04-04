@@ -1,9 +1,10 @@
-const VERSION = 'v2-2026-04-04';
+const VERSION = 'v2-2026-03-30';
 const STATIC_CACHE = `rentrix-static-${VERSION}`;
 const RUNTIME_CACHE = `rentrix-runtime-${VERSION}`;
 const ASSETS_TO_CACHE = [
   '/',
   '/index.html',
+  '/manifest.json',
   '/robots.txt',
   '/icon-rentrix.png',
 ];
@@ -50,14 +51,12 @@ self.addEventListener('fetch', event => {
   event.respondWith(
     caches.match(request).then(cached => {
       if (cached) return cached;
-      return fetch(request)
-        .then(response => {
-          if (!response || response.status !== 200) return response;
-          const copy = response.clone();
-          caches.open(RUNTIME_CACHE).then(cache => cache.put(request, copy));
-          return response;
-        })
-        .catch(() => caches.match(request).then(hit => hit || Response.error()));
+      return fetch(request).then(response => {
+        if (!response || response.status !== 200) return response;
+        const copy = response.clone();
+        caches.open(RUNTIME_CACHE).then(cache => cache.put(request, copy));
+        return response;
+      });
     })
   );
 });

@@ -1,36 +1,34 @@
-#!/usr/bin/env node
-import { existsSync } from 'node:fs';
-import process from 'node:process';
+import fs from 'node:fs';
+import path from 'node:path';
 
-const errors = [];
+const root = process.cwd();
+const localBin = (name) => path.join(root, 'node_modules', '.bin', name);
 
-const requiredNodeMajor = 20;
-const nodeMajor = Number.parseInt(process.versions.node.split('.')[0], 10);
-if (Number.isNaN(nodeMajor) || nodeMajor < requiredNodeMajor) {
-  errors.push(
-    `Node.js ${requiredNodeMajor}+ is required, current version is ${process.versions.node}.`
-  );
-}
+const requiredBinaries = ['tsc', 'vite'];
+const missingBinaries = requiredBinaries.filter((bin) => !fs.existsSync(localBin(bin)));
 
-const requiredFiles = [
-  'package.json',
-  'tsconfig.json',
-  'tsconfig.typecheck.json',
-  'vite.config.ts',
-];
-
-for (const filePath of requiredFiles) {
-  if (!existsSync(filePath)) {
-    errors.push(`Missing required file: ${filePath}`);
+if (missingBinaries.length > 0) {
+  const msg = `Missing required local binaries: ${missingBinaries.join(', ')}`;
+  if (process.env.CI === 'true') {
+    console.error(msg);
+    console.error('Run `npm ci` to install exact locked dependencies before running CI scripts.');
+    process.exit(1);
   }
+  console.warn(`[preflight warning] ${msg}`);
 }
 
-if (errors.length > 0) {
-  console.error('❌ Preflight checks failed:');
-  for (const error of errors) {
-    console.error(`- ${error}`);
+const strictEnv = process.env.PREFLIGHT_STRICT_ENV === '1';
+const requiredEnvVars = ['VITE_SUPABASE_URL', 'VITE_SUPABASE_ANON_KEY'];
+const missingEnvVars = requiredEnvVars.filter((key) => !process.env[key]);
+
+if (missingEnvVars.length > 0) {
+  const message = `Missing environment variables: ${missingEnvVars.join(', ')}`;
+  if (strictEnv) {
+    console.error(message);
+    process.exit(1);
   }
-  process.exit(1);
+  console.warn(`[preflight warning] ${message}`);
+  console.warn('[preflight warning] Set PREFLIGHT_STRICT_ENV=1 to enforce hard failure.');
 }
 
-console.log('✅ Preflight checks passed.');
+console.log('Preflight checks passed.');

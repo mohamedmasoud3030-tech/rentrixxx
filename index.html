@@ -14,8 +14,8 @@
     <link rel="apple-touch-icon" href="/icon-rentrix.png" />
 
     <!-- PWA -->
+    <link rel="manifest" href="/manifest.json" />
     <meta name="theme-color" content="#B8860B" />
-    <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="Rentrix" />
@@ -33,13 +33,161 @@
     <meta name="twitter:description" content="نظام إدارة العقارات الذكي للشركات والمكاتب العقارية" />
 
     <!-- Content Security Policy -->
-    <!-- JSON-LD Structured Data -->
-    <script src="/structured-data.jsonld" type="application/ld+json"></script>
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self' https: 'unsafe-inline' 'unsafe-eval'; img-src 'self' data: https:; font-src 'self' https: data:;" />
 
-<link rel="preconnect" href="https://fonts.googleapis.com">
+    <!-- JSON-LD Structured Data -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebApplication",
+      "name": "Rentrix",
+      "description": "نظام إدارة العقارات الذكي للشركات والمكاتب العقارية",
+      "applicationCategory": "BusinessApplication",
+      "operatingSystem": "Web",
+      "inLanguage": "ar"
+    }
+    </script>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;900&display=swap" rel="stylesheet">
+    <style>
+      /*
+        ==============================================
+        RENTRIX DESIGN SYSTEM — LUXURY THEME
+        Morning (Light): Warm Ivory + Golden
+        Night (Dark): Deep Navy + Golden accents
+        ==============================================
+      */
+      :root {
+        --radius: 0.625rem;
+
+        /* === MORNING LIGHT THEME === */
+        /* Gold accent: #B8860B / hsl(43 82% 38%) */
+        --color-primary: 43 82% 38%;
+        --color-primary-fg: 43 82% 98%;
+
+        /* Warm ivory background */
+        --color-bg: 38 40% 96%;
+        --color-card: 0 0% 100%;
+        --color-border: 38 25% 88%;
+
+        /* Text */
+        --color-text-primary: 30 20% 18%;
+        --color-text-muted: 30 12% 48%;
+
+        /* Sidebar warm cream */
+        --color-sidebar-bg: 38 30% 97%;
+        --color-sidebar-text: 30 15% 42%;
+        --color-sidebar-active-bg: 43 82% 38%;
+        --color-sidebar-hover-bg: 38 25% 92%;
+        --color-sidebar-active-text: 0 0% 100%;
+
+        /* Status Colors */
+        --color-success-bg: hsl(145 55% 93%);
+        --color-success-text: hsl(145 55% 28%);
+        --color-warning-bg: hsl(40 90% 93%);
+        --color-warning-text: hsl(40 90% 28%);
+        --color-danger-bg: hsl(0 65% 93%);
+        --color-danger-text: hsl(0 65% 42%);
+        --color-info-bg: hsl(210 70% 93%);
+        --color-info-text: hsl(210 70% 38%);
+        --color-default-bg: hsl(38 20% 90%);
+        --color-default-text: hsl(38 15% 40%);
+
+        /* Shadows */
+        --shadow-card: 0 2px 12px -2px rgba(184, 134, 11, 0.1), 0 1px 4px -1px rgba(0, 0, 0, 0.06);
+        --shadow-card-hover: 0 8px 24px -4px rgba(184, 134, 11, 0.18), 0 2px 8px -2px rgba(0, 0, 0, 0.08);
+        --shadow-sidebar: 2px 0 16px -4px rgba(184, 134, 11, 0.12);
+      }
+
+      [data-theme="dark"] {
+        /* === NIGHT DARK THEME === */
+        --color-primary: 43 78% 52%;
+        --color-primary-fg: 220 30% 8%;
+
+        /* Deep navy */
+        --color-bg: 216 28% 7%;
+        --color-card: 216 25% 10%;
+        --color-border: 216 18% 18%;
+
+        /* Text */
+        --color-text-primary: 210 25% 92%;
+        --color-text-muted: 210 15% 58%;
+
+        /* Dark sidebar deep navy */
+        --color-sidebar-bg: 218 32% 8%;
+        --color-sidebar-text: 210 18% 62%;
+        --color-sidebar-active-bg: 43 78% 52%;
+        --color-sidebar-hover-bg: 216 22% 15%;
+        --color-sidebar-active-text: 220 30% 8%;
+
+        /* Status Colors */
+        --color-success-bg: hsl(145 45% 15% / 0.6);
+        --color-success-text: hsl(145 55% 65%);
+        --color-warning-bg: hsl(40 80% 20% / 0.6);
+        --color-warning-text: hsl(40 80% 68%);
+        --color-danger-bg: hsl(0 55% 20% / 0.6);
+        --color-danger-text: hsl(0 65% 72%);
+        --color-info-bg: hsl(210 60% 18% / 0.6);
+        --color-info-text: hsl(210 70% 72%);
+        --color-default-bg: hsl(216 20% 18% / 0.7);
+        --color-default-text: hsl(216 15% 72%);
+
+        /* Shadows */
+        --shadow-card: 0 2px 12px -2px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(184, 134, 11, 0.06);
+        --shadow-card-hover: 0 8px 24px -4px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(184, 134, 11, 0.18);
+        --shadow-sidebar: 2px 0 20px -4px rgba(0, 0, 0, 0.5);
+      }
+
+      /* === BASE STYLES === */
+      html {
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+        scroll-behavior: smooth;
+      }
+
+      body {
+        font-family: 'Cairo', 'Noto Sans Arabic', 'Tajawal', sans-serif;
+        background-color: hsl(var(--color-bg));
+        color: hsl(var(--color-text-primary));
+        line-height: 1.6;
+      }
+
+      * { transition: background-color 0.2s ease, border-color 0.2s ease, color 0.15s ease; }
+      *, *::before, *::after { box-sizing: border-box; }
+
+      /* ===  MOBILE SAFE AREA & UX === */
+      .safe-bottom {
+        padding-bottom: env(safe-area-inset-bottom, 0px);
+      }
+
+      /* Prevent text selection on tap (mobile) */
+      button, a, nav {
+        -webkit-tap-highlight-color: transparent;
+        -webkit-touch-callout: none;
+      }
+
+      /* Smooth scrolling on mobile */
+      .overflow-y-auto, .overflow-x-auto {
+        -webkit-overflow-scrolling: touch;
+      }
+
+      /* Hide scrollbar but keep scroll */
+      .scrollbar-hide::-webkit-scrollbar { display: none; }
+      .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+
+      /* Active press effect for touch */
+      .active\:scale-95:active { transform: scale(0.95); }
+    </style>
+    <script>
+      (function() {
+        const theme = localStorage.getItem('theme') || 'light';
+        document.documentElement.setAttribute('data-theme', theme);
+      })();
+    </script>
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+<link rel="stylesheet" href="/src/index.css">
 </head>
   <body>
     <div id="root"></div>

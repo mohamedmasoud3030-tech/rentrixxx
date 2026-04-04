@@ -3,23 +3,9 @@ import { createRoot } from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
 import App from './App';
 import { AppProvider } from './contexts/AppContext';
-import AppErrorBoundary from './components/shared/AppErrorBoundary';
 import { errorTracker } from './services/errorTracker';
 import { logger } from './services/logger';
 import './index.css';
-
-
-let theme = 'light';
-try {
-  const storedTheme = localStorage.getItem('theme');
-  if (storedTheme) {
-    const parsedTheme = JSON.parse(storedTheme) as unknown;
-    theme = typeof parsedTheme === 'string' ? parsedTheme : storedTheme;
-  }
-} catch {
-  theme = localStorage.getItem('theme') || 'light';
-}
-document.documentElement.setAttribute('data-theme', theme);
 
 const rootElement = document.getElementById('root');
 if (!rootElement) {
@@ -48,12 +34,10 @@ window.addEventListener('unhandledrejection', (event) => {
 const root = createRoot(rootElement);
 root.render(
   <React.StrictMode>
-    <AppErrorBoundary>
-      <AppProvider>
-        <BrowserRouter>
-          <App />
-        </BrowserRouter>
-      </AppProvider>
-    </AppErrorBoundary>
+    <AppProvider>
+      <BrowserRouter>
+        <App />
+      </BrowserRouter>
+    </AppProvider>
   </React.StrictMode>
 );

@@ -70,11 +70,11 @@ const Financials: React.FC<{ initialTab?: FinancialTab }> = ({ initialTab = 'rec
         <div className="space-y-6">
             <HardGateBanner />
             
-            <div className="rounded-2xl border border-outline-variant/40 bg-surface-container-low p-4 flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+            <div className="rounded-2xl border border-blue-100 bg-blue-50/70 p-4 flex flex-col lg:flex-row lg:items-center justify-between gap-3">
                 <div>
-                    <p className="text-xs uppercase tracking-widest text-primary font-black">{AR_LABELS.cashflowOrchestration}</p>
+                    <p className="text-xs uppercase tracking-widest text-blue-700 font-black">{AR_LABELS.cashflowOrchestration}</p>
                     <p className="text-sm font-bold mt-1">السندات والمصروفات مرتبطة تلقائيًا بدورة الفاتورة والعقد لضبط التدفق النقدي.</p>
-                    <p className="text-xs text-text-muted mt-1">الفواتير المفتوحة الآن: <span className="font-black mono-data" dir="ltr">{stats.openInvoices}</span></p>
+                    <p className="text-xs text-text-muted mt-1">الفواتير المفتوحة الآن: <span className="font-black" dir="ltr">{stats.openInvoices}</span></p>
                 </div>
                 <div className="flex gap-2 flex-wrap items-center">
                     <button onClick={refreshFinancialSummary} disabled={loadingSummary} className="btn btn-secondary text-xs font-black flex items-center gap-1">
@@ -114,9 +114,9 @@ const Financials: React.FC<{ initialTab?: FinancialTab }> = ({ initialTab = 'rec
                 />
             </div>
 
-            <Card className="p-0 overflow-hidden border border-outline-variant/40 bg-surface-container-low">
+            <Card className="p-0 overflow-hidden border-none shadow-xl bg-card/50 backdrop-blur-sm">
                 <div className="flex flex-col md:flex-row md:items-center justify-between p-4 border-b border-border gap-4">
-                    <div className="flex bg-surface-container-high p-1 rounded-xl border border-outline-variant/40 overflow-x-auto">
+                    <div className="flex bg-background/50 p-1 rounded-xl border border-border overflow-x-auto">
                         <TabButton active={activeTab === 'receipts'} onClick={() => setActiveTab('receipts')} icon={<ReceiptIcon size={16} />} label={AR_LABELS.receipts} />
                         <TabButton active={activeTab === 'expenses'} onClick={() => setActiveTab('expenses')} icon={<ArrowDownRight size={16} />} label={AR_LABELS.expenses} />
                         <TabButton active={activeTab === 'deposits'} onClick={() => setActiveTab('deposits')} icon={<PiggyBank size={16} />} label="الودائع" />
@@ -137,16 +137,16 @@ const Financials: React.FC<{ initialTab?: FinancialTab }> = ({ initialTab = 'rec
 
 const StatCard: React.FC<{ label: string; value: number; icon: React.ReactNode; color: string; isCount?: boolean }> = ({ label, value, icon, color, isCount }) => {
     const colorClasses: Record<string, string> = {
-        blue: 'text-secondary bg-surface-container-low border-outline-variant/40',
-        amber: 'text-amber-500 bg-surface-container-low border-outline-variant/40',
-        emerald: 'text-primary bg-surface-container-low border-outline-variant/40',
-        rose: 'text-error bg-surface-container-low border-outline-variant/40',
+        blue: 'text-blue-600 bg-blue-50 border-blue-100',
+        amber: 'text-amber-600 bg-amber-50 border-amber-100',
+        emerald: 'text-emerald-600 bg-emerald-50 border-emerald-100',
+        rose: 'text-rose-600 bg-rose-50 border-rose-100',
     };
     return (
         <div className={`p-4 rounded-2xl border ${colorClasses[color]} flex flex-col items-center justify-center text-center shadow-sm hover:shadow-md transition-all`}>
             <div className="mb-2 opacity-80">{icon}</div>
             <p className="text-[10px] font-bold uppercase tracking-wider mb-1 opacity-70">{label}</p>
-            <p className="text-lg font-black mono-data" dir="ltr">
+            <p className="text-lg font-black" dir="ltr">
                 {isCount ? value : formatCurrency(value)}
             </p>
         </div>
@@ -157,7 +157,7 @@ const TabButton: React.FC<{ active: boolean; onClick: () => void; icon: React.Re
     <button
         onClick={onClick}
         className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-all whitespace-nowrap ${
-            active ? 'bg-surface-container-high text-primary border border-primary/40' : 'text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high'
+            active ? 'bg-primary text-white shadow-md' : 'text-text-muted hover:text-text hover:bg-background'
         }`}
     >
         {icon}
@@ -270,9 +270,9 @@ const ReceiptsView: React.FC = () => {
                 </div>
             ) : (
                 <>
-                    <div className="overflow-x-auto border border-outline-variant/40 rounded-2xl bg-surface-container-low">
+                    <div className="overflow-x-auto border border-border rounded-2xl">
                         <table className="w-full text-sm text-right">
-                            <thead className="bg-surface-container-high/50 text-slate-400 text-[10px] uppercase tracking-wider">
+                            <thead className="bg-background text-text-muted text-[10px] uppercase tracking-wider">
                                 <tr>
                                     <th className="px-6 py-4 font-black">رقم السند</th>
                                     <th className="px-6 py-4 font-black">التاريخ</th>
@@ -418,9 +418,9 @@ const ExpensesView: React.FC = () => {
                 </div>
             ) : (
                 <>
-                    <div className="overflow-x-auto border border-outline-variant/40 rounded-2xl bg-surface-container-low">
+                    <div className="overflow-x-auto border border-border rounded-2xl">
                         <table className="w-full text-sm text-right">
-                            <thead className="bg-surface-container-high/50 text-slate-400 text-[10px] uppercase tracking-wider">
+                            <thead className="bg-background text-text-muted text-[10px] uppercase tracking-wider">
                                 <tr>
                                     <th className="px-6 py-4 font-black">رقم السند</th>
                                     <th className="px-6 py-4 font-black">التاريخ</th>
@@ -542,9 +542,9 @@ const DepositsView: React.FC = () => {
                 </div>
             ) : (
                 <>
-                    <div className="overflow-x-auto border border-outline-variant/40 rounded-2xl bg-surface-container-low">
+                    <div className="overflow-x-auto border border-border rounded-2xl">
                         <table className="w-full text-sm text-right">
-                            <thead className="bg-surface-container-high/50 text-slate-400 text-[10px] uppercase tracking-wider">
+                            <thead className="bg-background text-text-muted text-[10px] uppercase tracking-wider">
                                 <tr>
                                     <th className="px-6 py-4 font-black">التاريخ</th>
                                     <th className="px-6 py-4 font-black">العقد / المستأجر</th>
@@ -572,7 +572,7 @@ const DepositsView: React.FC = () => {
                                                     {typeInfo.label}
                                                 </span>
                                             </td>
-                                            <td className="px-6 py-4 font-black mono-data" dir="ltr">{formatCurrency(tx.amount, db.settings.operational.currency)}</td>
+                                            <td className="px-6 py-4 font-black" dir="ltr">{formatCurrency(tx.amount, db.settings.operational.currency)}</td>
                                             <td className="px-6 py-4 text-center">
                                                 <button onClick={async () => await dataService.remove('depositTxs', tx.id)} className="p-2 text-text-muted hover:text-rose-600 hover:bg-rose-50 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity">
                                                     <Trash2 size={16} />
@@ -654,9 +654,9 @@ const OwnerSettlementsView: React.FC = () => {
                 </div>
             ) : (
                 <>
-                    <div className="overflow-x-auto border border-outline-variant/40 rounded-2xl bg-surface-container-low">
+                    <div className="overflow-x-auto border border-border rounded-2xl">
                         <table className="w-full text-sm text-right">
-                            <thead className="bg-surface-container-high/50 text-slate-400 text-[10px] uppercase tracking-wider">
+                            <thead className="bg-background text-text-muted text-[10px] uppercase tracking-wider">
                                 <tr>
                                     <th className="px-6 py-4 font-black">رقم التسوية</th>
                                     <th className="px-6 py-4 font-black">التاريخ</th>
