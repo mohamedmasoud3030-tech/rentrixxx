@@ -714,6 +714,7 @@ export interface AppContextType {
   db: Database | null;
   auth: {
     currentUser: User | null | undefined;
+    isInitializing: boolean;
     login: (username: string, password: string) => Promise<{ ok: boolean; msg: string; mustChange?: boolean }>;
     logout: () => void;
     changePassword: (userId: string, newPass: string) => Promise<{ ok: boolean }>;

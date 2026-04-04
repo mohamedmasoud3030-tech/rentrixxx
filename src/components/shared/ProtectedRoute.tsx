@@ -10,6 +10,10 @@ interface ProtectedRouteProps {
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ capability, children }) => {
   const { auth, canAccess } = useApp();
 
+  if (auth.isInitializing) {
+    return null;
+  }
+
   if (!auth.currentUser) {
     return <Navigate to="/login" replace />;
   }
