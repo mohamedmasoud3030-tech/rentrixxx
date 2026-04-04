@@ -279,7 +279,7 @@ export interface Contract {
   start: string; // YYYY-MM-DD
   end: string; // YYYY-MM-DD
   deposit: number;
-  status: 'ACTIVE' | 'ENDED' | 'SUSPENDED';
+  status: 'ACTIVE' | 'ENDED' | 'SUSPENDED' | 'TERMINATED';
   sponsorName?: string;
   sponsorId?: string;
   sponsorPhone?: string;

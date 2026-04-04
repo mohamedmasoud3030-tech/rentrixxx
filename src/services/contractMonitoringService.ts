@@ -126,7 +126,7 @@ export const getContractStatusSummary = (contracts: Contract[]): ContractStatusS
       if ((contract.status as string) === 'DRAFT') {
         acc.draft += 1;
       }
-      if ((contract.status as string) === 'TERMINATED') {
+      if (contract.status === 'TERMINATED') {
         acc.terminated += 1;
       }
       if (contract.status === 'ENDED') {
