@@ -41,6 +41,16 @@ const safeDate = (value: unknown): Date | null => {
   const d = new Date(String(value));
   return Number.isNaN(d.getTime()) ? null : d;
 };
+const startOfDay = (date: Date): Date => {
+  const d = new Date(date);
+  d.setHours(0, 0, 0, 0);
+  return d;
+};
+const endOfDay = (date: Date): Date => {
+  const d = new Date(date);
+  d.setHours(23, 59, 59, 999);
+  return d;
+};
 
 const isDebitNormal = (type?: AccountType): boolean => type === 'ASSET' || type === 'EXPENSE';
 
@@ -299,7 +309,8 @@ export const calculateBalanceSheetData = (db: Database, asOfDate: string) => {
 export const calculateAgedReceivables = (db: Database, asOfDate: string) => {
   try {
     const { invoices, contracts, tenants } = getArrays(db);
-    const asOf = safeDate(asOfDate);
+    const asOfRaw = safeDate(asOfDate);
+    const asOf = asOfRaw ? endOfDay(asOfRaw) : null;
     if (!asOf) {
       return { lines: [], totals: { total: 0, current: 0, '1-30': 0, '31-60': 0, '61-90': 0, '90+': 0 } };
     }
@@ -309,7 +320,8 @@ export const calculateAgedReceivables = (db: Database, asOfDate: string) => {
     const bucketsByTenant = new Map<string, { tenantName: string; current: number; '1-30': number; '31-60': number; '61-90': number; '90+': number; total: number }>();
 
     for (const invoice of invoices) {
-      const dueDate = safeDate(invoice?.dueDate);
+      const dueDateRaw = safeDate(invoice?.dueDate);
+      const dueDate = dueDateRaw ? startOfDay(dueDateRaw) : null;
       if (!dueDate || dueDate > asOf || invoice?.status === 'PAID') continue;
 
       const remaining = round3(toNumber(invoice.amount) + toNumber(invoice.taxAmount) - toNumber(invoice.paidAmount));
