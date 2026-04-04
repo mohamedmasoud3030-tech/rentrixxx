@@ -34,6 +34,10 @@ export interface ReceiptPostingResult {
 }
 
 export async function postReceiptAtomic(payload: ReceiptPostingPayload): Promise<ReceiptPostingResult> {
+  if (!supabase) {
+    return { success: false, error: 'Supabase client unavailable. تحقق من متغيرات البيئة.' };
+  }
+
   try {
     const { data, error } = await supabase.rpc('post_receipt_atomic', {
       p_receipt: payload.receipt,

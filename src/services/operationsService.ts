@@ -1,6 +1,7 @@
 import { supabase } from './supabase';
 import type { Contract, MaintenanceRecord } from '../types';
 
+
 export interface AutomationSummary {
   invoicesCreated: number;
   lateFeesApplied: number;
@@ -198,6 +199,10 @@ export interface MaintenanceBlockResult {
 }
 
 export async function checkUnitMaintenanceBlock(unitId: string): Promise<MaintenanceBlockResult> {
+  if (!supabase) {
+    return { blocked: false, count: 0, requests: [] };
+  }
+
   const { data, error } = await supabase.rpc('check_unit_maintenance_block', {
     p_unit_id: unitId,
   });
@@ -227,6 +232,10 @@ export interface TerminateContractResult {
 }
 
 export async function terminateContract(contractId: string, reason: string): Promise<TerminateContractResult> {
+  if (!supabase) {
+    return { success: false, error: 'Supabase client unavailable.' };
+  }
+
   const normalizedReason = reason.trim();
   if (!normalizedReason) {
     return { success: false, error: 'سبب الإنهاء مطلوب.' };

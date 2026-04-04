@@ -5,6 +5,13 @@ import type { AutomationResult } from '../types/automation';
 import type { User } from '../types';
 
 
+
+const ensureSupabase = (): boolean => {
+  if (supabase) return true;
+  logger.error('[EdgeFunction] Supabase client unavailable. Check environment variables.');
+  return false;
+};
+
 export interface OwnerPortalPayload {
   owner: { id: string; name: string };
   stats: { collections: number; expenses: number; officeShare: number; net: number };
@@ -12,6 +19,8 @@ export interface OwnerPortalPayload {
 }
 
 export async function createOwnerPortalUrl(ownerId: string): Promise<string> {
+  if (!ensureSupabase()) return '';
+
   try {
     const { data, error } = await supabase.functions.invoke('owner-access-token', {
       body: { ownerId, action: 'issue' },
@@ -32,6 +41,8 @@ export async function createOwnerPortalUrl(ownerId: string): Promise<string> {
 }
 
 export async function verifyOwnerAccessToken(ownerId: string, token: string): Promise<OwnerPortalPayload> {
+  if (!ensureSupabase()) throw new Error('تعذر الاتصال بقاعدة البيانات.');
+
   const { data, error } = await supabase.functions.invoke('owner-access-token', {
     body: { ownerId, token, action: 'verify' },
   });
@@ -43,6 +54,8 @@ export async function verifyOwnerAccessToken(ownerId: string, token: string): Pr
 }
 
 export async function adminCreateUser(payload: { email: string; password: string; username: string; role: User['role'] }): Promise<{ id: string }> {
+  if (!ensureSupabase()) throw new Error('تعذر الاتصال بقاعدة البيانات.');
+
   const { data, error } = await supabase.functions.invoke('admin-create-user', { body: payload });
   if (error || !data?.id) {
     logger.error('[EdgeFunction] admin-create-user failed', error || data);
@@ -52,6 +65,8 @@ export async function adminCreateUser(payload: { email: string; password: string
 }
 
 export async function askAssistant(prompt: string, context: unknown): Promise<string> {
+  if (!ensureSupabase()) throw new Error('تعذر الاتصال بقاعدة البيانات.');
+
   const { data, error } = await supabase.functions.invoke('assistant-proxy', {
     body: { prompt, context },
   });
@@ -63,6 +78,10 @@ export async function askAssistant(prompt: string, context: unknown): Promise<st
 }
 
 export async function runAutomationScheduler(payload?: { dryRun?: boolean }): Promise<AutomationResult> {
+  if (!ensureSupabase()) {
+    return { success: false, errors: ['Supabase client unavailable'], snapshotsRebuilt: 0, lateFeesApplied: 0, notificationsSent: 0, ts: new Date().toISOString() };
+  }
+
   const env = getAppEnv();
   const { data: { session } } = await supabase.auth.getSession();
   const accessToken = session?.access_token;
