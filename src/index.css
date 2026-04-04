@@ -1,28 +1,74 @@
 /* Base design tokens moved from index.html to satisfy strict CSP */
 :root {
     --radius: 0.625rem;
-    --color-primary: 43 82% 38%;
-    --color-primary-fg: 43 82% 98%;
-    --color-bg: 38 40% 96%;
-    --color-card: 0 0% 100%;
-    --color-border: 38 25% 88%;
-    --color-text-primary: 30 20% 18%;
-    --color-text-muted: 30 12% 48%;
-    --color-sidebar-bg: 38 30% 97%;
-    --color-sidebar-text: 30 15% 42%;
-    --color-sidebar-active-bg: 43 82% 38%;
-    --color-sidebar-hover-bg: 38 25% 92%;
-    --color-sidebar-active-text: 0 0% 100%;
-    --color-success-bg: hsl(145 55% 93%);
-    --color-success-text: hsl(145 55% 28%);
-    --color-warning-bg: hsl(40 90% 93%);
-    --color-warning-text: hsl(40 90% 28%);
-    --color-danger-bg: hsl(0 65% 93%);
-    --color-danger-text: hsl(0 65% 42%);
-    --color-info-bg: hsl(210 70% 93%);
-    --color-info-text: hsl(210 70% 38%);
-    --color-default-bg: hsl(38 20% 90%);
-    --color-default-text: hsl(38 15% 40%);
+
+    /* Canonical runtime tokens */
+    --rx-color-primary: 43 82% 38%;
+    --rx-color-primary-fg: 43 82% 98%;
+    --rx-color-background: 38 40% 96%;
+    --rx-color-surface: 0 0% 100%;
+    --rx-color-surface-dim: 36 28% 93%;
+    --rx-color-surface-container-lowest: 0 0% 100%;
+    --rx-color-surface-container-low: 38 30% 97%;
+    --rx-color-surface-container: 38 25% 94%;
+    --rx-color-surface-container-high: 38 25% 90%;
+    --rx-color-surface-container-highest: 38 20% 86%;
+    --rx-color-surface-bright: 38 35% 98%;
+    --rx-color-primary-container: 43 82% 44%;
+    --rx-color-on-primary: 43 82% 98%;
+    --rx-color-on-primary-container: 43 60% 16%;
+    --rx-color-secondary: 214 40% 44%;
+    --rx-color-tertiary: 263 75% 45%;
+    --rx-color-error: 0 68% 46%;
+    --rx-color-error-container: 0 72% 92%;
+    --rx-color-on-surface: 30 20% 18%;
+    --rx-color-on-surface-variant: 30 12% 48%;
+    --rx-color-outline: 38 16% 56%;
+    --rx-color-outline-variant: 38 20% 82%;
+    --rx-color-border: 38 25% 88%;
+    --rx-color-card: 0 0% 100%;
+    --rx-color-text-primary: 30 20% 18%;
+    --rx-color-text-muted: 30 12% 48%;
+    --rx-color-sidebar-bg: 38 30% 97%;
+    --rx-color-sidebar-text: 30 15% 42%;
+    --rx-color-sidebar-active-bg: 43 82% 38%;
+    --rx-color-sidebar-hover-bg: 38 25% 92%;
+    --rx-color-sidebar-active-text: 0 0% 100%;
+    --rx-color-success-bg: 145 55% 93%;
+    --rx-color-success-text: 145 55% 28%;
+    --rx-color-warning-bg: 40 90% 93%;
+    --rx-color-warning-text: 40 90% 28%;
+    --rx-color-danger-bg: 0 65% 93%;
+    --rx-color-danger-text: 0 65% 42%;
+    --rx-color-info-bg: 210 70% 93%;
+    --rx-color-info-text: 210 70% 38%;
+    --rx-color-default-bg: 38 20% 90%;
+    --rx-color-default-text: 38 15% 40%;
+
+    /* Legacy aliases (kept for compatibility) */
+    --color-primary: var(--rx-color-primary);
+    --color-primary-fg: var(--rx-color-primary-fg);
+    --color-bg: var(--rx-color-background);
+    --color-card: var(--rx-color-card);
+    --color-border: var(--rx-color-border);
+    --color-text-primary: var(--rx-color-text-primary);
+    --color-text-muted: var(--rx-color-text-muted);
+    --color-sidebar-bg: var(--rx-color-sidebar-bg);
+    --color-sidebar-text: var(--rx-color-sidebar-text);
+    --color-sidebar-active-bg: var(--rx-color-sidebar-active-bg);
+    --color-sidebar-hover-bg: var(--rx-color-sidebar-hover-bg);
+    --color-sidebar-active-text: var(--rx-color-sidebar-active-text);
+    --color-success-bg: var(--rx-color-success-bg);
+    --color-success-text: var(--rx-color-success-text);
+    --color-warning-bg: var(--rx-color-warning-bg);
+    --color-warning-text: var(--rx-color-warning-text);
+    --color-danger-bg: var(--rx-color-danger-bg);
+    --color-danger-text: var(--rx-color-danger-text);
+    --color-info-bg: var(--rx-color-info-bg);
+    --color-info-text: var(--rx-color-info-text);
+    --color-default-bg: var(--rx-color-default-bg);
+    --color-default-text: var(--rx-color-default-text);
+
     --shadow-card: 0 2px 12px -2px rgba(184, 134, 11, 0.1), 0 1px 4px -1px rgba(0, 0, 0, 0.06);
     --shadow-card-hover: 0 8px 24px -4px rgba(184, 134, 11, 0.18), 0 2px 8px -2px rgba(0, 0, 0, 0.08);
     --shadow-sidebar: 2px 0 16px -4px rgba(184, 134, 11, 0.12);
@@ -48,28 +94,48 @@
 
 
 [data-theme="dark"] {
-    --color-primary: 43 78% 52%;
-    --color-primary-fg: 220 30% 8%;
-    --color-bg: 216 28% 7%;
-    --color-card: 216 25% 10%;
-    --color-border: 216 18% 18%;
-    --color-text-primary: 210 25% 92%;
-    --color-text-muted: 210 15% 58%;
-    --color-sidebar-bg: 218 32% 8%;
-    --color-sidebar-text: 210 18% 62%;
-    --color-sidebar-active-bg: 43 78% 52%;
-    --color-sidebar-hover-bg: 216 22% 15%;
-    --color-sidebar-active-text: 220 30% 8%;
-    --color-success-bg: hsl(145 45% 15% / 0.6);
-    --color-success-text: hsl(145 55% 65%);
-    --color-warning-bg: hsl(40 80% 20% / 0.6);
-    --color-warning-text: hsl(40 80% 68%);
-    --color-danger-bg: hsl(0 55% 20% / 0.6);
-    --color-danger-text: hsl(0 65% 72%);
-    --color-info-bg: hsl(210 60% 18% / 0.6);
-    --color-info-text: hsl(210 70% 72%);
-    --color-default-bg: hsl(216 20% 18% / 0.7);
-    --color-default-text: hsl(216 15% 72%);
+    --rx-color-primary: 43 78% 52%;
+    --rx-color-primary-fg: 220 30% 8%;
+    --rx-color-background: 216 28% 7%;
+    --rx-color-surface: 216 25% 10%;
+    --rx-color-surface-dim: 216 24% 8%;
+    --rx-color-surface-container-lowest: 216 30% 6%;
+    --rx-color-surface-container-low: 216 24% 10%;
+    --rx-color-surface-container: 216 22% 13%;
+    --rx-color-surface-container-high: 216 20% 16%;
+    --rx-color-surface-container-highest: 216 18% 20%;
+    --rx-color-surface-bright: 216 24% 14%;
+    --rx-color-primary-container: 43 70% 35%;
+    --rx-color-on-primary: 220 30% 8%;
+    --rx-color-on-primary-container: 43 82% 90%;
+    --rx-color-secondary: 214 40% 72%;
+    --rx-color-tertiary: 263 75% 80%;
+    --rx-color-error: 0 70% 72%;
+    --rx-color-error-container: 0 55% 20%;
+    --rx-color-on-surface: 210 25% 92%;
+    --rx-color-on-surface-variant: 210 15% 58%;
+    --rx-color-outline: 210 14% 56%;
+    --rx-color-outline-variant: 216 18% 28%;
+    --rx-color-border: 216 18% 18%;
+    --rx-color-card: 216 25% 10%;
+    --rx-color-text-primary: 210 25% 92%;
+    --rx-color-text-muted: 210 15% 58%;
+    --rx-color-sidebar-bg: 218 32% 8%;
+    --rx-color-sidebar-text: 210 18% 62%;
+    --rx-color-sidebar-active-bg: 43 78% 52%;
+    --rx-color-sidebar-hover-bg: 216 22% 15%;
+    --rx-color-sidebar-active-text: 220 30% 8%;
+    --rx-color-success-bg: 145 45% 15% / 0.6;
+    --rx-color-success-text: 145 55% 65%;
+    --rx-color-warning-bg: 40 80% 20% / 0.6;
+    --rx-color-warning-text: 40 80% 68%;
+    --rx-color-danger-bg: 0 55% 20% / 0.6;
+    --rx-color-danger-text: 0 65% 72%;
+    --rx-color-info-bg: 210 60% 18% / 0.6;
+    --rx-color-info-text: 210 70% 72%;
+    --rx-color-default-bg: 216 20% 18% / 0.7;
+    --rx-color-default-text: 216 15% 72%;
+
     --shadow-card: 0 2px 12px -2px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(184, 134, 11, 0.06);
     --shadow-card-hover: 0 8px 24px -4px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(184, 134, 11, 0.18);
     --shadow-sidebar: 2px 0 20px -4px rgba(0, 0, 0, 0.5);
@@ -127,6 +193,22 @@ button, a, nav { -webkit-tap-highlight-color: transparent; -webkit-touch-callout
 }
 
 @layer components {
+    .bg-rx-surface { background-color: hsl(var(--rx-surface)); }
+    .bg-rx-surface-high { background-color: hsl(var(--rx-surface-high) / 0.35); }
+    .text-rx-primary { color: hsl(var(--rx-primary)); }
+    .border-rx { border-color: hsl(var(--rx-border)); }
+    .rx-gradient-btn {
+        background: linear-gradient(180deg, hsl(var(--rx-gradient-start)), hsl(var(--rx-gradient-end)));
+        color: hsl(var(--rx-primary-fg));
+        box-shadow: 0 10px 22px -10px hsl(var(--rx-primary) / 0.45);
+    }
+    .rx-gradient-text {
+        background: linear-gradient(180deg, hsl(var(--rx-gradient-start)), hsl(var(--rx-gradient-end)));
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+    }
+
     /* === BUTTONS === */
     .btn {
         @apply min-h-[42px] px-4 sm:px-5 py-2.5 rounded-xl font-bold text-sm focus:outline-none focus:ring-2 focus:ring-offset-2 inline-flex items-center justify-center gap-2 leading-none;
@@ -149,6 +231,9 @@ button, a, nav { -webkit-tap-highlight-color: transparent; -webkit-touch-callout
     .btn-ghost {
         @apply bg-transparent text-text-muted hover:bg-background hover:text-text rounded-lg;
     }
+    .btn-gradient {
+        @apply rx-gradient-btn hover:opacity-95 focus:ring-primary disabled:opacity-50 disabled:cursor-not-allowed;
+    }
     .btn-danger {
         @apply bg-danger-bg text-danger-text hover:opacity-90 border border-danger-text/20;
     }
@@ -163,28 +248,13 @@ button, a, nav { -webkit-tap-highlight-color: transparent; -webkit-touch-callout
         @apply inline-flex h-9 w-9 items-center justify-center rounded-lg border border-border bg-card text-text-muted transition-colors hover:bg-background hover:text-text;
     }
     .icon-btn-success {
-        border-color: color-mix(in srgb, hsl(var(--color-success-text)) 28%, transparent);
-        background: hsl(var(--color-success-bg));
-        color: hsl(var(--color-success-text));
-    }
-    .icon-btn-success:hover {
-        background: color-mix(in srgb, hsl(var(--color-success-bg)) 84%, hsl(var(--color-card)));
+        @apply border border-border bg-success-bg text-success-text hover:opacity-90;
     }
     .icon-btn-danger {
-        border-color: color-mix(in srgb, hsl(var(--color-danger-text)) 28%, transparent);
-        background: hsl(var(--color-danger-bg));
-        color: hsl(var(--color-danger-text));
-    }
-    .icon-btn-danger:hover {
-        background: color-mix(in srgb, hsl(var(--color-danger-bg)) 84%, hsl(var(--color-card)));
+        @apply border border-border bg-danger-bg text-danger-text hover:opacity-90;
     }
     .icon-btn-info {
-        border-color: color-mix(in srgb, hsl(var(--color-info-text)) 26%, transparent);
-        background: hsl(var(--color-info-bg));
-        color: hsl(var(--color-info-text));
-    }
-    .icon-btn-info:hover {
-        background: color-mix(in srgb, hsl(var(--color-info-bg)) 84%, hsl(var(--color-card)));
+        @apply border border-border bg-info-bg text-info-text hover:opacity-90;
     }
 
     .modal-content {
@@ -198,18 +268,37 @@ button, a, nav { -webkit-tap-highlight-color: transparent; -webkit-touch-callout
     }
 
     /* === TABLES === */
-    table { @apply w-full text-sm text-start; }
-    thead { background: var(--rx-table-head-bg); }
-    th {
-        @apply px-4 sm:px-5 py-3.5 border-b border-border text-text-muted tracking-wide font-bold text-xs;
+    .table-system__container {
+        @apply overflow-x-auto rounded-xl border;
+        border-color: var(--color-table-border);
+        background: var(--color-table-bg);
+        box-shadow: var(--shadow-card);
+    }
+    .table-system {
+        @apply w-full text-sm;
+        color: var(--color-table-text);
+        direction: inherit;
+    }
+    .table-system__head { background: var(--color-table-header-bg); }
+    .table-system__th {
+        @apply px-4 sm:px-5 py-3.5 border-b font-bold text-xs tracking-wide;
+        border-color: var(--color-table-border);
+        color: var(--color-table-text-muted);
         text-align: start;
         letter-spacing: 0.04em;
+        white-space: nowrap;
     }
-    td { @apply px-4 sm:px-5 py-3.5 sm:py-4 border-b border-border text-text; }
-    tbody tr:nth-child(even) { background: var(--rx-table-row-even); }
-    tbody tr:hover {
-        background: var(--rx-table-row-hover) !important;
-        transition: background 0.15s ease;
+    .table-system__td {
+        @apply px-4 sm:px-5 py-3.5 sm:py-4 border-b;
+        border-color: var(--color-table-border);
+        color: var(--color-table-text);
+        text-align: start;
+        vertical-align: middle;
+    }
+    .table-system__row:hover { background: var(--color-table-row-hover); }
+    .table-system__empty {
+        @apply py-8 text-center;
+        color: var(--color-table-text-muted);
     }
 
     .action-cell { position: relative !important; overflow: visible !important; }
@@ -669,12 +758,12 @@ input[type="number"] {
 /* === New UI System Overrides === */
 html[dir="rtl"] { direction: rtl; }
 body {
-  background: #111319;
+  background: hsl(var(--rx-bg));
   font-family: 'IBM Plex Sans Arabic', 'Inter', sans-serif;
-  color: #e2e2eb;
+  color: hsl(var(--rx-text));
 }
 .mono-data { font-family: 'JetBrains Mono', monospace; }
 ::-webkit-scrollbar { width: 6px; height: 6px; }
-::-webkit-scrollbar-track { background: #111319; }
-::-webkit-scrollbar-thumb { background: #282a30; border-radius: 999px; }
-::-webkit-scrollbar-thumb:hover { background: #33343b; }
+::-webkit-scrollbar-track { background: hsl(var(--rx-bg)); }
+::-webkit-scrollbar-thumb { background: hsl(var(--rx-surface-high)); border-radius: 999px; }
+::-webkit-scrollbar-thumb:hover { background: hsl(var(--rx-border)); }

@@ -1,30 +1,70 @@
 import React from 'react';
 
-export type BadgeVariant = 'default' | 'success' | 'warning' | 'danger' | 'info';
+export type BadgeVariant = 'primary' | 'secondary' | 'success' | 'warning' | 'error' | 'neutral';
 
 export interface BadgeProps extends React.HTMLAttributes<HTMLSpanElement> {
   variant?: BadgeVariant;
 }
 
+const baseClasses = [
+  'inline-flex items-center justify-center',
+  'max-w-full',
+  'px-2.5 py-1',
+  'rounded-[var(--rx-radius-pill,999px)]',
+  'border',
+  'text-xs font-semibold leading-5',
+  'tracking-[0.01em]',
+  'whitespace-nowrap',
+  'align-middle',
+  'select-none',
+].join(' ');
+
 const variantClasses: Record<BadgeVariant, string> = {
-  default: 'bg-[var(--rx-badge-default-bg,hsl(var(--color-default-bg)))] text-[var(--rx-badge-default-text,hsl(var(--color-default-text)))] border-[color-mix(in_srgb,var(--rx-badge-default-text,hsl(var(--color-default-text)))_22%,transparent)]',
-  success: 'bg-[var(--rx-badge-success-bg,hsl(var(--color-success-bg)))] text-[var(--rx-badge-success-text,hsl(var(--color-success-text)))] border-[color-mix(in_srgb,var(--rx-badge-success-text,hsl(var(--color-success-text)))_26%,transparent)]',
-  warning: 'bg-[var(--rx-badge-warning-bg,hsl(var(--color-warning-bg)))] text-[var(--rx-badge-warning-text,hsl(var(--color-warning-text)))] border-[color-mix(in_srgb,var(--rx-badge-warning-text,hsl(var(--color-warning-text)))_26%,transparent)]',
-  danger: 'bg-[var(--rx-badge-danger-bg,hsl(var(--color-danger-bg)))] text-[var(--rx-badge-danger-text,hsl(var(--color-danger-text)))] border-[color-mix(in_srgb,var(--rx-badge-danger-text,hsl(var(--color-danger-text)))_28%,transparent)]',
-  info: 'bg-[var(--rx-badge-info-bg,hsl(var(--color-info-bg)))] text-[var(--rx-badge-info-text,hsl(var(--color-info-text)))] border-[color-mix(in_srgb,var(--rx-badge-info-text,hsl(var(--color-info-text)))_24%,transparent)]',
+  primary: [
+    'bg-[color-mix(in_srgb,var(--rx-primary,hsl(var(--color-primary)))_18%,var(--rx-surface,hsl(var(--color-card)))_82%)]',
+    'text-[var(--rx-primary,hsl(var(--color-primary)))]',
+    'border-[color-mix(in_srgb,var(--rx-primary,hsl(var(--color-primary)))_45%,var(--rx-border,hsl(var(--color-border)))_55%)]',
+  ].join(' '),
+  secondary: [
+    'bg-[color-mix(in_srgb,var(--rx-surface,hsl(var(--color-card)))_65%,var(--rx-border,hsl(var(--color-border)))_35%)]',
+    'text-[hsl(var(--rx-color-on-surface,var(--color-text-primary)))]',
+    'border-[var(--rx-border,hsl(var(--color-border)))]',
+  ].join(' '),
+  success: [
+    'bg-[color-mix(in_srgb,var(--rx-success,hsl(var(--color-success-text)))_18%,var(--rx-surface,hsl(var(--color-card)))_82%)]',
+    'text-[var(--rx-success,hsl(var(--color-success-text)))]',
+    'border-[color-mix(in_srgb,var(--rx-success,hsl(var(--color-success-text)))_45%,var(--rx-border,hsl(var(--color-border)))_55%)]',
+  ].join(' '),
+  warning: [
+    'bg-[color-mix(in_srgb,hsl(var(--rx-color-warning-text,var(--color-warning-text)))_14%,var(--rx-surface,hsl(var(--color-card)))_86%)]',
+    'text-[hsl(var(--rx-color-warning-text,var(--color-warning-text)))]',
+    'border-[color-mix(in_srgb,hsl(var(--rx-color-warning-text,var(--color-warning-text)))_42%,var(--rx-border,hsl(var(--color-border)))_58%)]',
+  ].join(' '),
+  error: [
+    'bg-[color-mix(in_srgb,var(--rx-error,hsl(var(--color-danger-text)))_18%,var(--rx-surface,hsl(var(--color-card)))_82%)]',
+    'text-[var(--rx-error,hsl(var(--color-danger-text)))]',
+    'border-[color-mix(in_srgb,var(--rx-error,hsl(var(--color-danger-text)))_45%,var(--rx-border,hsl(var(--color-border)))_55%)]',
+  ].join(' '),
+  neutral: [
+    'bg-[color-mix(in_srgb,var(--rx-border,hsl(var(--color-border)))_22%,var(--rx-surface,hsl(var(--color-card)))_78%)]',
+    'text-[hsl(var(--rx-color-on-surface-variant,var(--color-text-muted)))]',
+    'border-[color-mix(in_srgb,var(--rx-border,hsl(var(--color-border)))_72%,var(--rx-surface,hsl(var(--color-card)))_28%)]',
+  ].join(' '),
 };
 
-const Badge: React.FC<BadgeProps> = ({ variant = 'default', className = '', children, ...props }) => (
-  <span
-    {...props}
-    className={[
-      'inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-bold leading-none',
-      variantClasses[variant],
-      className,
-    ].join(' ')}
-  >
-    {children}
-  </span>
+const Badge = React.forwardRef<HTMLSpanElement, BadgeProps>(
+  ({ variant = 'neutral', className = '', children, ...props }, ref) => (
+    <span
+      {...props}
+      ref={ref}
+      data-variant={variant}
+      className={[baseClasses, variantClasses[variant], className].filter(Boolean).join(' ')}
+    >
+      {children}
+    </span>
+  ),
 );
+
+Badge.displayName = 'Badge';
 
 export default Badge;

@@ -3,8 +3,7 @@ import { Wallet, FileText, Download, CheckSquare, Square, Trash2 } from 'lucide-
 import { formatCurrency, formatDate, getStatusBadgeVariant, INVOICE_STATUS_AR, INVOICE_TYPE_AR } from '../../utils/helpers';
 import { InvoiceWithDetails } from '../../utils/invoices/types';
 import { exportInvoiceToPdf } from '../../services/pdfService';
-import Badge from '../ui/Badge';
-import { TableShell, Table, TableHead, TableBody, TableRow, TableHeadCell, TableCell } from '../ui/Table';
+import { TableCell, TableContainer, TableHead, TableHeaderCell, TableRoot, TableRow } from '../shared/TablePrimitives';
 
 interface InvoiceTableProps {
   invoices: InvoiceWithDetails[];
@@ -39,25 +38,25 @@ export const InvoiceTable: React.FC<InvoiceTableProps> = ({
   db,
 }) => {
   return (
-    <TableShell>
-      <Table className="min-w-[860px]">
-        <TableHead className="uppercase tracking-wide text-[11px]">
+    <TableContainer className="rounded-2xl">
+      <TableRoot className="min-w-[860px]">
+        <TableHead className="uppercase">
           <TableRow>
-            <TableHeadCell className="w-10"></TableHeadCell>
-            <TableHeadCell className="whitespace-nowrap">رقم</TableHeadCell>
-            <TableHeadCell className="whitespace-nowrap">المستأجر/الوحدة</TableHeadCell>
-            <TableHeadCell className="whitespace-nowrap">النوع</TableHeadCell>
-            <TableHeadCell className="whitespace-nowrap">الاستحقاق</TableHeadCell>
-            <TableHeadCell className="whitespace-nowrap">المبلغ</TableHeadCell>
-            <TableHeadCell className="whitespace-nowrap">المتبقي</TableHeadCell>
-            <TableHeadCell className="whitespace-nowrap">الحالة</TableHeadCell>
-            <TableHeadCell className="whitespace-nowrap">إجراءات</TableHeadCell>
+            <TableHeaderCell className="w-10"></TableHeaderCell>
+            <TableHeaderCell className="whitespace-nowrap">رقم</TableHeaderCell>
+            <TableHeaderCell className="whitespace-nowrap">المستأجر/الوحدة</TableHeaderCell>
+            <TableHeaderCell className="whitespace-nowrap">النوع</TableHeaderCell>
+            <TableHeaderCell className="whitespace-nowrap">الاستحقاق</TableHeaderCell>
+            <TableHeaderCell className="whitespace-nowrap">المبلغ</TableHeaderCell>
+            <TableHeaderCell className="whitespace-nowrap">المتبقي</TableHeaderCell>
+            <TableHeaderCell className="whitespace-nowrap">الحالة</TableHeaderCell>
+            <TableHeaderCell className="whitespace-nowrap">إجراءات</TableHeaderCell>
           </TableRow>
         </TableHead>
-        <TableBody>
+        <tbody>
           {invoices.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={9} className="text-center text-text-muted py-8">
+              <TableCell colSpan={9} className="table-system__empty">
                 لا توجد فواتير
               </TableCell>
             </TableRow>
@@ -87,7 +86,7 @@ export const InvoiceTable: React.FC<InvoiceTableProps> = ({
                   <TableCell className="text-primary mono-data font-bold text-xs" dir="ltr">
                     {formatCurrency(inv.total)}
                   </TableCell>
-                  <TableCell className={`mono-data font-bold text-xs ${remainingAmount > 0 ? 'text-danger-text' : 'text-primary'}`} dir="ltr">
+                  <TableCell className={`mono-data font-bold text-xs ${remainingAmount > 0 ? 'text-error' : 'text-primary'}`} dir="ltr">
                     {remainingAmount > 0 ? formatOmani(remainingAmount) : '—'}
                   </TableCell>
                   <TableCell>
@@ -138,8 +137,8 @@ export const InvoiceTable: React.FC<InvoiceTableProps> = ({
               );
             })
           )}
-        </TableBody>
-      </Table>
-    </TableShell>
+        </tbody>
+      </TableRoot>
+    </TableContainer>
   );
 };
