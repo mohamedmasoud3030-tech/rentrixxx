@@ -73,6 +73,18 @@ const DEFAULT_SETTINGS: Settings = {
 
 const DEFAULT_SERIALS: Serials = { receipt: 1000, expense: 1000, maintenance: 1000, invoice: 1000, lead: 1000, ownerSettlement: 1000, journalEntry: 1000, mission: 1000, contract: 1000 };
 
+const EMPTY_DB: Database = {
+  settings: DEFAULT_SETTINGS, auth: { users: [] }, owners: [], properties: [], units: [],
+  tenants: [], contracts: [], invoices: [], receipts: [], receiptAllocations: [],
+  expenses: [], maintenanceRecords: [], depositTxs: [], auditLog: [],
+  governance: { readOnly: false, lockedPeriods: [] }, ownerSettlements: [],
+  serials: DEFAULT_SERIALS, snapshots: [], accounts: [], journalEntries: [],
+  autoBackups: [], ownerBalances: [], accountBalances: [], kpiSnapshots: [],
+  contractBalances: [], tenantBalances: [], notificationTemplates: [],
+  outgoingNotifications: [], appNotifications: [], leads: [], lands: [],
+  commissions: [], missions: [], budgets: [], attachments: [], utilityRecords: [],
+};
+
 const FINANCIAL_TABLES: (keyof Database)[] = ['receipts', 'expenses', 'invoices', 'ownerSettlements', 'maintenanceRecords', 'depositTxs', 'journalEntries', 'receiptAllocations'];
 const STRICT_FINANCIAL_WRITE_TABLES: (keyof Database)[] = ['receipts', 'expenses', 'invoices', 'ownerSettlements', 'depositTxs', 'journalEntries', 'receiptAllocations'];
 const TABLES_WITHOUT_UPDATED_AT = new Set<keyof Database>([
@@ -120,7 +132,7 @@ export const useApp = (): AppContextType => {
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [currentUser, setCurrentUser] = useState<User | null | undefined>(undefined);
-  const [db, setDb] = useState<Partial<Database> | null>(null);
+  const [db, setDb] = useState<Partial<Database> | null>(EMPTY_DB);
 
   const fetchPaginatedData = useCallback(async <T extends keyof Database>(
     table: T, 
@@ -1255,23 +1267,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return { duration: endTime - startTime };
   }, [db, runFinancialIntegrityChecks, refreshData, syncSnapshots]);
 
-  const emptyDb: Database = {
-    settings: DEFAULT_SETTINGS, auth: { users: [] }, owners: [], properties: [], units: [],
-    tenants: [], contracts: [], invoices: [], receipts: [], receiptAllocations: [],
-    expenses: [], maintenanceRecords: [], depositTxs: [], auditLog: [],
-    governance: { readOnly: false, lockedPeriods: [] }, ownerSettlements: [],
-    serials: DEFAULT_SERIALS, snapshots: [], accounts: [], journalEntries: [],
-    autoBackups: [], ownerBalances: [], accountBalances: [], kpiSnapshots: [],
-    contractBalances: [], tenantBalances: [], notificationTemplates: [],
-    outgoingNotifications: [], appNotifications: [], leads: [], lands: [],
-    commissions: [], missions: [], budgets: [], attachments: [], utilityRecords: [],
-  };
-
   const activeDb = useMemo<Database>(() => {
-    if (!db) return emptyDb;
+    if (!db) return EMPTY_DB;
 
     const definedEntries = Object.entries(db).filter(([, value]) => value !== undefined && value !== null);
-    const merged = { ...emptyDb, ...Object.fromEntries(definedEntries) } as Database;
+    const merged = { ...EMPTY_DB, ...Object.fromEntries(definedEntries) } as Database;
 
     const arrayKeys: (keyof Database)[] = [
       'owners', 'properties', 'units', 'tenants', 'contracts', 'invoices', 'receipts',
@@ -1284,14 +1284,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     arrayKeys.forEach((key) => {
       if (!Array.isArray(merged[key])) {
-        (merged[key] as unknown) = emptyDb[key];
+        (merged[key] as unknown) = EMPTY_DB[key];
       }
     });
 
-    if (!merged.auth || !Array.isArray(merged.auth.users)) merged.auth = emptyDb.auth;
-    if (!merged.settings) merged.settings = emptyDb.settings;
-    if (!merged.governance) merged.governance = emptyDb.governance;
-    if (!merged.serials) merged.serials = emptyDb.serials;
+    if (!merged.auth || !Array.isArray(merged.auth.users)) merged.auth = EMPTY_DB.auth;
+    if (!merged.settings) merged.settings = EMPTY_DB.settings;
+    if (!merged.governance) merged.governance = EMPTY_DB.governance;
+    if (!merged.serials) merged.serials = EMPTY_DB.serials;
 
     return merged;
   }, [db]);

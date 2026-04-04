@@ -11,9 +11,13 @@ const FinanceIntelligenceHub: React.FC = () => {
   const { db } = useApp();
 
   const intelligence = useMemo(() => {
+    const invoices = Array.isArray(db?.invoices) ? db.invoices : [];
+    const contracts = Array.isArray(db?.contracts) ? db.contracts : [];
+    const receiptAllocations = Array.isArray(db?.receiptAllocations) ? db.receiptAllocations : [];
+    const receipts = Array.isArray(db?.receipts) ? db.receipts : [];
     const month = currentMonth();
-    const monthInvoices = db.invoices.filter(inv => inv.dueDate.slice(0, 7) === month);
-    const activeContracts = db.contracts.filter(contract => contract.status === 'ACTIVE');
+    const monthInvoices = invoices.filter(inv => inv.dueDate.slice(0, 7) === month);
+    const activeContracts = contracts.filter(contract => contract.status === 'ACTIVE');
 
     const invoicesByContract = new Map<string, number>();
     monthInvoices.forEach(invoice => {
@@ -21,25 +25,25 @@ const FinanceIntelligenceHub: React.FC = () => {
     });
 
     const contractsMissingInvoices = activeContracts.filter(contract => !invoicesByContract.has(contract.id));
-    const overdueInvoices = db.invoices.filter(invoice => invoice.status === 'OVERDUE');
+    const overdueInvoices = invoices.filter(invoice => invoice.status === 'OVERDUE');
     const overdueAmount = overdueInvoices.reduce((sum, invoice) => {
       const total = invoice.amount + (invoice.taxAmount || 0);
       return sum + Math.max(total - invoice.paidAmount, 0);
     }, 0);
 
     const allocationsByReceipt = new Map<string, number>();
-    db.receiptAllocations.forEach(allocation => {
+    receiptAllocations.forEach(allocation => {
       allocationsByReceipt.set(allocation.receiptId, (allocationsByReceipt.get(allocation.receiptId) || 0) + allocation.amount);
     });
 
-    const unallocatedReceipts = db.receipts.filter(receipt => {
+    const unallocatedReceipts = receipts.filter(receipt => {
       if (receipt.status !== 'POSTED') return false;
       const allocated = allocationsByReceipt.get(receipt.id) || 0;
       return receipt.amount - allocated > 0.001;
     });
 
     const contractsWithOpenInvoices = new Set(
-      db.invoices
+      invoices
         .filter(invoice => invoice.status !== 'PAID')
         .map(invoice => invoice.contractId),
     );
@@ -56,6 +60,8 @@ const FinanceIntelligenceHub: React.FC = () => {
       connectedContracts,
     };
   }, [db]);
+
+  if (!Array.isArray(db?.invoices) || !Array.isArray(db?.contracts)) return null;
 
   const insightCards = [
     {
