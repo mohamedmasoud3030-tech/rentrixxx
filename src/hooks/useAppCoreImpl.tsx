@@ -1227,16 +1227,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   }, [deriveInvoiceStatus]);
 
-  const generateNotifications = useCallback(async () => {
-    if (!settings) return 0;
-    const generationResult = await notificationService.generateAllNotifications(activeDb, settings);
-    if (generationResult.total > 0) {
-      setIsDataStale(true);
-      await refreshData();
-    }
-    return generationResult.total;
-  }, [activeDb, refreshData, settings]);
-
   const syncSnapshots = useCallback(async (sourceDb?: Database | null) => {
     const currentDb = sourceDb || db || await supabaseData.getAllData();
     const snapshots = buildSnapshotState(currentDb);
@@ -1276,6 +1266,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const activeDb = db || emptyDb;
   const activeSettings = settings || DEFAULT_SETTINGS;
+
+  const generateNotifications = useCallback(async () => {
+    if (!settings) return 0;
+    const generationResult = await notificationService.generateAllNotifications(activeDb, settings);
+    if (generationResult.total > 0) {
+      setIsDataStale(true);
+      await refreshData();
+    }
+    return generationResult.total;
+  }, [activeDb, refreshData, settings]);
   const authValue: AuthContextValue = {
     auth: { currentUser: currentUser ?? null, login, logout, changePassword, addUser, updateUser, forcePasswordReset, disableUser, enableUser },
     canAccess,
