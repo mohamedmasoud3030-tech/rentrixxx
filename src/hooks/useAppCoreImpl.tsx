@@ -601,7 +601,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         }
       }
 
-      await syncSnapshots();
+      await syncSnapshots(await supabaseData.getAllData());
       setDb(prevDb => {
         if (!prevDb) return null;
         const newDb = { ...prevDb };
@@ -616,7 +616,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       toast.error(`خطأ أثناء الإضافة: ${err instanceof Error ? err.message : 'خطأ غير معروف'}`);
       return null;
     }
-  }, [isReadOnly, settings, audit, postJournalEntrySupabase, postInvoiceJournalEntries, createRentInvoicesForContract, syncSnapshots]);
+  }, [isReadOnly, settings, audit, postJournalEntrySupabase, postInvoiceJournalEntries, createRentInvoicesForContract]);
 
   const addReceiptWithAllocations: AppContextType['financeService']['addReceiptWithAllocations'] = useCallback(async (receiptData, allocations) => {
     if (isReadOnly || !settings) return { success: false, error: 'النظام في وضع القراءة فقط.' };
