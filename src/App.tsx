@@ -102,7 +102,7 @@ const App: React.FC = () => {
     }
   }, [settings, location.pathname]);
 
-  if (settings == null || auth.isInitializing) {
+  if (auth.isInitializing || (auth.currentUser && settings == null)) {
     return <PageLoader />;
   }
 
