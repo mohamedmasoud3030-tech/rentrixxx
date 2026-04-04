@@ -1,4 +1,5 @@
 import React, { Suspense, useState, useCallback, useEffect, useMemo, useRef } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { supabase } from '../../services/supabase';
 import { useApp } from '../../contexts/AppContext';
 import {
@@ -721,14 +722,27 @@ const REPORTS: { id: ReportId; label: string; group: string }[] = [
   { id: 'tenant_statement', label: 'كشف حساب المستأجر',     group: 'كشوف' },
 ];
 
+const DEFAULT_REPORT_ID: ReportId = 'summary';
+const REPORT_IDS = new Set<ReportId>(REPORTS.map((report) => report.id));
+const parseReportId = (value: string | null): ReportId =>
+  REPORT_IDS.has(value as ReportId) ? (value as ReportId) : DEFAULT_REPORT_ID;
+
 const ReportsDashboard: React.FC<DashboardProps> = ({ currency: currencyProp, owners: ownersProp, contracts: contractsProp, startDate, endDate }) => {
   const { settings, db } = useApp();
+  const [searchParams, setSearchParams] = useSearchParams();
   const currency = currencyProp ?? settings.operational?.currency ?? 'OMR';
   const owners = ownersProp ?? (db.owners || []);
   const contracts = contractsProp ?? (db.contracts || []);
-  const [active, setActive] = useState<ReportId>('summary');
+  const requestedReport = parseReportId(searchParams.get('tab'));
+  const [active, setActive] = useState<ReportId>(requestedReport);
   const [dashboardLoading, setDashboardLoading] = useState(false);
   const globalRange = useMemo<DateRange>(() => ({ from: startDate, to: endDate }), [startDate, endDate]);
+
+  useEffect(() => {
+    if (requestedReport !== active) {
+      setActive(requestedReport);
+    }
+  }, [requestedReport, active]);
 
   useEffect(() => {
     setDashboardLoading(true);
@@ -737,6 +751,12 @@ const ReportsDashboard: React.FC<DashboardProps> = ({ currency: currencyProp, ow
   }, [active, startDate, endDate]);
 
   const groups = Array.from(new Set(REPORTS.map(r => r.group)));
+  const handleTabChange = (next: ReportId) => {
+    setActive(next);
+    const nextParams = new URLSearchParams(searchParams);
+    nextParams.set('tab', next);
+    setSearchParams(nextParams, { replace: true });
+  };
 
   const renderContent = () => {
     switch (active) {
@@ -764,7 +784,7 @@ const ReportsDashboard: React.FC<DashboardProps> = ({ currency: currencyProp, ow
           <div key={group} className="mb-3">
             <p className="text-[10px] font-black text-text-muted uppercase tracking-widest px-2 mb-1">{group}</p>
             {REPORTS.filter(r => r.group === group).map(r => (
-              <button key={r.id} onClick={() => setActive(r.id)}
+              <button key={r.id} onClick={() => handleTabChange(r.id)}
                 className={`w-full text-right text-sm px-3 py-2 rounded-xl font-bold transition-all ${
                   active === r.id
                     ? 'bg-primary text-white shadow-sm'

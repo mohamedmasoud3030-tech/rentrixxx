@@ -1,10 +1,10 @@
+#!/usr/bin/env node
+import { spawnSync } from 'node:child_process';
 import { existsSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 import process from 'node:process';
-import { spawnSync } from 'node:child_process';
 
 const tempTestsDir = join(process.cwd(), '.tmp-tests');
-
 if (existsSync(tempTestsDir)) {
   rmSync(tempTestsDir, { recursive: true, force: true });
 }

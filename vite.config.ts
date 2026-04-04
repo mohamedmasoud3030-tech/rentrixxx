@@ -25,19 +25,6 @@ export default defineConfig(({ mode }) => ({
             return 'ui'
           }
 
-          if (
-            id.includes('/src/pages/Finance') ||
-            id.includes('/src/pages/Financials') ||
-            id.includes('/src/pages/Accounting') ||
-            id.includes('/src/pages/GeneralLedger') ||
-            id.includes('/src/pages/financial/')
-          ) {
-            return 'finance'
-          }
-
-          if (id.includes('/src/pages/Reports') || id.includes('/src/components/reports/')) {
-            return 'reports'
-          }
         }
       }
     }

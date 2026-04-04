@@ -6,7 +6,7 @@
     "dev": "vite",
     "build": "vite build",
     "dist": "npm run build",
-    "typecheck": "npx tsc -p tsconfig.typecheck.json --noEmit",
+    "typecheck": "tsc -p tsconfig.typecheck.json --noEmit",
     "lint": "node -e \"const fs=require('fs');const cp=require('child_process');const script='scripts/lint-check.mjs';if(fs.existsSync(script)){const r=cp.spawnSync(process.execPath,[script],{stdio:'inherit'});process.exit(r.status??1);}console.log('⚠️ scripts/lint-check.mjs not found; skipping custom lint checks.');\"",
     "test:prepare": "node scripts/prepare-tests.mjs",
     "test": "npm run test:unit && npm run test:service && npm run test:critical",
