@@ -234,25 +234,25 @@ const Dashboard: React.FC = () => {
           <button
             onClick={runGenerateMonthlyInvoices}
             disabled={isGeneratingInvoices}
-            className="text-right p-4 rounded-xl bg-gradient-to-b from-[#4fdbc8] to-[#14b8a6] text-on-primary font-bold active:scale-95 transition-all shadow-lg shadow-primary/10 disabled:opacity-60 disabled:cursor-not-allowed"
+            className="text-right p-4 rounded-xl rx-gradient-btn font-bold active:scale-95 transition-all disabled:opacity-60 disabled:cursor-not-allowed"
           >
             <div className="flex items-center justify-between gap-2">
               <div className="font-bold">توليد فواتير الشهر</div>
               {isGeneratingInvoices ? <Loader2 className="h-4 w-4 animate-spin" /> : <FilePlus2 className="h-4 w-4" />}
             </div>
-            <div className="text-xs text-on-primary/80 mt-1">آخر تشغيل: {formatLastRun(lastInvoiceRunAt)}</div>
+            <div className="text-xs text-primary-fg/80 mt-1">آخر تشغيل: {formatLastRun(lastInvoiceRunAt)}</div>
           </button>
 
           <button
             onClick={runAutomation}
             disabled={isRunningAutomation}
-            className="text-right p-4 rounded-xl bg-gradient-to-b from-[#4fdbc8] to-[#14b8a6] text-on-primary font-bold active:scale-95 transition-all shadow-lg shadow-primary/10 disabled:opacity-60 disabled:cursor-not-allowed"
+            className="text-right p-4 rounded-xl rx-gradient-btn font-bold active:scale-95 transition-all disabled:opacity-60 disabled:cursor-not-allowed"
           >
             <div className="flex items-center justify-between gap-2">
               <div className="font-bold">تشغيل الأتمتة</div>
               {isRunningAutomation ? <Loader2 className="h-4 w-4 animate-spin" /> : <PlayCircle className="h-4 w-4" />}
             </div>
-            <div className="text-xs text-on-primary/80 mt-1">آخر تشغيل: {formatLastRun(lastAutomationRunAt)}</div>
+            <div className="text-xs text-primary-fg/80 mt-1">آخر تشغيل: {formatLastRun(lastAutomationRunAt)}</div>
           </button>
         </div>
       </section>
@@ -325,7 +325,7 @@ const KpiCard: React.FC<{
 }> = ({ title, value, icon, variant }) => (
   <div className={`bg-surface-container-low p-5 rounded-xl border border-outline-variant/40 text-right border-r-4 ${variant === 'neutral' ? 'border-primary' : variant === 'secondary' ? 'border-secondary' : variant === 'tertiary' ? 'border-tertiary' : variant === 'error' ? 'border-error' : 'border-primary'}`}>
     <div className="flex items-center justify-between">
-      <p className="text-xs text-slate-400">{title}</p>
+      <p className="text-xs text-text-muted">{title}</p>
       <div className={variant === 'money' ? 'text-emerald-600' : 'text-primary'}>{icon}</div>
     </div>
     <p className="text-2xl font-bold mt-2 mono-data" dir="ltr">

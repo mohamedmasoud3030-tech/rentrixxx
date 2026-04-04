@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { normalizeLocalizedNumber } from '../../utils/helpers';
+import Input from './Input';
 
 interface NumberInputProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'onChange' | 'value' | 'type'> {
   value: number | string | undefined;
@@ -62,19 +63,15 @@ const NumberInput: React.FC<NumberInputProps> = ({
   };
 
   return (
-    <input
+    <Input
       {...rest}
       type="text"
       inputMode={allowDecimal ? 'decimal' : 'numeric'}
       value={display}
       onChange={handleChange}
       onBlur={handleBlur}
-      className={`ltr-input ${className}`}
+      className={`ltr-input ${className}`.trim()}
       dir="ltr"
-      style={{
-        textAlign: 'end',
-        ...(rest.style || {}),
-      }}
     />
   );
 };
