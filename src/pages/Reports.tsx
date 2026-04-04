@@ -24,24 +24,24 @@ const Reports: React.FC = () => {
 
   return (
     <div className="space-y-4">
-      <div className="bg-card border border-border rounded-2xl p-4">
+      <div className="bg-surface-container-low border border-outline-variant/40 rounded-2xl p-4">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           <div>
-            <label className="block text-xs font-bold text-text-muted mb-1">Start Date</label>
+            <label className="block text-xs font-bold text-on-surface-variant mb-1">Start Date</label>
             <input
               type="date"
               value={startDate}
               onChange={(e) => setStartDate(e.target.value)}
-              className="w-full text-sm border border-border rounded-xl px-3 py-2 bg-background"
+              className="w-full text-sm border border-outline-variant/40 rounded-xl px-3 py-2 bg-surface-container-high"
             />
           </div>
           <div>
-            <label className="block text-xs font-bold text-text-muted mb-1">End Date</label>
+            <label className="block text-xs font-bold text-on-surface-variant mb-1">End Date</label>
             <input
               type="date"
               value={endDate}
               onChange={(e) => setEndDate(e.target.value)}
-              className="w-full text-sm border border-border rounded-xl px-3 py-2 bg-background"
+              className="w-full text-sm border border-outline-variant/40 rounded-xl px-3 py-2 bg-surface-container-high"
             />
           </div>
         </div>

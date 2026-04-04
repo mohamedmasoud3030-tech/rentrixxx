@@ -18,8 +18,8 @@ const FinanceTab: React.FC<{ to: string, icon: React.ReactNode, label: string }>
         className={({ isActive }) => 
             `flex items-center gap-3 px-6 py-3 rounded-xl text-sm font-black transition-all ${
                 isActive 
-                    ? 'bg-primary text-white shadow-xl shadow-primary/20 scale-[1.02]' 
-                    : 'text-text-muted hover:text-primary hover:bg-primary/5'
+                    ? 'bg-surface-container-high text-primary border border-primary/30 shadow-sm' 
+                    : 'text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high'
             }`
         }
     >
@@ -47,7 +47,7 @@ const Finance: React.FC = () => {
     }, [financeBasePath]);
 
     return (
-        <div className="space-y-8 animate-in fade-in duration-500">
+        <div className="space-y-8 animate-in fade-in duration-500 bg-background">
             {/* Page Header */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
@@ -55,9 +55,9 @@ const Finance: React.FC = () => {
                     <p className="text-text-muted text-sm mt-1">منصة موحدة للحسابات والمالية تربط العقود والفواتير والسندات والتقارير بذكاء</p>
                 </div>
                 <div className="flex items-center gap-3">
-                    <div className="px-4 py-2 bg-emerald-50 border border-emerald-100 rounded-2xl flex items-center gap-2">
+                    <div className="px-4 py-2 bg-surface-container-low border border-outline-variant/40 rounded-2xl flex items-center gap-2">
                         <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
-                        <span className="text-[10px] font-black text-emerald-700 uppercase tracking-widest">النظام المالي متصل</span>
+                        <span className="text-[10px] font-black text-primary uppercase tracking-widest">النظام المالي متصل</span>
                     </div>
                 </div>
             </div>
@@ -65,7 +65,7 @@ const Finance: React.FC = () => {
             <FinanceIntelligenceHub />
 
             {/* Navigation Tabs */}
-            <Card className="p-1.5 overflow-hidden border-none shadow-lg bg-card/50 backdrop-blur-md sticky top-4 z-10">
+            <Card className="p-1.5 overflow-hidden border border-outline-variant/40 bg-surface-container-low sticky top-4 z-10">
                 <nav className="flex items-center gap-1 overflow-x-auto whitespace-nowrap scrollbar-hide">
                     <FinanceTab to="/finance/invoices" icon={<ReceiptText size={20}/>} label={AR_LABELS.invoices} />
                     <FinanceTab to="/finance/financials" icon={<Wallet size={20}/>} label={AR_LABELS.paymentsAndExpenses} />

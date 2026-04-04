@@ -304,12 +304,12 @@ const DashboardRevenueChart: React.FC<{ receipts: ReceiptType[]; expenses: Expen
       <div className="h-52" dir="ltr">
         <ResponsiveContainer width="100%" height="100%">
           <AreaChart data={chartData}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+            <CartesianGrid strokeDasharray="3 3" stroke="var(--rx-border)" />
             <XAxis dataKey="name" fontSize={12} />
             <YAxis fontSize={11} tickFormatter={(v) => (v > 0 ? `${(v / 1000).toFixed(0)}k` : '0')} />
             <Tooltip formatter={(value: number) => formatCurrency(value, 'OMR')} />
-            <Area type="monotone" dataKey="revenue" stroke="#10b981" fill="#10b98133" strokeWidth={2} />
-            <Area type="monotone" dataKey="expenses" stroke="#ef4444" fill="#ef444433" strokeWidth={2} />
+            <Area type="monotone" dataKey="revenue" stroke="var(--rx-success)" fill="color-mix(in srgb, var(--rx-success) 22%, transparent)" strokeWidth={2} />
+            <Area type="monotone" dataKey="expenses" stroke="var(--rx-error)" fill="color-mix(in srgb, var(--rx-error) 22%, transparent)" strokeWidth={2} />
           </AreaChart>
         </ResponsiveContainer>
       </div>
