@@ -11,7 +11,7 @@ interface SearchFilterBarProps {
 
 const SearchFilterBar: React.FC<SearchFilterBarProps> = ({ searchTerm, onSearchChange, placeholder = 'بحث...', children }) => {
     return (
-        <div className="mb-4 rounded-xl border border-outline-variant/50 bg-surface-container-low p-3 sm:p-4 flex flex-col gap-3 sm:flex-row sm:items-center">
+        <div className="mb-4 rounded-xl border border-rx bg-rx-surface-high p-3 sm:p-4 flex flex-col gap-3 sm:flex-row sm:items-center">
             <div className="w-full sm:flex-1">
                 <Input
                     id="search-input"

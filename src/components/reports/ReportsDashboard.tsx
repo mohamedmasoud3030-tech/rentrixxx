@@ -5,6 +5,10 @@ import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
   CartesianGrid, Cell, LineChart, Line, PieChart, Pie, Legend
 } from 'recharts';
+import Button from '../ui/Button';
+import Input from '../ui/Input';
+import Badge from '../ui/Badge';
+import { TableShell, Table, TableHead, TableBody, TableRow, TableHeadCell, TableCell } from '../ui/Table';
 
 // ─── Types ───────────────────────────────────────────────────
 type ReportId =
@@ -101,37 +105,34 @@ const SH: React.FC<{ title: string; onPrint?: () => void }> = ({ title, onPrint 
 
 // ─── Table wrapper ────────────────────────────────────────────
 const Tbl: React.FC<{ heads: string[]; rows: React.ReactNode[][]; footer?: React.ReactNode[] }> = ({ heads, rows, footer }) => (
-  <div className="overflow-x-auto rounded-xl border border-border">
-    <table className="w-full text-sm text-right">
-      <thead className="bg-background text-text-muted text-xs">
-        <tr>{heads.map((h, i) => <th key={i} className="px-4 py-3 font-bold">{h}</th>)}</tr>
-      </thead>
-      <tbody className="divide-y divide-border">
+  <TableShell>
+    <Table>
+      <TableHead>
+        <TableRow>{heads.map((h, i) => <TableHeadCell key={i}>{h}</TableHeadCell>)}</TableRow>
+      </TableHead>
+      <TableBody>
         {rows.map((r, i) => (
-          <tr key={i} className="hover:bg-background/60 transition-colors">
-            {r.map((c, j) => <td key={j} className="px-4 py-3">{c}</td>)}
-          </tr>
+          <TableRow key={i}>
+            {r.map((c, j) => <TableCell key={j}>{c}</TableCell>)}
+          </TableRow>
         ))}
         {rows.length === 0 && (
-          <tr><td colSpan={heads.length} className="px-4 py-10 text-center text-text-muted">لا توجد بيانات</td></tr>
+          <TableRow><TableCell colSpan={heads.length} className="py-10 text-center text-text-muted">لا توجد بيانات</TableCell></TableRow>
         )}
-      </tbody>
+      </TableBody>
       {footer && (
-        <tfoot className="bg-background border-t-2 border-border font-black text-text">
-          <tr>{footer.map((c, i) => <td key={i} className="px-4 py-3">{c}</td>)}</tr>
+        <tfoot className="font-black text-text">
+          <TableRow>{footer.map((c, i) => <TableCell key={i}>{c}</TableCell>)}</TableRow>
         </tfoot>
       )}
-    </table>
-  </div>
+    </Table>
+  </TableShell>
 );
 
 // ─── Badge ─────────────────────────────────────────────────────
-const Badge: React.FC<{ days: number }> = ({ days }) => {
-  const cls = days > 90 ? 'bg-red-100 text-red-700' :
-              days > 60 ? 'bg-orange-100 text-orange-700' :
-              days > 30 ? 'bg-yellow-100 text-yellow-700' :
-              'bg-blue-100 text-blue-700';
-  return <span className={`px-2 py-0.5 rounded-full text-[11px] font-bold ${cls}`}>{days} يوم</span>;
+const BadgeByAge: React.FC<{ days: number }> = ({ days }) => {
+  const variant = days > 60 ? 'danger' : days > 30 ? 'warning' : 'info';
+  return <Badge variant={variant}>{days} يوم</Badge>;
 };
 
 // ─── Date Range Picker ────────────────────────────────────────
@@ -139,26 +140,23 @@ const DatePicker: React.FC<{ range: DateRange; onChange: (r: DateRange) => void;
   <div className="flex flex-wrap items-center gap-2 p-4 bg-card border border-border rounded-2xl">
     <div className="flex items-center gap-2">
       <label className="text-xs text-text-muted font-bold">من</label>
-      <input type="date" value={range.from} onChange={e => onChange({ ...range, from: e.target.value })}
-        className="text-sm border border-border rounded-xl px-3 py-1.5 bg-background focus:ring-2 focus:ring-primary/20 outline-none"/>
+      <Input type="date" value={range.from} onChange={e => onChange({ ...range, from: e.target.value })} className="text-sm min-h-[2.5rem]"/>
     </div>
     <div className="flex items-center gap-2">
       <label className="text-xs text-text-muted font-bold">إلى</label>
-      <input type="date" value={range.to} onChange={e => onChange({ ...range, to: e.target.value })}
-        className="text-sm border border-border rounded-xl px-3 py-1.5 bg-background focus:ring-2 focus:ring-primary/20 outline-none"/>
+      <Input type="date" value={range.to} onChange={e => onChange({ ...range, to: e.target.value })} className="text-sm min-h-[2.5rem]"/>
     </div>
     <div className="flex gap-1">
       {MONTH_PRESETS.map(p => (
-        <button key={p.label} onClick={() => { onChange({ from: p.from(), to: p.to() }); }}
-          className="text-xs px-3 py-1.5 rounded-xl border border-border hover:border-primary hover:text-primary transition font-bold">
+        <Button key={p.label} onClick={() => { onChange({ from: p.from(), to: p.to() }); }}
+          variant="secondary" className="text-xs min-h-[2.25rem] px-3">
           {p.label}
-        </button>
+        </Button>
       ))}
     </div>
-    <button onClick={onGo} disabled={loading}
-      className="px-5 py-2 bg-primary text-white rounded-xl text-sm font-black hover:bg-primary/90 transition disabled:opacity-60 mr-auto">
+    <Button onClick={onGo} disabled={loading} className="mr-auto px-5">
       {loading ? '...' : 'عرض'}
-    </button>
+    </Button>
   </div>
 );
 
@@ -478,7 +476,7 @@ const OverdueView: React.FC<{ currency: string }> = ({ currency }) => {
               r.unit_name,
               <span className="font-mono text-xs">#{r.invoice_no}</span>,
               fmtDate(r.due_date),
-              <Badge days={r.days_overdue}/>,
+              <BadgeByAge days={r.days_overdue}/>,
               <span dir="ltr" className="font-mono font-bold text-red-600">{fmt(r.remaining, currency)}</span>,
             ])}
           />
