@@ -187,7 +187,7 @@ const Contracts: React.FC = () => {
                 if (filter === 'ACTIVE') return c.status === 'ACTIVE';
                 if (filter === 'SUSPENDED') return c.status === 'SUSPENDED';
                 if (filter === 'ENDED') return c.status === 'ENDED';
-                if (filter === 'TERMINATED') return c.status === 'ENDED';
+                if (filter === 'TERMINATED') return c.status === 'TERMINATED';
                 return true;
             })
             .filter(c => {

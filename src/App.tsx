@@ -102,7 +102,7 @@ const App: React.FC = () => {
     }
   }, [settings, location.pathname]);
 
-  if (settings == null || auth.currentUser === undefined) {
+  if (auth.isInitializing || (auth.currentUser && settings == null)) {
     return <PageLoader />;
   }
 
@@ -152,7 +152,7 @@ const App: React.FC = () => {
               {auth.currentUser.role === 'ADMIN' && (
                 <>
                   <Route path="/audit-log" element={<ProtectedRoute capability="VIEW_AUDIT_LOG"><AuditLog /></ProtectedRoute>} />
-                  // Users: settings sub-module by design — see docs/architecture/ADR-001
+                  {/* Users: settings sub-module by design — see docs/architecture/ADR-001 */}
                   <Route path="/settings/*" element={<ProtectedRoute capability="MANAGE_SETTINGS"><Settings /></ProtectedRoute>} />
                 </>
               )}

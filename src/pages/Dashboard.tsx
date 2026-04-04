@@ -25,6 +25,19 @@ const QUICK_ACTION_LAST_RUN_KEYS = {
   automation: 'dashboard:lastRun:runManualAutomation',
 } as const;
 
+const safeReadTimestamp = (key: string): number | null => {
+  try {
+    const raw = localStorage.getItem(key);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as unknown;
+    const value = typeof parsed === 'number' ? parsed : Number(parsed);
+    return Number.isFinite(value) && value > 0 ? value : null;
+  } catch {
+    const fallback = Number(localStorage.getItem(key));
+    return Number.isFinite(fallback) && fallback > 0 ? fallback : null;
+  }
+};
+
 const formatLastRun = (value: number | null): string => {
   if (!value) return 'لم يتم التشغيل بعد';
   return new Date(value).toLocaleString('ar-OM');
@@ -81,14 +94,8 @@ const Dashboard: React.FC = () => {
 
   const [isGeneratingInvoices, setIsGeneratingInvoices] = useState(false);
   const [isRunningAutomation, setIsRunningAutomation] = useState(false);
-  const [lastInvoiceRunAt, setLastInvoiceRunAt] = useState<number | null>(() => {
-    const raw = localStorage.getItem(QUICK_ACTION_LAST_RUN_KEYS.invoices);
-    return raw ? Number(raw) : null;
-  });
-  const [lastAutomationRunAt, setLastAutomationRunAt] = useState<number | null>(() => {
-    const raw = localStorage.getItem(QUICK_ACTION_LAST_RUN_KEYS.automation);
-    return raw ? Number(raw) : null;
-  });
+  const [lastInvoiceRunAt, setLastInvoiceRunAt] = useState<number | null>(() => safeReadTimestamp(QUICK_ACTION_LAST_RUN_KEYS.invoices));
+  const [lastAutomationRunAt, setLastAutomationRunAt] = useState<number | null>(() => safeReadTimestamp(QUICK_ACTION_LAST_RUN_KEYS.automation));
 
   const stats = useMemo(() => {
     const currentMonth = new Date().toISOString().slice(0, 7);
@@ -187,7 +194,7 @@ const Dashboard: React.FC = () => {
       <header className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
         <div>
           <h1 className="text-3xl font-black">لوحة التحكم</h1>
-          <p className="text-text-muted">{settings.general.company.name}</p>
+          <p className="text-text-muted">{settings?.general?.company?.name ?? 'Rentrix'}</p>
         </div>
       </header>
 
