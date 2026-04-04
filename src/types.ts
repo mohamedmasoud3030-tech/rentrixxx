@@ -61,7 +61,7 @@ export interface User {
   email: string;
   hash: string;
   salt: string;
-  role: 'ADMIN' | 'USER' | 'ACCOUNTANT' | 'MANAGER' | 'VIEWER';
+  role: 'ADMIN' | 'USER';
   mustChange: boolean;
   createdAt: number;
   isDemo?: boolean;
@@ -209,6 +209,7 @@ export interface Owner {
   commissionValue: number;
   createdAt: number;
   updatedAt?: number;
+  portalToken?: string; 
   isDemo?: boolean;
 }
 
@@ -279,7 +280,7 @@ export interface Contract {
   start: string; // YYYY-MM-DD
   end: string; // YYYY-MM-DD
   deposit: number;
-  status: 'ACTIVE' | 'ENDED' | 'SUSPENDED' | 'TERMINATED';
+  status: 'ACTIVE' | 'ENDED' | 'SUSPENDED';
   sponsorName?: string;
   sponsorId?: string;
   sponsorPhone?: string;
@@ -359,20 +360,16 @@ export interface MaintenanceRecord {
     unitId: string;
     requestDate: string; // YYYY-MM-DD
     description: string;
-    status: 'PENDING' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED';
+    status: 'NEW' | 'IN_PROGRESS' | 'COMPLETED' | 'CLOSED';
     priority?: 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT';
     assignedTo?: string;
     cost: number;
     chargedTo: 'OWNER' | 'OFFICE' | 'TENANT';
-    estimatedCost?: number;
-    actualCost?: number;
     completionDate?: string; // YYYY-MM-DD
     expenseId?: string;
     invoiceId?: string;
     createdAt: number;
     completedAt?: number;
-    cancelledAt?: string;
-    cancellationReason?: string;
 }
 
 export interface DepositTx {
@@ -551,21 +548,15 @@ export interface Lead {
 
 export interface Land {
     id: string;
-    no: string;
     plotNo: string;
     name: string;
     location: string;
     area: number;
-    ownerId: string;
     category: 'سكني' | 'تجاري' | 'صناعي';
     status: 'AVAILABLE' | 'RESERVED' | 'SOLD';
-    purchasePrice: number;
-    currentValue: number;
     ownerPrice: number;
     commission: number;
     notes: string;
-    lastValuationDate?: string;
-    valuationNotes?: string;
     createdAt: number;
     updatedAt?: number;
 }
@@ -573,14 +564,11 @@ export interface Land {
 export interface Commission {
     id: string;
     staffId: string;
-    contractId?: string;
-    commissionType: 'SALE' | 'RENTAL' | 'MANAGEMENT';
-    description?: string;
     type: 'SALE' | 'RENT' | 'MANAGEMENT';
     dealValue: number;
     percentage: number;
     amount: number;
-    status: 'PENDING' | 'UNPAID' | 'PAID';
+    status: 'UNPAID' | 'PAID';
     expenseId?: string; // Link to the payout expense
     createdAt: number;
     paidAt?: number;
@@ -714,7 +702,6 @@ export interface AppContextType {
   db: Database | null;
   auth: {
     currentUser: User | null | undefined;
-    isInitializing: boolean;
     login: (username: string, password: string) => Promise<{ ok: boolean; msg: string; mustChange?: boolean }>;
     logout: () => void;
     changePassword: (userId: string, newPass: string) => Promise<{ ok: boolean }>;

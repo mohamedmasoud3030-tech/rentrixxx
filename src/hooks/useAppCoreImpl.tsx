@@ -6,7 +6,7 @@ import { OperationsContext, type OperationsContextValue } from '../contexts/oper
 import { safeAsync, validateLoginPayload, validatePasswordStrength, validateRequiredString, sanitizeTextInput, assertNoRoleEscalation } from '../utils/validation';
 import { supabaseData } from '../services/supabaseDataService';
 import { IntegrationService } from '../services/integrationService';
-import { isSupabaseEnabled, supabase } from '../services/supabase';
+import { supabase } from '../services/supabase';
 import { toast } from 'react-hot-toast';
 import { confirmDialog } from '../components/shared/confirmDialog';
 import { adminCreateUser } from '../services/edgeFunctions';
@@ -16,8 +16,6 @@ import { calcVAT } from '../services/financeService';
 import { getEffectiveInvoiceStatus, getInvoiceRemaining } from '../utils/helpers';
 import { runManualAutomation as runManualAutomationService } from '../services/automationService';
 import { softDeleteContract } from '../services/operationsService';
-import { notificationService } from '../services/notificationService';
-import { ROLE_CAPABILITIES, type Capability } from '../config/rbac';
 
 const DEFAULT_GEMINI_API_KEY = '';
 
@@ -73,18 +71,6 @@ const DEFAULT_SETTINGS: Settings = {
 
 const DEFAULT_SERIALS: Serials = { receipt: 1000, expense: 1000, maintenance: 1000, invoice: 1000, lead: 1000, ownerSettlement: 1000, journalEntry: 1000, mission: 1000, contract: 1000 };
 
-const EMPTY_DB: Database = {
-  settings: DEFAULT_SETTINGS, auth: { users: [] }, owners: [], properties: [], units: [],
-  tenants: [], contracts: [], invoices: [], receipts: [], receiptAllocations: [],
-  expenses: [], maintenanceRecords: [], depositTxs: [], auditLog: [],
-  governance: { readOnly: false, lockedPeriods: [] }, ownerSettlements: [],
-  serials: DEFAULT_SERIALS, snapshots: [], accounts: [], journalEntries: [],
-  autoBackups: [], ownerBalances: [], accountBalances: [], kpiSnapshots: [],
-  contractBalances: [], tenantBalances: [], notificationTemplates: [],
-  outgoingNotifications: [], appNotifications: [], leads: [], lands: [],
-  commissions: [], missions: [], budgets: [], attachments: [], utilityRecords: [],
-};
-
 const FINANCIAL_TABLES: (keyof Database)[] = ['receipts', 'expenses', 'invoices', 'ownerSettlements', 'maintenanceRecords', 'depositTxs', 'journalEntries', 'receiptAllocations'];
 const STRICT_FINANCIAL_WRITE_TABLES: (keyof Database)[] = ['receipts', 'expenses', 'invoices', 'ownerSettlements', 'depositTxs', 'journalEntries', 'receiptAllocations'];
 const TABLES_WITHOUT_UPDATED_AT = new Set<keyof Database>([
@@ -132,8 +118,7 @@ export const useApp = (): AppContextType => {
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [currentUser, setCurrentUser] = useState<User | null | undefined>(undefined);
-  const [isAuthInitializing, setIsAuthInitializing] = useState(true);
-  const [db, setDb] = useState<Partial<Database> | null>(EMPTY_DB);
+  const [db, setDb] = useState<Partial<Database>>({});
 
   const fetchPaginatedData = useCallback(async <T extends keyof Database>(
     table: T, 
@@ -257,78 +242,43 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const canAccess = useCallback((action: string) => {
     if (!currentUser) return false;
-    return ROLE_CAPABILITIES[currentUser.role]?.has(action as Capability) || false;
+    const capabilityMap: Record<'ADMIN' | 'USER', Set<string>> = {
+      ADMIN: new Set([
+        'VIEW_DASHBOARD', 'VIEW_FINANCIALS', 'MANAGE_SETTINGS', 'MANAGE_USERS', 'VIEW_AUDIT_LOG', 'USE_SMART_ASSISTANT',
+        'MANAGE_PROPERTIES', 'MANAGE_TENANTS', 'MANAGE_OWNERS', 'MANAGE_CONTRACTS', 'MANAGE_MAINTENANCE', 'VIEW_REPORTS',
+      ]),
+      USER: new Set([
+        'VIEW_DASHBOARD', 'VIEW_FINANCIALS', 'USE_SMART_ASSISTANT',
+        'MANAGE_PROPERTIES', 'MANAGE_TENANTS', 'MANAGE_OWNERS', 'MANAGE_CONTRACTS', 'MANAGE_MAINTENANCE', 'VIEW_REPORTS',
+      ]),
+    };
+    return capabilityMap[currentUser.role]?.has(action) || false;
   }, [currentUser]);
 
   useEffect(() => {
-    const mapSessionToUser = async (session: Awaited<ReturnType<typeof supabase.auth.getSession>>['data']['session']) => {
-      if (!session?.user) {
-        setCurrentUser(null);
-        return;
-      }
-
-      const { data: profile, error: profileError } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', session.user.id)
-        .maybeSingle();
-
-      if (profileError) {
-        logger.error('[AppContext] mapSessionToUser profile lookup failed', profileError);
-      }
-
-      if (profile?.is_disabled) {
-        await supabase.auth.signOut();
-        setCurrentUser(null);
-        return;
-      }
-
-      if (!profile) {
-        setCurrentUser(prev => {
-          if (prev?.id === session.user.id) return prev;
-          return {
-            id: session.user.id,
-            username: session.user.email?.split('@')[0] || 'user',
-            email: session.user.email || '',
-            hash: '',
-            salt: '',
-            role: 'USER',
-            mustChange: false,
-            createdAt: Date.now(),
-            isDisabled: false,
-          };
-        });
-        return;
-      }
-
-      setCurrentUser({
-        id: session.user.id,
-        username: profile.username || session.user.email?.split('@')[0] || 'user',
-        email: session.user.email || '',
-        hash: '',
-        salt: '',
-        role: (profile.role as User['role']) || 'USER',
-        mustChange: profile.must_change_password || false,
-        createdAt: profile.created_at || Date.now(),
-        isDisabled: false,
-      });
-    };
-
     const initAuth = async () => {
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        await mapSessionToUser(session);
-      } finally {
-        setIsAuthInitializing(false);
-      }
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user) {
+        const { data: profile } = await supabase.from('profiles').select('*').eq('id', session.user.id).single();
+        if (profile) {
+          if (profile.is_disabled) {
+            await supabase.auth.signOut();
+            setCurrentUser(null);
+            return { success: false, error: 'يجب إضافة تخصيص واحد على الأقل.' };
+          }
+          setCurrentUser({
+            id: session.user.id, username: profile.username || session.user.email!.split('@')[0],
+            email: session.user.email || '', hash: '', salt: '',
+            role: (profile.role as 'ADMIN' | 'USER') || 'USER',
+            mustChange: profile.must_change_password || false, createdAt: profile.created_at || Date.now(),
+            isDisabled: false,
+          });
+        } else { setCurrentUser(null); }
+      } else { setCurrentUser(null); }
     };
     initAuth();
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (event === 'SIGNED_OUT' || !session) { setCurrentUser(null); return; }
-      if (event === 'SIGNED_IN' || event === 'USER_UPDATED') {
-        await mapSessionToUser(session);
-        return;
-      }
       if (event === 'TOKEN_REFRESHED' && session.user) {
         const { data: profile } = await supabase.from('profiles').select('is_disabled').eq('id', session.user.id).single();
         if (profile?.is_disabled) {
@@ -361,12 +311,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const login = useCallback(async (email: string, password: string) => {
     try {
-      if (!isSupabaseEnabled()) {
-        return {
-          ok: false,
-          msg: 'تعذر تسجيل الدخول بسبب إعدادات البيئة (VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY) في هذا النشر.',
-        };
-      }
       const credentials = validateLoginPayload(email, password);
       const { data, error } = await safeAsync(
         () => supabase.auth.signInWithPassword(credentials),
@@ -385,7 +329,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         await supabase.auth.signOut();
         return { ok: false, msg: 'هذا الحساب معطّل. تواصل مع مدير النظام.' };
       }
-      const user: User = { id: data.user.id, username: profile.username || data.user.email!.split('@')[0], email: data.user.email || '', hash: '', salt: '', role: (profile.role as User['role']) || 'USER', mustChange: profile.must_change_password || false, createdAt: profile.created_at || Date.now(), isDisabled: false };
+      const user: User = { id: data.user.id, username: profile.username || data.user.email!.split('@')[0], email: data.user.email || '', hash: '', salt: '', role: (profile.role as 'ADMIN' | 'USER') || 'USER', mustChange: profile.must_change_password || false, createdAt: profile.created_at || Date.now(), isDisabled: false };
       setCurrentUser(user);
       await audit('LOGIN', 'SESSION', user.id);
       return { ok: true, msg: 'Ok', mustChange: user.mustChange };
@@ -398,7 +342,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (currentUser) await audit('LOGOUT', 'SESSION', currentUser.id);
     await supabase.auth.signOut();
     setCurrentUser(null);
-    setDb(EMPTY_DB);
+    setDb(null);
     setSettings(null);
   }, [currentUser, audit]);
 
@@ -665,7 +609,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         }
       }
 
-      await syncSnapshots(await supabaseData.getAllData());
+      await syncSnapshots();
       setDb(prevDb => {
         if (!prevDb) return null;
         const newDb = { ...prevDb };
@@ -680,7 +624,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       toast.error(`خطأ أثناء الإضافة: ${err instanceof Error ? err.message : 'خطأ غير معروف'}`);
       return null;
     }
-  }, [isReadOnly, settings, audit, postJournalEntrySupabase, postInvoiceJournalEntries, createRentInvoicesForContract]);
+  }, [isReadOnly, settings, audit, postJournalEntrySupabase, postInvoiceJournalEntries, createRentInvoicesForContract, syncSnapshots]);
 
   const addReceiptWithAllocations: AppContextType['financeService']['addReceiptWithAllocations'] = useCallback(async (receiptData, allocations) => {
     if (isReadOnly || !settings) return { success: false, error: 'النظام في وضع القراءة فقط.' };
@@ -1065,7 +1009,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const generateOwnerPortalLink = useCallback(async (ownerId: string): Promise<string> => {
     const owner = await supabaseData.fetchOne<Owner>('owners', ownerId);
     if (!owner) return '';
-    return createOwnerPortalUrl(ownerId);
+    let token = owner.portalToken;
+    if (!token) {
+      token = crypto.randomUUID();
+      await supabaseData.update('owners', ownerId, { portalToken: token });
+    }
+    return `${window.location.href.split('#')[0]}#/owner-view/${ownerId}?auth=${token}`;
   }, []);
 
   const buildSnapshotState = useCallback((sourceDb: Database) => {
@@ -1207,8 +1156,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       if (!receipt || receipt.status !== 'POSTED') return;
       paidByInvoice.set(alloc.invoiceId, round3((paidByInvoice.get(alloc.invoiceId) || 0) + toNumber(alloc.amount)));
     });
-    const sourceInvoices = Array.isArray(sourceDb.invoices) ? sourceDb.invoices : [];
-    sourceInvoices.forEach(invoice => {
+    sourceDb.invoices.forEach(invoice => {
       if (Math.abs((paidByInvoice.get(invoice.id) || 0) - toNumber(invoice.paidAmount)) > 0.01) {
         issues.push(`Mismatch invoice paidAmount ${invoice.id}`);
       }
@@ -1234,9 +1182,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     reconcileRef.current = true;
     try {
       const now = Date.now();
-      const sourceInvoices = Array.isArray(sourceDb.invoices) ? sourceDb.invoices : [];
-      const sourceNotifications = Array.isArray(sourceDb.appNotifications) ? sourceDb.appNotifications : [];
-      const nextDb: Database = { ...sourceDb, invoices: [...sourceInvoices], appNotifications: [...sourceNotifications] };
+      const nextDb: Database = { ...sourceDb, invoices: [...sourceDb.invoices], appNotifications: [...sourceDb.appNotifications] };
       let changed = false;
       for (let i = 0; i < nextDb.invoices.length; i++) {
         const invoice = nextDb.invoices[i];
@@ -1285,7 +1231,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
       if (changed) {
         const refreshedInvoices = await supabaseData.fetchAll<Invoice>('invoices');
-        nextDb.invoices = Array.isArray(refreshedInvoices) ? refreshedInvoices : [];
+        nextDb.invoices = refreshedInvoices;
         return nextDb;
       }
       return sourceDb;
@@ -1293,6 +1239,27 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       reconcileRef.current = false;
     }
   }, [deriveInvoiceStatus]);
+
+  const generateContractExpiryNotifications = useCallback(async (): Promise<number> => {
+    if (!settings) return 0;
+    const alertDays = settings.operational?.contractAlertDays ?? 30;
+    const now = Date.now();
+    const activeContracts = await supabaseData.fetchWhere<Contract>('contracts', 'status', 'ACTIVE');
+    const existingNotifs = await supabaseData.fetchAll<AppNotification>('appNotifications');
+    let count = 0;
+    for (const c of activeContracts) {
+      const endDate = new Date(c.end).getTime();
+      const daysLeft = Math.ceil((endDate - now) / (1000 * 60 * 60 * 24));
+      if (daysLeft <= 0 || daysLeft > alertDays) continue;
+      const contractLink = `/contracts?contractId=${c.id}`;
+      const alreadyExists = existingNotifs.some(n => n.link === contractLink && n.type === 'CONTRACT_EXPIRING');
+      if (!alreadyExists) {
+        await supabaseData.insert('appNotifications', { id: crypto.randomUUID(), createdAt: now, isRead: false, role: 'ADMIN', type: 'CONTRACT_EXPIRING', title: `عقد ينتهي خلال ${daysLeft} يوم`, message: `عقد المستأجر سينتهي خلال ${daysLeft} يوم.`, link: contractLink });
+        count++;
+      }
+    }
+    return count;
+  }, [settings]);
 
   const syncSnapshots = useCallback(async (sourceDb?: Database | null) => {
     const currentDb = sourceDb || db || await supabaseData.getAllData();
@@ -1319,47 +1286,22 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return { duration: endTime - startTime };
   }, [db, runFinancialIntegrityChecks, refreshData, syncSnapshots]);
 
-  const activeDb = useMemo<Database>(() => {
-    if (!db) return EMPTY_DB;
+  const emptyDb: Database = {
+    settings: DEFAULT_SETTINGS, auth: { users: [] }, owners: [], properties: [], units: [],
+    tenants: [], contracts: [], invoices: [], receipts: [], receiptAllocations: [],
+    expenses: [], maintenanceRecords: [], depositTxs: [], auditLog: [],
+    governance: { readOnly: false, lockedPeriods: [] }, ownerSettlements: [],
+    serials: DEFAULT_SERIALS, snapshots: [], accounts: [], journalEntries: [],
+    autoBackups: [], ownerBalances: [], accountBalances: [], kpiSnapshots: [],
+    contractBalances: [], tenantBalances: [], notificationTemplates: [],
+    outgoingNotifications: [], appNotifications: [], leads: [], lands: [],
+    commissions: [], missions: [], budgets: [], attachments: [], utilityRecords: [],
+  };
 
-    const definedEntries = Object.entries(db).filter(([, value]) => value !== undefined && value !== null);
-    const merged = { ...EMPTY_DB, ...Object.fromEntries(definedEntries) } as Database;
-
-    const arrayKeys: (keyof Database)[] = [
-      'owners', 'properties', 'units', 'tenants', 'contracts', 'invoices', 'receipts',
-      'receiptAllocations', 'expenses', 'maintenanceRecords', 'depositTxs', 'auditLog',
-      'ownerSettlements', 'snapshots', 'accounts', 'journalEntries', 'autoBackups',
-      'ownerBalances', 'accountBalances', 'kpiSnapshots', 'contractBalances', 'tenantBalances',
-      'notificationTemplates', 'outgoingNotifications', 'appNotifications', 'leads',
-      'lands', 'commissions', 'missions', 'budgets', 'attachments', 'utilityRecords',
-    ];
-
-    arrayKeys.forEach((key) => {
-      if (!Array.isArray(merged[key])) {
-        (merged[key] as unknown) = EMPTY_DB[key];
-      }
-    });
-
-    if (!merged.auth || !Array.isArray(merged.auth.users)) merged.auth = EMPTY_DB.auth;
-    if (!merged.settings) merged.settings = EMPTY_DB.settings;
-    if (!merged.governance) merged.governance = EMPTY_DB.governance;
-    if (!merged.serials) merged.serials = EMPTY_DB.serials;
-
-    return merged;
-  }, [db]);
+  const activeDb = db || emptyDb;
   const activeSettings = settings || DEFAULT_SETTINGS;
-
-  const generateNotifications = useCallback(async () => {
-    if (!settings) return 0;
-    const generationResult = await notificationService.generateAllNotifications(activeDb, settings);
-    if (generationResult.total > 0) {
-      setIsDataStale(true);
-      await refreshData();
-    }
-    return generationResult.total;
-  }, [activeDb, refreshData, settings]);
   const authValue: AuthContextValue = {
-    auth: { currentUser, isInitializing: isAuthInitializing, login, logout, changePassword, addUser, updateUser, forcePasswordReset, disableUser, enableUser },
+    auth: { currentUser: currentUser ?? null, login, logout, changePassword, addUser, updateUser, forcePasswordReset, disableUser, enableUser },
     canAccess,
   };
 
@@ -1440,7 +1382,30 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       await refreshData();
       return result;
     },
-    generateNotifications,
+    generateNotifications: async () => {
+      if (!settings) return 0;
+      const now = Date.now();
+      const existingNotifs = await supabaseData.fetchAll<AppNotification>('appNotifications');
+      let count = await generateContractExpiryNotifications();
+      const allInvoices = await supabaseData.fetchAll<Invoice>('invoices');
+      const overdueInvoices = allInvoices.filter(inv => deriveInvoiceStatus(inv) === 'OVERDUE');
+      const overdueIds = new Set(overdueInvoices.map(inv => inv.id));
+      for (const inv of overdueInvoices) {
+        const link = `/finance/invoices?invoiceId=${inv.id}`;
+        const exists = existingNotifs.some(n => n.link === link && n.type === 'OVERDUE_BALANCE');
+        if (!exists) {
+          await supabaseData.insert('appNotifications', { id: crypto.randomUUID(), createdAt: now, isRead: false, role: 'ADMIN', type: 'OVERDUE_BALANCE', title: 'فاتورة متأخرة', message: `الفاتورة رقم ${inv.no} متأخرة بقيمة ${round3(inv.amount - inv.paidAmount)}`, link });
+          count++;
+        }
+      }
+      for (const notif of existingNotifs.filter(n => n.type === 'OVERDUE_BALANCE')) {
+        const invoiceId = notif.link.split('invoiceId=')[1];
+        if (!invoiceId || overdueIds.has(invoiceId)) continue;
+        await supabaseData.remove('appNotifications', notif.id);
+      }
+      await refreshData();
+      return count;
+    },
     updateNotificationTemplate,
   };
 
@@ -1482,7 +1447,30 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         await refreshData();
         return result;
       },
-      generateNotifications,
+      generateNotifications: async () => {
+        if (!settings) return 0;
+        const now = Date.now();
+        const existingNotifs = await supabaseData.fetchAll<AppNotification>('appNotifications');
+        let count = await generateContractExpiryNotifications();
+        const allInvoices = await supabaseData.fetchAll<Invoice>('invoices');
+        const overdueInvoices = allInvoices.filter(inv => deriveInvoiceStatus(inv) === 'OVERDUE');
+        const overdueIds = new Set(overdueInvoices.map(inv => inv.id));
+        for (const inv of overdueInvoices) {
+          const link = `/finance/invoices?invoiceId=${inv.id}`;
+          const exists = existingNotifs.some(n => n.link === link && n.type === 'OVERDUE_BALANCE');
+          if (!exists) {
+            await supabaseData.insert('appNotifications', { id: crypto.randomUUID(), createdAt: now, isRead: false, role: 'ADMIN', type: 'OVERDUE_BALANCE', title: 'فاتورة متأخرة', message: `الفاتورة رقم ${inv.no} متأخرة بقيمة ${round3(getInvoiceRemaining(inv))}`, link });
+            count++;
+          }
+        }
+        for (const notif of existingNotifs.filter(n => n.type === 'OVERDUE_BALANCE')) {
+          const invoiceId = notif.link.split('invoiceId=')[1];
+          if (!invoiceId || overdueIds.has(invoiceId)) continue;
+          await supabaseData.remove('appNotifications', notif.id);
+        }
+        await refreshData();
+        return count;
+      },
       updateNotificationTemplate, lockPeriod, unlockPeriod,
       setReadOnly: async (ro) => {
         const updated = { ...(governance || { readOnly: false, lockedPeriods: [] }), readOnly: ro };

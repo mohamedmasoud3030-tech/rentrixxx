@@ -79,7 +79,6 @@ export const getLastRunDate = async (): Promise<string | null> => {
 };
 
 const getTodayStr = (): string => new Date().toISOString().slice(0, 10);
-const asArray = <T,>(value: T[] | undefined | null): T[] => (Array.isArray(value) ? value : []);
 
 export const autoGenerateMonthlyInvoices = async (db: Database): Promise<number> => {
   const now = new Date();
@@ -88,12 +87,10 @@ export const autoGenerateMonthlyInvoices = async (db: Database): Promise<number>
   const monthKey = `${year}-${String(month).padStart(2, '0')}`;
   const today = getTodayStr();
 
-  const contracts = asArray(db?.contracts);
-  const invoices = asArray(db?.invoices);
-  const activeContracts = contracts.filter(c => c.status === 'ACTIVE' && c.end >= today);
+  const activeContracts = db.contracts.filter(c => c.status === 'ACTIVE' && c.end >= today);
   if (activeContracts.length === 0) return 0;
 
-  const existingInvoicesThisMonth = invoices.filter(inv => inv.dueDate?.startsWith(monthKey) && inv.type === 'RENT');
+  const existingInvoicesThisMonth = db.invoices.filter(inv => inv.dueDate?.startsWith(monthKey) && inv.type === 'RENT');
   const existingContractIds = new Set(existingInvoicesThisMonth.map(i => i.contractId));
 
   let count = 0;
@@ -132,13 +129,12 @@ export const autoApplyLateFees = async (db: Database, settings: Settings): Promi
   if (!lateFeeSettings?.isEnabled) return 0;
 
   const today = new Date();
-  const invoices = asArray(db?.invoices);
-  const overdueInvoices = invoices.filter(inv =>
+  const overdueInvoices = db.invoices.filter(inv =>
     (inv.status === 'OVERDUE' || (inv.status === 'UNPAID' && new Date(inv.dueDate) < today)) && inv.type === 'RENT'
   );
 
   const existingLateFeeSourceIds = new Set(
-    invoices
+    db.invoices
       .filter(inv => inv.type === 'LATE_FEE' && inv.relatedInvoiceId)
       .map(inv => inv.relatedInvoiceId as string),
   );
@@ -185,10 +181,8 @@ export const autoGenerateNotifications = async (db: Database, settings: Settings
   const alertDays = settings.operational?.contractAlertDays ?? 30;
   const thresholds = [alertDays, 7, 1];
   const now = Date.now();
-  const contracts = asArray(db?.contracts);
-  const invoices = asArray(db?.invoices);
-  const existingNotifs = asArray(db?.appNotifications);
-  const activeContracts = contracts.filter(c => c.status === 'ACTIVE');
+  const activeContracts = db.contracts.filter(c => c.status === 'ACTIVE');
+  const existingNotifs = db.appNotifications || [];
   let count = 0;
 
   for (const c of activeContracts) {
@@ -217,7 +211,7 @@ export const autoGenerateNotifications = async (db: Database, settings: Settings
     }
   }
 
-  const overdueInvoices = invoices.filter(inv =>
+  const overdueInvoices = db.invoices.filter(inv =>
     (inv.status === 'OVERDUE' || (inv.status === 'UNPAID' && new Date(inv.dueDate) < new Date())) && inv.type === 'RENT',
   );
 

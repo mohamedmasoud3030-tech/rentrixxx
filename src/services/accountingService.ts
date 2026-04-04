@@ -41,22 +41,6 @@ const safeDate = (value: unknown): Date | null => {
   const d = new Date(String(value));
   return Number.isNaN(d.getTime()) ? null : d;
 };
-const DATE_KEY_PATTERN = /^(\d{4}-\d{2}-\d{2})/;
-const getDateKey = (value: unknown): string | null => {
-  if (!value) return null;
-  const raw = String(value).trim();
-  const directMatch = DATE_KEY_PATTERN.exec(raw);
-  if (directMatch) return directMatch[1];
-
-  const parsed = safeDate(raw);
-  if (!parsed) return null;
-
-  const year = parsed.getUTCFullYear();
-  const month = String(parsed.getUTCMonth() + 1).padStart(2, '0');
-  const day = String(parsed.getUTCDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
-};
-const dateKeyToUtcTime = (value: string): number => new Date(`${value}T00:00:00.000Z`).getTime();
 
 const isDebitNormal = (type?: AccountType): boolean => type === 'ASSET' || type === 'EXPENSE';
 
@@ -315,19 +299,18 @@ export const calculateBalanceSheetData = (db: Database, asOfDate: string) => {
 export const calculateAgedReceivables = (db: Database, asOfDate: string) => {
   try {
     const { invoices, contracts, tenants } = getArrays(db);
-    const asOfKey = getDateKey(asOfDate);
-    if (!asOfKey) {
+    const asOf = safeDate(asOfDate);
+    if (!asOf) {
       return { lines: [], totals: { total: 0, current: 0, '1-30': 0, '31-60': 0, '61-90': 0, '90+': 0 } };
     }
-    const asOfTime = dateKeyToUtcTime(asOfKey);
 
     const tenantMap = new Map(tenants.map((t) => [t.id, t.name]));
     const contractMap = new Map(contracts.map((c) => [c.id, c]));
     const bucketsByTenant = new Map<string, { tenantName: string; current: number; '1-30': number; '31-60': number; '61-90': number; '90+': number; total: number }>();
 
     for (const invoice of invoices) {
-      const dueDateKey = getDateKey(invoice?.dueDate);
-      if (!dueDateKey || dueDateKey > asOfKey || invoice?.status === 'PAID') continue;
+      const dueDate = safeDate(invoice?.dueDate);
+      if (!dueDate || dueDate > asOf || invoice?.status === 'PAID') continue;
 
       const remaining = round3(toNumber(invoice.amount) + toNumber(invoice.taxAmount) - toNumber(invoice.paidAmount));
       if (remaining <= 0) continue;
@@ -346,7 +329,7 @@ export const calculateAgedReceivables = (db: Database, asOfDate: string) => {
         total: 0,
       };
 
-      const days = Math.floor((asOfTime - dateKeyToUtcTime(dueDateKey)) / (1000 * 60 * 60 * 24));
+      const days = Math.floor((asOf.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24));
 
       if (days <= 0) entry.current = round3(entry.current + remaining);
       else if (days <= 30) entry['1-30'] = round3(entry['1-30'] + remaining);

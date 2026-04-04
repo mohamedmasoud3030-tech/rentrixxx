@@ -14,8 +14,6 @@
   "include": [
     "tests/**/*.ts",
     "src/constants/status.ts",
-    "src/services/contractMonitoringService.ts",
-    "src/types.ts",
     "src/utils/status.ts",
     "src/utils/validation.ts",
     "src/utils/helpers.ts"

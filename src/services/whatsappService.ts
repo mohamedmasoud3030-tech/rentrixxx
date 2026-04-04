@@ -18,17 +18,3 @@ export const templates = {
     receipt: (no: string, amount: number) => 
         `تم استلام مبلغ ${amount} بنجاح. رقم السند: ${no}. شكراً لثقتكم.`
 };
-
-const formatOmrAmount = (amount: number): string => `${amount.toLocaleString('en-US', {
-    minimumFractionDigits: 3,
-    maximumFractionDigits: 3,
-})} ر.ع`;
-
-export const buildRentReminderMessage = (tenantName: string, balance: number, dueDate?: string): string => {
-    const dueDatePart = dueDate ? ` بتاريخ استحقاق ${dueDate}` : '';
-    return `السيد/ة ${tenantName}، يرجى العلم بوجود مبلغ مستحق بقيمة ${formatOmrAmount(balance)}${dueDatePart}. شكراً لتعاونكم.`;
-};
-
-export const buildContractExpiryMessage = (tenantName: string, expiryDate: string): string => {
-    return `السيد/ة ${tenantName}، نود تذكيركم بأن عقد الإيجار الخاص بكم سينتهي بتاريخ ${expiryDate}. يرجى التواصل معنا لتجديد العقد.`;
-};

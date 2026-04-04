@@ -185,7 +185,7 @@ export function formatDateTimeWithType(dateTimeString: string, calendarType: 'gr
     }
 }
 
-export function getStatusBadgeVariant(status: string): 'success' | 'warning' | 'danger' | 'info' | 'default' {
+export function getStatusBadgeClass(status: string): string {
     switch (status) {
         case 'ACTIVE':
         case 'POSTED':
@@ -193,43 +193,29 @@ export function getStatusBadgeVariant(status: string): 'success' | 'warning' | '
         case 'Completed':
         case 'RENTED':
         case 'PAID':
-            return 'success';
+            return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300';
         case 'INACTIVE':
         case 'PENDING':
         case 'Pending':
         case 'IN_PROGRESS':
         case 'ON_HOLD':
         case 'PARTIALLY_PAID':
-            return 'warning';
+            return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300';
         case 'ENDED':
         case 'SUSPENDED':
         case 'VOID':
         case 'BLACKLIST':
         case 'CLOSED':
-        case 'CANCELLED':
-        case 'CANCELED':
         case 'OVERDUE':
         case 'NOT_INTERESTED':
-            return 'danger';
+            return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300';
         case 'NEW':
         case 'CONTACTED':
         case 'INTERESTED':
-            return 'info';
+             return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300';
         default:
-            return 'default';
+            return 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300';
     }
-}
-
-export function getStatusBadgeClass(status: string): string {
-    const variant = getStatusBadgeVariant(status);
-    const classes: Record<typeof variant, string> = {
-      success: 'status-success',
-      warning: 'status-warning',
-      danger: 'status-danger',
-      info: 'status-info',
-      default: 'status-default',
-    };
-    return classes[variant];
 }
 
 export function sanitizePhoneNumber(phone: string): string {
@@ -297,7 +283,7 @@ export const INVOICE_TYPE_AR: Record<string, string> = {
 };
 
 export const CONTRACT_STATUS_AR: Record<string, string> = {
-    ACTIVE: 'نشط', ENDED: 'منتهي', SUSPENDED: 'معلق', TERMINATED: 'مُنهاة'
+    ACTIVE: 'نشط', ENDED: 'منتهي', SUSPENDED: 'معلق'
 };
 
 export const TENANT_STATUS_AR: Record<string, string> = {
@@ -305,11 +291,7 @@ export const TENANT_STATUS_AR: Record<string, string> = {
 };
 
 export const USER_ROLE_AR: Record<string, string> = {
-    ADMIN: 'مدير النظام',
-    MANAGER: 'مدير العمليات',
-    ACCOUNTANT: 'محاسب',
-    VIEWER: 'مشاهد فقط',
-    USER: 'مستخدم عام',
+    ADMIN: 'مدير', USER: 'مستخدم'
 };
 
 export const RECEIPT_STATUS_AR: Record<string, string> = {

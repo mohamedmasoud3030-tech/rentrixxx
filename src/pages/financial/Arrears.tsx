@@ -3,22 +3,21 @@ import { Link } from 'react-router-dom';
 import Card from '../../components/ui/Card';
 import { useApp } from '../../contexts/AppContext';
 import { formatCurrency } from '../../utils/helpers';
-import { getEffectiveStatus, getInvoiceRemaining } from '../../utils/invoices/invoiceCalculations';
 
 const Arrears: React.FC = () => {
   const { db } = useApp();
 
   const overdueInvoices = useMemo(() => {
-    const today = new Date().toISOString().slice(0, 10);
+    const today = new Date();
     return db.invoices
-      .filter((invoice) => getEffectiveStatus(invoice) === 'OVERDUE' && invoice.dueDate.slice(0, 10) < today)
+      .filter(invoice => (invoice.status === 'OVERDUE' || invoice.status === 'UNPAID') && new Date(invoice.dueDate) < today)
       .map(invoice => {
         const contract = db.contracts.find(c => c.id === invoice.contractId);
         const tenant = contract ? db.tenants.find(t => t.id === contract.tenantId) : null;
         return {
           ...invoice,
           tenantName: tenant?.name || 'غير معروف',
-          remaining: getInvoiceRemaining(invoice),
+          remaining: Math.max(0, invoice.amount - invoice.paidAmount),
         };
       })
       .sort((a, b) => a.dueDate.localeCompare(b.dueDate));

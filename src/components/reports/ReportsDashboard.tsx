@@ -1,15 +1,10 @@
-import React, { Suspense, useState, useCallback, useEffect, useMemo, useRef } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import React, { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import { supabase } from '../../services/supabase';
 import { useApp } from '../../contexts/AppContext';
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
   CartesianGrid, Cell, LineChart, Line, PieChart, Pie, Legend
 } from 'recharts';
-import Button from '../ui/Button';
-import Input from '../ui/Input';
-import Badge from '../ui/Badge';
-import { TableShell, Table, TableHead, TableBody, TableRow, TableHeadCell, TableCell } from '../ui/Table';
 
 // ─── Types ───────────────────────────────────────────────────
 type ReportId =
@@ -19,13 +14,6 @@ type ReportId =
 
 interface DateRange { from: string; to: string }
 type LoadState = 'idle' | 'loading' | 'done' | 'error';
-interface DashboardProps {
-  currency?: string;
-  owners?: any[];
-  contracts?: any[];
-  startDate: string;
-  endDate: string;
-}
 interface OverdueReportRow {
   tenant_name: string;
   tenant_phone?: string;
@@ -70,18 +58,6 @@ const Spinner = () => (
   </div>
 );
 
-const ReportsSkeleton: React.FC = () => (
-  <div className="animate-pulse space-y-4">
-    <div className="h-8 w-44 rounded-lg bg-background" />
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-      <div className="h-24 rounded-xl bg-background" />
-      <div className="h-24 rounded-xl bg-background" />
-      <div className="h-24 rounded-xl bg-background" />
-    </div>
-    <div className="h-72 rounded-xl bg-background" />
-  </div>
-);
-
 // ─── KPI Card ─────────────────────────────────────────────────
 const KPI: React.FC<{ label: string; value: string; sub?: string; color?: string }> = ({ label, value, sub, color = 'text-primary' }) => (
   <div className="bg-card border border-border rounded-2xl p-4 flex flex-col gap-1">
@@ -106,34 +82,37 @@ const SH: React.FC<{ title: string; onPrint?: () => void }> = ({ title, onPrint 
 
 // ─── Table wrapper ────────────────────────────────────────────
 const Tbl: React.FC<{ heads: string[]; rows: React.ReactNode[][]; footer?: React.ReactNode[] }> = ({ heads, rows, footer }) => (
-  <TableShell>
-    <Table>
-      <TableHead>
-        <TableRow>{heads.map((h, i) => <TableHeadCell key={i}>{h}</TableHeadCell>)}</TableRow>
-      </TableHead>
-      <TableBody>
+  <div className="overflow-x-auto rounded-xl border border-border">
+    <table className="w-full text-sm text-right">
+      <thead className="bg-background text-text-muted text-xs">
+        <tr>{heads.map((h, i) => <th key={i} className="px-4 py-3 font-bold">{h}</th>)}</tr>
+      </thead>
+      <tbody className="divide-y divide-border">
         {rows.map((r, i) => (
-          <TableRow key={i}>
-            {r.map((c, j) => <TableCell key={j}>{c}</TableCell>)}
-          </TableRow>
+          <tr key={i} className="hover:bg-background/60 transition-colors">
+            {r.map((c, j) => <td key={j} className="px-4 py-3">{c}</td>)}
+          </tr>
         ))}
         {rows.length === 0 && (
-          <TableRow><TableCell colSpan={heads.length} className="py-10 text-center text-text-muted">لا توجد بيانات</TableCell></TableRow>
+          <tr><td colSpan={heads.length} className="px-4 py-10 text-center text-text-muted">لا توجد بيانات</td></tr>
         )}
-      </TableBody>
+      </tbody>
       {footer && (
-        <tfoot className="font-black text-text">
-          <TableRow>{footer.map((c, i) => <TableCell key={i}>{c}</TableCell>)}</TableRow>
+        <tfoot className="bg-background border-t-2 border-border font-black text-text">
+          <tr>{footer.map((c, i) => <td key={i} className="px-4 py-3">{c}</td>)}</tr>
         </tfoot>
       )}
-    </Table>
-  </TableShell>
+    </table>
+  </div>
 );
 
 // ─── Badge ─────────────────────────────────────────────────────
-const BadgeByAge: React.FC<{ days: number }> = ({ days }) => {
-  const variant = days > 60 ? 'danger' : days > 30 ? 'warning' : 'info';
-  return <Badge variant={variant}>{days} يوم</Badge>;
+const Badge: React.FC<{ days: number }> = ({ days }) => {
+  const cls = days > 90 ? 'bg-red-100 text-red-700' :
+              days > 60 ? 'bg-orange-100 text-orange-700' :
+              days > 30 ? 'bg-yellow-100 text-yellow-700' :
+              'bg-blue-100 text-blue-700';
+  return <span className={`px-2 py-0.5 rounded-full text-[11px] font-bold ${cls}`}>{days} يوم</span>;
 };
 
 // ─── Date Range Picker ────────────────────────────────────────
@@ -141,23 +120,26 @@ const DatePicker: React.FC<{ range: DateRange; onChange: (r: DateRange) => void;
   <div className="flex flex-wrap items-center gap-2 p-4 bg-card border border-border rounded-2xl">
     <div className="flex items-center gap-2">
       <label className="text-xs text-text-muted font-bold">من</label>
-      <Input type="date" value={range.from} onChange={e => onChange({ ...range, from: e.target.value })} className="text-sm min-h-[2.5rem]"/>
+      <input type="date" value={range.from} onChange={e => onChange({ ...range, from: e.target.value })}
+        className="text-sm border border-border rounded-xl px-3 py-1.5 bg-background focus:ring-2 focus:ring-primary/20 outline-none"/>
     </div>
     <div className="flex items-center gap-2">
       <label className="text-xs text-text-muted font-bold">إلى</label>
-      <Input type="date" value={range.to} onChange={e => onChange({ ...range, to: e.target.value })} className="text-sm min-h-[2.5rem]"/>
+      <input type="date" value={range.to} onChange={e => onChange({ ...range, to: e.target.value })}
+        className="text-sm border border-border rounded-xl px-3 py-1.5 bg-background focus:ring-2 focus:ring-primary/20 outline-none"/>
     </div>
     <div className="flex gap-1">
       {MONTH_PRESETS.map(p => (
-        <Button key={p.label} onClick={() => { onChange({ from: p.from(), to: p.to() }); }}
-          variant="secondary" className="text-xs min-h-[2.25rem] px-3">
+        <button key={p.label} onClick={() => { onChange({ from: p.from(), to: p.to() }); }}
+          className="text-xs px-3 py-1.5 rounded-xl border border-border hover:border-primary hover:text-primary transition font-bold">
           {p.label}
-        </Button>
+        </button>
       ))}
     </div>
-    <Button onClick={onGo} disabled={loading} className="mr-auto px-5">
+    <button onClick={onGo} disabled={loading}
+      className="px-5 py-2 bg-primary text-white rounded-xl text-sm font-black hover:bg-primary/90 transition disabled:opacity-60 mr-auto">
       {loading ? '...' : 'عرض'}
-    </Button>
+    </button>
   </div>
 );
 
@@ -166,8 +148,8 @@ const DatePicker: React.FC<{ range: DateRange; onChange: (r: DateRange) => void;
 // ════════════════════════════════════════════════════════════════
 
 // 1. ملخص مالي
-const SummaryView: React.FC<{ currency: string; defaultRange: DateRange }> = ({ currency, defaultRange }) => {
-  const [range, setRange] = useState<DateRange>(defaultRange);
+const SummaryView: React.FC<{ currency: string }> = ({ currency }) => {
+  const [range, setRange] = useState<DateRange>({ from: firstOfYear(), to: today() });
   const [data, setData] = useState<any>(null);
   const [state, setState] = useState<LoadState>('idle');
 
@@ -178,7 +160,6 @@ const SummaryView: React.FC<{ currency: string; defaultRange: DateRange }> = ({ 
     setData(d); setState('done');
   }, [range]);
 
-  useEffect(() => { setRange(defaultRange); }, [defaultRange.from, defaultRange.to]);
   useEffect(() => { load(); }, []);
 
   const occupancy = data ? [
@@ -224,8 +205,8 @@ const SummaryView: React.FC<{ currency: string; defaultRange: DateRange }> = ({ 
 };
 
 // 2. قائمة الدخل
-const IncomeView: React.FC<{ currency: string; defaultRange: DateRange }> = ({ currency, defaultRange }) => {
-  const [range, setRange] = useState<DateRange>(defaultRange);
+const IncomeView: React.FC<{ currency: string }> = ({ currency }) => {
+  const [range, setRange] = useState<DateRange>({ from: firstOfYear(), to: today() });
   const [data, setData] = useState<any>(null);
   const [state, setState] = useState<LoadState>('idle');
 
@@ -236,7 +217,6 @@ const IncomeView: React.FC<{ currency: string; defaultRange: DateRange }> = ({ c
     setData(d); setState('done');
   }, [range]);
 
-  useEffect(() => { setRange(defaultRange); }, [defaultRange.from, defaultRange.to]);
   useEffect(() => { load(); }, []);
 
   const chartData = data ? [
@@ -349,8 +329,8 @@ const TrialBalanceView: React.FC<{ currency: string }> = ({ currency }) => {
 };
 
 // 4. أعمار الديون
-const AgedReceivablesView: React.FC<{ currency: string; defaultRange: DateRange }> = ({ currency, defaultRange }) => {
-  const [asOf, setAsOf] = useState(defaultRange.to);
+const AgedReceivablesView: React.FC<{ currency: string }> = ({ currency }) => {
+  const [asOf, setAsOf] = useState(today());
   const [data, setData] = useState<any>(null);
   const [state, setState] = useState<LoadState>('idle');
 
@@ -361,7 +341,6 @@ const AgedReceivablesView: React.FC<{ currency: string; defaultRange: DateRange 
     setData(d); setState('done');
   }, [asOf]);
 
-  useEffect(() => { setAsOf(defaultRange.to); }, [defaultRange.to]);
   useEffect(() => { load(); }, []);
 
   const buckets = data?.totals ? [
@@ -477,7 +456,7 @@ const OverdueView: React.FC<{ currency: string }> = ({ currency }) => {
               r.unit_name,
               <span className="font-mono text-xs">#{r.invoice_no}</span>,
               fmtDate(r.due_date),
-              <BadgeByAge days={r.days_overdue}/>,
+              <Badge days={r.days_overdue}/>,
               <span dir="ltr" className="font-mono font-bold text-red-600">{fmt(r.remaining, currency)}</span>,
             ])}
           />
@@ -543,9 +522,9 @@ const TenantStatementView: React.FC<{ currency: string; contracts: any[] }> = ({
 };
 
 // 7. كشف حساب المالك
-const OwnerStatementView: React.FC<{ currency: string; owners: any[]; defaultRange: DateRange }> = ({ currency, owners, defaultRange }) => {
+const OwnerStatementView: React.FC<{ currency: string; owners: any[] }> = ({ currency, owners }) => {
   const [ownerId, setOwnerId] = useState('');
-  const [range, setRange] = useState<DateRange>(defaultRange);
+  const [range, setRange] = useState<DateRange>({ from: firstOfYear(), to: today() });
   const [data, setData] = useState<any>(null);
   const [state, setState] = useState<LoadState>('idle');
 
@@ -556,8 +535,6 @@ const OwnerStatementView: React.FC<{ currency: string; owners: any[]; defaultRan
     if (error) { setState('error'); return; }
     setData(d); setState('done');
   }, [ownerId, range]);
-
-  useEffect(() => { setRange(defaultRange); }, [defaultRange.from, defaultRange.to]);
 
   return (
     <div className="space-y-5">
@@ -606,8 +583,8 @@ const OwnerStatementView: React.FC<{ currency: string; owners: any[]; defaultRan
 };
 
 // 8. التحصيل اليومي
-const DailyCollectionView: React.FC<{ currency: string; defaultRange: DateRange }> = ({ currency, defaultRange }) => {
-  const [range, setRange] = useState<DateRange>(defaultRange);
+const DailyCollectionView: React.FC<{ currency: string }> = ({ currency }) => {
+  const [range, setRange] = useState<DateRange>({ from: new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().slice(0,10), to: today() });
   const [data, setData] = useState<any>(null);
   const [state, setState] = useState<LoadState>('idle');
 
@@ -618,7 +595,6 @@ const DailyCollectionView: React.FC<{ currency: string; defaultRange: DateRange 
     setData(d); setState('done');
   }, [range]);
 
-  useEffect(() => { setRange(defaultRange); }, [defaultRange.from, defaultRange.to]);
   useEffect(() => { load(); }, []);
 
   return (
@@ -722,52 +698,25 @@ const REPORTS: { id: ReportId; label: string; group: string }[] = [
   { id: 'tenant_statement', label: 'كشف حساب المستأجر',     group: 'كشوف' },
 ];
 
-const DEFAULT_REPORT_ID: ReportId = 'summary';
-const REPORT_IDS = new Set<ReportId>(REPORTS.map((report) => report.id));
-const parseReportId = (value: string | null): ReportId =>
-  REPORT_IDS.has(value as ReportId) ? (value as ReportId) : DEFAULT_REPORT_ID;
-
-const ReportsDashboard: React.FC<DashboardProps> = ({ currency: currencyProp, owners: ownersProp, contracts: contractsProp, startDate, endDate }) => {
+const ReportsDashboard: React.FC = () => {
   const { settings, db } = useApp();
-  const [searchParams, setSearchParams] = useSearchParams();
-  const currency = currencyProp ?? settings.operational?.currency ?? 'OMR';
-  const owners = ownersProp ?? (db.owners || []);
-  const contracts = contractsProp ?? (db.contracts || []);
-  const requestedReport = parseReportId(searchParams.get('tab'));
-  const [active, setActive] = useState<ReportId>(requestedReport);
-  const [dashboardLoading, setDashboardLoading] = useState(false);
-  const globalRange = useMemo<DateRange>(() => ({ from: startDate, to: endDate }), [startDate, endDate]);
-
-  useEffect(() => {
-    if (requestedReport !== active) {
-      setActive(requestedReport);
-    }
-  }, [requestedReport, active]);
-
-  useEffect(() => {
-    setDashboardLoading(true);
-    const timer = setTimeout(() => setDashboardLoading(false), 250);
-    return () => clearTimeout(timer);
-  }, [active, startDate, endDate]);
+  const currency = settings.operational?.currency ?? 'OMR';
+  const owners = db.owners || [];
+  const contracts = db.contracts || [];
+  const [active, setActive] = useState<ReportId>('summary');
 
   const groups = Array.from(new Set(REPORTS.map(r => r.group)));
-  const handleTabChange = (next: ReportId) => {
-    setActive(next);
-    const nextParams = new URLSearchParams(searchParams);
-    nextParams.set('tab', next);
-    setSearchParams(nextParams, { replace: true });
-  };
 
   const renderContent = () => {
     switch (active) {
-      case 'summary':          return <SummaryView currency={currency} defaultRange={globalRange}/>;
-      case 'income_statement': return <IncomeView currency={currency} defaultRange={globalRange}/>;
+      case 'summary':          return <SummaryView currency={currency}/>;
+      case 'income_statement': return <IncomeView currency={currency}/>;
       case 'trial_balance':    return <TrialBalanceView currency={currency}/>;
-      case 'aged_receivables': return <AgedReceivablesView currency={currency} defaultRange={globalRange}/>;
+      case 'aged_receivables': return <AgedReceivablesView currency={currency}/>;
       case 'overdue':          return <OverdueView currency={currency}/>;
       case 'tenant_statement': return <TenantStatementView currency={currency} contracts={contracts}/>;
-      case 'owner_statement':  return <OwnerStatementView currency={currency} owners={owners} defaultRange={globalRange}/>;
-      case 'daily_collection': return <DailyCollectionView currency={currency} defaultRange={globalRange}/>;
+      case 'owner_statement':  return <OwnerStatementView currency={currency} owners={owners}/>;
+      case 'daily_collection': return <DailyCollectionView currency={currency}/>;
       case 'rent_roll':        return <RentRollView currency={currency}/>;
       case 'balance_sheet':    return <TrialBalanceView currency={currency}/>; // placeholder
       default:                 return null;
@@ -784,7 +733,7 @@ const ReportsDashboard: React.FC<DashboardProps> = ({ currency: currencyProp, ow
           <div key={group} className="mb-3">
             <p className="text-[10px] font-black text-text-muted uppercase tracking-widest px-2 mb-1">{group}</p>
             {REPORTS.filter(r => r.group === group).map(r => (
-              <button key={r.id} onClick={() => handleTabChange(r.id)}
+              <button key={r.id} onClick={() => setActive(r.id)}
                 className={`w-full text-right text-sm px-3 py-2 rounded-xl font-bold transition-all ${
                   active === r.id
                     ? 'bg-primary text-white shadow-sm'
@@ -805,7 +754,7 @@ const ReportsDashboard: React.FC<DashboardProps> = ({ currency: currencyProp, ow
           <span className="text-sm font-black text-text">{currentLabel}</span>
         </div>
         <div className="bg-card border border-border rounded-2xl p-5">
-          <Suspense fallback={<ReportsSkeleton />}>{renderContent()}</Suspense>
+          {renderContent()}
         </div>
       </main>
     </div>

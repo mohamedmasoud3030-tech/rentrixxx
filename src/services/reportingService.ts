@@ -14,21 +14,7 @@ export const getPostedReceiptsForDate = (receipts: Database['receipts'], dateIso
   return receipts.filter((receipt) => {
     if (receipt.status !== 'POSTED') return false;
     const receiptDate = extractIsoDate(receipt.dateTime);
-    if (!receiptDate) return false;
-    return isWithinInclusiveRange(receiptDate, dateIso, dateIso);
-  });
-};
-
-export const getPostedReceiptsInRange = (
-  receipts: Database['receipts'],
-  startDate: string,
-  endDate: string,
-) => {
-  return receipts.filter((receipt) => {
-    if (receipt.status !== 'POSTED') return false;
-    const receiptDate = extractIsoDate(receipt.dateTime);
-    if (!receiptDate) return false;
-    return isWithinInclusiveRange(receiptDate, startDate, endDate);
+    return receiptDate === dateIso;
   });
 };
 
@@ -44,3 +30,4 @@ export const getPostedExpensesInRange = (
     return isWithinInclusiveRange(expenseDate, fromIso, toIso);
   });
 };
+
