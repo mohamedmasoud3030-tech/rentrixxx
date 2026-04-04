@@ -26,6 +26,15 @@
     --shadow-card: 0 2px 12px -2px rgba(184, 134, 11, 0.1), 0 1px 4px -1px rgba(0, 0, 0, 0.06);
     --shadow-card-hover: 0 8px 24px -4px rgba(184, 134, 11, 0.18), 0 2px 8px -2px rgba(0, 0, 0, 0.08);
     --shadow-sidebar: 2px 0 16px -4px rgba(184, 134, 11, 0.12);
+    --rx-primary: hsl(var(--color-primary));
+    --rx-primary-fg: hsl(var(--color-primary-fg));
+    --rx-surface: hsl(var(--color-card));
+    --rx-surface-high: hsl(var(--color-bg));
+    --rx-border: hsl(var(--color-border));
+    --rx-gradient-start: var(--rx-primary);
+    --rx-gradient-end: color-mix(in srgb, var(--rx-primary) 75%, var(--rx-surface));
+    --rx-success: hsl(var(--color-success-text));
+    --rx-error: hsl(var(--color-danger-text));
 }
 
 [data-theme="dark"] {
@@ -54,6 +63,7 @@
     --shadow-card: 0 2px 12px -2px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(184, 134, 11, 0.06);
     --shadow-card-hover: 0 8px 24px -4px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(184, 134, 11, 0.18);
     --shadow-sidebar: 2px 0 20px -4px rgba(0, 0, 0, 0.5);
+    --rx-gradient-end: color-mix(in srgb, var(--rx-primary) 65%, var(--rx-surface-high));
 }
 
 html {
@@ -86,6 +96,25 @@ button, a, nav { -webkit-tap-highlight-color: transparent; -webkit-touch-callout
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer utilities {
+    .rx-gradient-btn {
+        background-image: linear-gradient(135deg, var(--rx-gradient-start), var(--rx-gradient-end));
+        color: var(--rx-primary-fg);
+    }
+
+    .rx-gradient-text {
+        background-image: linear-gradient(135deg, var(--rx-gradient-start), var(--rx-gradient-end));
+        color: transparent;
+        -webkit-background-clip: text;
+        background-clip: text;
+    }
+
+    .bg-rx-surface { background-color: var(--rx-surface); }
+    .bg-rx-surface-high { background-color: var(--rx-surface-high); }
+    .text-rx-primary { color: var(--rx-primary); }
+    .border-rx { border-color: var(--rx-border); }
+}
 
 @layer components {
     /* === BUTTONS === */
