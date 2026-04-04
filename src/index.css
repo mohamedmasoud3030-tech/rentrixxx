@@ -192,18 +192,37 @@ button, a, nav { -webkit-tap-highlight-color: transparent; -webkit-touch-callout
     }
 
     /* === TABLES === */
-    table { @apply w-full text-sm text-start; }
-    thead { background: hsl(var(--color-border) / 0.4); }
-    th {
-        @apply px-4 sm:px-5 py-3.5 border-b border-border text-text-muted tracking-wide font-bold text-xs;
+    .table-system__container {
+        @apply overflow-x-auto rounded-xl border;
+        border-color: var(--color-table-border);
+        background: var(--color-table-bg);
+        box-shadow: var(--shadow-card);
+    }
+    .table-system {
+        @apply w-full text-sm;
+        color: var(--color-table-text);
+        direction: inherit;
+    }
+    .table-system__head { background: var(--color-table-header-bg); }
+    .table-system__th {
+        @apply px-4 sm:px-5 py-3.5 border-b font-bold text-xs tracking-wide;
+        border-color: var(--color-table-border);
+        color: var(--color-table-text-muted);
         text-align: start;
         letter-spacing: 0.04em;
+        white-space: nowrap;
     }
-    td { @apply px-4 sm:px-5 py-3.5 sm:py-4 border-b border-border text-text; }
-    tbody tr:nth-child(even) { background: hsl(var(--color-border) / 0.15); }
-    tbody tr:hover {
-        background: hsl(var(--color-primary) / 0.06) !important;
-        transition: background 0.15s ease;
+    .table-system__td {
+        @apply px-4 sm:px-5 py-3.5 sm:py-4 border-b;
+        border-color: var(--color-table-border);
+        color: var(--color-table-text);
+        text-align: start;
+        vertical-align: middle;
+    }
+    .table-system__row:hover { background: var(--color-table-row-hover); }
+    .table-system__empty {
+        @apply py-8 text-center;
+        color: var(--color-table-text-muted);
     }
 
     .action-cell { position: relative !important; overflow: visible !important; }
