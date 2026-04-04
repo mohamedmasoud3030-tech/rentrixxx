@@ -85,7 +85,7 @@ export interface ContractsRow {
   start_date: string;
   end_date: string;
   deposit: number;
-  status: 'ACTIVE' | 'ENDED' | 'SUSPENDED';
+  status: 'ACTIVE' | 'ENDED' | 'SUSPENDED' | 'TERMINATED';
   sponsor_name: string | null;
   sponsor_id: string | null;
   sponsor_phone: string | null;

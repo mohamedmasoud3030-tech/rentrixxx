@@ -279,7 +279,7 @@ export interface Contract {
   start: string; // YYYY-MM-DD
   end: string; // YYYY-MM-DD
   deposit: number;
-  status: 'ACTIVE' | 'ENDED' | 'SUSPENDED';
+  status: 'ACTIVE' | 'ENDED' | 'SUSPENDED' | 'TERMINATED';
   sponsorName?: string;
   sponsorId?: string;
   sponsorPhone?: string;
@@ -714,6 +714,7 @@ export interface AppContextType {
   db: Database | null;
   auth: {
     currentUser: User | null | undefined;
+    isInitializing: boolean;
     login: (username: string, password: string) => Promise<{ ok: boolean; msg: string; mustChange?: boolean }>;
     logout: () => void;
     changePassword: (userId: string, newPass: string) => Promise<{ ok: boolean }>;
