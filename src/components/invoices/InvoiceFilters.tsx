@@ -122,7 +122,7 @@ export const InvoiceFilters: React.FC<InvoiceFiltersProps> = ({
         <button
           onClick={onGenerateInvoices}
           disabled={isLoadingMonths}
-          className="rx-gradient-btn font-bold px-6 py-2.5 rounded-xl flex items-center gap-2 active:scale-95 transition-all shadow-lg shadow-primary/10"
+          className="bg-gradient-to-b from-[#4fdbc8] to-[#14b8a6] text-on-primary font-bold px-6 py-2.5 rounded-xl flex items-center gap-2 active:scale-95 transition-all shadow-lg shadow-primary/10"
         >
           {isLoadingMonths ? <RefreshCw size={16} className="animate-spin" /> : <Plus size={16} />}
           إصدار فواتير الإيجار

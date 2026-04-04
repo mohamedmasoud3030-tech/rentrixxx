@@ -234,7 +234,7 @@ const Dashboard: React.FC = () => {
           <button
             onClick={runGenerateMonthlyInvoices}
             disabled={isGeneratingInvoices}
-            className="text-right p-4 rounded-xl rx-gradient-btn font-bold active:scale-95 transition-all shadow-lg shadow-primary/10 disabled:opacity-60 disabled:cursor-not-allowed"
+            className="text-right p-4 rounded-xl bg-gradient-to-b from-[#4fdbc8] to-[#14b8a6] text-on-primary font-bold active:scale-95 transition-all shadow-lg shadow-primary/10 disabled:opacity-60 disabled:cursor-not-allowed"
           >
             <div className="flex items-center justify-between gap-2">
               <div className="font-bold">توليد فواتير الشهر</div>
@@ -246,7 +246,7 @@ const Dashboard: React.FC = () => {
           <button
             onClick={runAutomation}
             disabled={isRunningAutomation}
-            className="text-right p-4 rounded-xl rx-gradient-btn font-bold active:scale-95 transition-all shadow-lg shadow-primary/10 disabled:opacity-60 disabled:cursor-not-allowed"
+            className="text-right p-4 rounded-xl bg-gradient-to-b from-[#4fdbc8] to-[#14b8a6] text-on-primary font-bold active:scale-95 transition-all shadow-lg shadow-primary/10 disabled:opacity-60 disabled:cursor-not-allowed"
           >
             <div className="flex items-center justify-between gap-2">
               <div className="font-bold">تشغيل الأتمتة</div>

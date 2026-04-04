@@ -40,7 +40,7 @@ const Topbar: React.FC<TopbarProps> = ({ setSidebarOpen }) => {
           <span className="text-base font-black text-on-surface truncate lg:hidden">{pageTitle}</span>
           <div className="hidden lg:flex items-center min-w-[260px] relative">
             <Search size={16} className="absolute end-3 text-on-surface-variant" />
-            <input readOnly placeholder="بحث سريع..." className="bg-rx-surface-high rounded-xl border-none pe-9 text-sm" />
+            <input readOnly placeholder="بحث سريع..." className="bg-[#111319] rounded-xl border-none pe-9 text-sm" />
           </div>
         </div>
 
@@ -58,7 +58,7 @@ const Topbar: React.FC<TopbarProps> = ({ setSidebarOpen }) => {
               <span className="block text-sm font-bold text-on-surface leading-tight">{username}</span>
               <span className="block text-xs text-on-surface-variant">{role}</span>
             </div>
-            <div className="w-8 h-8 rounded-xl flex items-center justify-center text-on-primary font-bold text-sm rx-gradient-btn">{username.charAt(0).toUpperCase()}</div>
+            <div className="w-8 h-8 rounded-xl flex items-center justify-center text-on-primary font-bold text-sm bg-gradient-to-b from-[#4fdbc8] to-[#14b8a6]">{username.charAt(0).toUpperCase()}</div>
             <button onClick={auth.logout} className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl hover:bg-error/15 hover:text-error transition-colors text-sm text-on-surface-variant active:scale-95" title="تسجيل الخروج">
               <LogOut size={16} />
               <span className="hidden sm:inline">خروج</span>

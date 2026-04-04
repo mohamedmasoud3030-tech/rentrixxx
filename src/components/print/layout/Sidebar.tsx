@@ -121,8 +121,8 @@ const Sidebar: React.FC<SidebarProps> = ({ sidebarOpen, setSidebarOpen }) => {
         <div
           className={`group flex flex-row-reverse items-center gap-3 rounded-xl ${itemPadding} py-2.5 font-bold text-sm transition-all duration-200 ${
             active
-              ? 'bg-rx-surface-high text-rx-primary border-r-4 border-rx-primary'
-              : 'text-on-surface-variant hover:bg-rx-surface-high hover:text-on-surface'
+              ? 'bg-[#282a30] text-[#14b8a6] border-r-4 border-[#14b8a6]'
+              : 'text-slate-400 hover:bg-[#282a30] hover:text-white'
           }`}
         >
           {item.path ? (
@@ -175,7 +175,7 @@ const Sidebar: React.FC<SidebarProps> = ({ sidebarOpen, setSidebarOpen }) => {
 
   return (
     <aside
-      className={`fixed right-0 top-0 z-50 flex h-screen w-64 flex-col overflow-y-hidden border-l border-outline-variant/40 bg-rx-surface duration-300 ease-in-out lg:static lg:translate-x-0 ${
+      className={`fixed right-0 top-0 z-50 flex h-screen w-64 flex-col overflow-y-hidden border-l border-outline-variant/40 bg-[#191b22] duration-300 ease-in-out lg:static lg:translate-x-0 ${
         sidebarOpen ? 'translate-x-0' : 'translate-x-full'
       }`}
       style={{ boxShadow: 'var(--shadow-sidebar)' }}
@@ -194,7 +194,7 @@ const Sidebar: React.FC<SidebarProps> = ({ sidebarOpen, setSidebarOpen }) => {
           🌐
         </div>
         <div className="min-w-0 flex-1">
-          <span className="block truncate text-base font-black text-rx-primary">{companyName}</span>
+          <span className="block truncate text-base font-black text-[#4fdbc8]">{companyName}</span>
           <span className="block text-xs text-text-muted">{AR_LABELS.rentrixNavigationHub}</span>
         </div>
         <button
@@ -205,7 +205,7 @@ const Sidebar: React.FC<SidebarProps> = ({ sidebarOpen, setSidebarOpen }) => {
         </button>
       </div>
 
-      <div className="scrollbar-hide flex flex-1 flex-col overflow-y-auto px-3 py-4 bg-rx-surface">
+      <div className="scrollbar-hide flex flex-1 flex-col overflow-y-auto px-3 py-4 bg-[#191b22]">
         <nav>
           <ul className="flex flex-col gap-1">{navItems.map(item => renderNavItem(item))}</ul>
         </nav>
