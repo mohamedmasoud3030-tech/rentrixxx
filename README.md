@@ -43,3 +43,18 @@ Production-ready SaaS for property, contracts, maintenance, and financial operat
 - Deployment readiness checklist:
   - `npm run readiness`
   - `npm run readiness:strict` (fails on missing required envs)
+
+
+## Vercel Sandbox quickstart
+
+Run the local demo script (uses `@vercel/sandbox`):
+
+```bash
+npm run sandbox:demo
+```
+
+Or connect directly with the CLI:
+
+```bash
+npx sandbox create --connect
+```
