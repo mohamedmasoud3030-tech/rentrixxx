@@ -297,7 +297,7 @@ export const INVOICE_TYPE_AR: Record<string, string> = {
 };
 
 export const CONTRACT_STATUS_AR: Record<string, string> = {
-    ACTIVE: 'نشط', ENDED: 'منتهي', SUSPENDED: 'معلق'
+    ACTIVE: 'نشط', ENDED: 'منتهي', SUSPENDED: 'معلق', TERMINATED: 'مُنهاة'
 };
 
 export const TENANT_STATUS_AR: Record<string, string> = {
