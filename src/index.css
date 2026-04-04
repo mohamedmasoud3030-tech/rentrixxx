@@ -1,28 +1,74 @@
 /* Base design tokens moved from index.html to satisfy strict CSP */
 :root {
     --radius: 0.625rem;
-    --color-primary: 43 82% 38%;
-    --color-primary-fg: 43 82% 98%;
-    --color-bg: 38 40% 96%;
-    --color-card: 0 0% 100%;
-    --color-border: 38 25% 88%;
-    --color-text-primary: 30 20% 18%;
-    --color-text-muted: 30 12% 48%;
-    --color-sidebar-bg: 38 30% 97%;
-    --color-sidebar-text: 30 15% 42%;
-    --color-sidebar-active-bg: 43 82% 38%;
-    --color-sidebar-hover-bg: 38 25% 92%;
-    --color-sidebar-active-text: 0 0% 100%;
-    --color-success-bg: hsl(145 55% 93%);
-    --color-success-text: hsl(145 55% 28%);
-    --color-warning-bg: hsl(40 90% 93%);
-    --color-warning-text: hsl(40 90% 28%);
-    --color-danger-bg: hsl(0 65% 93%);
-    --color-danger-text: hsl(0 65% 42%);
-    --color-info-bg: hsl(210 70% 93%);
-    --color-info-text: hsl(210 70% 38%);
-    --color-default-bg: hsl(38 20% 90%);
-    --color-default-text: hsl(38 15% 40%);
+
+    /* Canonical runtime tokens */
+    --rx-color-primary: 43 82% 38%;
+    --rx-color-primary-fg: 43 82% 98%;
+    --rx-color-background: 38 40% 96%;
+    --rx-color-surface: 0 0% 100%;
+    --rx-color-surface-dim: 36 28% 93%;
+    --rx-color-surface-container-lowest: 0 0% 100%;
+    --rx-color-surface-container-low: 38 30% 97%;
+    --rx-color-surface-container: 38 25% 94%;
+    --rx-color-surface-container-high: 38 25% 90%;
+    --rx-color-surface-container-highest: 38 20% 86%;
+    --rx-color-surface-bright: 38 35% 98%;
+    --rx-color-primary-container: 43 82% 44%;
+    --rx-color-on-primary: 43 82% 98%;
+    --rx-color-on-primary-container: 43 60% 16%;
+    --rx-color-secondary: 214 40% 44%;
+    --rx-color-tertiary: 263 75% 45%;
+    --rx-color-error: 0 68% 46%;
+    --rx-color-error-container: 0 72% 92%;
+    --rx-color-on-surface: 30 20% 18%;
+    --rx-color-on-surface-variant: 30 12% 48%;
+    --rx-color-outline: 38 16% 56%;
+    --rx-color-outline-variant: 38 20% 82%;
+    --rx-color-border: 38 25% 88%;
+    --rx-color-card: 0 0% 100%;
+    --rx-color-text-primary: 30 20% 18%;
+    --rx-color-text-muted: 30 12% 48%;
+    --rx-color-sidebar-bg: 38 30% 97%;
+    --rx-color-sidebar-text: 30 15% 42%;
+    --rx-color-sidebar-active-bg: 43 82% 38%;
+    --rx-color-sidebar-hover-bg: 38 25% 92%;
+    --rx-color-sidebar-active-text: 0 0% 100%;
+    --rx-color-success-bg: 145 55% 93%;
+    --rx-color-success-text: 145 55% 28%;
+    --rx-color-warning-bg: 40 90% 93%;
+    --rx-color-warning-text: 40 90% 28%;
+    --rx-color-danger-bg: 0 65% 93%;
+    --rx-color-danger-text: 0 65% 42%;
+    --rx-color-info-bg: 210 70% 93%;
+    --rx-color-info-text: 210 70% 38%;
+    --rx-color-default-bg: 38 20% 90%;
+    --rx-color-default-text: 38 15% 40%;
+
+    /* Legacy aliases (kept for compatibility) */
+    --color-primary: var(--rx-color-primary);
+    --color-primary-fg: var(--rx-color-primary-fg);
+    --color-bg: var(--rx-color-background);
+    --color-card: var(--rx-color-card);
+    --color-border: var(--rx-color-border);
+    --color-text-primary: var(--rx-color-text-primary);
+    --color-text-muted: var(--rx-color-text-muted);
+    --color-sidebar-bg: var(--rx-color-sidebar-bg);
+    --color-sidebar-text: var(--rx-color-sidebar-text);
+    --color-sidebar-active-bg: var(--rx-color-sidebar-active-bg);
+    --color-sidebar-hover-bg: var(--rx-color-sidebar-hover-bg);
+    --color-sidebar-active-text: var(--rx-color-sidebar-active-text);
+    --color-success-bg: var(--rx-color-success-bg);
+    --color-success-text: var(--rx-color-success-text);
+    --color-warning-bg: var(--rx-color-warning-bg);
+    --color-warning-text: var(--rx-color-warning-text);
+    --color-danger-bg: var(--rx-color-danger-bg);
+    --color-danger-text: var(--rx-color-danger-text);
+    --color-info-bg: var(--rx-color-info-bg);
+    --color-info-text: var(--rx-color-info-text);
+    --color-default-bg: var(--rx-color-default-bg);
+    --color-default-text: var(--rx-color-default-text);
+
     --shadow-card: 0 2px 12px -2px rgba(184, 134, 11, 0.1), 0 1px 4px -1px rgba(0, 0, 0, 0.06);
     --shadow-card-hover: 0 8px 24px -4px rgba(184, 134, 11, 0.18), 0 2px 8px -2px rgba(0, 0, 0, 0.08);
     --shadow-sidebar: 2px 0 16px -4px rgba(184, 134, 11, 0.12);
@@ -35,31 +81,61 @@
     --rx-gradient-end: color-mix(in srgb, var(--rx-primary) 75%, var(--rx-surface));
     --rx-success: hsl(var(--color-success-text));
     --rx-error: hsl(var(--color-danger-text));
+    --rx-text: hsl(var(--color-text-primary));
+    --rx-text-muted: hsl(var(--color-text-muted));
+    --rx-bg: hsl(var(--color-bg));
+    --rx-on-primary: hsl(var(--color-primary-fg));
+    --rx-shadow-card: var(--shadow-card);
+    --rx-shadow-card-hover: var(--shadow-card-hover);
+    --rx-table-head-bg: hsl(var(--color-border) / 0.4);
+    --rx-table-row-even: hsl(var(--color-border) / 0.15);
+    --rx-table-row-hover: hsl(var(--color-primary) / 0.06);
 }
 
+
 [data-theme="dark"] {
-    --color-primary: 43 78% 52%;
-    --color-primary-fg: 220 30% 8%;
-    --color-bg: 216 28% 7%;
-    --color-card: 216 25% 10%;
-    --color-border: 216 18% 18%;
-    --color-text-primary: 210 25% 92%;
-    --color-text-muted: 210 15% 58%;
-    --color-sidebar-bg: 218 32% 8%;
-    --color-sidebar-text: 210 18% 62%;
-    --color-sidebar-active-bg: 43 78% 52%;
-    --color-sidebar-hover-bg: 216 22% 15%;
-    --color-sidebar-active-text: 220 30% 8%;
-    --color-success-bg: hsl(145 45% 15% / 0.6);
-    --color-success-text: hsl(145 55% 65%);
-    --color-warning-bg: hsl(40 80% 20% / 0.6);
-    --color-warning-text: hsl(40 80% 68%);
-    --color-danger-bg: hsl(0 55% 20% / 0.6);
-    --color-danger-text: hsl(0 65% 72%);
-    --color-info-bg: hsl(210 60% 18% / 0.6);
-    --color-info-text: hsl(210 70% 72%);
-    --color-default-bg: hsl(216 20% 18% / 0.7);
-    --color-default-text: hsl(216 15% 72%);
+    --rx-color-primary: 43 78% 52%;
+    --rx-color-primary-fg: 220 30% 8%;
+    --rx-color-background: 216 28% 7%;
+    --rx-color-surface: 216 25% 10%;
+    --rx-color-surface-dim: 216 24% 8%;
+    --rx-color-surface-container-lowest: 216 30% 6%;
+    --rx-color-surface-container-low: 216 24% 10%;
+    --rx-color-surface-container: 216 22% 13%;
+    --rx-color-surface-container-high: 216 20% 16%;
+    --rx-color-surface-container-highest: 216 18% 20%;
+    --rx-color-surface-bright: 216 24% 14%;
+    --rx-color-primary-container: 43 70% 35%;
+    --rx-color-on-primary: 220 30% 8%;
+    --rx-color-on-primary-container: 43 82% 90%;
+    --rx-color-secondary: 214 40% 72%;
+    --rx-color-tertiary: 263 75% 80%;
+    --rx-color-error: 0 70% 72%;
+    --rx-color-error-container: 0 55% 20%;
+    --rx-color-on-surface: 210 25% 92%;
+    --rx-color-on-surface-variant: 210 15% 58%;
+    --rx-color-outline: 210 14% 56%;
+    --rx-color-outline-variant: 216 18% 28%;
+    --rx-color-border: 216 18% 18%;
+    --rx-color-card: 216 25% 10%;
+    --rx-color-text-primary: 210 25% 92%;
+    --rx-color-text-muted: 210 15% 58%;
+    --rx-color-sidebar-bg: 218 32% 8%;
+    --rx-color-sidebar-text: 210 18% 62%;
+    --rx-color-sidebar-active-bg: 43 78% 52%;
+    --rx-color-sidebar-hover-bg: 216 22% 15%;
+    --rx-color-sidebar-active-text: 220 30% 8%;
+    --rx-color-success-bg: 145 45% 15% / 0.6;
+    --rx-color-success-text: 145 55% 65%;
+    --rx-color-warning-bg: 40 80% 20% / 0.6;
+    --rx-color-warning-text: 40 80% 68%;
+    --rx-color-danger-bg: 0 55% 20% / 0.6;
+    --rx-color-danger-text: 0 65% 72%;
+    --rx-color-info-bg: 210 60% 18% / 0.6;
+    --rx-color-info-text: 210 70% 72%;
+    --rx-color-default-bg: 216 20% 18% / 0.7;
+    --rx-color-default-text: 216 15% 72%;
+
     --shadow-card: 0 2px 12px -2px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(184, 134, 11, 0.06);
     --shadow-card-hover: 0 8px 24px -4px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(184, 134, 11, 0.18);
     --shadow-sidebar: 2px 0 20px -4px rgba(0, 0, 0, 0.5);
@@ -243,11 +319,11 @@ button, a, nav { -webkit-tap-highlight-color: transparent; -webkit-touch-callout
         @apply px-2.5 py-0.5 text-xs rounded-full font-bold inline-flex items-center gap-1;
         letter-spacing: 0.03em;
     }
-    .status-success { background-color: var(--color-success-bg); color: var(--color-success-text); }
-    .status-warning { background-color: var(--color-warning-bg); color: var(--color-warning-text); }
-    .status-danger { background-color: var(--color-danger-bg); color: var(--color-danger-text); }
-    .status-info { background-color: var(--color-info-bg); color: var(--color-info-text); }
-    .status-default { background-color: var(--color-default-bg); color: var(--color-default-text); }
+    .status-success { background-color: hsl(var(--color-success-bg)); color: hsl(var(--color-success-text)); }
+    .status-warning { background-color: hsl(var(--color-warning-bg)); color: hsl(var(--color-warning-text)); }
+    .status-danger { background-color: hsl(var(--color-danger-bg)); color: hsl(var(--color-danger-text)); }
+    .status-info { background-color: hsl(var(--color-info-bg)); color: hsl(var(--color-info-text)); }
+    .status-default { background-color: hsl(var(--color-default-bg)); color: hsl(var(--color-default-text)); }
 
     /* === KPI CARDS === */
     .kpi-card {
