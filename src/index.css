@@ -555,3 +555,16 @@ input[type="number"] {
   text-align: end;
   unicode-bidi: isolate;
 }
+
+/* === New UI System Overrides === */
+html[dir="rtl"] { direction: rtl; }
+body {
+  background: #111319;
+  font-family: 'IBM Plex Sans Arabic', 'Inter', sans-serif;
+  color: #e2e2eb;
+}
+.mono-data { font-family: 'JetBrains Mono', monospace; }
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: #111319; }
+::-webkit-scrollbar-thumb { background: #282a30; border-radius: 999px; }
+::-webkit-scrollbar-thumb:hover { background: #33343b; }
