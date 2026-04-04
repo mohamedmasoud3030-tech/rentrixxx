@@ -120,7 +120,7 @@ export const useApp = (): AppContextType => {
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [currentUser, setCurrentUser] = useState<User | null | undefined>(undefined);
-  const [db, setDb] = useState<Partial<Database>>({});
+  const [db, setDb] = useState<Partial<Database> | null>(null);
 
   const fetchPaginatedData = useCallback(async <T extends keyof Database>(
     table: T, 
@@ -1267,7 +1267,34 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     commissions: [], missions: [], budgets: [], attachments: [], utilityRecords: [],
   };
 
-  const activeDb = db || emptyDb;
+  const activeDb = useMemo<Database>(() => {
+    if (!db) return emptyDb;
+
+    const definedEntries = Object.entries(db).filter(([, value]) => value !== undefined && value !== null);
+    const merged = { ...emptyDb, ...Object.fromEntries(definedEntries) } as Database;
+
+    const arrayKeys: (keyof Database)[] = [
+      'owners', 'properties', 'units', 'tenants', 'contracts', 'invoices', 'receipts',
+      'receiptAllocations', 'expenses', 'maintenanceRecords', 'depositTxs', 'auditLog',
+      'ownerSettlements', 'snapshots', 'accounts', 'journalEntries', 'autoBackups',
+      'ownerBalances', 'accountBalances', 'kpiSnapshots', 'contractBalances', 'tenantBalances',
+      'notificationTemplates', 'outgoingNotifications', 'appNotifications', 'leads',
+      'lands', 'commissions', 'missions', 'budgets', 'attachments', 'utilityRecords',
+    ];
+
+    arrayKeys.forEach((key) => {
+      if (!Array.isArray(merged[key])) {
+        (merged[key] as unknown) = emptyDb[key];
+      }
+    });
+
+    if (!merged.auth || !Array.isArray(merged.auth.users)) merged.auth = emptyDb.auth;
+    if (!merged.settings) merged.settings = emptyDb.settings;
+    if (!merged.governance) merged.governance = emptyDb.governance;
+    if (!merged.serials) merged.serials = emptyDb.serials;
+
+    return merged;
+  }, [db]);
   const activeSettings = settings || DEFAULT_SETTINGS;
 
   const generateNotifications = useCallback(async () => {
