@@ -11,9 +11,11 @@ const requiredFiles = [
   'vite.config.ts',
   'src/config/env.ts',
   '.github/workflows/ci.yml',
+  '.env.example',
 ];
 
 const placeholderPatterns = [/changeme/i, /your[_-]?/i, /^test$/i, /^placeholder$/i];
+const requiredEnvNames = ['VITE_SUPABASE_URL', 'VITE_SUPABASE_ANON_KEY'];
 
 const parseEnvFile = (filePath) => {
   if (!existsSync(filePath)) return {};
@@ -37,6 +39,8 @@ const envFromFiles = {
   ...parseEnvFile('.env.local'),
 };
 
+const envFromExample = parseEnvFile('.env.example');
+
 const readEnv = (name) => (process.env[name] ?? envFromFiles[name] ?? '').trim();
 const isPlaceholder = (value) => !value || placeholderPatterns.some((pattern) => pattern.test(value));
 
@@ -52,22 +56,37 @@ if (Number.isNaN(nodeMajor) || nodeMajor < 20) {
 }
 
 if (!existsSync('.env') && !existsSync('.env.local')) {
-  warnings.push('No .env or .env.local file found. Deployment env validation is limited to current process env.');
+  warnings.push('No .env or .env.local file found. Deployment env validation is limited to process env + .env.example schema checks.');
 }
 
-for (const envName of ['VITE_SUPABASE_URL', 'VITE_SUPABASE_ANON_KEY']) {
+for (const envName of requiredEnvNames) {
+  if (!(envName in envFromExample)) {
+    errors.push(`.env.example is missing required key: ${envName}`);
+  }
+}
+
+const missingRequiredRuntimeEnv = [];
+
+for (const envName of requiredEnvNames) {
   const value = readEnv(envName);
+
   if (!value) {
-    const message = `Missing required env variable: ${envName}`;
-    if (strict) errors.push(message);
-    else warnings.push(message);
+    missingRequiredRuntimeEnv.push(envName);
     continue;
   }
 
   if (isPlaceholder(value)) {
-    const message = `Env variable ${envName} still uses a placeholder/test value.`;
-    if (strict) errors.push(message);
-    else warnings.push(message);
+    errors.push(`Env variable ${envName} still uses a placeholder/test value.`);
+  }
+}
+
+if (missingRequiredRuntimeEnv.length > 0) {
+  const message = `Missing runtime env values: ${missingRequiredRuntimeEnv.join(', ')}. Configure these in Vercel Project Settings → Environment Variables before deployment.`;
+
+  if (strict) {
+    warnings.push(`${message} (strict mode keeps this as warning when local secrets are intentionally absent).`);
+  } else {
+    warnings.push(message);
   }
 }
 
