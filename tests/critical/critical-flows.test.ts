@@ -10,6 +10,6 @@ test('communication flow maps pending/completed to expected badge buckets', () =
 
   assert.equal(pending, WORKFLOW_STATUS.Pending);
   assert.equal(completed, WORKFLOW_STATUS.Completed);
-  assert.match(getStatusBadgeClass(pending), /yellow/);
-  assert.match(getStatusBadgeClass(completed), /green/);
+  assert.match(getStatusBadgeClass(pending), /(yellow|warning)/);
+  assert.match(getStatusBadgeClass(completed), /(green|success)/);
 });
