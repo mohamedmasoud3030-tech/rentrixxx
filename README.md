@@ -49,6 +49,9 @@
   SUPABASE_DB_PASSWORD
   SUPABASE_PROJECT_REF
 
+## Deployment guides
+- Multi-project Vercel setup (same repo): `docs/vercel-multi-project-setup.md`
+
 ## Tech stack
 - React + TypeScript + Vite
 - Supabase (PostgreSQL + Auth + Edge Functions)

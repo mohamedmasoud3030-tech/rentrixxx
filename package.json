@@ -17,6 +17,7 @@
     "preflight": "node scripts/preflight.mjs",
     "readiness": "node scripts/deployment-readiness.mjs",
     "readiness:strict": "node scripts/deployment-readiness.mjs --strict",
+    "vercel:consolidation:audit": "node scripts/vercel-consolidation-audit.mjs",
     "schema:drift:check": "node scripts/schema-drift-check.mjs",
     "start": "vite preview --host 0.0.0.0 --port 4173"
   },
