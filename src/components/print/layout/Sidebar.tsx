@@ -121,8 +121,8 @@ const Sidebar: React.FC<SidebarProps> = ({ sidebarOpen, setSidebarOpen }) => {
         <div
           className={`group flex flex-row-reverse items-center gap-3 rounded-xl ${itemPadding} py-2.5 font-bold text-sm transition-all duration-200 ${
             active
-              ? 'bg-[#282a30] text-[#14b8a6] border-r-4 border-[#14b8a6]'
-              : 'text-slate-400 hover:bg-[#282a30] hover:text-white'
+              ? 'bg-rx-surface-high text-rx-primary border-r-4 border-rx'
+              : 'text-text-muted hover:bg-rx-surface-high hover:text-text'
           }`}
         >
           {item.path ? (
@@ -137,7 +137,7 @@ const Sidebar: React.FC<SidebarProps> = ({ sidebarOpen, setSidebarOpen }) => {
               />
               <span className="truncate">{item.label}</span>
               {item.badgeKey && badges[item.badgeKey] > 0 && (
-                <span className="me-auto min-w-[20px] h-5 flex items-center justify-center rounded-full bg-red-500 text-white text-[10px] font-black px-1.5">
+                <span className="me-auto min-w-[20px] h-5 flex items-center justify-center rounded-full bg-danger-bg text-danger-text text-[10px] font-black px-1.5">
                   {badges[item.badgeKey]}
                 </span>
               )}
@@ -175,7 +175,7 @@ const Sidebar: React.FC<SidebarProps> = ({ sidebarOpen, setSidebarOpen }) => {
 
   return (
     <aside
-      className={`fixed right-0 top-0 z-50 flex h-screen w-64 flex-col overflow-y-hidden border-l border-outline-variant/40 bg-[#191b22] duration-300 ease-in-out lg:static lg:translate-x-0 ${
+      className={`fixed right-0 top-0 z-50 flex h-screen w-64 flex-col overflow-y-hidden border-l border-outline-variant/40 bg-rx-surface duration-300 ease-in-out lg:static lg:translate-x-0 ${
         sidebarOpen ? 'translate-x-0' : 'translate-x-full'
       }`}
       style={{ boxShadow: 'var(--shadow-sidebar)' }}
@@ -185,16 +185,12 @@ const Sidebar: React.FC<SidebarProps> = ({ sidebarOpen, setSidebarOpen }) => {
     >
       <div className="flex items-center gap-3 border-b border-outline-variant/40 px-4 py-4">
         <div
-          className="h-10 w-10 flex-shrink-0 rounded-xl text-xl font-black text-white flex items-center justify-center"
-          style={{
-            background: 'linear-gradient(135deg, hsl(var(--color-primary)), hsl(var(--color-primary) / 0.7))',
-            boxShadow: '0 4px 12px hsl(var(--color-primary) / 0.35)',
-          }}
+          className="h-10 w-10 flex-shrink-0 rounded-xl text-xl font-black text-primary-fg flex items-center justify-center rx-gradient-btn"
         >
           🌐
         </div>
         <div className="min-w-0 flex-1">
-          <span className="block truncate text-base font-black text-[#4fdbc8]">{companyName}</span>
+          <span className="block truncate text-base font-black text-rx-primary">{companyName}</span>
           <span className="block text-xs text-text-muted">{AR_LABELS.rentrixNavigationHub}</span>
         </div>
         <button
@@ -205,7 +201,7 @@ const Sidebar: React.FC<SidebarProps> = ({ sidebarOpen, setSidebarOpen }) => {
         </button>
       </div>
 
-      <div className="scrollbar-hide flex flex-1 flex-col overflow-y-auto px-3 py-4 bg-[#191b22]">
+      <div className="scrollbar-hide flex flex-1 flex-col overflow-y-auto px-3 py-4 bg-rx-surface">
         <nav>
           <ul className="flex flex-col gap-1">{navItems.map(item => renderNavItem(item))}</ul>
         </nav>
@@ -223,8 +219,7 @@ const Sidebar: React.FC<SidebarProps> = ({ sidebarOpen, setSidebarOpen }) => {
       <div className="border-t border-border px-4 py-4 lg:hidden">
         <div className="flex items-center gap-3">
           <div
-            className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl text-base font-bold text-white"
-            style={{ background: 'linear-gradient(135deg, hsl(var(--color-primary)), hsl(var(--color-primary) / 0.75))' }}
+            className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl text-base font-bold text-primary-fg rx-gradient-btn"
           >
             {(auth.currentUser?.username || 'U').charAt(0).toUpperCase()}
           </div>

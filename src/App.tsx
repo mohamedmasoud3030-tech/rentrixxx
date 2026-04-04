@@ -95,7 +95,9 @@ const App: React.FC = () => {
         const ogUrlEl = document.getElementById('og-url') as HTMLMetaElement | null;
         if (ogUrlEl) ogUrlEl.content = canonicalUrl;
         if (primaryColor) {
-            document.documentElement.style.setProperty('--color-primary', hexToHsl(primaryColor));
+            const hsl = hexToHsl(primaryColor);
+            document.documentElement.style.setProperty('--color-primary', hsl);
+            document.documentElement.style.setProperty('--rx-primary', hsl);
         }
     }
   }, [settings, location.pathname]);

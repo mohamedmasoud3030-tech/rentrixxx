@@ -72,10 +72,6 @@ const NumberInput: React.FC<NumberInputProps> = ({
       onBlur={handleBlur}
       className={`ltr-input ${className}`.trim()}
       dir="ltr"
-      style={{
-        textAlign: 'end',
-        ...(rest.style || {}),
-      }}
     />
   );
 };
