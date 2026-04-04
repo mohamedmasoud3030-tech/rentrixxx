@@ -6,7 +6,7 @@ import { OperationsContext, type OperationsContextValue } from '../contexts/oper
 import { safeAsync, validateLoginPayload, validatePasswordStrength, validateRequiredString, sanitizeTextInput, assertNoRoleEscalation } from '../utils/validation';
 import { supabaseData } from '../services/supabaseDataService';
 import { IntegrationService } from '../services/integrationService';
-import { supabase } from '../services/supabase';
+import { isSupabaseEnabled, supabase } from '../services/supabase';
 import { toast } from 'react-hot-toast';
 import { confirmDialog } from '../components/shared/confirmDialog';
 import { adminCreateUser } from '../services/edgeFunctions';
@@ -361,6 +361,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const login = useCallback(async (email: string, password: string) => {
     try {
+      if (!isSupabaseEnabled()) {
+        return {
+          ok: false,
+          msg: 'تعذر تسجيل الدخول بسبب إعدادات البيئة (VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY) في هذا النشر.',
+        };
+      }
       const credentials = validateLoginPayload(email, password);
       const { data, error } = await safeAsync(
         () => supabase.auth.signInWithPassword(credentials),
