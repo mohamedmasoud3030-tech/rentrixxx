@@ -81,7 +81,17 @@
     --rx-gradient-end: color-mix(in srgb, var(--rx-primary) 75%, var(--rx-surface));
     --rx-success: hsl(var(--color-success-text));
     --rx-error: hsl(var(--color-danger-text));
+    --rx-text: hsl(var(--color-text-primary));
+    --rx-text-muted: hsl(var(--color-text-muted));
+    --rx-bg: hsl(var(--color-bg));
+    --rx-on-primary: hsl(var(--color-primary-fg));
+    --rx-shadow-card: var(--shadow-card);
+    --rx-shadow-card-hover: var(--shadow-card-hover);
+    --rx-table-head-bg: hsl(var(--color-border) / 0.4);
+    --rx-table-row-even: hsl(var(--color-border) / 0.15);
+    --rx-table-row-hover: hsl(var(--color-primary) / 0.06);
 }
+
 
 [data-theme="dark"] {
     --rx-color-primary: 43 78% 52%;

@@ -185,7 +185,7 @@ export function formatDateTimeWithType(dateTimeString: string, calendarType: 'gr
     }
 }
 
-export function getStatusBadgeClass(status: string): string {
+export function getStatusBadgeVariant(status: string): 'success' | 'warning' | 'danger' | 'info' | 'default' {
     switch (status) {
         case 'ACTIVE':
         case 'POSTED':
@@ -193,14 +193,14 @@ export function getStatusBadgeClass(status: string): string {
         case 'Completed':
         case 'RENTED':
         case 'PAID':
-            return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300';
+            return 'success';
         case 'INACTIVE':
         case 'PENDING':
         case 'Pending':
         case 'IN_PROGRESS':
         case 'ON_HOLD':
         case 'PARTIALLY_PAID':
-            return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300';
+            return 'warning';
         case 'ENDED':
         case 'SUSPENDED':
         case 'VOID':
@@ -210,14 +210,26 @@ export function getStatusBadgeClass(status: string): string {
         case 'CANCELED':
         case 'OVERDUE':
         case 'NOT_INTERESTED':
-            return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300';
+            return 'danger';
         case 'NEW':
         case 'CONTACTED':
         case 'INTERESTED':
-             return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300';
+            return 'info';
         default:
-            return 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300';
+            return 'default';
     }
+}
+
+export function getStatusBadgeClass(status: string): string {
+    const variant = getStatusBadgeVariant(status);
+    const classes: Record<typeof variant, string> = {
+      success: 'status-success',
+      warning: 'status-warning',
+      danger: 'status-danger',
+      info: 'status-info',
+      default: 'status-default',
+    };
+    return classes[variant];
 }
 
 export function sanitizePhoneNumber(phone: string): string {

@@ -1,6 +1,6 @@
 import React from 'react';
 import { Wallet, FileText, Download, CheckSquare, Square, Trash2 } from 'lucide-react';
-import { formatCurrency, formatDate, getStatusBadgeClass, INVOICE_STATUS_AR, INVOICE_TYPE_AR } from '../../utils/helpers';
+import { formatCurrency, formatDate, getStatusBadgeVariant, INVOICE_STATUS_AR, INVOICE_TYPE_AR } from '../../utils/helpers';
 import { InvoiceWithDetails } from '../../utils/invoices/types';
 import { exportInvoiceToPdf } from '../../services/pdfService';
 import { TableCell, TableContainer, TableHead, TableHeaderCell, TableRoot, TableRow } from '../shared/TablePrimitives';
@@ -91,13 +91,13 @@ export const InvoiceTable: React.FC<InvoiceTableProps> = ({
                   </TableCell>
                   <TableCell>
                     <div className="flex flex-col gap-1 items-start">
-                      <span className={`px-2 py-1 rounded text-[10px] border inline-block ${getStatusBadgeClass(inv.effectiveStatus)}`}>
+                      <Badge variant={getStatusBadgeVariant(inv.effectiveStatus)}>
                         {INVOICE_STATUS_AR[inv.effectiveStatus as keyof typeof INVOICE_STATUS_AR]}
-                      </span>
+                      </Badge>
                       {inv.effectiveStatus === 'OVERDUE' && overdueDays > 0 && (
-                        <span className="px-2 py-1 rounded text-[10px] border inline-block bg-rose-50 text-rose-700 border-rose-200">
+                        <Badge variant="danger">
                           متأخر {overdueDays} يوم
-                        </span>
+                        </Badge>
                       )}
                     </div>
                   </TableCell>

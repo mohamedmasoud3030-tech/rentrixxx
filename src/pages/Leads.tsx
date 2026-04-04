@@ -3,8 +3,12 @@ import { useApp } from '../contexts/AppContext';
 import { Lead } from '../types';
 import Card from '../components/ui/Card';
 import Modal from '../components/ui/Modal';
+import Button from '../components/ui/Button';
+import Input from '../components/ui/Input';
+import Badge from '../components/ui/Badge';
+import { TableShell, Table, TableHead, TableBody, TableRow, TableHeadCell, TableCell } from '../components/ui/Table';
 import ActionsMenu, { EditAction, DeleteAction } from '../components/shared/ActionsMenu';
-import { getStatusBadgeClass, normalizeArabicNumerals, exportToCsv } from '../utils/helpers';
+import { getStatusBadgeVariant, normalizeArabicNumerals, exportToCsv } from '../utils/helpers';
 import { UserPlus, MessageCircle, Download } from 'lucide-react';
 import WhatsAppModal from '../components/shared/WhatsAppModal';
 import { toast } from 'react-hot-toast';
@@ -60,52 +64,52 @@ const Leads: React.FC = () => {
     };
 
     return (
-        <Card>
+        <Card variant="elevated">
             <div className="flex justify-between items-center mb-4">
                 <h2 className="text-xl font-bold flex items-center gap-2"><UserPlus /> العملاء المحتملين</h2>
                 <div className="flex gap-2">
-                    <button onClick={handleExportLeads} className="btn btn-secondary">
+                    <Button onClick={handleExportLeads} variant="secondary">
                         <Download size={14} />
                         تصدير CSV
-                    </button>
-                    <button onClick={() => handleOpenFormModal()} className="btn btn-primary">إضافة عميل محتمل</button>
+                    </Button>
+                    <Button onClick={() => handleOpenFormModal()}>إضافة عميل محتمل</Button>
                 </div>
             </div>
-            <div className="overflow-x-auto">
-                <table className="w-full text-sm text-right border-collapse border border-border">
-                    <thead className="text-xs uppercase bg-background text-text">
-                        <tr>
-                            <th scope="col" className="px-6 py-3 border border-border">الاسم</th>
-                            <th scope="col" className="px-6 py-3 border border-border">الهاتف</th>
-                            <th scope="col" className="px-6 py-3 border border-border">البريد الإلكتروني</th>
-                            <th scope="col" className="px-6 py-3 border border-border">الحالة</th>
-                            <th scope="col" className="px-6 py-3 border border-border">إجراءات</th>
-                        </tr>
-                    </thead>
-                    <tbody>
+            <TableShell>
+                <Table>
+                    <TableHead>
+                        <TableRow>
+                            <TableHeadCell scope="col">الاسم</TableHeadCell>
+                            <TableHeadCell scope="col">الهاتف</TableHeadCell>
+                            <TableHeadCell scope="col">البريد الإلكتروني</TableHeadCell>
+                            <TableHeadCell scope="col">الحالة</TableHeadCell>
+                            <TableHeadCell scope="col">إجراءات</TableHeadCell>
+                        </TableRow>
+                    </TableHead>
+                    <TableBody>
                         {db.leads.map(lead => (
-                            <tr key={lead.id} className="bg-card hover:bg-background">
-                                <td className="px-6 py-4 font-medium text-text border border-border">{lead.name}</td>
-                                <td className="px-6 py-4 border border-border">{lead.phone}</td>
-                                <td className="px-6 py-4 border border-border">{lead.email || '—'}</td>
-                                <td className="px-6 py-4 border border-border">
-                                    <span className={`px-2 py-1 text-xs rounded-full ${getStatusBadgeClass(lead.status)}`}>
+                            <TableRow key={lead.id}>
+                                <TableCell className="font-medium">{lead.name}</TableCell>
+                                <TableCell>{lead.phone}</TableCell>
+                                <TableCell>{lead.email || '—'}</TableCell>
+                                <TableCell>
+                                    <Badge variant={getStatusBadgeVariant(lead.status)}>
                                         {getStatusLabel(lead.status)}
-                                    </span>
-                                </td>
-                                <td className="px-6 py-4 border border-border">
+                                    </Badge>
+                                </TableCell>
+                                <TableCell>
                                     <ActionsMenu items={[
                                         EditAction(() => handleOpenFormModal(lead)),
                                         { label: 'مراسلة واتساب', icon: <MessageCircle size={16} />, onClick: () => handleOpenWhatsAppModal(lead) },
                                         // FIX: Use dataService for data manipulation
                                         DeleteAction(async () => await dataService.remove('leads', lead.id)),
                                     ]} />
-                                </td>
-                            </tr>
+                                </TableCell>
+                            </TableRow>
                         ))}
-                    </tbody>
-                </table>
-            </div>
+                    </TableBody>
+                </Table>
+            </TableShell>
             <LeadForm isOpen={isFormModalOpen} onClose={handleCloseAllModals} lead={editingLead} />
              {whatsAppRecipient && (
                 <WhatsAppModal
@@ -188,27 +192,27 @@ const LeadForm: React.FC<{ isOpen: boolean, onClose: () => void, lead: Lead | nu
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                         <label htmlFor="lead-name" className="block text-sm font-medium mb-1">الاسم</label>
-                        <input id="lead-name" type="text" value={name} onChange={e => setName(e.target.value)} required />
+                        <Input id="lead-name" type="text" value={name} onChange={e => setName(e.target.value)} required />
                     </div>
                     <div>
                         <label htmlFor="lead-phone" className="block text-sm font-medium mb-1">الهاتف</label>
-                        <input id="lead-phone" type="tel" value={phone} onChange={e => setPhone(e.target.value)} required />
+                        <Input id="lead-phone" type="tel" value={phone} onChange={e => setPhone(e.target.value)} required />
                     </div>
                     <div>
                         <label htmlFor="lead-email" className="block text-sm font-medium mb-1">البريد الإلكتروني</label>
-                        <input id="lead-email" type="email" value={email} onChange={e => setEmail(e.target.value)} />
+                        <Input id="lead-email" type="email" value={email} onChange={e => setEmail(e.target.value)} />
                     </div>
                     <div>
                         <label htmlFor="lead-unittype" className="block text-sm font-medium mb-1">نوع الوحدة المطلوبة</label>
-                        <input id="lead-unittype" type="text" value={desiredUnitType} onChange={e => setDesiredUnitType(e.target.value)} placeholder="مثال: شقة غرفتين"/>
+                        <Input id="lead-unittype" type="text" value={desiredUnitType} onChange={e => setDesiredUnitType(e.target.value)} placeholder="مثال: شقة غرفتين"/>
                     </div>
                     <div>
                         <label htmlFor="lead-minbudget" className="block text-sm font-medium mb-1">أقل ميزانية ({settings.operational?.currency ?? 'OMR'})</label>
-                        <input id="lead-minbudget" type="number" value={minBudget || ''} onChange={e => setMinBudget(Number(normalizeArabicNumerals(e.target.value)) || undefined)} />
+                        <Input id="lead-minbudget" type="number" value={minBudget || ''} onChange={e => setMinBudget(Number(normalizeArabicNumerals(e.target.value)) || undefined)} />
                     </div>
                      <div>
                         <label className="block text-sm font-medium mb-1">أعلى ميزانية ({settings.operational?.currency ?? 'OMR'})</label>
-                        <input type="number" value={maxBudget || ''} onChange={e => setMaxBudget(Number(normalizeArabicNumerals(e.target.value)) || undefined)} />
+                        <Input type="number" value={maxBudget || ''} onChange={e => setMaxBudget(Number(normalizeArabicNumerals(e.target.value)) || undefined)} />
                     </div>
                 </div>
                 <div>
@@ -226,8 +230,8 @@ const LeadForm: React.FC<{ isOpen: boolean, onClose: () => void, lead: Lead | nu
                     <textarea value={notes} onChange={e => setNotes(e.target.value)} rows={3} />
                 </div>
                  <div className="flex justify-end gap-3 pt-4 border-t border-border mt-4">
-                    <button type="button" onClick={onClose} className="btn btn-ghost" disabled={isSaving}>إلغاء</button>
-                    <button type="submit" className="btn btn-primary" disabled={isSaving}>{isSaving ? 'جاري الحفظ...' : 'حفظ'}</button>
+                    <Button type="button" onClick={onClose} variant="ghost" disabled={isSaving}>إلغاء</Button>
+                    <Button type="submit" disabled={isSaving}>{isSaving ? 'جاري الحفظ...' : 'حفظ'}</Button>
                 </div>
             </form>
         </Modal>
