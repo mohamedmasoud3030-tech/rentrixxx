@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { calculateAgedReceivables } from '../../src/services/accountingService';
+import { filterInvoiceByDate, getEffectiveStatus } from '../../src/utils/invoices/invoiceCalculations';
 import type { Database } from '../../src/types';
 
 const baseDb = (): Database => ({
@@ -41,4 +42,46 @@ test('calculateAgedReceivables includes invoices due on asOfDate regardless of t
   assert.equal(report.totals.total, 11);
   assert.equal(report.totals.current, 11);
   assert.equal(report.lines.length, 1);
+});
+
+test('getEffectiveStatus treats due dates as day-level values (not time-of-day)', () => {
+  const status = getEffectiveStatus(
+    {
+      id: 'i2',
+      no: 'INV-2',
+      contractId: 'c1',
+      type: 'RENT',
+      dueDate: '2099-01-01T00:00:00.000Z',
+      amount: 20,
+      taxAmount: 0,
+      paidAmount: 0,
+      status: 'UNPAID',
+      notes: '',
+      createdAt: 0,
+    },
+    0,
+  );
+
+  assert.equal(status, 'UNPAID');
+});
+
+test('filterInvoiceByDate matches invoices with timestamped due dates', () => {
+  const invoices = [
+    {
+      id: 'i3',
+      no: 'INV-3',
+      contractId: 'c1',
+      type: 'RENT',
+      dueDate: '2026-04-04T23:00:00.000Z',
+      amount: 10,
+      taxAmount: 0,
+      paidAmount: 0,
+      status: 'UNPAID',
+      notes: '',
+      createdAt: 0,
+    },
+  ] as Database['invoices'];
+
+  const filtered = filterInvoiceByDate(invoices, '2026-04-04', '2026-04-04');
+  assert.equal(filtered.length, 1);
 });

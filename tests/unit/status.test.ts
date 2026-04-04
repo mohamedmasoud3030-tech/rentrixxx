@@ -4,7 +4,7 @@ import { getContractStatusSummary } from '../../src/services/contractMonitoringS
 import type { Contract } from '../../src/types';
 import { WORKFLOW_STATUS } from '../../src/constants/status';
 import { isWorkflowStatus, normalizeWorkflowStatus } from '../../src/utils/status';
-import { formatDate, sanitizePhoneNumber } from '../../src/utils/helpers';
+import { CONTRACT_STATUS_AR, formatDate, sanitizePhoneNumber } from '../../src/utils/helpers';
 
 const createContract = (overrides: Partial<Contract> = {}): Contract => ({
   id: 'contract-1',
@@ -59,4 +59,8 @@ test('contract status summary counts terminated contracts without type casting h
 
   assert.equal(summary.active, 1);
   assert.equal(summary.terminated, 1);
+});
+
+test('contract status dictionary includes terminated label', () => {
+  assert.equal(CONTRACT_STATUS_AR.TERMINATED, 'مُنهاة');
 });

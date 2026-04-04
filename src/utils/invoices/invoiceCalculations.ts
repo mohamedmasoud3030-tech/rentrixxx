@@ -19,9 +19,11 @@ export const getEffectiveStatus = (
   if (paid >= total - 0.001) return 'PAID';
 
   const dueWithGrace = new Date(invoice.dueDate);
+  dueWithGrace.setHours(0, 0, 0, 0);
   dueWithGrace.setDate(dueWithGrace.getDate() + graceDays);
-
-  if (dueWithGrace < new Date()) return 'OVERDUE';
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  if (dueWithGrace < today) return 'OVERDUE';
   if (paid > 0.001) return 'PARTIALLY_PAID';
 
   return 'UNPAID';
@@ -58,9 +60,13 @@ export const filterInvoiceByDate = (
   dateFrom: string,
   dateTo: string
 ): Invoice[] => {
-  return invoices.filter(inv => 
-    (!dateFrom || inv.dueDate >= dateFrom) && (!dateTo || inv.dueDate <= dateTo)
-  );
+  const from = dateFrom.slice(0, 10);
+  const to = dateTo.slice(0, 10);
+
+  return invoices.filter((inv) => {
+    const dueDate = inv.dueDate.slice(0, 10);
+    return (!from || dueDate >= from) && (!to || dueDate <= to);
+  });
 };
 
 export const filterInvoiceBySearch = (
