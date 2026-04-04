@@ -1,10 +1,9 @@
-const VERSION = 'v2-2026-03-30';
+const VERSION = 'v2-2026-04-04';
 const STATIC_CACHE = `rentrix-static-${VERSION}`;
 const RUNTIME_CACHE = `rentrix-runtime-${VERSION}`;
 const ASSETS_TO_CACHE = [
   '/',
   '/index.html',
-  '/manifest.json',
   '/robots.txt',
   '/icon-rentrix.png',
 ];

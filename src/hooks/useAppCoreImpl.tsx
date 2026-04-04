@@ -1143,7 +1143,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       if (!receipt || receipt.status !== 'POSTED') return;
       paidByInvoice.set(alloc.invoiceId, round3((paidByInvoice.get(alloc.invoiceId) || 0) + toNumber(alloc.amount)));
     });
-    sourceDb.invoices.forEach(invoice => {
+    const sourceInvoices = Array.isArray(sourceDb.invoices) ? sourceDb.invoices : [];
+    sourceInvoices.forEach(invoice => {
       if (Math.abs((paidByInvoice.get(invoice.id) || 0) - toNumber(invoice.paidAmount)) > 0.01) {
         issues.push(`Mismatch invoice paidAmount ${invoice.id}`);
       }
@@ -1169,7 +1170,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     reconcileRef.current = true;
     try {
       const now = Date.now();
-      const nextDb: Database = { ...sourceDb, invoices: [...sourceDb.invoices], appNotifications: [...sourceDb.appNotifications] };
+      const sourceInvoices = Array.isArray(sourceDb.invoices) ? sourceDb.invoices : [];
+      const sourceNotifications = Array.isArray(sourceDb.appNotifications) ? sourceDb.appNotifications : [];
+      const nextDb: Database = { ...sourceDb, invoices: [...sourceInvoices], appNotifications: [...sourceNotifications] };
       let changed = false;
       for (let i = 0; i < nextDb.invoices.length; i++) {
         const invoice = nextDb.invoices[i];
@@ -1218,7 +1221,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
       if (changed) {
         const refreshedInvoices = await supabaseData.fetchAll<Invoice>('invoices');
-        nextDb.invoices = refreshedInvoices;
+        nextDb.invoices = Array.isArray(refreshedInvoices) ? refreshedInvoices : [];
         return nextDb;
       }
       return sourceDb;
