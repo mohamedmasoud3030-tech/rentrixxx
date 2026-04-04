@@ -35,7 +35,17 @@
     --rx-gradient-end: color-mix(in srgb, var(--rx-primary) 75%, var(--rx-surface));
     --rx-success: hsl(var(--color-success-text));
     --rx-error: hsl(var(--color-danger-text));
+    --rx-text: hsl(var(--color-text-primary));
+    --rx-text-muted: hsl(var(--color-text-muted));
+    --rx-bg: hsl(var(--color-bg));
+    --rx-on-primary: hsl(var(--color-primary-fg));
+    --rx-shadow-card: var(--shadow-card);
+    --rx-shadow-card-hover: var(--shadow-card-hover);
+    --rx-table-head-bg: hsl(var(--color-border) / 0.4);
+    --rx-table-row-even: hsl(var(--color-border) / 0.15);
+    --rx-table-row-hover: hsl(var(--color-primary) / 0.06);
 }
+
 
 [data-theme="dark"] {
     --color-primary: 43 78% 52%;
@@ -153,13 +163,28 @@ button, a, nav { -webkit-tap-highlight-color: transparent; -webkit-touch-callout
         @apply inline-flex h-9 w-9 items-center justify-center rounded-lg border border-border bg-card text-text-muted transition-colors hover:bg-background hover:text-text;
     }
     .icon-btn-success {
-        @apply border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100;
+        border-color: color-mix(in srgb, hsl(var(--color-success-text)) 28%, transparent);
+        background: hsl(var(--color-success-bg));
+        color: hsl(var(--color-success-text));
+    }
+    .icon-btn-success:hover {
+        background: color-mix(in srgb, hsl(var(--color-success-bg)) 84%, hsl(var(--color-card)));
     }
     .icon-btn-danger {
-        @apply border-rose-200 bg-rose-50 text-rose-700 hover:bg-rose-100;
+        border-color: color-mix(in srgb, hsl(var(--color-danger-text)) 28%, transparent);
+        background: hsl(var(--color-danger-bg));
+        color: hsl(var(--color-danger-text));
+    }
+    .icon-btn-danger:hover {
+        background: color-mix(in srgb, hsl(var(--color-danger-bg)) 84%, hsl(var(--color-card)));
     }
     .icon-btn-info {
-        @apply border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100;
+        border-color: color-mix(in srgb, hsl(var(--color-info-text)) 26%, transparent);
+        background: hsl(var(--color-info-bg));
+        color: hsl(var(--color-info-text));
+    }
+    .icon-btn-info:hover {
+        background: color-mix(in srgb, hsl(var(--color-info-bg)) 84%, hsl(var(--color-card)));
     }
 
     .modal-content {
@@ -174,16 +199,16 @@ button, a, nav { -webkit-tap-highlight-color: transparent; -webkit-touch-callout
 
     /* === TABLES === */
     table { @apply w-full text-sm text-start; }
-    thead { background: hsl(var(--color-border) / 0.4); }
+    thead { background: var(--rx-table-head-bg); }
     th {
         @apply px-4 sm:px-5 py-3.5 border-b border-border text-text-muted tracking-wide font-bold text-xs;
         text-align: start;
         letter-spacing: 0.04em;
     }
     td { @apply px-4 sm:px-5 py-3.5 sm:py-4 border-b border-border text-text; }
-    tbody tr:nth-child(even) { background: hsl(var(--color-border) / 0.15); }
+    tbody tr:nth-child(even) { background: var(--rx-table-row-even); }
     tbody tr:hover {
-        background: hsl(var(--color-primary) / 0.06) !important;
+        background: var(--rx-table-row-hover) !important;
         transition: background 0.15s ease;
     }
 
@@ -205,11 +230,11 @@ button, a, nav { -webkit-tap-highlight-color: transparent; -webkit-touch-callout
         @apply px-2.5 py-0.5 text-xs rounded-full font-bold inline-flex items-center gap-1;
         letter-spacing: 0.03em;
     }
-    .status-success { background-color: var(--color-success-bg); color: var(--color-success-text); }
-    .status-warning { background-color: var(--color-warning-bg); color: var(--color-warning-text); }
-    .status-danger { background-color: var(--color-danger-bg); color: var(--color-danger-text); }
-    .status-info { background-color: var(--color-info-bg); color: var(--color-info-text); }
-    .status-default { background-color: var(--color-default-bg); color: var(--color-default-text); }
+    .status-success { background-color: hsl(var(--color-success-bg)); color: hsl(var(--color-success-text)); }
+    .status-warning { background-color: hsl(var(--color-warning-bg)); color: hsl(var(--color-warning-text)); }
+    .status-danger { background-color: hsl(var(--color-danger-bg)); color: hsl(var(--color-danger-text)); }
+    .status-info { background-color: hsl(var(--color-info-bg)); color: hsl(var(--color-info-text)); }
+    .status-default { background-color: hsl(var(--color-default-bg)); color: hsl(var(--color-default-text)); }
 
     /* === KPI CARDS === */
     .kpi-card {

@@ -1,5 +1,8 @@
 import React, { useState } from 'react';
 import { useApp } from '../contexts/AppContext';
+import Card from '../components/ui/Card';
+import Input from '../components/ui/Input';
+import Button from '../components/ui/Button';
 
 const ChangePassword: React.FC = () => {
   const { auth } = useApp();
@@ -39,7 +42,7 @@ const ChangePassword: React.FC = () => {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
-      <div className="max-w-md w-full bg-card shadow-md rounded-lg p-8 border border-border">
+      <Card className="max-w-md w-full p-8" variant="elevated">
         <div className="text-center mb-8">
           <h1 className="text-2xl font-bold text-text">تغيير كلمة المرور</h1>
           <p className="text-text-muted mt-2">
@@ -51,38 +54,22 @@ const ChangePassword: React.FC = () => {
             <label className="block text-sm font-medium text-text-muted mb-2" htmlFor="newPassword">
               كلمة المرور الجديدة
             </label>
-            <input
-              id="newPassword"
-              type="password"
-              value={newPassword}
-              onChange={(e) => setNewPassword(e.target.value)}
-              required
-            />
+            <Input id="newPassword" type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} required />
           </div>
           <div className="mb-6">
             <label className="block text-sm font-medium text-text-muted mb-2" htmlFor="confirmPassword">
               تأكيد كلمة المرور الجديدة
             </label>
-            <input
-              id="confirmPassword"
-              type="password"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              required
-            />
+            <Input id="confirmPassword" type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} required />
           </div>
           {error && <p className="text-red-500 text-sm mb-4 text-center">{error}</p>}
           <div className="flex items-center justify-between">
-            <button
-              type="submit"
-              disabled={isLoading}
-              className="w-full btn btn-primary"
-            >
+            <Button type="submit" disabled={isLoading} fullWidth>
               {isLoading ? 'جاري الحفظ...' : 'حفظ وتأكيد'}
-            </button>
+            </Button>
           </div>
         </form>
-      </div>
+      </Card>
     </div>
   );
 };

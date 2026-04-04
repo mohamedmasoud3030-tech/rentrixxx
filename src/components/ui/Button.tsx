@@ -1,6 +1,6 @@
 import React from 'react';
 
-type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'gradient';
+type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'gradient' | 'success' | 'warning' | 'danger';
 
 export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: ButtonVariant;
@@ -45,6 +45,29 @@ const variantClasses: Record<ButtonVariant, string> = {
     'hover:shadow-lg',
     'active:scale-95',
   ].join(' '),
+
+  success: [
+    'bg-[var(--rx-badge-success-bg,hsl(var(--color-success-bg)))]',
+    'text-[var(--rx-badge-success-text,hsl(var(--color-success-text)))]',
+    'border-[color-mix(in_srgb,var(--rx-badge-success-text,hsl(var(--color-success-text)))_22%,transparent)]',
+    'hover:bg-[color-mix(in_srgb,var(--rx-badge-success-bg,hsl(var(--color-success-bg)))_88%,var(--rx-surface,hsl(var(--color-card)))_12%)]',
+    'focus-visible:ring-[var(--rx-badge-success-text,hsl(var(--color-success-text)))]',
+  ].join(' '),
+  warning: [
+    'bg-[var(--rx-badge-warning-bg,hsl(var(--color-warning-bg)))]',
+    'text-[var(--rx-badge-warning-text,hsl(var(--color-warning-text)))]',
+    'border-[color-mix(in_srgb,var(--rx-badge-warning-text,hsl(var(--color-warning-text)))_24%,transparent)]',
+    'hover:bg-[color-mix(in_srgb,var(--rx-badge-warning-bg,hsl(var(--color-warning-bg)))_88%,var(--rx-surface,hsl(var(--color-card)))_12%)]',
+    'focus-visible:ring-[var(--rx-badge-warning-text,hsl(var(--color-warning-text)))]',
+  ].join(' '),
+  danger: [
+    'bg-[var(--rx-badge-danger-bg,hsl(var(--color-danger-bg)))]',
+    'text-[var(--rx-badge-danger-text,hsl(var(--color-danger-text)))]',
+    'border-[color-mix(in_srgb,var(--rx-badge-danger-text,hsl(var(--color-danger-text)))_24%,transparent)]',
+    'hover:bg-[color-mix(in_srgb,var(--rx-badge-danger-bg,hsl(var(--color-danger-bg)))_86%,var(--rx-surface,hsl(var(--color-card)))_14%)]',
+    'focus-visible:ring-[var(--rx-badge-danger-text,hsl(var(--color-danger-text)))]',
+  ].join(' '),
+
 };
 
 const baseClasses = [

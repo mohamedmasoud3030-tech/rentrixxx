@@ -1,8 +1,10 @@
 import React from 'react';
 import { Wallet, FileText, Download, CheckSquare, Square, Trash2 } from 'lucide-react';
-import { formatCurrency, formatDate, getStatusBadgeClass, INVOICE_STATUS_AR, INVOICE_TYPE_AR } from '../../utils/helpers';
+import { formatCurrency, formatDate, getStatusBadgeVariant, INVOICE_STATUS_AR, INVOICE_TYPE_AR } from '../../utils/helpers';
 import { InvoiceWithDetails } from '../../utils/invoices/types';
 import { exportInvoiceToPdf } from '../../services/pdfService';
+import Badge from '../ui/Badge';
+import { TableShell, Table, TableHead, TableBody, TableRow, TableHeadCell, TableCell } from '../ui/Table';
 
 interface InvoiceTableProps {
   invoices: InvoiceWithDetails[];
@@ -37,70 +39,70 @@ export const InvoiceTable: React.FC<InvoiceTableProps> = ({
   db,
 }) => {
   return (
-    <div className="overflow-x-auto rounded-2xl bg-surface-container-low border border-outline-variant/40">
-      <table className="w-full min-w-[860px] text-sm text-start">
-        <thead className="text-xs text-slate-400 border-b border-outline-variant/40 bg-surface-container-high/50 uppercase tracking-widest">
-          <tr>
-            <th className="px-2 py-3 w-10 font-semibold"></th>
-            <th className="px-2 py-3 font-semibold whitespace-nowrap">رقم</th>
-            <th className="px-2 py-3 font-semibold whitespace-nowrap">المستأجر/الوحدة</th>
-            <th className="px-2 py-3 font-semibold whitespace-nowrap">النوع</th>
-            <th className="px-2 py-3 font-semibold whitespace-nowrap">الاستحقاق</th>
-            <th className="px-2 py-3 font-semibold whitespace-nowrap">المبلغ</th>
-            <th className="px-2 py-3 font-semibold whitespace-nowrap">المتبقي</th>
-            <th className="px-2 py-3 font-semibold whitespace-nowrap">الحالة</th>
-            <th className="px-2 py-3 font-semibold whitespace-nowrap">إجراءات</th>
-          </tr>
-        </thead>
-        <tbody>
+    <TableShell>
+      <Table className="min-w-[860px]">
+        <TableHead className="uppercase tracking-wide text-[11px]">
+          <TableRow>
+            <TableHeadCell className="w-10"></TableHeadCell>
+            <TableHeadCell className="whitespace-nowrap">رقم</TableHeadCell>
+            <TableHeadCell className="whitespace-nowrap">المستأجر/الوحدة</TableHeadCell>
+            <TableHeadCell className="whitespace-nowrap">النوع</TableHeadCell>
+            <TableHeadCell className="whitespace-nowrap">الاستحقاق</TableHeadCell>
+            <TableHeadCell className="whitespace-nowrap">المبلغ</TableHeadCell>
+            <TableHeadCell className="whitespace-nowrap">المتبقي</TableHeadCell>
+            <TableHeadCell className="whitespace-nowrap">الحالة</TableHeadCell>
+            <TableHeadCell className="whitespace-nowrap">إجراءات</TableHeadCell>
+          </TableRow>
+        </TableHead>
+        <TableBody>
           {invoices.length === 0 ? (
-            <tr>
-              <td colSpan={9} className="px-2 py-8 text-center text-text-muted">
+            <TableRow>
+              <TableCell colSpan={9} className="text-center text-text-muted py-8">
                 لا توجد فواتير
-              </td>
-            </tr>
+              </TableCell>
+            </TableRow>
           ) : (
             invoices.map(inv => {
               const remainingAmount = Math.max(0, (inv.amount || 0) + (inv.taxAmount || 0) - (inv.paidAmount || 0));
               const overdueDays = inv.effectiveStatus === 'OVERDUE' ? getOverdueDays(inv.dueDate) : 0;
 
               return (
-                <tr key={inv.id} className="border-t border-outline-variant/30 hover:bg-surface-container-high transition-colors">
-                  <td className="px-2 py-3 cursor-pointer" onClick={() => onSelectToggle(inv.id)}>
+                <TableRow key={inv.id}>
+                  <TableCell className="cursor-pointer" onClick={() => onSelectToggle(inv.id)}>
                     {selectedIds.has(inv.id) ? (
                       <CheckSquare size={16} className="text-primary" />
                     ) : (
                       <Square size={16} className="text-text-muted" />
                     )}
-                  </td>
-                  <td className="px-2 py-3 text-primary mono-data font-bold text-xs">{inv.no}</td>
-                  <td className="px-2 py-3">
+                  </TableCell>
+                  <TableCell className="text-primary mono-data font-bold text-xs">{inv.no}</TableCell>
+                  <TableCell>
                     <div className="font-medium">{inv.tenant?.name || '-'}</div>
                     <div className="text-xs text-text-muted">{inv.unit?.name || '-'}</div>
-                  </td>
-                  <td className="px-2 py-3 text-xs">
+                  </TableCell>
+                  <TableCell className="text-xs">
                     {INVOICE_TYPE_AR[inv.type as keyof typeof INVOICE_TYPE_AR] || inv.type}
-                  </td>
-                  <td className="px-2 py-3 text-xs">{formatDate(inv.dueDate)}</td>
-                  <td className="px-2 py-3 text-primary mono-data font-bold text-xs" dir="ltr">
+                  </TableCell>
+                  <TableCell className="text-xs">{formatDate(inv.dueDate)}</TableCell>
+                  <TableCell className="text-primary mono-data font-bold text-xs" dir="ltr">
                     {formatCurrency(inv.total)}
-                  </td>
-                  <td className={`px-2 py-3 mono-data font-bold text-xs ${remainingAmount > 0 ? 'text-error' : 'text-primary'}`} dir="ltr">
+                  </TableCell>
+                  <TableCell className={`mono-data font-bold text-xs ${remainingAmount > 0 ? 'text-danger-text' : 'text-primary'}`} dir="ltr">
                     {remainingAmount > 0 ? formatOmani(remainingAmount) : '—'}
-                  </td>
-                  <td className="px-2 py-3">
+                  </TableCell>
+                  <TableCell>
                     <div className="flex flex-col gap-1 items-start">
-                      <span className={`px-2 py-1 rounded text-[10px] border inline-block ${getStatusBadgeClass(inv.effectiveStatus)}`}>
+                      <Badge variant={getStatusBadgeVariant(inv.effectiveStatus)}>
                         {INVOICE_STATUS_AR[inv.effectiveStatus as keyof typeof INVOICE_STATUS_AR]}
-                      </span>
+                      </Badge>
                       {inv.effectiveStatus === 'OVERDUE' && overdueDays > 0 && (
-                        <span className="px-2 py-1 rounded text-[10px] border inline-block bg-rose-50 text-rose-700 border-rose-200">
+                        <Badge variant="danger">
                           متأخر {overdueDays} يوم
-                        </span>
+                        </Badge>
                       )}
                     </div>
-                  </td>
-                  <td className="px-2 py-3">
+                  </TableCell>
+                  <TableCell>
                     <div className="flex gap-1">
                       <button
                         onClick={() => onQuickPay(inv)}
@@ -131,13 +133,13 @@ export const InvoiceTable: React.FC<InvoiceTableProps> = ({
                         <Trash2 size={14} />
                       </button>
                     </div>
-                  </td>
-                </tr>
+                  </TableCell>
+                </TableRow>
               );
             })
           )}
-        </tbody>
-      </table>
-    </div>
+        </TableBody>
+      </Table>
+    </TableShell>
   );
 };
