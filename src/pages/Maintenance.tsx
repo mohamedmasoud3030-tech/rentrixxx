@@ -105,8 +105,14 @@ const Maintenance: React.FC = () => {
         await dataService.remove('maintenanceRecords', id);
     };
 
-    const expensesMap = useMemo(() => new Map(db?.expenses.map(e => [e.id, e])), [db?.expenses]);
-    const invoicesMap = useMemo(() => new Map(db?.invoices.map(i => [i.id, i])), [db?.invoices]);
+    const expensesMap = useMemo(() => {
+        if (!Array.isArray(db?.expenses)) return new Map<string, Expense>();
+        return new Map(db.expenses.map(e => [e.id, e]));
+    }, [db?.expenses]);
+    const invoicesMap = useMemo(() => {
+        if (!Array.isArray(db?.invoices)) return new Map<string, Invoice>();
+        return new Map(db.invoices.map(i => [i.id, i]));
+    }, [db?.invoices]);
 
     const filteredRecords = useMemo(() => {
         if (!db) return [];

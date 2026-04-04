@@ -21,7 +21,11 @@ const Notifications: React.FC = () => {
     const currency = settings.operational?.currency ?? 'OMR';
     const alertDays = settings.operational?.contractAlertDays ?? 30;
 
-    const expiringContracts = db.contracts.filter(c => {
+    const contracts = Array.isArray(db?.contracts) ? db.contracts : [];
+    const invoices = Array.isArray(db?.invoices) ? db.invoices : [];
+    const tenants = Array.isArray(db?.tenants) ? db.tenants : [];
+
+    const expiringContracts = contracts.filter(c => {
         if (c.status !== 'ACTIVE') return false;
         const endDate = new Date(c.end);
         const alertDate = new Date();
@@ -29,7 +33,7 @@ const Notifications: React.FC = () => {
         return endDate <= alertDate && endDate > new Date();
     });
 
-    const overdueInvoices = db.invoices.filter(inv => inv.status === 'OVERDUE');
+    const overdueInvoices = invoices.filter(inv => inv.status === 'OVERDUE');
 
     const allItems: Array<
         | { id: string; type: 'overdue'; inv: (typeof overdueInvoices)[number] }
@@ -138,8 +142,8 @@ const Notifications: React.FC = () => {
                                             فواتير متأخرة
                                         </h4>
                                         {filteredOverdueInvoices.map(inv => {
-                                            const contract = db.contracts.find(c => c.id === inv.contractId);
-                                            const tenant = contract ? db.tenants.find(t => t.id === contract.tenantId) : { name: 'غير معروف' };
+                                            const contract = contracts.find(c => c.id === inv.contractId);
+                                            const tenant = contract ? tenants.find(t => t.id === contract.tenantId) : { name: 'غير معروف' };
                                             const itemId = `inv-${inv.id}`;
                                             const isRead = itemId in readLog;
                                             return (
@@ -176,7 +180,7 @@ const Notifications: React.FC = () => {
                                             عقود تنتهي قريباً
                                         </h4>
                                         {filteredExpiringContracts.map(c => {
-                                            const tenant = db.tenants.find(t => t.id === c.tenantId);
+                                            const tenant = tenants.find(t => t.id === c.tenantId);
                                             const itemId = `ctr-${c.id}`;
                                             const isRead = itemId in readLog;
                                             return (
