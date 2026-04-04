@@ -26,20 +26,15 @@
     --shadow-card: 0 2px 12px -2px rgba(184, 134, 11, 0.1), 0 1px 4px -1px rgba(0, 0, 0, 0.06);
     --shadow-card-hover: 0 8px 24px -4px rgba(184, 134, 11, 0.18), 0 2px 8px -2px rgba(0, 0, 0, 0.08);
     --shadow-sidebar: 2px 0 16px -4px rgba(184, 134, 11, 0.12);
-    --rx-primary: var(--color-primary);
-    --rx-primary-fg: var(--color-primary-fg);
-    --rx-bg: var(--color-bg);
-    --rx-surface: var(--color-card);
-    --rx-surface-high: var(--color-border);
-    --rx-border: var(--color-border);
-    --rx-text: var(--color-text-primary);
-    --rx-muted: var(--color-text-muted);
-    --rx-success: var(--color-success-text);
-    --rx-warning: var(--color-warning-text);
-    --rx-danger: var(--color-danger-text);
-    --rx-info: var(--color-info-text);
-    --rx-gradient-start: 175 67% 58%;
-    --rx-gradient-end: 172 81% 40%;
+    --rx-primary: hsl(var(--color-primary));
+    --rx-primary-fg: hsl(var(--color-primary-fg));
+    --rx-surface: hsl(var(--color-card));
+    --rx-surface-high: hsl(var(--color-bg));
+    --rx-border: hsl(var(--color-border));
+    --rx-gradient-start: var(--rx-primary);
+    --rx-gradient-end: color-mix(in srgb, var(--rx-primary) 75%, var(--rx-surface));
+    --rx-success: hsl(var(--color-success-text));
+    --rx-error: hsl(var(--color-danger-text));
 }
 
 [data-theme="dark"] {
@@ -68,8 +63,7 @@
     --shadow-card: 0 2px 12px -2px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(184, 134, 11, 0.06);
     --shadow-card-hover: 0 8px 24px -4px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(184, 134, 11, 0.18);
     --shadow-sidebar: 2px 0 20px -4px rgba(0, 0, 0, 0.5);
-    --rx-gradient-start: 175 62% 54%;
-    --rx-gradient-end: var(--color-primary);
+    --rx-gradient-end: color-mix(in srgb, var(--rx-primary) 65%, var(--rx-surface-high));
 }
 
 html {
@@ -102,6 +96,25 @@ button, a, nav { -webkit-tap-highlight-color: transparent; -webkit-touch-callout
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer utilities {
+    .rx-gradient-btn {
+        background-image: linear-gradient(135deg, var(--rx-gradient-start), var(--rx-gradient-end));
+        color: var(--rx-primary-fg);
+    }
+
+    .rx-gradient-text {
+        background-image: linear-gradient(135deg, var(--rx-gradient-start), var(--rx-gradient-end));
+        color: transparent;
+        -webkit-background-clip: text;
+        background-clip: text;
+    }
+
+    .bg-rx-surface { background-color: var(--rx-surface); }
+    .bg-rx-surface-high { background-color: var(--rx-surface-high); }
+    .text-rx-primary { color: var(--rx-primary); }
+    .border-rx { border-color: var(--rx-border); }
+}
 
 @layer components {
     .bg-rx-surface { background-color: hsl(var(--rx-surface)); }
@@ -262,6 +275,62 @@ input, select, textarea {
 input::placeholder, textarea::placeholder {
     color: hsl(var(--color-text-muted));
 }
+
+
+.rx-input-wrapper {
+    position: relative;
+    width: 100%;
+}
+
+.rx-input {
+    width: 100%;
+    border-radius: var(--radius);
+    border: 1px solid var(--rx-input-border, hsl(var(--color-border)));
+    background: var(--rx-input-bg, hsl(var(--color-bg)));
+    color: var(--rx-input-text, hsl(var(--color-text-primary)));
+    min-height: 2.7rem;
+    padding-block: 0.65rem;
+    padding-inline: 0.9rem;
+    transition: background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease, color 0.15s ease;
+}
+
+.rx-input::placeholder {
+    color: var(--rx-input-placeholder, hsl(var(--color-text-muted)));
+}
+
+.rx-input:hover {
+    border-color: var(--rx-input-border-hover, hsl(var(--color-border) / 0.9));
+    background: var(--rx-input-bg-hover, hsl(var(--color-card)));
+}
+
+.rx-input:focus {
+    outline: none;
+    border-color: var(--rx-input-focus-border, hsl(var(--color-primary)));
+    background: var(--rx-input-focus-bg, hsl(var(--color-card)));
+    box-shadow: 0 0 0 3px var(--rx-input-focus-ring, hsl(var(--color-primary) / 0.12));
+}
+
+.rx-input:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+}
+
+.rx-input-icon {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--rx-input-icon, hsl(var(--color-text-muted)));
+    pointer-events: none;
+}
+
+.rx-input-icon-start { inset-inline-start: 0.75rem; }
+.rx-input-icon-end { inset-inline-end: 0.75rem; }
+
+.rx-input-with-icon-start { padding-inline-start: 2.5rem; }
+.rx-input-with-icon-end { padding-inline-end: 2.5rem; }
 
 select {
     -webkit-appearance: none;
