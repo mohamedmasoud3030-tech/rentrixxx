@@ -267,10 +267,37 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         return;
       }
 
-      const { data: profile } = await supabase.from('profiles').select('*').eq('id', session.user.id).single();
-      if (!profile || profile.is_disabled) {
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', session.user.id)
+        .maybeSingle();
+
+      if (profileError) {
+        logger.error('[AppContext] mapSessionToUser profile lookup failed', profileError);
+      }
+
+      if (profile?.is_disabled) {
         await supabase.auth.signOut();
         setCurrentUser(null);
+        return;
+      }
+
+      if (!profile) {
+        setCurrentUser(prev => {
+          if (prev?.id === session.user.id) return prev;
+          return {
+            id: session.user.id,
+            username: session.user.email?.split('@')[0] || 'user',
+            email: session.user.email || '',
+            hash: '',
+            salt: '',
+            role: 'USER',
+            mustChange: false,
+            createdAt: Date.now(),
+            isDisabled: false,
+          };
+        });
         return;
       }
 
