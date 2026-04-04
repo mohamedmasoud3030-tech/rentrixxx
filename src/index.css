@@ -228,6 +228,62 @@ input::placeholder, textarea::placeholder {
     color: hsl(var(--color-text-muted));
 }
 
+
+.rx-input-wrapper {
+    position: relative;
+    width: 100%;
+}
+
+.rx-input {
+    width: 100%;
+    border-radius: var(--radius);
+    border: 1px solid var(--rx-input-border, hsl(var(--color-border)));
+    background: var(--rx-input-bg, hsl(var(--color-bg)));
+    color: var(--rx-input-text, hsl(var(--color-text-primary)));
+    min-height: 2.7rem;
+    padding-block: 0.65rem;
+    padding-inline: 0.9rem;
+    transition: background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease, color 0.15s ease;
+}
+
+.rx-input::placeholder {
+    color: var(--rx-input-placeholder, hsl(var(--color-text-muted)));
+}
+
+.rx-input:hover {
+    border-color: var(--rx-input-border-hover, hsl(var(--color-border) / 0.9));
+    background: var(--rx-input-bg-hover, hsl(var(--color-card)));
+}
+
+.rx-input:focus {
+    outline: none;
+    border-color: var(--rx-input-focus-border, hsl(var(--color-primary)));
+    background: var(--rx-input-focus-bg, hsl(var(--color-card)));
+    box-shadow: 0 0 0 3px var(--rx-input-focus-ring, hsl(var(--color-primary) / 0.12));
+}
+
+.rx-input:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+}
+
+.rx-input-icon {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--rx-input-icon, hsl(var(--color-text-muted)));
+    pointer-events: none;
+}
+
+.rx-input-icon-start { inset-inline-start: 0.75rem; }
+.rx-input-icon-end { inset-inline-end: 0.75rem; }
+
+.rx-input-with-icon-start { padding-inline-start: 2.5rem; }
+.rx-input-with-icon-end { padding-inline-end: 2.5rem; }
+
 select {
     -webkit-appearance: none;
     -moz-appearance: none;
