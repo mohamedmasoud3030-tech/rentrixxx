@@ -40,7 +40,7 @@ const Owners: React.FC = () => {
 
 
     const getBalanceColorClass = (balance: number) => {
-        if (balance > 0) return 'text-green-600';
+        if (balance > 0) return 'text-primary';
         if (balance < 0) return 'text-red-600';
         return 'text-gray-500';
     };

@@ -119,16 +119,16 @@ const Sidebar: React.FC<SidebarProps> = ({ sidebarOpen, setSidebarOpen }) => {
     return (
       <li key={item.id} className={nestedIndent}>
         <div
-          className={`group flex items-center gap-3 rounded-xl ${itemPadding} py-2.5 font-bold text-sm transition-all duration-200 ${
+          className={`group flex flex-row-reverse items-center gap-3 rounded-xl ${itemPadding} py-2.5 font-bold text-sm transition-all duration-200 ${
             active
-              ? 'text-sidebar-active-text bg-[hsl(var(--color-sidebar-active-bg))] shadow-[0_2px_8px_hsl(var(--color-primary)/0.25)]'
-              : 'text-sidebar-text hover:text-text hover:bg-[hsl(var(--color-sidebar-hover-bg))]'
+              ? 'bg-rx-surface-high text-rx-primary border-r-4 border-rx-primary'
+              : 'text-on-surface-variant hover:bg-rx-surface-high hover:text-on-surface'
           }`}
         >
           {item.path ? (
             <NavLink
               to={item.path}
-              className="flex min-w-0 flex-1 items-center gap-3"
+              className="flex min-w-0 flex-1 items-center flex-row-reverse gap-3"
               onClick={() => setSidebarOpen(false)}
             >
               <item.icon
@@ -137,7 +137,7 @@ const Sidebar: React.FC<SidebarProps> = ({ sidebarOpen, setSidebarOpen }) => {
               />
               <span className="truncate">{item.label}</span>
               {item.badgeKey && badges[item.badgeKey] > 0 && (
-                <span className="ms-auto min-w-[20px] h-5 flex items-center justify-center rounded-full bg-red-500 text-white text-[10px] font-black px-1.5">
+                <span className="me-auto min-w-[20px] h-5 flex items-center justify-center rounded-full bg-red-500 text-white text-[10px] font-black px-1.5">
                   {badges[item.badgeKey]}
                 </span>
               )}
@@ -156,7 +156,7 @@ const Sidebar: React.FC<SidebarProps> = ({ sidebarOpen, setSidebarOpen }) => {
             <button
               type="button"
               onClick={() => toggleItem(item.id)}
-              className="ms-auto inline-flex h-6 w-6 items-center justify-center rounded-md text-text-muted transition-colors hover:text-text"
+              className="me-auto inline-flex h-6 w-6 items-center justify-center rounded-md text-text-muted transition-colors hover:text-text"
               aria-label={isExpanded ? `${AR_LABELS.collapse} ${item.label}` : `${AR_LABELS.expand} ${item.label}`}
             >
               <ChevronDown size={16} className={`transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`} />
@@ -175,7 +175,7 @@ const Sidebar: React.FC<SidebarProps> = ({ sidebarOpen, setSidebarOpen }) => {
 
   return (
     <aside
-      className={`absolute start-0 top-0 z-50 flex h-screen w-72 flex-col overflow-y-hidden border-s border-border bg-sidebar-bg duration-300 ease-in-out lg:static lg:translate-x-0 ${
+      className={`fixed right-0 top-0 z-50 flex h-screen w-64 flex-col overflow-y-hidden border-l border-outline-variant/40 bg-rx-surface duration-300 ease-in-out lg:static lg:translate-x-0 ${
         sidebarOpen ? 'translate-x-0' : 'translate-x-full'
       }`}
       style={{ boxShadow: 'var(--shadow-sidebar)' }}
@@ -183,7 +183,7 @@ const Sidebar: React.FC<SidebarProps> = ({ sidebarOpen, setSidebarOpen }) => {
       aria-modal={sidebarOpen ? 'true' : undefined}
       aria-label={AR_LABELS.rentrixNavigationHub}
     >
-      <div className="flex items-center gap-3 border-b border-border px-4 py-4">
+      <div className="flex items-center gap-3 border-b border-outline-variant/40 px-4 py-4">
         <div
           className="h-10 w-10 flex-shrink-0 rounded-xl text-xl font-black text-white flex items-center justify-center"
           style={{
@@ -191,10 +191,10 @@ const Sidebar: React.FC<SidebarProps> = ({ sidebarOpen, setSidebarOpen }) => {
             boxShadow: '0 4px 12px hsl(var(--color-primary) / 0.35)',
           }}
         >
-          {companyName.charAt(0)}
+          🌐
         </div>
         <div className="min-w-0 flex-1">
-          <span className="block truncate text-base font-black text-text">{companyName}</span>
+          <span className="block truncate text-base font-black text-rx-primary">{companyName}</span>
           <span className="block text-xs text-text-muted">{AR_LABELS.rentrixNavigationHub}</span>
         </div>
         <button
@@ -205,7 +205,7 @@ const Sidebar: React.FC<SidebarProps> = ({ sidebarOpen, setSidebarOpen }) => {
         </button>
       </div>
 
-      <div className="scrollbar-hide flex flex-1 flex-col overflow-y-auto px-3 py-4">
+      <div className="scrollbar-hide flex flex-1 flex-col overflow-y-auto px-3 py-4 bg-rx-surface">
         <nav>
           <ul className="flex flex-col gap-1">{navItems.map(item => renderNavItem(item))}</ul>
         </nav>

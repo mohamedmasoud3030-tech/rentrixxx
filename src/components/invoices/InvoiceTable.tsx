@@ -37,9 +37,9 @@ export const InvoiceTable: React.FC<InvoiceTableProps> = ({
   db,
 }) => {
   return (
-    <div className="table-shell">
+    <div className="overflow-x-auto rounded-2xl bg-surface-container-low border border-outline-variant/40">
       <table className="w-full min-w-[860px] text-sm text-start">
-        <thead className="text-xs text-text-muted border-b border-border bg-background/50">
+        <thead className="text-xs text-slate-400 border-b border-outline-variant/40 bg-surface-container-high/50 uppercase tracking-widest">
           <tr>
             <th className="px-2 py-3 w-10 font-semibold"></th>
             <th className="px-2 py-3 font-semibold whitespace-nowrap">رقم</th>
@@ -65,7 +65,7 @@ export const InvoiceTable: React.FC<InvoiceTableProps> = ({
               const overdueDays = inv.effectiveStatus === 'OVERDUE' ? getOverdueDays(inv.dueDate) : 0;
 
               return (
-                <tr key={inv.id} className="border-t border-border hover:bg-background/50 transition-colors">
+                <tr key={inv.id} className="border-t border-outline-variant/30 hover:bg-surface-container-high transition-colors">
                   <td className="px-2 py-3 cursor-pointer" onClick={() => onSelectToggle(inv.id)}>
                     {selectedIds.has(inv.id) ? (
                       <CheckSquare size={16} className="text-primary" />
@@ -73,7 +73,7 @@ export const InvoiceTable: React.FC<InvoiceTableProps> = ({
                       <Square size={16} className="text-text-muted" />
                     )}
                   </td>
-                  <td className="px-2 py-3 font-mono text-xs">{inv.no}</td>
+                  <td className="px-2 py-3 text-primary mono-data font-bold text-xs">{inv.no}</td>
                   <td className="px-2 py-3">
                     <div className="font-medium">{inv.tenant?.name || '-'}</div>
                     <div className="text-xs text-text-muted">{inv.unit?.name || '-'}</div>
@@ -82,10 +82,10 @@ export const InvoiceTable: React.FC<InvoiceTableProps> = ({
                     {INVOICE_TYPE_AR[inv.type as keyof typeof INVOICE_TYPE_AR] || inv.type}
                   </td>
                   <td className="px-2 py-3 text-xs">{formatDate(inv.dueDate)}</td>
-                  <td className="px-2 py-3 font-mono text-xs" dir="ltr">
+                  <td className="px-2 py-3 text-primary mono-data font-bold text-xs" dir="ltr">
                     {formatCurrency(inv.total)}
                   </td>
-                  <td className={`px-2 py-3 font-mono text-xs ${remainingAmount > 0 ? 'text-rose-600' : 'text-emerald-600'}`} dir="ltr">
+                  <td className={`px-2 py-3 mono-data font-bold text-xs ${remainingAmount > 0 ? 'text-error' : 'text-primary'}`} dir="ltr">
                     {remainingAmount > 0 ? formatOmani(remainingAmount) : '—'}
                   </td>
                   <td className="px-2 py-3">

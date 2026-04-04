@@ -111,27 +111,27 @@ const PropertiesListView: React.FC = () => {
     return (
         <div className="space-y-6">
             <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-                <div className="bg-background rounded-xl border border-border p-3 text-center">
+                <div className="bg-surface-container-low rounded-xl border border-outline-variant/40 p-3 text-center">
                     <Building size={18} className="mx-auto mb-1 text-blue-500" />
                     <p className="text-lg font-black">{properties.length}</p>
                     <p className="text-[10px] text-text-muted">عقارات</p>
                 </div>
-                <div className="bg-background rounded-xl border border-border p-3 text-center">
+                <div className="bg-surface-container-low rounded-xl border border-outline-variant/40 p-3 text-center">
                     <Home size={18} className="mx-auto mb-1 text-indigo-500" />
                     <p className="text-lg font-black">{stats.totalUnits}</p>
                     <p className="text-[10px] text-text-muted">وحدات</p>
                 </div>
-                <div className="bg-background rounded-xl border border-border p-3 text-center">
+                <div className="bg-surface-container-low rounded-xl border border-outline-variant/40 p-3 text-center">
                     <User size={18} className="mx-auto mb-1 text-emerald-500" />
                     <p className="text-lg font-black">{stats.rented}</p>
                     <p className="text-[10px] text-text-muted">مؤجرة</p>
                 </div>
-                <div className="bg-background rounded-xl border border-border p-3 text-center">
+                <div className="bg-surface-container-low rounded-xl border border-outline-variant/40 p-3 text-center">
                     <AlertCircle size={18} className="mx-auto mb-1 text-amber-500" />
                     <p className="text-lg font-black">{stats.available}</p>
                     <p className="text-[10px] text-text-muted">شاغرة</p>
                 </div>
-                <div className="bg-background rounded-xl border border-border p-3 text-center">
+                <div className="bg-surface-container-low rounded-xl border border-outline-variant/40 p-3 text-center">
                     <Percent size={18} className="mx-auto mb-1 text-purple-500" />
                     <p className="text-lg font-black">{stats.occupancy.toFixed(0)}%</p>
                     <p className="text-[10px] text-text-muted">نسبة الإشغال</p>
@@ -152,7 +152,7 @@ const PropertiesListView: React.FC = () => {
                     const monthlyRevenue = activeContracts.reduce((sum, c) => sum + (c.rent || 0), 0);
                     const netOwnerDue = ownerBalances[p.ownerId]?.net ?? 0;
                     return (
-                    <div key={p.id} onClick={() => setSelectedProp(p)} className="bg-background p-4 rounded-lg border border-border cursor-pointer hover:ring-2 hover:ring-primary transition-all">
+                    <div key={p.id} onClick={() => setSelectedProp(p)} className="bg-background p-4 rounded-lg border border-outline-variant/40 cursor-pointer hover:ring-2 hover:ring-primary transition-all">
                         <div className="flex justify-between items-start mb-2">
                             <h3 className="font-bold text-lg">{p.name}</h3>
                             <div onClick={(e) => e.stopPropagation()}>
@@ -247,19 +247,19 @@ const UnitsView: React.FC<{ property: Property, onBack: () => void }> = ({ prope
             </div>
 
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div className="bg-background border border-border rounded-lg p-4 text-center">
+                <div className="bg-background border border-outline-variant/40 rounded-lg p-4 text-center">
                     <p className="text-2xl font-bold text-primary">{toArabicDigits(units.length)}</p>
                     <p className="text-xs text-text-muted">إجمالي الوحدات</p>
                 </div>
-                <div className="bg-background border border-border rounded-lg p-4 text-center">
+                <div className="bg-background border border-outline-variant/40 rounded-lg p-4 text-center">
                     <p className="text-2xl font-bold text-blue-600">{toArabicDigits(stats.rented)}</p>
                     <p className="text-xs text-text-muted">مؤجرة</p>
                 </div>
-                <div className="bg-background border border-border rounded-lg p-4 text-center">
-                    <p className="text-2xl font-bold text-green-600">{toArabicDigits(stats.available)}</p>
+                <div className="bg-background border border-outline-variant/40 rounded-lg p-4 text-center">
+                    <p className="text-2xl font-bold text-primary">{toArabicDigits(stats.available)}</p>
                     <p className="text-xs text-text-muted">شاغرة</p>
                 </div>
-                <div className="bg-background border border-border rounded-lg p-4 text-center">
+                <div className="bg-background border border-outline-variant/40 rounded-lg p-4 text-center">
                     <p className="text-2xl font-bold text-gray-600">{toArabicDigits(stats.onHold)}</p>
                     <p className="text-xs text-text-muted">معلقة</p>
                 </div>
@@ -328,7 +328,7 @@ const UnitCard: React.FC<{ u: Unit; activeContract?: { rent: number } | null; ut
     }, [u.bedrooms, u.bathrooms, u.kitchens, u.livingRooms]);
 
     return (
-        <div className="p-4 bg-background border border-border rounded-lg relative group hover:shadow-lg transition-shadow">
+        <div className="p-4 bg-background border border-outline-variant/40 rounded-lg relative group hover:shadow-lg transition-shadow">
             <div className="absolute top-2 left-2">
                 <ActionsMenu items={[
                     { label: 'إدارة المرافق', icon: <Zap size={14} />, onClick: onViewUtilities },
@@ -547,7 +547,7 @@ const UtilityRecordForm: React.FC<{
                         <NumberInput value={unitPrice} onChange={setUnitPrice} required disabled={isSaving} />
                     </div>
                 </div>
-                <div className="bg-background border border-border rounded-lg p-3 flex justify-between items-center">
+                <div className="bg-background border border-outline-variant/40 rounded-lg p-3 flex justify-between items-center">
                     <span className="text-sm">الاستهلاك: <strong>{consumption}</strong> وحدة</span>
                     <span className="text-sm">المبلغ: <strong className="text-primary">{formatCurrency(amount, currency)}</strong></span>
                 </div>
@@ -563,7 +563,7 @@ const UtilityRecordForm: React.FC<{
                     <label htmlFor="bill-image-upload" className="block text-sm font-medium mb-1">صورة الفاتورة</label>
                     <input id="bill-image-upload" type="file" accept="image/*,application/pdf" ref={fileRef} onChange={handleImageUpload} className="hidden" disabled={isSaving} />
                     {billImageUrl ? (
-                        <div className="border border-border rounded-lg p-2 flex items-center justify-between">
+                        <div className="border border-outline-variant/40 rounded-lg p-2 flex items-center justify-between">
                             {billImageMime?.startsWith('image/') && billPreviewUrl && <img src={billPreviewUrl} alt="فاتورة" className="h-16 w-auto rounded object-cover" />}
                             {billImageMime === 'application/pdf' && <span className="text-sm text-blue-600">📄 PDF مرفق</span>}
                             <button type="button" onClick={() => { setBillImageUrl(''); setBillImageMime(''); }} className="text-red-500 hover:text-red-700" disabled={isSaving}><Trash2 size={16} /></button>
@@ -682,22 +682,22 @@ const UnitDetailView: React.FC<{ unit: Unit; property: Property; onBack: () => v
             </div>
 
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div className="bg-background border border-border rounded-lg p-4">
+                <div className="bg-background border border-outline-variant/40 rounded-lg p-4">
                     <p className="text-xs text-text-muted mb-1">رقم عداد المياه</p>
                     <p className="font-bold">{unit.waterMeter || '—'}</p>
                     <p className="text-2xl mt-1">💧</p>
                 </div>
-                <div className="bg-background border border-border rounded-lg p-4">
+                <div className="bg-background border border-outline-variant/40 rounded-lg p-4">
                     <p className="text-xs text-text-muted mb-1">رقم عداد الكهرباء</p>
                     <p className="font-bold">{unit.electricityMeter || '—'}</p>
                     <p className="text-2xl mt-1">⚡</p>
                 </div>
-                <div className="bg-background border border-border rounded-lg p-4">
+                <div className="bg-background border border-outline-variant/40 rounded-lg p-4">
                     <p className="text-xs text-text-muted mb-1">المستأجر الحالي</p>
                     <p className="font-bold text-sm">{tenant?.name || 'شاغرة'}</p>
                     <p className="text-xs text-text-muted mt-1">{tenant && activeContract?.rent ? formatCurrency(activeContract.rent, currency) + '/شهر' : ''}</p>
                 </div>
-                <div className="bg-background border border-border rounded-lg p-4">
+                <div className="bg-background border border-outline-variant/40 rounded-lg p-4">
                     <p className="text-xs text-text-muted mb-1">إجمالي فواتير المرافق</p>
                     <p className="font-bold text-primary">{formatCurrency(totalAmount, currency)}</p>
                     <p className="text-xs text-text-muted mt-1">{unitRecords.length} سجل</p>

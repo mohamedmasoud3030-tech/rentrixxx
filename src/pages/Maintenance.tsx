@@ -161,22 +161,22 @@ const Maintenance: React.FC = () => {
             <HardGateBanner />
 
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                <div className="bg-card rounded-xl border border-border p-3 text-center">
+                <div className="bg-surface-container-low rounded-xl border border-outline-variant/40 p-3 text-center">
                     <Clock size={18} className="mx-auto mb-1 text-amber-500" />
                     <p className="text-lg font-black text-amber-600">{maintenanceSummary.pending}</p>
                     <p className="text-[10px] text-text-muted">قيد الانتظار</p>
                 </div>
-                <div className="bg-card rounded-xl border border-border p-3 text-center">
+                <div className="bg-surface-container-low rounded-xl border border-outline-variant/40 p-3 text-center">
                     <Loader2 size={18} className="mx-auto mb-1 text-orange-500" />
                     <p className="text-lg font-black text-orange-600">{maintenanceSummary.inProgress}</p>
                     <p className="text-[10px] text-text-muted">جارٍ التنفيذ</p>
                 </div>
-                <div className="bg-card rounded-xl border border-border p-3 text-center">
+                <div className="bg-surface-container-low rounded-xl border border-outline-variant/40 p-3 text-center">
                     <CheckCircle size={18} className="mx-auto mb-1 text-emerald-500" />
                     <p className="text-lg font-black text-emerald-600">{maintenanceSummary.completed}</p>
                     <p className="text-[10px] text-text-muted">مكتملة</p>
                 </div>
-                <div className="bg-card rounded-xl border border-border p-3 text-center">
+                <div className="bg-surface-container-low rounded-xl border border-outline-variant/40 p-3 text-center">
                     <XCircle size={18} className="mx-auto mb-1 text-red-500" />
                     <p className="text-lg font-black text-red-600">{maintenanceSummary.cancelled}</p>
                     <p className="text-[10px] text-text-muted">ملغاة</p>
@@ -235,19 +235,19 @@ const Maintenance: React.FC = () => {
                     </div>
                 </div>
                 <div className="overflow-x-auto mt-4">
-                    <table className="w-full text-sm text-right border-collapse border border-border">
-                        <thead className="text-xs uppercase bg-background text-text">
+                    <table className="w-full text-sm text-right border-collapse">
+                        <thead className="text-xs uppercase bg-surface-container-high/50 text-slate-400 tracking-widest">
                             <tr>
-                                <th scope="col" className="px-4 py-3 border border-border">رقم الطلب</th>
-                                <th scope="col" className="px-4 py-3 border border-border">الوحدة</th>
-                                <th scope="col" className="px-4 py-3 border border-border">تاريخ الطلب</th>
-                                <th scope="col" className="px-4 py-3 border border-border">مُكلَّف إلى</th>
-                                <th scope="col" className="px-4 py-3 border border-border">الأولوية</th>
-                                <th scope="col" className="px-4 py-3 border border-border">المصروف/الفاتورة</th>
-                                <th scope="col" className="px-4 py-3 border border-border">التكلفة</th>
-                                <th scope="col" className="px-4 py-3 border border-border">الحالة</th>
-                                <th scope="col" className="px-4 py-3 border border-border">تاريخ الإنجاز</th>
-                                <th scope="col" className="px-4 py-3 border border-border">إجراءات</th>
+                                <th scope="col" className="px-4 py-3 border border-outline-variant/40">رقم الطلب</th>
+                                <th scope="col" className="px-4 py-3 border border-outline-variant/40">الوحدة</th>
+                                <th scope="col" className="px-4 py-3 border border-outline-variant/40">تاريخ الطلب</th>
+                                <th scope="col" className="px-4 py-3 border border-outline-variant/40">مُكلَّف إلى</th>
+                                <th scope="col" className="px-4 py-3 border border-outline-variant/40">الأولوية</th>
+                                <th scope="col" className="px-4 py-3 border border-outline-variant/40">المصروف/الفاتورة</th>
+                                <th scope="col" className="px-4 py-3 border border-outline-variant/40">التكلفة</th>
+                                <th scope="col" className="px-4 py-3 border border-outline-variant/40">الحالة</th>
+                                <th scope="col" className="px-4 py-3 border border-outline-variant/40">تاريخ الإنجاز</th>
+                                <th scope="col" className="px-4 py-3 border border-outline-variant/40">إجراءات</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -260,29 +260,29 @@ const Maintenance: React.FC = () => {
                                 const completionDate = rec.completionDate || (rec.completedAt ? new Date(rec.completedAt).toISOString().slice(0, 10) : '');
                                 const normalizedStatus = normalizeMaintenanceStatus(rec.status);
                                 return (
-                                    <tr key={rec.id} onClick={() => handleOpenModal(rec)} className="bg-card hover:bg-background cursor-pointer">
-                                        <td className="px-4 py-3 font-mono border border-border">{rec.no}</td>
-                                        <td className="px-4 py-3 font-medium text-text border border-border">
+                                    <tr key={rec.id} onClick={() => handleOpenModal(rec)} className="bg-surface-container-low hover:bg-surface-container-high cursor-pointer">
+                                        <td className="px-4 py-3 font-mono border border-outline-variant/40">{rec.no}</td>
+                                        <td className="px-4 py-3 font-medium text-text border border-outline-variant/40">
                                             {unit?.name} <span className="text-xs text-text-muted">({property?.name})</span>
                                         </td>
-                                        <td className="px-4 py-3 border border-border">{formatDate(rec.requestDate)}</td>
-                                        <td className="px-4 py-3 border border-border">{rec.assignedTo || '—'}</td>
-                                        <td className="px-4 py-3 border border-border">
+                                        <td className="px-4 py-3 border border-outline-variant/40">{formatDate(rec.requestDate)}</td>
+                                        <td className="px-4 py-3 border border-outline-variant/40">{rec.assignedTo || '—'}</td>
+                                        <td className="px-4 py-3 border border-outline-variant/40">
                                             <span className={`px-2 py-1 text-xs rounded-full ${priorityBadgeClass[rec.priority || 'LOW']}`}>
                                                 {priorityLabel[rec.priority || 'LOW']}
                                             </span>
                                         </td>
-                                        <td className="px-4 py-3 font-mono text-xs border border-border">{linkedDoc ? (linkedDoc as Invoice | Expense).no : '—'}</td>
-                                        <td className="px-4 py-3 border border-border">{formatCurrency(rec.cost || 0, settings.operational.currency)}</td>
-                                        <td className="px-4 py-3 border border-border">
+                                        <td className="px-4 py-3 font-mono text-xs border border-outline-variant/40">{linkedDoc ? (linkedDoc as Invoice | Expense).no : '—'}</td>
+                                        <td className="px-4 py-3 border border-outline-variant/40">{formatCurrency(rec.cost || 0, settings.operational.currency)}</td>
+                                        <td className="px-4 py-3 border border-outline-variant/40">
                                             <span className={`px-2 py-1 text-xs rounded-full ${getStatusBadgeClass(normalizedStatus)}`}>
                                                 {statusLabel[normalizedStatus]}
                                             </span>
                                         </td>
-                                        <td className="px-4 py-3 border border-border">
+                                        <td className="px-4 py-3 border border-outline-variant/40">
                                             {normalizedStatus === 'COMPLETED' && completionDate ? formatDate(completionDate) : '—'}
                                         </td>
-                                        <td className="px-4 py-3 border border-border" onClick={e => e.stopPropagation()}>
+                                        <td className="px-4 py-3 border border-outline-variant/40" onClick={e => e.stopPropagation()}>
                                             <div className="flex items-center gap-2">
                                                 <select
                                                     aria-label="تحديث الحالة"
@@ -310,19 +310,19 @@ const Maintenance: React.FC = () => {
                     </table>
                 </div>
                 <div className="mt-4 grid grid-cols-1 md:grid-cols-4 gap-3">
-                    <div className="bg-background border border-border rounded-lg p-3">
+                    <div className="bg-background border border-outline-variant/40 rounded-lg p-3">
                         <p className="text-xs text-text-muted mb-1">إجمالي التكلفة</p>
                         <p className="font-bold" dir="ltr">{formatCurrency(maintenanceSummary.totalCost, settings.operational.currency)}</p>
                     </div>
-                    <div className="bg-background border border-border rounded-lg p-3">
+                    <div className="bg-background border border-outline-variant/40 rounded-lg p-3">
                         <p className="text-xs text-text-muted mb-1">حصة المالك</p>
                         <p className="font-bold" dir="ltr">{formatCurrency(maintenanceSummary.ownerCost, settings.operational.currency)}</p>
                     </div>
-                    <div className="bg-background border border-border rounded-lg p-3">
+                    <div className="bg-background border border-outline-variant/40 rounded-lg p-3">
                         <p className="text-xs text-text-muted mb-1">حصة المستأجر</p>
                         <p className="font-bold" dir="ltr">{formatCurrency(maintenanceSummary.tenantCost, settings.operational.currency)}</p>
                     </div>
-                    <div className="bg-background border border-border rounded-lg p-3">
+                    <div className="bg-background border border-outline-variant/40 rounded-lg p-3">
                         <p className="text-xs text-text-muted mb-1">حصة المكتب</p>
                         <p className="font-bold" dir="ltr">{formatCurrency(maintenanceSummary.officeCost, settings.operational.currency)}</p>
                     </div>
