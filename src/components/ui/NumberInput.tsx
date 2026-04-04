@@ -69,12 +69,8 @@ const NumberInput: React.FC<NumberInputProps> = ({
       value={display}
       onChange={handleChange}
       onBlur={handleBlur}
-      className={`ltr-input ${className}`}
+      className={`ltr-input text-end ${className}`}
       dir="ltr"
-      style={{
-        textAlign: 'end',
-        ...(rest.style || {}),
-      }}
     />
   );
 };

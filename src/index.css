@@ -26,6 +26,20 @@
     --shadow-card: 0 2px 12px -2px rgba(184, 134, 11, 0.1), 0 1px 4px -1px rgba(0, 0, 0, 0.06);
     --shadow-card-hover: 0 8px 24px -4px rgba(184, 134, 11, 0.18), 0 2px 8px -2px rgba(0, 0, 0, 0.08);
     --shadow-sidebar: 2px 0 16px -4px rgba(184, 134, 11, 0.12);
+    --rx-primary: var(--color-primary);
+    --rx-primary-fg: var(--color-primary-fg);
+    --rx-bg: var(--color-bg);
+    --rx-surface: var(--color-card);
+    --rx-surface-high: var(--color-border);
+    --rx-border: var(--color-border);
+    --rx-text: var(--color-text-primary);
+    --rx-muted: var(--color-text-muted);
+    --rx-success: var(--color-success-text);
+    --rx-warning: var(--color-warning-text);
+    --rx-danger: var(--color-danger-text);
+    --rx-info: var(--color-info-text);
+    --rx-gradient-start: 175 67% 58%;
+    --rx-gradient-end: 172 81% 40%;
 }
 
 [data-theme="dark"] {
@@ -54,6 +68,8 @@
     --shadow-card: 0 2px 12px -2px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(184, 134, 11, 0.06);
     --shadow-card-hover: 0 8px 24px -4px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(184, 134, 11, 0.18);
     --shadow-sidebar: 2px 0 20px -4px rgba(0, 0, 0, 0.5);
+    --rx-gradient-start: 175 62% 54%;
+    --rx-gradient-end: var(--color-primary);
 }
 
 html {
@@ -88,6 +104,22 @@ button, a, nav { -webkit-tap-highlight-color: transparent; -webkit-touch-callout
 @tailwind utilities;
 
 @layer components {
+    .bg-rx-surface { background-color: hsl(var(--rx-surface)); }
+    .bg-rx-surface-high { background-color: hsl(var(--rx-surface-high) / 0.35); }
+    .text-rx-primary { color: hsl(var(--rx-primary)); }
+    .border-rx { border-color: hsl(var(--rx-border)); }
+    .rx-gradient-btn {
+        background: linear-gradient(180deg, hsl(var(--rx-gradient-start)), hsl(var(--rx-gradient-end)));
+        color: hsl(var(--rx-primary-fg));
+        box-shadow: 0 10px 22px -10px hsl(var(--rx-primary) / 0.45);
+    }
+    .rx-gradient-text {
+        background: linear-gradient(180deg, hsl(var(--rx-gradient-start)), hsl(var(--rx-gradient-end)));
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+    }
+
     /* === BUTTONS === */
     .btn {
         @apply min-h-[42px] px-4 sm:px-5 py-2.5 rounded-xl font-bold text-sm focus:outline-none focus:ring-2 focus:ring-offset-2 inline-flex items-center justify-center gap-2 leading-none;
@@ -110,6 +142,9 @@ button, a, nav { -webkit-tap-highlight-color: transparent; -webkit-touch-callout
     .btn-ghost {
         @apply bg-transparent text-text-muted hover:bg-background hover:text-text rounded-lg;
     }
+    .btn-gradient {
+        @apply rx-gradient-btn hover:opacity-95 focus:ring-primary disabled:opacity-50 disabled:cursor-not-allowed;
+    }
     .btn-danger {
         @apply bg-danger-bg text-danger-text hover:opacity-90 border border-danger-text/20;
     }
@@ -124,13 +159,13 @@ button, a, nav { -webkit-tap-highlight-color: transparent; -webkit-touch-callout
         @apply inline-flex h-9 w-9 items-center justify-center rounded-lg border border-border bg-card text-text-muted transition-colors hover:bg-background hover:text-text;
     }
     .icon-btn-success {
-        @apply border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100;
+        @apply border border-border bg-success-bg text-success-text hover:opacity-90;
     }
     .icon-btn-danger {
-        @apply border-rose-200 bg-rose-50 text-rose-700 hover:bg-rose-100;
+        @apply border border-border bg-danger-bg text-danger-text hover:opacity-90;
     }
     .icon-btn-info {
-        @apply border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100;
+        @apply border border-border bg-info-bg text-info-text hover:opacity-90;
     }
 
     .modal-content {
@@ -559,12 +594,12 @@ input[type="number"] {
 /* === New UI System Overrides === */
 html[dir="rtl"] { direction: rtl; }
 body {
-  background: #111319;
+  background: hsl(var(--rx-bg));
   font-family: 'IBM Plex Sans Arabic', 'Inter', sans-serif;
-  color: #e2e2eb;
+  color: hsl(var(--rx-text));
 }
 .mono-data { font-family: 'JetBrains Mono', monospace; }
 ::-webkit-scrollbar { width: 6px; height: 6px; }
-::-webkit-scrollbar-track { background: #111319; }
-::-webkit-scrollbar-thumb { background: #282a30; border-radius: 999px; }
-::-webkit-scrollbar-thumb:hover { background: #33343b; }
+::-webkit-scrollbar-track { background: hsl(var(--rx-bg)); }
+::-webkit-scrollbar-thumb { background: hsl(var(--rx-surface-high)); border-radius: 999px; }
+::-webkit-scrollbar-thumb:hover { background: hsl(var(--rx-border)); }

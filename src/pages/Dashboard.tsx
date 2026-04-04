@@ -234,25 +234,25 @@ const Dashboard: React.FC = () => {
           <button
             onClick={runGenerateMonthlyInvoices}
             disabled={isGeneratingInvoices}
-            className="text-right p-4 rounded-xl bg-gradient-to-b from-[#4fdbc8] to-[#14b8a6] text-on-primary font-bold active:scale-95 transition-all shadow-lg shadow-primary/10 disabled:opacity-60 disabled:cursor-not-allowed"
+            className="text-right p-4 rounded-xl rx-gradient-btn font-bold active:scale-95 transition-all disabled:opacity-60 disabled:cursor-not-allowed"
           >
             <div className="flex items-center justify-between gap-2">
               <div className="font-bold">توليد فواتير الشهر</div>
               {isGeneratingInvoices ? <Loader2 className="h-4 w-4 animate-spin" /> : <FilePlus2 className="h-4 w-4" />}
             </div>
-            <div className="text-xs text-on-primary/80 mt-1">آخر تشغيل: {formatLastRun(lastInvoiceRunAt)}</div>
+            <div className="text-xs text-primary-fg/80 mt-1">آخر تشغيل: {formatLastRun(lastInvoiceRunAt)}</div>
           </button>
 
           <button
             onClick={runAutomation}
             disabled={isRunningAutomation}
-            className="text-right p-4 rounded-xl bg-gradient-to-b from-[#4fdbc8] to-[#14b8a6] text-on-primary font-bold active:scale-95 transition-all shadow-lg shadow-primary/10 disabled:opacity-60 disabled:cursor-not-allowed"
+            className="text-right p-4 rounded-xl rx-gradient-btn font-bold active:scale-95 transition-all disabled:opacity-60 disabled:cursor-not-allowed"
           >
             <div className="flex items-center justify-between gap-2">
               <div className="font-bold">تشغيل الأتمتة</div>
               {isRunningAutomation ? <Loader2 className="h-4 w-4 animate-spin" /> : <PlayCircle className="h-4 w-4" />}
             </div>
-            <div className="text-xs text-on-primary/80 mt-1">آخر تشغيل: {formatLastRun(lastAutomationRunAt)}</div>
+            <div className="text-xs text-primary-fg/80 mt-1">آخر تشغيل: {formatLastRun(lastAutomationRunAt)}</div>
           </button>
         </div>
       </section>
@@ -304,12 +304,12 @@ const DashboardRevenueChart: React.FC<{ receipts: ReceiptType[]; expenses: Expen
       <div className="h-52" dir="ltr">
         <ResponsiveContainer width="100%" height="100%">
           <AreaChart data={chartData}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+            <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--rx-border))" />
             <XAxis dataKey="name" fontSize={12} />
             <YAxis fontSize={11} tickFormatter={(v) => (v > 0 ? `${(v / 1000).toFixed(0)}k` : '0')} />
             <Tooltip formatter={(value: number) => formatCurrency(value, 'OMR')} />
-            <Area type="monotone" dataKey="revenue" stroke="#10b981" fill="#10b98133" strokeWidth={2} />
-            <Area type="monotone" dataKey="expenses" stroke="#ef4444" fill="#ef444433" strokeWidth={2} />
+            <Area type="monotone" dataKey="revenue" stroke="hsl(var(--rx-success))" fill="hsl(var(--rx-success) / 0.2)" strokeWidth={2} />
+            <Area type="monotone" dataKey="expenses" stroke="hsl(var(--rx-danger))" fill="hsl(var(--rx-danger) / 0.2)" strokeWidth={2} />
           </AreaChart>
         </ResponsiveContainer>
       </div>
@@ -325,7 +325,7 @@ const KpiCard: React.FC<{
 }> = ({ title, value, icon, variant }) => (
   <div className={`bg-surface-container-low p-5 rounded-xl border border-outline-variant/40 text-right border-r-4 ${variant === 'neutral' ? 'border-primary' : variant === 'secondary' ? 'border-secondary' : variant === 'tertiary' ? 'border-tertiary' : variant === 'error' ? 'border-error' : 'border-primary'}`}>
     <div className="flex items-center justify-between">
-      <p className="text-xs text-slate-400">{title}</p>
+      <p className="text-xs text-text-muted">{title}</p>
       <div className={variant === 'money' ? 'text-emerald-600' : 'text-primary'}>{icon}</div>
     </div>
     <p className="text-2xl font-bold mt-2 mono-data" dir="ltr">
