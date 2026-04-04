@@ -76,12 +76,17 @@ const Login: React.FC = () => {
             <form onSubmit={handleLogin} className="space-y-5">
               {/* Email Input */}
               <div className="group">
-                <label className="block text-sm font-semibold text-text mb-2">
+                <label
+                  htmlFor="login-email"
+                  className="block text-sm font-semibold text-text mb-2"
+                >
                   البريد الإلكتروني
                 </label>
                 <div className="relative">
                   <Mail className="absolute right-4 top-1/2 -translate-y-1/2 h-5 w-5 text-text-muted group-focus-within:text-primary transition-colors" />
                   <input
+                    id="login-email"
+                    name="email"
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
@@ -96,12 +101,17 @@ const Login: React.FC = () => {
 
               {/* Password Input */}
               <div className="group">
-                <label className="block text-sm font-semibold text-text mb-2">
+                <label
+                  htmlFor="login-password"
+                  className="block text-sm font-semibold text-text mb-2"
+                >
                   كلمة المرور
                 </label>
                 <div className="relative">
                   <Lock className="absolute right-4 top-1/2 -translate-y-1/2 h-5 w-5 text-text-muted group-focus-within:text-primary transition-colors" />
                   <input
+                    id="login-password"
+                    name="password"
                     type={showPassword ? "text" : "password"}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
