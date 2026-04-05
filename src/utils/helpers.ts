@@ -206,8 +206,6 @@ export function getStatusBadgeClass(status: string): string {
         case 'VOID':
         case 'BLACKLIST':
         case 'CLOSED':
-        case 'CANCELLED':
-        case 'CANCELED':
         case 'OVERDUE':
         case 'NOT_INTERESTED':
             return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300';
@@ -293,11 +291,7 @@ export const TENANT_STATUS_AR: Record<string, string> = {
 };
 
 export const USER_ROLE_AR: Record<string, string> = {
-    ADMIN: 'مدير النظام',
-    MANAGER: 'مدير العمليات',
-    ACCOUNTANT: 'محاسب',
-    VIEWER: 'مشاهد فقط',
-    USER: 'مستخدم عام',
+    ADMIN: 'مدير', USER: 'مستخدم'
 };
 
 export const RECEIPT_STATUS_AR: Record<string, string> = {

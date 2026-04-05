@@ -8,34 +8,19 @@ import { formatCurrency, formatDate, getStatusBadgeClass, normalizeArabicNumeral
 import HardGateBanner from '../components/shared/HardGateBanner';
 import SearchFilterBar from '../components/shared/SearchFilterBar';
 import { toast } from 'react-hot-toast';
-import { Clock, Loader2, CheckCircle, Download, XCircle } from 'lucide-react';
+import { Wrench, Clock, Loader2, CheckCircle, DollarSign, Download } from 'lucide-react';
 import { useSearchParams } from 'react-router-dom';
-import { getMaintenanceSummary, updateMaintenanceStatus } from '../services/operationsService';
 
 const MAINTENANCE_FILTER_KEY = 'rentrix:maintenance_filter';
 
 type MaintenanceStatusFilter = 'ALL' | MaintenanceRecord['status'];
 
-const normalizeMaintenanceStatus = (status: string): MaintenanceRecord['status'] => {
-    if (status === 'NEW') return 'PENDING';
-    if (status === 'CLOSED') return 'COMPLETED';
-    if (status === 'CANCELED') return 'CANCELLED';
-    return status as MaintenanceRecord['status'];
-};
-
-const statusLabel: Record<MaintenanceRecord['status'], string> = {
-    PENDING: 'قيد الانتظار',
-    IN_PROGRESS: 'جارٍ التنفيذ',
-    COMPLETED: 'مكتملة',
-    CANCELLED: 'ملغاة',
-};
-
 const statusTabs: { value: MaintenanceStatusFilter; label: string }[] = [
     { value: 'ALL', label: 'الكل' },
-    { value: 'PENDING', label: 'قيد الانتظار' },
-    { value: 'IN_PROGRESS', label: 'جارٍ التنفيذ' },
-    { value: 'COMPLETED', label: 'مكتملة' },
-    { value: 'CANCELLED', label: 'ملغاة' },
+    { value: 'NEW', label: 'جديد' },
+    { value: 'IN_PROGRESS', label: 'قيد التنفيذ' },
+    { value: 'COMPLETED', label: 'مكتمل' },
+    { value: 'CLOSED', label: 'مغلق' },
 ];
 
 const priorityBadgeClass: Record<string, string> = {
@@ -68,7 +53,7 @@ const Maintenance: React.FC = () => {
         if (!saved) return;
         try {
             const parsed = JSON.parse(saved) as { status?: MaintenanceStatusFilter; fromDate?: string; toDate?: string };
-            if (parsed.status && ['ALL', 'PENDING', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED'].includes(parsed.status)) {
+            if (parsed.status && ['ALL', 'NEW', 'IN_PROGRESS', 'COMPLETED', 'CLOSED'].includes(parsed.status)) {
                 setStatusFilter(parsed.status);
             }
             if (parsed.fromDate) setFromDate(parsed.fromDate);
@@ -117,8 +102,7 @@ const Maintenance: React.FC = () => {
                 const normalizedNo = normalizeArabicNumerals(rec.no || '');
                 const normalizedDescription = normalizeArabicNumerals(rec.description || '');
                 const normalizedUnitName = normalizeArabicNumerals(unit?.name || '');
-                const normalizedStatus = normalizeMaintenanceStatus(rec.status);
-                const statusMatch = statusFilter === 'ALL' || normalizedStatus === statusFilter;
+                const statusMatch = statusFilter === 'ALL' || rec.status === statusFilter;
                 const fromMatch = !fromDate || rec.requestDate >= fromDate;
                 const toMatch = !toDate || rec.requestDate <= toDate;
                 const queryMatch =
@@ -133,26 +117,17 @@ const Maintenance: React.FC = () => {
         [filteredRecords],
     );
 
-    const normalizedRecords = useMemo(
-        () => (db?.maintenanceRecords || []).map(record => ({ ...record, status: normalizeMaintenanceStatus(record.status) })),
-        [db],
-    );
-    const maintenanceSummary = useMemo(() => getMaintenanceSummary(normalizedRecords), [normalizedRecords]);
-
-    const handleStatusUpdate = async (record: MaintenanceRecord, nextStatus: MaintenanceRecord['status']) => {
-        const currentStatus = normalizeMaintenanceStatus(record.status);
-        if (currentStatus === nextStatus) return;
-        const result = await updateMaintenanceStatus(record.id, nextStatus, { currentStatus });
-        if (!result.success) {
-            toast.error(result.error || 'تعذر تحديث الحالة');
-            return;
-        }
-        const updates: Partial<MaintenanceRecord> = { status: nextStatus };
-        if (nextStatus === 'COMPLETED') updates.completedAt = Date.now();
-        if (nextStatus === 'CANCELLED') updates.cancelledAt = new Date().toISOString();
-        await dataService.update('maintenanceRecords', record.id, updates);
-        toast.success('تم تحديث الحالة');
-    };
+    const maintenanceStats = useMemo(() => {
+        if (!db) return { total: 0, newCount: 0, inProgress: 0, completed: 0, totalCost: 0 };
+        const records = db.maintenanceRecords;
+        return {
+            total: records.length,
+            newCount: records.filter(r => r.status === 'NEW').length,
+            inProgress: records.filter(r => r.status === 'IN_PROGRESS').length,
+            completed: records.filter(r => r.status === 'COMPLETED' || r.status === 'CLOSED').length,
+            totalCost: records.reduce((s, r) => s + (r.cost || 0), 0),
+        };
+    }, [db]);
 
     if (!db) return null;
 
@@ -160,26 +135,31 @@ const Maintenance: React.FC = () => {
         <div className="space-y-6">
             <HardGateBanner />
 
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                <div className="bg-surface-container-low rounded-xl border border-outline-variant/40 p-3 text-center">
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+                <div className="bg-card rounded-xl border border-border p-3 text-center">
+                    <Wrench size={18} className="mx-auto mb-1 text-blue-500" />
+                    <p className="text-lg font-black">{maintenanceStats.total}</p>
+                    <p className="text-[10px] text-text-muted">إجمالي الطلبات</p>
+                </div>
+                <div className="bg-card rounded-xl border border-border p-3 text-center">
                     <Clock size={18} className="mx-auto mb-1 text-amber-500" />
-                    <p className="text-lg font-black text-amber-600">{maintenanceSummary.pending}</p>
-                    <p className="text-[10px] text-text-muted">قيد الانتظار</p>
+                    <p className="text-lg font-black text-amber-600">{maintenanceStats.newCount}</p>
+                    <p className="text-[10px] text-text-muted">طلبات جديدة</p>
                 </div>
-                <div className="bg-surface-container-low rounded-xl border border-outline-variant/40 p-3 text-center">
+                <div className="bg-card rounded-xl border border-border p-3 text-center">
                     <Loader2 size={18} className="mx-auto mb-1 text-orange-500" />
-                    <p className="text-lg font-black text-orange-600">{maintenanceSummary.inProgress}</p>
-                    <p className="text-[10px] text-text-muted">جارٍ التنفيذ</p>
+                    <p className="text-lg font-black text-orange-600">{maintenanceStats.inProgress}</p>
+                    <p className="text-[10px] text-text-muted">قيد التنفيذ</p>
                 </div>
-                <div className="bg-surface-container-low rounded-xl border border-outline-variant/40 p-3 text-center">
+                <div className="bg-card rounded-xl border border-border p-3 text-center">
                     <CheckCircle size={18} className="mx-auto mb-1 text-emerald-500" />
-                    <p className="text-lg font-black text-emerald-600">{maintenanceSummary.completed}</p>
+                    <p className="text-lg font-black text-emerald-600">{maintenanceStats.completed}</p>
                     <p className="text-[10px] text-text-muted">مكتملة</p>
                 </div>
-                <div className="bg-surface-container-low rounded-xl border border-outline-variant/40 p-3 text-center">
-                    <XCircle size={18} className="mx-auto mb-1 text-red-500" />
-                    <p className="text-lg font-black text-red-600">{maintenanceSummary.cancelled}</p>
-                    <p className="text-[10px] text-text-muted">ملغاة</p>
+                <div className="bg-card rounded-xl border border-border p-3 text-center">
+                    <DollarSign size={18} className="mx-auto mb-1 text-red-500" />
+                    <p className="text-lg font-black text-red-600" dir="ltr">{formatCurrency(maintenanceStats.totalCost, settings.operational.currency)}</p>
+                    <p className="text-[10px] text-text-muted">إجمالي التكاليف</p>
                 </div>
             </div>
 
@@ -197,7 +177,14 @@ const Maintenance: React.FC = () => {
                                     'مكلّف إلى': r.assignedTo || '—',
                                     الأولوية: priorityLabel[r.priority || 'LOW'] || 'منخفضة',
                                     التكلفة: formatCurrency(r.cost || 0, settings.operational.currency),
-                                    الحالة: statusLabel[normalizeMaintenanceStatus(r.status)],
+                                    الحالة:
+                                        r.status === 'NEW'
+                                            ? 'جديد'
+                                            : r.status === 'IN_PROGRESS'
+                                              ? 'قيد التنفيذ'
+                                              : r.status === 'COMPLETED'
+                                                ? 'مكتمل'
+                                                : 'مغلق',
                                 }));
                                 exportToCsv('طلبات_صيانة_rentrix', data);
                             }}
@@ -235,19 +222,19 @@ const Maintenance: React.FC = () => {
                     </div>
                 </div>
                 <div className="overflow-x-auto mt-4">
-                    <table className="w-full text-sm text-right border-collapse">
-                        <thead className="text-xs uppercase bg-surface-container-high/50 text-slate-400 tracking-widest">
+                    <table className="w-full text-sm text-right border-collapse border border-border">
+                        <thead className="text-xs uppercase bg-background text-text">
                             <tr>
-                                <th scope="col" className="px-4 py-3 border border-outline-variant/40">رقم الطلب</th>
-                                <th scope="col" className="px-4 py-3 border border-outline-variant/40">الوحدة</th>
-                                <th scope="col" className="px-4 py-3 border border-outline-variant/40">تاريخ الطلب</th>
-                                <th scope="col" className="px-4 py-3 border border-outline-variant/40">مُكلَّف إلى</th>
-                                <th scope="col" className="px-4 py-3 border border-outline-variant/40">الأولوية</th>
-                                <th scope="col" className="px-4 py-3 border border-outline-variant/40">المصروف/الفاتورة</th>
-                                <th scope="col" className="px-4 py-3 border border-outline-variant/40">التكلفة</th>
-                                <th scope="col" className="px-4 py-3 border border-outline-variant/40">الحالة</th>
-                                <th scope="col" className="px-4 py-3 border border-outline-variant/40">تاريخ الإنجاز</th>
-                                <th scope="col" className="px-4 py-3 border border-outline-variant/40">إجراءات</th>
+                                <th scope="col" className="px-4 py-3 border border-border">رقم الطلب</th>
+                                <th scope="col" className="px-4 py-3 border border-border">الوحدة</th>
+                                <th scope="col" className="px-4 py-3 border border-border">تاريخ الطلب</th>
+                                <th scope="col" className="px-4 py-3 border border-border">مُكلَّف إلى</th>
+                                <th scope="col" className="px-4 py-3 border border-border">الأولوية</th>
+                                <th scope="col" className="px-4 py-3 border border-border">المصروف/الفاتورة</th>
+                                <th scope="col" className="px-4 py-3 border border-border">التكلفة</th>
+                                <th scope="col" className="px-4 py-3 border border-border">الحالة</th>
+                                <th scope="col" className="px-4 py-3 border border-border">تاريخ الإنجاز</th>
+                                <th scope="col" className="px-4 py-3 border border-border">إجراءات</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -258,74 +245,42 @@ const Maintenance: React.FC = () => {
                                 const linkedInvoice = rec.invoiceId ? invoicesMap.get(rec.invoiceId) : null;
                                 const linkedDoc = linkedExpense || linkedInvoice;
                                 const completionDate = rec.completionDate || (rec.completedAt ? new Date(rec.completedAt).toISOString().slice(0, 10) : '');
-                                const normalizedStatus = normalizeMaintenanceStatus(rec.status);
                                 return (
-                                    <tr key={rec.id} onClick={() => handleOpenModal(rec)} className="bg-surface-container-low hover:bg-surface-container-high cursor-pointer">
-                                        <td className="px-4 py-3 font-mono border border-outline-variant/40">{rec.no}</td>
-                                        <td className="px-4 py-3 font-medium text-text border border-outline-variant/40">
+                                    <tr key={rec.id} onClick={() => handleOpenModal(rec)} className="bg-card hover:bg-background cursor-pointer">
+                                        <td className="px-4 py-3 font-mono border border-border">{rec.no}</td>
+                                        <td className="px-4 py-3 font-medium text-text border border-border">
                                             {unit?.name} <span className="text-xs text-text-muted">({property?.name})</span>
                                         </td>
-                                        <td className="px-4 py-3 border border-outline-variant/40">{formatDate(rec.requestDate)}</td>
-                                        <td className="px-4 py-3 border border-outline-variant/40">{rec.assignedTo || '—'}</td>
-                                        <td className="px-4 py-3 border border-outline-variant/40">
+                                        <td className="px-4 py-3 border border-border">{formatDate(rec.requestDate)}</td>
+                                        <td className="px-4 py-3 border border-border">{rec.assignedTo || '—'}</td>
+                                        <td className="px-4 py-3 border border-border">
                                             <span className={`px-2 py-1 text-xs rounded-full ${priorityBadgeClass[rec.priority || 'LOW']}`}>
                                                 {priorityLabel[rec.priority || 'LOW']}
                                             </span>
                                         </td>
-                                        <td className="px-4 py-3 font-mono text-xs border border-outline-variant/40">{linkedDoc ? (linkedDoc as Invoice | Expense).no : '—'}</td>
-                                        <td className="px-4 py-3 border border-outline-variant/40">{formatCurrency(rec.cost || 0, settings.operational.currency)}</td>
-                                        <td className="px-4 py-3 border border-outline-variant/40">
-                                            <span className={`px-2 py-1 text-xs rounded-full ${getStatusBadgeClass(normalizedStatus)}`}>
-                                                {statusLabel[normalizedStatus]}
+                                        <td className="px-4 py-3 font-mono text-xs border border-border">{linkedDoc ? (linkedDoc as Invoice | Expense).no : '—'}</td>
+                                        <td className="px-4 py-3 border border-border">{formatCurrency(rec.cost || 0, settings.operational.currency)}</td>
+                                        <td className="px-4 py-3 border border-border">
+                                            <span className={`px-2 py-1 text-xs rounded-full ${getStatusBadgeClass(rec.status)}`}>
+                                                {rec.status === 'NEW' ? 'جديد' : rec.status === 'IN_PROGRESS' ? 'قيد التنفيذ' : rec.status === 'COMPLETED' ? 'مكتمل' : 'مغلق'}
                                             </span>
                                         </td>
-                                        <td className="px-4 py-3 border border-outline-variant/40">
-                                            {normalizedStatus === 'COMPLETED' && completionDate ? formatDate(completionDate) : '—'}
+                                        <td className="px-4 py-3 border border-border">
+                                            {['COMPLETED', 'CLOSED'].includes(rec.status) && completionDate ? formatDate(completionDate) : '—'}
                                         </td>
-                                        <td className="px-4 py-3 border border-outline-variant/40" onClick={e => e.stopPropagation()}>
-                                            <div className="flex items-center gap-2">
-                                                <select
-                                                    aria-label="تحديث الحالة"
-                                                    className="text-xs"
-                                                    value={normalizedStatus}
-                                                    onChange={e => handleStatusUpdate(rec, e.target.value as MaintenanceRecord['status'])}
-                                                >
-                                                    <option value="PENDING">تحديث الحالة: قيد الانتظار</option>
-                                                    <option value="IN_PROGRESS">تحديث الحالة: جارٍ التنفيذ</option>
-                                                    <option value="COMPLETED">تحديث الحالة: مكتملة</option>
-                                                    <option value="CANCELLED">تحديث الحالة: ملغاة</option>
-                                                </select>
-                                                <ActionsMenu
-                                                    items={[
-                                                        EditAction(() => handleOpenModal(rec)),
-                                                        DeleteAction(() => handleDelete(rec.id)),
-                                                    ]}
-                                                />
-                                            </div>
+                                        <td className="px-4 py-3 border border-border" onClick={e => e.stopPropagation()}>
+                                            <ActionsMenu
+                                                items={[
+                                                    EditAction(() => handleOpenModal(rec)),
+                                                    DeleteAction(() => handleDelete(rec.id)),
+                                                ]}
+                                            />
                                         </td>
                                     </tr>
                                 );
                             })}
                         </tbody>
                     </table>
-                </div>
-                <div className="mt-4 grid grid-cols-1 md:grid-cols-4 gap-3">
-                    <div className="bg-background border border-outline-variant/40 rounded-lg p-3">
-                        <p className="text-xs text-text-muted mb-1">إجمالي التكلفة</p>
-                        <p className="font-bold" dir="ltr">{formatCurrency(maintenanceSummary.totalCost, settings.operational.currency)}</p>
-                    </div>
-                    <div className="bg-background border border-outline-variant/40 rounded-lg p-3">
-                        <p className="text-xs text-text-muted mb-1">حصة المالك</p>
-                        <p className="font-bold" dir="ltr">{formatCurrency(maintenanceSummary.ownerCost, settings.operational.currency)}</p>
-                    </div>
-                    <div className="bg-background border border-outline-variant/40 rounded-lg p-3">
-                        <p className="text-xs text-text-muted mb-1">حصة المستأجر</p>
-                        <p className="font-bold" dir="ltr">{formatCurrency(maintenanceSummary.tenantCost, settings.operational.currency)}</p>
-                    </div>
-                    <div className="bg-background border border-outline-variant/40 rounded-lg p-3">
-                        <p className="text-xs text-text-muted mb-1">حصة المكتب</p>
-                        <p className="font-bold" dir="ltr">{formatCurrency(maintenanceSummary.officeCost, settings.operational.currency)}</p>
-                    </div>
                 </div>
                 <div className="mt-4 pt-3 border-t border-border flex justify-end">
                     <p className="text-sm font-bold">
@@ -348,7 +303,7 @@ const MaintenanceForm: React.FC<{ isOpen: boolean; onClose: () => void; record: 
     const [unitId, setUnitId] = useState('');
     const [requestDate, setRequestDate] = useState('');
     const [description, setDescription] = useState('');
-    const [status, setStatus] = useState<MaintenanceRecord['status']>('PENDING');
+    const [status, setStatus] = useState<MaintenanceRecord['status']>('NEW');
     const [cost, setCost] = useState(0);
     const [chargedTo, setChargedTo] = useState<MaintenanceRecord['chargedTo']>('OWNER');
     const [priority, setPriority] = useState<'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT'>('MEDIUM');
@@ -363,7 +318,7 @@ const MaintenanceForm: React.FC<{ isOpen: boolean; onClose: () => void; record: 
             setUnitId(record.unitId);
             setRequestDate(record.requestDate);
             setDescription(record.description);
-            setStatus(normalizeMaintenanceStatus(record.status));
+            setStatus(record.status);
             setCost(record.cost || 0);
             setChargedTo(record.chargedTo);
             setPriority(record.priority || 'MEDIUM');
@@ -373,7 +328,7 @@ const MaintenanceForm: React.FC<{ isOpen: boolean; onClose: () => void; record: 
             setUnitId(prefilledUnitId || db.units[0]?.id || '');
             setRequestDate(new Date().toISOString().slice(0, 10));
             setDescription('');
-            setStatus('PENDING');
+            setStatus('NEW');
             setCost(0);
             setChargedTo(settings.operational.maintenance.defaultChargedTo);
             setPriority('MEDIUM');
@@ -400,8 +355,7 @@ const MaintenanceForm: React.FC<{ isOpen: boolean; onClose: () => void; record: 
                     return;
                 }
 
-                const normalizedRecordStatus = normalizeMaintenanceStatus(record.status);
-                const isNewlyCompleted = status === 'COMPLETED' && normalizedRecordStatus !== 'COMPLETED' && cost > 0;
+                const isNewlyCompleted = ['COMPLETED', 'CLOSED'].includes(status) && !['COMPLETED', 'CLOSED'].includes(record.status) && cost > 0;
                 const updates: Partial<MaintenanceRecord> = {
                     unitId,
                     requestDate,
@@ -411,7 +365,7 @@ const MaintenanceForm: React.FC<{ isOpen: boolean; onClose: () => void; record: 
                     chargedTo,
                     priority,
                     assignedTo: assignedTo || undefined,
-                    completionDate: status === 'COMPLETED' ? (completionDate || new Date().toISOString().slice(0, 10)) : undefined,
+                    completionDate: ['COMPLETED', 'CLOSED'].includes(status) ? (completionDate || new Date().toISOString().slice(0, 10)) : undefined,
                 };
 
                 if (isNewlyCompleted) {
@@ -462,7 +416,7 @@ const MaintenanceForm: React.FC<{ isOpen: boolean; onClose: () => void; record: 
                     chargedTo,
                     priority,
                     assignedTo: assignedTo || undefined,
-                    completionDate: status === 'COMPLETED' ? (completionDate || new Date().toISOString().slice(0, 10)) : undefined,
+                    completionDate: ['COMPLETED', 'CLOSED'].includes(status) ? (completionDate || new Date().toISOString().slice(0, 10)) : undefined,
                 });
             }
             onClose();
@@ -501,10 +455,10 @@ const MaintenanceForm: React.FC<{ isOpen: boolean; onClose: () => void; record: 
                     <div>
                         <label className="block text-sm font-medium mb-1">الحالة</label>
                         <select value={status} onChange={e => setStatus(e.target.value as MaintenanceRecord['status'])}>
-                            <option value="PENDING">قيد الانتظار</option>
-                            <option value="IN_PROGRESS">جارٍ التنفيذ</option>
-                            <option value="COMPLETED">مكتملة</option>
-                            <option value="CANCELLED">ملغاة</option>
+                            <option value="NEW">جديد</option>
+                            <option value="IN_PROGRESS">قيد التنفيذ</option>
+                            <option value="COMPLETED">مكتمل</option>
+                            <option value="CLOSED">مغلق</option>
                         </select>
                     </div>
                     <div>
@@ -534,7 +488,7 @@ const MaintenanceForm: React.FC<{ isOpen: boolean; onClose: () => void; record: 
                         <label className="block text-sm font-medium mb-1">مُكلَّف إلى</label>
                         <input value={assignedTo} onChange={e => setAssignedTo(e.target.value)} placeholder="اسم الفني / المقاول" />
                     </div>
-                    {status === 'COMPLETED' && (
+                    {['COMPLETED', 'CLOSED'].includes(status) && (
                         <div>
                             <label className="block text-sm font-medium mb-1">تاريخ الإنجاز</label>
                             <input type="date" value={completionDate} onChange={e => setCompletionDate(e.target.value)} />

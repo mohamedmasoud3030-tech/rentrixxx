@@ -13,6 +13,7 @@ export interface OwnersRow {
   notes: string;
   commission_type: 'RATE' | 'FIXED_MONTHLY';
   commission_value: number;
+  portal_token: string | null;
   is_demo: boolean | null;
   created_at: number;
   updated_at: number | null;
@@ -158,26 +159,22 @@ export interface MaintenanceRequestsRow {
   unit_id: string;
   request_date: string;
   description: string;
-  status: 'PENDING' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED';
+  status: 'NEW' | 'IN_PROGRESS' | 'COMPLETED' | 'CLOSED';
   priority: 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT' | null;
   assigned_to: string | null;
   cost: number;
   charged_to: 'OWNER' | 'OFFICE' | 'TENANT';
-  estimated_cost: number | null;
-  actual_cost: number | null;
   completion_date: string | null;
   expense_id: string | null;
   invoice_id: string | null;
   created_at: number;
   completed_at: number | null;
-  cancelled_at: string | null;
-  cancellation_reason: string | null;
 }
 
 export interface UsersRow {
   id: string;
   username: string;
-  role: 'ADMIN' | 'USER' | 'ACCOUNTANT' | 'MANAGER' | 'VIEWER';
+  role: 'ADMIN' | 'USER';
   must_change_password: boolean;
   is_disabled: boolean;
   created_at: number;

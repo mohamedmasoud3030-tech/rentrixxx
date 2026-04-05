@@ -1,57 +1,60 @@
+<div align="center">
+<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
+</div>
+
 # Rentrix
-نظام إدارة العقارات — Production-ready property management system.
+
+Production-ready SaaS for property, contracts, maintenance, and financial operations.
 
 ## Local setup
 
-### Prerequisites
+**Prerequisites**
 - Node.js 20+
 - npm 10+
 
-### Installation
-1. Install dependencies:
+1. Install dependencies deterministically:
+   ```bash
    npm ci
-
-2. Set environment variables in .env.local:
-   VITE_SUPABASE_URL=your_supabase_url
-   VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
-
-   Optional:
-   VITE_ERROR_TRACKER_DSN=
-   VITE_RELEASE_VERSION=
-   VITE_LOG_LEVEL=
-
-3. Run preflight checks:
+   ```
+2. Run preflight checks:
+   ```bash
    npm run preflight
-
-4. Start dev server:
+   ```
+3. Start dev server:
+   ```bash
    npm run dev
+   ```
 
-## Available scripts
+## Required environment variables
 
-| Script | Description |
-|--------|-------------|
-| npm run dev | Start development server |
-| npm run build | Production build |
-| npm run typecheck | TypeScript type check |
-| npm run lint | ESLint check |
-| npm run test | Run tests |
-| npm run ci | Full local gate (typecheck + lint + test + build) |
-| npm run preflight | Environment preflight checks |
-| npm run readiness | Deployment readiness checklist |
-| npm run readiness:strict | Readiness check (fails on missing envs) |
-| npm run schema:drift:check | Check Supabase schema drift |
+1. Install dependencies:
+   `npm install`
+2. Set environment variables in `.env.local`:
+   - `VITE_SUPABASE_URL`
+   - `VITE_SUPABASE_ANON_KEY`
+   - optional: `VITE_ERROR_TRACKER_DSN`, `VITE_RELEASE_VERSION`, `VITE_LOG_LEVEL`
+3. Run the app:
+   `npm run dev`
 
-## CI/CD
-- GitHub Actions runs on every push and pull request
-- Required GitHub Secrets:
-  SUPABASE_ACCESS_TOKEN
-  SUPABASE_DB_PASSWORD
-  SUPABASE_PROJECT_REF
+## Launch hardening checks
 
-## Tech stack
-- React + TypeScript + Vite
-- Supabase (PostgreSQL + Auth + Edge Functions)
-- Tailwind CSS + shadcn/ui
-- Deployed on Vercel
+- Run full gate locally:
+  - `npm run ci`
+- Deployment readiness checklist:
+  - `npm run readiness`
+  - `npm run readiness:strict` (fails on missing required envs)
 
-<!-- CI verified -->
+
+## Vercel Sandbox quickstart
+
+Run the local demo script (uses `@vercel/sandbox`):
+
+```bash
+npm run sandbox:demo
+```
+
+Or connect directly with the CLI:
+
+```bash
+npx sandbox create --connect
+```

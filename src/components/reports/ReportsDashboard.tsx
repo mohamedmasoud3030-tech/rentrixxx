@@ -1,4 +1,4 @@
-import React, { Suspense, useState, useCallback, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import { supabase } from '../../services/supabase';
 import { useApp } from '../../contexts/AppContext';
 import {
@@ -14,13 +14,6 @@ type ReportId =
 
 interface DateRange { from: string; to: string }
 type LoadState = 'idle' | 'loading' | 'done' | 'error';
-interface DashboardProps {
-  currency?: string;
-  owners?: any[];
-  contracts?: any[];
-  startDate: string;
-  endDate: string;
-}
 interface OverdueReportRow {
   tenant_name: string;
   tenant_phone?: string;
@@ -62,18 +55,6 @@ const AGING_COLORS = ['#10b981','#3b82f6','#f59e0b','#ef4444','#991b1b'];
 const Spinner = () => (
   <div className="flex items-center justify-center py-16">
     <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin"/>
-  </div>
-);
-
-const ReportsSkeleton: React.FC = () => (
-  <div className="animate-pulse space-y-4">
-    <div className="h-8 w-44 rounded-lg bg-background" />
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-      <div className="h-24 rounded-xl bg-background" />
-      <div className="h-24 rounded-xl bg-background" />
-      <div className="h-24 rounded-xl bg-background" />
-    </div>
-    <div className="h-72 rounded-xl bg-background" />
   </div>
 );
 
@@ -167,8 +148,8 @@ const DatePicker: React.FC<{ range: DateRange; onChange: (r: DateRange) => void;
 // ════════════════════════════════════════════════════════════════
 
 // 1. ملخص مالي
-const SummaryView: React.FC<{ currency: string; defaultRange: DateRange }> = ({ currency, defaultRange }) => {
-  const [range, setRange] = useState<DateRange>(defaultRange);
+const SummaryView: React.FC<{ currency: string }> = ({ currency }) => {
+  const [range, setRange] = useState<DateRange>({ from: firstOfYear(), to: today() });
   const [data, setData] = useState<any>(null);
   const [state, setState] = useState<LoadState>('idle');
 
@@ -179,7 +160,6 @@ const SummaryView: React.FC<{ currency: string; defaultRange: DateRange }> = ({ 
     setData(d); setState('done');
   }, [range]);
 
-  useEffect(() => { setRange(defaultRange); }, [defaultRange.from, defaultRange.to]);
   useEffect(() => { load(); }, []);
 
   const occupancy = data ? [
@@ -225,8 +205,8 @@ const SummaryView: React.FC<{ currency: string; defaultRange: DateRange }> = ({ 
 };
 
 // 2. قائمة الدخل
-const IncomeView: React.FC<{ currency: string; defaultRange: DateRange }> = ({ currency, defaultRange }) => {
-  const [range, setRange] = useState<DateRange>(defaultRange);
+const IncomeView: React.FC<{ currency: string }> = ({ currency }) => {
+  const [range, setRange] = useState<DateRange>({ from: firstOfYear(), to: today() });
   const [data, setData] = useState<any>(null);
   const [state, setState] = useState<LoadState>('idle');
 
@@ -237,7 +217,6 @@ const IncomeView: React.FC<{ currency: string; defaultRange: DateRange }> = ({ c
     setData(d); setState('done');
   }, [range]);
 
-  useEffect(() => { setRange(defaultRange); }, [defaultRange.from, defaultRange.to]);
   useEffect(() => { load(); }, []);
 
   const chartData = data ? [
@@ -350,8 +329,8 @@ const TrialBalanceView: React.FC<{ currency: string }> = ({ currency }) => {
 };
 
 // 4. أعمار الديون
-const AgedReceivablesView: React.FC<{ currency: string; defaultRange: DateRange }> = ({ currency, defaultRange }) => {
-  const [asOf, setAsOf] = useState(defaultRange.to);
+const AgedReceivablesView: React.FC<{ currency: string }> = ({ currency }) => {
+  const [asOf, setAsOf] = useState(today());
   const [data, setData] = useState<any>(null);
   const [state, setState] = useState<LoadState>('idle');
 
@@ -362,7 +341,6 @@ const AgedReceivablesView: React.FC<{ currency: string; defaultRange: DateRange 
     setData(d); setState('done');
   }, [asOf]);
 
-  useEffect(() => { setAsOf(defaultRange.to); }, [defaultRange.to]);
   useEffect(() => { load(); }, []);
 
   const buckets = data?.totals ? [
@@ -544,9 +522,9 @@ const TenantStatementView: React.FC<{ currency: string; contracts: any[] }> = ({
 };
 
 // 7. كشف حساب المالك
-const OwnerStatementView: React.FC<{ currency: string; owners: any[]; defaultRange: DateRange }> = ({ currency, owners, defaultRange }) => {
+const OwnerStatementView: React.FC<{ currency: string; owners: any[] }> = ({ currency, owners }) => {
   const [ownerId, setOwnerId] = useState('');
-  const [range, setRange] = useState<DateRange>(defaultRange);
+  const [range, setRange] = useState<DateRange>({ from: firstOfYear(), to: today() });
   const [data, setData] = useState<any>(null);
   const [state, setState] = useState<LoadState>('idle');
 
@@ -557,8 +535,6 @@ const OwnerStatementView: React.FC<{ currency: string; owners: any[]; defaultRan
     if (error) { setState('error'); return; }
     setData(d); setState('done');
   }, [ownerId, range]);
-
-  useEffect(() => { setRange(defaultRange); }, [defaultRange.from, defaultRange.to]);
 
   return (
     <div className="space-y-5">
@@ -607,8 +583,8 @@ const OwnerStatementView: React.FC<{ currency: string; owners: any[]; defaultRan
 };
 
 // 8. التحصيل اليومي
-const DailyCollectionView: React.FC<{ currency: string; defaultRange: DateRange }> = ({ currency, defaultRange }) => {
-  const [range, setRange] = useState<DateRange>(defaultRange);
+const DailyCollectionView: React.FC<{ currency: string }> = ({ currency }) => {
+  const [range, setRange] = useState<DateRange>({ from: new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().slice(0,10), to: today() });
   const [data, setData] = useState<any>(null);
   const [state, setState] = useState<LoadState>('idle');
 
@@ -619,7 +595,6 @@ const DailyCollectionView: React.FC<{ currency: string; defaultRange: DateRange 
     setData(d); setState('done');
   }, [range]);
 
-  useEffect(() => { setRange(defaultRange); }, [defaultRange.from, defaultRange.to]);
   useEffect(() => { load(); }, []);
 
   return (
@@ -723,33 +698,25 @@ const REPORTS: { id: ReportId; label: string; group: string }[] = [
   { id: 'tenant_statement', label: 'كشف حساب المستأجر',     group: 'كشوف' },
 ];
 
-const ReportsDashboard: React.FC<DashboardProps> = ({ currency: currencyProp, owners: ownersProp, contracts: contractsProp, startDate, endDate }) => {
+const ReportsDashboard: React.FC = () => {
   const { settings, db } = useApp();
-  const currency = currencyProp ?? settings.operational?.currency ?? 'OMR';
-  const owners = ownersProp ?? (db.owners || []);
-  const contracts = contractsProp ?? (db.contracts || []);
+  const currency = settings.operational?.currency ?? 'OMR';
+  const owners = db.owners || [];
+  const contracts = db.contracts || [];
   const [active, setActive] = useState<ReportId>('summary');
-  const [dashboardLoading, setDashboardLoading] = useState(false);
-  const globalRange = useMemo<DateRange>(() => ({ from: startDate, to: endDate }), [startDate, endDate]);
-
-  useEffect(() => {
-    setDashboardLoading(true);
-    const timer = setTimeout(() => setDashboardLoading(false), 250);
-    return () => clearTimeout(timer);
-  }, [active, startDate, endDate]);
 
   const groups = Array.from(new Set(REPORTS.map(r => r.group)));
 
   const renderContent = () => {
     switch (active) {
-      case 'summary':          return <SummaryView currency={currency} defaultRange={globalRange}/>;
-      case 'income_statement': return <IncomeView currency={currency} defaultRange={globalRange}/>;
+      case 'summary':          return <SummaryView currency={currency}/>;
+      case 'income_statement': return <IncomeView currency={currency}/>;
       case 'trial_balance':    return <TrialBalanceView currency={currency}/>;
-      case 'aged_receivables': return <AgedReceivablesView currency={currency} defaultRange={globalRange}/>;
+      case 'aged_receivables': return <AgedReceivablesView currency={currency}/>;
       case 'overdue':          return <OverdueView currency={currency}/>;
       case 'tenant_statement': return <TenantStatementView currency={currency} contracts={contracts}/>;
-      case 'owner_statement':  return <OwnerStatementView currency={currency} owners={owners} defaultRange={globalRange}/>;
-      case 'daily_collection': return <DailyCollectionView currency={currency} defaultRange={globalRange}/>;
+      case 'owner_statement':  return <OwnerStatementView currency={currency} owners={owners}/>;
+      case 'daily_collection': return <DailyCollectionView currency={currency}/>;
       case 'rent_roll':        return <RentRollView currency={currency}/>;
       case 'balance_sheet':    return <TrialBalanceView currency={currency}/>; // placeholder
       default:                 return null;
@@ -787,7 +754,7 @@ const ReportsDashboard: React.FC<DashboardProps> = ({ currency: currencyProp, ow
           <span className="text-sm font-black text-text">{currentLabel}</span>
         </div>
         <div className="bg-card border border-border rounded-2xl p-5">
-          <Suspense fallback={<ReportsSkeleton />}>{renderContent()}</Suspense>
+          {renderContent()}
         </div>
       </main>
     </div>

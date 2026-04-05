@@ -2,7 +2,6 @@ import { supabase } from './supabase';
 import { getAppEnv } from '../config/env';
 import { logger } from './logger';
 import type { AutomationResult } from '../types/automation';
-import type { User } from '../types';
 
 const env = getAppEnv();
 
@@ -12,24 +11,15 @@ export interface OwnerPortalPayload {
   currency: string;
 }
 
-export async function createOwnerPortalUrl(ownerId: string): Promise<string> {
-  try {
-    const { data, error } = await supabase.functions.invoke('owner-access-token', {
-      body: { ownerId, action: 'issue' },
-    });
-
-    if (error || !data?.url) {
-      logger.error('[EdgeFunction] owner-access-token issue failed', error || data);
-      console.error('[EdgeFunction] owner-access-token issue failed', error || data);
-      return '';
-    }
-
-    return data.url as string;
-  } catch (error) {
-    logger.error('[EdgeFunction] owner-access-token issue exception', error);
-    console.error('[EdgeFunction] owner-access-token issue exception', error);
-    return '';
+export async function createOwnerAccessToken(ownerId: string): Promise<string> {
+  const { data, error } = await supabase.functions.invoke('owner-access-token', {
+    body: { ownerId, action: 'issue' },
+  });
+  if (error || !data?.token) {
+    logger.error('[EdgeFunction] owner-access-token issue failed', error || data);
+    throw new Error('تعذر إنشاء رابط البوابة الآمن.');
   }
+  return data.token as string;
 }
 
 export async function verifyOwnerAccessToken(ownerId: string, token: string): Promise<OwnerPortalPayload> {
@@ -43,7 +33,7 @@ export async function verifyOwnerAccessToken(ownerId: string, token: string): Pr
   return data as OwnerPortalPayload;
 }
 
-export async function adminCreateUser(payload: { email: string; password: string; username: string; role: User['role'] }): Promise<{ id: string }> {
+export async function adminCreateUser(payload: { email: string; password: string; username: string; role: 'ADMIN' | 'USER' }): Promise<{ id: string }> {
   const { data, error } = await supabase.functions.invoke('admin-create-user', { body: payload });
   if (error || !data?.id) {
     logger.error('[EdgeFunction] admin-create-user failed', error || data);

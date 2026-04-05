@@ -13,7 +13,7 @@ import { ROUTES } from '../routes/modules';
 import { AR_LABELS } from '../config/labels.ar';
 
 const Owners: React.FC = () => {
-    const { dataService, generateOwnerPortalLink, fetchPaginatedData, sendWhatsApp, ownerBalances } = useApp();
+    const { dataService, generateOwnerPortalLink, fetchPaginatedData, sendWhatsApp } = useApp();
     const navigate = useNavigate();
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingOwner, setEditingOwner] = useState<Owner | null>(null);
@@ -38,12 +38,6 @@ const Owners: React.FC = () => {
         setIsModalOpen(true);
     };
 
-
-    const getBalanceColorClass = (balance: number) => {
-        if (balance > 0) return 'text-primary';
-        if (balance < 0) return 'text-red-600';
-        return 'text-gray-500';
-    };
     const handleDelete = async (id: string) => {
         // You might want to add a check here to prevent deleting owners with properties.
         await dataService.remove('owners', id);
@@ -68,23 +62,14 @@ const Owners: React.FC = () => {
             ) : (
                 <div>
                     <div className="space-y-4">
-                        <div className="hidden md:grid grid-cols-4 gap-4 px-4 text-xs text-text-muted">
-                            <p>المالك</p>
-                            <p>الهاتف</p>
-                            <p>الرصيد</p>
-                            <p className="text-left">الإجراءات</p>
-                        </div>
-                        {owners.map(owner => {
-                            const ownerNetBalance = ownerBalances[owner.id]?.net ?? 0;
-                            return (
+                        {owners.map(owner => (
                             <Card key={owner.id}>
-                                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 md:items-center">
+                                <div className="flex justify-between items-center">
                                     <div onClick={() => handleOpenModal(owner)} className="cursor-pointer">
                                         <h3 className="font-bold text-lg text-primary">{owner.name}</h3>
+                                        <p className="text-sm text-text-muted">{owner.phone}</p>
                                     </div>
-                                    <p className="text-sm text-text-muted">{owner.phone || '—'}</p>
-                                    <p className={`font-semibold ${getBalanceColorClass(ownerNetBalance)}`}>{ownerNetBalance.toFixed(3)} ر.ع</p>
-                                    <div className="flex items-center gap-2 md:justify-end">
+                                    <div className="flex items-center gap-2">
                                         <button 
                                             onClick={() => sendWhatsApp(owner.phone, `سيد ${owner.name}، إليك تقرير العقارات اخر تحديث...`)}
                                             className="p-2 bg-green-100 text-green-700 rounded-full hover:bg-green-200"
@@ -111,8 +96,7 @@ const Owners: React.FC = () => {
                                     </div>
                                 </div>
                             </Card>
-                            );
-                        })}
+                        ))}
                     </div>
                     <div className="flex justify-between items-center mt-4">
                         <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1} className="btn">السابق</button>

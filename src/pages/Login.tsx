@@ -48,7 +48,7 @@ const Login: React.FC = () => {
       </div>
 
       <div className="w-full max-w-5xl mx-auto relative z-10">
-        <div className="grid md:grid-cols-2 gap-0 rounded-3xl overflow-hidden shadow-2xl border border-outline-variant/40 backdrop-blur-sm bg-surface-container-low/95">
+        <div className="grid md:grid-cols-2 gap-0 rounded-3xl overflow-hidden shadow-2xl border border-border/50 backdrop-blur-sm bg-card/95">
           {/* Left Side - Form */}
           <div className="p-8 md:p-12 lg:p-16 flex flex-col justify-center">
             {/* Header */}
@@ -59,10 +59,10 @@ const Login: React.FC = () => {
                 </div>
                 <span className="text-sm font-bold text-primary">Rentrix-Egy</span>
               </div>
-              <h1 className="text-4xl md:text-5xl font-black rx-gradient-text mb-3">
+              <h1 className="text-4xl md:text-5xl font-black bg-gradient-to-l from-primary to-primary/70 bg-clip-text text-transparent mb-3">
                 مرحباً بعودتك
               </h1>
-              <p className="text-on-surface-variant text-lg">
+              <p className="text-muted-foreground text-lg">
                 سجل الدخول لإدارة عقاراتك بكفاءة
               </p>
             </div>
@@ -81,7 +81,7 @@ const Login: React.FC = () => {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="your@email.com"
-                    className="w-full pr-12 pl-4 py-3 bg-background border border-outline-variant/40 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all placeholder:text-text-muted/50 disabled:opacity-50"
+                    className="w-full pr-12 pl-4 py-3 bg-background border border-border/50 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all placeholder:text-text-muted/50 disabled:opacity-50"
                     required
                     dir="ltr"
                     disabled={isLoading}
@@ -101,7 +101,7 @@ const Login: React.FC = () => {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="••••••••"
-                    className="w-full pr-12 pl-12 py-3 bg-background border border-outline-variant/40 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all placeholder:text-text-muted/50 disabled:opacity-50"
+                    className="w-full pr-12 pl-12 py-3 bg-background border border-border/50 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all placeholder:text-text-muted/50 disabled:opacity-50"
                     required
                     dir="ltr"
                     disabled={isLoading}
@@ -130,7 +130,7 @@ const Login: React.FC = () => {
               <button
                 type="submit"
                 disabled={isLoading || !email || !password}
-                className="w-full relative py-3 px-4 rx-gradient-btn font-bold rounded-xl transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-lg hover:shadow-primary/30 active:scale-95 flex items-center justify-center gap-2 group mt-2"
+                className="w-full relative py-3 px-4 bg-gradient-to-r from-primary to-primary/80 hover:from-primary hover:to-primary text-white font-bold rounded-xl transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-lg hover:shadow-primary/30 active:scale-95 flex items-center justify-center gap-2 group mt-2"
               >
                 <span
                   className={`transition-all ${isLoading ? "opacity-0" : "opacity-100"}`}
@@ -148,10 +148,10 @@ const Login: React.FC = () => {
               {/* Footer */}
               <div className="pt-6 border-t border-border/30">
                 <div className="text-center space-y-2">
-                  <p className="text-xs text-on-surface-variant/70">
+                  <p className="text-xs text-muted-foreground/70">
                     نظام إدارة العقارات المتقدم
                   </p>
-                  <div className="flex items-center justify-center gap-2 text-xs text-on-surface-variant">
+                  <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
                     <span> آمن تماماً</span>
                     <span className="text-border">•</span>
                     <span> متاح على الويب والسطح المكتب</span>
@@ -235,7 +235,7 @@ const Login: React.FC = () => {
       </div>
 
       {/* Mobile branding info */}
-      <div className="md:hidden fixed bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-primary/20 to-transparent border-t border-border/30 text-center text-xs text-on-surface-variant">
+      <div className="md:hidden fixed bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-primary/20 to-transparent border-t border-border/30 text-center text-xs text-muted-foreground">
         <p className="font-semibold">
           Rentrix-Egy- نظام إدارة العقارات المتقدم
         </p>

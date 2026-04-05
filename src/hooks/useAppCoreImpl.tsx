@@ -16,8 +16,6 @@ import { calcVAT } from '../services/financeService';
 import { getEffectiveInvoiceStatus, getInvoiceRemaining } from '../utils/helpers';
 import { runManualAutomation as runManualAutomationService } from '../services/automationService';
 import { softDeleteContract } from '../services/operationsService';
-import { notificationService } from '../services/notificationService';
-import { ROLE_CAPABILITIES, type Capability } from '../config/rbac';
 
 const DEFAULT_GEMINI_API_KEY = '';
 
@@ -244,7 +242,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const canAccess = useCallback((action: string) => {
     if (!currentUser) return false;
-    return ROLE_CAPABILITIES[currentUser.role]?.has(action as Capability) || false;
+    const capabilityMap: Record<'ADMIN' | 'USER', Set<string>> = {
+      ADMIN: new Set([
+        'VIEW_DASHBOARD', 'VIEW_FINANCIALS', 'MANAGE_SETTINGS', 'MANAGE_USERS', 'VIEW_AUDIT_LOG', 'USE_SMART_ASSISTANT',
+        'MANAGE_PROPERTIES', 'MANAGE_TENANTS', 'MANAGE_OWNERS', 'MANAGE_CONTRACTS', 'MANAGE_MAINTENANCE', 'VIEW_REPORTS',
+      ]),
+      USER: new Set([
+        'VIEW_DASHBOARD', 'VIEW_FINANCIALS', 'USE_SMART_ASSISTANT',
+        'MANAGE_PROPERTIES', 'MANAGE_TENANTS', 'MANAGE_OWNERS', 'MANAGE_CONTRACTS', 'MANAGE_MAINTENANCE', 'VIEW_REPORTS',
+      ]),
+    };
+    return capabilityMap[currentUser.role]?.has(action) || false;
   }, [currentUser]);
 
   useEffect(() => {
@@ -261,7 +269,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           setCurrentUser({
             id: session.user.id, username: profile.username || session.user.email!.split('@')[0],
             email: session.user.email || '', hash: '', salt: '',
-            role: (profile.role as User['role']) || 'USER',
+            role: (profile.role as 'ADMIN' | 'USER') || 'USER',
             mustChange: profile.must_change_password || false, createdAt: profile.created_at || Date.now(),
             isDisabled: false,
           });
@@ -321,7 +329,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         await supabase.auth.signOut();
         return { ok: false, msg: 'هذا الحساب معطّل. تواصل مع مدير النظام.' };
       }
-      const user: User = { id: data.user.id, username: profile.username || data.user.email!.split('@')[0], email: data.user.email || '', hash: '', salt: '', role: (profile.role as User['role']) || 'USER', mustChange: profile.must_change_password || false, createdAt: profile.created_at || Date.now(), isDisabled: false };
+      const user: User = { id: data.user.id, username: profile.username || data.user.email!.split('@')[0], email: data.user.email || '', hash: '', salt: '', role: (profile.role as 'ADMIN' | 'USER') || 'USER', mustChange: profile.must_change_password || false, createdAt: profile.created_at || Date.now(), isDisabled: false };
       setCurrentUser(user);
       await audit('LOGIN', 'SESSION', user.id);
       return { ok: true, msg: 'Ok', mustChange: user.mustChange };
@@ -1001,7 +1009,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const generateOwnerPortalLink = useCallback(async (ownerId: string): Promise<string> => {
     const owner = await supabaseData.fetchOne<Owner>('owners', ownerId);
     if (!owner) return '';
-    return createOwnerPortalUrl(ownerId);
+    let token = owner.portalToken;
+    if (!token) {
+      token = crypto.randomUUID();
+      await supabaseData.update('owners', ownerId, { portalToken: token });
+    }
+    return `${window.location.href.split('#')[0]}#/owner-view/${ownerId}?auth=${token}`;
   }, []);
 
   const buildSnapshotState = useCallback((sourceDb: Database) => {
@@ -1227,15 +1240,26 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   }, [deriveInvoiceStatus]);
 
-  const generateNotifications = useCallback(async () => {
+  const generateContractExpiryNotifications = useCallback(async (): Promise<number> => {
     if (!settings) return 0;
-    const generationResult = await notificationService.generateAllNotifications(activeDb, settings);
-    if (generationResult.total > 0) {
-      setIsDataStale(true);
-      await refreshData();
+    const alertDays = settings.operational?.contractAlertDays ?? 30;
+    const now = Date.now();
+    const activeContracts = await supabaseData.fetchWhere<Contract>('contracts', 'status', 'ACTIVE');
+    const existingNotifs = await supabaseData.fetchAll<AppNotification>('appNotifications');
+    let count = 0;
+    for (const c of activeContracts) {
+      const endDate = new Date(c.end).getTime();
+      const daysLeft = Math.ceil((endDate - now) / (1000 * 60 * 60 * 24));
+      if (daysLeft <= 0 || daysLeft > alertDays) continue;
+      const contractLink = `/contracts?contractId=${c.id}`;
+      const alreadyExists = existingNotifs.some(n => n.link === contractLink && n.type === 'CONTRACT_EXPIRING');
+      if (!alreadyExists) {
+        await supabaseData.insert('appNotifications', { id: crypto.randomUUID(), createdAt: now, isRead: false, role: 'ADMIN', type: 'CONTRACT_EXPIRING', title: `عقد ينتهي خلال ${daysLeft} يوم`, message: `عقد المستأجر سينتهي خلال ${daysLeft} يوم.`, link: contractLink });
+        count++;
+      }
     }
-    return generationResult.total;
-  }, [activeDb, refreshData, settings]);
+    return count;
+  }, [settings]);
 
   const syncSnapshots = useCallback(async (sourceDb?: Database | null) => {
     const currentDb = sourceDb || db || await supabaseData.getAllData();
@@ -1358,7 +1382,30 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       await refreshData();
       return result;
     },
-    generateNotifications,
+    generateNotifications: async () => {
+      if (!settings) return 0;
+      const now = Date.now();
+      const existingNotifs = await supabaseData.fetchAll<AppNotification>('appNotifications');
+      let count = await generateContractExpiryNotifications();
+      const allInvoices = await supabaseData.fetchAll<Invoice>('invoices');
+      const overdueInvoices = allInvoices.filter(inv => deriveInvoiceStatus(inv) === 'OVERDUE');
+      const overdueIds = new Set(overdueInvoices.map(inv => inv.id));
+      for (const inv of overdueInvoices) {
+        const link = `/finance/invoices?invoiceId=${inv.id}`;
+        const exists = existingNotifs.some(n => n.link === link && n.type === 'OVERDUE_BALANCE');
+        if (!exists) {
+          await supabaseData.insert('appNotifications', { id: crypto.randomUUID(), createdAt: now, isRead: false, role: 'ADMIN', type: 'OVERDUE_BALANCE', title: 'فاتورة متأخرة', message: `الفاتورة رقم ${inv.no} متأخرة بقيمة ${round3(inv.amount - inv.paidAmount)}`, link });
+          count++;
+        }
+      }
+      for (const notif of existingNotifs.filter(n => n.type === 'OVERDUE_BALANCE')) {
+        const invoiceId = notif.link.split('invoiceId=')[1];
+        if (!invoiceId || overdueIds.has(invoiceId)) continue;
+        await supabaseData.remove('appNotifications', notif.id);
+      }
+      await refreshData();
+      return count;
+    },
     updateNotificationTemplate,
   };
 
@@ -1400,7 +1447,30 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         await refreshData();
         return result;
       },
-      generateNotifications,
+      generateNotifications: async () => {
+        if (!settings) return 0;
+        const now = Date.now();
+        const existingNotifs = await supabaseData.fetchAll<AppNotification>('appNotifications');
+        let count = await generateContractExpiryNotifications();
+        const allInvoices = await supabaseData.fetchAll<Invoice>('invoices');
+        const overdueInvoices = allInvoices.filter(inv => deriveInvoiceStatus(inv) === 'OVERDUE');
+        const overdueIds = new Set(overdueInvoices.map(inv => inv.id));
+        for (const inv of overdueInvoices) {
+          const link = `/finance/invoices?invoiceId=${inv.id}`;
+          const exists = existingNotifs.some(n => n.link === link && n.type === 'OVERDUE_BALANCE');
+          if (!exists) {
+            await supabaseData.insert('appNotifications', { id: crypto.randomUUID(), createdAt: now, isRead: false, role: 'ADMIN', type: 'OVERDUE_BALANCE', title: 'فاتورة متأخرة', message: `الفاتورة رقم ${inv.no} متأخرة بقيمة ${round3(getInvoiceRemaining(inv))}`, link });
+            count++;
+          }
+        }
+        for (const notif of existingNotifs.filter(n => n.type === 'OVERDUE_BALANCE')) {
+          const invoiceId = notif.link.split('invoiceId=')[1];
+          if (!invoiceId || overdueIds.has(invoiceId)) continue;
+          await supabaseData.remove('appNotifications', notif.id);
+        }
+        await refreshData();
+        return count;
+      },
       updateNotificationTemplate, lockPeriod, unlockPeriod,
       setReadOnly: async (ro) => {
         const updated = { ...(governance || { readOnly: false, lockedPeriods: [] }), readOnly: ro };

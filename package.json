@@ -15,15 +15,14 @@
     "test:critical": "npm run test:prepare && node --test .tmp-tests/tests/critical/critical-flows.test.js",
     "ci": "npm run preflight && npm run typecheck && npm run lint && npm run test && npm run build",
     "preflight": "node scripts/preflight.mjs",
-    "readiness": "node scripts/deployment-readiness.mjs",
-    "readiness:strict": "node scripts/deployment-readiness.mjs --strict",
-    "schema:drift:check": "node scripts/schema-drift-check.mjs"
+    "sandbox:demo": "node scripts/vercel-sandbox-connect.mjs"
   },
   "author": "Mohamed Masoud",
   "license": "UNLICENSED",
   "dependencies": {
     "@google/genai": "^1.40.0",
     "@supabase/supabase-js": "^2.100.0",
+    "@vercel/sandbox": "^1.9.2",
     "date-fns": "^4.1.0",
     "jspdf": "^4.1.0",
     "jspdf-autotable": "^5.0.7",
@@ -41,7 +40,7 @@
     "autoprefixer": "^10.4.19",
     "postcss": "^8.4.39",
     "tailwindcss": "^3.4.6",
-    "vite": "^5.3.4",
-    "typescript": "^5.8.3"
+    "typescript": "^5.8.3",
+    "vite": "^5.3.4"
   }
 }

@@ -23,7 +23,7 @@ export const ReceiptPrint: React.FC<ReceiptPrintProps> = ({ data, settings }) =>
   const stamp = settings.appearance?.stampDataUrl;
 
   return (
-    <div id="receipt-print-area" dir="rtl" className="print-only" style={{
+    <div id="receipt-print-area" className="print-only" style={{
       direction: 'rtl', padding: '40px', background: 'white', minHeight: '297mm', color: '#333', fontFamily: 'Cairo, sans-serif'
     }}>
       <DocumentHeaderInline

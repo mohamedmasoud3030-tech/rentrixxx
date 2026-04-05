@@ -1,8 +1,8 @@
 /** @type {import('tailwindcss').Config} */
 module.exports = {
   content: [
-    './index.html',
-    './src/**/*.{js,ts,jsx,tsx}',
+    "./index.html",
+    "./src/**/*.{js,ts,jsx,tsx}",
   ],
   theme: {
     extend: {
@@ -14,74 +14,29 @@ module.exports = {
         '2xl': 'calc(var(--radius) + 8px)',
       },
       colors: {
-        rx: {
-          primary: 'hsl(var(--rx-primary))',
-          'primary-fg': 'hsl(var(--rx-primary-fg))',
-          bg: 'hsl(var(--rx-bg))',
-          surface: 'hsl(var(--rx-surface))',
-          'surface-high': 'hsl(var(--rx-surface-high))',
-          border: 'hsl(var(--rx-border))',
-          text: 'hsl(var(--rx-text))',
-          muted: 'hsl(var(--rx-muted))',
-          success: 'hsl(var(--rx-success))',
-          danger: 'hsl(var(--rx-danger))',
-          warning: 'hsl(var(--rx-warning))',
-          info: 'hsl(var(--rx-info))',
-        },
         primary: {
-          DEFAULT: 'hsl(var(--rx-color-primary))',
-          fg: 'hsl(var(--rx-color-primary-fg))',
+          DEFAULT: 'hsl(var(--color-primary))',
+          fg: 'hsl(var(--color-primary-fg))',
         },
         'primary-fg': 'hsl(var(--color-primary-fg))',
-        background: 'hsl(var(--rx-bg))',
-        surface: 'hsl(var(--rx-surface))',
-        'surface-dim': 'hsl(var(--rx-bg))',
-        'surface-container-lowest': 'hsl(var(--rx-bg))',
-        'surface-container-low': 'hsl(var(--rx-surface))',
-        'surface-container': 'hsl(var(--rx-surface-high) / 0.4)',
-        'surface-container-high': 'hsl(var(--rx-surface-high) / 0.65)',
-        'surface-container-highest': 'hsl(var(--rx-surface-high))',
-        'surface-bright': 'hsl(var(--rx-border))',
-        'primary-container': 'hsl(var(--rx-primary) / 0.25)',
-        'on-primary': 'hsl(var(--rx-primary-fg))',
-        'on-primary-container': 'hsl(var(--rx-text))',
-        secondary: 'hsl(var(--rx-info))',
-        tertiary: 'hsl(var(--rx-warning))',
-        error: 'hsl(var(--rx-danger))',
-        'error-container': 'hsl(var(--rx-danger) / 0.2)',
-        'on-surface': 'hsl(var(--rx-text))',
-        'on-surface-variant': 'hsl(var(--rx-muted))',
-        outline: 'hsl(var(--rx-border))',
-        'outline-variant': 'hsl(var(--rx-border) / 0.65)',
+        background: 'hsl(var(--color-bg))',
         card: 'hsl(var(--color-card))',
         border: 'hsl(var(--color-border))',
         text: {
-          DEFAULT: 'hsl(var(--rx-color-text-primary))',
-          muted: 'hsl(var(--rx-color-text-muted))',
+          DEFAULT: 'hsl(var(--color-text-primary))',
+          muted: 'hsl(var(--color-text-muted))',
         },
         sidebar: {
-          bg: 'hsl(var(--rx-color-sidebar-bg))',
-          text: 'hsl(var(--rx-color-sidebar-text))',
-          'active-bg': 'hsl(var(--rx-color-sidebar-active-bg))',
-          'hover-bg': 'hsl(var(--rx-color-sidebar-hover-bg))',
-          'active-text': 'hsl(var(--rx-color-sidebar-active-text))',
+          bg: 'hsl(var(--color-sidebar-bg))',
+          text: 'hsl(var(--color-sidebar-text))',
+          'active-bg': 'hsl(var(--color-sidebar-active-bg))',
+          'hover-bg': 'hsl(var(--color-sidebar-hover-bg))',
+          'active-text': 'hsl(var(--color-sidebar-active-text))',
         },
-        success: {
-          text: 'hsl(var(--rx-color-success-text))',
-          bg: 'hsl(var(--rx-color-success-bg))',
-        },
-        warning: {
-          text: 'hsl(var(--rx-color-warning-text))',
-          bg: 'hsl(var(--rx-color-warning-bg))',
-        },
-        danger: {
-          text: 'hsl(var(--rx-color-danger-text))',
-          bg: 'hsl(var(--rx-color-danger-bg))',
-        },
-        info: {
-          text: 'hsl(var(--rx-color-info-text))',
-          bg: 'hsl(var(--rx-color-info-bg))',
-        },
+        success: { text: 'hsl(var(--color-success-text))', bg: 'hsl(var(--color-success-bg))' },
+        warning: { text: 'hsl(var(--color-warning-text))', bg: 'hsl(var(--color-warning-bg))' },
+        danger: { text: 'hsl(var(--color-danger-text))', bg: 'hsl(var(--color-danger-bg))' },
+        info: { text: 'hsl(var(--color-info-text))', bg: 'hsl(var(--color-info-bg))' },
       },
       boxShadow: {
         card: 'var(--shadow-card)',
@@ -95,7 +50,7 @@ module.exports = {
       backdropBlur: {
         xs: '2px',
       },
-    },
+    }
   },
   plugins: [],
 }
