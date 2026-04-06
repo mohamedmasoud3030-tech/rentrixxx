@@ -35,7 +35,7 @@ const getDefaultFinancePath = () =>
   window.localStorage.getItem(LAST_FINANCE_TAB_KEY) || FINANCIAL_ROUTES.invoices;
 
 const withMeta = (path: string) => ({
-  label: NAVIGATION_META[path]?.title ?? path,
+  label: NAVIGATION_META[path]?.titleAr ?? NAVIGATION_META[path]?.title ?? path,
   icon: NAVIGATION_META[path]?.icon,
   path,
 });
@@ -55,6 +55,11 @@ export const createSidebarConfig = (): SidebarNavItem[] => {
       icon: UserCheck,
     },
     {
+      id: 'tenants',
+      ...withMeta('/tenants'),
+      icon: Users,
+    },
+    {
       id: 'contracts',
       ...withMeta('/contracts'),
       icon: FileText,
@@ -67,7 +72,7 @@ export const createSidebarConfig = (): SidebarNavItem[] => {
     },
     {
       id: 'financial',
-      label: NAVIGATION_META['/financial'].title,
+      label: NAVIGATION_META['/financial'].titleAr,
       icon: WalletCards,
       path: financeRoot,
       badgeKey: 'overdueInvoices',
@@ -85,27 +90,15 @@ export const createSidebarConfig = (): SidebarNavItem[] => {
       icon: BarChart2,
     },
     {
-      id: 'notifications',
+      id: 'communication',
       ...withMeta('/communication'),
       icon: Bell,
       badgeKey: 'pendingNotifications',
     },
     {
-      id: 'operations',
-      label: 'Operations',
+      id: 'maintenance',
+      ...withMeta('/maintenance'),
       icon: Wrench,
-      path: '/maintenance',
-      children: [
-        { id: 'operations-maintenance', ...withMeta('/maintenance'), icon: Wrench },
-        { id: 'operations-tenants', ...withMeta('/tenants'), icon: Users },
-      ],
-    },
-    {
-      id: 'users',
-      label: 'Users',
-      icon: Users,
-      path: '/settings/users',
-      adminOnly: true,
     },
     {
       id: 'settings',
