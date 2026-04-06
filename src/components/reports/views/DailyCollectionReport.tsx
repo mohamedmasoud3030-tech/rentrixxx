@@ -18,7 +18,7 @@ import {
   exportVacantUnitsToPdf, exportUtilitiesReportToPdf, exportPropertyReportToPdf
 } from '../../../services/pdfService';
 import { calculateBalanceSheetData, calculateIncomeStatementData, calculateAgedReceivables } from '../../../services/accountingService';
-import { getPostedReceiptsForDate } from '../../../services/reportingService';
+import { getPostedReceiptsForDate } from '../../../services/financeService';
 import { startOfMonth, endOfMonth, subMonths, startOfYear, endOfYear, isWithinInterval, format, eachMonthOfInterval } from 'date-fns';
 import { ar } from 'date-fns/locale';
 import {

@@ -2,17 +2,30 @@ import { supabaseData } from './supabaseDataService';
 import { Database, Settings, Invoice } from '../types';
 import type { AutomationResult } from '../types/automation';
 import type { AutomationRunsRow } from '../types/database';
-import {
-  AutomationTaskConfig,
-  defaultAutomationConfig,
-  executeAutomationTasks,
-} from './automationCore';
 
 const STORAGE_KEY_CONFIG = 'rentrix_automation_config';
-
 let inFlightDailyRun: Promise<AutomationResult | null> | null = null;
 
-export { type AutomationTaskConfig };
+export interface AutomationTaskConfig {
+  invoices: boolean;
+  lateFees: boolean;
+  notifications: boolean;
+  snapshots: boolean;
+}
+
+export interface AutomationTaskHandlers {
+  runInvoices: () => Promise<number>;
+  runLateFees: () => Promise<number>;
+  runNotifications: () => Promise<number>;
+  runSnapshots: () => Promise<boolean>;
+}
+
+export const defaultAutomationConfig: AutomationTaskConfig = {
+  invoices: true,
+  lateFees: true,
+  notifications: true,
+  snapshots: false,
+};
 
 export const getAutomationConfig = (settings?: Settings): AutomationTaskConfig => {
   const settingsAutomation = (settings as Settings & { automation?: AutomationTaskConfig } | undefined)?.automation;
@@ -238,6 +251,53 @@ export const autoGenerateNotifications = async (db: Database, settings: Settings
 };
 
 export const autoRebuildSnapshots = async (): Promise<boolean> => true;
+
+export const executeAutomationTasks = async (
+  taskConfig: AutomationTaskConfig,
+  handlers: AutomationTaskHandlers,
+): Promise<AutomationResult> => {
+  const result: AutomationResult = {
+    ts: new Date().toISOString(),
+    success: true,
+    errors: [],
+    lateFeesApplied: 0,
+    notificationsSent: 0,
+    snapshotsRebuilt: 0,
+  };
+
+  const runTask = async (
+    shouldRun: boolean,
+    task: () => Promise<number | boolean>,
+    onSuccess: (value: number | boolean) => void,
+    onError: (message: string) => void,
+  ): Promise<void> => {
+    if (!shouldRun) return;
+    try {
+      const value = await task();
+      onSuccess(value);
+    } catch (error: unknown) {
+      onError(error instanceof Error ? error.message : 'خطأ غير معروف');
+    }
+  };
+
+  const collectError = (label: string, message: string) => {
+    result.errors.push(`${label}: ${message}`);
+  };
+
+  await runTask(taskConfig.invoices, handlers.runInvoices, () => undefined, message => collectError('invoices', message));
+  await runTask(taskConfig.lateFees, handlers.runLateFees, value => {
+    result.lateFeesApplied = Number(value) || 0;
+  }, message => collectError('lateFees', message));
+  await runTask(taskConfig.notifications, handlers.runNotifications, value => {
+    result.notificationsSent = Number(value) || 0;
+  }, message => collectError('notifications', message));
+  await runTask(taskConfig.snapshots, handlers.runSnapshots, value => {
+    result.snapshotsRebuilt = value ? 1 : 0;
+  }, message => collectError('snapshots', message));
+
+  result.success = result.errors.length === 0;
+  return result;
+};
 
 const runConfiguredAutomation = async (
   db: Database,

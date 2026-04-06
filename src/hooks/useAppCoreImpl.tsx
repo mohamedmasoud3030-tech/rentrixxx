@@ -11,7 +11,8 @@ import { toast } from 'react-hot-toast';
 import { confirmDialog } from '../components/shared/confirmDialog';
 import { adminCreateUser } from '../services/edgeFunctions';
 import { logger } from '../services/logger';
-import { postReceiptAtomic, renewContractAtomic, voidReceiptAtomic } from '../services/antiMistakeService';
+import { postReceiptAtomic, voidReceiptAtomic } from '../services/receiptService';
+import { renewContractAtomic } from '../services/operationsService';
 import { calcVAT } from '../services/financeService';
 import { getEffectiveInvoiceStatus, getInvoiceRemaining } from '../utils/helpers';
 import { runManualAutomation as runManualAutomationService } from '../services/automationService';
@@ -241,18 +242,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   }, [currentUser]);
 
   const canAccess = useCallback((action: string) => {
-    if (!currentUser) return false;
-    const capabilityMap: Record<'ADMIN' | 'USER', Set<string>> = {
-      ADMIN: new Set([
-        'VIEW_DASHBOARD', 'VIEW_FINANCIALS', 'MANAGE_SETTINGS', 'MANAGE_USERS', 'VIEW_AUDIT_LOG', 'USE_SMART_ASSISTANT',
-        'MANAGE_PROPERTIES', 'MANAGE_TENANTS', 'MANAGE_OWNERS', 'MANAGE_CONTRACTS', 'MANAGE_MAINTENANCE', 'VIEW_REPORTS',
-      ]),
-      USER: new Set([
-        'VIEW_DASHBOARD', 'VIEW_FINANCIALS', 'USE_SMART_ASSISTANT',
-        'MANAGE_PROPERTIES', 'MANAGE_TENANTS', 'MANAGE_OWNERS', 'MANAGE_CONTRACTS', 'MANAGE_MAINTENANCE', 'VIEW_REPORTS',
-      ]),
-    };
-    return capabilityMap[currentUser.role]?.has(action) || false;
+    return import('../services/authService').then(m => m.canUserAccess(currentUser, action));
   }, [currentUser]);
 
   useEffect(() => {
@@ -261,18 +251,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       if (session?.user) {
         const { data: profile } = await supabase.from('profiles').select('*').eq('id', session.user.id).single();
         if (profile) {
+          const { mapProfileToUser } = await import('../services/authService');
           if (profile.is_disabled) {
             await supabase.auth.signOut();
             setCurrentUser(null);
-            return { success: false, error: 'يجب إضافة تخصيص واحد على الأقل.' };
+            return;
           }
-          setCurrentUser({
-            id: session.user.id, username: profile.username || session.user.email!.split('@')[0],
-            email: session.user.email || '', hash: '', salt: '',
-            role: (profile.role as 'ADMIN' | 'USER') || 'USER',
-            mustChange: profile.must_change_password || false, createdAt: profile.created_at || Date.now(),
-            isDisabled: false,
-          });
+          setCurrentUser(mapProfileToUser(session, profile));
         } else { setCurrentUser(null); }
       } else { setCurrentUser(null); }
     };

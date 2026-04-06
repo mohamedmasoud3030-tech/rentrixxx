@@ -6,7 +6,7 @@ import {
   getOverdueContracts,
   type ContractStatusSnapshot,
 } from '../../services/contractMonitoringService';
-import { notificationService } from '../../services/notificationService';
+import { supabaseData } from '../../services/supabaseDataService';
 import { validateNonNegativeNumber, validateRequiredString } from '../../utils/validation';
 import { createTool } from '../core/toolSystem';
 
@@ -77,7 +77,19 @@ export const sendNotificationTool = createTool({
     link: validateRequiredString(input.link, 'Notification link'),
   }),
   execute: async (input): Promise<AppNotification> => {
-    return notificationService.createAppNotification(input);
+    const payload: AppNotification = {
+      id: crypto.randomUUID(),
+      createdAt: Date.now(),
+      isRead: false,
+      role: 'ADMIN',
+      type: input.type,
+      title: input.title,
+      message: input.message,
+      link: input.link,
+    };
+    const result = await supabaseData.insert<AppNotification>('appNotifications', payload);
+    if (result.error) throw new Error(result.error);
+    return payload;
   },
 });
 

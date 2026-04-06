@@ -60,3 +60,22 @@ export async function postReceiptAtomic(payload: ReceiptPostingPayload): Promise
     return { success: false, error: message };
   }
 }
+
+export async function voidReceiptAtomic(payload: {
+  receiptId: string;
+  voidedAt: number;
+  invoiceUpdates: Record<string, unknown>[];
+  reverseEntries: Record<string, unknown>[];
+}): Promise<{ ok: boolean; step: string; details?: Record<string, unknown> }> {
+  const { data, error } = await supabase.rpc('void_receipt_atomic', {
+    p_receipt_id: payload.receiptId,
+    p_voided_at: payload.voidedAt,
+    p_invoice_updates: payload.invoiceUpdates,
+    p_reverse_entries: payload.reverseEntries,
+  });
+  if (error) {
+    logger.error('[ReceiptService] voidReceiptAtomic failed', error);
+    return { ok: false, step: 'void_receipt_atomic', details: { message: error.message } };
+  }
+  return { ok: true, step: 'void_receipt_atomic', details: (data || {}) as Record<string, unknown> };
+}

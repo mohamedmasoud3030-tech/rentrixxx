@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { useApp } from '../contexts/AppContext';
-import { renewContractAtomic } from '../services/antiMistakeService';
+import { renewContractAtomic } from '../services/operationsService';
 import { checkUnitMaintenanceBlock, type MaintenanceBlockResult } from '../services/operationsService';
 import { supabaseData } from '../services/supabaseDataService';
 import { Contract, Receipt, Expense } from '../types';

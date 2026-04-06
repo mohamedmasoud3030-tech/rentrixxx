@@ -1,6 +1,6 @@
 import React, { useRef } from 'react';
 import { useApp } from '../../contexts/AppContext';
-import { exportToJson, importFromJson } from '../../services/backupService';
+import { exportToJson, importFromJson } from '../../services/financeService';
 import { confirmDialog } from '../shared/confirmDialog';
 import { toast } from 'react-hot-toast';
 import { Database, Download } from 'lucide-react';
