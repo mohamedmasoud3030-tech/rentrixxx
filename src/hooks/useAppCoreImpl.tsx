@@ -14,6 +14,7 @@ import { logger } from '../services/logger';
 import { postReceiptAtomic, voidReceiptAtomic } from '../services/receiptService';
 import { renewContractAtomic } from '../services/operationsService';
 import { calcVAT } from '../services/financeService';
+import { canUserAccess, mapProfileToUser } from '../services/authService';
 import { getEffectiveInvoiceStatus, getInvoiceRemaining } from '../utils/helpers';
 import { runManualAutomation as runManualAutomationService } from '../services/automationService';
 import { softDeleteContract } from '../services/operationsService';
@@ -242,7 +243,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   }, [currentUser]);
 
   const canAccess = useCallback((action: string) => {
-    return import('../services/authService').then(m => m.canUserAccess(currentUser, action));
+    return canUserAccess(currentUser, action);
   }, [currentUser]);
 
   useEffect(() => {
@@ -251,7 +252,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       if (session?.user) {
         const { data: profile } = await supabase.from('profiles').select('*').eq('id', session.user.id).single();
         if (profile) {
-          const { mapProfileToUser } = await import('../services/authService');
           if (profile.is_disabled) {
             await supabase.auth.signOut();
             setCurrentUser(null);
@@ -264,6 +264,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     initAuth();
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (event === 'SIGNED_OUT' || !session) { setCurrentUser(null); return; }
+      if (event === 'SIGNED_IN' && session.user) {
+        const { data: profile } = await supabase.from('profiles').select('*').eq('id', session.user.id).single();
+        if (profile) {
+          if (profile.is_disabled) {
+            await supabase.auth.signOut();
+            setCurrentUser(null);
+            return;
+          }
+          setCurrentUser(mapProfileToUser(session, profile));
+        }
+      }
       if (event === 'TOKEN_REFRESHED' && session.user) {
         const { data: profile } = await supabase.from('profiles').select('is_disabled').eq('id', session.user.id).single();
         if (profile?.is_disabled) {
