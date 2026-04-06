@@ -7,7 +7,7 @@ import { Contract, Receipt, Expense } from '../types';
 import Card from '../components/ui/Card';
 import Modal from '../components/ui/Modal';
 import ActionsMenu, { EditAction, DeleteAction, PrintAction } from '../components/shared/ActionsMenu';
-import { formatCurrency, toArabicDigits, getStatusBadgeClass, formatDateTime, formatDate, exportToCsv, CONTRACT_STATUS_AR, parseLocalizedNumber } from '../utils/helpers';
+import { formatCurrency, toArabicDigits, getStatusBadgeClass, formatDateTime, formatDate, exportToCsv, CONTRACT_STATUS_AR, normalizeLocalizedNumber, parseLocalizedNumber } from '../utils/helpers';
 import NumberInput from '../components/ui/NumberInput';
 import HardGateBanner from '../components/shared/HardGateBanner';
 import AttachmentsManager from '../components/shared/AttachmentsManager';
@@ -418,6 +418,7 @@ const ContractForm: React.FC<{ isOpen: boolean; onClose: () => void; contract: C
     const [isCheckingMaintenance, setIsCheckingMaintenance] = useState(false);
     const [maintenanceBlock, setMaintenanceBlock] = useState<MaintenanceBlockResult | null>(null);
     const isSavingRef = useRef(false);
+    const sanitizeNonNegativeMoneyInput = (value: string) => normalizeLocalizedNumber(value).replace(/^[+-]/, '');
 
     const contracts = db.contracts || [];
     const units = db.units || [];
@@ -509,7 +510,7 @@ const ContractForm: React.FC<{ isOpen: boolean; onClose: () => void; contract: C
         if (isSavingRef.current) return;
         const rent = parseLocalizedNumber(rentInput);
         const deposit = parseLocalizedNumber(depositInput);
-        if (!unitId || !tenantId || !start || !end || !Number.isFinite(rent) || rent <= 0) {
+        if (!unitId || !tenantId || !start || !end || !Number.isFinite(rent) || rent <= 0 || !Number.isFinite(deposit) || deposit < 0) {
             toast.error('تحقق من الحقول المطلوبة.');
             return;
         }
@@ -553,11 +554,11 @@ const ContractForm: React.FC<{ isOpen: boolean; onClose: () => void; contract: C
                             {tenants.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
                         </select>
                     </div>
-                    <div><label className="block text-sm font-medium mb-1">الإيجار</label><input value={rentInput} onChange={e => setRentInput(e.target.value)} /></div>
+                    <div><label className="block text-sm font-medium mb-1">الإيجار</label><input value={rentInput} onChange={e => setRentInput(sanitizeNonNegativeMoneyInput(e.target.value))} /></div>
                     <div><label className="block text-sm font-medium mb-1">يوم الاستحقاق</label><NumberInput value={dueDay} onChange={setDueDay} allowDecimal={false} min={1} max={28} /></div>
                     <div><label className="block text-sm font-medium mb-1">تاريخ البدء</label><input type="date" value={start} onChange={e => setStart(e.target.value)} /></div>
                     <div><label className="block text-sm font-medium mb-1">تاريخ الانتهاء</label><input type="date" value={end} onChange={e => setEnd(e.target.value)} /></div>
-                    <div><label className="block text-sm font-medium mb-1">الوديعة</label><input value={depositInput} onChange={e => setDepositInput(e.target.value)} /></div>
+                    <div><label className="block text-sm font-medium mb-1">الوديعة</label><input value={depositInput} onChange={e => setDepositInput(sanitizeNonNegativeMoneyInput(e.target.value))} /></div>
                     <div>
                         <label className="block text-sm font-medium mb-1">الحالة</label>
                         <select value={status} onChange={e => setStatus(e.target.value as Contract['status'])}>
