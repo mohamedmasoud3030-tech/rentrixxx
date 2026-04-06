@@ -624,7 +624,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       toast.error(`خطأ أثناء الإضافة: ${err instanceof Error ? err.message : 'خطأ غير معروف'}`);
       return null;
     }
-  }, [isReadOnly, settings, audit, postJournalEntrySupabase, postInvoiceJournalEntries, createRentInvoicesForContract, syncSnapshots]);
+  }, [isReadOnly, settings, audit, postJournalEntrySupabase, postInvoiceJournalEntries, createRentInvoicesForContract]);
 
   const addReceiptWithAllocations: AppContextType['financeService']['addReceiptWithAllocations'] = useCallback(async (receiptData, allocations) => {
     if (isReadOnly || !settings) return { success: false, error: 'النظام في وضع القراءة فقط.' };
@@ -977,8 +977,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (newExpense) {
       await supabaseData.update('commissions', commissionId, { status: 'PAID', expenseId: newExpense.id, paidAt: Date.now() });
       await refreshData();
-      return { success: false, error: err instanceof Error ? err.message : 'خطأ غير معروف' };
+      return { success: true };
     }
+    return { success: false, error: 'فشل صرف العمولة لعدم إنشاء المصروف المرتبط.' };
   }, [isReadOnly, add, refreshData]);
 
   const updateNotificationTemplate: AppContextType['updateNotificationTemplate'] = useCallback(async (id, updates) => {
