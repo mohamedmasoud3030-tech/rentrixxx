@@ -100,7 +100,11 @@ const App: React.FC = () => {
     }
   }, [settings, location.pathname]);
 
-  if (settings == null || auth.currentUser === undefined) {
+  if (auth.currentUser === undefined) {
+    return <PageLoader />;
+  }
+
+  if (settings == null && auth.currentUser !== null) {
     return <PageLoader />;
   }
 
