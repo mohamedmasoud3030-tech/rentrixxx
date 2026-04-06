@@ -118,9 +118,48 @@ export const useApp = (): AppContextType => {
     return context;
 };
 
+const DEFAULT_EMPTY_DB: Database = {
+  settings: DEFAULT_SETTINGS,
+  auth: { users: [] },
+  owners: [],
+  properties: [],
+  units: [],
+  tenants: [],
+  contracts: [],
+  invoices: [],
+  receipts: [],
+  receiptAllocations: [],
+  expenses: [],
+  maintenanceRecords: [],
+  depositTxs: [],
+  auditLog: [],
+  governance: { readOnly: false, lockedPeriods: [] },
+  ownerSettlements: [],
+  serials: DEFAULT_SERIALS,
+  snapshots: [],
+  accounts: [],
+  journalEntries: [],
+  autoBackups: [],
+  ownerBalances: [],
+  accountBalances: [],
+  kpiSnapshots: [],
+  contractBalances: [],
+  tenantBalances: [],
+  notificationTemplates: [],
+  outgoingNotifications: [],
+  appNotifications: [],
+  leads: [],
+  lands: [],
+  commissions: [],
+  missions: [],
+  budgets: [],
+  attachments: [],
+  utilityRecords: [],
+};
+
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [currentUser, setCurrentUser] = useState<User | null | undefined>(undefined);
-  const [db, setDb] = useState<Partial<Database>>({});
+  const [db, setDb] = useState<Database>(DEFAULT_EMPTY_DB);
 
   const fetchPaginatedData = useCallback(async <T extends keyof Database>(
     table: T, 
@@ -1283,19 +1322,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return { duration: endTime - startTime };
   }, [db, runFinancialIntegrityChecks, refreshData, syncSnapshots]);
 
-  const emptyDb: Database = {
-    settings: DEFAULT_SETTINGS, auth: { users: [] }, owners: [], properties: [], units: [],
-    tenants: [], contracts: [], invoices: [], receipts: [], receiptAllocations: [],
-    expenses: [], maintenanceRecords: [], depositTxs: [], auditLog: [],
-    governance: { readOnly: false, lockedPeriods: [] }, ownerSettlements: [],
-    serials: DEFAULT_SERIALS, snapshots: [], accounts: [], journalEntries: [],
-    autoBackups: [], ownerBalances: [], accountBalances: [], kpiSnapshots: [],
-    contractBalances: [], tenantBalances: [], notificationTemplates: [],
-    outgoingNotifications: [], appNotifications: [], leads: [], lands: [],
-    commissions: [], missions: [], budgets: [], attachments: [], utilityRecords: [],
-  };
-
-  const activeDb = db || emptyDb;
+  const activeDb = db || DEFAULT_EMPTY_DB;
   const activeSettings = settings || DEFAULT_SETTINGS;
   const authValue: AuthContextValue = {
     auth: { currentUser: currentUser ?? null, login, logout, changePassword, addUser, updateUser, forcePasswordReset, disableUser, enableUser },
