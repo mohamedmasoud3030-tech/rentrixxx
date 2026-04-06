@@ -37,9 +37,9 @@ const Sidebar: React.FC<SidebarProps> = ({ sidebarOpen, setSidebarOpen }) => {
     const now = new Date();
     const alertDays = settings.operational?.contractAlertDays ?? 30;
     const futureDate = new Date(now.getTime() + alertDays * 86400000);
-    const expiringContracts = db.contracts.filter(c => c.status === 'ACTIVE' && new Date(c.end) <= futureDate).length;
-    const overdueInvoices = db.invoices.filter(i => i.status === 'OVERDUE' || (i.status === 'UNPAID' && new Date(i.dueDate) < now)).length;
-    const pendingNotifications = db.outgoingNotifications.filter(
+    const expiringContracts = (db.contracts || []).filter(c => c.status === 'ACTIVE' && new Date(c.end) <= futureDate).length;
+    const overdueInvoices = (db.invoices || []).filter(i => i.status === 'OVERDUE' || (i.status === 'UNPAID' && new Date(i.dueDate) < now)).length;
+    const pendingNotifications = (db.outgoingNotifications || []).filter(
       n => normalizeWorkflowStatus(n.status) === WORKFLOW_STATUS.Pending,
     ).length;
 
@@ -99,14 +99,7 @@ const Sidebar: React.FC<SidebarProps> = ({ sidebarOpen, setSidebarOpen }) => {
     };
   }, [sidebarOpen]);
 
-  useEffect(() => {
-    const activeGroup = navGroups.find(group =>
-      group.links.some(link => isLinkActive(link.path)),
-    );
-    if (!activeGroup) return;
-    const key = getGroupKey(activeGroup.title);
-    setCollapsedGroups(prev => ({ ...prev, [key]: false }));
-  }, [pathname]);
+  // Removed stale navGroups/isLinkActive references that were causing undefined errors
 
   const toggleItem = (itemId: string) => {
     setExpandedItems(prev => ({ ...prev, [itemId]: !prev[itemId] }));

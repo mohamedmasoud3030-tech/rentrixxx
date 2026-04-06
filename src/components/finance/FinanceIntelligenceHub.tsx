@@ -12,8 +12,8 @@ const FinanceIntelligenceHub: React.FC = () => {
 
   const intelligence = useMemo(() => {
     const month = currentMonth();
-    const monthInvoices = db.invoices.filter(inv => inv.dueDate.slice(0, 7) === month);
-    const activeContracts = db.contracts.filter(contract => contract.status === 'ACTIVE');
+    const monthInvoices = (db.invoices || []).filter(inv => inv.dueDate.slice(0, 7) === month);
+    const activeContracts = (db.contracts || []).filter(contract => contract.status === 'ACTIVE');
 
     const invoicesByContract = new Map<string, number>();
     monthInvoices.forEach(invoice => {
@@ -21,30 +21,30 @@ const FinanceIntelligenceHub: React.FC = () => {
     });
 
     const contractsMissingInvoices = activeContracts.filter(contract => !invoicesByContract.has(contract.id));
-    const overdueInvoices = db.invoices.filter(invoice => invoice.status === 'OVERDUE');
+    const overdueInvoices = (db.invoices || []).filter(invoice => invoice.status === 'OVERDUE');
     const overdueAmount = overdueInvoices.reduce((sum, invoice) => {
       const total = invoice.amount + (invoice.taxAmount || 0);
       return sum + Math.max(total - invoice.paidAmount, 0);
     }, 0);
 
     const allocationsByReceipt = new Map<string, number>();
-    db.receiptAllocations.forEach(allocation => {
+    (db.receiptAllocations || []).forEach(allocation => {
       allocationsByReceipt.set(allocation.receiptId, (allocationsByReceipt.get(allocation.receiptId) || 0) + allocation.amount);
     });
 
-    const unallocatedReceipts = db.receipts.filter(receipt => {
+    const unallocatedReceipts = (db.receipts || []).filter(receipt => {
       if (receipt.status !== 'POSTED') return false;
       const allocated = allocationsByReceipt.get(receipt.id) || 0;
       return receipt.amount - allocated > 0.001;
     });
 
     const contractsWithOpenInvoices = new Set(
-      db.invoices
+      (db.invoices || [])
         .filter(invoice => invoice.status !== 'PAID')
         .map(invoice => invoice.contractId),
     );
 
-    const connectedContracts = activeContracts.filter(contract => contractsWithOpenInvoices.has(contract.id)).length;
+    const connectedContracts = (activeContracts || []).filter(contract => contractsWithOpenInvoices.has(contract.id)).length;
 
     return {
       month,
