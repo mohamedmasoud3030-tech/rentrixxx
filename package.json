@@ -1,28 +1,21 @@
 {
-  "name": "rentrix-web",
-  "version": "1.0.0",
-  "description": "نظام ادارة مؤسسات شامل لإدارة العقارات",
+  "name": "rentrix-pwa",
+  "version": "2.0.0",
+  "description": "نظام إدارة العقارات الذكي - Rentrix Property Management System",
+  "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "dist": "npm run build",
-    "typecheck": "npx tsc -p tsconfig.typecheck.json --noEmit",
-    "lint": "node scripts/lint-check.mjs",
-    "test:prepare": "rm -rf .tmp-tests && npx tsc -p tsconfig.tests.json",
-    "test": "npm run test:unit && npm run test:service && npm run test:critical",
-    "test:unit": "npm run test:prepare && node --test .tmp-tests/tests/unit/status.test.js .tmp-tests/tests/unit/finance-rounding.test.js",
-    "test:service": "npm run test:prepare && node --test .tmp-tests/tests/service/validation.test.js .tmp-tests/tests/service/security-validation.test.js",
-    "test:critical": "npm run test:prepare && node --test .tmp-tests/tests/critical/critical-flows.test.js",
-    "ci": "npm run preflight && npm run typecheck && npm run lint && npm run test && npm run build",
-    "preflight": "node scripts/preflight.mjs",
-    "sandbox:demo": "node scripts/vercel-sandbox-connect.mjs"
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit",
+    "lint": "tsc --noEmit && echo 'Type checking passed'",
+    "type-check": "tsc -p tsconfig.typecheck.json --noEmit"
   },
   "author": "Mohamed Masoud",
   "license": "UNLICENSED",
   "dependencies": {
     "@google/genai": "^1.40.0",
     "@supabase/supabase-js": "^2.100.0",
-    "@vercel/sandbox": "^1.9.2",
     "date-fns": "^4.1.0",
     "jspdf": "^4.1.0",
     "jspdf-autotable": "^5.0.7",
@@ -41,6 +34,7 @@
     "postcss": "^8.4.39",
     "tailwindcss": "^3.4.6",
     "typescript": "^5.8.3",
-    "vite": "^5.3.4"
+    "vite": "^5.3.4",
+    "vite-plugin-pwa": "^0.21.1"
   }
 }

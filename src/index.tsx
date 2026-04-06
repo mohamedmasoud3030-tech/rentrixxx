@@ -12,15 +12,6 @@ if (!rootElement) {
   throw new Error("Could not find root element to mount to");
 }
 
-// Register Service Worker for PWA support
-if ('serviceWorker' in navigator && import.meta.env.PROD) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/service-worker.js')
-      .then(() => console.log('Service Worker registered successfully'))
-      .catch((err) => console.log('Service Worker registration failed:', err));
-  });
-}
-
 window.addEventListener('error', (event) => {
   logger.error('[GlobalError] Uncaught error', event.error ?? event.message);
   errorTracker.capture(event.error ?? event.message, { area: 'window', action: 'error-event' });

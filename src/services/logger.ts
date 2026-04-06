@@ -10,18 +10,18 @@ const LEVEL_WEIGHT: Record<LogLevel, number> = {
   error: 40,
 };
 
-const resolveLogLevel = (): LogLevel => {
+const resolveLogLevel = (): number => {
   try {
     const fromEnv = getAppEnv().logLevel;
-    if (fromEnv) return fromEnv;
+    if (fromEnv) return LEVEL_WEIGHT[fromEnv];
   } catch {
     // fallback during early boot
   }
 
-  return import.meta.env.DEV ? 'debug' : 'warn';
+  return import.meta.env.DEV ? LEVEL_WEIGHT.debug : LEVEL_WEIGHT.warn;
 };
 
-const threshold = LEVEL_WEIGHT[resolveLogLevel()] ?? LEVEL_WEIGHT.warn;
+const threshold = resolveLogLevel();
 
 const shouldLog = (level: LogLevel): boolean => LEVEL_WEIGHT[level] >= threshold;
 

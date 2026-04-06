@@ -1,17 +1,34 @@
-import { createClient } from '@supabase/supabase-js';
+import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { getAppEnv, maskSecret } from '../config/env';
 import { logger } from './logger';
 
-const env = getAppEnv();
+let supabaseInstance: SupabaseClient | null = null;
 
-logger.info('[Supabase] Initializing client', {
-  url: env.supabaseUrl,
-  anonKeyMasked: maskSecret(env.supabaseAnonKey),
-});
+export const getSupabaseClient = (): SupabaseClient => {
+  if (supabaseInstance) {
+    return supabaseInstance;
+  }
 
-export const supabase = createClient(env.supabaseUrl, env.supabaseAnonKey, {
-  auth: {
-    persistSession: true,
-    autoRefreshToken: true,
+  const env = getAppEnv();
+
+  logger.info("[Supabase] Initializing client", {
+    url: env.supabaseUrl,
+    anonKeyMasked: maskSecret(env.supabaseAnonKey),
+  });
+
+  supabaseInstance = createClient(env.supabaseUrl, env.supabaseAnonKey, {
+    auth: {
+      persistSession: true,
+      autoRefreshToken: true,
+    },
+  });
+
+  return supabaseInstance;
+};
+
+export const supabase = new Proxy({} as SupabaseClient, {
+  get: (target, prop) => {
+    const client = getSupabaseClient();
+    return Reflect.get(client, prop);
   },
 });

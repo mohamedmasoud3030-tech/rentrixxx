@@ -3,8 +3,6 @@ import { getAppEnv } from '../config/env';
 import { logger } from './logger';
 import type { AutomationResult } from '../types/automation';
 
-const env = getAppEnv();
-
 export interface OwnerPortalPayload {
   owner: { id: string; name: string };
   stats: { collections: number; expenses: number; officeShare: number; net: number };
@@ -54,6 +52,7 @@ export async function askAssistant(prompt: string, context: unknown): Promise<st
 }
 
 export async function runAutomationScheduler(payload?: { dryRun?: boolean }): Promise<AutomationResult> {
+  const env = getAppEnv();
   const { data: { session } } = await supabase.auth.getSession();
   const accessToken = session?.access_token;
 

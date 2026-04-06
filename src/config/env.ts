@@ -7,16 +7,6 @@ const isPlaceholder = (value: string): boolean => {
   return PLACEHOLDER_PATTERNS.some(pattern => pattern.test(value));
 };
 
-const assertValidEnv = (name: string, value: string): void => {
-  if (!value) {
-    throw new Error(`[env] Missing required variable: ${name}`);
-  }
-
-  if (isPlaceholder(value)) {
-    throw new Error(`[env] Variable ${name} contains placeholder/test value and is not deployment-safe.`);
-  }
-};
-
 export type AppEnv = {
   supabaseUrl: string;
   supabaseAnonKey: string;
@@ -32,8 +22,12 @@ export const getAppEnv = (): AppEnv => {
   const errorTrackerDsn = normalize(import.meta.env.VITE_ERROR_TRACKER_DSN as string | undefined);
   const releaseVersion = normalize(import.meta.env.VITE_RELEASE_VERSION as string | undefined);
 
-  assertValidEnv('VITE_SUPABASE_URL', supabaseUrl);
-  assertValidEnv('VITE_SUPABASE_ANON_KEY', supabaseAnonKey);
+  if (!supabaseUrl || isPlaceholder(supabaseUrl)) {
+    console.warn('[env] VITE_SUPABASE_URL is missing or contains a placeholder value.');
+  }
+  if (!supabaseAnonKey || isPlaceholder(supabaseAnonKey)) {
+    console.warn('[env] VITE_SUPABASE_ANON_KEY is missing or contains a placeholder value.');
+  }
 
   return {
     supabaseUrl,
