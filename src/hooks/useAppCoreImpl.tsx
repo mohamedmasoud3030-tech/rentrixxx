@@ -7,6 +7,7 @@ import { safeAsync, validateLoginPayload, validatePasswordStrength, validateRequ
 import { supabaseData } from '../services/supabaseDataService';
 import { IntegrationService } from '../services/integrationService';
 import { supabase } from '../services/supabase';
+import type { ProfileRow } from '@/types/supabase';
 import { toast } from 'react-hot-toast';
 import { confirmDialog } from '../components/shared/confirmDialog';
 import { adminCreateUser } from '../services/edgeFunctions';
@@ -289,7 +290,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const initAuth = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session?.user) {
-        const { data: profile } = await supabase.from('profiles').select('*').eq('id', session.user.id).single();
+        const { data: profile } = await supabase.from('profiles').select('*').eq('id', session.user.id).single<ProfileRow>();
         if (profile) {
           if (profile.is_disabled) {
             await supabase.auth.signOut();
@@ -304,7 +305,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (event === 'SIGNED_OUT' || !session) { setCurrentUser(null); return; }
       if (event === 'SIGNED_IN' && session.user) {
-        const { data: profile } = await supabase.from('profiles').select('*').eq('id', session.user.id).single();
+        const { data: profile } = await supabase.from('profiles').select('*').eq('id', session.user.id).single<ProfileRow>();
         if (profile) {
           if (profile.is_disabled) {
             await supabase.auth.signOut();
@@ -315,7 +316,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         }
       }
       if (event === 'TOKEN_REFRESHED' && session.user) {
-        const { data: profile } = await supabase.from('profiles').select('is_disabled').eq('id', session.user.id).single();
+        const { data: profile } = await supabase.from('profiles').select('is_disabled').eq('id', session.user.id).single<ProfileRow>();
         if (profile?.is_disabled) {
           await supabase.auth.signOut();
           setCurrentUser(null);
@@ -352,11 +353,18 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         'تعذر تسجيل الدخول حالياً',
       );
       if (error || !data.user) return { ok: false, msg: 'البريد الإلكتروني أو كلمة المرور غير صحيحة' };
-      let { data: profile } = await supabase.from('profiles').select('*').eq('id', data.user.id).single();
+      let { data: profile } = await supabase.from('profiles').select('*').eq('id', data.user.id).single<ProfileRow>();
       if (!profile) {
         const { count } = await supabase.from('profiles').select('id', { count: 'exact', head: true });
         const isFirstUser = (count ?? 0) === 0;
-        const newProfile = { id: data.user.id, username: data.user.email!.split('@')[0], role: isFirstUser ? 'ADMIN' : 'USER', must_change_password: false, created_at: Date.now() };
+        const newProfile: ProfileRow = {
+          id: data.user.id,
+          username: data.user.email!.split('@')[0],
+          role: isFirstUser ? 'ADMIN' : 'USER',
+          must_change_password: false,
+          is_disabled: false,
+          created_at: Date.now(),
+        };
         await supabase.from('profiles').insert(newProfile);
         profile = newProfile;
       }

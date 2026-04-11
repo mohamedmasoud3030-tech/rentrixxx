@@ -4,7 +4,20 @@ const normalize = (value: string | undefined): string => (value ?? '').trim();
 
 const isPlaceholder = (value: string): boolean => {
   if (!value) return true;
-  return PLACEHOLDER_PATTERNS.some(pattern => pattern.test(value));
+  return PLACEHOLDER_PATTERNS.some((pattern) => pattern.test(value));
+};
+
+const ensureAscii = (value: string): string => value.replace(/[^\x00-\x7F]/g, '');
+
+const readRequired = (key: 'VITE_SUPABASE_URL' | 'VITE_SUPABASE_ANON_KEY'): string => {
+  const raw = normalize(import.meta.env[key] as string | undefined);
+  const value = ensureAscii(raw);
+
+  if (!value || isPlaceholder(value)) {
+    throw new Error(`[env] ${key} is missing or contains a placeholder value.`);
+  }
+
+  return value;
 };
 
 export type AppEnv = {
@@ -15,27 +28,20 @@ export type AppEnv = {
   releaseVersion?: string;
 };
 
+let envCache: AppEnv | null = null;
+
 export const getAppEnv = (): AppEnv => {
-  const supabaseUrl = normalize(import.meta.env.VITE_SUPABASE_URL as string | undefined);
-  const supabaseAnonKey = normalize(import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined);
-  const logLevel = normalize(import.meta.env.VITE_LOG_LEVEL as string | undefined) as AppEnv['logLevel'];
-  const errorTrackerDsn = normalize(import.meta.env.VITE_ERROR_TRACKER_DSN as string | undefined);
-  const releaseVersion = normalize(import.meta.env.VITE_RELEASE_VERSION as string | undefined);
+  if (envCache) return envCache;
 
-  if (!supabaseUrl || isPlaceholder(supabaseUrl)) {
-    console.warn('[env] VITE_SUPABASE_URL is missing or contains a placeholder value.');
-  }
-  if (!supabaseAnonKey || isPlaceholder(supabaseAnonKey)) {
-    console.warn('[env] VITE_SUPABASE_ANON_KEY is missing or contains a placeholder value.');
-  }
-
-  return {
-    supabaseUrl,
-    supabaseAnonKey,
-    logLevel: logLevel || undefined,
-    errorTrackerDsn: errorTrackerDsn || undefined,
-    releaseVersion: releaseVersion || undefined,
+  envCache = {
+    supabaseUrl: readRequired('VITE_SUPABASE_URL'),
+    supabaseAnonKey: readRequired('VITE_SUPABASE_ANON_KEY'),
+    logLevel: normalize(import.meta.env.VITE_LOG_LEVEL as string | undefined) as AppEnv['logLevel'] || undefined,
+    errorTrackerDsn: normalize(import.meta.env.VITE_ERROR_TRACKER_DSN as string | undefined) || undefined,
+    releaseVersion: normalize(import.meta.env.VITE_RELEASE_VERSION as string | undefined) || undefined,
   };
+
+  return envCache;
 };
 
 export const maskSecret = (secret: string): string => {

@@ -1,10 +1,10 @@
 import React, { useCallback, useMemo, useState, useEffect } from 'react';
-import { useApp } from '../contexts/AppContext';
-import { Invoice } from '../types';
-import Card from '../components/ui/Card';
-import { formatCurrency, getEffectiveInvoiceStatus } from '../utils/helpers';
+import { useApp } from '@/contexts/AppContext';
+import { Invoice } from '@/types';
+import Card from '@/components/ui/Card';
+import { formatCurrency, getEffectiveInvoiceStatus } from '@/utils/helpers';
 import { AlertCircle, Clock, ArrowUpRight } from 'lucide-react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 import { StatCard } from '../components/invoices/StatCard';
 import { QuickPayModal } from '../components/invoices/QuickPayModal';
@@ -21,6 +21,7 @@ import {
     filterInvoiceByDate,
     filterInvoiceBySearch,
 } from '../utils/invoices/invoiceCalculations';
+import { getArrearsAmount, getCashInflow } from '@/services/financialFlowService';
 
 const Invoices: React.FC = () => {
     const { db, financeService, settings, dataService } = useApp();
@@ -84,12 +85,13 @@ const Invoices: React.FC = () => {
     }, [db, filters, getEffectiveStatus]);
 
     const stats = useMemo(() => {
-        const unpaid = db.invoices.filter(i => ['UNPAID', 'PARTIALLY_PAID'].includes(getEffectiveStatus(i))).reduce((s, i) => s + getInvoiceRemaining(i), 0);
-        const overdue = db.invoices.filter(i => getEffectiveStatus(i) === 'OVERDUE').reduce((s, i) => s + getInvoiceRemaining(i), 0);
+        const unpaid = db.invoices
+            .filter(i => ['UNPAID', 'PARTIALLY_PAID'].includes(getEffectiveStatus(i)))
+            .reduce((sum, invoice) => sum + getInvoiceRemaining(invoice), 0);
+        const overdueInvoices = db.invoices.filter(i => getEffectiveStatus(i) === 'OVERDUE');
+        const overdue = getArrearsAmount(overdueInvoices);
         const month = new Date().toISOString().slice(0, 7);
-        const collectedThisMonth = db.receipts
-            .filter(r => r.status === 'POSTED' && r.dateTime.startsWith(month))
-            .reduce((s, r) => s + r.amount, 0);
+        const collectedThisMonth = getCashInflow(db.receipts.filter(r => r.dateTime.startsWith(month)));
         return { unpaid, overdue, collectedThisMonth };
     }, [db.invoices, db.receipts, getEffectiveStatus]);
 

@@ -1,9 +1,10 @@
 import React, { useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { useApp } from '../../contexts/AppContext';
-import Card from '../ui/Card';
-import { formatCurrency } from '../../utils/helpers';
+import { useApp } from '@/contexts/AppContext';
+import Card from '@/components/ui/Card';
+import { formatCurrency } from '@/utils/helpers';
 import { AlertTriangle, ArrowRight, BarChart3, FileCheck2, FileWarning, Link2, Receipt, ScrollText } from 'lucide-react';
+import { getArrearsAmount } from '@/services/financialFlowService';
 
 const currentMonth = (): string => new Date().toISOString().slice(0, 7);
 
@@ -22,10 +23,7 @@ const FinanceIntelligenceHub: React.FC = () => {
 
     const contractsMissingInvoices = activeContracts.filter(contract => !invoicesByContract.has(contract.id));
     const overdueInvoices = (db.invoices || []).filter(invoice => invoice.status === 'OVERDUE');
-    const overdueAmount = overdueInvoices.reduce((sum, invoice) => {
-      const total = invoice.amount + (invoice.taxAmount || 0);
-      return sum + Math.max(total - invoice.paidAmount, 0);
-    }, 0);
+    const overdueAmount = getArrearsAmount(overdueInvoices);
 
     const allocationsByReceipt = new Map<string, number>();
     (db.receiptAllocations || []).forEach(allocation => {

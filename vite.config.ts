@@ -1,6 +1,7 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
+import path from 'node:path'
 
 export default defineConfig({
   plugins: [
@@ -36,6 +37,11 @@ export default defineConfig({
       devOptions: { enabled: false },
     }),
   ],
+  resolve: {
+    alias: {
+      '@': path.resolve(__dirname, 'src'),
+    },
+  },
   base: '/',
   server: {
     allowedHosts: true,
@@ -44,6 +50,7 @@ export default defineConfig({
     strictPort: false,
   },
   build: {
+    chunkSizeWarningLimit: 1300,
     outDir: 'dist',
     sourcemap: false,
     minify: 'terser',

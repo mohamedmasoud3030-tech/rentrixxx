@@ -1,6 +1,6 @@
-import React, { useState, useCallback, useEffect, useMemo, useRef } from 'react';
-import { supabase } from '../../services/supabase';
-import { useApp } from '../../contexts/AppContext';
+import React, { memo, useState, useCallback, useEffect, useMemo, useRef } from 'react';
+import { runReportRpcRaw } from '@/services/reportsService';
+import { useApp } from '@/contexts/AppContext';
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
   CartesianGrid, Cell, LineChart, Line, PieChart, Pie, Legend
@@ -51,24 +51,33 @@ const MONTH_PRESETS = [
 
 const AGING_COLORS = ['#10b981','#3b82f6','#f59e0b','#ef4444','#991b1b'];
 
+const useLoadOnce = (loader: () => Promise<void>) => {
+  const didRun = useRef(false);
+  useEffect(() => {
+    if (didRun.current) return;
+    didRun.current = true;
+    void loader();
+  }, [loader]);
+};
+
 // ─── Loading spinner ──────────────────────────────────────────
-const Spinner = () => (
+const Spinner = memo(() => (
   <div className="flex items-center justify-center py-16">
     <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin"/>
   </div>
-);
+));
 
 // ─── KPI Card ─────────────────────────────────────────────────
-const KPI: React.FC<{ label: string; value: string; sub?: string; color?: string }> = ({ label, value, sub, color = 'text-primary' }) => (
+const KPI: React.FC<{ label: string; value: string; sub?: string; color?: string }> = memo(({ label, value, sub, color = 'text-primary' }) => (
   <div className="bg-card border border-border rounded-2xl p-4 flex flex-col gap-1">
     <p className="text-xs text-text-muted font-medium">{label}</p>
     <p className={`text-xl font-black font-mono ${color}`} dir="ltr">{value}</p>
     {sub && <p className="text-[11px] text-text-muted">{sub}</p>}
   </div>
-);
+));
 
 // ─── Section Header ───────────────────────────────────────────
-const SH: React.FC<{ title: string; onPrint?: () => void }> = ({ title, onPrint }) => (
+const SH: React.FC<{ title: string; onPrint?: () => void }> = memo(({ title, onPrint }) => (
   <div className="flex items-center justify-between mb-4">
     <h3 className="font-black text-base text-text">{title}</h3>
     {onPrint && (
@@ -78,10 +87,10 @@ const SH: React.FC<{ title: string; onPrint?: () => void }> = ({ title, onPrint 
       </button>
     )}
   </div>
-);
+));
 
 // ─── Table wrapper ────────────────────────────────────────────
-const Tbl: React.FC<{ heads: string[]; rows: React.ReactNode[][]; footer?: React.ReactNode[] }> = ({ heads, rows, footer }) => (
+const Tbl: React.FC<{ heads: string[]; rows: React.ReactNode[][]; footer?: React.ReactNode[] }> = memo(({ heads, rows, footer }) => (
   <div className="overflow-x-auto rounded-xl border border-border">
     <table className="w-full text-sm text-right">
       <thead className="bg-background text-text-muted text-xs">
@@ -104,19 +113,19 @@ const Tbl: React.FC<{ heads: string[]; rows: React.ReactNode[][]; footer?: React
       )}
     </table>
   </div>
-);
+));
 
 // ─── Badge ─────────────────────────────────────────────────────
-const Badge: React.FC<{ days: number }> = ({ days }) => {
+const Badge: React.FC<{ days: number }> = memo(({ days }) => {
   const cls = days > 90 ? 'bg-red-100 text-red-700' :
               days > 60 ? 'bg-orange-100 text-orange-700' :
               days > 30 ? 'bg-yellow-100 text-yellow-700' :
               'bg-blue-100 text-blue-700';
   return <span className={`px-2 py-0.5 rounded-full text-[11px] font-bold ${cls}`}>{days} يوم</span>;
-};
+});
 
 // ─── Date Range Picker ────────────────────────────────────────
-const DatePicker: React.FC<{ range: DateRange; onChange: (r: DateRange) => void; onGo: () => void; loading: boolean }> = ({ range, onChange, onGo, loading }) => (
+const DatePicker: React.FC<{ range: DateRange; onChange: (r: DateRange) => void; onGo: () => void; loading: boolean }> = memo(({ range, onChange, onGo, loading }) => (
   <div className="flex flex-wrap items-center gap-2 p-4 bg-card border border-border rounded-2xl">
     <div className="flex items-center gap-2">
       <label className="text-xs text-text-muted font-bold">من</label>
@@ -141,7 +150,7 @@ const DatePicker: React.FC<{ range: DateRange; onChange: (r: DateRange) => void;
       {loading ? '...' : 'عرض'}
     </button>
   </div>
-);
+));
 
 // ════════════════════════════════════════════════════════════════
 // REPORT VIEWS
@@ -155,12 +164,12 @@ const SummaryView: React.FC<{ currency: string }> = ({ currency }) => {
 
   const load = useCallback(async () => {
     setState('loading');
-    const { data: d, error } = await supabase.rpc('rpt_financial_summary', { p_from: range.from, p_to: range.to });
+    const { data: d, error } = await runReportRpcRaw('rpt_financial_summary', { p_from: range.from, p_to: range.to });
     if (error) { setState('error'); return; }
     setData(d); setState('done');
   }, [range]);
 
-  useEffect(() => { load(); }, []);
+  useLoadOnce(load);
 
   const occupancy = data ? [
     { name: 'مشغول', value: data.occupied_units },
@@ -212,12 +221,12 @@ const IncomeView: React.FC<{ currency: string }> = ({ currency }) => {
 
   const load = useCallback(async () => {
     setState('loading');
-    const { data: d, error } = await supabase.rpc('rpt_income_statement', { p_from: range.from, p_to: range.to });
+    const { data: d, error } = await runReportRpcRaw('rpt_income_statement', { p_from: range.from, p_to: range.to });
     if (error) { setState('error'); return; }
     setData(d); setState('done');
   }, [range]);
 
-  useEffect(() => { load(); }, []);
+  useLoadOnce(load);
 
   const chartData = data ? [
     { name: 'الإيرادات', amount: data.total_revenue, fill: '#10b981' },
@@ -281,12 +290,12 @@ const TrialBalanceView: React.FC<{ currency: string }> = ({ currency }) => {
 
   const load = useCallback(async () => {
     setState('loading');
-    const { data: d, error } = await supabase.rpc('rpt_trial_balance', { p_as_of: asOf });
+    const { data: d, error } = await runReportRpcRaw('rpt_trial_balance', { p_as_of: asOf });
     if (error) { setState('error'); return; }
     setData(d); setState('done');
   }, [asOf]);
 
-  useEffect(() => { load(); }, []);
+  useLoadOnce(load);
 
   return (
     <div className="space-y-5">
@@ -336,12 +345,12 @@ const AgedReceivablesView: React.FC<{ currency: string }> = ({ currency }) => {
 
   const load = useCallback(async () => {
     setState('loading');
-    const { data: d, error } = await supabase.rpc('rpt_aged_receivables', { p_as_of: asOf });
+    const { data: d, error } = await runReportRpcRaw('rpt_aged_receivables', { p_as_of: asOf });
     if (error) { setState('error'); return; }
     setData(d); setState('done');
   }, [asOf]);
 
-  useEffect(() => { load(); }, []);
+  useLoadOnce(load);
 
   const buckets = data?.totals ? [
     { name: 'حالي',    value: data.totals.current },
@@ -415,12 +424,12 @@ const OverdueView: React.FC<{ currency: string }> = ({ currency }) => {
 
   const load = useCallback(async () => {
     setState('loading');
-    const { data: d, error } = await supabase.rpc('rpt_overdue_invoices', { p_as_of: today() });
+    const { data: d, error } = await runReportRpcRaw('rpt_overdue_invoices', { p_as_of: today() });
     if (error) { setState('error'); return; }
     setData(d as OverdueReportData); setState('done');
   }, []);
 
-  useEffect(() => { load(); }, []);
+  useLoadOnce(load);
 
   const rows = useMemo(
     () => (data?.rows || []).filter((r) =>
@@ -475,7 +484,7 @@ const TenantStatementView: React.FC<{ currency: string; contracts: any[] }> = ({
   const load = useCallback(async () => {
     if (!contractId) return;
     setState('loading');
-    const { data: d, error } = await supabase.rpc('rpt_tenant_statement', { p_contract_id: contractId });
+    const { data: d, error } = await runReportRpcRaw('rpt_tenant_statement', { p_contract_id: contractId });
     if (error) { setState('error'); return; }
     setData(d); setState('done');
   }, [contractId]);
@@ -531,7 +540,7 @@ const OwnerStatementView: React.FC<{ currency: string; owners: any[] }> = ({ cur
   const load = useCallback(async () => {
     if (!ownerId) return;
     setState('loading');
-    const { data: d, error } = await supabase.rpc('rpt_owner_statement', { p_owner_id: ownerId, p_from: range.from, p_to: range.to });
+    const { data: d, error } = await runReportRpcRaw('rpt_owner_statement', { p_owner_id: ownerId, p_from: range.from, p_to: range.to });
     if (error) { setState('error'); return; }
     setData(d); setState('done');
   }, [ownerId, range]);
@@ -590,12 +599,12 @@ const DailyCollectionView: React.FC<{ currency: string }> = ({ currency }) => {
 
   const load = useCallback(async () => {
     setState('loading');
-    const { data: d, error } = await supabase.rpc('rpt_daily_collection', { p_from: range.from, p_to: range.to });
+    const { data: d, error } = await runReportRpcRaw('rpt_daily_collection', { p_from: range.from, p_to: range.to });
     if (error) { setState('error'); return; }
     setData(d); setState('done');
   }, [range]);
 
-  useEffect(() => { load(); }, []);
+  useLoadOnce(load);
 
   return (
     <div className="space-y-5">
@@ -640,12 +649,12 @@ const RentRollView: React.FC<{ currency: string }> = ({ currency }) => {
 
   const load = useCallback(async () => {
     setState('loading');
-    const { data: d, error } = await supabase.rpc('rpt_rent_roll', { p_as_of: today() });
+    const { data: d, error } = await runReportRpcRaw('rpt_rent_roll', { p_as_of: today() });
     if (error) { setState('error'); return; }
     setData(d); setState('done');
   }, []);
 
-  useEffect(() => { load(); }, []);
+  useLoadOnce(load);
 
   const rows = data?.rows || [];
   const totalRent = rows.filter((r:any) => r.tenant_name).reduce((s:number, r:any) => s + r.rent_amount, 0);

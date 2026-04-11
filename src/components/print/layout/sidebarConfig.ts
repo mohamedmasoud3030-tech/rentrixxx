@@ -12,7 +12,7 @@ import {
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { NAVIGATION_META } from '../../../config/navigationMeta';
-import { FINANCIAL_ROUTES } from '../../../routes/modules';
+import { FINANCIAL_ROUTES } from '@/config/routes';
 
 export type SidebarBadgeKey =
   | 'expiringContracts'

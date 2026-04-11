@@ -1,9 +1,10 @@
 import React, { useMemo } from 'react';
 import { useParams } from 'react-router-dom';
-import Card from '../components/ui/Card';
-import { useApp } from '../contexts/AppContext';
-import { formatCurrency } from '../utils/helpers';
-import { AR_LABELS } from '../config/labels.ar';
+import Card from '@/components/ui/Card';
+import { useApp } from '@/contexts/AppContext';
+import { formatCurrency } from '@/utils/helpers';
+import { AR_LABELS } from '@/config/labels.ar';
+import { getArrearsAmount, getArrearsInvoices, getCashInflow, getExpenseImpact, getRevenueFromPaidInvoices } from '@/services/financialFlowService';
 
 const OwnersHub: React.FC = () => {
   const { ownerId } = useParams<{ ownerId: string }>();
@@ -24,16 +25,13 @@ const OwnersHub: React.FC = () => {
     [db.expenses, ownerId, propertyIds],
   );
 
-  const arrears = useMemo(
-    () => invoices.filter(invoice => invoice.status === 'OVERDUE' || (invoice.status === 'UNPAID' && new Date(invoice.dueDate) < new Date())),
-    [invoices],
-  );
+  const arrears = useMemo(() => getArrearsInvoices(invoices), [invoices]);
 
   const summary = useMemo(() => ({
-    totalInvoices: invoices.reduce((sum, invoice) => sum + invoice.amount, 0),
-    totalPayments: payments.reduce((sum, payment) => sum + payment.amount, 0),
-    totalExpenses: expenses.reduce((sum, expense) => sum + expense.amount, 0),
-    totalArrears: arrears.reduce((sum, invoice) => sum + Math.max(0, invoice.amount - invoice.paidAmount), 0),
+    totalInvoices: getRevenueFromPaidInvoices(invoices),
+    totalPayments: getCashInflow(payments),
+    totalExpenses: getExpenseImpact(expenses),
+    totalArrears: getArrearsAmount(arrears),
   }), [invoices, payments, expenses, arrears]);
 
   if (!owner) {

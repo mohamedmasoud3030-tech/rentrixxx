@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { useApp } from '../../contexts/AppContext';
+import { useApp } from '@/contexts/AppContext';
 import { toast } from 'react-hot-toast';
-import { Settings } from '../../types';
-import { supabase } from '../../services/supabase';
+import { Settings } from '@/types';
+import { uploadCompanyLogo } from '@/services/appearanceService';
 
 type Appearance = Settings['appearance'];
 
@@ -20,18 +20,6 @@ const validateImageDimensions = (file: File): Promise<boolean> => {
         img.onerror = () => { URL.revokeObjectURL(url); resolve(false); };
         img.src = url;
     });
-};
-
-const uploadToStorage = async (file: File, path: string): Promise<string | null> => {
-    const { data, error } = await supabase.storage
-        .from('company-assets')
-        .upload(path, file, { upsert: true, contentType: file.type });
-    if (error) {
-        console.error('[Storage] upload error:', error);
-        return null;
-    }
-    const { data: urlData } = supabase.storage.from('company-assets').getPublicUrl(data.path);
-    return urlData.publicUrl;
 };
 
 const fileToBase64 = (file: File): Promise<string> => {
@@ -102,7 +90,7 @@ const AppearanceSettings: React.FC = () => {
 
             if (logoFile) {
                 const ext = logoFile.name.split('.').pop();
-                const url = await uploadToStorage(logoFile, `logo.${ext}`);
+                const url = await uploadCompanyLogo(new File([logoFile], `logo.${ext}`, { type: logoFile.type }));
                 if (url) {
                     updatedAppearance = { ...updatedAppearance, logoDataUrl: url };
                 } else {
@@ -114,7 +102,7 @@ const AppearanceSettings: React.FC = () => {
 
             if (stampFile) {
                 const ext = stampFile.name.split('.').pop();
-                const url = await uploadToStorage(stampFile, `stamp.${ext}`);
+                const url = await uploadCompanyLogo(new File([stampFile], `stamp.${ext}`, { type: stampFile.type }));
                 if (url) {
                     updatedAppearance = { ...updatedAppearance, stampDataUrl: url };
                 } else {

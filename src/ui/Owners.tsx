@@ -9,7 +9,7 @@ import { MessageCircle, Users, BookOpen, Link as LinkIcon } from 'lucide-react';
 import NumberInput from '../components/ui/NumberInput';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
-import { ROUTES } from '../routes/modules';
+import { ROUTES } from '@/config/routes';
 import { AR_LABELS } from '../config/labels.ar';
 
 const Owners: React.FC = () => {

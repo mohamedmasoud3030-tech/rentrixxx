@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { ChevronDown, Bot, X, LogOut } from 'lucide-react';
 import { useApp } from '../../../contexts/AppContext';
-import { WORKFLOW_STATUS } from '../../../constants/status';
+import { WORKFLOW_STATUS } from '@/config/status';
 import { normalizeWorkflowStatus } from '../../../utils/status';
 import { getLastRunDate } from '../../../services/automationService';
 import { createSidebarConfig, type SidebarNavItem } from './sidebarConfig';
