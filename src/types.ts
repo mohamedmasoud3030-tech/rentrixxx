@@ -281,6 +281,7 @@ export interface Contract {
   end: string; // YYYY-MM-DD
   deposit: number;
   status: 'ACTIVE' | 'ENDED' | 'SUSPENDED';
+  deletedAt?: number | string | null;
   sponsorName?: string;
   sponsorId?: string;
   sponsorPhone?: string;

@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useMemo, useCallback, useRef } from 'react';
-import { Database, User, Settings, Owner, Contract, Receipt, Expense, DepositTx, Governance, Serials, Invoice, ReceiptAllocation, Account, JournalEntry, NotificationTemplate, AppContextType, PerformanceMetrics, OperationType, ContractBalance, TenantBalance, OwnerSettlement, AppNotification, OwnerBalance, AccountBalance, KpiSnapshot, Commission } from '../types';
+import { Database, User, Settings, Owner, Contract, Receipt, Expense, DepositTx, Governance, Serials, Invoice, ReceiptAllocation, Account, JournalEntry, NotificationTemplate, AppContextType, PerformanceMetrics, OperationType, ContractBalance, TenantBalance, OwnerSettlement, AppNotification, OwnerBalance, AccountBalance, KpiSnapshot, Commission, Tenant } from '../types';
 import { AuthContext, type AuthContextValue } from '../contexts/authContext';
 import { FinanceContext, type FinanceContextValue } from '../contexts/financeContext';
 import { OperationsContext, type OperationsContextValue } from '../contexts/operationsContext';
@@ -570,6 +570,39 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const add: AppContextType['dataService']['add'] = useCallback(async (table, entry) => {
     if (isReadOnly || !settings) { toast.error('لا يمكن إضافة سجلات في وضع القراءة فقط'); return null; }
     try {
+      if (table === 'tenants') {
+        const incomingIdNo = String((entry as Partial<Tenant>).idNo || '').trim();
+        if (!incomingIdNo) {
+          toast.error('رقم هوية المستأجر مطلوب.');
+          return null;
+        }
+        const duplicateTenant = db?.tenants?.find(t => t.idNo?.trim() === incomingIdNo);
+        if (duplicateTenant) {
+          toast.error('رقم الهوية مستخدم مسبقاً لمستأجر آخر.');
+          return null;
+        }
+      }
+
+      if (table === 'contracts') {
+        const draft = entry as Partial<Contract>;
+        const tenantExists = !!db?.tenants?.some(t => t.id === draft.tenantId);
+        const unitExists = !!db?.units?.some(u => u.id === draft.unitId);
+        if (!tenantExists || !unitExists) {
+          toast.error('بيانات العقد غير صالحة: المستأجر أو الوحدة غير موجود.');
+          return null;
+        }
+
+        const duplicateActiveOnUnit = db?.contracts?.some(c =>
+          c.unitId === draft.unitId &&
+          c.status === 'ACTIVE' &&
+          !c.deletedAt
+        );
+        if (duplicateActiveOnUnit) {
+          toast.error('لا يمكن إنشاء عقد جديد: يوجد عقد نشط بالفعل على نفس الوحدة.');
+          return null;
+        }
+      }
+
       if (FINANCIAL_TABLES.includes(table as keyof Database)) setIsDataStale(true);
       if (table === 'receipts') {
         toast.error('إضافة سند القبض يجب أن تتم عبر خدمة التخصيصات.');
@@ -659,7 +692,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       toast.error(`خطأ أثناء الإضافة: ${err instanceof Error ? err.message : 'خطأ غير معروف'}`);
       return null;
     }
-  }, [isReadOnly, settings, audit, postJournalEntrySupabase, postInvoiceJournalEntries, createRentInvoicesForContract]);
+  }, [isReadOnly, settings, audit, postJournalEntrySupabase, postInvoiceJournalEntries, createRentInvoicesForContract, db]);
 
   const addReceiptWithAllocations: AppContextType['financeService']['addReceiptWithAllocations'] = useCallback(async (receiptData, allocations) => {
     if (isReadOnly || !settings) return { success: false, error: 'النظام في وضع القراءة فقط.' };
@@ -837,6 +870,46 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         toast.error('تعديل مباشر غير مسموح. خطوات الاسترجاع: 1) إلغاء الحركة الحالية 2) مراجعة القيود العكسية 3) إعادة التسجيل بالقيم الصحيحة.');
         return;
       }
+
+      if (table === 'tenants' && typeof (updates as Partial<Tenant>).idNo === 'string') {
+        const incomingIdNo = String((updates as Partial<Tenant>).idNo || '').trim();
+        const duplicateTenant = db?.tenants?.find(t => t.idNo?.trim() === incomingIdNo && t.id !== id);
+        if (duplicateTenant) {
+          toast.error('رقم الهوية مستخدم مسبقاً لمستأجر آخر.');
+          return;
+        }
+      }
+
+      if (table === 'contracts') {
+        const current = db?.contracts?.find(c => c.id === id);
+        const nextTenantId = (updates as Partial<Contract>).tenantId ?? current?.tenantId;
+        const nextUnitId = (updates as Partial<Contract>).unitId ?? current?.unitId;
+        if (!nextTenantId || !nextUnitId) {
+          toast.error('لا يمكن تحديث العقد: بيانات المستأجر أو الوحدة غير مكتملة.');
+          return;
+        }
+        const tenantExists = !!db?.tenants?.some(t => t.id === nextTenantId);
+        const unitExists = !!db?.units?.some(u => u.id === nextUnitId);
+        if (!tenantExists || !unitExists) {
+          toast.error('لا يمكن تحديث العقد: المستأجر أو الوحدة غير موجود.');
+          return;
+        }
+
+        const nextStatus = ((updates as Partial<Contract>).status ?? current?.status);
+        if (nextStatus === 'ACTIVE') {
+          const duplicateActiveOnUnit = db?.contracts?.some(c =>
+            c.id !== id &&
+            c.unitId === nextUnitId &&
+            c.status === 'ACTIVE' &&
+            !c.deletedAt
+          );
+          if (duplicateActiveOnUnit) {
+            toast.error('لا يمكن تفعيل العقد: توجد وحدة مرتبطة بعقد نشط آخر.');
+            return;
+          }
+        }
+      }
+
       const normalizedUpdates = TABLES_WITHOUT_UPDATED_AT.has(table as keyof Database)
         ? { ...updates }
         : { ...updates, updatedAt: Date.now() };
@@ -851,7 +924,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       console.error('[AppContext] update error:', err);
       toast.error(`خطأ أثناء التحديث: ${message}`);
     }
-  }, [audit, refreshData]);
+  }, [audit, refreshData, db]);
 
   const remove: AppContextType['dataService']['remove'] = useCallback(async (table, id) => {
     const isContractDelete = table === 'contracts';
