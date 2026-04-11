@@ -83,7 +83,6 @@ export const createSnapshotPayload = (db: Database, note: string, userId: string
   id: crypto.randomUUID(),
   ts: Date.now(),
   note,
-  userId,
   data: JSON.stringify(db),
 });
 
