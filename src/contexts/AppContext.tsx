@@ -1,3 +1,3 @@
-import { AppProvider, useApp } from '../hooks/useAppCore';
+import { AppProvider, useApp } from '../hooks/useAppCoreImpl';
 
 export { AppProvider, useApp };
