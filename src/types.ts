@@ -750,6 +750,13 @@ export interface AppContextType {
   tenantBalances: { [tenantId: string]: TenantBalance };
 
   // Other Utilities
+  fetchPaginatedData: <T extends keyof Database>(
+    table: T,
+    page: number,
+    pageSize: number,
+    orderBy?: string,
+    ascending?: boolean
+  ) => Promise<{ data: Database[T]; total: number }>;
   updateNotificationTemplate: (id: string, updates: Partial<NotificationTemplate>) => Promise<void>;
   generateNotifications: () => Promise<number>;
   generateOwnerPortalLink: (ownerId: string) => Promise<string>;

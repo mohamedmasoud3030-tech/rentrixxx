@@ -184,7 +184,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       (newDb[table] as Database[T]) = updatedData as Database[T];
       return newDb;
     });
-    return { data, total };
+    return { data: data as Database[T], total };
   }, []);
 
   const [settings, setSettings] = useState<Settings | null>(null);
@@ -914,6 +914,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const startTime = performance.now();
     try {
       await audit('VOID', 'receipts', id);
+      const invoiceUpdates: Array<{ id: string; paid_amount: number; status: Invoice['status'] }> = [];
       const allocations = await supabaseData.fetchWhere<ReceiptAllocation>('receiptAllocations', 'receiptId', id);
       for (const alloc of allocations) {
         const invoices = await supabaseData.fetchWhere<Invoice>('invoices', 'id', alloc.invoiceId);
@@ -956,7 +957,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       console.error('voidReceipt failed:', err);
       toast.error('حدث خطأ أثناء إلغاء السند: ' + (err instanceof Error ? err.message : 'خطأ غير معروف'));
       await refreshData();
-      return { success: false, error: err instanceof Error ? err.message : 'خطأ غير معروف' };
+      return;
     }
   }, [audit, logOperationTime, refreshData]);
 
@@ -977,7 +978,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       console.error('voidExpense failed:', err);
       toast.error('حدث خطأ أثناء إلغاء المصروف: ' + (err instanceof Error ? err.message : 'خطأ غير معروف'));
       await refreshData();
-      return { success: false, error: err instanceof Error ? err.message : 'خطأ غير معروف' };
+      return;
     }
   }, [audit, reverseAllJournalEntries, logOperationTime, refreshData]);
 
@@ -1009,12 +1010,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       contractId: null, ref: `COMM-${commissionId.slice(0, 6)}`,
     });
 
-    if (newExpense) {
-      await supabaseData.update('commissions', commissionId, { status: 'PAID', expenseId: newExpense.id, paidAt: Date.now() });
-      await refreshData();
-      return { success: true };
+    if (!newExpense) {
+      throw new Error('فشل صرف العمولة لعدم إنشاء المصروف المرتبط.');
     }
-    return { success: false, error: 'فشل صرف العمولة لعدم إنشاء المصروف المرتبط.' };
+    await supabaseData.update('commissions', commissionId, { status: 'PAID', expenseId: newExpense.id, paidAt: Date.now() });
+    await refreshData();
   }, [isReadOnly, add, refreshData]);
 
   const updateNotificationTemplate: AppContextType['updateNotificationTemplate'] = useCallback(async (id, updates) => {
@@ -1509,8 +1509,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       restoreBackup: async (s) => {
         toast.error('استعادة النسخة الاحتياطية غير متاحة في وضع Supabase. يرجى استخدام لوحة تحكم Supabase.');
       },
+      fetchPaginatedData,
       generateOwnerPortalLink, canAccess, isDataStale, performanceMetrics, logOperationTime,
       ownerBalances, contractBalances, tenantBalances,
+      getFinancialSummary,
       createSnapshot: async (note) => {
         await supabaseData.insert('snapshots', { id: crypto.randomUUID(), ts: Date.now(), note, data: await supabaseData.getAllData() });
         toast.success("تم إنشاء نقطة الاستعادة بنجاح.");

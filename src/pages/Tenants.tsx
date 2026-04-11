@@ -13,6 +13,8 @@ import { toast } from 'react-hot-toast';
 
 const Tenants: React.FC = () => {
     const { db, dataService } = useApp();
+    const [searchTerm, setSearchTerm] = useState('');
+    const [statusFilter, setStatusFilter] = useState<'ALL' | Tenant['status']>('ALL');
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingTenant, setEditingTenant] = useState<Tenant | null>(null);
     const [whatsAppContext, setWhatsAppContext] = useState<any | null>(null);
@@ -95,6 +97,22 @@ const Tenants: React.FC = () => {
             <div className="flex justify-between items-center mb-4">
                 <h2 className="text-xl font-bold">قائمة المستأجرين</h2>
                 <div className="flex gap-2">
+                    <input
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        placeholder="بحث بالاسم / الهاتف / الهوية"
+                        className="rounded border border-border px-3 py-2 text-sm"
+                    />
+                    <select
+                        value={statusFilter}
+                        onChange={(e) => setStatusFilter(e.target.value as 'ALL' | Tenant['status'])}
+                        className="rounded border border-border px-3 py-2 text-sm"
+                    >
+                        <option value="ALL">كل الحالات</option>
+                        <option value="ACTIVE">نشط</option>
+                        <option value="INACTIVE">غير نشط</option>
+                        <option value="BLACKLIST">قائمة سوداء</option>
+                    </select>
                     <button onClick={() => exportToCsv('مستأجرون_rentrix', tenants.map(t => ({ 'الاسم': t.name, 'الهاتف': t.phone, 'رقم الهوية': t.idNo, 'الجنسية': t.nationality || '', 'الحالة': TENANT_STATUS_AR[t.status] || t.status, 'تاريخ الإضافة': new Date(t.createdAt).toLocaleDateString('ar') })))} className="btn btn-secondary">
                         <Download size={14} />
                         تصدير CSV
@@ -122,7 +140,7 @@ const Tenants: React.FC = () => {
                             </tr>
                         </thead>
                         <tbody>
-                            {tenants.map(t => (
+                            {filteredTenants.map(t => (
                                 <tr key={t.id} className="bg-card hover:bg-background">
                                     <td className="px-6 py-4 font-medium text-primary border border-border cursor-pointer hover:underline" onClick={() => setSelectedTenant(t)}>{t.name}</td>
                                     <td className="px-6 py-4 border border-border">{t.phone}</td>
