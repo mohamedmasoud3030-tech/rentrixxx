@@ -779,7 +779,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           id: newReceipt.id, no: newReceipt.no, contract_id: newReceipt.contractId, date_time: newReceipt.dateTime,
           channel: newReceipt.channel, amount: round3(newReceipt.amount), ref: newReceipt.ref, notes: newReceipt.notes,
           status: newReceipt.status, created_at: newReceipt.createdAt, check_number: newReceipt.checkNumber || '',
-          check_bank: newReceipt.checkBank || '', check_date: newReceipt.checkDate || '', check_status: newReceipt.checkStatus || '',
+          check_bank: newReceipt.checkBank || '', check_date: newReceipt.checkDate || '', check_status: newReceipt.checkStatus || undefined,
+          voided_at: null,
         },
         allocations: newAllocations.map(a => ({ id: a.id, receipt_id: a.receiptId, invoice_id: a.invoiceId, amount: round3(a.amount), created_at: a.createdAt })),
         journalEntries: journalEntries.map(j => ({

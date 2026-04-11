@@ -53,7 +53,7 @@ const ContractPrintable: React.FC<{ contract: Contract }> = ({ contract }) => {
                     logoUrl={logo}
                     docTitle="عقد إيجار"
                     docNo={contract.no || contract.id}
-                    docDate={formatDate(contract.createdAt)}
+                    docDate={formatDate(new Date(contract.createdAt).toISOString())}
                 />
             </div>
             <div className="space-y-2 print-doc__body">

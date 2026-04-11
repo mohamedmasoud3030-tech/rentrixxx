@@ -7,7 +7,7 @@ interface StatCardProps {
   value: number;
   icon: React.ReactNode;
   color: 'amber' | 'rose' | 'emerald';
-  currency?: string;
+  currency?: 'OMR' | 'SAR' | 'EGP';
 }
 
 const colorClasses: Record<string, string> = {
