@@ -1,5 +1,5 @@
 import React from 'react';
-import AuditLog from '../../pages/AuditLog';
+import AuditLog from '@/ui/AuditLog';
 
 const SecuritySettings: React.FC = () => {
     return (

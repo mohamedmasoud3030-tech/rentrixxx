@@ -1,33 +1,33 @@
 
-import React, { useEffect, Suspense } from 'react';
+import React, { lazy, Suspense, useEffect } from 'react';
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
-import { useApp } from './contexts/AppContext';
-import Layout from './components/print/layout/Layout';
-import Login from './pages/Login';
-import ChangePassword from './pages/ChangePassword';
-import OwnerView from './pages/OwnerView';
+import { useApp } from '@/contexts/AppContext';
+import Layout from '@/components/print/layout/Layout';
+import Login from '@/ui/Login';
+import ChangePassword from '@/ui/ChangePassword';
+import OwnerView from '@/ui/OwnerView';
 import { Toaster } from 'react-hot-toast';
 
-// Static imports for stability and to prevent Error #130
-import Dashboard from './pages/Dashboard';
-import Properties from './pages/Properties';
-import Tenants from './pages/Tenants';
-import Owners from './pages/Owners';
-import Contracts from './pages/Contracts';
-import Finance from './pages/Finance';
-import Reports from './pages/Reports';
-import Settings from './pages/System';
-import Leads from './pages/Leads';
-import CommunicationHub from './pages/CommunicationHub';
-import Lands from './pages/Lands';
-import Commissions from './pages/Commissions';
-import Maintenance from './pages/Maintenance';
-import AuditLog from './pages/AuditLog';
-import SmartAssistant from './pages/SmartAssistant';
-import ProtectedRoute from './components/shared/ProtectedRoute';
-import OwnersHub from './pages/OwnersHub';
-import { LEGACY_FINANCIAL_ALIASES } from './routes/modules';
-import { NAVIGATION_META } from './config/navigationMeta';
+const Dashboard = lazy(() => import('@/ui/Dashboard'));
+const Properties = lazy(() => import('@/ui/Properties'));
+const Tenants = lazy(() => import('@/ui/Tenants'));
+const Owners = lazy(() => import('@/ui/Owners'));
+const Contracts = lazy(() => import('@/ui/Contracts'));
+const Finance = lazy(() => import('@/ui/Finance'));
+const Reports = lazy(() => import('@/ui/Reports'));
+const Settings = lazy(() => import('@/ui/System'));
+const Leads = lazy(() => import('@/ui/Leads'));
+const CommunicationHub = lazy(() => import('@/ui/CommunicationHub'));
+const Lands = lazy(() => import('@/ui/Lands'));
+const Commissions = lazy(() => import('@/ui/Commissions'));
+const Maintenance = lazy(() => import('@/ui/Maintenance'));
+const AuditLog = lazy(() => import('@/ui/AuditLog'));
+const SmartAssistant = lazy(() => import('@/ui/SmartAssistant'));
+const OwnersHub = lazy(() => import('@/ui/OwnersHub'));
+
+import ProtectedRoute from '@/components/shared/ProtectedRoute';
+import { LEGACY_FINANCIAL_ALIASES } from '@/config/routes';
+import { NAVIGATION_META } from '@/config/navigationMeta';
 
 const hexToHsl = (hex: string): string => {
     hex = hex.replace('#', '');

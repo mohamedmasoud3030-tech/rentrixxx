@@ -6,7 +6,7 @@ import Card from '../components/ui/Card';
 import { getStatusBadgeClass, sanitizePhoneNumber } from '../utils/helpers';
 import { Send, MessageSquare, Copy, Check, Trash2 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
-import { WORKFLOW_STATUS } from '../constants/status';
+import { WORKFLOW_STATUS } from '@/config/status';
 import { normalizeWorkflowStatus } from '../utils/status';
 
 const CommunicationHub: React.FC = () => {

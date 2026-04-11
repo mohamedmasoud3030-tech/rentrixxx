@@ -1,4 +1,5 @@
-import { getAppEnv } from '../config/env';
+import { getAppEnv } from '@/config/env';
+import { sanitizeHeaders } from '@/utils/sanitizeHeaders';
 
 export type ErrorContext = {
   area: string;
@@ -53,7 +54,7 @@ export const errorTracker = {
 
     void fetch(dsn, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: sanitizeHeaders({ 'Content-Type': 'application/json' }),
       body: payload,
       keepalive: true,
     }).catch(() => {

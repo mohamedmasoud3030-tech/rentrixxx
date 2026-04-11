@@ -1,12 +1,13 @@
 import React, { useMemo, useState } from 'react';
-import { useApp } from '../contexts/AppContext';
-import { formatCurrency, formatDate } from '../utils/helpers';
+import { useApp } from '@/contexts/AppContext';
+import { formatCurrency } from '@/utils/helpers';
 import { useNavigate } from 'react-router-dom';
 import { Search, Building2, Users, FileText, Banknote, TrendingUp, TrendingDown, AlertTriangle, Wrench, Home, Percent, DollarSign, CalendarClock } from 'lucide-react';
-import { Contract, Receipt as ReceiptType, Expense } from '../types';
+import { Contract, Receipt as ReceiptType, Expense, Invoice } from '@/types';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 import { startOfMonth, endOfMonth, subMonths, eachMonthOfInterval, isWithinInterval, format } from 'date-fns';
 import { ar } from 'date-fns/locale';
+import { getArrearsAmount, getArrearsInvoices, getCashInflow, getExpenseImpact, getRevenueFromPaidInvoices } from '@/services/financialFlowService';
 
 const QuickSearch = () => {
     const [query, setQuery] = useState('');
@@ -53,18 +54,16 @@ const Dashboard: React.FC = () => {
 
         const monthReceipts = db.receipts.filter(r => r.status === 'POSTED' && r.dateTime?.startsWith(currentMonth));
         const monthExpenses = db.expenses.filter(e => e.status === 'POSTED' && e.dateTime?.startsWith(currentMonth));
-        const monthlyRevenue = monthReceipts.reduce((s, r) => s + r.amount, 0);
-        const monthlyExpenses = monthExpenses.reduce((s, e) => s + e.amount, 0);
+        const monthInvoices = db.invoices.filter((inv: Invoice) => inv.dueDate?.startsWith(currentMonth));
+        const monthlyRevenue = getRevenueFromPaidInvoices(monthInvoices);
+        const monthlyExpenses = getExpenseImpact(monthExpenses);
 
         const officeShareTotal = Object.values(ownerBalances).reduce((s, b) => s + (b.officeShare || 0), 0);
-        const officeExpensesTotal = db.expenses.filter(e => e.status === 'POSTED' && !e.contractId).reduce((s, e) => s + e.amount, 0);
+        const officeExpensesTotal = getExpenseImpact(db.expenses.filter(e => !e.contractId));
         const treasuryBalance = officeShareTotal - officeExpensesTotal;
 
-        const overdueInvoices = db.invoices.filter(inv => (inv.status === 'OVERDUE' || (inv.status === 'UNPAID' && new Date(inv.dueDate) < new Date())) && inv.type === 'RENT');
-        const overdueAmount = overdueInvoices.reduce((s, inv) => {
-            const total = (inv.amount || 0) + (inv.taxAmount || 0);
-            return s + Math.max(0, total - (inv.paidAmount || 0));
-        }, 0);
+        const overdueInvoices = getArrearsInvoices(db.invoices.filter(inv => inv.type === 'RENT'));
+        const overdueAmount = getArrearsAmount(overdueInvoices);
 
         const expiringContracts = activeContracts.filter(c => {
             const diff = new Date(c.end).getTime() - now;
@@ -151,8 +150,8 @@ const DashboardRevenueChart: React.FC<{ receipts: ReceiptType[]; expenses: Expen
         return months.map(monthStart => {
             const monthEnd = endOfMonth(monthStart);
             const label = format(monthStart, 'MMM', { locale: ar });
-            const revenue = receipts.filter(r => r.status === 'POSTED' && r.dateTime && isWithinInterval(new Date(r.dateTime), { start: monthStart, end: monthEnd })).reduce((s, r) => s + r.amount, 0);
-            const exp = expenses.filter(e => e.status === 'POSTED' && e.dateTime && isWithinInterval(new Date(e.dateTime), { start: monthStart, end: monthEnd })).reduce((s, e) => s + e.amount, 0);
+            const revenue = getCashInflow(receipts.filter(r => r.dateTime && isWithinInterval(new Date(r.dateTime), { start: monthStart, end: monthEnd })));
+            const exp = getExpenseImpact(expenses.filter(e => e.dateTime && isWithinInterval(new Date(e.dateTime), { start: monthStart, end: monthEnd })));
             return { name: label, revenue, expenses: exp };
         });
     }, [receipts, expenses]);

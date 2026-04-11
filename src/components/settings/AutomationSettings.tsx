@@ -1,14 +1,14 @@
 import React, { useEffect, useState } from 'react';
-import { useApp } from '../../contexts/AppContext';
+import { useApp } from '@/contexts/AppContext';
 import {
   getAutomationConfig,
   saveAutomationConfig,
   getAutomationRunLog,
   getLastRunDate,
   type AutomationTaskConfig,
-} from '../../services/automationService';
-import { runAutomationScheduler } from '../../services/edgeFunctions';
-import type { AutomationResult, AutomationRunState } from '../../types/automation';
+} from '@/services/automationService';
+import { appOrchestrator } from '@/services/appOrchestrator';
+import type { AutomationResult, AutomationRunState } from '@/types/automation';
 import { Play, ToggleLeft, ToggleRight, Clock, AlertCircle, CheckCircle } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 
@@ -67,7 +67,7 @@ const AutomationSettings: React.FC = () => {
     try {
       let result: AutomationResult;
       try {
-        result = await runAutomationScheduler();
+        result = await appOrchestrator.runAutomation();
       } catch {
         result = await runManualAutomation();
       }

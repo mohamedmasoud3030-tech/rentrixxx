@@ -1,1 +1,0 @@
-export const agents = { rentCollector:true, financeAnalyzer:true, maintenanceAgent:true };

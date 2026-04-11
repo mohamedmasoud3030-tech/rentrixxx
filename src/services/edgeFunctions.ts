@@ -1,7 +1,8 @@
-import { supabase } from './supabase';
-import { getAppEnv } from '../config/env';
-import { logger } from './logger';
-import type { AutomationResult } from '../types/automation';
+import { getAppEnv } from '@/config/env';
+import { logger } from '@/services/logger';
+import { supabase } from '@/services/supabase';
+import type { AutomationResult } from '@/types/automation';
+import { sanitizeHeaders } from '@/utils/sanitizeHeaders';
 
 export interface OwnerPortalPayload {
   owner: { id: string; name: string };
@@ -58,11 +59,11 @@ export async function runAutomationScheduler(payload?: { dryRun?: boolean }): Pr
 
   const response = await fetch(`${env.supabaseUrl}/functions/v1/automation-scheduler`, {
     method: 'POST',
-    headers: {
+    headers: sanitizeHeaders({
       'Content-Type': 'application/json',
       apikey: env.supabaseAnonKey,
       ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
-    },
+    }),
     body: JSON.stringify(payload || {}),
   });
 
