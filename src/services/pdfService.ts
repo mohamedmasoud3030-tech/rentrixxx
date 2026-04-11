@@ -6,7 +6,7 @@ import { Settings, Contract, Database, Invoice, Expense, UtilityType, UTILITY_TY
 import { formatDate, formatCurrency } from '../utils/helpers';
 
 type PdfRow = Record<string, any>;
-type PdfCell = { content: string; colSpan?: number; styles?: Record<string, unknown> };
+type PdfCell = { content: string | number; colSpan?: number; styles?: Record<string, unknown> };
 type AutoTableDoc = jsPDF & { autoTable: (opts: Record<string, unknown>) => void; lastAutoTable?: { finalY: number } };
 const asAutoTableDoc = (doc: jsPDF) => doc as AutoTableDoc;
 const FALLBACK_FONT = 'helvetica';
@@ -519,7 +519,7 @@ export const exportDailyCollectionToPdf = (receipts: PdfRow[], totals: { cash: n
         { content: '', styles: {} },
         { content: formatCurrency(totals.total, cur), styles: { fontStyle: 'bold' } },
         { content: 'الإجمالي', colSpan: 2, styles: { halign: 'center', fontStyle: 'bold' } } as PdfCell,
-    ] as PdfCell);
+    ] as PdfCell[]);
 
     asAutoTableDoc(doc).autoTable({
         head, body, startY: 38,
@@ -534,7 +534,7 @@ export const exportExpensesReportToPdf = (expenses: Expense[], byCategory: [stri
     const doc = getArabicDoc('تقرير المصروفات', dateRange, settings);
 
     if (byCategory.length > 0) {
-        const catBody = byCategory.map(([cat, amt]) => [formatCurrency(amt, cur), cat]);
+        const catBody: Array<Array<string | PdfCell>> = byCategory.map(([cat, amt]) => [formatCurrency(amt, cur), cat]);
         catBody.push([
             { content: formatCurrency(totalExpenses, cur), styles: { fontStyle: 'bold' } } as PdfCell,
             { content: 'الإجمالي', styles: { fontStyle: 'bold', halign: 'center' } } as PdfCell,
@@ -589,7 +589,7 @@ export const exportDepositsReportToPdf = (contracts: PdfRow[], totalDeposits: nu
         { content: '', styles: {} },
         { content: formatCurrency(totalDeposits, cur), styles: { fontStyle: 'bold' } },
         { content: 'الإجمالي', colSpan: 3, styles: { halign: 'center', fontStyle: 'bold' } } as PdfCell,
-    ] as PdfCell);
+    ] as PdfCell[]);
 
     asAutoTableDoc(doc).autoTable({
         head, body, startY: 40,
@@ -616,7 +616,7 @@ export const exportMaintenanceReportToPdf = (records: PdfRow[], totalCost: numbe
         { content: '', styles: {} },
         { content: formatCurrency(totalCost, cur), styles: { fontStyle: 'bold' } },
         { content: 'الإجمالي', colSpan: 4, styles: { halign: 'center', fontStyle: 'bold' } } as PdfCell,
-    ] as PdfCell);
+    ] as PdfCell[]);
 
     asAutoTableDoc(doc).autoTable({
         head, body, startY: 35,
@@ -646,7 +646,7 @@ export const exportOverdueTenantsToPdf = (overdue: PdfRow[], totalOverdue: numbe
     body.push([
         { content: formatCurrency(totalOverdue, cur), styles: { fontStyle: 'bold' } },
         { content: 'الإجمالي', colSpan: 6, styles: { halign: 'center', fontStyle: 'bold' } } as PdfCell,
-    ] as PdfCell);
+    ] as PdfCell[]);
 
     asAutoTableDoc(doc).autoTable({
         head, body, startY: 40,
@@ -722,7 +722,7 @@ export const exportUtilitiesReportToPdf = (records: PdfRow[], totalAmount: numbe
         { content: '', styles: {} },
         { content: formatCurrency(totalAmount, cur), styles: { fontStyle: 'bold' } },
         { content: 'الإجمالي', colSpan: 6, styles: { halign: 'center', fontStyle: 'bold' } } as PdfCell,
-    ] as PdfCell);
+    ] as PdfCell[]);
 
     asAutoTableDoc(doc).autoTable({
         head, body, startY: y + 5,

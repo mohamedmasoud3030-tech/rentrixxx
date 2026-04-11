@@ -1,14 +1,19 @@
 import { useCallback, useEffect, useState } from 'react';
 import type { Database } from '../types';
 
+type ArrayTableKey = {
+  [K in keyof Database]: Database[K] extends Array<unknown> ? K : never
+}[keyof Database];
+type TableEntity<T extends ArrayTableKey> = Database[T] extends Array<infer U> ? U : never;
+
 export interface UseDataLoaderResult {
   data: Partial<Database>;
   isLoading: boolean;
   isError: boolean;
   refresh: () => Promise<void>;
-  addEntity: <T extends keyof Database>(table: T, entity: Database[T][number]) => void;
-  updateEntity: <T extends keyof Database>(table: T, id: string, updates: Partial<Database[T][number]>) => void;
-  removeEntity: <T extends keyof Database>(table: T, id: string) => void;
+  addEntity: <T extends ArrayTableKey>(table: T, entity: TableEntity<T>) => void;
+  updateEntity: <T extends ArrayTableKey>(table: T, id: string, updates: Partial<TableEntity<T>>) => void;
+  removeEntity: <T extends ArrayTableKey>(table: T, id: string) => void;
 }
 
 export const useDataLoader = (
@@ -36,25 +41,25 @@ export const useDataLoader = (
     void refresh();
   }, [refresh]);
 
-  const addEntity = useCallback(<T extends keyof Database>(table: T, entity: Database[T][number]) => {
+  const addEntity = useCallback(<T extends ArrayTableKey>(table: T, entity: TableEntity<T>) => {
     setData(prev => {
-      const current = (prev[table] as Database[T]) || ([] as unknown as Database[T]);
+      const current = (prev[table] as TableEntity<T>[] | undefined) || [];
       return { ...prev, [table]: [...current, entity] };
     });
   }, []);
 
-  const updateEntity = useCallback(<T extends keyof Database>(table: T, id: string, updates: Partial<Database[T][number]>) => {
+  const updateEntity = useCallback(<T extends ArrayTableKey>(table: T, id: string, updates: Partial<TableEntity<T>>) => {
     setData(prev => {
-      const current = ((prev[table] as Database[T]) || ([] as unknown as Database[T])) as Array<Database[T][number] & { id: string }>;
+      const current = ((prev[table] as TableEntity<T>[] | undefined) || []) as Array<TableEntity<T> & { id: string }>;
       const next = current.map(row => (row.id === id ? { ...row, ...updates } : row));
-      return { ...prev, [table]: next as Database[T] };
+      return { ...prev, [table]: next };
     });
   }, []);
 
-  const removeEntity = useCallback(<T extends keyof Database>(table: T, id: string) => {
+  const removeEntity = useCallback(<T extends ArrayTableKey>(table: T, id: string) => {
     setData(prev => {
-      const current = ((prev[table] as Database[T]) || ([] as unknown as Database[T])) as Array<Database[T][number] & { id: string }>;
-      return { ...prev, [table]: current.filter(row => row.id !== id) as Database[T] };
+      const current = ((prev[table] as TableEntity<T>[] | undefined) || []) as Array<TableEntity<T> & { id: string }>;
+      return { ...prev, [table]: current.filter(row => row.id !== id) };
     });
   }, []);
 

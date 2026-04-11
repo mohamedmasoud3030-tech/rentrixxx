@@ -92,10 +92,10 @@ export const transitionMaintenanceStatus = (
   next: MaintenanceRecord['status'],
 ): MaintenanceRecord['status'] => {
   const allowed: Record<MaintenanceRecord['status'], MaintenanceRecord['status'][]> = {
-    OPEN: ['IN_PROGRESS', 'DONE', 'CANCELED'],
-    IN_PROGRESS: ['DONE', 'CANCELED'],
-    DONE: ['DONE'],
-    CANCELED: ['CANCELED'],
+    NEW: ['IN_PROGRESS', 'COMPLETED', 'CLOSED'],
+    IN_PROGRESS: ['COMPLETED', 'CLOSED'],
+    COMPLETED: ['COMPLETED'],
+    CLOSED: ['CLOSED'],
   };
 
   return allowed[current]?.includes(next) ? next : current;
