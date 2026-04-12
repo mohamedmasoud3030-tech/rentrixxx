@@ -22,6 +22,7 @@ import {
     filterInvoiceBySearch,
 } from '../utils/invoices/invoiceCalculations';
 import { getArrearsAmount, getCashInflow } from '@/services/financialFlowService';
+import { receiptService } from '@/services/receiptService';
 
 const Invoices: React.FC = () => {
     const { db, financeService, settings, dataService } = useApp();
@@ -234,16 +235,43 @@ const Invoices: React.FC = () => {
                     onClose={() => setQuickPayInvoice(null)}
                     onSaved={async (amount, channel) => {
                         try {
-                            const contractId = quickPayInvoice.contractId;
-                            await dataService.add('receipts', {
-                                contractId,
-                                dateTime: new Date().toISOString(),
-                                channel,
-                                amount,
-                                ref: '',
-                                notes: `سداد فاتورة ${quickPayInvoice.no}`,
-                                status: 'POSTED',
+                            const nowIso = new Date().toISOString();
+                            const createdAt = Date.now();
+                            const receiptId = crypto.randomUUID();
+
+                            const result = await receiptService.postReceipt({
+                                receipt: {
+                                    id: receiptId,
+                                    no: `QP-${quickPayInvoice.no}-${createdAt}`,
+                                    contract_id: quickPayInvoice.contractId,
+                                    date_time: nowIso,
+                                    channel,
+                                    amount,
+                                    ref: '',
+                                    notes: `سداد فاتورة ${quickPayInvoice.no}`,
+                                    status: 'POSTED',
+                                    check_number: null,
+                                    check_bank: null,
+                                    check_date: null,
+                                    check_status: null,
+                                    voided_at: null,
+                                    created_at: createdAt,
+                                },
+                                allocations: [{
+                                    id: crypto.randomUUID(),
+                                    receipt_id: receiptId,
+                                    invoice_id: quickPayInvoice.id,
+                                    amount,
+                                    created_at: createdAt,
+                                }],
+                                journalEntries: [],
                             });
+
+                            if (!result.success) {
+                                toast.error(result.error || 'تعذر تسجيل الدفعة.');
+                                return;
+                            }
+
                             toast.success('تم تسجيل الدفعة بنجاح');
                             setQuickPayInvoice(null);
                         } catch (error) {

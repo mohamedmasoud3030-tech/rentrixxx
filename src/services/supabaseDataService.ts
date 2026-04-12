@@ -229,7 +229,13 @@ export const supabaseData = {
 
   async remove(jsTable: string, id: string | number): Promise<boolean> {
     const sqlTable = resolveTable(jsTable);
-    const { error } = await supabase.from(sqlTable).delete().eq('id', id);
+    const { error } = jsTable === 'contracts'
+      ? await supabase
+          .from(sqlTable)
+          .update({ deleted_at: new Date().toISOString(), updated_at: Date.now() })
+          .eq('id', id)
+          .is('deleted_at', null)
+      : await supabase.from(sqlTable).delete().eq('id', id);
     if (error) { console.error(`[SupabaseData] remove ${sqlTable}:`, error); return false; }
     return true;
   },
@@ -237,7 +243,13 @@ export const supabaseData = {
   async removeWhere(jsTable: string, column: string, value: unknown): Promise<boolean> {
     const sqlTable = resolveTable(jsTable);
     const snakeCol = camelToSnake(column);
-    const { error } = await supabase.from(sqlTable).delete().eq(snakeCol, value);
+    const { error } = jsTable === 'contracts'
+      ? await supabase
+          .from(sqlTable)
+          .update({ deleted_at: new Date().toISOString(), updated_at: Date.now() })
+          .eq(snakeCol, value)
+          .is('deleted_at', null)
+      : await supabase.from(sqlTable).delete().eq(snakeCol, value);
     if (error) { console.error(`[SupabaseData] removeWhere ${sqlTable}:`, error); return false; }
     return true;
   },
