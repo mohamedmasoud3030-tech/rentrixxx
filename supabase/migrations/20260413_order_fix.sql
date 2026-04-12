@@ -1,15 +1,32 @@
 -- 2026-04-13: Migration order safety net for atomic finance + contract soft-delete dependencies
 
 -- Ensure dependency columns exist regardless of historical migration order
-alter table if exists public.contracts
-  add column if not exists deleted_at timestamptz;
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1
+    FROM information_schema.tables
+    WHERE table_schema = 'public'
+      AND table_name = 'contracts'
+  ) THEN
+    EXECUTE 'ALTER TABLE public.contracts ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMPTZ DEFAULT NULL';
+  END IF;
+END;
+$$;
 
-alter table if exists public.receipts
-  add column if not exists request_id text;
-
-create unique index if not exists receipts_request_id_unique_idx
-  on public.receipts (request_id)
-  where request_id is not null;
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1
+    FROM information_schema.tables
+    WHERE table_schema = 'public'
+      AND table_name = 'receipts'
+  ) THEN
+    EXECUTE 'ALTER TABLE public.receipts ADD COLUMN IF NOT EXISTS request_id text';
+    EXECUTE 'CREATE UNIQUE INDEX IF NOT EXISTS receipts_request_id_unique_idx ON public.receipts (request_id) WHERE request_id IS NOT NULL';
+  END IF;
+END;
+$$;
 
 -- Re-apply canonical RPC signatures used by frontend services.
 create or replace function public.post_receipt_atomic(
