@@ -58,8 +58,8 @@ export async function renewContractAtomic(
   newContract: Record<string, unknown>,
 ): Promise<RenewContractAtomicResult> {
   const { data, error } = await supabase.rpc('renew_contract_atomic', {
-    p_old_contract_id: oldContractId,
-    p_new_contract: newContract,
+    old_contract_id: oldContractId,
+    new_contract_data: newContract,
   });
 
   if (error) {
