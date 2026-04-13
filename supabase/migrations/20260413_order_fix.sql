@@ -1,4 +1,0 @@
--- This migration has been superseded by individual migrations applied in April 2026.
--- All functions (post_receipt_atomic, renew_contract_atomic, guard_contract_delete)
--- and DDL changes (deleted_at, request_id) were applied via separate migrations.
--- File intentionally left empty to preserve migration history.
