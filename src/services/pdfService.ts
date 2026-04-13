@@ -1,14 +1,12 @@
 
-import jsPDF from 'jspdf';
-import 'jspdf-autotable';
+import { jsPDF } from 'jspdf';
+import autoTable from 'jspdf-autotable';
 import { cairoFontBase64 } from './cairoFontBase64';
 import { Settings, Contract, Database, Invoice, Expense, UtilityType, UTILITY_TYPE_AR } from '../types';
 import { formatDate, formatCurrency } from '../utils/helpers';
 
 type PdfRow = Record<string, any>;
 type PdfCell = { content: string | number; colSpan?: number; styles?: Record<string, unknown> };
-type AutoTableDoc = jsPDF & { autoTable: (opts: Record<string, unknown>) => void; lastAutoTable?: { finalY: number } };
-const asAutoTableDoc = (doc: jsPDF) => doc as AutoTableDoc;
 const FALLBACK_FONT = 'helvetica';
 const ARABIC_FONT = 'Cairo';
 const ARABIC_FONT_FALLBACKS = ['Cairo', 'Amiri', 'NotoNaskhArabic', 'NotoSansArabic', 'helvetica'];
@@ -67,24 +65,6 @@ const getArabicDoc = (title: string, subtitle: string, settings: Settings) => {
         doc.text(safeText(subtitle), pageWidth / 2, 26, { align: 'center' });
         doc.setDrawColor(203, 213, 225);
         doc.line(12, 30, pageWidth - 12, 30);
-
-        (doc as unknown as { autoTableSetDefaults?: (opts: Record<string, unknown>) => void }).autoTableSetDefaults?.({
-            theme: 'grid',
-            margin: { left: 10, right: 10 },
-            showHead: 'everyPage',
-            rowPageBreak: 'avoid',
-            styles: getTableStyle(doc, 9),
-            headStyles: { fillColor: [30, 80, 130], fontStyle: 'bold' },
-            footStyles: { fillColor: [230, 230, 230], textColor: 0, fontStyle: 'bold' },
-            didDrawPage: () => {
-                const pageCurrent = doc.getCurrentPageInfo?.().pageNumber || 1;
-                const pageTotal = doc.getNumberOfPages();
-                doc.setFontSize(8);
-                doc.text(`صفحة ${pageCurrent} / ${pageTotal}`, pageWidth - 10, pageHeight - 6, { align: 'right' });
-                doc.text(safeText(settings.general?.company?.name, 'Rentrix'), 10, pageHeight - 6, { align: 'left' });
-            },
-        });
-
         return doc;
     } catch (error) {
         console.error('Error creating PDF document:', error);
@@ -129,7 +109,7 @@ export const exportRentRollToPdf = (units: PdfRow[], totals: PdfRow, settings: S
         { content: 'الإجمالي (للوحدات المؤجرة)', colSpan: 6, styles: { halign: 'center', fontStyle: 'bold' } },
     ]);
 
-    asAutoTableDoc(doc).autoTable({
+    autoTable(doc, {
         head,
         body,
         startY: 35,
@@ -178,7 +158,7 @@ export const exportOwnerLedgerToPdf = (transactions: PdfRow[], totals: PdfRow, s
         (footerRow[2] as PdfCell).colSpan = 2;
     }
 
-    asAutoTableDoc(doc).autoTable({
+    autoTable(doc, {
         head,
         body,
         foot: [footerRow],
@@ -209,7 +189,7 @@ export const exportTenantStatementToPdf = (statementData: { tenant?: PdfRow; uni
         formatDate(tx.date),
     ]);
 
-    asAutoTableDoc(doc).autoTable({
+    autoTable(doc, {
         head,
         body,
         foot: [[
@@ -229,7 +209,7 @@ export const exportTenantStatementToPdf = (statementData: { tenant?: PdfRow; uni
 export const exportIncomeStatementToPdf = (pnlData: { totalRevenue: number; totalExpense: number; netIncome: number; revenues: PdfRow[]; expenses: PdfRow[] }, settings: Settings, dateRange: string) => {
     const doc = getArabicDoc('قائمة الدخل', dateRange, settings);
     
-    asAutoTableDoc(doc).autoTable({
+    autoTable(doc, {
         startY: 35,
         body: [
             // FIX: Corrected path to currency settings
@@ -266,7 +246,7 @@ export const exportTrialBalanceToPdf = (data: { lines: PdfRow[]; totalCredit: nu
         { content: 'الإجمالي', colSpan: 2, styles: { halign: 'center', fontStyle: 'bold' } }
     ]];
     
-    asAutoTableDoc(doc).autoTable({
+    autoTable(doc, {
         head,
         body,
         foot: footer,
@@ -372,7 +352,7 @@ export const exportInvoiceToPdf = (invoice: Invoice, db: Database) => {
         doc.text(`إلى السيد/ة: ${tenant?.name || 'غير معروف'}`, 200, 40, { align: 'right' });
         doc.text(`تاريخ الاستحقاق: ${formatDate(invoice.dueDate)}`, 200, 48, { align: 'right' });
 
-        asAutoTableDoc(doc).autoTable({
+        autoTable(doc, {
             head: [['المجموع', 'الضريبة', 'السعر', 'الكمية', 'البيان']],
             body: [[
                 // FIX: Corrected path to currency settings
@@ -387,7 +367,7 @@ export const exportInvoiceToPdf = (invoice: Invoice, db: Database) => {
             headStyles: { fillColor: [30, 80, 130], fontStyle: 'bold' },
         });
 
-        const finalY = (asAutoTableDoc(doc).lastAutoTable?.finalY || 35) + 10;
+        const finalY = ((doc as any).lastAutoTable?.finalY ?? 35) + 10;
         doc.setFontSize(12);
         doc.text('الإجمالي:', 200, finalY, { align: 'right' });
         // FIX: Corrected path to currency settings
@@ -464,7 +444,7 @@ export const exportAgedReceivablesToPdf = (data: { lines: PdfRow[]; totals: PdfR
         'الإجمالي'
     ]];
 
-    asAutoTableDoc(doc).autoTable({
+    autoTable(doc, {
         head,
         body,
         foot: footer,
@@ -521,7 +501,7 @@ export const exportDailyCollectionToPdf = (receipts: PdfRow[], totals: { cash: n
         { content: 'الإجمالي', colSpan: 2, styles: { halign: 'center', fontStyle: 'bold' } } as PdfCell,
     ] as PdfCell[]);
 
-    asAutoTableDoc(doc).autoTable({
+    autoTable(doc, {
         head, body, startY: 38,
         styles: tableStyleFor(doc),
         headStyles: HEAD_STYLE,
@@ -539,7 +519,7 @@ export const exportExpensesReportToPdf = (expenses: Expense[], byCategory: [stri
             { content: formatCurrency(totalExpenses, cur), styles: { fontStyle: 'bold' } } as PdfCell,
             { content: 'الإجمالي', styles: { fontStyle: 'bold', halign: 'center' } } as PdfCell,
         ]);
-        asAutoTableDoc(doc).autoTable({
+        autoTable(doc, {
             head: [['المبلغ', 'الفئة']],
             body: catBody,
             startY: 35,
@@ -548,7 +528,7 @@ export const exportExpensesReportToPdf = (expenses: Expense[], byCategory: [stri
         });
     }
 
-    const detailY = byCategory.length > 0 ? (asAutoTableDoc(doc).lastAutoTable?.finalY || 35) + 8 : 35;
+    const detailY = byCategory.length > 0 ? ((doc as any).lastAutoTable?.finalY ?? 35) + 8 : 35;
     const head = [['ملاحظات', 'المبلغ', 'المستفيد', 'الفئة', 'التاريخ', 'الرقم']];
     const body = expenses.map(e => [
         e.notes || '-',
@@ -559,7 +539,7 @@ export const exportExpensesReportToPdf = (expenses: Expense[], byCategory: [stri
         e.no,
     ]);
 
-    asAutoTableDoc(doc).autoTable({
+    autoTable(doc, {
         head, body, startY: detailY,
         styles: tableStyleFor(doc),
         headStyles: HEAD_STYLE,
@@ -591,7 +571,7 @@ export const exportDepositsReportToPdf = (contracts: PdfRow[], totalDeposits: nu
         { content: 'الإجمالي', colSpan: 3, styles: { halign: 'center', fontStyle: 'bold' } } as PdfCell,
     ] as PdfCell[]);
 
-    asAutoTableDoc(doc).autoTable({
+    autoTable(doc, {
         head, body, startY: 40,
         styles: tableStyleFor(doc),
         headStyles: HEAD_STYLE,
@@ -618,7 +598,7 @@ export const exportMaintenanceReportToPdf = (records: PdfRow[], totalCost: numbe
         { content: 'الإجمالي', colSpan: 4, styles: { halign: 'center', fontStyle: 'bold' } } as PdfCell,
     ] as PdfCell[]);
 
-    asAutoTableDoc(doc).autoTable({
+    autoTable(doc, {
         head, body, startY: 35,
         styles: tableStyleFor(doc),
         headStyles: HEAD_STYLE,
@@ -648,7 +628,7 @@ export const exportOverdueTenantsToPdf = (overdue: PdfRow[], totalOverdue: numbe
         { content: 'الإجمالي', colSpan: 6, styles: { halign: 'center', fontStyle: 'bold' } } as PdfCell,
     ] as PdfCell[]);
 
-    asAutoTableDoc(doc).autoTable({
+    autoTable(doc, {
         head, body, startY: 40,
         styles: tableStyleFor(doc),
         headStyles: HEAD_STYLE,
@@ -684,7 +664,7 @@ export const exportVacantUnitsToPdf = (units: PdfRow[], totalPotentialRent: numb
         r.propertyName || '-',
     ]);
 
-    asAutoTableDoc(doc).autoTable({
+    autoTable(doc, {
         head, body, startY: 40,
         styles: tableStyleFor(doc, 8),
         headStyles: HEAD_STYLE,
@@ -724,7 +704,7 @@ export const exportUtilitiesReportToPdf = (records: PdfRow[], totalAmount: numbe
         { content: 'الإجمالي', colSpan: 6, styles: { halign: 'center', fontStyle: 'bold' } } as PdfCell,
     ] as PdfCell[]);
 
-    asAutoTableDoc(doc).autoTable({
+    autoTable(doc, {
         head, body, startY: y + 5,
         styles: tableStyleFor(doc, 8),
         headStyles: HEAD_STYLE,
@@ -755,7 +735,7 @@ export const exportPropertyReportToPdf = (property: PdfRow, owner: PdfRow, units
         u.name,
     ]);
 
-    asAutoTableDoc(doc).autoTable({
+    autoTable(doc, {
         head, body, startY: y + 5,
         styles: tableStyleFor(doc),
         headStyles: HEAD_STYLE,
