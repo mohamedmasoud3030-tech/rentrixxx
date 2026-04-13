@@ -2,59 +2,72 @@
 <img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
 </div>
 
-# Rentrix
+# Rentrix — نظام إدارة العقارات
 
-Production-ready SaaS for property, contracts, maintenance, and financial operations.
+نظام ERP متكامل لإدارة العقارات والعقود والمستأجرين والمالية.
 
-## Local setup
+## الإعداد المحلي
 
-**Prerequisites**
+**المتطلبات**
 - Node.js 20+
 - npm 10+
 
-1. Install dependencies deterministically:
-   ```bash
-   npm ci
-   ```
-2. Run preflight checks:
-   ```bash
-   npm run preflight
-   ```
-3. Start dev server:
-   ```bash
-   npm run dev
-   ```
-
-## Required environment variables
-
-1. Install dependencies:
-   `npm install`
-2. Set environment variables in `.env.local`:
-   - `VITE_SUPABASE_URL`
-   - `VITE_SUPABASE_ANON_KEY`
-   - optional: `VITE_ERROR_TRACKER_DSN`, `VITE_RELEASE_VERSION`, `VITE_LOG_LEVEL`
-3. Run the app:
-   `npm run dev`
-
-## Launch hardening checks
-
-- Run full gate locally:
-  - `npm run ci`
-- Deployment readiness checklist:
-  - `npm run readiness`
-  - `npm run readiness:strict` (fails on missing required envs)
-
-
-## Vercel Sandbox quickstart
-
-Run the local demo script (uses `@vercel/sandbox`):
-
+### 1. تثبيت الحزم
 ```bash
-npm run sandbox:demo
+npm install
 ```
 
-Or connect directly with the CLI:
+### 2. إعداد متغيرات البيئة
+```bash
+cp .env.example .env.local
+```
+
+افتح `.env.local` وضع البيانات التالية:
+```
+VITE_SUPABASE_URL=https://nnggcnpcuomwfuupupwg.supabase.co
+VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5uZ2djbnBjdW9td2Z1dXB1cHdnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM4MTcyMjQsImV4cCI6MjA4OTM5MzIyNH0.i_3dknmkEjUONYx0bF_6CujPsBKMH4zfrC_qPz-XxZE
+```
+
+### 3. تطبيق migrations على Supabase
+```bash
+npx supabase login
+npx supabase link --project-ref nnggcnpcuomwfuupupwg
+npx supabase db push
+```
+
+### 4. تشغيل التطبيق
+```bash
+npm run dev
+```
+
+---
+
+## النشر على Vercel
+
+1. اربط الـ repo بـ Vercel
+2. في **Settings → Environment Variables** أضف:
+   - `VITE_SUPABASE_URL` = `https://nnggcnpcuomwfuupupwg.supabase.co`
+   - `VITE_SUPABASE_ANON_KEY` = `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...`
+3. Deploy
+
+---
+
+## هيكل قاعدة البيانات
 
 ```bash
-npx sandbox create --connect
+# لتطبيق جميع الـ migrations:
+npx supabase db push
+
+# للاتصال المباشر بقاعدة البيانات:
+postgresql://postgres:PASSWORD@db.nnggcnpcuomwfuupupwg.supabase.co:5432/postgres
+```
+
+---
+
+## الأوامر المتاحة
+
+```bash
+npm run dev        # تشغيل محلي
+npm run build      # بناء للإنتاج
+npm run typecheck  # فحص TypeScript
 ```
