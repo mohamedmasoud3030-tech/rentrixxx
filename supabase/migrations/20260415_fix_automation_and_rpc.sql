@@ -13,8 +13,9 @@ create or replace function get_financial_summary(
     from_date date,
     to_date date
 )
-returns setof rpt_financial_summary
+returns jsonb
 language sql
+stable
 as $$
-    select * from rpt_financial_summary(from_date, to_date);
+    select public.rpt_financial_summary(from_date, to_date);
 $$;

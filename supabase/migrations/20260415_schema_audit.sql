@@ -46,13 +46,13 @@ END $$;
 
 -- 6. Safe RPC wrapper (avoid crashes)
 create or replace function safe_rpt_financial_summary(from_date date, to_date date)
-returns setof rpt_financial_summary
+returns jsonb
 language plpgsql
 as $$
 begin
-  return query select * from rpt_financial_summary(from_date, to_date);
+  return public.rpt_financial_summary(from_date, to_date);
 exception when others then
-  return;
+  return null;
 end;
 $$;
 
