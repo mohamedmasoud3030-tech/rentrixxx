@@ -82,6 +82,10 @@ as $$
 $$;
 
 -- 5. Indexes for stability
+alter table if exists tenants add column if not exists created_at timestamp default now();
+alter table if exists invoices add column if not exists created_at timestamp default now();
+alter table if exists payments add column if not exists created_at timestamp default now();
+
 create index if not exists idx_tenants_created_at on tenants(created_at);
 create index if not exists idx_invoices_created_at on invoices(created_at);
 create index if not exists idx_payments_created_at on payments(created_at);
