@@ -3,9 +3,9 @@ import { Database, Settings, Governance, Serials } from '../types';
 import { logger } from './logger';
 import type { GovernanceRow, SerialsRow, SettingsRow, UsersRow } from '../types/database';
 
-// نظام cache بسيط للاستعلامات المتكررة
+// Cache disabled by default to guarantee strong consistency across screens.
 const queryCache = new Map<string, { data: unknown; timestamp: number }>();
-const CACHE_TTL = 5 * 60 * 1000; // 5 دقائق
+const CACHE_TTL = 0;
 
 function getCacheKey(jsTable: string, operation: string, params?: unknown): string {
   return `${jsTable}:${operation}:${JSON.stringify(params || {})}`;
@@ -29,6 +29,15 @@ function setCachedResult(key: string, data: unknown): void {
   if (queryCache.size > 100) {
     const oldestKey = queryCache.keys().next().value;
     queryCache.delete(oldestKey);
+  }
+}
+
+function clearTableCache(jsTable: string): void {
+  const prefix = `${jsTable}:`;
+  for (const key of queryCache.keys()) {
+    if (key.startsWith(prefix)) {
+      queryCache.delete(key);
+    }
   }
 }
 
@@ -155,7 +164,7 @@ export const supabaseData = {
     
     for (const orderBy of orderCandidates) {
       try {
-        const { data, error } = await applyContractsVisibility(supabase.from(sqlTable).select('*'), jsTable).order(orderBy, { ascending: false }).limit(limit);
+        const { data, error } = await applyContractsVisibility(supabase.from(sqlTable).select('*'), jsTable).order(orderBy, { ascending: false, nullsFirst: false }).limit(limit);
         if (!error && data) {
           return (data || []).map(row => toCamelObj(row, jsTable) as T);
         }
@@ -200,8 +209,7 @@ export const supabaseData = {
       console.error(`[SupabaseData] insert ${sqlTable}:`, error, snakeRecord); 
       return { data: null, error: errorMsg };
     }
-    // إزالة الـ cache للجدول
-    queryCache.delete(getCacheKey(jsTable, 'fetchAll'));
+    clearTableCache(jsTable);
     return { data: data ? toCamelObj(data, jsTable) as T : null, error: null };
   },
 
@@ -210,6 +218,7 @@ export const supabaseData = {
     const snakeRecord = toSnakeObj(record, jsTable);
     const { data, error } = await supabase.from(sqlTable).upsert(snakeRecord).select().single();
     if (error) { console.error(`[SupabaseData] upsert ${sqlTable}:`, error, snakeRecord); return null; }
+    clearTableCache(jsTable);
     return data ? toCamelObj(data, jsTable) as T : null;
   },
 
@@ -222,8 +231,7 @@ export const supabaseData = {
       console.error(`[SupabaseData] update ${sqlTable}:`, error); 
       return { ok: false, error: errorMsg };
     }
-    // إزالة الـ cache للجدول
-    queryCache.delete(getCacheKey(jsTable, 'fetchAll'));
+    clearTableCache(jsTable);
     return { ok: true, error: null };
   },
 
@@ -237,6 +245,7 @@ export const supabaseData = {
           .is('deleted_at', null)
       : await supabase.from(sqlTable).delete().eq('id', id);
     if (error) { console.error(`[SupabaseData] remove ${sqlTable}:`, error); return false; }
+    clearTableCache(jsTable);
     return true;
   },
 
@@ -251,6 +260,7 @@ export const supabaseData = {
           .is('deleted_at', null)
       : await supabase.from(sqlTable).delete().eq(snakeCol, value);
     if (error) { console.error(`[SupabaseData] removeWhere ${sqlTable}:`, error); return false; }
+    clearTableCache(jsTable);
     return true;
   },
 
@@ -269,6 +279,7 @@ export const supabaseData = {
     const snakeRecords = records.map(r => toSnakeObj(r, jsTable));
     const { data, error } = await supabase.from(sqlTable).insert(snakeRecords).select();
     if (error) { console.error(`[SupabaseData] bulkInsert ${sqlTable}:`, error); return []; }
+    clearTableCache(jsTable);
     return (data || []).map(row => toCamelObj(row, jsTable) as T);
   },
 
@@ -293,6 +304,7 @@ export const supabaseData = {
         logger.error(`[SupabaseData] bulkUpdate ${sqlTable} error:`, error);
         return false;
       }
+      clearTableCache(jsTable);
       return true;
     } catch (err) {
       logger.error(`[SupabaseData] bulkUpdate ${sqlTable} exception:`, err);
@@ -306,6 +318,7 @@ export const supabaseData = {
     const snakeRecords = records.map(r => toSnakeObj(r, jsTable));
     const { error } = await supabase.from(sqlTable).upsert(snakeRecords);
     if (error) { console.error(`[SupabaseData] upsertMany ${sqlTable}:`, error); return false; }
+    clearTableCache(jsTable);
     return true;
   },
 
