@@ -260,20 +260,19 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const refreshData = useCallback(async () => {
     try {
-      const [settingsData, govData] = await withRetry(() => Promise.all([
-        supabaseData.getSettings(),
-        supabaseData.getGovernance(),
-      ]), 1);
-      // setDb(allData); // Keep existing data, we will load on demand
-      setSettings(settingsData || DEFAULT_SETTINGS);
-      setGovernance(govData || { readOnly: false, lockedPeriods: [] });
-      setIsDataStale(false);
+      const allData = await withRetry(() => supabaseData.getAllData(), 1);
+      await initializeBalancesIfNeeded(allData);
+      const stabilizedData = await withRetry(() => supabaseData.getAllData(), 1);
 
+      setDb(stabilizedData);
+      setSettings(stabilizedData.settings || DEFAULT_SETTINGS);
+      setGovernance(stabilizedData.governance || { readOnly: false, lockedPeriods: [] });
+      setIsDataStale(false);
     } catch (err) {
       logger.error('[AppContext] refreshData error', err);
       toast.error('تعذر تحديث البيانات. تم تفعيل إعادة المحاولة التلقائية.');
     }
-  }, []);
+  }, [initializeBalancesIfNeeded]);
 
   refreshRef.current = refreshData;
 
@@ -385,7 +384,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (currentUser) await audit('LOGOUT', 'SESSION', currentUser.id);
     await supabase.auth.signOut();
     setCurrentUser(null);
-    setDb(null);
+    setDb(DEFAULT_EMPTY_DB);
     setSettings(null);
   }, [currentUser, audit]);
 
