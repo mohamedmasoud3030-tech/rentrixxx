@@ -75,6 +75,10 @@ const TABLE_MAP: Record<string, string> = {
   accountBalances: 'account_balances',
   kpiSnapshots: 'kpi_snapshots',
   users: 'profiles',
+  automationRuns: 'automation_runs',
+  automationRunLogs: 'automation_run_logs',
+  automationJobs: 'automation_jobs',
+  payments: 'payments',
 };
 
 const SPECIAL_FIELD_MAP: Record<string, Record<string, string>> = {
@@ -91,6 +95,26 @@ const REVERSE_SPECIAL_MAP: Record<string, Record<string, string>> = {
   ownerBalances: { total_income: 'collections', total_expenses: 'expenses', commission: 'officeShare', net_balance: 'net', updated_at: 'updatedAt' },
   contractBalances: { balance_due: 'balance', updated_at: 'lastUpdatedAt' },
   tenantBalances: { balance_due: 'balance', updated_at: 'lastUpdatedAt' },
+};
+
+// Known sort column per SQL table — avoids 400 trial-and-error loops
+const TABLE_SORT_COLUMN: Record<string, string> = {
+  automation_runs:     'started_at',
+  automation_run_logs: 'started_at',
+  audit_log:           'created_at',
+  auto_backups:        'created_at',
+  app_notifications:   'created_at',
+  outgoing_notifications: 'created_at',
+  snapshots:           'created_at',
+  kpi_snapshots:       'created_at',
+  journal_entries:     'created_at',
+  receipts:            'created_at',
+  expenses:            'created_at',
+  invoices:            'created_at',
+  contracts:           'created_at',
+  maintenance_records: 'created_at',
+  deposit_txs:         'created_at',
+  owner_settlements:   'created_at',
 };
 
 function camelToSnake(str: string): string {
@@ -160,36 +184,34 @@ export const supabaseData = {
 
   async fetchRecent<T>(jsTable: string, limit = 200): Promise<T[]> {
     const sqlTable = resolveTable(jsTable);
-    const orderCandidates = ['created_at', 'updated_at', 'ts', 'date'];
-    
+    const preferredSort = TABLE_SORT_COLUMN[sqlTable];
+    const orderCandidates = preferredSort
+      ? [preferredSort, 'id']
+      : ['created_at', 'id'];
+
     for (const orderBy of orderCandidates) {
       try {
-        const { data, error } = await applyContractsVisibility(supabase.from(sqlTable).select('*'), jsTable).order(orderBy, { ascending: false, nullsFirst: false }).limit(limit);
+        const { data, error } = await applyContractsVisibility(
+          supabase.from(sqlTable).select('*'), jsTable
+        ).order(orderBy, { ascending: false, nullsFirst: false }).limit(limit);
         if (!error && data) {
-          return (data || []).map(row => toCamelObj(row, jsTable) as T);
+          return data.map(row => toCamelObj(row, jsTable) as T);
         }
-        if (error && (error.message.includes('400') || error.message.includes('Bad Request') || error.message.includes('column'))) {
-          // 400 error might mean column doesn't exist, try next column
-          continue;
-        }
-        // If error is not 400, don't retry ordering, just return empty or try without order
+        if (error?.code === 'PGRST116' || error?.message?.includes('column')) continue;
         break;
-      } catch (err) {
-        // Continue to next ordering candidate
+      } catch {
         continue;
       }
     }
-    
-    // Final fallback: try without ordering
+    // Final fallback: no ordering
     try {
-      const { data, error } = await applyContractsVisibility(supabase.from(sqlTable).select('*'), jsTable).limit(limit);
-      if (!error && data) {
-        return (data || []).map(row => toCamelObj(row, jsTable) as T);
-      }
+      const { data } = await applyContractsVisibility(
+        supabase.from(sqlTable).select('*'), jsTable
+      ).limit(limit);
+      return (data || []).map(row => toCamelObj(row, jsTable) as T);
     } catch (err) {
-      logger.error(`[SupabaseData] fetchRecent ${sqlTable} failed with error:`, err);
+      logger.error(`[SupabaseData] fetchRecent ${sqlTable} failed:`, err);
     }
-    
     return [];
   },
 
