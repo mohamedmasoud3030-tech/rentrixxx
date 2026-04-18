@@ -1,23 +1,17 @@
-// Updated PDF Service
+const head = [['الرصيد المستحق', 'التأمين', 'الإيجار', 'انتهاء العقد', 'بدء العقد', 'المستأجر', 'الحالة', 'الوحدة', 'العقار']];
 
-import { PDFDocument } from 'pdf-lib';
+export const exportIncomeStatementToPdf = (pnlData: { totalRevenue: number; totalExpense: number; netIncome: number; revenues: PdfRow[]; expenses: PdfRow[] }, settings: Settings, dateRange: string) => {
+    [{ content: 'الإيرادات', styles: { fontStyle: 'bold', fillColor: [241, 245, 249] } }, { content: formatCurrency(pnlData.totalRevenue, settings.operational.currency), styles: { fontStyle: 'bold' } }],
+    [{ content: 'المصروفات', styles: { fontStyle: 'bold', fillColor: [241, 245, 249] } }, { content: `(${formatCurrency(pnlData.totalExpense, settings.operational.currency)})`, styles: { fontStyle: 'bold' } }],
+    [{ content: 'صافي الربح / (الخسارة)', styles: { fontStyle: 'bold', fillColor: [226, 232, 240] } }, { content: formatCurrency(pnlData.netIncome, settings.operational.currency), styles: { fontStyle: 'bold' } }],
+};
 
-export class PDFService {
-    public async generatePDF(data: any): Promise<Uint8Array> {
-        const pdfDoc = await PDFDocument.create();
-        const page = pdfDoc.addPage();
-        const { width, height } = page.getSize();
+addWrappedText(`واتفق الطرفين على أن يستأجر الطرف الثاني من الطرف الأول ما هو ${unit?.type} رقم (${unit?.name}) في العقار (${property?.name}).`);
+addWrappedText(`كما قام الطرف الثاني بدفع مبلغ وقدره (${formatCurrency(contract.deposit, db.settings.operational.currency)}) كتأمين لا يرد إلا عند انتهاء العقد.`);
+addWrappedText('3. لا يجوز للطرف الثاني تأجير العين من الباطن أو التنازل عنها للغير دون موافقة خطية من الطرف الأول.');
 
-        // Draw text on the page
-        page.drawText(data.text, { x: 50, y: height - 50 });
+export const exportBalanceSheetToPdf = (data: { assets: PdfRow[]; liabilities: PdfRow[]; equity: PdfRow[]; totalAssets: number; totalLiabilities: number; totalEquity: number }, settings: Settings, date: string) => {
 
-        // Serialize the PDFDocument to bytes (a Uint8Array)
-        const pdfBytes = await pdfDoc.save();
-        return pdfBytes;
-    }
-    
-    public async loadPDF(bytes: Uint8Array): Promise<void> {
-        const pdfDoc = await PDFDocument.load(bytes);
-        return pdfDoc;
-    }
-}
+};
+
+doc.text(`إجمالي الوحدات: ${units.length}  |  مؤجرة: ${rented}  |  شاغرة: ${available}  |  الدخل الشهري: ${formatCurrency(totalRent, cur)}  |  السنوي: ${formatCurrency(annualIncome, cur)}  |  الصيانة: ${formatCurrency(maintenanceCost, cur)}`, 200, y, { align: 'right' });
