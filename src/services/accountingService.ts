@@ -53,6 +53,7 @@ const getArrays = (db: Database) => ({
   accounts: Array.isArray(db?.accounts) ? db.accounts : [],
   journalEntries: Array.isArray(db?.journalEntries) ? db.journalEntries : [],
   invoices: Array.isArray(db?.invoices) ? db.invoices : [],
+  receipts: Array.isArray(db?.receipts) ? db.receipts : [],
   contracts: Array.isArray(db?.contracts) ? db.contracts : [],
   tenants: Array.isArray(db?.tenants) ? db.tenants : [],
 });
@@ -286,6 +287,34 @@ export const calculateBalanceSheetData = (db: Database, asOfDate: string) => {
     const liabilities = buildHierarchy(accounts.filter((acc) => acc.type === 'LIABILITY' && isRoot(acc)));
     const equity = buildHierarchy(accounts.filter((acc) => acc.type === 'EQUITY' && isRoot(acc)));
 
+    const revenueToDate = round3(
+      accounts
+        .filter((acc) => acc.type === 'REVENUE')
+        .reduce((sum, acc) => {
+          const line = sums.get(acc.id) ?? { debit: 0, credit: 0 };
+          return round3(sum + round3(line.credit - line.debit));
+        }, 0),
+    );
+    const expenseToDate = round3(
+      accounts
+        .filter((acc) => acc.type === 'EXPENSE')
+        .reduce((sum, acc) => {
+          const line = sums.get(acc.id) ?? { debit: 0, credit: 0 };
+          return round3(sum + round3(line.debit - line.credit));
+        }, 0),
+    );
+    const currentEarnings = round3(revenueToDate - expenseToDate);
+    if (Math.abs(currentEarnings) > 0.0001) {
+      equity.push({
+        id: '__current_earnings__',
+        no: 'CURRENT',
+        name: 'Current Earnings',
+        isParent: false,
+        balance: currentEarnings,
+        children: [],
+      });
+    }
+
     const totalAssets = round3(assets.reduce((sum, item) => sum + item.balance, 0));
     const totalLiabilities = round3(liabilities.reduce((sum, item) => sum + item.balance, 0));
     const totalEquity = round3(equity.reduce((sum, item) => sum + item.balance, 0));
@@ -294,6 +323,131 @@ export const calculateBalanceSheetData = (db: Database, asOfDate: string) => {
   } catch {
     return { assets: [], liabilities: [], equity: [], totalAssets: 0, totalLiabilities: 0, totalEquity: 0 };
   }
+};
+
+export interface FinancialConsistencyReport {
+  trialBalance: {
+    status: 'BALANCED' | 'NOT_BALANCED';
+    totalDebit: number;
+    totalCredit: number;
+    discrepancy: number;
+  };
+  incomeStatement: {
+    status: 'VERIFIED' | 'MISMATCH';
+    reportRevenue: number;
+    expectedRevenue: number;
+    reportExpense: number;
+    expectedExpense: number;
+    reportNetIncome: number;
+    expectedNetIncome: number;
+  };
+  balanceSheet: {
+    status: 'VALID' | 'INVALID';
+    totalAssets: number;
+    totalLiabilities: number;
+    totalEquity: number;
+    discrepancy: number;
+  };
+  crossChecks: {
+    postedReceipts: number;
+    invoicesPaidAmount: number;
+    activeContracts: number;
+    postedReceiptCount: number;
+    openInvoiceCount: number;
+  };
+}
+
+export const validateFinancialConsistency = (
+  db: Database,
+  startDate: string,
+  endDate: string,
+  asOfDate: string,
+): FinancialConsistencyReport => {
+  const { accounts, journalEntries, invoices, receipts, contracts } = getArrays(db);
+
+  const trial = calculateTrialBalanceData(db, asOfDate);
+  const discrepancyTrial = round3(trial.totalDebit - trial.totalCredit);
+
+  const income = calculateIncomeStatementData(db, startDate, endDate);
+  const start = safeDate(startDate);
+  const end = safeDate(endDate);
+  const sums = getEntrySumsByAccount(journalEntries, (je) => {
+    const d = safeDate(je?.date);
+    return !!d && !!start && !!end && d >= start && d <= end;
+  });
+  const expectedRevenue = round3(
+    accounts
+      .filter((acc) => acc.type === 'REVENUE')
+      .reduce((sum, acc) => {
+        const s = sums.get(acc.id) ?? { debit: 0, credit: 0 };
+        return round3(sum + (s.credit - s.debit));
+      }, 0),
+  );
+  const expectedExpense = round3(
+    accounts
+      .filter((acc) => acc.type === 'EXPENSE')
+      .reduce((sum, acc) => {
+        const s = sums.get(acc.id) ?? { debit: 0, credit: 0 };
+        return round3(sum + (s.debit - s.credit));
+      }, 0),
+  );
+  const expectedNetIncome = round3(expectedRevenue - expectedExpense);
+  const incomeVerified =
+    Math.abs(income.totalRevenue - expectedRevenue) < 0.001 &&
+    Math.abs(income.totalExpense - expectedExpense) < 0.001 &&
+    Math.abs(income.netIncome - expectedNetIncome) < 0.001;
+
+  const balance = calculateBalanceSheetData(db, asOfDate);
+  const balanceDiscrepancy = round3(balance.totalAssets - (balance.totalLiabilities + balance.totalEquity));
+
+  const asOf = safeDate(asOfDate);
+  const postedReceipts = round3(
+    receipts.reduce((sum, receipt) => {
+      const d = safeDate(receipt?.dateTime);
+      if (receipt?.status !== 'POSTED' || !d || (asOf && d > asOf)) return sum;
+      return round3(sum + toNumber(receipt.amount));
+    }, 0),
+  );
+  const invoicesPaidAmount = round3(
+    invoices.reduce((sum, invoice) => {
+      return round3(sum + toNumber(invoice.paidAmount));
+    }, 0),
+  );
+  const activeContracts = contracts.filter((contract) => contract.status === 'ACTIVE' && !contract.deletedAt).length;
+  const postedReceiptCount = receipts.filter((r) => r.status === 'POSTED').length;
+  const openInvoiceCount = invoices.filter((i) => i.status !== 'PAID').length;
+
+  return {
+    trialBalance: {
+      status: trial.isBalanced ? 'BALANCED' : 'NOT_BALANCED',
+      totalDebit: trial.totalDebit,
+      totalCredit: trial.totalCredit,
+      discrepancy: discrepancyTrial,
+    },
+    incomeStatement: {
+      status: incomeVerified ? 'VERIFIED' : 'MISMATCH',
+      reportRevenue: income.totalRevenue,
+      expectedRevenue,
+      reportExpense: income.totalExpense,
+      expectedExpense,
+      reportNetIncome: income.netIncome,
+      expectedNetIncome,
+    },
+    balanceSheet: {
+      status: Math.abs(balanceDiscrepancy) < 0.001 ? 'VALID' : 'INVALID',
+      totalAssets: balance.totalAssets,
+      totalLiabilities: balance.totalLiabilities,
+      totalEquity: balance.totalEquity,
+      discrepancy: balanceDiscrepancy,
+    },
+    crossChecks: {
+      postedReceipts,
+      invoicesPaidAmount,
+      activeContracts,
+      postedReceiptCount,
+      openInvoiceCount,
+    },
+  };
 };
 
 export const calculateAgedReceivables = (db: Database, asOfDate: string) => {
