@@ -35,7 +35,7 @@ export interface ReceiptPostingResult {
 
 export async function postReceiptAtomic(payload: ReceiptPostingPayload): Promise<ReceiptPostingResult> {
   try {
-    const requestId = crypto.randomUUID();
+    const requestId = `receipt:${payload.receipt.id}`;
     const { data, error } = await supabase.rpc('post_receipt_atomic', {
       payload: {
         request_id: requestId,
