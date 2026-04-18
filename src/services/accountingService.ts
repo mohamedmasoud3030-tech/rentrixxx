@@ -53,6 +53,8 @@ const getArrays = (db: Database) => ({
   accounts: Array.isArray(db?.accounts) ? db.accounts : [],
   journalEntries: Array.isArray(db?.journalEntries) ? db.journalEntries : [],
   invoices: Array.isArray(db?.invoices) ? db.invoices : [],
+  receipts: Array.isArray(db?.receipts) ? db.receipts : [],
+  receiptAllocations: Array.isArray(db?.receiptAllocations) ? db.receiptAllocations : [],
   contracts: Array.isArray(db?.contracts) ? db.contracts : [],
   tenants: Array.isArray(db?.tenants) ? db.tenants : [],
 });
@@ -294,6 +296,198 @@ export const calculateBalanceSheetData = (db: Database, asOfDate: string) => {
   } catch {
     return { assets: [], liabilities: [], equity: [], totalAssets: 0, totalLiabilities: 0, totalEquity: 0 };
   }
+};
+
+export interface FinancialConsistencyReport {
+  trialBalance: {
+    status: 'BALANCED' | 'NOT_BALANCED';
+    totalDebit: number;
+    totalCredit: number;
+    discrepancy: number;
+  };
+  incomeStatement: {
+    status: 'VERIFIED' | 'MISMATCH';
+    reportRevenue: number;
+    expectedRevenue: number;
+    reportExpense: number;
+    expectedExpense: number;
+    reportNetIncome: number;
+    expectedNetIncome: number;
+  };
+  balanceSheet: {
+    status: 'VALID' | 'INVALID';
+    totalAssets: number;
+    totalLiabilities: number;
+    totalEquity: number;
+    discrepancy: number;
+  };
+  crossChecks: {
+    postedReceipts: number;
+    invoicesPaidAmount: number;
+    activeContracts: number;
+    postedReceiptCount: number;
+    openInvoiceCount: number;
+  };
+  anomalies: {
+    unbalancedSources: string[];
+    orphanJournalEntries: string[];
+    invoicesWithoutJournal: string[];
+    receiptsWithoutJournal: string[];
+    invoiceReceiptMismatchContractIds: string[];
+  };
+}
+
+export const validateFinancialConsistency = (
+  db: Database,
+  startDate: string,
+  endDate: string,
+  asOfDate: string,
+): FinancialConsistencyReport => {
+  const { accounts, journalEntries, invoices, receipts, receiptAllocations, contracts, tenants } = getArrays(db);
+
+  const trial = calculateTrialBalanceData(db, asOfDate);
+  const discrepancyTrial = round3(trial.totalDebit - trial.totalCredit);
+
+  const income = calculateIncomeStatementData(db, startDate, endDate);
+  const start = safeDate(startDate);
+  const end = safeDate(endDate);
+  const sums = getEntrySumsByAccount(journalEntries, (je) => {
+    const d = safeDate(je?.date);
+    return !!d && !!start && !!end && d >= start && d <= end;
+  });
+  const expectedRevenue = round3(
+    accounts
+      .filter((acc) => acc.type === 'REVENUE')
+      .reduce((sum, acc) => {
+        const s = sums.get(acc.id) ?? { debit: 0, credit: 0 };
+        return round3(sum + (s.credit - s.debit));
+      }, 0),
+  );
+  const expectedExpense = round3(
+    accounts
+      .filter((acc) => acc.type === 'EXPENSE')
+      .reduce((sum, acc) => {
+        const s = sums.get(acc.id) ?? { debit: 0, credit: 0 };
+        return round3(sum + (s.debit - s.credit));
+      }, 0),
+  );
+  const expectedNetIncome = round3(expectedRevenue - expectedExpense);
+  const incomeVerified =
+    Math.abs(income.totalRevenue - expectedRevenue) < 0.001 &&
+    Math.abs(income.totalExpense - expectedExpense) < 0.001 &&
+    Math.abs(income.netIncome - expectedNetIncome) < 0.001;
+
+  const balance = calculateBalanceSheetData(db, asOfDate);
+  const balanceDiscrepancy = round3(balance.totalAssets - (balance.totalLiabilities + balance.totalEquity));
+
+  const asOf = safeDate(asOfDate);
+  const postedReceipts = round3(
+    receipts.reduce((sum, receipt) => {
+      const d = safeDate(receipt?.dateTime);
+      if (receipt?.status !== 'POSTED' || !d || (asOf && d > asOf)) return sum;
+      return round3(sum + toNumber(receipt.amount));
+    }, 0),
+  );
+  const invoicesPaidAmount = round3(
+    invoices.reduce((sum, invoice) => {
+      return round3(sum + toNumber(invoice.paidAmount));
+    }, 0),
+  );
+  const activeContracts = contracts.filter((contract) => contract.status === 'ACTIVE' && !contract.deletedAt).length;
+  const postedReceiptCount = receipts.filter((r) => r.status === 'POSTED').length;
+  const openInvoiceCount = invoices.filter((i) => i.status !== 'PAID').length;
+  const sourceSums = new Map<string, { debit: number; credit: number }>();
+  for (const je of journalEntries) {
+    const source = (je.sourceId || je.no || '').trim();
+    if (!source) continue;
+    const current = sourceSums.get(source) ?? { debit: 0, credit: 0 };
+    if (je.type === 'DEBIT') current.debit = round3(current.debit + toNumber(je.amount));
+    if (je.type === 'CREDIT') current.credit = round3(current.credit + toNumber(je.amount));
+    sourceSums.set(source, current);
+  }
+  const unbalancedSources = Array.from(sourceSums.entries())
+    .filter(([, sum]) => Math.abs(sum.debit - sum.credit) >= 0.001)
+    .map(([source]) => source);
+
+  const contractIds = new Set(contracts.map((c) => c.id));
+  const tenantIds = new Set(tenants.map((t) => t.id));
+  const orphanJournalEntries = journalEntries
+    .filter((je) => {
+      if (!je.entityId || !je.entityType) return false;
+      if (je.entityType === 'CONTRACT') return !contractIds.has(je.entityId);
+      if (je.entityType === 'TENANT') return !tenantIds.has(je.entityId);
+      return false;
+    })
+    .map((je) => je.id);
+
+  const invoiceIdToJournal = new Set(
+    journalEntries
+      .filter((je) => (je.sourceId || '').trim() !== '')
+      .map((je) => je.sourceId),
+  );
+  const invoicesWithoutJournal = invoices
+    .filter((invoice) => !invoiceIdToJournal.has(invoice.id))
+    .map((invoice) => invoice.id);
+
+  const receiptIdToJournal = new Set(
+    journalEntries
+      .filter((je) => (je.sourceId || '').trim() !== '')
+      .map((je) => je.sourceId),
+  );
+  const receiptsWithoutJournal = receipts
+    .filter((receipt) => !receiptIdToJournal.has(receipt.id))
+    .map((receipt) => receipt.id);
+
+  const receiptById = new Map(receipts.map((receipt) => [receipt.id, receipt]));
+  const contractByInvoice = new Map(invoices.map((invoice) => [invoice.id, invoice.contractId]));
+  const receiptMismatchSet = new Set<string>();
+  for (const allocation of receiptAllocations) {
+    const receipt = receiptById.get(allocation.receiptId);
+    if (!receipt) continue;
+    const invoiceContractId = contractByInvoice.get(allocation.invoiceId);
+    if (invoiceContractId && invoiceContractId !== receipt.contractId) {
+      receiptMismatchSet.add(receipt.id);
+    }
+  }
+
+  return {
+    trialBalance: {
+      status: trial.isBalanced ? 'BALANCED' : 'NOT_BALANCED',
+      totalDebit: trial.totalDebit,
+      totalCredit: trial.totalCredit,
+      discrepancy: discrepancyTrial,
+    },
+    incomeStatement: {
+      status: incomeVerified ? 'VERIFIED' : 'MISMATCH',
+      reportRevenue: income.totalRevenue,
+      expectedRevenue,
+      reportExpense: income.totalExpense,
+      expectedExpense,
+      reportNetIncome: income.netIncome,
+      expectedNetIncome,
+    },
+    balanceSheet: {
+      status: Math.abs(balanceDiscrepancy) < 0.001 ? 'VALID' : 'INVALID',
+      totalAssets: balance.totalAssets,
+      totalLiabilities: balance.totalLiabilities,
+      totalEquity: balance.totalEquity,
+      discrepancy: balanceDiscrepancy,
+    },
+    crossChecks: {
+      postedReceipts,
+      invoicesPaidAmount,
+      activeContracts,
+      postedReceiptCount,
+      openInvoiceCount,
+    },
+    anomalies: {
+      unbalancedSources,
+      orphanJournalEntries,
+      invoicesWithoutJournal,
+      receiptsWithoutJournal,
+      invoiceReceiptMismatchContractIds: Array.from(receiptMismatchSet),
+    },
+  };
 };
 
 export const calculateAgedReceivables = (db: Database, asOfDate: string) => {

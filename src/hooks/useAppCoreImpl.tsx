@@ -97,6 +97,23 @@ const toNumber = (value: unknown): number => {
 const round3 = (value: number): number => Number(value.toFixed(ROUND_SCALE));
 type EntityWithId = { id: string };
 
+const toUtcDayMs = (value?: string): number | null => {
+  if (!value) return null;
+  const parsed = Date.parse(`${value}T00:00:00Z`);
+  return Number.isFinite(parsed) ? parsed : null;
+};
+
+const hasDateRangeOverlap = (aStart: string, aEnd: string, bStart: string, bEnd: string): boolean => {
+  const aStartMs = toUtcDayMs(aStart);
+  const aEndMs = toUtcDayMs(aEnd);
+  const bStartMs = toUtcDayMs(bStart);
+  const bEndMs = toUtcDayMs(bEnd);
+  if (aStartMs === null || aEndMs === null || bStartMs === null || bEndMs === null) return false;
+  return aStartMs <= bEndMs && bStartMs <= aEndMs;
+};
+
+const isContractRecordActive = (status?: Contract['status']): boolean => status === 'ACTIVE' || status === 'SUSPENDED';
+
 const withRetry = async <T,>(fn: () => Promise<T>, retries = 2): Promise<T> => {
   let lastError: unknown = null;
   for (let attempt = 0; attempt <= retries; attempt += 1) {
@@ -592,20 +609,50 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
       if (table === 'contracts') {
         const draft = entry as Partial<Contract>;
+        const startMs = toUtcDayMs(draft.start);
+        const endMs = toUtcDayMs(draft.end);
+        if (startMs === null || endMs === null || startMs > endMs) {
+          toast.error('تواريخ العقد غير صحيحة.');
+          return null;
+        }
+        const dueDay = toNumber(draft.dueDay);
+        if (!Number.isInteger(dueDay) || dueDay < 1 || dueDay > 31) {
+          toast.error('يوم الاستحقاق يجب أن يكون بين 1 و 31.');
+          return null;
+        }
+
         const tenantExists = !!db?.tenants?.some(t => t.id === draft.tenantId);
         const unitExists = !!db?.units?.some(u => u.id === draft.unitId);
         if (!tenantExists || !unitExists) {
           toast.error('بيانات العقد غير صالحة: المستأجر أو الوحدة غير موجود.');
           return null;
         }
+        const unit = db?.units?.find(u => u.id === draft.unitId);
+        const property = unit ? db?.properties?.find(p => p.id === unit.propertyId) : null;
+        const owner = property ? db?.owners?.find(o => o.id === property.ownerId) : null;
+        if (!property || !owner) {
+          toast.error('بيانات الملكية غير مكتملة: الوحدة غير مرتبطة بعقار/مالك صالح.');
+          return null;
+        }
 
         const duplicateActiveOnUnit = db?.contracts?.some(c =>
           c.unitId === draft.unitId &&
-          c.status === 'ACTIVE' &&
-          !c.deletedAt
+          isContractRecordActive(c.status) &&
+          !c.deletedAt &&
+          hasDateRangeOverlap(draft.start || '', draft.end || '', c.start, c.end)
         );
         if (duplicateActiveOnUnit) {
-          toast.error('لا يمكن إنشاء عقد جديد: يوجد عقد نشط بالفعل على نفس الوحدة.');
+          toast.error('لا يمكن إنشاء عقد جديد: يوجد عقد متداخل لنفس الوحدة.');
+          return null;
+        }
+
+        const duplicateActiveForTenant = db?.contracts?.some(c =>
+          c.tenantId === draft.tenantId &&
+          isContractRecordActive(c.status) &&
+          !c.deletedAt
+        );
+        if (duplicateActiveForTenant) {
+          toast.error('لا يمكن إنشاء عقد جديد: يوجد عقد نشط للمستأجر.');
           return null;
         }
       }
@@ -710,11 +757,38 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         toast.error(message);
         return { success: false, error: message };
       }
+      const contract = db?.contracts?.find(c => c.id === receiptData.contractId);
+      if (!contract || !!contract.deletedAt) {
+        const message = 'العقد المرتبط بسند القبض غير صالح.';
+        toast.error(message);
+        return { success: false, error: message };
+      }
+      const duplicateInvoices = allocations
+        .map(a => a.invoiceId)
+        .filter((id, index, list) => list.indexOf(id) !== index);
+      if (duplicateInvoices.length) {
+        const message = 'لا يمكن تكرار نفس الفاتورة داخل نفس سند القبض.';
+        toast.error(message);
+        return { success: false, error: message };
+      }
       const allocationTotal = round3(allocations.reduce((sum, alloc) => sum + toNumber(alloc.amount), 0));
       const receiptTotal = round3(toNumber(receiptData.amount));
       if (Math.abs(allocationTotal - receiptTotal) > 0.001) {
         toast.error('مجموع التخصيصات يجب أن يساوي مبلغ السند.');
         return { success: false, error: 'مجموع التخصيصات يجب أن يساوي مبلغ السند.' };
+      }
+      const duplicateReceipt = db?.receipts?.some(receipt =>
+        receipt.status === 'POSTED' &&
+        receipt.contractId === receiptData.contractId &&
+        round3(toNumber(receipt.amount)) === receiptTotal &&
+        receipt.ref?.trim() &&
+        receipt.ref.trim() === String(receiptData.ref || '').trim() &&
+        receipt.dateTime.slice(0, 10) === receiptData.dateTime.slice(0, 10),
+      );
+      if (duplicateReceipt) {
+        const message = 'تم رصد سند قبض مكرر بنفس المرجع والتاريخ.';
+        toast.error(message);
+        return { success: false, error: message };
       }
       const newNo = await supabaseData.incrementSerial('receipt');
       const newReceipt: Receipt = { ...receiptData, id: crypto.randomUUID(), createdAt: Date.now(), no: String(newNo), status: 'POSTED' as const };
@@ -729,9 +803,19 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
       let totalVatCollected = 0;
       for (const alloc of allocations) {
+        if (alloc.amount <= 0) {
+          const message = 'قيمة التخصيص يجب أن تكون أكبر من صفر.';
+          toast.error(message);
+          return { success: false, error: message };
+        }
         const invoices = await supabaseData.fetchWhere<Invoice>('invoices', 'id', alloc.invoiceId);
         const invoice = invoices[0];
         if (!invoice) continue;
+        if (invoice.contractId !== newReceipt.contractId) {
+          const message = `الفاتورة ${invoice.no} لا تنتمي لنفس العقد.`;
+          toast.error(message);
+          return { success: false, error: message };
+        }
         const invoiceTotal = round3(invoice.amount + (invoice.taxAmount || 0));
         const invoiceRemaining = round3(invoiceTotal - invoice.paidAmount);
         if (alloc.amount - invoiceRemaining > 0.001) {
@@ -772,7 +856,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
       // 2. Reclassification: Move Rent from Revenue to Owner Payable & Office Commission
       // This happens only for RENT type receipts (which we assume all contract receipts are for now)
-      const contract = db?.contracts?.find(c => c.id === newReceipt.contractId);
       if (contract && revenueAccount && ownersPayableAccount && officeCommissionAccount) {
           const unit = db?.units?.find(u => u.id === contract.unitId);
           const property = unit ? db?.properties?.find(p => p.id === unit.propertyId) : null;
@@ -891,8 +974,21 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         const current = db?.contracts?.find(c => c.id === id);
         const nextTenantId = (updates as Partial<Contract>).tenantId ?? current?.tenantId;
         const nextUnitId = (updates as Partial<Contract>).unitId ?? current?.unitId;
+        const nextStart = (updates as Partial<Contract>).start ?? current?.start;
+        const nextEnd = (updates as Partial<Contract>).end ?? current?.end;
         if (!nextTenantId || !nextUnitId) {
           toast.error('لا يمكن تحديث العقد: بيانات المستأجر أو الوحدة غير مكتملة.');
+          return;
+        }
+        const startMs = toUtcDayMs(nextStart);
+        const endMs = toUtcDayMs(nextEnd);
+        if (startMs === null || endMs === null || startMs > endMs) {
+          toast.error('لا يمكن تحديث العقد: تاريخ البداية/النهاية غير صالح.');
+          return;
+        }
+        const nextDueDay = (updates as Partial<Contract>).dueDay ?? current?.dueDay;
+        if (!Number.isInteger(toNumber(nextDueDay)) || toNumber(nextDueDay) < 1 || toNumber(nextDueDay) > 31) {
+          toast.error('لا يمكن تحديث العقد: يوم الاستحقاق يجب أن يكون بين 1 و 31.');
           return;
         }
         const tenantExists = !!db?.tenants?.some(t => t.id === nextTenantId);
@@ -901,17 +997,35 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           toast.error('لا يمكن تحديث العقد: المستأجر أو الوحدة غير موجود.');
           return;
         }
+        const unit = db?.units?.find(u => u.id === nextUnitId);
+        const property = unit ? db?.properties?.find(p => p.id === unit.propertyId) : null;
+        const owner = property ? db?.owners?.find(o => o.id === property.ownerId) : null;
+        if (!property || !owner) {
+          toast.error('لا يمكن تحديث العقد: الوحدة غير مرتبطة بعقار/مالك صالح.');
+          return;
+        }
 
         const nextStatus = ((updates as Partial<Contract>).status ?? current?.status);
-        if (nextStatus === 'ACTIVE') {
+        if (nextStatus && isContractRecordActive(nextStatus)) {
           const duplicateActiveOnUnit = db?.contracts?.some(c =>
             c.id !== id &&
             c.unitId === nextUnitId &&
-            c.status === 'ACTIVE' &&
-            !c.deletedAt
+            isContractRecordActive(c.status) &&
+            !c.deletedAt &&
+            hasDateRangeOverlap(nextStart || '', nextEnd || '', c.start, c.end)
           );
           if (duplicateActiveOnUnit) {
-            toast.error('لا يمكن تفعيل العقد: توجد وحدة مرتبطة بعقد نشط آخر.');
+            toast.error('لا يمكن تفعيل العقد: توجد وحدة مرتبطة بعقد متداخل آخر.');
+            return;
+          }
+          const duplicateActiveForTenant = db?.contracts?.some(c =>
+            c.id !== id &&
+            c.tenantId === nextTenantId &&
+            isContractRecordActive(c.status) &&
+            !c.deletedAt
+          );
+          if (duplicateActiveForTenant) {
+            toast.error('لا يمكن تفعيل العقد: يوجد للمستأجر عقد نشط آخر.');
             return;
           }
         }

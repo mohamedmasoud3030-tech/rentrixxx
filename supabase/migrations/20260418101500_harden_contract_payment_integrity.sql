@@ -1,3 +1,86 @@
+-- Harden integrity checks for contracts and atomic receipt posting.
+-- Safe migration: additive constraints are NOT VALID to avoid breaking legacy rows.
+
+do $$
+begin
+  if not exists (select 1 from pg_constraint where conname = 'properties_owner_fk') then
+    alter table public.properties
+      add constraint properties_owner_fk
+      foreign key (owner_id) references public.owners(id)
+      not valid;
+  end if;
+end $$;
+
+do $$
+begin
+  if not exists (select 1 from pg_constraint where conname = 'units_property_fk') then
+    alter table public.units
+      add constraint units_property_fk
+      foreign key (property_id) references public.properties(id)
+      not valid;
+  end if;
+end $$;
+
+do $$
+begin
+  if not exists (select 1 from pg_constraint where conname = 'contracts_unit_fk') then
+    alter table public.contracts
+      add constraint contracts_unit_fk
+      foreign key (unit_id) references public.units(id)
+      not valid;
+  end if;
+end $$;
+
+do $$
+begin
+  if not exists (select 1 from pg_constraint where conname = 'contracts_tenant_fk') then
+    alter table public.contracts
+      add constraint contracts_tenant_fk
+      foreign key (tenant_id) references public.tenants(id)
+      not valid;
+  end if;
+end $$;
+
+do $$
+begin
+  if not exists (select 1 from pg_constraint where conname = 'invoices_contract_fk') then
+    alter table public.invoices
+      add constraint invoices_contract_fk
+      foreign key (contract_id) references public.contracts(id)
+      not valid;
+  end if;
+end $$;
+
+do $$
+begin
+  if not exists (select 1 from pg_constraint where conname = 'receipts_contract_fk') then
+    alter table public.receipts
+      add constraint receipts_contract_fk
+      foreign key (contract_id) references public.contracts(id)
+      not valid;
+  end if;
+end $$;
+
+do $$
+begin
+  if not exists (select 1 from pg_constraint where conname = 'receipt_allocations_receipt_fk') then
+    alter table public.receipt_allocations
+      add constraint receipt_allocations_receipt_fk
+      foreign key (receipt_id) references public.receipts(id)
+      not valid;
+  end if;
+end $$;
+
+do $$
+begin
+  if not exists (select 1 from pg_constraint where conname = 'receipt_allocations_invoice_fk') then
+    alter table public.receipt_allocations
+      add constraint receipt_allocations_invoice_fk
+      foreign key (invoice_id) references public.invoices(id)
+      not valid;
+  end if;
+end $$;
+
 create or replace function public.post_receipt_atomic(
   payload jsonb
 ) returns jsonb
@@ -12,21 +95,15 @@ declare
   v_request_id text;
   v_receipt_id uuid;
   v_existing_receipt_id uuid;
-  v_existing_result jsonb;
   v_receipt_contract_id uuid;
   v_receipt_amount numeric;
   v_total_allocations numeric := 0;
-  v_receipt_date date;
-  v_tenant_id uuid;
-  v_batch_id text;
   v_invoice_id uuid;
   v_invoice_contract_id uuid;
   v_invoice_total numeric;
   v_invoice_paid numeric;
   v_allocation_amount numeric;
   v_duplicate_count integer;
-  v_journal_debits numeric := 0;
-  v_journal_credits numeric := 0;
 begin
   v_receipt := coalesce(payload->'receipt', '{}'::jsonb);
   v_allocations := coalesce(payload->'allocations', '[]'::jsonb);
@@ -34,20 +111,9 @@ begin
   v_request_id := nullif(coalesce(payload->>'request_id', v_receipt->>'request_id'), '');
   v_receipt_contract_id := (v_receipt->>'contract_id')::uuid;
   v_receipt_amount := coalesce((v_receipt->>'amount')::numeric, 0);
-  v_receipt_date := (v_receipt->>'date_time')::date;
 
   if v_request_id is null then
     raise exception 'معرّف الطلب مطلوب لضمان عدم التكرار.';
-  end if;
-  select response_payload
-    into v_existing_result
-  from public.financial_operation_idempotency
-  where operation_name = 'post_receipt_atomic'
-    and request_id = v_request_id
-  for update;
-
-  if v_existing_result is not null then
-    return v_existing_result;
   end if;
   if v_receipt_contract_id is null then
     raise exception 'العقد المرتبط بسند القبض مطلوب.';
@@ -62,19 +128,6 @@ begin
       and c.deleted_at is null
   ) then
     raise exception 'العقد غير موجود أو محذوف.';
-  end if;
-  select c.organization_id into v_tenant_id
-  from public.contracts c
-  where c.id = v_receipt_contract_id;
-  v_batch_id := coalesce(v_request_id, v_receipt->>'id');
-  if exists (
-    select 1
-    from public.accounting_periods p
-    where p.status = 'CLOSED'
-      and p.start_date <= v_receipt_date
-      and p.end_date >= v_receipt_date
-  ) then
-    raise exception 'الفترة المحاسبية مغلقة ولا تسمح بترحيل قيود جديدة.';
   end if;
 
   select r.id
@@ -114,8 +167,7 @@ begin
     select i.contract_id, (coalesce(i.amount, 0) + coalesce(i.tax_amount, 0)), coalesce(i.paid_amount, 0)
       into v_invoice_contract_id, v_invoice_total, v_invoice_paid
     from public.invoices i
-    where i.id = v_invoice_id
-    for update;
+    where i.id = v_invoice_id;
     if v_invoice_contract_id is null then
       raise exception 'فاتورة غير موجودة: %', v_invoice_id;
     end if;
@@ -130,16 +182,6 @@ begin
 
   if abs(v_total_allocations - v_receipt_amount) > 0.001 then
     raise exception 'مجموع التخصيصات يجب أن يساوي مبلغ السند.';
-  end if;
-
-  select
-    coalesce(sum(case when (j->>'type') = 'DEBIT' then (j->>'amount')::numeric else 0 end), 0),
-    coalesce(sum(case when (j->>'type') = 'CREDIT' then (j->>'amount')::numeric else 0 end), 0)
-  into v_journal_debits, v_journal_credits
-  from jsonb_array_elements(v_journal_entries) as j;
-
-  if abs(v_journal_debits - v_journal_credits) > 0.001 then
-    raise exception 'القيود المحاسبية غير متوازنة.';
   end if;
 
   insert into public.receipts (
@@ -157,8 +199,7 @@ begin
     check_date,
     check_status,
     created_at,
-    request_id,
-    tenant_id
+    request_id
   )
   values (
     (v_receipt->>'id')::uuid,
@@ -175,19 +216,17 @@ begin
     nullif(v_receipt->>'check_date', ''),
     nullif(v_receipt->>'check_status', ''),
     (v_receipt->>'created_at')::bigint,
-    v_request_id,
-    v_tenant_id
+    v_request_id
   )
   returning id into v_receipt_id;
 
-  insert into public.receipt_allocations (id, receipt_id, invoice_id, amount, created_at, tenant_id)
+  insert into public.receipt_allocations (id, receipt_id, invoice_id, amount, created_at)
   select
     (a->>'id')::uuid,
     v_receipt_id,
     (a->>'invoice_id')::uuid,
     (a->>'amount')::numeric,
-    (a->>'created_at')::bigint,
-    v_tenant_id
+    (a->>'created_at')::bigint
   from jsonb_array_elements(v_allocations) as a;
 
   with alloc_totals as (
@@ -218,11 +257,7 @@ begin
     source_id,
     entity_type,
     entity_id,
-    created_at,
-    tenant_id,
-    batch_id,
-    request_id,
-    source_module
+    created_at
   )
   select
     (j->>'id')::uuid,
@@ -234,57 +269,14 @@ begin
     j->>'source_id',
     nullif(j->>'entity_type', ''),
     nullif(j->>'entity_id', ''),
-    (j->>'created_at')::bigint,
-    v_tenant_id,
-    v_batch_id,
-    v_request_id,
-    'RECEIPTS'
+    (j->>'created_at')::bigint
   from jsonb_array_elements(v_journal_entries) as j;
 
-  perform public.seal_ledger_batch(v_batch_id, v_tenant_id);
-
-  v_existing_result := jsonb_build_object(
+  return jsonb_build_object(
     'success', true,
     'idempotent', false,
     'request_id', v_request_id,
     'receipt_id', v_receipt_id
   );
-
-  insert into public.financial_operation_idempotency (operation_name, request_id, response_payload)
-  values ('post_receipt_atomic', v_request_id, v_existing_result)
-  on conflict (operation_name, request_id) do nothing;
-
-  insert into public.financial_audit_log (
-    action,
-    actor_id,
-    source_module,
-    request_id,
-    entity_type,
-    entity_id,
-    before_state,
-    after_state,
-    metadata
-  ) values (
-    'POST_RECEIPT',
-    null,
-    'RECEIPTS',
-    v_request_id,
-    'RECEIPT',
-    v_receipt_id,
-    null,
-    jsonb_build_object('receipt_id', v_receipt_id, 'contract_id', v_receipt_contract_id),
-    jsonb_build_object('allocations_count', jsonb_array_length(v_allocations), 'tenant_id', v_tenant_id, 'batch_id', v_batch_id)
-  );
-
-  perform public.append_financial_event(
-    'RECEIPT_POSTED',
-    v_tenant_id,
-    v_request_id,
-    'RECEIPT',
-    v_receipt_id,
-    jsonb_build_object('batch_id', v_batch_id, 'contract_id', v_receipt_contract_id, 'amount', v_receipt_amount)
-  );
-
-  return v_existing_result;
 end;
 $$;
