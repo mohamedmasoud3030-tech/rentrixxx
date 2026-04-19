@@ -225,7 +225,7 @@ export const supabaseData = {
   async insert<T>(jsTable: string, record: object): Promise<{ data: T | null; error: string | null }> {
     const sqlTable = resolveTable(jsTable);
     const snakeRecord = toSnakeObj(record, jsTable);
-    const { data, error } = await supabase.from(sqlTable).insert(snakeRecord).select().single();
+    const { data, error } = await supabase.from(sqlTable).insert([snakeRecord]).select().single();
     if (error) { 
       const errorMsg = error.message || 'خطأ غير معروف';
       console.error(`[SupabaseData] insert ${sqlTable}:`, error, snakeRecord); 
