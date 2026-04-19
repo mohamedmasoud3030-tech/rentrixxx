@@ -116,7 +116,8 @@ begin
     check_date,
     check_status,
     created_at,
-    request_id
+    request_id,
+    tenant_id
   )
   values (
     (v_receipt->>'id')::uuid,
@@ -133,17 +134,19 @@ begin
     nullif(v_receipt->>'check_date', ''),
     nullif(v_receipt->>'check_status', ''),
     (v_receipt->>'created_at')::bigint,
-    v_request_id
+    v_request_id,
+    v_tenant_id
   )
   returning id into v_receipt_id;
 
-  insert into public.receipt_allocations (id, receipt_id, invoice_id, amount, created_at)
+  insert into public.receipt_allocations (id, receipt_id, invoice_id, amount, created_at, tenant_id)
   select
     (a->>'id')::uuid,
     v_receipt_id,
     (a->>'invoice_id')::uuid,
     (a->>'amount')::numeric,
-    (a->>'created_at')::bigint
+    (a->>'created_at')::bigint,
+    v_tenant_id
   from jsonb_array_elements(v_allocations) as a;
 
   with alloc_totals as (
@@ -174,7 +177,11 @@ begin
     source_id,
     entity_type,
     entity_id,
-    created_at
+    created_at,
+    tenant_id,
+    batch_id,
+    request_id,
+    source_module
   )
   select
     (j->>'id')::uuid,
@@ -186,14 +193,57 @@ begin
     j->>'source_id',
     nullif(j->>'entity_type', ''),
     nullif(j->>'entity_id', ''),
-    (j->>'created_at')::bigint
+    (j->>'created_at')::bigint,
+    v_tenant_id,
+    v_batch_id,
+    v_request_id,
+    'RECEIPTS'
   from jsonb_array_elements(v_journal_entries) as j;
 
-  return jsonb_build_object(
+  perform public.seal_ledger_batch(v_batch_id, v_tenant_id);
+
+  v_existing_result := jsonb_build_object(
     'success', true,
     'idempotent', false,
     'request_id', v_request_id,
     'receipt_id', v_receipt_id
   );
+
+  insert into public.financial_operation_idempotency (operation_name, request_id, response_payload)
+  values ('post_receipt_atomic', v_request_id, v_existing_result)
+  on conflict (operation_name, request_id) do nothing;
+
+  insert into public.financial_audit_log (
+    action,
+    actor_id,
+    source_module,
+    request_id,
+    entity_type,
+    entity_id,
+    before_state,
+    after_state,
+    metadata
+  ) values (
+    'POST_RECEIPT',
+    null,
+    'RECEIPTS',
+    v_request_id,
+    'RECEIPT',
+    v_receipt_id,
+    null,
+    jsonb_build_object('receipt_id', v_receipt_id, 'contract_id', v_receipt_contract_id),
+    jsonb_build_object('allocations_count', jsonb_array_length(v_allocations), 'tenant_id', v_tenant_id, 'batch_id', v_batch_id)
+  );
+
+  perform public.append_financial_event(
+    'RECEIPT_POSTED',
+    v_tenant_id,
+    v_request_id,
+    'RECEIPT',
+    v_receipt_id,
+    jsonb_build_object('batch_id', v_batch_id, 'contract_id', v_receipt_contract_id, 'amount', v_receipt_amount)
+  );
+
+  return v_existing_result;
 end;
 $$;

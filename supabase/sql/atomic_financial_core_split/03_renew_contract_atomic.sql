@@ -10,7 +10,25 @@ declare
   v_new_id uuid;
   v_unit_id uuid;
   v_active_count integer;
+  v_request_id text;
+  v_existing jsonb;
+  v_tenant_id uuid;
 begin
+  v_request_id := nullif(new_contract_data->>'request_id', '');
+
+  if v_request_id is not null then
+    select response_payload
+      into v_existing
+    from public.financial_operation_idempotency
+    where operation_name = 'renew_contract_atomic'
+      and request_id = v_request_id
+    for update;
+
+    if v_existing is not null then
+      return v_existing;
+    end if;
+  end if;
+
   select unit_id
     into v_unit_id
   from public.contracts
@@ -39,6 +57,10 @@ begin
     status = 'ENDED',
     ended_at = now(),
     updated_at = (extract(epoch from now()) * 1000)::bigint
+  where id = old_contract_id;
+
+  select organization_id into v_tenant_id
+  from public.contracts
   where id = old_contract_id;
 
   insert into public.contracts (
@@ -81,10 +103,49 @@ begin
   from jsonb_populate_record(null::public.contracts, new_contract_data) as r
   returning id into v_new_id;
 
-  return jsonb_build_object(
+  v_existing := jsonb_build_object(
     'success', true,
     'old_contract_id', old_contract_id,
     'new_contract_id', v_new_id
   );
+
+  if v_request_id is not null then
+    insert into public.financial_operation_idempotency (operation_name, request_id, response_payload)
+    values ('renew_contract_atomic', v_request_id, v_existing)
+    on conflict (operation_name, request_id) do nothing;
+  end if;
+
+  insert into public.financial_audit_log (
+    action,
+    actor_id,
+    source_module,
+    request_id,
+    entity_type,
+    entity_id,
+    before_state,
+    after_state,
+    metadata
+  ) values (
+    'RENEW_CONTRACT',
+    null,
+    'CONTRACTS',
+    v_request_id,
+    'CONTRACT',
+    v_new_id,
+    jsonb_build_object('old_contract_id', old_contract_id),
+    jsonb_build_object('new_contract_id', v_new_id),
+    jsonb_build_object('function', 'renew_contract_atomic')
+  );
+
+  perform public.append_financial_event(
+    'CONTRACT_RENEWED',
+    v_tenant_id,
+    v_request_id,
+    'CONTRACT',
+    v_new_id,
+    jsonb_build_object('old_contract_id', old_contract_id, 'new_contract_id', v_new_id)
+  );
+
+  return v_existing;
 end;
 $$;
