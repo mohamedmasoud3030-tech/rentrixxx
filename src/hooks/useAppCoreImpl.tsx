@@ -19,6 +19,7 @@ import { canUserAccess, mapProfileToUser } from '../services/authService';
 import { getEffectiveInvoiceStatus, getInvoiceRemaining } from '../utils/helpers';
 import { runManualAutomation as runManualAutomationService } from '../services/automationService';
 import { softDeleteContract } from '../services/operationsService';
+import { mapContractPayload } from '../mappers/contractMapper';
 
 const DEFAULT_GEMINI_API_KEY = '';
 
@@ -113,6 +114,14 @@ const hasDateRangeOverlap = (aStart: string, aEnd: string, bStart: string, bEnd:
 };
 
 const isContractRecordActive = (status?: Contract['status']): boolean => status === 'ACTIVE' || status === 'SUSPENDED';
+const CONTRACT_CAMEL_DB_KEYS = ['unitId', 'tenantId', 'rent', 'start', 'end'] as const;
+
+const assertNoRawContractCamelPayload = (payload: Record<string, unknown>): void => {
+  const hasForbidden = CONTRACT_CAMEL_DB_KEYS.some((key) => key in payload);
+  if (hasForbidden) {
+    throw new Error('INVALID PAYLOAD DETECTED: use ContractEngine + mapper');
+  }
+};
 
 const withRetry = async <T,>(fn: () => Promise<T>, retries = 2): Promise<T> => {
   let lastError: unknown = null;
@@ -613,26 +622,27 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       }
 
       if (table === 'contracts') {
-        const draft = entry as Partial<Contract>;
-        const startMs = toUtcDayMs(draft.start);
-        const endMs = toUtcDayMs(draft.end);
+        assertNoRawContractCamelPayload(entry as Record<string, unknown>);
+        const draft = mapContractPayload(entry as any);
+        const startMs = toUtcDayMs(draft.start_date);
+        const endMs = toUtcDayMs(draft.end_date);
         if (startMs === null || endMs === null || startMs > endMs) {
           toast.error('تواريخ العقد غير صحيحة.');
           return null;
         }
-        const dueDay = toNumber(draft.dueDay);
+        const dueDay = toNumber(draft.due_day);
         if (!Number.isInteger(dueDay) || dueDay < 1 || dueDay > 31) {
           toast.error('يوم الاستحقاق يجب أن يكون بين 1 و 31.');
           return null;
         }
 
-        const tenantExists = !!db?.tenants?.some(t => t.id === draft.tenantId);
-        const unitExists = !!db?.units?.some(u => u.id === draft.unitId);
+        const tenantExists = !!db?.tenants?.some(t => t.id === draft.tenant_id);
+        const unitExists = !!db?.units?.some(u => u.id === draft.unit_id);
         if (!tenantExists || !unitExists) {
           toast.error('بيانات العقد غير صالحة: المستأجر أو الوحدة غير موجود.');
           return null;
         }
-        const unit = db?.units?.find(u => u.id === draft.unitId);
+        const unit = db?.units?.find(u => u.id === draft.unit_id);
         const property = unit ? db?.properties?.find(p => p.id === unit.propertyId) : null;
         const owner = property ? db?.owners?.find(o => o.id === property.ownerId) : null;
         if (!property || !owner) {
@@ -641,10 +651,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         }
 
         const duplicateActiveOnUnit = db?.contracts?.some(c =>
-          c.unitId === draft.unitId &&
+          c.unitId === draft.unit_id &&
           isContractRecordActive(c.status) &&
           !c.deletedAt &&
-          hasDateRangeOverlap(draft.start || '', draft.end || '', c.start, c.end)
+          hasDateRangeOverlap(draft.start_date || '', draft.end_date || '', c.start, c.end)
         );
         if (duplicateActiveOnUnit) {
           toast.error('لا يمكن إنشاء عقد جديد: يوجد عقد متداخل لنفس الوحدة.');
@@ -652,7 +662,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         }
 
         const duplicateActiveForTenant = db?.contracts?.some(c =>
-          c.tenantId === draft.tenantId &&
+          c.tenantId === draft.tenant_id &&
           isContractRecordActive(c.status) &&
           !c.deletedAt
         );
@@ -683,12 +693,20 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       }
       if (table === 'contracts') {
         const newNo = await supabaseData.incrementSerial('contract');
+        const mapped = mapContractPayload(entry as any);
         mutableEntry['no'] = String(newNo);
+        Object.keys(mutableEntry).forEach((key) => {
+          if (CONTRACT_CAMEL_DB_KEYS.includes(key as typeof CONTRACT_CAMEL_DB_KEYS[number]) || key === 'dueDay' || key === 'sponsorName' || key === 'sponsorId' || key === 'sponsorPhone') {
+            delete mutableEntry[key];
+          }
+        });
+        Object.assign(mutableEntry, mapped);
       }
 
       const result = await supabaseData.insert(table as string, mutableEntry);
-      if (result.error) { toast.error(`فشل في إضافة السجل: ${result.error}`); return null; }
+      if (result.error) { throw new Error(result.error); }
       if (!result.data) { toast.error('فشل في إضافة السجل: لم يتم استرجاع البيانات'); return null; }
+      const persistedEntry = result.data as unknown as EntityWithId;
       
       await audit('CREATE', String(table), id);
 
@@ -697,7 +715,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         const invoice = mutableEntry as unknown as Invoice;
         await postInvoiceJournalEntries(invoice);
       } else if (table === 'contracts') {
-        await createRentInvoicesForContract(mutableEntry as unknown as Contract);
+        await createRentInvoicesForContract(result.data as unknown as Contract);
       } else if (table === 'expenses') {
         const e = mutableEntry as unknown as Expense;
         const cashAccount = mappings.paymentMethods.CASH;
@@ -741,11 +759,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         if (!prevDb) return null;
         const newDb = { ...prevDb };
         const currentRows = ((newDb[table as keyof Database] as EntityWithId[] | undefined) || []);
-        (newDb[table as keyof Database] as unknown as EntityWithId[]) = [...currentRows, mutableEntry as EntityWithId];
+        (newDb[table as keyof Database] as unknown as EntityWithId[]) = [...currentRows, persistedEntry];
         return newDb;
       });
       toast.success('تمت الإضافة بنجاح!');
-      return mutableEntry as unknown as Database[typeof table][number];
+      return result.data as unknown as Database[typeof table][number];
     } catch (err: unknown) {
       console.error('[AppContext] add error:', err);
       toast.error(`خطأ أثناء الإضافة: ${err instanceof Error ? err.message : 'خطأ غير معروف'}`);
@@ -976,11 +994,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       }
 
       if (table === 'contracts') {
+        assertNoRawContractCamelPayload(updates as Record<string, unknown>);
+        const mappedUpdates = mapContractPayload(updates as any);
         const current = db?.contracts?.find(c => c.id === id);
-        const nextTenantId = (updates as Partial<Contract>).tenantId ?? current?.tenantId;
-        const nextUnitId = (updates as Partial<Contract>).unitId ?? current?.unitId;
-        const nextStart = (updates as Partial<Contract>).start ?? current?.start;
-        const nextEnd = (updates as Partial<Contract>).end ?? current?.end;
+        const nextTenantId = mappedUpdates.tenant_id ?? current?.tenantId;
+        const nextUnitId = mappedUpdates.unit_id ?? current?.unitId;
+        const nextStart = mappedUpdates.start_date ?? current?.start;
+        const nextEnd = mappedUpdates.end_date ?? current?.end;
         if (!nextTenantId || !nextUnitId) {
           toast.error('لا يمكن تحديث العقد: بيانات المستأجر أو الوحدة غير مكتملة.');
           return;
@@ -991,7 +1011,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           toast.error('لا يمكن تحديث العقد: تاريخ البداية/النهاية غير صالح.');
           return;
         }
-        const nextDueDay = (updates as Partial<Contract>).dueDay ?? current?.dueDay;
+        const nextDueDay = mappedUpdates.due_day ?? current?.dueDay;
         if (!Number.isInteger(toNumber(nextDueDay)) || toNumber(nextDueDay) < 1 || toNumber(nextDueDay) > 31) {
           toast.error('لا يمكن تحديث العقد: يوم الاستحقاق يجب أن يكون بين 1 و 31.');
           return;
@@ -1010,7 +1030,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           return;
         }
 
-        const nextStatus = ((updates as Partial<Contract>).status ?? current?.status);
+        const nextStatus = (mappedUpdates.status ?? current?.status);
         if (nextStatus && isContractRecordActive(nextStatus)) {
           const duplicateActiveOnUnit = db?.contracts?.some(c =>
             c.id !== id &&
@@ -1039,7 +1059,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       const normalizedUpdates = TABLES_WITHOUT_UPDATED_AT.has(table as keyof Database)
         ? { ...updates }
         : { ...updates, updatedAt: Date.now() };
-      const result = await supabaseData.update(table as string, id, normalizedUpdates);
+      const payload = table === 'contracts'
+        ? {
+            ...(TABLES_WITHOUT_UPDATED_AT.has(table as keyof Database) ? {} : { updatedAt: Date.now() }),
+            ...mapContractPayload(normalizedUpdates as any),
+            status: (normalizedUpdates as Record<string, unknown>).status as Contract['status'] | undefined,
+            deposit: (normalizedUpdates as Record<string, unknown>).deposit as number | undefined,
+          }
+        : normalizedUpdates;
+      const result = await supabaseData.update(table as string, id, payload);
       if (!result.ok) { toast.error(`فشل التحديث: ${result.error}`); return; }
       await audit('UPDATE', String(table), id);
       if (FINANCIAL_TABLES.includes(table as keyof Database)) setIsDataStale(true);
