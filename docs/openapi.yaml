@@ -1,0 +1,126 @@
+openapi: 3.0.3
+info:
+  title: Rentrix Platform API
+  version: 1.0.0
+  description: Public multi-tenant financial API.
+servers:
+  - url: https://{project}.supabase.co/functions/v1/public-api
+    variables:
+      project:
+        default: your-project
+security:
+  - ApiKeyAuth: []
+components:
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-Key
+  schemas:
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code: { type: string }
+            message: { type: string }
+            details: {}
+paths:
+  /receipts:
+    post:
+      summary: Create and post receipt atomically
+      parameters:
+        - in: header
+          name: X-Request-Id
+          schema: { type: string }
+          required: true
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200': { description: Posted }
+        '4XX':
+          description: Validation/Auth error
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+  /invoices:
+    post:
+      summary: Create invoice
+      parameters:
+        - in: header
+          name: X-Request-Id
+          schema: { type: string }
+          required: true
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object }
+      responses:
+        '200': { description: Created }
+  /contracts:
+    post:
+      summary: Create contract
+      parameters:
+        - in: header
+          name: X-Request-Id
+          schema: { type: string }
+          required: true
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object }
+      responses:
+        '200': { description: Created }
+  /journal-entries:
+    post:
+      summary: Post journal batch (ADMIN only)
+      parameters:
+        - in: header
+          name: X-Request-Id
+          schema: { type: string }
+          required: true
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                batch_id: { type: string }
+                entries:
+                  type: array
+                  items: { type: object }
+      responses:
+        '200': { description: Posted }
+        '403': { description: Forbidden }
+  /ledger:
+    get:
+      summary: Fetch tenant ledger entries
+      parameters:
+        - in: query
+          name: from
+          schema: { type: string, format: date }
+        - in: query
+          name: to
+          schema: { type: string, format: date }
+      responses:
+        '200': { description: OK }
+  /reports/{report}:
+    get:
+      summary: Fetch report output
+      parameters:
+        - in: path
+          name: report
+          required: true
+          schema:
+            type: string
+            enum: [income, trial_balance, balance_sheet, reconciliation]
+      responses:
+        '200': { description: OK }
