@@ -1,4 +1,4 @@
-import { createClient } from '@supabase/supabase-js';
+import { supabaseData } from '../src/services/supabaseDataService';
 
 const EXPECTED_FIELDS = [
   'id',
@@ -15,33 +15,17 @@ const EXPECTED_FIELDS = [
   'sponsor_phone',
 ];
 
-function readEnv(name: string, fallback?: string): string {
-  const value = (process.env[name] || (fallback ? process.env[fallback] : '') || '').trim();
-  if (!value) {
-    throw new Error(`Missing required environment variable: ${name}${fallback ? ` (or ${fallback})` : ''}`);
-  }
-  return value;
-}
-
 async function main() {
-  const supabaseUrl = readEnv('SUPABASE_URL', 'VITE_SUPABASE_URL');
-  const supabaseAnonKey = readEnv('SUPABASE_ANON_KEY', 'VITE_SUPABASE_ANON_KEY');
+  const rows = await supabaseData.fetchRecent<Record<string, unknown>>('contracts', 1);
+  const sample = rows[0];
 
-  const supabase = createClient(supabaseUrl, supabaseAnonKey, { auth: { persistSession: false } });
-  const { data, error } = await supabase.from('contracts').select('*').limit(1);
-
-  if (error) {
-    throw new Error(`Failed to read contracts sample row: ${error.message}`);
-  }
-
-  const sample = data?.[0] as Record<string, unknown> | undefined;
   if (!sample) {
     console.error('SCHEMA DRIFT DETECTED');
     console.error('No sample row found in contracts. Cannot compare actual columns.');
     process.exit(1);
   }
 
-  const actualColumns = Object.keys(sample);
+  const actualColumns = Object.keys(sample).map((key) => key.replace(/[A-Z]/g, (letter) => `_${letter.toLowerCase()}`));
   const missingFields = EXPECTED_FIELDS.filter((field) => !actualColumns.includes(field));
   const extraFields = actualColumns.filter((field) => !EXPECTED_FIELDS.includes(field));
 

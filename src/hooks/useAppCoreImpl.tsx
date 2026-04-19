@@ -623,7 +623,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
       if (table === 'contracts') {
         assertNoRawContractCamelPayload(entry as Record<string, unknown>);
-        const draft = mapContractPayload(entry as any);
+        const draft = mapContractPayload(entry as Record<string, unknown>);
         const startMs = toUtcDayMs(draft.start_date);
         const endMs = toUtcDayMs(draft.end_date);
         if (startMs === null || endMs === null || startMs > endMs) {
@@ -695,12 +695,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         const newNo = await supabaseData.incrementSerial('contract');
         const mapped = mapContractPayload(entry as any);
         mutableEntry['no'] = String(newNo);
-        Object.keys(mutableEntry).forEach((key) => {
-          if (CONTRACT_CAMEL_DB_KEYS.includes(key as typeof CONTRACT_CAMEL_DB_KEYS[number]) || key === 'dueDay' || key === 'sponsorName' || key === 'sponsorId' || key === 'sponsorPhone') {
-            delete mutableEntry[key];
-          }
-        });
-        Object.assign(mutableEntry, mapped);
+        Object.assign(mutableEntry, mapContractPayload(mutableEntry));
       }
 
       const result = await supabaseData.insert(table as string, mutableEntry);
@@ -995,7 +990,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
       if (table === 'contracts') {
         assertNoRawContractCamelPayload(updates as Record<string, unknown>);
-        const mappedUpdates = mapContractPayload(updates as any);
+        const mappedUpdates = mapContractPayload(updates as Record<string, unknown>);
         const current = db?.contracts?.find(c => c.id === id);
         const nextTenantId = mappedUpdates.tenant_id ?? current?.tenantId;
         const nextUnitId = mappedUpdates.unit_id ?? current?.unitId;
@@ -1060,12 +1055,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         ? { ...updates }
         : { ...updates, updatedAt: Date.now() };
       const payload = table === 'contracts'
-        ? {
-            ...(TABLES_WITHOUT_UPDATED_AT.has(table as keyof Database) ? {} : { updatedAt: Date.now() }),
-            ...mapContractPayload(normalizedUpdates as any),
-            status: (normalizedUpdates as Record<string, unknown>).status as Contract['status'] | undefined,
-            deposit: (normalizedUpdates as Record<string, unknown>).deposit as number | undefined,
-          }
+        ? { ...normalizedUpdates, ...mapContractPayload(normalizedUpdates as Record<string, unknown>) }
         : normalizedUpdates;
       const result = await supabaseData.update(table as string, id, payload);
       if (!result.ok) { toast.error(`فشل التحديث: ${result.error}`); return; }

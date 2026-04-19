@@ -1,5 +1,5 @@
 import type { AppContextType, Contract } from '../../src/types';
-import { ContractDbPayload, mapContractPayload } from '../../src/mappers/contractMapper';
+import { mapContractPayload } from '../../src/mappers/contractMapper';
 
 type ContractRawInput = {
   id?: string;
@@ -32,7 +32,7 @@ const ALLOWED_RAW_KEYS = [
   'sponsorPhone',
 ] as const;
 
-const REQUIRED_FIELDS: Array<keyof ContractDbPayload> = [
+const REQUIRED_FIELDS: Array<keyof ReturnType<typeof mapContractPayload>> = [
   'unit_id',
   'tenant_id',
   'rent_amount',
