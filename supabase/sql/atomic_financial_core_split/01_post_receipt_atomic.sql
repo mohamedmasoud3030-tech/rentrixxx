@@ -12,21 +12,15 @@ declare
   v_request_id text;
   v_receipt_id uuid;
   v_existing_receipt_id uuid;
-  v_existing_result jsonb;
   v_receipt_contract_id uuid;
   v_receipt_amount numeric;
   v_total_allocations numeric := 0;
-  v_receipt_date date;
-  v_tenant_id uuid;
-  v_batch_id text;
   v_invoice_id uuid;
   v_invoice_contract_id uuid;
   v_invoice_total numeric;
   v_invoice_paid numeric;
   v_allocation_amount numeric;
   v_duplicate_count integer;
-  v_journal_debits numeric := 0;
-  v_journal_credits numeric := 0;
 begin
   v_receipt := coalesce(payload->'receipt', '{}'::jsonb);
   v_allocations := coalesce(payload->'allocations', '[]'::jsonb);
@@ -34,20 +28,9 @@ begin
   v_request_id := nullif(coalesce(payload->>'request_id', v_receipt->>'request_id'), '');
   v_receipt_contract_id := (v_receipt->>'contract_id')::uuid;
   v_receipt_amount := coalesce((v_receipt->>'amount')::numeric, 0);
-  v_receipt_date := (v_receipt->>'date_time')::date;
 
   if v_request_id is null then
     raise exception 'معرّف الطلب مطلوب لضمان عدم التكرار.';
-  end if;
-  select response_payload
-    into v_existing_result
-  from public.financial_operation_idempotency
-  where operation_name = 'post_receipt_atomic'
-    and request_id = v_request_id
-  for update;
-
-  if v_existing_result is not null then
-    return v_existing_result;
   end if;
   if v_receipt_contract_id is null then
     raise exception 'العقد المرتبط بسند القبض مطلوب.';
@@ -62,19 +45,6 @@ begin
       and c.deleted_at is null
   ) then
     raise exception 'العقد غير موجود أو محذوف.';
-  end if;
-  select c.organization_id into v_tenant_id
-  from public.contracts c
-  where c.id = v_receipt_contract_id;
-  v_batch_id := coalesce(v_request_id, v_receipt->>'id');
-  if exists (
-    select 1
-    from public.accounting_periods p
-    where p.status = 'CLOSED'
-      and p.start_date <= v_receipt_date
-      and p.end_date >= v_receipt_date
-  ) then
-    raise exception 'الفترة المحاسبية مغلقة ولا تسمح بترحيل قيود جديدة.';
   end if;
 
   select r.id
@@ -114,8 +84,7 @@ begin
     select i.contract_id, (coalesce(i.amount, 0) + coalesce(i.tax_amount, 0)), coalesce(i.paid_amount, 0)
       into v_invoice_contract_id, v_invoice_total, v_invoice_paid
     from public.invoices i
-    where i.id = v_invoice_id
-    for update;
+    where i.id = v_invoice_id;
     if v_invoice_contract_id is null then
       raise exception 'فاتورة غير موجودة: %', v_invoice_id;
     end if;
@@ -130,16 +99,6 @@ begin
 
   if abs(v_total_allocations - v_receipt_amount) > 0.001 then
     raise exception 'مجموع التخصيصات يجب أن يساوي مبلغ السند.';
-  end if;
-
-  select
-    coalesce(sum(case when (j->>'type') = 'DEBIT' then (j->>'amount')::numeric else 0 end), 0),
-    coalesce(sum(case when (j->>'type') = 'CREDIT' then (j->>'amount')::numeric else 0 end), 0)
-  into v_journal_debits, v_journal_credits
-  from jsonb_array_elements(v_journal_entries) as j;
-
-  if abs(v_journal_debits - v_journal_credits) > 0.001 then
-    raise exception 'القيود المحاسبية غير متوازنة.';
   end if;
 
   insert into public.receipts (
