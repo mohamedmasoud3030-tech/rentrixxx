@@ -21,7 +21,7 @@ import {
     filterInvoiceByDate,
     filterInvoiceBySearch,
 } from '../utils/invoices/invoiceCalculations';
-import { getArrearsAmount, getCashInflow } from '@/services/financialFlowService';
+import { getArrearsAmount, getCashInflow } from '@/services/financeService';
 import { receiptService } from '@/services/receiptService';
 
 const Invoices: React.FC = () => {

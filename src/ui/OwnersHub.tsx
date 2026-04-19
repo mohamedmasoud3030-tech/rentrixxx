@@ -4,7 +4,7 @@ import Card from '@/components/ui/Card';
 import { useApp } from '@/contexts/AppContext';
 import { formatCurrency } from '@/utils/helpers';
 import { AR_LABELS } from '@/config/labels.ar';
-import { getArrearsAmount, getArrearsInvoices, getCashInflow, getExpenseImpact, getRevenueFromPaidInvoices } from '@/services/financialFlowService';
+import { getArrearsAmount, getArrearsInvoices, getCashInflow, getExpenseImpact, getRevenueFromPaidInvoices } from '@/services/financeService';
 
 const OwnersHub: React.FC = () => {
   const { ownerId } = useParams<{ ownerId: string }>();

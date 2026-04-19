@@ -215,6 +215,39 @@ export const supabaseData = {
     return [];
   },
 
+  async fetchRecentRaw(jsTable: string, limit = 1): Promise<Record<string, unknown>[]> {
+    const sqlTable = resolveTable(jsTable);
+    const preferredSort = TABLE_SORT_COLUMN[sqlTable];
+    const orderCandidates = preferredSort
+      ? [preferredSort, 'id']
+      : ['created_at', 'id'];
+
+    for (const orderBy of orderCandidates) {
+      try {
+        const { data, error } = await applyContractsVisibility(
+          supabase.from(sqlTable).select('*'), jsTable
+        ).order(orderBy, { ascending: false, nullsFirst: false }).limit(limit);
+        if (!error && data) {
+          return data as Record<string, unknown>[];
+        }
+        if (error?.code === 'PGRST116' || error?.message?.includes('column')) continue;
+        break;
+      } catch {
+        continue;
+      }
+    }
+
+    try {
+      const { data } = await applyContractsVisibility(
+        supabase.from(sqlTable).select('*'), jsTable
+      ).limit(limit);
+      return (data || []) as Record<string, unknown>[];
+    } catch (err) {
+      logger.error(`[SupabaseData] fetchRecentRaw ${sqlTable} failed:`, err);
+    }
+    return [];
+  },
+
   async fetchOne<T>(jsTable: string, id: string | number): Promise<T | null> {
     const sqlTable = resolveTable(jsTable);
     const { data, error } = await applyContractsVisibility(supabase.from(sqlTable).select('*').eq('id', id), jsTable).single();
@@ -225,7 +258,7 @@ export const supabaseData = {
   async insert<T>(jsTable: string, record: object): Promise<{ data: T | null; error: string | null }> {
     const sqlTable = resolveTable(jsTable);
     const snakeRecord = toSnakeObj(record, jsTable);
-    const { data, error } = await supabase.from(sqlTable).insert(snakeRecord).select().single();
+    const { data, error } = await supabase.from(sqlTable).insert([snakeRecord]).select().single();
     if (error) { 
       const errorMsg = error.message || 'خطأ غير معروف';
       console.error(`[SupabaseData] insert ${sqlTable}:`, error, snakeRecord); 

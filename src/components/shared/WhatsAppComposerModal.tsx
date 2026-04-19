@@ -138,3 +138,50 @@ export const WhatsAppComposerModal: React.FC<WhatsAppComposerModalProps> = ({ is
         </Modal>
     );
 };
+
+// ─── Simple variant (previously WhatsAppModal.tsx) ────────────────────────────
+// Used by Leads.tsx and Tenants.tsx with basic recipientName/recipientPhone props
+import { sanitizePhoneNumber } from '../../utils/helpers';
+
+interface SimpleWhatsAppModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  recipientName: string;
+  recipientPhone: string;
+}
+
+export const WhatsAppModal: React.FC<SimpleWhatsAppModalProps> = ({
+  isOpen, onClose, recipientName, recipientPhone,
+}) => {
+  const [simpleMsg, setSimpleMsg] = useState('');
+
+  const handleSend = () => {
+    if (!recipientPhone || !simpleMsg) { toast.error('الرجاء إدخال رسالة.'); return; }
+    const url = `https://wa.me/${sanitizePhoneNumber(recipientPhone)}?text=${encodeURIComponent(simpleMsg)}`;
+    window.open(url, '_blank');
+    onClose();
+    setSimpleMsg('');
+  };
+
+  return (
+    <Modal isOpen={isOpen} onClose={onClose} title={`إرسال رسالة واتساب إلى ${recipientName}`}>
+      <div className="space-y-4">
+        <div>
+          <label className="block text-sm font-medium text-text-muted mb-1">نص الرسالة</label>
+          <textarea rows={5} value={simpleMsg} onChange={e => setSimpleMsg(e.target.value)}
+            className="w-full rounded-md border-border bg-background p-2"
+            placeholder="اكتب رسالتك هنا..." />
+        </div>
+        <div className="flex justify-end gap-3 pt-4">
+          <button type="button" onClick={onClose} className="px-4 py-2 rounded-md border border-border">إلغاء</button>
+          <button type="button" onClick={handleSend}
+            className="px-4 py-2 rounded-md bg-green-600 text-white flex items-center gap-2">
+            <Send size={16} />إرسال عبر واتساب
+          </button>
+        </div>
+      </div>
+    </Modal>
+  );
+};
+
+export default WhatsAppModal;
