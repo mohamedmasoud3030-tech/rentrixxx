@@ -7,7 +7,7 @@ import { Contract, Receipt as ReceiptType, Expense, Invoice } from '@/types';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 import { startOfMonth, endOfMonth, subMonths, eachMonthOfInterval, isWithinInterval, format } from 'date-fns';
 import { ar } from 'date-fns/locale';
-import { getArrearsAmount, getArrearsInvoices, getCashInflow, getExpenseImpact, getRevenueFromPaidInvoices } from '@/services/financialFlowService';
+import { getArrearsAmount, getArrearsInvoices, getCashInflow, getExpenseImpact, getRevenueFromPaidInvoices } from '@/services/financeService';
 
 const QuickSearch = () => {
     const [query, setQuery] = useState('');

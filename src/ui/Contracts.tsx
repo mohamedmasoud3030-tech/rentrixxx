@@ -17,6 +17,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { exportContractToPdf } from '../services/pdfService';
 import { toast } from 'react-hot-toast';
 import { DocumentHeaderInline } from '../components/shared/DocumentHeader';
+import { ContractEngine } from '../../core/contracts/ContractEngine';
 
 type ContractFilter = 'ALL' | 'ACTIVE' | 'ENDED' | 'TERMINATED' | 'SUSPENDED';
 
@@ -95,6 +96,10 @@ const Contracts: React.FC = () => {
     useEffect(() => {
         sessionStorage.setItem('rentrix:contracts_filter', filter);
     }, [filter]);
+
+    useEffect(() => {
+        ContractEngine.configure(dataService);
+    }, [dataService]);
 
     const handleOpenModal = (contract: Contract | null = null, unitIdForNew?: string) => {
         setEditingContract(contract);
@@ -378,7 +383,25 @@ const Contracts: React.FC = () => {
                                                         <div className="flex flex-wrap gap-2 mt-4">
                                                             <button className="btn btn-secondary" onClick={() => setPrintingContract(c)}><Printer size={14} /> طباعة</button>
                                                             <button className="btn btn-secondary" onClick={() => handleRenewContract(c)}><RefreshCw size={14} /> تجديد</button>
-                                                            <button className="btn btn-ghost" onClick={() => dataService.update('contracts', c.id, { status: 'ENDED' })}><Ban size={14} /> إنهاء</button>
+                                                            <button
+                                                                className="btn btn-ghost"
+                                                                onClick={() => ContractEngine.create({
+                                                                    id: c.id,
+                                                                    unitId: c.unitId,
+                                                                    tenantId: c.tenantId,
+                                                                    rent: c.rent,
+                                                                    dueDay: c.dueDay,
+                                                                    start: c.start,
+                                                                    end: c.end,
+                                                                    deposit: c.deposit,
+                                                                    status: 'ENDED',
+                                                                    sponsorName: c.sponsorName,
+                                                                    sponsorId: c.sponsorId,
+                                                                    sponsorPhone: c.sponsorPhone,
+                                                                })}
+                                                            >
+                                                                <Ban size={14} /> إنهاء
+                                                            </button>
                                                         </div>
                                                     </td>
                                                 </tr>
@@ -420,6 +443,10 @@ const ContractForm: React.FC<{ isOpen: boolean; onClose: () => void; contract: C
     const [maintenanceBlock, setMaintenanceBlock] = useState<MaintenanceBlockResult | null>(null);
     const isSavingRef = useRef(false);
     const sanitizeNonNegativeMoneyInput = (value: string) => normalizeLocalizedNumber(value).replace(/^[+-]/, '');
+
+    useEffect(() => {
+        ContractEngine.configure(dataService);
+    }, [dataService]);
 
     const contracts = db.contracts || [];
     const units = db.units || [];
@@ -527,9 +554,8 @@ const ContractForm: React.FC<{ isOpen: boolean; onClose: () => void; contract: C
         isSavingRef.current = true;
         setIsSaving(true);
         try {
-            const data = { unitId, tenantId, rent, dueDay, start, end, deposit, status, sponsorName, sponsorId, sponsorPhone };
-            if (contract) await dataService.update('contracts', contract.id, data);
-            else await dataService.add('contracts', data);
+            const formData = { id: contract?.id, unitId, tenantId, rent, dueDay, start, end, deposit, status, sponsorName, sponsorId, sponsorPhone };
+            await ContractEngine.create(formData);
             onClose();
         } finally {
             isSavingRef.current = false;

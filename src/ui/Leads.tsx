@@ -6,7 +6,7 @@ import Modal from '../components/ui/Modal';
 import ActionsMenu, { EditAction, DeleteAction } from '../components/shared/ActionsMenu';
 import { getStatusBadgeClass, normalizeArabicNumerals, exportToCsv } from '../utils/helpers';
 import { UserPlus, MessageCircle, Download } from 'lucide-react';
-import WhatsAppModal from '../components/shared/WhatsAppModal';
+import { WhatsAppModal } from '../components/shared/WhatsAppComposerModal';
 import { toast } from 'react-hot-toast';
 
 const Leads: React.FC = () => {

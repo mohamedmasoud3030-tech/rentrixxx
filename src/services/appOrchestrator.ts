@@ -2,6 +2,7 @@ import type { ContractModel } from '@/domain/contracts';
 import { isActive } from '@/domain/contracts';
 import { calculateBalance, isInvoiceOverdue, type FinancialInvoice } from '@/domain/financial';
 import { runAutomationScheduler } from '@/services/edgeFunctions';
+import { runAI } from '@/ai/orchestrator';
 import type { AutomationResult } from '@/types/automation';
 
 export const appOrchestrator = {
@@ -9,8 +10,7 @@ export const appOrchestrator = {
     return runAutomationScheduler(payload);
   },
 
-  async runAI(prompt: string, payload: unknown): Promise<string> {
-    const { runAI } = await import('@/ai/orchestrator');
+  runAI(prompt: string, payload: unknown): Promise<string> {
     return runAI({ query: prompt, context: payload });
   },
 

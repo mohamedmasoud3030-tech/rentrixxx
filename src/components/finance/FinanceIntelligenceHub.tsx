@@ -4,7 +4,7 @@ import { useApp } from '@/contexts/AppContext';
 import Card from '@/components/ui/Card';
 import { formatCurrency } from '@/utils/helpers';
 import { AlertTriangle, ArrowRight, BarChart3, FileCheck2, FileWarning, Link2, Receipt, ScrollText } from 'lucide-react';
-import { getArrearsAmount } from '@/services/financialFlowService';
+import { getArrearsAmount } from '@/services/financeService';
 
 const currentMonth = (): string => new Date().toISOString().slice(0, 7);
 

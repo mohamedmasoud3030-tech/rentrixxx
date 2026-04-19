@@ -156,3 +156,44 @@ export const importFromJson = (file: File): Promise<unknown> => {
     fileReader.readAsText(file);
   });
 };
+
+// ─── Merged from financialFlowService (single source of truth) ────────────────
+import type { Expense, JournalEntry, Receipt } from '../types';
+
+const uniqById = <T extends { id: string }>(rows: T[]): T[] => {
+  const map = new Map<string, T>();
+  rows.forEach(row => { if (!map.has(row.id)) map.set(row.id, row); });
+  return [...map.values()];
+};
+
+export const getArrearsInvoices = (invoices: Invoice[], asOf = new Date()): Invoice[] =>
+  uniqById(invoices).filter(
+    inv => ['UNPAID', 'PARTIALLY_PAID', 'OVERDUE'].includes(inv.status) &&
+           new Date(inv.dueDate) < asOf,
+  );
+
+export const getRevenueFromPaidInvoices = (invoices: Invoice[]): number =>
+  uniqById(invoices)
+    .filter(inv => inv.status === 'PAID')
+    .reduce((sum, inv) => sum + ((inv.amount || 0) + (inv.taxAmount || 0)), 0);
+
+export const getCashInflow = (receipts: Receipt[]): number =>
+  uniqById(receipts)
+    .filter(r => r.status === 'POSTED')
+    .reduce((sum, r) => sum + r.amount, 0);
+
+export const getExpenseImpact = (expenses: Expense[]): number =>
+  uniqById(expenses)
+    .filter(e => e.status === 'POSTED')
+    .reduce((sum, e) => sum + Math.abs(e.amount), 0);
+
+export const getArrearsAmount = (invoices: Invoice[], asOf = new Date()): number =>
+  getArrearsInvoices(invoices, asOf).reduce(
+    (sum, inv) => sum + getInvoiceOutstanding(inv), 0,
+  );
+
+export const getStableLedgerEntries = (entries: JournalEntry[]): JournalEntry[] =>
+  uniqById(entries).sort((a, b) => {
+    const diff = (a.createdAt || 0) - (b.createdAt || 0);
+    return diff !== 0 ? diff : a.id.localeCompare(b.id);
+  });
