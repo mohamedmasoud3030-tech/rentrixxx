@@ -142,6 +142,7 @@ const Contracts: React.FC = () => {
             const payload = {
                 id: crypto.randomUUID(),
                 no: nextNo,
+                request_id: `renew:${contract.id}:${newStart.toISOString().slice(0, 10)}`,
                 unit_id: contract.unitId,
                 tenant_id: contract.tenantId,
                 rent_amount: contract.rent,
