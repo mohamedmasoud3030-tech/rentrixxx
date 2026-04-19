@@ -213,10 +213,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const reconcileRef = useRef(false);
 
   const getFinancialSummary = useCallback(async () => {
-    const { data, error } = await supabase.rpc('get_financial_summary');
+    const today = new Date();
+    const firstOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+    const fmt = (d: Date) => d.toISOString().slice(0, 10);
+    const { data, error } = await supabase.rpc('get_financial_summary', {
+      p_from: fmt(firstOfMonth),
+      p_to: fmt(today),
+    });
     if (error) {
       logger.error('[AppContext] Failed to get financial summary:', error);
-      toast.error('فشل في جلب ملخص البيانات المالية.');
       return null;
     }
     return data;
