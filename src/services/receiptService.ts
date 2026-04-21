@@ -33,9 +33,33 @@ export interface ReceiptPostingResult {
   error?: string;
 }
 
+const toFiveMinuteBucket = (dateTime: string): number => {
+  const parsed = Date.parse(dateTime);
+  if (!Number.isFinite(parsed)) return Math.floor(Date.now() / 300000);
+  return Math.floor(parsed / 300000);
+};
+
+const normalizeAmount = (value: number): string => Number(value || 0).toFixed(3);
+
+const buildReceiptRequestFingerprint = (payload: ReceiptPostingPayload): string => {
+  const allocationKey = payload.allocations
+    .map(a => `${a.invoice_id}:${normalizeAmount(a.amount)}`)
+    .sort()
+    .join('|');
+  const bucket = toFiveMinuteBucket(payload.receipt.date_time);
+  return [
+    'receipt_post',
+    payload.receipt.contract_id,
+    payload.receipt.channel,
+    normalizeAmount(payload.receipt.amount),
+    String(bucket),
+    allocationKey,
+  ].join(':');
+};
+
 export async function postReceiptAtomic(payload: ReceiptPostingPayload): Promise<ReceiptPostingResult> {
   try {
-    const requestId = `receipt:${payload.receipt.id}`;
+    const requestId = buildReceiptRequestFingerprint(payload);
     const { data, error } = await supabase.rpc('post_receipt_atomic', {
       payload: {
         request_id: requestId,

@@ -52,7 +52,7 @@ export async function askAssistant(prompt: string, context: unknown): Promise<st
   return data.text as string;
 }
 
-export async function runAutomationScheduler(payload?: { dryRun?: boolean }): Promise<AutomationResult> {
+export async function runAutomationScheduler(payload?: { dryRun?: boolean; invoices?: boolean; lateFees?: boolean; notifications?: boolean; snapshots?: boolean }): Promise<AutomationResult> {
   const env = getAppEnv();
   const { data: { session } } = await supabase.auth.getSession();
   const accessToken = session?.access_token;
