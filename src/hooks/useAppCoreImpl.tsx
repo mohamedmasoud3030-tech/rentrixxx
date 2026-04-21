@@ -546,64 +546,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   }, [settings, postJournalEntrySupabase]);
 
-  const createRentInvoicesForContract = useCallback(async (contract: Contract) => {
-    if (!settings) return 0;
-    const taxRate = settings.operational?.taxRate ?? 0;
-    const now = Date.now();
-    const startDate = new Date(`${contract.start}T00:00:00`);
-    const endDate = new Date(`${contract.end}T23:59:59`);
-    const lastRelevant = contract.status === 'ACTIVE'
-      ? new Date(Math.min(now, endDate.getTime()))
-      : endDate;
-    if (lastRelevant.getTime() < startDate.getTime()) return 0;
-
-    const existing = await supabaseData.fetchWhere<Invoice>('invoices', 'contractId', contract.id);
-    const existingRentYm = new Set(
-      existing
-        .filter(inv => inv.type === 'RENT')
-        .map(inv => inv.dueDate.slice(0, 7))
-    );
-
-    let createdCount = 0;
-    let cursor = new Date(startDate.getFullYear(), startDate.getMonth(), 1);
-    const endCursor = new Date(lastRelevant.getFullYear(), lastRelevant.getMonth(), 1);
-
-    while (cursor.getTime() <= endCursor.getTime()) {
-      const ym = `${cursor.getFullYear()}-${String(cursor.getMonth() + 1).padStart(2, '0')}`;
-      if (!existingRentYm.has(ym)) {
-        const daysInMonth = new Date(cursor.getFullYear(), cursor.getMonth() + 1, 0).getDate();
-        const safeDay = Math.min(Math.max(contract.dueDay || 1, 1), daysInMonth);
-        let dueDate = `${ym}-${String(safeDay).padStart(2, '0')}`;
-        if (ym === contract.start.slice(0, 7) && dueDate < contract.start) dueDate = contract.start;
-        if (dueDate <= contract.end) {
-          const { vat: taxAmount } = calcVAT(toNumber(contract.rent), taxRate);
-          const invoiceStatus = new Date(`${dueDate}T23:59:59`).getTime() < now ? 'OVERDUE' : 'UNPAID';
-          const no = String(await supabaseData.incrementSerial('invoice'));
-          const invoice: Invoice = {
-            id: crypto.randomUUID(),
-            no,
-            contractId: contract.id,
-            dueDate,
-            amount: toNumber(contract.rent),
-            taxAmount: taxAmount > 0.001 ? taxAmount : undefined,
-            paidAmount: 0,
-            status: invoiceStatus,
-            type: 'RENT',
-            notes: `فاتورة إيجار شهر ${ym}`,
-            createdAt: Date.now(),
-          };
-          const inserted = await supabaseData.insert<Invoice>('invoices', invoice);
-          if (!inserted.error && inserted.data) {
-            await postInvoiceJournalEntries(invoice);
-            createdCount++;
-          }
-        }
-      }
-      cursor = new Date(cursor.getFullYear(), cursor.getMonth() + 1, 1);
-    }
-
-    return createdCount;
-  }, [settings, postInvoiceJournalEntries]);
 
   const add: AppContextType['dataService']['add'] = useCallback(async (table, entry) => {
     if (isReadOnly || !settings) { toast.error('لا يمكن إضافة سجلات في وضع القراءة فقط'); return null; }
@@ -709,8 +651,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       if (table === 'invoices') {
         const invoice = mutableEntry as unknown as Invoice;
         await postInvoiceJournalEntries(invoice);
-      } else if (table === 'contracts') {
-        await createRentInvoicesForContract(result.data as unknown as Contract);
       } else if (table === 'expenses') {
         const e = mutableEntry as unknown as Expense;
         const cashAccount = mappings.paymentMethods.CASH;
@@ -764,7 +704,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       toast.error(`خطأ أثناء الإضافة: ${err instanceof Error ? err.message : 'خطأ غير معروف'}`);
       return null;
     }
-  }, [isReadOnly, settings, audit, postJournalEntrySupabase, postInvoiceJournalEntries, createRentInvoicesForContract, db]);
+  }, [isReadOnly, settings, audit, postJournalEntrySupabase, postInvoiceJournalEntries, db]);
 
   const addReceiptWithAllocations: AppContextType['financeService']['addReceiptWithAllocations'] = useCallback(async (receiptData, allocations) => {
     if (isReadOnly || !settings) return { success: false, error: 'النظام في وضع القراءة فقط.' };
@@ -1201,19 +1141,23 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   }, [audit, reverseAllJournalEntries, logOperationTime, refreshData]);
 
   const generateMonthlyInvoices: AppContextType['financeService']['generateMonthlyInvoices'] = useCallback(async () => {
-    if (!settings) return 0;
+    if (!settings || !db) return 0;
     const startTime = performance.now();
-    const activeContracts = await supabaseData.fetchWhere<Contract>('contracts', 'status', 'ACTIVE');
-    let count = 0;
-    for (const c of activeContracts) {
-      count += await createRentInvoicesForContract(c);
-    }
+    const result = await runManualAutomationService(db, settings, {
+      invoices: true,
+      lateFees: false,
+      notifications: false,
+      snapshots: false,
+    });
 
     const endTime = performance.now();
-    if (count > 0) logOperationTime('generateInvoices', endTime - startTime);
-    if (count > 0) await refreshData();
-    return count;
-  }, [createRentInvoicesForContract, logOperationTime, settings, refreshData]);
+    if (result.success) {
+      logOperationTime('generateInvoices', endTime - startTime);
+      await refreshData();
+      return 0;
+    }
+    throw new Error(result.errors.join(' | ') || 'تعذر توليد الفواتير تلقائياً.');
+  }, [db, logOperationTime, settings, refreshData]);
 
   const payoutCommission = useCallback(async (commissionId: string) => {
     if (isReadOnly) { toast.error("النظام في وضع القراءة فقط."); return; }
@@ -1662,8 +1606,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       if (issues.length) console.error('[FinancialIntegrityIssues][Periodic]', issues);
     };
     runSync();
-    const intervalId = window.setInterval(runSync, 5 * 60 * 1000);
-    return () => window.clearInterval(intervalId);
+    return undefined;
   }, [db, runFinancialIntegrityChecks, syncFinancialConsistency]);
 
   return (
