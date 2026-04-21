@@ -4,6 +4,7 @@ import { useApp } from '../contexts/AppContext';
 import { AuditIssue, Snapshot } from '../types';
 import { runDataIntegrityAudit } from '../services/auditEngine';
 import Card from '../components/ui/Card';
+import Modal from '../components/ui/Modal';
 import ConfirmActionModal from '../components/shared/ConfirmActionModal';
 import { AlertTriangle, AlertCircle, Info, RefreshCw, ChevronsRight, SearchCheck, PlusCircle, RotateCcw, XCircle, Search } from 'lucide-react';
 import { Link } from 'react-router-dom';
@@ -27,12 +28,18 @@ const AuditLog: React.FC = () => {
     const [selectedUser, setSelectedUser] = useState('all');
     const [selectedAction, setSelectedAction] = useState('all');
     const [snapshotToRestore, setSnapshotToRestore] = useState<Snapshot | null>(null);
+    const [isCreateSnapshotOpen, setIsCreateSnapshotOpen] = useState(false);
+    const [snapshotNote, setSnapshotNote] = useState('');
 
     const handleCreateSnapshot = () => {
-        const note = prompt("يرجى إدخال ملاحظة لنقطة الاستعادة (مثال: 'قبل تعديلات نهاية الشهر'):");
-        if (note) {
-            createSnapshot(note);
+        const note = snapshotNote.trim();
+        if (!note) {
+            toast.error('يرجى إدخال ملاحظة لنقطة الاستعادة.');
+            return;
         }
+        createSnapshot(note);
+        setSnapshotNote('');
+        setIsCreateSnapshotOpen(false);
     };
 
     const handleRestore = (snapshot: Snapshot) => {
@@ -71,7 +78,7 @@ const AuditLog: React.FC = () => {
             <Card>
                 <div className="flex justify-between items-center mb-4">
                     <h2 className="text-xl font-bold">نقاط استعادة النظام (Snapshots)</h2>
-                    <button onClick={handleCreateSnapshot} className="btn btn-primary flex items-center gap-2">
+                    <button onClick={() => setIsCreateSnapshotOpen(true)} className="btn btn-primary flex items-center gap-2">
                         <PlusCircle size={16} />
                         إنشاء نقطة استعادة
                     </button>
@@ -169,6 +176,30 @@ const AuditLog: React.FC = () => {
                 </div>
             </Card>
         </div>
+        <Modal isOpen={isCreateSnapshotOpen} onClose={() => { setIsCreateSnapshotOpen(false); setSnapshotNote(''); }} title="إنشاء نقطة استعادة">
+            <div className="space-y-4">
+                <p className="text-sm text-text-muted">أدخل وصفاً واضحاً ليسهل الرجوع لهذه النقطة لاحقاً.</p>
+                <div>
+                    <label className="text-xs text-text-muted">ملاحظة النقطة</label>
+                    <input
+                        type="text"
+                        value={snapshotNote}
+                        onChange={e => setSnapshotNote(e.target.value)}
+                        placeholder="مثال: قبل تعديلات نهاية الشهر"
+                        className="w-full"
+                    />
+                </div>
+                <div className="flex justify-end gap-2">
+                    <button type="button" className="btn btn-ghost" onClick={() => { setIsCreateSnapshotOpen(false); setSnapshotNote(''); }}>
+                        إلغاء
+                    </button>
+                    <button type="button" className="btn btn-primary" onClick={handleCreateSnapshot}>
+                        حفظ النقطة
+                    </button>
+                </div>
+            </div>
+        </Modal>
+
         <ConfirmActionModal
             isOpen={!!snapshotToRestore}
             onClose={() => setSnapshotToRestore(null)}

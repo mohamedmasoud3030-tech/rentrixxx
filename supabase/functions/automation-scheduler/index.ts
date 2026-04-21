@@ -30,6 +30,7 @@ type InvoiceRow = {
   status: string;
   type: string;
   related_invoice_id: string | null;
+  request_id?: string | null;
 };
 
 type AppNotificationRow = {
@@ -69,7 +70,7 @@ const autoGenerateMonthlyInvoices = async (): Promise<number> => {
 
   const { data: invoices, error: invoicesError } = await adminClient
     .from('invoices')
-    .select('contract_id,due_date,type')
+    .select('contract_id,due_date,type,request_id')
     .eq('type', 'RENT')
     .like('due_date', `${monthKey}%`);
   if (invoicesError) throw invoicesError;
@@ -88,18 +89,22 @@ const autoGenerateMonthlyInvoices = async (): Promise<number> => {
     const safeDay = Math.min(dueDay, daysInMonth);
     const dueDate = `${monthKey}-${String(safeDay).padStart(2, '0')}`;
 
-    const { error: insertError } = await adminClient.from('invoices').insert({
-      id: crypto.randomUUID(),
-      no: String(serialValue),
-      contract_id: contract.id,
-      due_date: dueDate,
-      amount: contract.rent_amount,
-      paid_amount: 0,
-      status: 'UNPAID',
-      type: 'RENT',
-      notes: `فاتورة إيجار شهر ${monthKey}`,
-      created_at: Date.now(),
-    });
+    const requestId = `auto:invoice:rent:${contract.id}:${monthKey}`;
+    const { error: insertError } = await adminClient
+      .from('invoices')
+      .upsert({
+        id: crypto.randomUUID(),
+        no: String(serialValue),
+        contract_id: contract.id,
+        due_date: dueDate,
+        amount: contract.rent_amount,
+        paid_amount: 0,
+        status: 'UNPAID',
+        type: 'RENT',
+        notes: `فاتورة إيجار شهر ${monthKey}`,
+        request_id: requestId,
+        created_at: Date.now(),
+      }, { onConflict: 'request_id', ignoreDuplicates: true });
     if (insertError) throw insertError;
     count += 1;
   }
@@ -115,7 +120,7 @@ const autoApplyLateFees = async (): Promise<number> => {
 
   const { data: invoices, error } = await adminClient
     .from('invoices')
-    .select('id,no,contract_id,due_date,amount,paid_amount,status,type,related_invoice_id');
+    .select('id,no,contract_id,due_date,amount,paid_amount,status,type,related_invoice_id,request_id');
   if (error) throw error;
 
   const allInvoices = (invoices || []) as InvoiceRow[];
@@ -141,19 +146,23 @@ const autoApplyLateFees = async (): Promise<number> => {
     const { data: serialValue, error: serialError } = await adminClient.rpc('increment_serial', { serial_column: 'invoice' });
     if (serialError) throw serialError;
 
-    const { error: insertError } = await adminClient.from('invoices').insert({
-      id: crypto.randomUUID(),
-      no: String(serialValue),
-      contract_id: inv.contract_id,
-      due_date: today.toISOString().slice(0, 10),
-      amount: feeAmount,
-      paid_amount: 0,
-      status: 'UNPAID',
-      type: 'LATE_FEE',
-      notes: `رسوم تأخير على الفاتورة رقم ${inv.no}`,
-      related_invoice_id: inv.id,
-      created_at: Date.now(),
-    });
+    const requestId = `auto:invoice:late_fee:${inv.id}:${today.toISOString().slice(0, 10)}`;
+    const { error: insertError } = await adminClient
+      .from('invoices')
+      .upsert({
+        id: crypto.randomUUID(),
+        no: String(serialValue),
+        contract_id: inv.contract_id,
+        due_date: today.toISOString().slice(0, 10),
+        amount: feeAmount,
+        paid_amount: 0,
+        status: 'UNPAID',
+        type: 'LATE_FEE',
+        notes: `رسوم تأخير على الفاتورة رقم ${inv.no}`,
+        related_invoice_id: inv.id,
+        request_id: requestId,
+        created_at: Date.now(),
+      }, { onConflict: 'request_id', ignoreDuplicates: true });
     if (insertError) throw insertError;
     count += 1;
   }
@@ -260,7 +269,12 @@ Deno.serve(async req => {
   try {
     const body = req.method === 'POST' ? await req.json().catch(() => ({})) : {};
     const dryRun = Boolean(body?.dryRun);
-    const config = { ...defaultAutomationConfig } as AutomationTaskConfig;
+    const config: AutomationTaskConfig = {
+      invoices: typeof body?.invoices === 'boolean' ? body.invoices : defaultAutomationConfig.invoices,
+      lateFees: typeof body?.lateFees === 'boolean' ? body.lateFees : defaultAutomationConfig.lateFees,
+      notifications: typeof body?.notifications === 'boolean' ? body.notifications : defaultAutomationConfig.notifications,
+      snapshots: typeof body?.snapshots === 'boolean' ? body.snapshots : defaultAutomationConfig.snapshots,
+    };
 
     const result = await executeAutomationTasks(config, {
       runInvoices: dryRun ? async () => 0 : autoGenerateMonthlyInvoices,
