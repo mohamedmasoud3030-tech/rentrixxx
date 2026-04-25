@@ -20,6 +20,7 @@ type IdempotencyRow = {
   response_payload: JsonObject | null;
   source_table?: string | null;
   source_record_id?: string | null;
+  tenant_id?: string | null;
 };
 
 type AlertSeverity = 'INFO' | 'WARNING' | 'CRITICAL';
@@ -225,7 +226,8 @@ Deno.serve(async (req) => {
   const lookupIdempotencyResult = async (operationName: string): Promise<IdempotencyRow | null> => {
     const { data, error } = await supabase
       .from('financial_operation_idempotency')
-      .select('response_payload,source_table,source_record_id')
+      .select('response_payload,source_table,source_record_id,tenant_id')
+      .eq('tenant_id', tenantId)
       .eq('operation_name', operationName)
       .eq('request_id', finalRequestId)
       .gt('expires_at', new Date().toISOString())
@@ -239,7 +241,13 @@ Deno.serve(async (req) => {
   };
 
   const verifySourceRecord = async (sourceTable: string, sourceRecordId: string): Promise<boolean> => {
-    const { data, error } = await supabase.from(sourceTable).select('id').eq('id', sourceRecordId).limit(1).maybeSingle();
+    const { data, error } = await supabase
+      .from(sourceTable)
+      .select('id')
+      .eq('tenant_id', tenantId)
+      .eq('id', sourceRecordId)
+      .limit(1)
+      .maybeSingle();
     if (error) {
       await emitAlert('idempotency_source_validation_failed', 'CRITICAL', `Failed to verify ${sourceTable}:${sourceRecordId}`, {
         error: error.message,
@@ -280,6 +288,7 @@ Deno.serve(async (req) => {
   ): Promise<void> => {
     const { error } = await supabase.from('financial_operation_idempotency').upsert(
       {
+        tenant_id: tenantId,
         operation_name: operationName,
         request_id: finalRequestId,
         response_payload: responsePayload,
@@ -287,7 +296,7 @@ Deno.serve(async (req) => {
         source_record_id: sourceRecordId,
         expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
       },
-      { onConflict: 'operation_name,request_id', ignoreDuplicates: true },
+      { onConflict: 'tenant_id,operation_name,request_id', ignoreDuplicates: true },
     );
 
     if (error) {
