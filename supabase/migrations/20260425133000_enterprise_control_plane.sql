@@ -4,9 +4,23 @@
 alter table if exists public.journal_entries
   add column if not exists transaction_group_id uuid;
 
-update public.journal_entries
-set transaction_group_id = coalesce(transaction_group_id, gen_random_uuid())
-where transaction_group_id is null;
+with grouped_legacy_transactions as (
+  select
+    tenant_id,
+    batch_id,
+    gen_random_uuid() as transaction_group_id
+  from public.journal_entries
+  where transaction_group_id is null
+    and batch_id is not null
+  group by tenant_id, batch_id
+)
+update public.journal_entries je
+set transaction_group_id = glt.transaction_group_id
+from grouped_legacy_transactions glt
+where je.transaction_group_id is null
+  and je.batch_id is not null
+  and je.tenant_id = glt.tenant_id
+  and je.batch_id = glt.batch_id;
 
 create index if not exists idx_journal_entries_transaction_group_id
   on public.journal_entries (tenant_id, transaction_group_id);
@@ -53,18 +67,36 @@ deferrable initially deferred
 for each row execute function public.enforce_transaction_group_integrity();
 
 alter table if exists public.financial_operation_idempotency
+  add column if not exists tenant_id uuid,
   add column if not exists expires_at timestamptz;
 
 update public.financial_operation_idempotency
 set expires_at = coalesce(expires_at, created_at + interval '24 hours', now() + interval '24 hours')
 where expires_at is null;
 
+do $$
+begin
+  if exists (
+    select 1
+    from pg_constraint
+    where conname = 'financial_operation_idempotency_operation_name_request_id_key'
+      and conrelid = 'public.financial_operation_idempotency'::regclass
+  ) then
+    alter table public.financial_operation_idempotency
+      drop constraint financial_operation_idempotency_operation_name_request_id_key;
+  end if;
+end $$;
+
 alter table public.financial_operation_idempotency
   alter column expires_at set default (now() + interval '24 hours');
 
 drop index if exists public.idx_financial_operation_idempotency_active;
 create index if not exists idx_financial_operation_idempotency_active
-  on public.financial_operation_idempotency (operation_name, request_id, expires_at);
+  on public.financial_operation_idempotency (tenant_id, operation_name, request_id, expires_at);
+
+create unique index if not exists financial_operation_idempotency_tenant_request_unique_idx
+  on public.financial_operation_idempotency (tenant_id, operation_name, request_id)
+  where tenant_id is not null;
 
 create or replace function public.cleanup_expired_idempotency_rows(p_limit integer default 1000)
 returns integer
