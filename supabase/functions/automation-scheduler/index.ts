@@ -232,11 +232,12 @@ const autoGenerateNotifications = async (adminClient: ReturnType<typeof createCl
   const thresholds = [alertDays, 7, 1];
   const now = Date.now();
 
-  const [{ data: contracts, error: contractsError }, { data: invoices, error: invoicesError }, { data: notifs, error: notifsError }] = await Promise.all([
-    adminClient.from('contracts').select('id,status,end_date').eq('status', 'ACTIVE'),
-    adminClient.from('invoices').select('id,no,due_date,amount,paid_amount,status,type'),
-    adminClient.from('app_notifications').select('id,link,title,type'),
-  ]);
+  const [{ data: contracts, error: contractsError }, { data: invoices, error: invoicesError }, { data: notifs, error: notifsError }] =
+    await Promise.all([
+      adminClient.from('contracts').select('id,status,end_date').eq('status', 'ACTIVE'),
+      adminClient.from('invoices').select('id,no,due_date,amount,paid_amount,status,type'),
+      adminClient.from('app_notifications').select('id,link,title,type'),
+    ]);
 
   if (contractsError) throw contractsError;
   if (invoicesError) throw invoicesError;
@@ -310,10 +311,16 @@ const persistAutomationRun = async (adminClient: ReturnType<typeof createClient>
     notifications_created: result.notificationsSent,
     snapshots_rebuilt: result.snapshotsRebuilt > 0,
     error: result.errors.length > 0 ? result.errors.join(' | ') : null,
+    status: result.success ? 'success' : 'failed',
+    task_name: 'automation_summary',
+    error_message: result.errors.length > 0 ? result.errors.join(' | ') : null,
+    executed_at: result.ts,
   };
 
   const { error } = await adminClient.from('automation_runs').insert(row);
-  if (error) throw error;
+  if (error) {
+    console.error('[automation-scheduler] failed to persist run summary', { error: error.message });
+  }
 };
 
 const executeAutomationTasks = async (

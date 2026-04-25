@@ -71,6 +71,8 @@ Deno.serve(async (req) => {
 
   const supabaseUrl = Deno.env.get('SUPABASE_URL');
   const serviceRole = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+  const strictMode = envFlag(Deno.env.get('PUBLIC_API_STRICT_MODE'));
+
   if (!supabaseUrl || !serviceRole) {
     console.error('[public-api] missing supabase env', {
       hasSupabaseUrl: Boolean(supabaseUrl),
@@ -150,6 +152,9 @@ Deno.serve(async (req) => {
   };
 
   try {
+    const contractResponse = await enforceOrWarnContract();
+    if (contractResponse) return contractResponse;
+
     if (method === 'POST' && path === '/receipts') {
       const { data: cachedResponse, error: idempotencyLookupError } = await supabase
         .from('financial_operation_idempotency')
@@ -175,7 +180,12 @@ Deno.serve(async (req) => {
         return apiError('receipt_post_failed', error.message, 400);
       }
 
-      const receiptId = (data as Record<string, unknown>)?.receipt_id as string | undefined;
+      const receiptId = (data as JsonObject)?.receipt_id as string | undefined;
+      const responsePayload = {
+        ...(typeof data === 'object' && data ? (data as JsonObject) : {}),
+      } as JsonObject;
+      await storeIdempotencyResult(operationName, responsePayload);
+
       await supabase.rpc('platform_record_usage', {
         p_tenant_id: tenantId,
         p_metric_code: 'transactions',
