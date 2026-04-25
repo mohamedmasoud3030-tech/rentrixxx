@@ -132,6 +132,7 @@ Deno.serve(async (req) => {
   }
 
   const tenantId = authPayload.tenant_id;
+  const sourceIp = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || req.headers.get('cf-connecting-ip') || 'unknown';
   const startAt = Date.now();
 
   const logApi = async (statusCode: number, metadata: Record<string, unknown> = {}) => {
