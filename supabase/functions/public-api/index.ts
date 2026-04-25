@@ -1,6 +1,7 @@
 import { createClient } from 'npm:@supabase/supabase-js@2';
 
 type ApiError = { error: { code: string; message: string; details?: unknown } };
+type JsonObject = Record<string, unknown>;
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -35,12 +36,46 @@ const requiredScopeByEndpoint = (path: string, method: string): string | null =>
   return null;
 };
 
+const camelToSnake = (key: string): string => key.replace(/[A-Z]/g, (match) => `_${match.toLowerCase()}`);
+
+const mapCamelToSnakeDeep = (value: unknown): unknown => {
+  if (Array.isArray(value)) return value.map(mapCamelToSnakeDeep);
+  if (value && typeof value === 'object' && Object.getPrototypeOf(value) === Object.prototype) {
+    return Object.entries(value as JsonObject).reduce<JsonObject>((acc, [k, v]) => {
+      acc[camelToSnake(k)] = mapCamelToSnakeDeep(v);
+      return acc;
+    }, {});
+  }
+  return value;
+};
+
+const blockSnakeCaseInput = (payload: JsonObject): string[] => {
+  const disallowed = [
+    'request_id',
+    'tenant_id',
+    'unit_id',
+    'rent_amount',
+    'due_day',
+    'start_date',
+    'end_date',
+    'tax_amount',
+    'paid_amount',
+    'source_module',
+  ];
+
+  return disallowed.filter((key) => Object.prototype.hasOwnProperty.call(payload, key));
+};
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response(null, { headers: corsHeaders });
 
   const supabaseUrl = Deno.env.get('SUPABASE_URL');
   const serviceRole = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
   if (!supabaseUrl || !serviceRole) {
+    console.error('[public-api] missing supabase env', {
+      hasSupabaseUrl: Boolean(supabaseUrl),
+      hasServiceRole: Boolean(serviceRole),
+    });
     return apiError('config_error', 'Missing Supabase service configuration', 500);
   }
 
@@ -53,30 +88,52 @@ Deno.serve(async (req) => {
   if (!requiredScope) return apiError('not_found', 'Endpoint not found', 404);
 
   const apiKey = req.headers.get('x-api-key') || req.headers.get('authorization')?.replace(/^Bearer\s+/i, '') || '';
+  if (!apiKey) {
+    return apiError('auth_failed', 'Missing API key', 401);
+  }
+
   const { data: authData, error: authError } = await supabase.rpc('platform_authenticate_api_key', {
     p_api_key: apiKey,
     p_required_scope: requiredScope,
   });
 
-  if (authError) return apiError('auth_failed', authError.message, 401);
+  if (authError) {
+    console.error('[public-api] authentication rpc failed', { path, method, error: authError.message });
+    return apiError('auth_failed', authError.message, 401);
+  }
+
   const authPayload = (authData || {}) as { ok?: boolean; error?: string; tenant_id?: string; role?: string; api_key_id?: string };
   if (!authPayload.ok || !authPayload.tenant_id) {
     return apiError('auth_failed', authPayload.error || 'Invalid API key', 401);
   }
 
-  const requestId = req.headers.get('x-request-id') || '';
-  const body = method === 'GET' ? {} : await req.json().catch(() => ({}));
-  const finalRequestId = requestId || String((body as Record<string, unknown>).request_id || '');
+  const rawBody = method === 'GET' ? {} : await req.json().catch(() => ({}));
+  const body = (rawBody && typeof rawBody === 'object' ? rawBody : {}) as JsonObject;
+  const snakeCaseViolations = blockSnakeCaseInput(body);
+
+  if (snakeCaseViolations.length > 0) {
+    return apiError(
+      'validation_error',
+      'Use camelCase API fields only. snake_case fields are internal and not accepted from client payloads.',
+      422,
+      { fields: snakeCaseViolations },
+    );
+  }
+
+  const mappedPayload = mapCamelToSnakeDeep(body) as JsonObject;
+  const requestIdHeader = req.headers.get('x-request-id') || '';
+  const requestIdBody = String(mappedPayload.request_id || '').trim();
+  const finalRequestId = requestIdHeader || requestIdBody;
 
   if (method === 'POST' && !finalRequestId) {
-    return apiError('validation_error', 'request_id is required for write operations', 422);
+    return apiError('validation_error', 'requestId is required for write operations', 422);
   }
 
   const tenantId = authPayload.tenant_id;
   const startAt = Date.now();
 
   const logApi = async (statusCode: number, metadata: Record<string, unknown> = {}) => {
-    await supabase.from('platform_api_request_log').insert({
+    const { error } = await supabase.from('platform_api_request_log').insert({
       tenant_id: tenantId,
       api_key_id: authPayload.api_key_id,
       request_method: method,
@@ -86,14 +143,33 @@ Deno.serve(async (req) => {
       duration_ms: Date.now() - startAt,
       metadata,
     });
+
+    if (error) {
+      console.error('[public-api] failed to log api request', { path, method, statusCode, error: error.message });
+    }
   };
 
   try {
     if (method === 'POST' && path === '/receipts') {
-      const payload = body as Record<string, unknown>;
-      payload.request_id = finalRequestId;
+      const { data: cachedResponse, error: idempotencyLookupError } = await supabase
+        .from('financial_operation_idempotency')
+        .select('response_payload')
+        .eq('operation_name', 'post_receipt_atomic')
+        .eq('request_id', finalRequestId)
+        .maybeSingle();
 
-      const { data, error } = await supabase.rpc('post_receipt_atomic', { payload });
+      if (idempotencyLookupError) {
+        await logApi(500, { error: idempotencyLookupError.message, stage: 'idempotency_lookup' });
+        return apiError('idempotency_lookup_failed', idempotencyLookupError.message, 500);
+      }
+
+      if (cachedResponse?.response_payload) {
+        await logApi(200, { idempotent: true, request_id: finalRequestId });
+        return json({ data: cachedResponse.response_payload, idempotent: true, audit_reference: null });
+      }
+
+      mappedPayload.request_id = finalRequestId;
+      const { data, error } = await supabase.rpc('post_receipt_atomic', { payload: mappedPayload });
       if (error) {
         await logApi(400, { error: error.message });
         return apiError('receipt_post_failed', error.message, 400);
@@ -117,130 +193,16 @@ Deno.serve(async (req) => {
         .maybeSingle();
 
       await logApi(200, { receipt_id: receiptId });
-      return json({ data, audit_reference: auditRow?.id || null });
+      return json({ data, idempotent: false, audit_reference: auditRow?.id || null });
     }
 
-    if (method === 'POST' && path === '/contracts') {
-      const payload = body as Record<string, unknown>;
-      const record = {
-        id: payload.id,
-        no: payload.no,
-        unit_id: payload.unit_id,
-        tenant_id: payload.tenant_id,
-        rent_amount: payload.rent_amount,
-        due_day: payload.due_day,
-        start_date: payload.start_date,
-        end_date: payload.end_date,
-        deposit: payload.deposit ?? 0,
-        status: payload.status ?? 'ACTIVE',
-        sponsor_name: payload.sponsor_name ?? '',
-        sponsor_id: payload.sponsor_id ?? '',
-        sponsor_phone: payload.sponsor_phone ?? '',
-        created_at: payload.created_at ?? Date.now(),
-        tenant_id: tenantId,
-      };
-
-      const { data, error } = await supabase.from('contracts').insert(record).select('id').single();
-      if (error) {
-        await logApi(400, { error: error.message });
-        return apiError('contract_create_failed', error.message, 400);
-      }
-
-      await supabase.rpc('platform_record_usage', {
-        p_tenant_id: tenantId,
-        p_metric_code: 'transactions',
-        p_quantity: 1,
-        p_reference_type: 'CONTRACT',
-        p_reference_id: data.id,
-      });
-
-      await logApi(200, { contract_id: data.id });
-      return json({ data: { success: true, contract_id: data.id }, audit_reference: null });
-    }
-
-    if (method === 'POST' && path === '/invoices') {
-      const payload = body as Record<string, unknown>;
-      const record = {
-        id: payload.id,
-        no: payload.no,
-        contract_id: payload.contract_id,
-        due_date: payload.due_date,
-        amount: payload.amount,
-        tax_amount: payload.tax_amount ?? 0,
-        paid_amount: payload.paid_amount ?? 0,
-        status: payload.status ?? 'UNPAID',
-        type: payload.type ?? 'RENT',
-        notes: payload.notes ?? '',
-        created_at: payload.created_at ?? Date.now(),
-        tenant_id: tenantId,
-      };
-
-      const { data, error } = await supabase.from('invoices').insert(record).select('id').single();
-      if (error) {
-        await logApi(400, { error: error.message });
-        return apiError('invoice_create_failed', error.message, 400);
-      }
-
-      await supabase.rpc('append_financial_event', {
-        p_event_type: 'INVOICE_CREATED',
-        p_tenant_id: tenantId,
-        p_request_id: finalRequestId,
-        p_entity_type: 'INVOICE',
-        p_entity_id: data.id,
-        p_payload: { invoice_id: data.id, request_id: finalRequestId },
-      });
-
-      await supabase.rpc('platform_record_usage', {
-        p_tenant_id: tenantId,
-        p_metric_code: 'transactions',
-        p_quantity: 1,
-        p_reference_type: 'INVOICE',
-        p_reference_id: data.id,
-      });
-
-      await logApi(200, { invoice_id: data.id });
-      return json({ data: { success: true, invoice_id: data.id }, audit_reference: null });
-    }
-
-    if (method === 'POST' && path === '/journal-entries') {
-      if (authPayload.role !== 'ADMIN') {
-        await logApi(403, { error: 'role_denied' });
-        return apiError('forbidden', 'Only ADMIN role can post raw journal entries', 403);
-      }
-
-      const payload = body as { entries?: Record<string, unknown>[]; batch_id?: string };
-      const entries = Array.isArray(payload.entries) ? payload.entries : [];
-      if (!entries.length) {
-        await logApi(422, { error: 'missing_entries' });
-        return apiError('validation_error', 'entries are required', 422);
-      }
-
-      const batchId = payload.batch_id || finalRequestId;
-      const enriched = entries.map((entry) => ({
-        ...entry,
-        tenant_id: tenantId,
-        batch_id: batchId,
-        request_id: finalRequestId,
-        source_module: 'PUBLIC_API',
-      }));
-
-      const { error } = await supabase.from('journal_entries').insert(enriched);
-      if (error) {
-        await logApi(400, { error: error.message });
-        return apiError('journal_post_failed', error.message, 400);
-      }
-
-      await supabase.rpc('seal_ledger_batch', { p_batch_id: batchId, p_tenant_id: tenantId });
-      await supabase.rpc('platform_record_usage', {
-        p_tenant_id: tenantId,
-        p_metric_code: 'transactions',
-        p_quantity: entries.length,
-        p_reference_type: 'JOURNAL_BATCH',
-        p_reference_id: batchId,
-      });
-
-      await logApi(200, { batch_id: batchId, entries: entries.length });
-      return json({ data: { success: true, batch_id: batchId, entries: entries.length }, audit_reference: null });
+    if (method === 'POST' && (path === '/contracts' || path === '/invoices' || path === '/journal-entries')) {
+      await logApi(409, { blocked: true, reason: 'direct_db_write_disabled' });
+      return apiError(
+        'write_path_disabled',
+        'Direct table writes are disabled for this endpoint. Use an approved atomic RPC workflow instead.',
+        409,
+      );
     }
 
     if (method === 'GET' && path === '/ledger') {
@@ -314,16 +276,8 @@ Deno.serve(async (req) => {
     return apiError('not_found', 'Endpoint not found', 404);
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown error';
-    await supabase.from('platform_api_request_log').insert({
-      tenant_id: tenantId,
-      api_key_id: authPayload.api_key_id,
-      request_method: method,
-      request_path: path,
-      request_id: finalRequestId || null,
-      status_code: 500,
-      duration_ms: Date.now() - startAt,
-      metadata: { error: message },
-    });
+    console.error('[public-api] unhandled error', { message, path, method, tenantId, requestId: finalRequestId || null });
+    await logApi(500, { error: message });
     return apiError('internal_error', message, 500);
   }
 });
