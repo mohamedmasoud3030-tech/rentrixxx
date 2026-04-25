@@ -17,10 +17,6 @@ type AutomationRunsRow = {
   notifications_created: number;
   snapshots_rebuilt: boolean;
   error: string | null;
-  status?: 'success' | 'failed';
-  task_name?: string;
-  error_message?: string | null;
-  executed_at?: string;
 };
 
 type AutomationTaskConfig = {
@@ -90,52 +86,6 @@ const authorizeRequest = (req: Request): void => {
   const token = authHeader.replace(/^Bearer\s+/i, '').trim();
   if (!token || token !== requiredSecret) {
     throw new Error('Unauthorized automation execution request');
-  }
-};
-
-const persistTaskExecution = async (
-  adminClient: ReturnType<typeof createClient>,
-  taskName: string,
-  status: 'success' | 'failed',
-  errorMessage: string | null,
-): Promise<void> => {
-  const row: AutomationRunsRow = {
-    id: crypto.randomUUID(),
-    ts: Date.now(),
-    invoices_created: 0,
-    late_fees_applied: 0,
-    notifications_created: 0,
-    snapshots_rebuilt: false,
-    error: errorMessage,
-    status,
-    task_name: taskName,
-    error_message: errorMessage,
-    executed_at: new Date().toISOString(),
-  };
-
-  const { error } = await adminClient.from('automation_runs').insert(row);
-  if (error) {
-    console.error('[automation-scheduler] failed to persist task execution log', {
-      taskName,
-      status,
-      error: error.message,
-    });
-  }
-};
-
-const runTaskWithObservation = async <T>(
-  adminClient: ReturnType<typeof createClient>,
-  taskName: string,
-  runner: () => Promise<T>,
-): Promise<T> => {
-  try {
-    const result = await runner();
-    await persistTaskExecution(adminClient, taskName, 'success', null);
-    return result;
-  } catch (error) {
-    const message = error instanceof Error ? error.message : `Unknown error in ${taskName}`;
-    await persistTaskExecution(adminClient, taskName, 'failed', message);
-    throw error;
   }
 };
 
@@ -352,7 +302,7 @@ const autoGenerateNotifications = async (adminClient: ReturnType<typeof createCl
 
 const autoRebuildSnapshots = async (): Promise<boolean> => true;
 
-const persistAutomationSummary = async (adminClient: ReturnType<typeof createClient>, result: AutomationResult): Promise<void> => {
+const persistAutomationRun = async (adminClient: ReturnType<typeof createClient>, result: AutomationResult): Promise<void> => {
   const row: AutomationRunsRow = {
     id: crypto.randomUUID(),
     ts: new Date(result.ts).getTime(),
@@ -374,7 +324,6 @@ const persistAutomationSummary = async (adminClient: ReturnType<typeof createCli
 };
 
 const executeAutomationTasks = async (
-  adminClient: ReturnType<typeof createClient>,
   config: AutomationTaskConfig,
   runners: {
     runInvoices: () => Promise<number>;
@@ -390,42 +339,34 @@ const executeAutomationTasks = async (
 
   if (config.invoices) {
     try {
-      await runTaskWithObservation(adminClient, 'invoices', runners.runInvoices);
+      await runners.runInvoices();
     } catch (error) {
       errors.push(`invoices: ${error instanceof Error ? error.message : 'unknown error'}`);
     }
-  } else {
-    await persistTaskExecution(adminClient, 'invoices', 'success', 'skipped_by_config');
   }
 
   if (config.lateFees) {
     try {
-      lateFeesApplied = await runTaskWithObservation(adminClient, 'late_fees', runners.runLateFees);
+      lateFeesApplied = await runners.runLateFees();
     } catch (error) {
       errors.push(`lateFees: ${error instanceof Error ? error.message : 'unknown error'}`);
     }
-  } else {
-    await persistTaskExecution(adminClient, 'late_fees', 'success', 'skipped_by_config');
   }
 
   if (config.notifications) {
     try {
-      notificationsSent = await runTaskWithObservation(adminClient, 'notifications', runners.runNotifications);
+      notificationsSent = await runners.runNotifications();
     } catch (error) {
       errors.push(`notifications: ${error instanceof Error ? error.message : 'unknown error'}`);
     }
-  } else {
-    await persistTaskExecution(adminClient, 'notifications', 'success', 'skipped_by_config');
   }
 
   if (config.snapshots) {
     try {
-      snapshotsRebuilt = (await runTaskWithObservation(adminClient, 'snapshots', runners.runSnapshots)) ? 1 : 0;
+      snapshotsRebuilt = (await runners.runSnapshots()) ? 1 : 0;
     } catch (error) {
       errors.push(`snapshots: ${error instanceof Error ? error.message : 'unknown error'}`);
     }
-  } else {
-    await persistTaskExecution(adminClient, 'snapshots', 'success', 'skipped_by_config');
   }
 
   return {
@@ -477,14 +418,16 @@ Deno.serve(async (req) => {
           : defaultAutomationConfig.snapshots,
     };
 
-    const result = await executeAutomationTasks(adminClient, config, {
+    const result = await executeAutomationTasks(config, {
       runInvoices: dryRun ? async () => 0 : () => autoGenerateMonthlyInvoices(adminClient!),
       runLateFees: dryRun ? async () => 0 : () => autoApplyLateFees(adminClient!),
       runNotifications: dryRun ? async () => 0 : () => autoGenerateNotifications(adminClient!),
       runSnapshots: dryRun ? async () => false : autoRebuildSnapshots,
     });
 
-    await persistAutomationSummary(adminClient, result);
+    if (!dryRun) {
+      await persistAutomationRun(adminClient, result);
+    }
 
     return new Response(JSON.stringify(result), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -509,8 +452,11 @@ Deno.serve(async (req) => {
     };
 
     if (adminClient) {
-      await persistTaskExecution(adminClient, 'scheduler', 'failed', message);
-      await persistAutomationSummary(adminClient, failedResult);
+      try {
+        await persistAutomationRun(adminClient, failedResult);
+      } catch (persistError) {
+        console.error('[automation-scheduler] failed to persist failed run', persistError);
+      }
     }
 
     return new Response(JSON.stringify(failedResult), {
