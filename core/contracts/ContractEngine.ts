@@ -1,5 +1,5 @@
 import type { AppContextType, Contract } from '../../src/types';
-import { mapContractPayload } from '../../src/mappers/contractMapper';
+import { mapContractPayload } from '@/mappers/contractMapper';
 
 type ContractRawInput = {
   id?: string;
