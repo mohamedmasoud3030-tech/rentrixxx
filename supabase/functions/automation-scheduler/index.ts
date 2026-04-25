@@ -1,16 +1,37 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-import type { AutomationResult } from '../../../src/types/automation.ts';
-import type { AutomationRunsRow } from '../../../src/types/database.ts';
-import {
-  defaultAutomationConfig,
-  executeAutomationTasks,
-  type AutomationTaskConfig,
-} from '../../../src/services/automationCore.ts';
 
-const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
-const SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+type AutomationResult = {
+  success: boolean;
+  errors: string[];
+  snapshotsRebuilt: number;
+  lateFeesApplied: number;
+  notificationsSent: number;
+  ts: string;
+};
 
-const adminClient = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
+type AutomationRunsRow = {
+  id: string;
+  ts: number;
+  invoices_created: number;
+  late_fees_applied: number;
+  notifications_created: number;
+  snapshots_rebuilt: boolean;
+  error: string | null;
+};
+
+type AutomationTaskConfig = {
+  invoices: boolean;
+  lateFees: boolean;
+  notifications: boolean;
+  snapshots: boolean;
+};
+
+const defaultAutomationConfig: AutomationTaskConfig = {
+  invoices: true,
+  lateFees: true,
+  notifications: true,
+  snapshots: true,
+};
 
 type ContractRow = {
   id: string;
@@ -40,7 +61,35 @@ type AppNotificationRow = {
   type: string;
 };
 
-const getSettings = async (): Promise<Record<string, unknown>> => {
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Methods': 'POST,OPTIONS',
+};
+
+const getAdminClient = () => {
+  const supabaseUrl = Deno.env.get('SUPABASE_URL');
+  const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+
+  if (!supabaseUrl || !serviceRoleKey) {
+    throw new Error('Missing required env vars: SUPABASE_URL and/or SUPABASE_SERVICE_ROLE_KEY');
+  }
+
+  return createClient(supabaseUrl, serviceRoleKey);
+};
+
+const authorizeRequest = (req: Request): void => {
+  const requiredSecret = Deno.env.get('AUTOMATION_CRON_SECRET');
+  if (!requiredSecret) return;
+
+  const authHeader = req.headers.get('authorization') || '';
+  const token = authHeader.replace(/^Bearer\s+/i, '').trim();
+  if (!token || token !== requiredSecret) {
+    throw new Error('Unauthorized automation execution request');
+  }
+};
+
+const getSettings = async (adminClient: ReturnType<typeof createClient>): Promise<Record<string, unknown>> => {
   const { data, error } = await adminClient.from('settings').select('data').eq('id', 1).single();
   if (error || !data?.data) throw new Error('تعذر تحميل إعدادات النظام');
   return data.data as Record<string, unknown>;
@@ -52,7 +101,7 @@ const isRentOverdue = (invoice: InvoiceRow): boolean => {
   return invoice.status === 'UNPAID' && new Date(invoice.due_date) < new Date();
 };
 
-const autoGenerateMonthlyInvoices = async (): Promise<number> => {
+const autoGenerateMonthlyInvoices = async (adminClient: ReturnType<typeof createClient>): Promise<number> => {
   const now = new Date();
   const year = now.getFullYear();
   const month = now.getMonth() + 1;
@@ -92,19 +141,22 @@ const autoGenerateMonthlyInvoices = async (): Promise<number> => {
     const requestId = `auto:invoice:rent:${contract.id}:${monthKey}`;
     const { error: insertError } = await adminClient
       .from('invoices')
-      .upsert({
-        id: crypto.randomUUID(),
-        no: String(serialValue),
-        contract_id: contract.id,
-        due_date: dueDate,
-        amount: contract.rent_amount,
-        paid_amount: 0,
-        status: 'UNPAID',
-        type: 'RENT',
-        notes: `فاتورة إيجار شهر ${monthKey}`,
-        request_id: requestId,
-        created_at: Date.now(),
-      }, { onConflict: 'request_id', ignoreDuplicates: true });
+      .upsert(
+        {
+          id: crypto.randomUUID(),
+          no: String(serialValue),
+          contract_id: contract.id,
+          due_date: dueDate,
+          amount: contract.rent_amount,
+          paid_amount: 0,
+          status: 'UNPAID',
+          type: 'RENT',
+          notes: `فاتورة إيجار شهر ${monthKey}`,
+          request_id: requestId,
+          created_at: Date.now(),
+        },
+        { onConflict: 'request_id', ignoreDuplicates: true },
+      );
     if (insertError) throw insertError;
     count += 1;
   }
@@ -112,8 +164,8 @@ const autoGenerateMonthlyInvoices = async (): Promise<number> => {
   return count;
 };
 
-const autoApplyLateFees = async (): Promise<number> => {
-  const settings = await getSettings();
+const autoApplyLateFees = async (adminClient: ReturnType<typeof createClient>): Promise<number> => {
+  const settings = await getSettings(adminClient);
   const operational = (settings.operational || {}) as Record<string, unknown>;
   const lateFee = (operational.lateFee || {}) as Record<string, unknown>;
   if (!lateFee.isEnabled) return 0;
@@ -126,7 +178,7 @@ const autoApplyLateFees = async (): Promise<number> => {
   const allInvoices = (invoices || []) as InvoiceRow[];
   const overdueInvoices = allInvoices.filter(isRentOverdue);
   const existingLateFeeSourceIds = new Set(
-    allInvoices.filter(inv => inv.type === 'LATE_FEE' && !!inv.related_invoice_id).map(inv => inv.related_invoice_id as string),
+    allInvoices.filter((inv) => inv.type === 'LATE_FEE' && !!inv.related_invoice_id).map((inv) => inv.related_invoice_id as string),
   );
 
   let count = 0;
@@ -149,20 +201,23 @@ const autoApplyLateFees = async (): Promise<number> => {
     const requestId = `auto:invoice:late_fee:${inv.id}:${today.toISOString().slice(0, 10)}`;
     const { error: insertError } = await adminClient
       .from('invoices')
-      .upsert({
-        id: crypto.randomUUID(),
-        no: String(serialValue),
-        contract_id: inv.contract_id,
-        due_date: today.toISOString().slice(0, 10),
-        amount: feeAmount,
-        paid_amount: 0,
-        status: 'UNPAID',
-        type: 'LATE_FEE',
-        notes: `رسوم تأخير على الفاتورة رقم ${inv.no}`,
-        related_invoice_id: inv.id,
-        request_id: requestId,
-        created_at: Date.now(),
-      }, { onConflict: 'request_id', ignoreDuplicates: true });
+      .upsert(
+        {
+          id: crypto.randomUUID(),
+          no: String(serialValue),
+          contract_id: inv.contract_id,
+          due_date: today.toISOString().slice(0, 10),
+          amount: feeAmount,
+          paid_amount: 0,
+          status: 'UNPAID',
+          type: 'LATE_FEE',
+          notes: `رسوم تأخير على الفاتورة رقم ${inv.no}`,
+          related_invoice_id: inv.id,
+          request_id: requestId,
+          created_at: Date.now(),
+        },
+        { onConflict: 'request_id', ignoreDuplicates: true },
+      );
     if (insertError) throw insertError;
     count += 1;
   }
@@ -170,8 +225,8 @@ const autoApplyLateFees = async (): Promise<number> => {
   return count;
 };
 
-const autoGenerateNotifications = async (): Promise<number> => {
-  const settings = await getSettings();
+const autoGenerateNotifications = async (adminClient: ReturnType<typeof createClient>): Promise<number> => {
+  const settings = await getSettings(adminClient);
   const operational = (settings.operational || {}) as Record<string, unknown>;
   const alertDays = Number(operational.contractAlertDays ?? 30);
   const thresholds = [alertDays, 7, 1];
@@ -199,7 +254,7 @@ const autoGenerateNotifications = async (): Promise<number> => {
     for (const threshold of thresholds) {
       if (daysLeft <= threshold && daysLeft > 0) {
         const alreadyExists = existingNotifs.some(
-          n => n.link === `/contracts?contractId=${contract.id}` && n.title.includes(String(threshold)),
+          (n) => n.link === `/contracts?contractId=${contract.id}` && n.title.includes(String(threshold)),
         );
         if (!alreadyExists) {
           const { error: insertError } = await adminClient.from('app_notifications').insert({
@@ -223,7 +278,7 @@ const autoGenerateNotifications = async (): Promise<number> => {
   const overdueInvoices = allInvoices.filter(isRentOverdue);
   for (const invoice of overdueInvoices) {
     const alreadyExists = existingNotifs.some(
-      n => n.link === `/finance/invoices?invoiceId=${invoice.id}` && n.type === 'OVERDUE_BALANCE',
+      (n) => n.link === `/finance/invoices?invoiceId=${invoice.id}` && n.type === 'OVERDUE_BALANCE',
     );
     if (alreadyExists) continue;
 
@@ -246,7 +301,7 @@ const autoGenerateNotifications = async (): Promise<number> => {
 
 const autoRebuildSnapshots = async (): Promise<boolean> => true;
 
-const persistAutomationRun = async (result: AutomationResult): Promise<void> => {
+const persistAutomationRun = async (adminClient: ReturnType<typeof createClient>, result: AutomationResult): Promise<void> => {
   const row: AutomationRunsRow = {
     id: crypto.randomUUID(),
     ts: new Date(result.ts).getTime(),
@@ -261,38 +316,125 @@ const persistAutomationRun = async (result: AutomationResult): Promise<void> => 
   if (error) throw error;
 };
 
-Deno.serve(async req => {
-  if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type' } });
+const executeAutomationTasks = async (
+  config: AutomationTaskConfig,
+  runners: {
+    runInvoices: () => Promise<number>;
+    runLateFees: () => Promise<number>;
+    runNotifications: () => Promise<number>;
+    runSnapshots: () => Promise<boolean>;
+  },
+): Promise<AutomationResult> => {
+  const errors: string[] = [];
+  let lateFeesApplied = 0;
+  let notificationsSent = 0;
+  let snapshotsRebuilt = 0;
+
+  if (config.invoices) {
+    try {
+      await runners.runInvoices();
+    } catch (error) {
+      errors.push(`invoices: ${error instanceof Error ? error.message : 'unknown error'}`);
+    }
   }
 
+  if (config.lateFees) {
+    try {
+      lateFeesApplied = await runners.runLateFees();
+    } catch (error) {
+      errors.push(`lateFees: ${error instanceof Error ? error.message : 'unknown error'}`);
+    }
+  }
+
+  if (config.notifications) {
+    try {
+      notificationsSent = await runners.runNotifications();
+    } catch (error) {
+      errors.push(`notifications: ${error instanceof Error ? error.message : 'unknown error'}`);
+    }
+  }
+
+  if (config.snapshots) {
+    try {
+      snapshotsRebuilt = (await runners.runSnapshots()) ? 1 : 0;
+    } catch (error) {
+      errors.push(`snapshots: ${error instanceof Error ? error.message : 'unknown error'}`);
+    }
+  }
+
+  return {
+    success: errors.length === 0,
+    errors,
+    snapshotsRebuilt,
+    lateFeesApplied,
+    notificationsSent,
+    ts: new Date().toISOString(),
+  };
+};
+
+Deno.serve(async (req) => {
+  if (req.method === 'OPTIONS') {
+    return new Response('ok', { headers: corsHeaders });
+  }
+
+  if (req.method !== 'POST') {
+    return new Response(JSON.stringify({ error: { code: 'method_not_allowed', message: 'Only POST is supported' } }), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      status: 405,
+    });
+  }
+
+  let adminClient: ReturnType<typeof createClient> | null = null;
+
   try {
-    const body = req.method === 'POST' ? await req.json().catch(() => ({})) : {};
-    const dryRun = Boolean(body?.dryRun);
+    authorizeRequest(req);
+    adminClient = getAdminClient();
+
+    const body = await req.json().catch(() => ({}));
+    const dryRun = Boolean((body as Record<string, unknown>)?.dryRun);
     const config: AutomationTaskConfig = {
-      invoices: typeof body?.invoices === 'boolean' ? body.invoices : defaultAutomationConfig.invoices,
-      lateFees: typeof body?.lateFees === 'boolean' ? body.lateFees : defaultAutomationConfig.lateFees,
-      notifications: typeof body?.notifications === 'boolean' ? body.notifications : defaultAutomationConfig.notifications,
-      snapshots: typeof body?.snapshots === 'boolean' ? body.snapshots : defaultAutomationConfig.snapshots,
+      invoices:
+        typeof (body as Record<string, unknown>)?.invoices === 'boolean'
+          ? Boolean((body as Record<string, unknown>).invoices)
+          : defaultAutomationConfig.invoices,
+      lateFees:
+        typeof (body as Record<string, unknown>)?.lateFees === 'boolean'
+          ? Boolean((body as Record<string, unknown>).lateFees)
+          : defaultAutomationConfig.lateFees,
+      notifications:
+        typeof (body as Record<string, unknown>)?.notifications === 'boolean'
+          ? Boolean((body as Record<string, unknown>).notifications)
+          : defaultAutomationConfig.notifications,
+      snapshots:
+        typeof (body as Record<string, unknown>)?.snapshots === 'boolean'
+          ? Boolean((body as Record<string, unknown>).snapshots)
+          : defaultAutomationConfig.snapshots,
     };
 
     const result = await executeAutomationTasks(config, {
-      runInvoices: dryRun ? async () => 0 : autoGenerateMonthlyInvoices,
-      runLateFees: dryRun ? async () => 0 : autoApplyLateFees,
-      runNotifications: dryRun ? async () => 0 : autoGenerateNotifications,
+      runInvoices: dryRun ? async () => 0 : () => autoGenerateMonthlyInvoices(adminClient!),
+      runLateFees: dryRun ? async () => 0 : () => autoApplyLateFees(adminClient!),
+      runNotifications: dryRun ? async () => 0 : () => autoGenerateNotifications(adminClient!),
       runSnapshots: dryRun ? async () => false : autoRebuildSnapshots,
     });
 
     if (!dryRun) {
-      await persistAutomationRun(result);
+      await persistAutomationRun(adminClient, result);
     }
 
     return new Response(JSON.stringify(result), {
-      headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 200,
     });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Unknown error';
+    console.error('[automation-scheduler] execution failed', {
+      message,
+      method: req.method,
+      url: req.url,
+      hasAuthHeader: Boolean(req.headers.get('authorization')),
+    });
+
     const failedResult: AutomationResult = {
       success: false,
       errors: [message],
@@ -302,14 +444,16 @@ Deno.serve(async req => {
       ts: new Date().toISOString(),
     };
 
-    try {
-      await persistAutomationRun(failedResult);
-    } catch {
-      // best effort
+    if (adminClient) {
+      try {
+        await persistAutomationRun(adminClient, failedResult);
+      } catch (persistError) {
+        console.error('[automation-scheduler] failed to persist failed run', persistError);
+      }
     }
 
     return new Response(JSON.stringify(failedResult), {
-      headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 500,
     });
   }
