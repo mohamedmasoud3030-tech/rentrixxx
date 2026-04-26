@@ -1,7 +1,5 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '@/types/supabase';
-import { getAppEnv, maskSecret } from '@/config/env';
-import { logger } from '@/services/logger';
 
 let supabaseInstance: SupabaseClient<Database> | null = null;
 
@@ -10,25 +8,30 @@ export const getSupabaseClient = (): SupabaseClient<Database> => {
     return supabaseInstance;
   }
 
-  const env = getAppEnv();
+  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL?.trim();
+  const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY?.trim();
 
-  logger.info("[Supabase] Initializing client", {
-    url: env.supabaseUrl,
-    anonKeyMasked: maskSecret(env.supabaseAnonKey),
-  });
+  if (!supabaseUrl || !supabaseAnonKey) {
+    throw new Error(
+      `Missing Supabase environment variables. ` +
+      `URL: ${supabaseUrl ? '✓' : '✗'}, Key: ${supabaseAnonKey ? '✓' : '✗'}`
+    );
+  }
 
-  supabaseInstance = createClient<Database>(env.supabaseUrl, env.supabaseAnonKey, {
+  supabaseInstance = createClient<Database>(supabaseUrl, supabaseAnonKey, {
     auth: {
       persistSession: true,
       autoRefreshToken: true,
+      detectSessionInUrl: true,
     },
+    db: { schema: 'public' },
   });
 
   return supabaseInstance;
 };
 
 export const supabase = new Proxy({} as SupabaseClient<Database>, {
-  get: (target, prop) => {
+  get: (target, prop: string | symbol) => {
     const client = getSupabaseClient();
     return Reflect.get(client, prop);
   },
