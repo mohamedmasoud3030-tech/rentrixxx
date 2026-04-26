@@ -1,4 +1,4 @@
-import { supabase } from '@/services/api/supabaseClient';
+import { getSupabaseClient } from '@/services/api/supabaseClient';
 import { handleError, NotFoundError } from '@/services/utils/errorHandler';
 
 export interface Invoice {
@@ -16,7 +16,8 @@ export interface Invoice {
 export class InvoiceService {
   static async list(): Promise<Invoice[]> {
     try {
-      const { data, error } = await supabase
+      const supabase = getSupabaseClient();
+    const { data, error } = await supabase
         .from('invoices')
         .select('*')
         .order('due_date', { ascending: true });
@@ -30,7 +31,8 @@ export class InvoiceService {
 
   static async get(id: string): Promise<Invoice> {
     try {
-      const { data, error } = await supabase
+      const supabase = getSupabaseClient();
+    const { data, error } = await supabase
         .from('invoices')
         .select('*')
         .eq('id', id)
@@ -47,7 +49,8 @@ export class InvoiceService {
 
   static async create(invoice: Omit<Invoice, 'id' | 'createdAt' | 'updatedAt'>): Promise<Invoice> {
     try {
-      const { data, error } = await supabase
+      const supabase = getSupabaseClient();
+    const { data, error } = await supabase
         .from('invoices')
         .insert([{
           contract_id: invoice.contractId,
@@ -69,7 +72,8 @@ export class InvoiceService {
 
   static async update(id: string, updates: Partial<Invoice>): Promise<Invoice> {
     try {
-      const { data, error } = await supabase
+      const supabase = getSupabaseClient();
+    const { data, error } = await supabase
         .from('invoices')
         .update({
           status: updates.status,

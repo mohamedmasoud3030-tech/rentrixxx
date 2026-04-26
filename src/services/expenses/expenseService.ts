@@ -1,4 +1,4 @@
-import { supabase } from '@/services/api/supabaseClient';
+import { getSupabaseClient } from '@/services/api/supabaseClient';
 import { handleError, NotFoundError } from '@/services/utils/errorHandler';
 
 export interface Expense {
@@ -15,6 +15,7 @@ export interface Expense {
 export class ExpenseService {
   static async list(): Promise<Expense[]> {
     try {
+      const supabase = getSupabaseClient();
       const { data, error } = await supabase
         .from('expenses')
         .select('*')
@@ -29,6 +30,7 @@ export class ExpenseService {
 
   static async get(id: string): Promise<Expense> {
     try {
+      const supabase = getSupabaseClient();
       const { data, error } = await supabase
         .from('expenses')
         .select('*')
@@ -46,8 +48,7 @@ export class ExpenseService {
 
   static async create(expense: Omit<Expense, 'id' | 'createdAt' | 'updatedAt'>): Promise<Expense> {
     try {
-      const { data, error } = await supabase
-        .from('expenses')
+      const supabase = getSupabaseClient();
         .insert([{
           amount: expense.amount,
           description: expense.description,

@@ -1,4 +1,4 @@
-import { supabase } from '@/services/api/supabaseClient';
+import { getSupabaseClient } from '@/services/api/supabaseClient';
 
 export interface Tenant {
   id: string;
@@ -12,6 +12,7 @@ export interface Tenant {
 
 export class TenantService {
   static async list(): Promise<Tenant[]> {
+    const supabase = getSupabaseClient();
     const { data, error } = await supabase
       .from('tenants')
       .select('*')
@@ -30,6 +31,7 @@ export class TenantService {
   }
 
   static async get(id: string): Promise<Tenant | null> {
+    const supabase = getSupabaseClient();
     const { data, error } = await supabase
       .from('tenants')
       .select('*')
@@ -51,6 +53,7 @@ export class TenantService {
   }
 
   static async create(tenant: Omit<Tenant, 'id' | 'createdAt' | 'updatedAt'>): Promise<Tenant> {
+    const supabase = getSupabaseClient();
     const { data, error } = await supabase
       .from('tenants')
       .insert([{
@@ -76,6 +79,7 @@ export class TenantService {
   }
 
   static async update(id: string, updates: Partial<Tenant>): Promise<Tenant> {
+    const supabase = getSupabaseClient();
     const { data, error } = await supabase
       .from('tenants')
       .update({

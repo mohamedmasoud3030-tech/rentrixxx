@@ -1,4 +1,4 @@
-import { supabase } from '@/services/api/supabaseClient';
+import { getSupabaseClient } from '@/services/api/supabaseClient';
 import { handleError, NotFoundError } from '@/services/utils/errorHandler';
 
 export interface Property {
@@ -16,7 +16,8 @@ export interface Property {
 export class PropertyService {
   static async list(): Promise<Property[]> {
     try {
-      const { data, error } = await supabase
+      const supabase = getSupabaseClient();
+    const { data, error } = await supabase
         .from('properties')
         .select('*')
         .order('created_at', { ascending: false });
@@ -30,7 +31,8 @@ export class PropertyService {
 
   static async get(id: string): Promise<Property> {
     try {
-      const { data, error } = await supabase
+      const supabase = getSupabaseClient();
+    const { data, error } = await supabase
         .from('properties')
         .select('*')
         .eq('id', id)
@@ -47,7 +49,8 @@ export class PropertyService {
 
   static async create(property: Omit<Property, 'id' | 'createdAt' | 'updatedAt'>): Promise<Property> {
     try {
-      const { data, error } = await supabase
+      const supabase = getSupabaseClient();
+    const { data, error } = await supabase
         .from('properties')
         .insert([{
           owner_id: property.ownerId,
@@ -69,7 +72,8 @@ export class PropertyService {
 
   static async update(id: string, updates: Partial<Property>): Promise<Property> {
     try {
-      const { data, error } = await supabase
+      const supabase = getSupabaseClient();
+    const { data, error } = await supabase
         .from('properties')
         .update({
           name: updates.name,

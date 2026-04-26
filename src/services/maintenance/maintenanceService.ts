@@ -1,4 +1,4 @@
-import { supabase } from '@/services/api/supabaseClient';
+import { getSupabaseClient } from '@/services/api/supabaseClient';
 import { handleError, NotFoundError } from '@/services/utils/errorHandler';
 
 export interface MaintenanceRecord {
@@ -18,7 +18,8 @@ export interface MaintenanceRecord {
 export class MaintenanceService {
   static async list(): Promise<MaintenanceRecord[]> {
     try {
-      const { data, error } = await supabase
+      const supabase = getSupabaseClient();
+    const { data, error } = await supabase
         .from('maintenance_records')
         .select('*')
         .order('request_date', { ascending: false });
@@ -32,7 +33,8 @@ export class MaintenanceService {
 
   static async get(id: string): Promise<MaintenanceRecord> {
     try {
-      const { data, error } = await supabase
+      const supabase = getSupabaseClient();
+    const { data, error } = await supabase
         .from('maintenance_records')
         .select('*')
         .eq('id', id)
@@ -49,7 +51,8 @@ export class MaintenanceService {
 
   static async create(record: Omit<MaintenanceRecord, 'id' | 'createdAt' | 'updatedAt'>): Promise<MaintenanceRecord> {
     try {
-      const { data, error } = await supabase
+      const supabase = getSupabaseClient();
+    const { data, error } = await supabase
         .from('maintenance_records')
         .insert([{
           no: record.no,
@@ -72,7 +75,8 @@ export class MaintenanceService {
 
   static async update(id: string, updates: Partial<MaintenanceRecord>): Promise<MaintenanceRecord> {
     try {
-      const { data, error } = await supabase
+      const supabase = getSupabaseClient();
+    const { data, error } = await supabase
         .from('maintenance_records')
         .update({
           status: updates.status,

@@ -1,4 +1,4 @@
-import { supabase } from '@/services/api/supabaseClient';
+import { getSupabaseClient } from '@/services/api/supabaseClient';
 import { handleError, NotFoundError } from '@/services/utils/errorHandler';
 
 export interface Receipt {
@@ -13,7 +13,8 @@ export interface Receipt {
 export class ReceiptService {
   static async list(): Promise<Receipt[]> {
     try {
-      const { data, error } = await supabase
+      const supabase = getSupabaseClient();
+    const { data, error } = await supabase
         .from('receipts')
         .select('*')
         .order('date_time', { ascending: false });
@@ -27,7 +28,8 @@ export class ReceiptService {
 
   static async get(id: string): Promise<Receipt> {
     try {
-      const { data, error } = await supabase
+      const supabase = getSupabaseClient();
+    const { data, error } = await supabase
         .from('receipts')
         .select('*')
         .eq('id', id)
@@ -44,7 +46,8 @@ export class ReceiptService {
 
   static async create(receipt: Omit<Receipt, 'id' | 'createdAt' | 'updatedAt'>): Promise<Receipt> {
     try {
-      const { data, error } = await supabase
+      const supabase = getSupabaseClient();
+    const { data, error } = await supabase
         .from('receipts')
         .insert([{
           amount: receipt.amount,
@@ -64,7 +67,8 @@ export class ReceiptService {
   static async post(id: string): Promise<Receipt> {
     try {
       const receipt = await this.get(id);
-      const { data, error } = await supabase.rpc('post_receipt_atomic', {
+      const supabase = getSupabaseClient();
+    const { data, error } = await supabase.rpc('post_receipt_atomic', {
         p_receipt_id: id,
         p_amount: receipt.amount,
         p_posted_at: Date.now(),
@@ -80,7 +84,8 @@ export class ReceiptService {
 
   static async void(id: string): Promise<Receipt> {
     try {
-      const { data, error } = await supabase.rpc('void_receipt_atomic', {
+      const supabase = getSupabaseClient();
+    const { data, error } = await supabase.rpc('void_receipt_atomic', {
         p_receipt_id: id,
         p_voided_at: Date.now(),
       });
@@ -94,6 +99,7 @@ export class ReceiptService {
   }
 
   private static async update(id: string, updates: Partial<Receipt>): Promise<Receipt> {
+    const supabase = getSupabaseClient();
     const { data, error } = await supabase
       .from('receipts')
       .update({ status: updates.status })

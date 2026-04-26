@@ -1,4 +1,4 @@
-import { supabase } from '@/services/api/supabaseClient';
+import { getSupabaseClient } from '@/services/api/supabaseClient';
 import { handleError, DatabaseError } from '@/services/utils/errorHandler';
 
 export interface FinancialSummary {
@@ -41,7 +41,8 @@ export class FinanceService {
       const p_from = startDate ? startDate.toISOString().split('T')[0] : firstOfMonth.toISOString().split('T')[0];
       const p_to = endDate ? endDate.toISOString().split('T')[0] : today.toISOString().split('T')[0];
 
-      const { data, error } = await supabase.rpc('get_financial_summary', {
+      const supabase = getSupabaseClient();
+    const { data, error } = await supabase.rpc('get_financial_summary', {
         p_from,
         p_to,
       });
@@ -60,7 +61,8 @@ export class FinanceService {
     endDate: Date
   ): Promise<JournalEntry[]> {
     try {
-      const { data, error } = await supabase
+      const supabase = getSupabaseClient();
+    const { data, error } = await supabase
         .from('journal_entries')
         .select('*')
         .gte('date', startDate.toISOString())
@@ -98,7 +100,8 @@ export class FinanceService {
     asOfDate: Date
   ): Promise<{ balanced: boolean; discrepancy: number }> {
     try {
-      const { data, error } = await supabase.rpc('reconcile_ledger', {
+      const supabase = getSupabaseClient();
+    const { data, error } = await supabase.rpc('reconcile_ledger', {
         as_of_date: asOfDate.toISOString().split('T')[0],
       });
 
@@ -116,7 +119,8 @@ export class FinanceService {
     amount: number
   ): Promise<{ success: boolean; receiptId: string }> {
     try {
-      const { data, error } = await supabase.rpc('post_receipt_atomic', {
+      const supabase = getSupabaseClient();
+    const { data, error } = await supabase.rpc('post_receipt_atomic', {
         p_receipt_id: receiptId,
         p_amount: amount,
         p_posted_at: Date.now(),
