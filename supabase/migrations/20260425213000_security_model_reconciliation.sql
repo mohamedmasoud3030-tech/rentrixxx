@@ -5,8 +5,22 @@
 -- 0) Final ghost cleanup guard (no-op if already removed)
 -- -----------------------------------------------------------------------------
 drop view if exists public.maintenance cascade;
-drop view if exists public.automation_runs cascade;
-drop materialized view if exists public.automation_runs cascade;
+
+do $$
+begin
+  if exists (
+    select 1 from pg_matviews where schemaname = 'public' and matviewname = 'automation_runs'
+  ) then
+    drop materialized view public.automation_runs cascade;
+  elsif exists (
+    select 1
+    from information_schema.views
+    where table_schema = 'public'
+      and table_name = 'automation_runs'
+  ) then
+    drop view public.automation_runs cascade;
+  end if;
+end $$;
 
 -- -----------------------------------------------------------------------------
 -- 1) sessions hardening: enforce secure ownership model + least-privilege policies
@@ -14,8 +28,21 @@ drop materialized view if exists public.automation_runs cascade;
 do $$
 declare
   pol record;
+  has_user_id boolean;
 begin
   if to_regclass('public.sessions') is not null then
+    select exists (
+      select 1
+      from information_schema.columns
+      where table_schema = 'public'
+        and table_name = 'sessions'
+        and column_name = 'user_id'
+    ) into has_user_id;
+
+    if not has_user_id then
+      return;
+    end if;
+
     delete from public.sessions where user_id is null;
 
     begin
@@ -84,12 +111,16 @@ end $$;
 do $$
 declare
   pol record;
+  has_tenants boolean;
+  has_contracts boolean;
+  has_invoices boolean;
 begin
   if to_regclass('public.payments') is not null then
     alter table public.payments
       add column if not exists tenant_id uuid,
       add column if not exists contract_id uuid,
       add column if not exists invoice_id uuid,
+      add column if not exists amount numeric not null default 0,
       add column if not exists created_at timestamptz default now(),
       add column if not exists updated_at timestamptz default now(),
       add column if not exists deleted_at timestamptz,
@@ -183,29 +214,39 @@ begin
     with check (true);
 
     -- Foreign keys as NOT VALID to avoid long blocking validation in prod.
-    begin
-      alter table public.payments
-        add constraint payments_tenant_id_fk
-        foreign key (tenant_id) references public.tenants(id) not valid;
-    exception when duplicate_object then
-      null;
-    end;
+    has_tenants := to_regclass('public.tenants') is not null;
+    has_contracts := to_regclass('public.contracts') is not null;
+    has_invoices := to_regclass('public.invoices') is not null;
 
-    begin
-      alter table public.payments
-        add constraint payments_contract_id_fk
-        foreign key (contract_id) references public.contracts(id) not valid;
-    exception when duplicate_object then
-      null;
-    end;
+    if has_tenants then
+      begin
+        alter table public.payments
+          add constraint payments_tenant_id_fk
+          foreign key (tenant_id) references public.tenants(id) not valid;
+      exception when duplicate_object then
+        null;
+      end;
+    end if;
 
-    begin
-      alter table public.payments
-        add constraint payments_invoice_id_fk
-        foreign key (invoice_id) references public.invoices(id) not valid;
-    exception when duplicate_object then
-      null;
-    end;
+    if has_contracts then
+      begin
+        alter table public.payments
+          add constraint payments_contract_id_fk
+          foreign key (contract_id) references public.contracts(id) not valid;
+      exception when duplicate_object then
+        null;
+      end;
+    end if;
+
+    if has_invoices then
+      begin
+        alter table public.payments
+          add constraint payments_invoice_id_fk
+          foreign key (invoice_id) references public.invoices(id) not valid;
+      exception when duplicate_object then
+        null;
+      end;
+    end if;
   end if;
 end $$;
 
