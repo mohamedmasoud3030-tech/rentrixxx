@@ -49,7 +49,6 @@ export class ExpenseService {
   static async create(expense: Omit<Expense, 'id' | 'createdAt' | 'updatedAt'>): Promise<Expense> {
     try {
       const supabase = getSupabaseClient();
-        .insert([{
           amount: expense.amount,
           description: expense.description,
           status: expense.status || 'DRAFT',

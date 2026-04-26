@@ -61,7 +61,6 @@ export class ContractService {
 
   static async update(id: string, updates: Partial<Contract>): Promise<Contract> {
     const supabase = getSupabaseClient();
-      .update({
         status: updates.status,
         rent_amount: updates.rentAmount,
         deposit: updates.deposit,
