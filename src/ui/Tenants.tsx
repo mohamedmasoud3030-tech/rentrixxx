@@ -392,9 +392,10 @@ const TenantForm: React.FC<{ isOpen: boolean, onClose: () => void, tenant: Tenan
                 await dataService.add('tenants', data);
             }
             onClose();
-        } catch (error: any) {
+        } catch (error: unknown) {
+            const errorMsg = error instanceof Error ? error.message : 'فشل الحفظ';
             console.error('TenantForm error:', error);
-            toast.error(`خطأ: ${error?.message || 'فشل الحفظ'}`);
+            toast.error(`خطأ: ${errorMsg}`);
         } finally {
             isSavingRef.current = false;
             setIsSaving(false);
