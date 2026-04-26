@@ -14,7 +14,7 @@ jobs:
     env:
       SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
       SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
-      SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
+      SUPABASE_PROJECT_REF: nnggcnpcuomwfuupupwg
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -28,47 +28,11 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Type check
+      - name: Type Check
         run: npm run type-check
 
-      - name: Setup Supabase CLI
-        uses: supabase/setup-cli@v1
-        with:
-          version: latest
+      - name: Supabase Cloud Validate (API/MCP)
+        run: node scripts/supabase-validate.mjs
 
-      - name: Validate SQL and migrations
-        run: |
-          supabase db lint
-          supabase migration list
-
-      - name: Link project
-        run: supabase link --project-ref "$SUPABASE_PROJECT_REF"
-
-      - name: Dry-run migration apply
-        run: supabase db push --dry-run
-
-      - name: RLS gate (block merge if any public table lacks RLS)
-        run: |
-          MISSING_RLS=$(supabase db query "select count(*)::int as c from pg_class c join pg_namespace n on n.oid=c.relnamespace where n.nspname='public' and c.relkind='r' and c.relrowsecurity=false;" --output json | jq '.[0].c')
-          if [ "$MISSING_RLS" -gt 0 ]; then
-            echo "RLS gate failed: $MISSING_RLS public tables without RLS"
-            exit 1
-          fi
-
-      - name: Function hardening gate (search_path + security)
-        run: |
-          BAD_SEARCH_PATH=$(supabase db query "select count(*)::int as c from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='public' and coalesce((select option_value from pg_options_to_table(p.proconfig) where option_name='search_path'),'') <> 'public';" --output json | jq '.[0].c')
-          if [ "$BAD_SEARCH_PATH" -gt 0 ]; then
-            echo "Function gate failed: $BAD_SEARCH_PATH public functions without search_path=public"
-            exit 1
-          fi
-
-      - name: Apply migrations (push only)
-        if: github.event_name == 'push'
-        run: supabase db push
-
-      - name: Rollback simulation (push only)
-        if: github.event_name == 'push'
-        run: |
-          supabase db dump --data-only > /tmp/prod_data_snapshot.sql
-          supabase migration list
+      - name: Supabase Auto Fix
+        run: node scripts/supabase-autofix.mjs
