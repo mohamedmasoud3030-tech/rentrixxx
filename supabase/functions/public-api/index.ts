@@ -3,6 +3,28 @@ import { createClient } from 'npm:@supabase/supabase-js@2';
 type ApiError = { error: { code: string; message: string; details?: unknown } };
 type JsonObject = Record<string, unknown>;
 
+type AuthPayload = {
+  ok?: boolean;
+  error?: string;
+  tenant_id?: string;
+  role?: string;
+  api_key_id?: string;
+};
+
+type SupabaseErrorLike = {
+  code?: string;
+  message: string;
+};
+
+type IdempotencyRow = {
+  response_payload: JsonObject | null;
+  source_table?: string | null;
+  source_record_id?: string | null;
+  tenant_id?: string | null;
+};
+
+type AlertSeverity = 'INFO' | 'WARNING' | 'CRITICAL';
+
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-api-key, x-request-id, content-type',
@@ -150,6 +172,224 @@ Deno.serve(async (req) => {
     if (error) {
       console.error('[public-api] failed to log api request', { path, method, statusCode, error: error.message });
     }
+  };
+
+  const emitAlert = async (
+    alertType: string,
+    severity: AlertSeverity,
+    message: string,
+    details: Record<string, unknown> = {},
+  ): Promise<void> => {
+    const payload = {
+      alert_type: alertType,
+      severity,
+      message,
+      tenant_id: tenantId,
+      request_id: finalRequestId || null,
+      details,
+      dedup_key: `${tenantId}:${alertType}:${path}`,
+      dedup_window_start: new Date(Math.floor(Date.now() / (5 * 60 * 1000)) * (5 * 60 * 1000)).toISOString(),
+    };
+
+    const { error: insertError } = await supabase.from('operational_alerts').insert(payload);
+    if (insertError) {
+      console.error('[public-api] failed to persist alert', { alertType, error: insertError.message });
+    }
+
+    if (severity !== 'CRITICAL') return;
+
+    const webhook = Deno.env.get('ALERT_WEBHOOK_URL');
+    if (!webhook) {
+      await supabase.from('operational_alert_delivery_queue').insert({
+        alert_type: alertType,
+        payload,
+        status: 'pending',
+        last_error: 'missing ALERT_WEBHOOK_URL',
+      });
+      return;
+    }
+
+    try {
+      await fetch(webhook, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+    } catch (error) {
+      const webhookError = error instanceof Error ? error.message : 'unknown webhook error';
+      await supabase.from('operational_alert_delivery_queue').insert({
+        alert_type: alertType,
+        payload,
+        status: 'pending',
+        last_error: webhookError,
+      });
+    }
+  };
+
+  const lookupIdempotencyResult = async (operationName: string): Promise<IdempotencyRow | null> => {
+    const { data, error } = await supabase
+      .from('financial_operation_idempotency')
+      .select('response_payload,source_table,source_record_id,tenant_id')
+      .eq('tenant_id', tenantId)
+      .eq('operation_name', operationName)
+      .eq('request_id', finalRequestId)
+      .gt('expires_at', new Date().toISOString())
+      .maybeSingle();
+
+    if (error) {
+      throw new Error(`Idempotency lookup failed for ${operationName}: ${error.message}`);
+    }
+
+    return (data as IdempotencyRow | null) ?? null;
+  };
+
+  const verifySourceRecord = async (sourceTable: string, sourceRecordId: string): Promise<boolean> => {
+    const { data, error } = await supabase
+      .from(sourceTable)
+      .select('id')
+      .eq('tenant_id', tenantId)
+      .eq('id', sourceRecordId)
+      .limit(1)
+      .maybeSingle();
+    if (error) {
+      await emitAlert('idempotency_source_validation_failed', 'CRITICAL', `Failed to verify ${sourceTable}:${sourceRecordId}`, {
+        error: error.message,
+      });
+      return false;
+    }
+    return Boolean(data?.id);
+  };
+
+  const lookupDeterministicIdempotencyResult = async (operationName: string): Promise<JsonObject | null> => {
+    const row = await lookupIdempotencyResult(operationName);
+    if (!row?.response_payload) return null;
+    if (!row.source_table || !row.source_record_id) {
+      await emitAlert('legacy_idempotency_row_without_source', 'WARNING', 'Idempotency row missing source references', {
+        operation_name: operationName,
+      });
+      return null;
+    }
+
+    const sourceExists = await verifySourceRecord(row.source_table, row.source_record_id);
+    if (!sourceExists) {
+      await emitAlert('orphaned_idempotency_row', 'CRITICAL', 'Idempotency row points to missing source record', {
+        operation_name: operationName,
+        source_table: row.source_table,
+        source_record_id: row.source_record_id,
+      });
+      return null;
+    }
+
+    return row.response_payload;
+  };
+
+  const storeIdempotencyResult = async (
+    operationName: string,
+    responsePayload: JsonObject,
+    sourceTable: string,
+    sourceRecordId: string,
+  ): Promise<void> => {
+    const { error } = await supabase.from('financial_operation_idempotency').upsert(
+      {
+        tenant_id: tenantId,
+        operation_name: operationName,
+        request_id: finalRequestId,
+        response_payload: responsePayload,
+        source_table: sourceTable,
+        source_record_id: sourceRecordId,
+        expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+      },
+      { onConflict: 'tenant_id,operation_name,request_id', ignoreDuplicates: true },
+    );
+
+    if (error) {
+      await emitAlert('idempotency_store_failed', 'CRITICAL', `Failed to persist idempotency for ${operationName}`, {
+        error: error.message,
+      });
+    }
+  };
+
+  const enforceOrWarnContract = async (): Promise<Response | null> => {
+    if (snakeCaseViolations.length === 0) return null;
+
+    await logApi(strictMode ? 422 : 202, {
+      violation: 'snake_case_input',
+      strict_mode: strictMode,
+      fields: snakeCaseViolations,
+    });
+
+    if (strictMode) {
+      return apiError(
+        'validation_error',
+        'Use camelCase API fields only. snake_case fields are internal and not accepted from client payloads.',
+        422,
+        { fields: snakeCaseViolations },
+      );
+    }
+
+    console.warn('[public-api] backward compatibility mode accepted snake_case payload', {
+      path,
+      method,
+      fields: snakeCaseViolations,
+    });
+
+    return null;
+  };
+
+  const detectRetryAnomaly = async (): Promise<void> => {
+    if (method !== 'POST' || !finalRequestId) return;
+    const since = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+    const { count, error } = await supabase
+      .from('platform_api_request_log')
+      .select('*', { count: 'exact', head: true })
+      .eq('tenant_id', tenantId)
+      .eq('request_id', finalRequestId)
+      .gte('created_at', since);
+
+    if (error) {
+      console.error('[public-api] anomaly query failed', { error: error.message });
+      return;
+    }
+
+    if ((count || 0) >= 5) {
+      await emitAlert('excessive_retry_pattern', 'CRITICAL', 'Excessive retry pattern detected', {
+        request_id: finalRequestId,
+        count_last_hour: count,
+      });
+    }
+  };
+
+  const enforceRateLimits = async (): Promise<Response | null> => {
+    if (method !== 'POST') return null;
+    const { data, error } = await supabase.rpc('enforce_api_rate_limit', {
+      p_api_key_id: authPayload.api_key_id || 'unknown',
+      p_source_ip: sourceIp,
+      p_request_id: finalRequestId || 'missing_request_id',
+    });
+
+    if (error) {
+      await emitAlert('rate_limit_evaluation_failed', 'CRITICAL', 'Failed to evaluate API rate limit', {
+        error: error.message,
+      });
+      return apiError('rate_limit_check_failed', 'Unable to validate request rate limits', 503);
+    }
+
+    const decision = (data || {}) as { exceeded?: boolean; scope?: string; limit?: number; current?: number };
+    if (decision.exceeded === true) {
+      await emitAlert('rate_limit_blocked', 'WARNING', 'Request blocked by API/IP/requestId limiter', {
+        scope: decision.scope || 'unknown',
+        limit: decision.limit ?? null,
+        current: decision.current ?? null,
+        source_ip: sourceIp,
+      });
+      return apiError('rate_limited', 'Too many requests', 429, {
+        scope: decision.scope || 'unknown',
+        limit: decision.limit ?? null,
+        current: decision.current ?? null,
+      });
+    }
+
+    return null;
   };
 
   try {
