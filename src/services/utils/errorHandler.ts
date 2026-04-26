@@ -5,7 +5,7 @@ export class AppError extends Error {
     public code: string,
     public message: string,
     public statusCode: number = 400,
-    public details?: Record<string, any>
+    public details?: Record<string, unknown>
   ) {
     super(message);
     this.name = 'AppError';
@@ -13,7 +13,7 @@ export class AppError extends Error {
 }
 
 export class ValidationError extends AppError {
-  constructor(message: string, details?: Record<string, any>) {
+  constructor(message: string, details?: Record<string, unknown>) {
     super('VALIDATION_ERROR', message, 400, details);
     this.name = 'ValidationError';
   }
@@ -35,28 +35,33 @@ export class AuthorizationError extends AppError {
 }
 
 export class DatabaseError extends AppError {
-  constructor(message: string, details?: Record<string, any>) {
+  constructor(message: string, details?: Record<string, unknown>) {
     super('DATABASE_ERROR', message, 500, details);
     this.name = 'DatabaseError';
   }
 }
 
-export const handleError = (error: any): AppError => {
+export const handleError = (error: unknown): AppError => {
   if (error instanceof AppError) {
     return error;
   }
 
-  if (error?.code === 'PGRST116') {
+  const err = error as Record<string, unknown> | null;
+
+  if (err?.code === 'PGRST116') {
     return new NotFoundError('Resource');
   }
 
-  if (error?.message?.includes('permission denied')) {
+  if (typeof err?.message === 'string' && err.message.includes('permission denied')) {
     return new AuthorizationError();
   }
 
+  const message = typeof err?.message === 'string' ? err.message : 'حدث خطأ غير متوقع';
+  const status = typeof err?.status === 'number' ? err.status : 500;
+
   return new AppError(
     'UNKNOWN_ERROR',
-    error?.message || 'حدث خطأ غير متوقع',
-    error?.status || 500
+    message,
+    status
   );
 };
