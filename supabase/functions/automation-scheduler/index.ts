@@ -17,10 +17,6 @@ type AutomationRunsRow = {
   notifications_created: number;
   snapshots_rebuilt: boolean;
   error: string | null;
-  status?: 'success' | 'failed';
-  task_name?: string;
-  error_message?: string | null;
-  executed_at?: string;
 };
 
 type AutomationTaskConfig = {
@@ -28,13 +24,6 @@ type AutomationTaskConfig = {
   lateFees: boolean;
   notifications: boolean;
   snapshots: boolean;
-};
-
-type ReplayQueueRow = {
-  id: string;
-  task_name: string;
-  replay_key: string;
-  payload: Record<string, unknown>;
 };
 
 const defaultAutomationConfig: AutomationTaskConfig = {
@@ -89,55 +78,6 @@ const getAdminClient = () => {
   return createClient(supabaseUrl, serviceRoleKey);
 };
 
-const sleep = (ms: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, ms));
-
-const emitAlert = async (
-  adminClient: ReturnType<typeof createClient>,
-  alertType: string,
-  severity: 'INFO' | 'WARNING' | 'CRITICAL',
-  message: string,
-  details: Record<string, unknown> = {},
-): Promise<void> => {
-  const payload = {
-    alert_type: alertType,
-    severity,
-    task_name: 'automation_scheduler',
-    message,
-    details,
-    dedup_key: `automation:${alertType}`,
-    dedup_window_start: new Date(Math.floor(Date.now() / (5 * 60 * 1000)) * (5 * 60 * 1000)).toISOString(),
-  };
-
-  await adminClient.from('operational_alerts').insert(payload);
-
-  if (severity !== 'CRITICAL') return;
-  const webhook = Deno.env.get('ALERT_WEBHOOK_URL');
-  if (!webhook) {
-    await adminClient.from('operational_alert_delivery_queue').insert({
-      alert_type: alertType,
-      payload,
-      status: 'pending',
-      last_error: 'missing ALERT_WEBHOOK_URL',
-    });
-    return;
-  }
-
-  try {
-    await fetch(webhook, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-    });
-  } catch (error) {
-    await adminClient.from('operational_alert_delivery_queue').insert({
-      alert_type: alertType,
-      payload,
-      status: 'pending',
-      last_error: error instanceof Error ? error.message : 'unknown webhook error',
-    });
-  }
-};
-
 const authorizeRequest = (req: Request): void => {
   const requiredSecret = Deno.env.get('AUTOMATION_CRON_SECRET');
   if (!requiredSecret) return;
@@ -146,65 +86,6 @@ const authorizeRequest = (req: Request): void => {
   const token = authHeader.replace(/^Bearer\s+/i, '').trim();
   if (!token || token !== requiredSecret) {
     throw new Error('Unauthorized automation execution request');
-  }
-};
-
-const persistTaskExecution = async (
-  adminClient: ReturnType<typeof createClient>,
-  taskName: string,
-  status: 'success' | 'failed',
-  errorMessage: string | null,
-): Promise<void> => {
-  const row: AutomationRunsRow = {
-    id: crypto.randomUUID(),
-    ts: Date.now(),
-    invoices_created: 0,
-    late_fees_applied: 0,
-    notifications_created: 0,
-    snapshots_rebuilt: false,
-    error: errorMessage,
-    status,
-    task_name: taskName,
-    error_message: errorMessage,
-    executed_at: new Date().toISOString(),
-  };
-
-  const { error } = await adminClient.from('automation_runs').insert(row);
-  if (error) {
-    console.error('[automation-scheduler] failed to persist task execution log', {
-      taskName,
-      status,
-      error: error.message,
-    });
-  }
-};
-
-const runTaskWithObservation = async <T>(
-  adminClient: ReturnType<typeof createClient>,
-  taskName: string,
-  runner: () => Promise<T>,
-): Promise<T> => {
-  try {
-    const result = await runner();
-    await persistTaskExecution(adminClient, taskName, 'success', null);
-    return result;
-  } catch (error) {
-    const message = error instanceof Error ? error.message : `Unknown error in ${taskName}`;
-    await persistTaskExecution(adminClient, taskName, 'failed', message);
-    await adminClient.from('automation_replay_queue').upsert(
-      {
-        id: crypto.randomUUID(),
-        task_name: taskName,
-        replay_key: `${taskName}:${new Date().toISOString().slice(0, 13)}`,
-        payload: {},
-        processing_mode: 'isolated',
-        status: 'pending',
-        error_message: message,
-      },
-      { onConflict: 'replay_key' },
-    );
-    await emitAlert(adminClient, 'automation_task_failed', 'CRITICAL', message, { task: taskName });
-    throw error;
   }
 };
 
@@ -421,7 +302,7 @@ const autoGenerateNotifications = async (adminClient: ReturnType<typeof createCl
 
 const autoRebuildSnapshots = async (): Promise<boolean> => true;
 
-const persistAutomationSummary = async (adminClient: ReturnType<typeof createClient>, result: AutomationResult): Promise<void> => {
+const persistAutomationRun = async (adminClient: ReturnType<typeof createClient>, result: AutomationResult): Promise<void> => {
   const row: AutomationRunsRow = {
     id: crypto.randomUUID(),
     ts: new Date(result.ts).getTime(),
@@ -443,7 +324,6 @@ const persistAutomationSummary = async (adminClient: ReturnType<typeof createCli
 };
 
 const executeAutomationTasks = async (
-  adminClient: ReturnType<typeof createClient>,
   config: AutomationTaskConfig,
   runners: {
     runInvoices: () => Promise<number>;
@@ -459,42 +339,34 @@ const executeAutomationTasks = async (
 
   if (config.invoices) {
     try {
-      await runTaskWithObservation(adminClient, 'invoices', runners.runInvoices);
+      await runners.runInvoices();
     } catch (error) {
       errors.push(`invoices: ${error instanceof Error ? error.message : 'unknown error'}`);
     }
-  } else {
-    await persistTaskExecution(adminClient, 'invoices', 'success', 'skipped_by_config');
   }
 
   if (config.lateFees) {
     try {
-      lateFeesApplied = await runTaskWithObservation(adminClient, 'late_fees', runners.runLateFees);
+      lateFeesApplied = await runners.runLateFees();
     } catch (error) {
       errors.push(`lateFees: ${error instanceof Error ? error.message : 'unknown error'}`);
     }
-  } else {
-    await persistTaskExecution(adminClient, 'late_fees', 'success', 'skipped_by_config');
   }
 
   if (config.notifications) {
     try {
-      notificationsSent = await runTaskWithObservation(adminClient, 'notifications', runners.runNotifications);
+      notificationsSent = await runners.runNotifications();
     } catch (error) {
       errors.push(`notifications: ${error instanceof Error ? error.message : 'unknown error'}`);
     }
-  } else {
-    await persistTaskExecution(adminClient, 'notifications', 'success', 'skipped_by_config');
   }
 
   if (config.snapshots) {
     try {
-      snapshotsRebuilt = (await runTaskWithObservation(adminClient, 'snapshots', runners.runSnapshots)) ? 1 : 0;
+      snapshotsRebuilt = (await runners.runSnapshots()) ? 1 : 0;
     } catch (error) {
       errors.push(`snapshots: ${error instanceof Error ? error.message : 'unknown error'}`);
     }
-  } else {
-    await persistTaskExecution(adminClient, 'snapshots', 'success', 'skipped_by_config');
   }
 
   return {
@@ -527,7 +399,6 @@ Deno.serve(async (req) => {
 
     const body = await req.json().catch(() => ({}));
     const dryRun = Boolean((body as Record<string, unknown>)?.dryRun);
-    const replayFailures = Boolean((body as Record<string, unknown>)?.replayFailures);
     const config: AutomationTaskConfig = {
       invoices:
         typeof (body as Record<string, unknown>)?.invoices === 'boolean'
@@ -547,51 +418,15 @@ Deno.serve(async (req) => {
           : defaultAutomationConfig.snapshots,
     };
 
-    const result = await executeAutomationTasks(adminClient, config, {
+    const result = await executeAutomationTasks(config, {
       runInvoices: dryRun ? async () => 0 : () => autoGenerateMonthlyInvoices(adminClient!),
       runLateFees: dryRun ? async () => 0 : () => autoApplyLateFees(adminClient!),
       runNotifications: dryRun ? async () => 0 : () => autoGenerateNotifications(adminClient!),
       runSnapshots: dryRun ? async () => false : autoRebuildSnapshots,
     });
 
-    await persistAutomationSummary(adminClient, result);
-
-    if (replayFailures && !dryRun) {
-      const { data: replayRows, error: replayError } = await adminClient
-        .from('automation_replay_queue')
-        .select('id,task_name,replay_key,payload')
-        .eq('processing_mode', 'isolated')
-        .eq('status', 'pending')
-        .order('created_at', { ascending: true })
-        .limit(10);
-
-      if (replayError) {
-        await emitAlert(adminClient, 'automation_replay_load_failed', 'CRITICAL', replayError.message);
-      } else {
-        const rows = (replayRows || []) as ReplayQueueRow[];
-        for (const row of rows) {
-          try {
-            if (row.task_name === 'invoices') await autoGenerateMonthlyInvoices(adminClient);
-            if (row.task_name === 'late_fees') await autoApplyLateFees(adminClient);
-            if (row.task_name === 'notifications') await autoGenerateNotifications(adminClient);
-            if (row.task_name === 'snapshots') await autoRebuildSnapshots();
-
-            await adminClient
-              .from('automation_replay_queue')
-              .update({ status: 'replayed', replayed_at: new Date().toISOString(), error_message: null })
-              .eq('id', row.id);
-          } catch (replayTaskError) {
-            const replayMessage = replayTaskError instanceof Error ? replayTaskError.message : 'unknown replay failure';
-            await adminClient
-              .from('automation_replay_queue')
-              .update({ status: 'failed', error_message: replayMessage })
-              .eq('id', row.id);
-            await emitAlert(adminClient, 'automation_replay_failed', 'CRITICAL', replayMessage, { task: row.task_name });
-          }
-
-          await sleep(250);
-        }
-      }
+    if (!dryRun) {
+      await persistAutomationRun(adminClient, result);
     }
 
     return new Response(JSON.stringify(result), {
@@ -617,9 +452,11 @@ Deno.serve(async (req) => {
     };
 
     if (adminClient) {
-      await persistTaskExecution(adminClient, 'scheduler', 'failed', message);
-      await persistAutomationSummary(adminClient, failedResult);
-      await emitAlert(adminClient, 'automation_scheduler_failed', 'CRITICAL', message);
+      try {
+        await persistAutomationRun(adminClient, failedResult);
+      } catch (persistError) {
+        console.error('[automation-scheduler] failed to persist failed run', persistError);
+      }
     }
 
     return new Response(JSON.stringify(failedResult), {
