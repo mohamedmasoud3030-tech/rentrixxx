@@ -13,6 +13,9 @@
   },
   "author": "Mohamed Masoud",
   "license": "UNLICENSED",
+  "engines": {
+    "node": ">=22"
+  },
   "dependencies": {
     "@google/genai": "^1.40.0",
     "@supabase/supabase-js": "^2.100.0",
