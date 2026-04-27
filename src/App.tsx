@@ -1,5 +1,5 @@
 
-import React, { lazy, Suspense, useEffect } from 'react';
+import React, { lazy, Suspense, useEffect, useState } from 'react';
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { useApp } from '@/contexts/AppContext';
 import Layout from '@/components/print/layout/Layout';
@@ -28,6 +28,7 @@ const OwnersHub = lazy(() => import('@/ui/OwnersHub'));
 import ProtectedRoute from '@/components/shared/ProtectedRoute';
 import { LEGACY_FINANCIAL_ALIASES } from '@/config/routes';
 import { NAVIGATION_META } from '@/config/navigationMeta';
+import { supabase } from '@/utils/supabase';
 
 const hexToHsl = (hex: string): string => {
     hex = hex.replace('#', '');
@@ -65,9 +66,29 @@ const ROUTE_META: Record<string, { title: string; description: string }> = Objec
     .map(([path, meta]) => [path, { title: meta.titleAr, description: meta.description as string }])
 );
 
+
+type Todo = {
+  id: number | string;
+  name: string;
+};
+
 const App: React.FC = () => {
   const { settings, auth } = useApp();
   const location = useLocation();
+  const [todos, setTodos] = useState<Todo[]>([]);
+
+
+  useEffect(() => {
+    async function getTodos() {
+      const { data } = await supabase.from('todos').select('id, name');
+
+      if (data) {
+        setTodos(data as Todo[]);
+      }
+    }
+
+    getTodos();
+  }, []);
 
   useEffect(() => {
     if (settings) {
@@ -111,6 +132,18 @@ const App: React.FC = () => {
   return (
     <>
       <Toaster position="top-center" />
+
+      {todos.length > 0 && (
+        <div className="fixed bottom-4 left-4 z-50 max-h-40 overflow-auto rounded-md border border-border bg-card/95 p-3 shadow-lg">
+          <p className="mb-2 text-xs font-semibold text-text-muted">Supabase Todos</p>
+          <ul className="space-y-1 text-xs">
+            {todos.map((todo) => (
+              <li key={todo.id}>{todo.name}</li>
+            ))}
+          </ul>
+        </div>
+      )}
+
       <Suspense fallback={<PageLoader />}>
         <Routes>
           {/* Public Routes */}
@@ -154,7 +187,7 @@ const App: React.FC = () => {
               {auth.currentUser.role === 'ADMIN' && (
                 <>
                   <Route path="/audit-log" element={<ProtectedRoute capability="VIEW_AUDIT_LOG"><AuditLog /></ProtectedRoute>} />
-                  // Users: settings sub-module by design — see docs/architecture/ADR-001
+                  {/* Users: settings sub-module by design — see docs/architecture/ADR-001 */}
                   <Route path="/settings/*" element={<ProtectedRoute capability="MANAGE_SETTINGS"><Settings /></ProtectedRoute>} />
                 </>
               )}

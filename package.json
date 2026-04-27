@@ -15,7 +15,7 @@
   "license": "UNLICENSED",
   "dependencies": {
     "@google/genai": "^1.40.0",
-    "@supabase/supabase-js": "^2.100.0",
+    "@supabase/supabase-js": "^2.104.1",
     "date-fns": "^4.1.0",
     "jspdf": "^4.1.0",
     "jspdf-autotable": "^5.0.7",
