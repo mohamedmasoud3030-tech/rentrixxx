@@ -1,6 +1,6 @@
 import { getAppEnv } from '@/config/env';
 import { logger } from '@/services/logger';
-import { supabase } from '@/services/supabase';
+import { supabase } from '@/services/api/supabaseClient';
 import type { AutomationResult } from '@/types/automation';
 import { sanitizeHeaders } from '@/utils/sanitizeHeaders';
 

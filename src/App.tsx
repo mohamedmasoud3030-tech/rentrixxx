@@ -26,7 +26,6 @@ const SmartAssistant = lazy(() => import('@/ui/SmartAssistant'));
 const OwnersHub = lazy(() => import('@/ui/OwnersHub'));
 
 import ProtectedRoute from '@/components/shared/ProtectedRoute';
-import { LEGACY_FINANCIAL_ALIASES } from '@/config/routes';
 import { NAVIGATION_META } from '@/config/navigationMeta';
 
 const hexToHsl = (hex: string): string => {
@@ -138,9 +137,6 @@ const App: React.FC = () => {
 
               {/* Finance Hub (Unified) */}
               <Route path="/financial/*" element={<ProtectedRoute capability="VIEW_FINANCIALS"><Finance /></ProtectedRoute>} />
-              {Object.entries(LEGACY_FINANCIAL_ALIASES).map(([legacyPath, nextPath]) => (
-                <Route key={legacyPath} path={legacyPath} element={<Navigate to={nextPath} replace />} />
-              ))}
 
               {/* CRM & Growth */}
               <Route path="/leads" element={<Leads />} />

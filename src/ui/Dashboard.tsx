@@ -9,6 +9,14 @@ import { startOfMonth, endOfMonth, subMonths, eachMonthOfInterval, isWithinInter
 import { ar } from 'date-fns/locale';
 import { getArrearsAmount, getArrearsInvoices, getCashInflow, getExpenseImpact, getRevenueFromPaidInvoices } from '@/services/financeService';
 
+const PageState: React.FC<{ title: string; message: string; tone?: 'default' | 'error'; action?: React.ReactNode }> = ({ title, message, tone = 'default', action }) => (
+    <div className="bg-card border border-border rounded-2xl p-8 text-center space-y-3">
+        <h3 className={`text-lg font-black ${tone === 'error' ? 'text-red-600' : 'text-text'}`}>{title}</h3>
+        <p className="text-sm text-text-muted">{message}</p>
+        {action}
+    </div>
+);
+
 const QuickSearch = () => {
     const [query, setQuery] = useState('');
     const navigate = useNavigate();
@@ -30,6 +38,11 @@ const QuickSearch = () => {
             {results.length > 0 && (
                 <div className="absolute top-full left-0 right-0 mt-2 bg-card border border-border rounded-lg shadow-lg z-10">
                     {results.map(r => <button key={r.id} onClick={() => navigate(`/contracts?contractId=${r.id}`)} className="w-full p-3 hover:bg-background text-sm text-right">{r.unitName} — {r.tenantName}</button>)}
+                </div>
+            )}
+            {query.length >= 2 && results.length === 0 && (
+                <div className="absolute top-full left-0 right-0 mt-2 bg-card border border-border rounded-lg shadow-lg z-10 p-3 text-sm text-text-muted text-right">
+                    لا توجد نتائج مطابقة.
                 </div>
             )}
         </div>
@@ -97,6 +110,54 @@ const Dashboard: React.FC = () => {
         { key: 'invoices', title: 'فواتير متأخرة', detail: `${stats.overdueCount} فاتورة`, path: '/financial/invoices' },
         { key: 'maintenance', title: 'صيانة معلقة', detail: `${stats.pendingMaintenance} طلب`, path: '/properties' },
     ];
+
+    const isLoading = !settings;
+    const hasConfigError = !settings?.general?.company?.name;
+    const hasData = db.properties.length > 0 || db.units.length > 0 || db.contracts.length > 0;
+
+    if (isLoading) {
+        return (
+            <PageState
+                title="جاري تحميل لوحة التحكم..."
+                message="يتم تجهيز البيانات والمؤشرات الآن."
+            />
+        );
+    }
+
+    if (hasConfigError) {
+        return (
+            <PageState
+                title="تعذر عرض لوحة التحكم"
+                message="بيانات الشركة الأساسية غير مكتملة في الإعدادات."
+                tone="error"
+                action={
+                    <button
+                        onClick={() => navigate('/settings')}
+                        className="px-4 py-2 rounded-xl border border-red-300 text-red-700 text-sm font-bold hover:bg-red-50 transition"
+                    >
+                        الانتقال إلى الإعدادات
+                    </button>
+                }
+            />
+        );
+    }
+
+    if (!hasData) {
+        return (
+            <PageState
+                title="لا توجد بيانات بعد"
+                message="ابدأ بإضافة عقار أو وحدة أو عقد حتى تظهر مؤشرات لوحة التحكم."
+                action={
+                    <button
+                        onClick={() => navigate('/properties')}
+                        className="px-4 py-2 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary/90 transition"
+                    >
+                        إضافة أول عقار
+                    </button>
+                }
+            />
+        );
+    }
 
     return (
         <div className="space-y-6">
