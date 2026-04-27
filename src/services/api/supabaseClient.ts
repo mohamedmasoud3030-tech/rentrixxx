@@ -6,15 +6,17 @@ let supabaseInstance: SupabaseClient<Database> | null = null;
 const initializeSupabase = (): SupabaseClient<Database> => {
   const supabaseUrl = import.meta.env.VITE_SUPABASE_URL?.trim();
   const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY?.trim();
+  const supabasePublishableKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY?.trim();
+  const supabaseKey = supabasePublishableKey || supabaseAnonKey;
 
-  if (!supabaseUrl || !supabaseAnonKey) {
+  if (!supabaseUrl || !supabaseKey) {
     throw new Error(
       `Missing Supabase environment variables. ` +
-      `URL: ${supabaseUrl ? '✓' : '✗'}, Key: ${supabaseAnonKey ? '✓' : '✗'}`
+      `URL: ${supabaseUrl ? '✓' : '✗'}, Key: ${supabaseKey ? '✓' : '✗'}`
     );
   }
 
-  return createClient<Database>(supabaseUrl, supabaseAnonKey, {
+  return createClient<Database>(supabaseUrl, supabaseKey, {
     auth: {
       persistSession: true,
       autoRefreshToken: true,

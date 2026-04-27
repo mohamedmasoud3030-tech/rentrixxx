@@ -15,7 +15,7 @@
   "license": "UNLICENSED",
   "dependencies": {
     "@google/genai": "^1.40.0",
-    "@supabase/supabase-js": "^2.100.0",
+    "@supabase/supabase-js": "^2.104.1",
     "date-fns": "^4.1.0",
     "jspdf": "^4.1.0",
     "jspdf-autotable": "^5.0.7",
@@ -23,6 +23,7 @@
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
     "react-hot-toast": "^2.6.0",
+    "react-is": "^19.2.5",
     "react-router-dom": "^7.13.0",
     "recharts": "^3.8.0"
   },

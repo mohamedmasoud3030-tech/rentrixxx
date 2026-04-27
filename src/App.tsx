@@ -28,6 +28,7 @@ const OwnersHub = lazy(() => import('@/ui/OwnersHub'));
 import ProtectedRoute from '@/components/shared/ProtectedRoute';
 import { LEGACY_FINANCIAL_ALIASES } from '@/config/routes';
 import { NAVIGATION_META } from '@/config/navigationMeta';
+import { supabase } from '@/utils/supabase';
 
 const hexToHsl = (hex: string): string => {
     hex = hex.replace('#', '');
@@ -99,6 +100,26 @@ const App: React.FC = () => {
         }
     }
   }, [settings, location.pathname]);
+
+  useEffect(() => {
+    const loadTodosPreview = async (): Promise<void> => {
+      const { count, error } = await supabase
+        .from('todos')
+        .select('id', { count: 'exact', head: true });
+
+      if (error) {
+        if (import.meta.env.DEV) {
+          console.warn('[supabase] todos preview query failed:', error.message);
+        }
+        return;
+      }
+      if (import.meta.env.DEV) {
+        console.info('[supabase] todos available:', count ?? 0);
+      }
+    };
+
+    void loadTodosPreview();
+  }, []);
 
   if (auth.currentUser === undefined) {
     return <PageLoader />;
