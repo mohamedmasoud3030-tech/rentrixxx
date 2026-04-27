@@ -16,6 +16,17 @@ npm install
 npm run dev
 ```
 
+## 🤖 GitNexus (Agent Context)
+
+تم تجهيز المشروع للعمل مع GitNexus لتوفير فهرسة ذكية للكود وربطها عبر MCP:
+
+```bash
+npm run gitnexus:setup
+npm run gitnexus:analyze
+```
+
+تفاصيل الاستخدام موجودة هنا: `docs/gitnexus-setup.md`.
+
 ## 🔑 Environment Variables
 
 ```

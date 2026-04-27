@@ -9,10 +9,17 @@
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
     "lint": "tsc --noEmit && echo 'Type checking passed'",
-    "type-check": "tsc -p tsconfig.typecheck.json --noEmit"
+    "type-check": "tsc -p tsconfig.typecheck.json --noEmit",
+    "gitnexus:setup": "npx -y gitnexus@latest setup",
+    "gitnexus:analyze": "npx -y gitnexus@latest analyze --skip-embeddings --skip-agents-md",
+    "gitnexus:status": "npx -y gitnexus@latest status",
+    "gitnexus:mcp": "npx -y gitnexus@latest mcp"
   },
   "author": "Mohamed Masoud",
   "license": "UNLICENSED",
+  "engines": {
+    "node": ">=22"
+  },
   "dependencies": {
     "@google/genai": "^1.40.0",
     "@supabase/supabase-js": "^2.100.0",
