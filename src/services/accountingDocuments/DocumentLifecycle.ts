@@ -2,7 +2,6 @@ import type { AccountingDocumentStatus } from './types';
 
 const ALLOWED_TRANSITIONS: Record<AccountingDocumentStatus, ReadonlySet<AccountingDocumentStatus>> = {
   draft: new Set(['posted']),
-  approved: new Set([]),
   posted: new Set(['void']),
   void: new Set([]),
 };

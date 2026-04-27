@@ -1,7 +1,7 @@
 import type { ReceiptsRow } from '@/types/database';
 
 export type AccountingDocumentType = 'receipt' | 'payment' | 'invoice' | 'adjustment' | 'manual_entry';
-export type AccountingDocumentStatus = 'draft' | 'approved' | 'posted' | 'void';
+export type AccountingDocumentStatus = 'draft' | 'posted' | 'void';
 
 export interface AccountingLedgerEntry {
   id: string;
