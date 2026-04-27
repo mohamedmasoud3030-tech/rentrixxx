@@ -691,7 +691,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
       await syncSnapshots();
       setDb(prevDb => {
-        if (!prevDb) return null;
         const newDb = { ...prevDb };
         const currentRows = ((newDb[table as keyof Database] as EntityWithId[] | undefined) || []);
         (newDb[table as keyof Database] as unknown as EntityWithId[]) = [...currentRows, persistedEntry];
@@ -706,7 +705,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   }, [isReadOnly, settings, audit, postJournalEntrySupabase, postInvoiceJournalEntries, db]);
 
-  const addReceiptWithAllocations: AppContextType['financeService']['addReceiptWithAllocations'] = useCallback(async (receiptData, allocations) => {
+  const addReceiptWithAllocations = useCallback(async (receiptData: Omit<Receipt, 'id' | 'createdAt' | 'no' | 'status'>, allocations: { invoiceId: string, amount: number }[]) => {
     if (isReadOnly || !settings) return { success: false, error: 'النظام في وضع القراءة فقط.' };
     const startTime = performance.now();
     try {
@@ -860,7 +859,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           id: newReceipt.id, no: newReceipt.no, contract_id: newReceipt.contractId, date_time: newReceipt.dateTime,
           channel: newReceipt.channel, amount: round3(newReceipt.amount), ref: newReceipt.ref, notes: newReceipt.notes,
           status: newReceipt.status, created_at: newReceipt.createdAt, check_number: newReceipt.checkNumber || '',
-          check_bank: newReceipt.checkBank || '', check_date: newReceipt.checkDate || '', check_status: newReceipt.checkStatus || undefined,
+          check_bank: newReceipt.checkBank || '', check_date: newReceipt.checkDate || '', check_status: newReceipt.checkStatus || null,
           voided_at: null,
         },
         allocations: newAllocations.map(a => ({ id: a.id, receipt_id: a.receiptId, invoice_id: a.invoiceId, amount: round3(a.amount), created_at: a.createdAt })),
@@ -889,7 +888,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       await refreshData();
       return { success: false, error: err instanceof Error ? err.message : 'خطأ غير معروف' };
     }
-  }, [isReadOnly, settings, audit, logOperationTime, refreshData, db]);
+  }, [isReadOnly, settings, audit, logOperationTime, refreshData, db]) as AppContextType['financeService']['addReceiptWithAllocations'];
 
   const addManualJournalVoucher: AppContextType['financeService']['addManualJournalVoucher'] = useCallback(async (voucher) => {
     if (isReadOnly) { toast.error("النظام في وضع القراءة فقط."); return; }
@@ -1411,7 +1410,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             type: 'OVERDUE_BALANCE',
             title: 'فاتورة إيجار متأخرة',
             message: `الفاتورة رقم ${invoice.no} متأخرة بمبلغ ${round3(getInvoiceRemaining(invoice))}`,
-            link: `/finance/invoices?invoiceId=${invoice.id}`,
+            link: `/financial/invoices?invoiceId=${invoice.id}`,
           };
           await supabaseData.insert('appNotifications', notification);
           nextDb.appNotifications.push(notification);
@@ -1543,6 +1542,52 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     contractBalances,
     tenantBalances,
   };
+  const runManualAutomation = async () => {
+    toast('جاري تشغيل المهام التلقائية...');
+    const result = await runManualAutomationService(activeDb, activeSettings);
+    if (!result.success) {
+      toast.error(`حدث خطأ في الأتمتة: ${result.errors.join(' | ')}`);
+    } else if (result.lateFeesApplied + result.notificationsSent + result.snapshotsRebuilt > 0) {
+      toast.success(`اكتمل التشغيل: ${result.lateFeesApplied} غرامة، ${result.notificationsSent} إشعار، ${result.snapshotsRebuilt} لقطات`);
+    } else {
+      toast.success('اكتمل التشغيل. لم تكن هناك مهام جديدة.');
+    }
+    await refreshData();
+    return result;
+  };
+  const generateNotifications = async () => {
+    if (!settings) return 0;
+    const now = Date.now();
+    const existingNotifs = await supabaseData.fetchAll<AppNotification>('appNotifications');
+    let count = await generateContractExpiryNotifications();
+    const allInvoices = await supabaseData.fetchAll<Invoice>('invoices');
+    const overdueInvoices = allInvoices.filter(inv => deriveInvoiceStatus(inv) === 'OVERDUE');
+    const overdueIds = new Set(overdueInvoices.map(inv => inv.id));
+    for (const inv of overdueInvoices) {
+      const link = `/financial/invoices?invoiceId=${inv.id}`;
+      const exists = existingNotifs.some(n => n.link === link && n.type === 'OVERDUE_BALANCE');
+      if (!exists) {
+        await supabaseData.insert('appNotifications', {
+          id: crypto.randomUUID(),
+          createdAt: now,
+          isRead: false,
+          role: 'ADMIN',
+          type: 'OVERDUE_BALANCE',
+          title: 'فاتورة متأخرة',
+          message: `الفاتورة رقم ${inv.no} متأخرة بقيمة ${round3(getInvoiceRemaining(inv))}`,
+          link,
+        });
+        count++;
+      }
+    }
+    for (const notif of existingNotifs.filter(n => n.type === 'OVERDUE_BALANCE')) {
+      const invoiceId = notif.link.split('invoiceId=')[1];
+      if (!invoiceId || overdueIds.has(invoiceId)) continue;
+      await supabaseData.remove('appNotifications', notif.id);
+    }
+    await refreshData();
+    return count;
+  };
   const operationsValue: OperationsContextValue = {
     settings: activeSettings,
     updateSettings: async (s) => {
@@ -1555,43 +1600,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       await audit('UPDATE', 'settings', 'main', `Updated settings: ${Object.keys(s).join(', ')}`);
     },
     dataService,
-    runManualAutomation: async () => {
-      toast('جاري تشغيل المهام التلقائية...');
-      const result = await runManualAutomationService(activeDb, activeSettings);
-      if (!result.success) {
-        toast.error(`حدث خطأ في الأتمتة: ${result.errors.join(' | ')}`);
-      } else if (result.lateFeesApplied + result.notificationsSent + result.snapshotsRebuilt > 0) {
-        toast.success(`اكتمل التشغيل: ${result.lateFeesApplied} غرامة، ${result.notificationsSent} إشعار، ${result.snapshotsRebuilt} لقطات`);
-      } else {
-        toast.success('اكتمل التشغيل. لم تكن هناك مهام جديدة.');
-      }
-      await refreshData();
-      return result;
-    },
-    generateNotifications: async () => {
-      if (!settings) return 0;
-      const now = Date.now();
-      const existingNotifs = await supabaseData.fetchAll<AppNotification>('appNotifications');
-      let count = await generateContractExpiryNotifications();
-      const allInvoices = await supabaseData.fetchAll<Invoice>('invoices');
-      const overdueInvoices = allInvoices.filter(inv => deriveInvoiceStatus(inv) === 'OVERDUE');
-      const overdueIds = new Set(overdueInvoices.map(inv => inv.id));
-      for (const inv of overdueInvoices) {
-        const link = `/finance/invoices?invoiceId=${inv.id}`;
-        const exists = existingNotifs.some(n => n.link === link && n.type === 'OVERDUE_BALANCE');
-        if (!exists) {
-          await supabaseData.insert('appNotifications', { id: crypto.randomUUID(), createdAt: now, isRead: false, role: 'ADMIN', type: 'OVERDUE_BALANCE', title: 'فاتورة متأخرة', message: `الفاتورة رقم ${inv.no} متأخرة بقيمة ${round3(inv.amount - inv.paidAmount)}`, link });
-          count++;
-        }
-      }
-      for (const notif of existingNotifs.filter(n => n.type === 'OVERDUE_BALANCE')) {
-        const invoiceId = notif.link.split('invoiceId=')[1];
-        if (!invoiceId || overdueIds.has(invoiceId)) continue;
-        await supabaseData.remove('appNotifications', notif.id);
-      }
-      await refreshData();
-      return count;
-    },
+    runManualAutomation,
+    generateNotifications,
     updateNotificationTemplate,
   };
 
@@ -1619,43 +1629,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       settings: activeSettings,
       updateSettings: operationsValue.updateSettings,
       rebuildSnapshotsFromJournal, isReadOnly, dataService, financeService,
-      runManualAutomation: async () => {
-        toast('جاري تشغيل المهام التلقائية...');
-        const result = await runManualAutomationService(activeDb, activeSettings);
-        if (!result.success) {
-          toast.error(`حدث خطأ في الأتمتة: ${result.errors.join(' | ')}`);
-        } else if (result.lateFeesApplied + result.notificationsSent + result.snapshotsRebuilt > 0) {
-          toast.success(`اكتمل التشغيل: ${result.lateFeesApplied} غرامة، ${result.notificationsSent} إشعار، ${result.snapshotsRebuilt} لقطات`);
-        } else {
-          toast.success('اكتمل التشغيل. لم تكن هناك مهام جديدة.');
-        }
-        await refreshData();
-        return result;
-      },
-      generateNotifications: async () => {
-        if (!settings) return 0;
-        const now = Date.now();
-        const existingNotifs = await supabaseData.fetchAll<AppNotification>('appNotifications');
-        let count = await generateContractExpiryNotifications();
-        const allInvoices = await supabaseData.fetchAll<Invoice>('invoices');
-        const overdueInvoices = allInvoices.filter(inv => deriveInvoiceStatus(inv) === 'OVERDUE');
-        const overdueIds = new Set(overdueInvoices.map(inv => inv.id));
-        for (const inv of overdueInvoices) {
-          const link = `/finance/invoices?invoiceId=${inv.id}`;
-          const exists = existingNotifs.some(n => n.link === link && n.type === 'OVERDUE_BALANCE');
-          if (!exists) {
-            await supabaseData.insert('appNotifications', { id: crypto.randomUUID(), createdAt: now, isRead: false, role: 'ADMIN', type: 'OVERDUE_BALANCE', title: 'فاتورة متأخرة', message: `الفاتورة رقم ${inv.no} متأخرة بقيمة ${round3(getInvoiceRemaining(inv))}`, link });
-            count++;
-          }
-        }
-        for (const notif of existingNotifs.filter(n => n.type === 'OVERDUE_BALANCE')) {
-          const invoiceId = notif.link.split('invoiceId=')[1];
-          if (!invoiceId || overdueIds.has(invoiceId)) continue;
-          await supabaseData.remove('appNotifications', notif.id);
-        }
-        await refreshData();
-        return count;
-      },
+      runManualAutomation,
+      generateNotifications,
       updateNotificationTemplate, lockPeriod, unlockPeriod,
       setReadOnly: async (ro) => {
         const updated = { ...(governance || { readOnly: false, lockedPeriods: [] }), readOnly: ro };

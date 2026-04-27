@@ -1,4 +1,5 @@
 import { supabase } from './supabase';
+import { supabaseData } from './supabaseDataService';
 import type { Contract, MaintenanceRecord } from '../types';
 
 export interface AutomationSummary {
@@ -177,4 +178,23 @@ export async function softDeleteContract(contractId: string): Promise<SoftDelete
   }
 
   return { success: true };
+}
+
+export async function getNextContractSerial(): Promise<string> {
+  const serial = await supabaseData.incrementSerial('contract');
+  return String(serial);
+}
+
+export async function fetchContractsAndBalances(): Promise<{
+  contracts: Contract[];
+  contractBalances: Array<{ contractId: string; balance: number; lastUpdatedAt?: number }>;
+}> {
+  const [contracts, balances] = await Promise.all([
+    supabaseData.fetchAll<Contract>('contracts'),
+    supabaseData.fetchAll<{ contractId: string; balance: number; lastUpdatedAt?: number }>('contractBalances'),
+  ]);
+  return {
+    contracts,
+    contractBalances: balances,
+  };
 }

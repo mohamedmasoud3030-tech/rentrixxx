@@ -371,19 +371,19 @@ const TenantForm: React.FC<{ isOpen: boolean, onClose: () => void, tenant: Tenan
         isSavingRef.current = true;
         setIsSaving(true);
         try {
-            const data = {
-                name: name.trim(),
-                phone: phone.trim() || undefined,
-                email: email.trim() || undefined,
-                idNo: idNo.trim() || undefined,
-                tenantType,
-                crNumber: crNumber.trim() || undefined,
+                const data = {
+                    name: name.trim(),
+                    phone: phone.trim() || '',
+                    email: email.trim() || undefined,
+                    idNo: idNo.trim() || '',
+                    tenantType,
+                    crNumber: crNumber.trim() || undefined,
                 address: address.trim() || undefined,
                 postalCode: postalCode.trim() || undefined,
                 poBox: poBox.trim() || undefined,
                 nationality: nationality.trim() || undefined,
                 status,
-                notes: notes.trim() || undefined,
+                notes: notes.trim() || '',
             };
 
             if (tenant) {

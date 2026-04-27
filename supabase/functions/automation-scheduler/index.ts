@@ -279,7 +279,7 @@ const autoGenerateNotifications = async (adminClient: ReturnType<typeof createCl
   const overdueInvoices = allInvoices.filter(isRentOverdue);
   for (const invoice of overdueInvoices) {
     const alreadyExists = existingNotifs.some(
-      (n) => n.link === `/finance/invoices?invoiceId=${invoice.id}` && n.type === 'OVERDUE_BALANCE',
+      (n) => n.link === `/financial/invoices?invoiceId=${invoice.id}` && n.type === 'OVERDUE_BALANCE',
     );
     if (alreadyExists) continue;
 
@@ -291,7 +291,7 @@ const autoGenerateNotifications = async (adminClient: ReturnType<typeof createCl
       type: 'OVERDUE_BALANCE',
       title: 'فاتورة إيجار متأخرة',
       message: `الفاتورة رقم ${invoice.no} متأخرة بمبلغ ${invoice.amount - invoice.paid_amount}`,
-      link: `/finance/invoices?invoiceId=${invoice.id}`,
+      link: `/financial/invoices?invoiceId=${invoice.id}`,
     });
     if (insertError) throw insertError;
     count += 1;

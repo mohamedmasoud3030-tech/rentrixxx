@@ -700,7 +700,7 @@ export interface PerformanceMetrics {
 
 // FIX: Refactored AppContextType to align with new service-oriented architecture. Removed direct data manipulation methods and auth functions, exposing services and auth state instead.
 export interface AppContextType {
-  db: Database | null;
+  db: Database;
   auth: {
     currentUser: User | null | undefined;
     login: (username: string, password: string) => Promise<{ ok: boolean; msg: string; mustChange?: boolean }>;

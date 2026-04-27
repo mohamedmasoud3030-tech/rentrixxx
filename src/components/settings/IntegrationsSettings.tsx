@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useApp } from '../../contexts/AppContext';
 import { toast } from 'react-hot-toast';
-import { supabase } from '../../services/supabase';
+import { createPlatformApiKey, getPlatformUsageMetrics, type PlatformUsageMetric } from '../../services/platformService';
 
 const IntegrationsSettings: React.FC = () => {
     const { settings, updateSettings } = useApp();
@@ -10,7 +10,7 @@ const IntegrationsSettings: React.FC = () => {
     const [tenantId, setTenantId] = useState('');
     const [apiKeyName, setApiKeyName] = useState('Default API Key');
     const [createdApiKey, setCreatedApiKey] = useState('');
-    const [usageMetrics, setUsageMetrics] = useState<Array<{ metric_code: string; total_quantity: number; events_count: number; usage_month: string }>>([]);
+    const [usageMetrics, setUsageMetrics] = useState<PlatformUsageMetric[]>([]);
 
     useEffect(() => {
         setIntegrations(settings.integrations);
@@ -36,32 +36,23 @@ const IntegrationsSettings: React.FC = () => {
             toast.error('Tenant ID مطلوب لإنشاء API Key.');
             return;
         }
-        const { data, error } = await supabase.rpc('platform_create_api_key', {
-            p_tenant_id: tenantId,
-            p_name: apiKeyName,
-            p_role: 'ADMIN',
-            p_scopes: ['receipts:write', 'invoices:write', 'contracts:write', 'ledger:read', 'reports:read', 'ledger:write'],
-        });
-        if (error) {
-            toast.error(error.message || 'فشل إنشاء API Key');
-            return;
+        try {
+            const payload = await createPlatformApiKey(tenantId, apiKeyName);
+            setCreatedApiKey(payload.apiKey);
+            toast.success('تم إنشاء API Key جديد.');
+        } catch (error) {
+            toast.error(error instanceof Error ? error.message : 'فشل إنشاء API Key');
         }
-        const payload = data as { api_key?: string };
-        setCreatedApiKey(payload?.api_key || '');
-        toast.success('تم إنشاء API Key جديد.');
     };
 
     const loadUsageMetrics = async () => {
         if (!tenantId.trim()) return;
-        const { data, error } = await supabase.rpc('platform_get_usage_metrics', {
-            p_tenant_id: tenantId,
-        });
-        if (error) {
-            toast.error(error.message || 'فشل تحميل استخدام المنصة');
-            return;
+        try {
+            const usage = await getPlatformUsageMetrics(tenantId);
+            setUsageMetrics(usage);
+        } catch (error) {
+            toast.error(error instanceof Error ? error.message : 'فشل تحميل استخدام المنصة');
         }
-        const usage = (data as { usage?: Array<{ metric_code: string; total_quantity: number; events_count: number; usage_month: string }> })?.usage || [];
-        setUsageMetrics(usage);
     };
     
     return (
