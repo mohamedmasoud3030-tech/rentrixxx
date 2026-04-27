@@ -20,13 +20,13 @@ export function calculateCommission(
   owner: Owner,
   contract: Contract
 ): CommissionCalculation {
-  const rentAmount = contract.rentAmount || 0;
+  const rentAmount = contract.rent || 0;
   const commissionType = owner.commissionType;
   const commissionValue = owner.commissionValue || 0;
 
   // Calculate contract duration in months
-  const startDate = new Date(contract.startDate);
-  const endDate = new Date(contract.endDate);
+  const startDate = new Date(contract.start);
+  const endDate = new Date(contract.end);
   const contractMonths = Math.max(
     1,
     Math.round(
