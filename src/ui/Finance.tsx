@@ -10,7 +10,7 @@ import Accounting from './Accounting';
 import FinanceIntelligenceHub from '../components/finance/FinanceIntelligenceHub';
 import Arrears from './financial/Arrears';
 import { AR_LABELS } from '../config/labels.ar';
-import { FINANCIAL_ROUTES, LEGACY_FINANCIAL_ALIASES } from '@/config/routes';
+import { FINANCIAL_ROUTES } from '@/config/routes';
 
 const FinanceTab: React.FC<{ to: string, icon: React.ReactNode, label: string }> = ({ to, icon, label }) => (
     <NavLink
@@ -31,14 +31,13 @@ const FinanceTab: React.FC<{ to: string, icon: React.ReactNode, label: string }>
 
 const LAST_FINANCE_TAB_KEY = 'rentrix:last-finance-tab';
 const FINANCIAL_BASE_PATH = '/financial';
-const normalizeFinancePath = (path: string): string => LEGACY_FINANCIAL_ALIASES[path] ?? path;
 
 const Finance: React.FC = () => {
     const location = useLocation();
     const financeBasePath = FINANCIAL_BASE_PATH;
 
     useEffect(() => {
-        if ((location.pathname.startsWith('/finance/') || location.pathname.startsWith('/financial/')) && location.pathname !== '/finance' && location.pathname !== '/financial') {
+        if (location.pathname.startsWith('/financial/') && location.pathname !== '/financial') {
             window.localStorage.setItem(LAST_FINANCE_TAB_KEY, location.pathname);
         }
     }, [location.pathname]);
@@ -46,8 +45,7 @@ const Finance: React.FC = () => {
     const defaultFinancePath = useMemo(() => {
         const savedPath = window.localStorage.getItem(LAST_FINANCE_TAB_KEY);
         if (!savedPath) return `${financeBasePath}/invoices`;
-        const normalizedPath = normalizeFinancePath(savedPath);
-        return normalizedPath.startsWith('/financial/') ? normalizedPath : `${financeBasePath}/invoices`;
+        return savedPath.startsWith('/financial/') ? savedPath : `${financeBasePath}/invoices`;
     }, [financeBasePath]);
 
     return (
@@ -86,7 +84,6 @@ const Finance: React.FC = () => {
                     <Route path="payments" element={<Financials initialTab="receipts" />} />
                     <Route path="expenses" element={<Financials initialTab="expenses" />} />
                     <Route path="receipts" element={<Financials initialTab="receipts" />} />
-                    <Route path="financials" element={<Navigate to="../receipts" replace />} />
                     <Route path="arrears" element={<Arrears />} />
                     <Route path="maintenance" element={<Maintenance />} />
                     <Route path="gl" element={<GeneralLedger />} />

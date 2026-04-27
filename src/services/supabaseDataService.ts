@@ -1,4 +1,4 @@
-import { supabase } from './supabase';
+import { supabase } from '@/services/api/supabaseClient';
 import { Database, Settings, Governance, Serials } from '../types';
 import { logger } from './logger';
 import type { GovernanceRow, SerialsRow, SettingsRow, UsersRow } from '../types/database';
