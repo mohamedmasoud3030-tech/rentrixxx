@@ -21,7 +21,7 @@ export class OwnerService {
         .order('created_at', { ascending: false });
       
       if (error) throw error;
-      return (data || []).map(o => this.mapOwner(o));
+      return (data || []).map((o: any) => this.mapOwner(o));
     } catch (error) {
       throw handleError(error);
     }
@@ -90,6 +90,7 @@ export class OwnerService {
 
   static async delete(id: string): Promise<void> {
     try {
+      const supabase = getSupabaseClient();
       const { error } = await supabase
         .from('owners')
         .delete()

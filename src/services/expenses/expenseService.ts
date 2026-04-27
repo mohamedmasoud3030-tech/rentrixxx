@@ -20,7 +20,6 @@ export class ExpenseService {
         .from('expenses')
         .select('*')
         .order('date_time', { ascending: false });
-      
       if (error) throw error;
       return (data || []).map(e => this.mapExpense(e));
     } catch (error) {
@@ -36,10 +35,8 @@ export class ExpenseService {
         .select('*')
         .eq('id', id)
         .single();
-      
       if (error && error.code !== 'PGRST116') throw error;
       if (!data) throw new NotFoundError('المصروف', id);
-      
       return this.mapExpense(data);
     } catch (error) {
       throw handleError(error);
@@ -49,6 +46,9 @@ export class ExpenseService {
   static async create(expense: Omit<Expense, 'id' | 'createdAt' | 'updatedAt'>): Promise<Expense> {
     try {
       const supabase = getSupabaseClient();
+      const { data, error } = await supabase
+        .from('expenses')
+        .insert([{
           amount: expense.amount,
           description: expense.description,
           status: expense.status || 'DRAFT',
@@ -57,7 +57,6 @@ export class ExpenseService {
         }])
         .select()
         .single();
-      
       if (error) throw error;
       return this.mapExpense(data);
     } catch (error) {
@@ -67,6 +66,7 @@ export class ExpenseService {
 
   static async update(id: string, updates: Partial<Expense>): Promise<Expense> {
     try {
+      const supabase = getSupabaseClient();
       const { data, error } = await supabase
         .from('expenses')
         .update({
@@ -77,7 +77,6 @@ export class ExpenseService {
         .eq('id', id)
         .select()
         .single();
-      
       if (error) throw error;
       return this.mapExpense(data);
     } catch (error) {

@@ -392,7 +392,7 @@ export const supabaseData = {
   async updateSettingsPartial(partial: Partial<Settings>): Promise<boolean> {
     const current = await this.getSettings();
     if (!current) return false;
-    const merged = deepMerge(current, partial);
+    const merged = deepMerge(current as any, partial as any) as unknown as Settings;
     return this.saveSettings(merged);
   },
 

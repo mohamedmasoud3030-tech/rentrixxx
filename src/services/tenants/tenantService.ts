@@ -19,7 +19,7 @@ export class TenantService {
       .order('created_at', { ascending: false });
     
     if (error) throw error;
-    return (data || []).map(t => ({
+    return (data || []).map((t: any) => ({
       id: t.id,
       name: t.name || t.fullName,
       email: t.email,
@@ -40,15 +40,16 @@ export class TenantService {
     
     if (error && error.code !== 'PGRST116') throw error;
     if (!data) return null;
+    const d = data as any;
 
     return {
-      id: data.id,
-      name: data.name || data.fullName,
-      email: data.email,
-      phone: data.phone,
-      nationalId: data.national_id,
-      createdAt: new Date(data.created_at).getTime(),
-      updatedAt: new Date(data.updated_at).getTime(),
+      id: d.id,
+      name: d.name || d.fullName,
+      email: d.email,
+      phone: d.phone,
+      nationalId: d.national_id,
+      createdAt: new Date(d.created_at).getTime(),
+      updatedAt: new Date(d.updated_at).getTime(),
     };
   }
 
@@ -68,13 +69,13 @@ export class TenantService {
     if (error) throw error;
     
     return {
-      id: data.id,
-      name: data.name,
-      email: data.email,
-      phone: data.phone,
-      nationalId: data.national_id,
-      createdAt: new Date(data.created_at).getTime(),
-      updatedAt: new Date(data.updated_at).getTime(),
+      id: (data as any).id,
+      name: (data as any).name,
+      email: (data as any).email,
+      phone: (data as any).phone,
+      nationalId: (data as any).national_id,
+      createdAt: new Date((data as any).created_at).getTime(),
+      updatedAt: new Date((data as any).updated_at).getTime(),
     };
   }
 
@@ -95,17 +96,18 @@ export class TenantService {
     if (error) throw error;
     
     return {
-      id: data.id,
-      name: data.name,
-      email: data.email,
-      phone: data.phone,
-      nationalId: data.national_id,
-      createdAt: new Date(data.created_at).getTime(),
-      updatedAt: new Date(data.updated_at).getTime(),
+      id: (data as any).id,
+      name: (data as any).name,
+      email: (data as any).email,
+      phone: (data as any).phone,
+      nationalId: (data as any).national_id,
+      createdAt: new Date((data as any).created_at).getTime(),
+      updatedAt: new Date((data as any).updated_at).getTime(),
     };
   }
 
   static async delete(id: string): Promise<void> {
+    const supabase = getSupabaseClient();
     const { error } = await supabase
       .from('tenants')
       .delete()

@@ -62,7 +62,8 @@ export class FinanceService {
   ): Promise<JournalEntry[]> {
     try {
       const supabase = getSupabaseClient();
-    const { data, error } = await supabase
+      const supabase2 = getSupabaseClient();
+      const { data, error } = await supabase2
         .from('journal_entries')
         .select('*')
         .gte('date', startDate.toISOString())
@@ -71,7 +72,7 @@ export class FinanceService {
 
       if (error) throw error;
       
-      return (data || []).map(entry => ({
+      return (data || []).map((entry: any) => ({
         id: entry.id,
         date: new Date(entry.date).getTime(),
         description: entry.description,
@@ -146,6 +147,7 @@ export class FinanceService {
   // Check occupancy rate
   static async getOccupancyRate(): Promise<number> {
     try {
+      const supabase = getSupabaseClient();
       const { data: totalUnits, error: e1 } = await supabase
         .from('units')
         .select('id', { count: 'exact' });

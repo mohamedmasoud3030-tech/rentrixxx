@@ -6,6 +6,9 @@ on:
   pull_request:
     branches: [main]
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 jobs:
   typecheck:
     name: TypeScript Check
@@ -35,13 +38,12 @@ jobs:
         with:
           version: latest
 
-      - name: Validate migration files exist
+      - name: Count migration files
         run: |
-          echo "Migration files:"
           ls supabase/migrations/*.sql | wc -l
-          echo "✅ Migration files found"
+          echo "✅ Migrations found"
 
-      - name: Link and push migrations
+      - name: Push migrations
         if: ${{ secrets.SUPABASE_ACCESS_TOKEN != '' && secrets.SUPABASE_PROJECT_REF != '' }}
         run: |
           supabase link --project-ref "${{ secrets.SUPABASE_PROJECT_REF }}"

@@ -23,7 +23,7 @@ export class PropertyService {
         .order('created_at', { ascending: false });
       
       if (error) throw error;
-      return (data || []).map(p => this.mapProperty(p));
+      return (data || []).map((p: any) => this.mapProperty(p));
     } catch (error) {
       throw handleError(error);
     }
@@ -95,6 +95,7 @@ export class PropertyService {
 
   static async delete(id: string): Promise<void> {
     try {
+      const supabase = getSupabaseClient();
       const { error } = await supabase
         .from('properties')
         .delete()
