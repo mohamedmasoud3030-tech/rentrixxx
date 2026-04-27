@@ -1,4 +1,4 @@
-import { supabase } from '../services/supabase';
+import { supabase } from '@/services/api/supabaseClient';
 import { uploadAttachment } from '../services/attachmentService';
 
 const BATCH_SIZE = 10;
