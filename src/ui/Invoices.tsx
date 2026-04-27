@@ -74,8 +74,8 @@ const Invoices: React.FC = () => {
                 const property = unit ? properties.find(p => p.id === unit.propertyId) : null;
                 return {
                     ...inv,
-                    tenant,
-                    unit,
+                    tenant: tenant || undefined,
+                    unit: unit || undefined,
                     propertyName: property?.name || '',
                     total: getInvoiceTotal(inv),
                     remaining: getInvoiceRemaining(inv),

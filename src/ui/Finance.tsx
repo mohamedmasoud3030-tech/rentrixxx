@@ -10,6 +10,7 @@ import Accounting from './Accounting';
 import FinanceIntelligenceHub from '../components/finance/FinanceIntelligenceHub';
 import Arrears from './financial/Arrears';
 import { AR_LABELS } from '../config/labels.ar';
+import { FINANCIAL_ROUTES, LEGACY_FINANCIAL_ALIASES } from '@/config/routes';
 
 const FinanceTab: React.FC<{ to: string, icon: React.ReactNode, label: string }> = ({ to, icon, label }) => (
     <NavLink
@@ -29,10 +30,12 @@ const FinanceTab: React.FC<{ to: string, icon: React.ReactNode, label: string }>
 );
 
 const LAST_FINANCE_TAB_KEY = 'rentrix:last-finance-tab';
+const FINANCIAL_BASE_PATH = '/financial';
+const normalizeFinancePath = (path: string): string => LEGACY_FINANCIAL_ALIASES[path] ?? path;
 
 const Finance: React.FC = () => {
     const location = useLocation();
-    const financeBasePath = location.pathname.startsWith('/financial') ? '/financial' : '/finance';
+    const financeBasePath = FINANCIAL_BASE_PATH;
 
     useEffect(() => {
         if ((location.pathname.startsWith('/finance/') || location.pathname.startsWith('/financial/')) && location.pathname !== '/finance' && location.pathname !== '/financial') {
@@ -42,8 +45,9 @@ const Finance: React.FC = () => {
 
     const defaultFinancePath = useMemo(() => {
         const savedPath = window.localStorage.getItem(LAST_FINANCE_TAB_KEY);
-        const isSupportedSavedPath = savedPath && (savedPath.startsWith('/finance/') || savedPath.startsWith('/financial/'));
-        return isSupportedSavedPath ? savedPath : `${financeBasePath}/invoices`;
+        if (!savedPath) return `${financeBasePath}/invoices`;
+        const normalizedPath = normalizeFinancePath(savedPath);
+        return normalizedPath.startsWith('/financial/') ? normalizedPath : `${financeBasePath}/invoices`;
     }, [financeBasePath]);
 
     return (
@@ -67,11 +71,11 @@ const Finance: React.FC = () => {
             {/* Navigation Tabs */}
             <Card className="p-1.5 overflow-hidden border-none shadow-lg bg-card/50 backdrop-blur-md sticky top-4 z-10">
                 <nav className="flex items-center gap-1 overflow-x-auto whitespace-nowrap scrollbar-hide">
-                    <FinanceTab to="/finance/invoices" icon={<ReceiptText size={20}/>} label={AR_LABELS.invoices} />
-                    <FinanceTab to="/finance/financials" icon={<Wallet size={20}/>} label={AR_LABELS.paymentsAndExpenses} />
-                    <FinanceTab to="/finance/maintenance" icon={<Wrench size={20}/>} label="الصيانة" />
-                    <FinanceTab to="/finance/gl" icon={<Calculator size={20}/>} label="الأستاذ العام" />
-                    <FinanceTab to="/finance/accounting" icon={<BookOpen size={20}/>} label="دليل الحسابات" />
+                    <FinanceTab to={FINANCIAL_ROUTES.invoices} icon={<ReceiptText size={20}/>} label={AR_LABELS.invoices} />
+                    <FinanceTab to={FINANCIAL_ROUTES.receipts} icon={<Wallet size={20}/>} label={AR_LABELS.paymentsAndExpenses} />
+                    <FinanceTab to={FINANCIAL_ROUTES.maintenance} icon={<Wrench size={20}/>} label="الصيانة" />
+                    <FinanceTab to={FINANCIAL_ROUTES.gl} icon={<Calculator size={20}/>} label="الأستاذ العام" />
+                    <FinanceTab to={FINANCIAL_ROUTES.accounting} icon={<BookOpen size={20}/>} label="دليل الحسابات" />
                 </nav>
             </Card>
 

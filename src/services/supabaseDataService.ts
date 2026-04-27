@@ -3,42 +3,8 @@ import { Database, Settings, Governance, Serials } from '../types';
 import { logger } from './logger';
 import type { GovernanceRow, SerialsRow, SettingsRow, UsersRow } from '../types/database';
 
-// Cache disabled by default to guarantee strong consistency across screens.
-const queryCache = new Map<string, { data: unknown; timestamp: number }>();
-const CACHE_TTL = 0;
-
-function getCacheKey(jsTable: string, operation: string, params?: unknown): string {
-  return `${jsTable}:${operation}:${JSON.stringify(params || {})}`;
-}
-
-function getCachedResult<T>(key: string): T | null {
-  const cached = queryCache.get(key);
-  if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
-    return cached.data as T;
-  }
-  if (cached) {
-    queryCache.delete(key); // إزالة المنتهي الصلاحية
-  }
-  return null;
-}
-
-function setCachedResult(key: string, data: unknown): void {
-  queryCache.set(key, { data, timestamp: Date.now() });
-
-  // تنظيف الـ cache إذا أصبح كبيراً
-  if (queryCache.size > 100) {
-    const oldestKey = queryCache.keys().next().value;
-    queryCache.delete(oldestKey);
-  }
-}
-
 function clearTableCache(jsTable: string): void {
-  const prefix = `${jsTable}:`;
-  for (const key of queryCache.keys()) {
-    if (key.startsWith(prefix)) {
-      queryCache.delete(key);
-    }
-  }
+  void jsTable;
 }
 
 const TABLE_MAP: Record<string, string> = {
@@ -160,12 +126,6 @@ function applyContractsVisibility<T extends { is: (column: string, value: null) 
 
 export const supabaseData = {
   async fetchAll<T>(jsTable: string): Promise<T[]> {
-    const cacheKey = getCacheKey(jsTable, 'fetchAll');
-    const cached = getCachedResult<T[]>(cacheKey);
-    if (cached) {
-      return cached;
-    }
-
     const sqlTable = resolveTable(jsTable);
     try {
       const { data, error } = await applyContractsVisibility(supabase.from(sqlTable).select('*'), jsTable);
@@ -174,7 +134,6 @@ export const supabaseData = {
         return [];
       }
       const result = (data || []).map(row => toCamelObj(row, jsTable) as T);
-      setCachedResult(cacheKey, result);
       return result;
     } catch (err) {
       logger.error(`[SupabaseData] fetchAll ${sqlTable} exception:`, err);
