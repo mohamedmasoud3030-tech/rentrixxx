@@ -6,7 +6,7 @@ import { OperationsContext, type OperationsContextValue } from '../contexts/oper
 import { safeAsync, validateLoginPayload, validatePasswordStrength, validateRequiredString, sanitizeTextInput, assertNoRoleEscalation } from '../utils/validation';
 import { supabaseData } from '../services/supabaseDataService';
 import { IntegrationService } from '../services/integrationService';
-import { supabase } from '../services/supabase';
+import { supabase } from '@/services/api/supabaseClient';
 import type { ProfileRow } from '@/types/supabase';
 import { toast } from 'react-hot-toast';
 import { confirmDialog } from '../components/shared/confirmDialog';
