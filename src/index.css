@@ -2,11 +2,19 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+    --motion-ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
+    --motion-fast: 150ms;
+    --motion-base: 200ms;
+    --motion-page: 250ms;
+    --motion-slow: 300ms;
+}
+
 @layer components {
     /* === BUTTONS === */
     .btn {
         @apply min-h-[42px] px-4 sm:px-5 py-2.5 rounded-xl font-bold text-sm focus:outline-none focus:ring-2 focus:ring-offset-2 inline-flex items-center justify-center gap-2 leading-none;
-        transition: all 0.2s ease;
+        transition: all var(--motion-base) var(--motion-ease-standard);
     }
     .btn-primary {
         background: hsl(var(--color-primary));
@@ -17,6 +25,9 @@
     .btn-primary:hover {
         box-shadow: 0 4px 14px -2px hsl(var(--color-primary) / 0.45);
         transform: translateY(-1px);
+    }
+    .btn:active {
+        transform: scale(0.98);
     }
     .btn-secondary {
         @apply bg-card border border-border text-text hover:bg-border/40 focus:ring-primary;
@@ -70,7 +81,7 @@
     tbody tr:nth-child(even) { background: hsl(var(--color-border) / 0.15); }
     tbody tr:hover {
         background: hsl(var(--color-primary) / 0.06) !important;
-        transition: background 0.15s ease;
+        transition: background var(--motion-fast) var(--motion-ease-standard);
     }
 
     .action-cell { position: relative !important; overflow: visible !important; }
@@ -101,7 +112,7 @@
     .kpi-card {
         @apply bg-card rounded-xl p-5 border border-border;
         box-shadow: var(--shadow-card);
-        transition: all 0.25s ease;
+        transition: all var(--motion-page) var(--motion-ease-standard);
     }
     .kpi-card:hover {
         box-shadow: var(--shadow-card-hover);
@@ -112,7 +123,7 @@
     .card-luxury {
         @apply bg-card rounded-xl border border-border;
         box-shadow: var(--shadow-card);
-        transition: box-shadow 0.25s ease, transform 0.25s ease;
+        transition: box-shadow var(--motion-page) var(--motion-ease-standard), transform var(--motion-page) var(--motion-ease-standard);
     }
     .card-luxury:hover {
         box-shadow: var(--shadow-card-hover);
@@ -177,9 +188,9 @@ input:focus, select:focus, textarea:focus {
 ::-webkit-scrollbar-thumb:hover { background: hsl(var(--color-text-muted)); }
 
 /* === TRANSITIONS === */
-.page-enter { animation: fadeSlideIn 0.25s ease forwards; }
+.page-enter { animation: fadeSlideIn var(--motion-page) var(--motion-ease-standard) forwards; }
 @keyframes fadeSlideIn {
-    from { opacity: 0; transform: translateY(6px); }
+    from { opacity: 0; transform: translateY(8px); }
     to { opacity: 1; transform: translateY(0); }
 }
 
@@ -211,7 +222,7 @@ input:focus, select:focus, textarea:focus {
 .smooth-card {
     @apply bg-card border border-border rounded-xl;
     box-shadow: var(--shadow-card);
-    transition: box-shadow 0.3s ease, transform 0.3s ease;
+    transition: box-shadow var(--motion-slow) var(--motion-ease-standard), transform var(--motion-slow) var(--motion-ease-standard);
 }
 
 .smooth-card:hover {
@@ -469,4 +480,43 @@ input[type="number"] {
   direction: ltr;
   text-align: right;
   unicode-bidi: plaintext;
+}
+
+:root {
+    --ds-radius-sm: 8px;
+    --ds-radius-md: 12px;
+    --ds-radius-lg: 16px;
+    --ds-radius-xl: 24px;
+    --shadow-card: var(--ds-shadow-card, 0 1px 2px rgb(15 23 42 / 8%));
+    --shadow-card-hover: 0 10px 20px -12px rgb(15 23 42 / 22%), 0 4px 8px -6px rgb(15 23 42 / 12%);
+    --brand-font-family: 'Cairo', 'Noto Sans Arabic', sans-serif;
+}
+
+body {
+    font-family: var(--brand-font-family);
+}
+
+.ds-glass-mode .glass-card,
+.ui-pack-glass .glass-card {
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border-color: hsl(var(--color-border) / 0.55);
+}
+
+.ui-pack-enterprise .kpi-card {
+    border-radius: var(--ds-radius-lg);
+    box-shadow: var(--shadow-card-hover);
+}
+
+.ui-pack-minimal .kpi-card {
+    box-shadow: var(--shadow-card);
+}
+
+.modal-enter {
+    animation: modalFadeIn var(--motion-base) var(--motion-ease-standard) forwards;
+}
+
+@keyframes modalFadeIn {
+    from { opacity: 0; transform: scale(0.98) translateY(6px); }
+    to { opacity: 1; transform: scale(1) translateY(0); }
 }

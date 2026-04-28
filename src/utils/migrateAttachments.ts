@@ -1,4 +1,4 @@
-import { supabase } from '../services/supabase';
+import { supabase } from '@/services/api/supabaseClient';
 import { uploadAttachment } from '../services/attachmentService';
 
 const BATCH_SIZE = 10;
@@ -54,7 +54,6 @@ const processLegacyAttachments = async () => {
       if (updateError) {
         console.error(`[AttachmentMigration] Failed updating attachment row ${row.id}`, updateError);
       } else {
-        console.log(`[AttachmentMigration] Migrated attachment row ${row.id}`);
         successCount += 1;
       }
     } catch (migrateError) {
@@ -88,7 +87,6 @@ const processLegacyUtilityBills = async () => {
         .maybeSingle();
 
       if (existing.data?.id) {
-        console.log(`[AttachmentMigration] Utility bill ${row.id} already migrated.`);
         continue;
       }
 
@@ -116,7 +114,6 @@ const processLegacyUtilityBills = async () => {
       if (clearError) {
         console.error(`[AttachmentMigration] Utility bill ${row.id} uploaded but not cleared`, clearError);
       } else {
-        console.log(`[AttachmentMigration] Migrated utility bill ${row.id}`);
         successCount += 1;
       }
     } catch (migrateError) {

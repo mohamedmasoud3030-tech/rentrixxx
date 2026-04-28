@@ -1,38 +1,19 @@
-import { createClient, SupabaseClient } from '@supabase/supabase-js';
-import type { Database } from '@/types/supabase';
+/**
+ * @deprecated Use `@/services/api/supabaseClient` directly.
+ * Compatibility shim retained for staged migration.
+ * TODO(release+1): remove this shim after all imports are migrated and CI enforces canonical path.
+ */
 
-let supabaseInstance: SupabaseClient<Database> | null = null;
+const DEPRECATION_FLAG = '__rentrix_supabase_shim_warned__';
 
-export const getSupabaseClient = (): SupabaseClient<Database> => {
-  if (supabaseInstance) {
-    return supabaseInstance;
-  }
-
-  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL?.trim();
-  const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY?.trim();
-
-  if (!supabaseUrl || !supabaseAnonKey) {
-    throw new Error(
-      `Missing Supabase environment variables. ` +
-      `URL: ${supabaseUrl ? '✓' : '✗'}, Key: ${supabaseAnonKey ? '✓' : '✗'}`
-    );
-  }
-
-  supabaseInstance = createClient<Database>(supabaseUrl, supabaseAnonKey, {
-    auth: {
-      persistSession: true,
-      autoRefreshToken: true,
-      detectSessionInUrl: true,
-    },
-    db: { schema: 'public' },
+if (typeof globalThis !== 'undefined' && !(DEPRECATION_FLAG in globalThis)) {
+  Object.defineProperty(globalThis, DEPRECATION_FLAG, {
+    value: true,
+    configurable: false,
+    enumerable: false,
+    writable: false,
   });
+  console.warn('[DEPRECATION] Import from "@/services/api/supabaseClient" instead of "@/services/supabase".');
+}
 
-  return supabaseInstance;
-};
-
-export const supabase = new Proxy({} as SupabaseClient<Database>, {
-  get: (target, prop: string | symbol) => {
-    const client = getSupabaseClient();
-    return Reflect.get(client, prop);
-  },
-});
+export { supabase, getSupabaseClient } from './api/supabaseClient';

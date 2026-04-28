@@ -1,4 +1,4 @@
-import { supabase } from '@/services/supabase';
+import { supabase } from '@/services/api/supabaseClient';
 
 export interface PlatformUsageMetric {
   metric_code: string;
