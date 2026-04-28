@@ -23,6 +23,8 @@
   "dependencies": {
     "@google/genai": "^1.40.0",
     "@supabase/supabase-js": "^2.100.0",
+    "@tanstack/react-query": "^5.100.6",
+    "@tanstack/react-query-devtools": "^5.100.6",
     "date-fns": "^4.1.0",
     "jspdf": "^4.1.0",
     "jspdf-autotable": "^5.0.7",

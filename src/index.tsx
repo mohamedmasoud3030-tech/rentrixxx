@@ -1,8 +1,11 @@
 import React from 'react';
 import { createRoot } from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
+import { QueryClientProvider } from '@tanstack/react-query';
+import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import App from './App';
 import { AppProvider } from './contexts/AppContext';
+import { queryClient } from './config/queryClient';
 import { errorTracker } from './services/errorTracker';
 import { logger } from './services/logger';
 import './index.css';
@@ -25,10 +28,13 @@ window.addEventListener('unhandledrejection', (event) => {
 const root = createRoot(rootElement);
 root.render(
   <React.StrictMode>
-    <AppProvider>
-      <BrowserRouter>
-        <App />
-      </BrowserRouter>
-    </AppProvider>
+    <QueryClientProvider client={queryClient}>
+      <AppProvider>
+        <BrowserRouter>
+          <App />
+        </BrowserRouter>
+      </AppProvider>
+      <ReactQueryDevtools initialIsOpen={false} />
+    </QueryClientProvider>
   </React.StrictMode>
 );
