@@ -15,12 +15,7 @@ jobs:
           fetch-depth: 0
 
       - name: Validate commit messages
-        run: |
-          BASE_REF="origin/main"
-          if [ "${{ github.event_name }}" = "pull_request" ]; then
-            BASE_REF="origin/${{ github.base_ref }}"
-          fi
-          bash .github/scripts/validate-commit-messages.sh "$BASE_REF"
+        run: bash .github/scripts/validate-commit-messages.sh "origin/main"
 
   typecheck:
     runs-on: ubuntu-latest
@@ -30,9 +25,10 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
+          cache: npm
 
       - name: Install dependencies
-        run: npm install --legacy-peer-deps
+        run: npm ci --legacy-peer-deps
 
       - name: Type check
         run: npm run typecheck
