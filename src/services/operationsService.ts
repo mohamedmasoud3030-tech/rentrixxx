@@ -1,4 +1,4 @@
-import { supabase } from './supabase';
+import { supabase } from '@/services/api/supabaseClient';
 import { supabaseData } from './supabaseDataService';
 import type { Contract, MaintenanceRecord } from '../types';
 
