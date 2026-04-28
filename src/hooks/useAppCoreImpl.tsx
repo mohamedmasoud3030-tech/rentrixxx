@@ -6,7 +6,7 @@ import { OperationsContext, type OperationsContextValue } from '../contexts/oper
 import { safeAsync, validateLoginPayload, validatePasswordStrength, validateRequiredString, sanitizeTextInput, assertNoRoleEscalation } from '../utils/validation';
 import { supabaseData } from '../services/supabaseDataService';
 import { IntegrationService } from '../services/integrationService';
-import { supabase } from '../services/supabase';
+import { supabase } from '@/services/api/supabaseClient';
 import type { ProfileRow } from '@/types/supabase';
 import { toast } from 'react-hot-toast';
 import { confirmDialog } from '../components/shared/confirmDialog';
@@ -20,6 +20,11 @@ import { getEffectiveInvoiceStatus, getInvoiceRemaining } from '../utils/helpers
 import { runManualAutomation as runManualAutomationService } from '../services/automationService';
 import { softDeleteContract } from '../services/operationsService';
 import { mapContractPayload } from '../mappers/contractMapper';
+import { authFacade } from '@/domain/auth/auth.facade';
+import { financeFacade } from '@/domain/finance/finance.facade';
+import { operationsFacade } from '@/domain/operations/operations.facade';
+import { settingsFacade } from '@/domain/settings/settings.facade';
+import { bootstrapFacade } from '@/domain/bootstrap/bootstrap.facade';
 
 const DEFAULT_GEMINI_API_KEY = '';
 
@@ -222,6 +227,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const reconcileRef = useRef(false);
 
   const getFinancialSummary = useCallback(async () => {
+    const facadeSummary = await financeFacade.getFinancialSummary();
+    if (facadeSummary) return facadeSummary;
     const today = new Date();
     const firstOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
     const fmt = (d: Date) => d.toISOString().slice(0, 10);
@@ -364,7 +371,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         await supabase.from('profiles').update({ role: 'ADMIN' }).eq('id', currentUser.id);
         setCurrentUser({ ...currentUser, role: 'ADMIN' });
       }
-      await supabaseData.seedDefaults(
+      await bootstrapFacade.seedDefaults(
         DEFAULT_SETTINGS,
         DEFAULT_ACCOUNTS.map(acc => ({ ...acc, id: acc.no, createdAt: Date.now() })),
         DEFAULT_TEMPLATES as unknown as Record<string, unknown>[],
@@ -376,6 +383,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   }, [currentUser, refreshData]);
 
   const login = useCallback(async (email: string, password: string) => {
+    const facadeLogin = await authFacade.login(email, password);
+    if (facadeLogin) return facadeLogin;
     try {
       const credentials = validateLoginPayload(email, password);
       const { data, error } = await safeAsync(
@@ -412,6 +421,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   }, [audit]);
 
   const logout = useCallback(async () => {
+    const facadeLogout = await authFacade.logout();
+    if (facadeLogout) return facadeLogout;
     if (currentUser) await audit('LOGOUT', 'SESSION', currentUser.id);
     await supabase.auth.signOut();
     setCurrentUser(null);
@@ -420,6 +431,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   }, [currentUser, audit]);
 
   const changePassword: AppContextType['auth']['changePassword'] = useCallback(async (userId, newPass) => {
+    const facadeChangePassword = await authFacade.changePassword(userId, newPass);
+    if (facadeChangePassword) return facadeChangePassword;
     validatePasswordStrength(newPass);
     const { error } = await supabase.auth.updateUser({ password: newPass });
     if (error) return { ok: false, msg: error.message };
@@ -433,13 +446,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     validateRequiredString(user.username, 'اسم المستخدم');
     validatePasswordStrength(pass);
     const email = (user as User).email || `${user.username}@rentrix.local`;
-    const result = await adminCreateUser({ email, password: pass, username: user.username, role: user.role });
+    const result = await authFacade.adminCreateUser({ email, password: pass, username: user.username, role: user.role });
     await audit('CREATE', 'users', result.id, `Created user ${user.username}`);
     await refreshData();
     return { ok: true, msg: 'تم إنشاء المستخدم. سيتلقى المستخدم رسالة تأكيد بالبريد الإلكتروني.' };
   }, [audit, refreshData, currentUser]);
 
   const updateUser: AppContextType['auth']['updateUser'] = useCallback(async (id, updates) => {
+    const facadeUpdateUser = await authFacade.updateUser(id, updates);
+    if (facadeUpdateUser) return facadeUpdateUser;
     const actorRole = currentUser?.role || 'USER';
     if (updates.username) {
       const username = sanitizeTextInput(validateRequiredString(updates.username, 'اسم المستخدم'));
@@ -470,6 +485,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   }, [audit, currentUser]);
 
   const disableUser = useCallback(async (userId: string) => {
+    const facadeDisable = await authFacade.disableUser(userId);
+    if (facadeDisable) return facadeDisable;
     if (currentUser?.id === userId) { toast.error('لا يمكنك تعطيل حسابك الخاص.'); return; }
 
     const confirmed = await confirmDialog({
@@ -487,6 +504,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   }, [currentUser, audit, refreshData]);
 
   const enableUser = useCallback(async (userId: string) => {
+    const facadeEnable = await authFacade.enableUser(userId);
+    if (facadeEnable) return facadeEnable;
     await supabase.from('profiles').update({ is_disabled: false }).eq('id', userId);
     await audit('ENABLE_USER', 'users', userId);
     await refreshData();
@@ -494,6 +513,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   }, [audit, refreshData]);
 
   const postJournalEntrySupabase = useCallback(async (params: { dr: string; cr: string; amount: number; ref: string; date?: string; entityType?: 'CONTRACT' | 'TENANT'; entityId?: string }) => {
+    const facadeJournal = await financeFacade.postJournalEntry(params);
+    if (facadeJournal) return facadeJournal;
     // Validate entityType if provided
     if (params.entityType && !['CONTRACT', 'TENANT'].includes(params.entityType)) {
       throw new Error(`Invalid entityType: ${params.entityType}. Must be 'CONTRACT' or 'TENANT'`);
@@ -510,6 +531,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   }, []);
 
   const postInvoiceJournalEntries = useCallback(async (invoice: Invoice) => {
+    const facadePostInvoice = await financeFacade.postInvoice(invoice);
+    if (facadePostInvoice) return facadePostInvoice;
     if (!settings) return;
     const mappings = settings.accounting.accountMappings;
     const arAccount = mappings.accountsReceivable;
@@ -565,7 +588,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
       if (table === 'contracts') {
         assertNoRawContractCamelPayload(entry as Record<string, unknown>);
-        const draft = mapContractPayload(entry as Record<string, unknown>);
+        const draft = operationsFacade.validateContract(entry as Omit<Contract, 'id' | 'createdAt' | 'no'>);
         const startMs = toUtcDayMs(draft.start_date);
         const endMs = toUtcDayMs(draft.end_date);
         if (startMs === null || endMs === null || startMs > endMs) {
@@ -635,9 +658,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       }
       if (table === 'contracts') {
         const newNo = await supabaseData.incrementSerial('contract');
-        const mapped = mapContractPayload(entry as any);
+        const mapped = operationsFacade.validateContract(entry as Omit<Contract, 'id' | 'createdAt' | 'no'>);
         mutableEntry['no'] = String(newNo);
-        Object.assign(mutableEntry, mapContractPayload(mutableEntry));
+        Object.assign(mutableEntry, operationsFacade.validateContract(mutableEntry as Omit<Contract, 'id' | 'createdAt' | 'no'>));
       }
 
       const result = await supabaseData.insert(table as string, mutableEntry);
@@ -854,7 +877,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           }
       }
 
-      const breakdown = await postReceiptAtomic({
+      const breakdown = await financeFacade.postReceipt({
         receipt: {
           id: newReceipt.id, no: newReceipt.no, contract_id: newReceipt.contractId, date_time: newReceipt.dateTime,
           channel: newReceipt.channel, amount: round3(newReceipt.amount), ref: newReceipt.ref, notes: newReceipt.notes,
@@ -929,7 +952,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
       if (table === 'contracts') {
         assertNoRawContractCamelPayload(updates as Record<string, unknown>);
-        const mappedUpdates = mapContractPayload(updates as Record<string, unknown>);
+        const mappedUpdates = operationsFacade.validateContract(updates as Omit<Contract, 'id' | 'createdAt' | 'no'>);
         const current = db?.contracts?.find(c => c.id === id);
         const nextTenantId = mappedUpdates.tenant_id ?? current?.tenantId;
         const nextUnitId = mappedUpdates.unit_id ?? current?.unitId;
@@ -994,7 +1017,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         ? { ...updates }
         : { ...updates, updatedAt: Date.now() };
       const payload = table === 'contracts'
-        ? { ...normalizedUpdates, ...mapContractPayload(normalizedUpdates as Record<string, unknown>) }
+        ? { ...normalizedUpdates, ...operationsFacade.validateContract(normalizedUpdates as Omit<Contract, 'id' | 'createdAt' | 'no'>) }
         : normalizedUpdates;
       const result = await supabaseData.update(table as string, id, payload);
       if (!result.ok) { toast.error(`فشل التحديث: ${result.error}`); return; }
@@ -1094,7 +1117,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         type: e.type === 'DEBIT' ? 'CREDIT' : 'DEBIT',
         createdAt: Date.now(),
       }));
-      const atomic = await voidReceiptAtomic({
+      const atomic = await financeFacade.voidReceipt({
         receiptId: id,
         voidedAt: Date.now(),
         invoiceUpdates,
@@ -1591,11 +1614,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const operationsValue: OperationsContextValue = {
     settings: activeSettings,
     updateSettings: async (s) => {
-      const ok = await supabaseData.updateSettingsPartial(s);
+      const ok = await settingsFacade.updateSettings(s);
       if (!ok) {
         throw new Error('فشل تحديث الإعدادات في قاعدة البيانات');
       }
-      const newSettings = await supabaseData.getSettings();
+      const newSettings = await settingsFacade.getSettings();
       if (newSettings) setSettings(newSettings);
       await audit('UPDATE', 'settings', 'main', `Updated settings: ${Object.keys(s).join(', ')}`);
     },

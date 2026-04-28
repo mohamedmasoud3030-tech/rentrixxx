@@ -28,12 +28,3 @@ export const FINANCIAL_ROUTES = {
   gl: '/financial/gl',
   accounting: '/financial/accounting',
 } as const;
-
-export const LEGACY_FINANCIAL_ALIASES: Record<string, string> = {
-  '/finance': FINANCIAL_ROUTES.invoices,
-  '/finance/invoices': FINANCIAL_ROUTES.invoices,
-  '/finance/financials': FINANCIAL_ROUTES.receipts,
-  '/finance/maintenance': FINANCIAL_ROUTES.maintenance,
-  '/finance/gl': FINANCIAL_ROUTES.gl,
-  '/finance/accounting': FINANCIAL_ROUTES.accounting,
-};

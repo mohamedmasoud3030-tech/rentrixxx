@@ -1,6 +1,8 @@
 import React, { memo, useState, useCallback, useEffect, useMemo, useRef } from 'react';
-import { runReportRpcRaw } from '@/services/reportsService';
+import { reportEngine } from '@/services/reports/ReportEngine';
 import { useApp } from '@/contexts/AppContext';
+import { EmptyState, ErrorState, LoadingState } from '@/components/ui/PageStates';
+import { AppShellLayout } from '@/app/layouts/AppShellLayout';
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
   CartesianGrid, Cell, LineChart, Line, PieChart, Pie, Legend
@@ -60,13 +62,6 @@ const useLoadOnce = (loader: () => Promise<void>) => {
   }, [loader]);
 };
 
-// ─── Loading spinner ──────────────────────────────────────────
-const Spinner = memo(() => (
-  <div className="flex items-center justify-center py-16">
-    <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin"/>
-  </div>
-));
-
 // ─── KPI Card ─────────────────────────────────────────────────
 const KPI: React.FC<{ label: string; value: string; sub?: string; color?: string }> = memo(({ label, value, sub, color = 'text-primary' }) => (
   <div className="bg-card border border-border rounded-2xl p-4 flex flex-col gap-1">
@@ -82,7 +77,7 @@ const SH: React.FC<{ title: string; onPrint?: () => void }> = memo(({ title, onP
     <h3 className="font-black text-base text-text">{title}</h3>
     {onPrint && (
       <button onClick={onPrint}
-        className="text-xs text-primary border border-primary/30 px-3 py-1.5 rounded-xl hover:bg-primary/5 transition font-bold">
+        className="text-xs text-primary border border-primary/30 px-3 py-1.5 rounded-xl hover:bg-primary/5 transition active:scale-[0.98] font-bold">
         طباعة / PDF
       </button>
     )}
@@ -140,13 +135,13 @@ const DatePicker: React.FC<{ range: DateRange; onChange: (r: DateRange) => void;
     <div className="flex gap-1">
       {MONTH_PRESETS.map(p => (
         <button key={p.label} onClick={() => { onChange({ from: p.from(), to: p.to() }); }}
-          className="text-xs px-3 py-1.5 rounded-xl border border-border hover:border-primary hover:text-primary transition font-bold">
+          className="text-xs px-3 py-1.5 rounded-xl border border-border hover:border-primary hover:text-primary transition active:scale-[0.98] font-bold">
           {p.label}
         </button>
       ))}
     </div>
     <button onClick={onGo} disabled={loading}
-      className="px-5 py-2 bg-primary text-white rounded-xl text-sm font-black hover:bg-primary/90 transition disabled:opacity-60 mr-auto">
+      className="px-5 py-2 bg-primary text-white rounded-xl text-sm font-black hover:bg-primary/90 transition active:scale-[0.98] disabled:opacity-60 mr-auto">
       {loading ? '...' : 'عرض'}
     </button>
   </div>
@@ -164,7 +159,7 @@ const SummaryView: React.FC<{ currency: string }> = ({ currency }) => {
 
   const load = useCallback(async () => {
     setState('loading');
-    const { data: d, error } = await runReportRpcRaw('rpt_financial_summary', { p_from: range.from, p_to: range.to });
+    const { data: d, error } = await reportEngine.generate({ reportId: 'summary', rpcName: 'rpt_financial_summary', params: { p_from: range.from, p_to: range.to } });
     if (error) { setState('error'); return; }
     setData(d); setState('done');
   }, [range]);
@@ -179,7 +174,7 @@ const SummaryView: React.FC<{ currency: string }> = ({ currency }) => {
   return (
     <div className="space-y-5">
       <DatePicker range={range} onChange={setRange} onGo={load} loading={state === 'loading'}/>
-      {state === 'loading' && <Spinner/>}
+      {state === 'loading' && <LoadingState title="جاري تحميل الملخص المالي..." message="يتم تجهيز المؤشرات الآن."/>}
       {state === 'done' && data && (
         <>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
@@ -208,7 +203,8 @@ const SummaryView: React.FC<{ currency: string }> = ({ currency }) => {
           )}
         </>
       )}
-      {state === 'error' && <p className="text-red-500 text-sm text-center py-8">حدث خطأ في تحميل البيانات</p>}
+      {state === 'done' && !data && <EmptyState message="لا توجد بيانات ضمن الفترة المختارة."/>}
+      {state === 'error' && <ErrorState message="حدث خطأ في تحميل البيانات." onRetry={load}/>}
     </div>
   );
 };
@@ -221,7 +217,7 @@ const IncomeView: React.FC<{ currency: string }> = ({ currency }) => {
 
   const load = useCallback(async () => {
     setState('loading');
-    const { data: d, error } = await runReportRpcRaw('rpt_income_statement', { p_from: range.from, p_to: range.to });
+    const { data: d, error } = await reportEngine.generate({ reportId: 'income_statement', rpcName: 'rpt_income_statement', params: { p_from: range.from, p_to: range.to } });
     if (error) { setState('error'); return; }
     setData(d); setState('done');
   }, [range]);
@@ -237,7 +233,7 @@ const IncomeView: React.FC<{ currency: string }> = ({ currency }) => {
   return (
     <div className="space-y-5">
       <DatePicker range={range} onChange={setRange} onGo={load} loading={state === 'loading'}/>
-      {state === 'loading' && <Spinner/>}
+      {state === 'loading' && <LoadingState title="جاري تحميل قائمة الدخل..." message="يتم تجهيز بيانات الإيرادات والمصروفات."/>}
       {state === 'done' && data && (
         <>
           <div className="grid grid-cols-3 gap-3">
@@ -278,6 +274,8 @@ const IncomeView: React.FC<{ currency: string }> = ({ currency }) => {
           </div>
         </>
       )}
+      {state === 'done' && !data && <EmptyState message="لا توجد بيانات لقائمة الدخل لهذه الفترة."/>}
+      {state === 'error' && <ErrorState message="تعذر تحميل قائمة الدخل." onRetry={load}/>}
     </div>
   );
 };
@@ -290,7 +288,7 @@ const TrialBalanceView: React.FC<{ currency: string }> = ({ currency }) => {
 
   const load = useCallback(async () => {
     setState('loading');
-    const { data: d, error } = await runReportRpcRaw('rpt_trial_balance', { p_as_of: asOf });
+    const { data: d, error } = await reportEngine.generate({ reportId: 'trial_balance', rpcName: 'rpt_trial_balance', params: { p_as_of: asOf } });
     if (error) { setState('error'); return; }
     setData(d); setState('done');
   }, [asOf]);
@@ -313,7 +311,7 @@ const TrialBalanceView: React.FC<{ currency: string }> = ({ currency }) => {
           </span>
         )}
       </div>
-      {state === 'loading' && <Spinner/>}
+      {state === 'loading' && <LoadingState title="جاري تحميل ميزان المراجعة..." message="يتم تدقيق الأرصدة قبل العرض."/>}
       {state === 'done' && data && (
         <Tbl
           heads={['رقم', 'اسم الحساب', 'النوع', 'مدين', 'دائن', 'الرصيد']}
@@ -333,6 +331,110 @@ const TrialBalanceView: React.FC<{ currency: string }> = ({ currency }) => {
           ]}
         />
       )}
+      {state === 'done' && !data && <EmptyState message="لا توجد قيود متاحة لميزان المراجعة في هذا التاريخ."/>}
+      {state === 'error' && <ErrorState message="تعذر تحميل ميزان المراجعة." onRetry={load}/>}
+    </div>
+  );
+};
+
+// 4b. الميزانية العمومية
+const BalanceSheetView: React.FC<{ currency: string }> = ({ currency }) => {
+  const [asOf, setAsOf] = useState(today());
+  const [data, setData] = useState<any>(null);
+  const [state, setState] = useState<LoadState>('idle');
+  const reportRef = useRef<HTMLDivElement | null>(null);
+
+  const load = useCallback(async () => {
+    setState('loading');
+    const { data: d, error } = await reportEngine.generate({ reportId: 'balance_sheet', rpcName: 'rpt_balance_sheet', params: { p_as_of: asOf } });
+    if (error) { setState('error'); return; }
+    setData(d); setState('done');
+  }, [asOf]);
+
+  useLoadOnce(load);
+
+  const printPdf = useCallback(() => {
+    if (!reportRef.current) return;
+    const printWindow = window.open('', '', 'height=900,width=1200');
+    if (!printWindow) return;
+    const css = Array.from(document.querySelectorAll('style, link[rel="stylesheet"]'))
+      .map((node) => node.outerHTML)
+      .join('\n');
+    printWindow.document.write(`<!doctype html><html dir="rtl"><head><meta charset="utf-8"><title>الميزانية العمومية</title>${css}</head><body>`);
+    printWindow.document.write(`<div style="padding:16mm">${reportRef.current.outerHTML}</div>`);
+    printWindow.document.write('</body></html>');
+    printWindow.document.close();
+    printWindow.focus();
+    setTimeout(() => {
+      printWindow.print();
+      printWindow.close();
+    }, 300);
+  }, []);
+
+  const toRows = (lines: any[]) => (lines || []).map((r: any) => [
+    <span className="font-mono text-xs">{r.no}</span>,
+    r.name,
+    <span dir="ltr" className="font-mono">{fmt(Number(r.balance || 0), currency)}</span>,
+  ]);
+
+  return (
+    <div className="space-y-5">
+      <div className="flex items-center gap-3 p-4 bg-card border border-border rounded-2xl">
+        <label className="text-xs text-text-muted font-bold">حتى تاريخ</label>
+        <input type="date" value={asOf} onChange={e => setAsOf(e.target.value)}
+          className="text-sm border border-border rounded-xl px-3 py-1.5 bg-background outline-none focus:ring-2 focus:ring-primary/20"/>
+        <button onClick={load} disabled={state === 'loading'}
+          className="px-5 py-2 bg-primary text-white rounded-xl text-sm font-black hover:bg-primary/90 transition disabled:opacity-60">
+          {state === 'loading' ? '...' : 'عرض'}
+        </button>
+        {data && (
+          <span className={`mr-auto text-xs font-bold px-3 py-1.5 rounded-full ${data.is_balanced ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'}`}>
+            {data.is_balanced
+              ? '✓ الأصول = الالتزامات + حقوق الملكية'
+              : `⚠ فارق: ${fmt(Math.abs(Number(data.total_assets || 0) - Number(data.total_liabilities || 0) - Number(data.total_equity || 0)), currency)}`}
+          </span>
+        )}
+      </div>
+
+      {state === 'loading' && <LoadingState title="جاري تحميل الميزانية العمومية..." message="يتم إعداد الأصول والالتزامات وحقوق الملكية."/>}
+      {state === 'done' && data && (
+        <div ref={reportRef} className="space-y-5">
+          <SH title="الميزانية العمومية" onPrint={printPdf}/>
+          <div className="grid grid-cols-3 gap-3">
+            <KPI label="إجمالي الأصول" value={fmt(Number(data.total_assets || 0), currency)} color="text-primary"/>
+            <KPI label="إجمالي الالتزامات" value={fmt(Number(data.total_liabilities || 0), currency)} color="text-red-500"/>
+            <KPI label="إجمالي حقوق الملكية" value={fmt(Number(data.total_equity || 0), currency)} color="text-emerald-600"/>
+          </div>
+          <div className="grid md:grid-cols-3 gap-4">
+            <div>
+              <SH title="الأصول"/>
+              <Tbl
+                heads={['رقم', 'الحساب', 'الرصيد']}
+                rows={toRows(data.assets || [])}
+                footer={['', 'الإجمالي', <span dir="ltr" className="font-mono font-black">{fmt(Number(data.total_assets || 0), currency)}</span>]}
+              />
+            </div>
+            <div>
+              <SH title="الالتزامات"/>
+              <Tbl
+                heads={['رقم', 'الحساب', 'الرصيد']}
+                rows={toRows(data.liabilities || [])}
+                footer={['', 'الإجمالي', <span dir="ltr" className="font-mono font-black">{fmt(Number(data.total_liabilities || 0), currency)}</span>]}
+              />
+            </div>
+            <div>
+              <SH title="حقوق الملكية"/>
+              <Tbl
+                heads={['رقم', 'الحساب', 'الرصيد']}
+                rows={toRows(data.equity || [])}
+                footer={['', 'الإجمالي', <span dir="ltr" className="font-mono font-black">{fmt(Number(data.total_equity || 0), currency)}</span>]}
+              />
+            </div>
+          </div>
+        </div>
+      )}
+      {state === 'done' && !data && <EmptyState message="لا توجد بيانات للميزانية العمومية في التاريخ المحدد."/>}
+      {state === 'error' && <ErrorState message="تعذر تحميل الميزانية العمومية." onRetry={load}/>}
     </div>
   );
 };
@@ -345,7 +447,7 @@ const AgedReceivablesView: React.FC<{ currency: string }> = ({ currency }) => {
 
   const load = useCallback(async () => {
     setState('loading');
-    const { data: d, error } = await runReportRpcRaw('rpt_aged_receivables', { p_as_of: asOf });
+    const { data: d, error } = await reportEngine.generate({ reportId: 'aged_receivables', rpcName: 'rpt_aged_receivables', params: { p_as_of: asOf } });
     if (error) { setState('error'); return; }
     setData(d); setState('done');
   }, [asOf]);
@@ -371,7 +473,7 @@ const AgedReceivablesView: React.FC<{ currency: string }> = ({ currency }) => {
           {state === 'loading' ? '...' : 'عرض'}
         </button>
       </div>
-      {state === 'loading' && <Spinner/>}
+      {state === 'loading' && <LoadingState title="جاري تحميل أعمار الديون..." message="يتم تصنيف المديونيات حسب الفترات."/>}
       {state === 'done' && data && (
         <>
           <div className="grid grid-cols-5 gap-2">
@@ -412,6 +514,8 @@ const AgedReceivablesView: React.FC<{ currency: string }> = ({ currency }) => {
           />
         </>
       )}
+      {state === 'done' && !data && <EmptyState message="لا توجد بيانات أعمار ديون في التاريخ المحدد."/>}
+      {state === 'error' && <ErrorState message="تعذر تحميل تقرير أعمار الديون." onRetry={load}/>}
     </div>
   );
 };
@@ -424,7 +528,7 @@ const OverdueView: React.FC<{ currency: string }> = ({ currency }) => {
 
   const load = useCallback(async () => {
     setState('loading');
-    const { data: d, error } = await runReportRpcRaw('rpt_overdue_invoices', { p_as_of: today() });
+    const { data: d, error } = await reportEngine.generate({ reportId: 'overdue', rpcName: 'rpt_overdue_invoices', params: { p_as_of: today() } });
     if (error) { setState('error'); return; }
     setData(d as OverdueReportData); setState('done');
   }, []);
@@ -445,7 +549,7 @@ const OverdueView: React.FC<{ currency: string }> = ({ currency }) => {
 
   return (
     <div className="space-y-4">
-      {state === 'loading' && <Spinner/>}
+      {state === 'loading' && <LoadingState title="جاري تحميل تقرير المتأخرات..." message="يتم جمع الفواتير المتأخرة الآن."/>}
       {state === 'done' && data && (
         <>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
@@ -469,8 +573,11 @@ const OverdueView: React.FC<{ currency: string }> = ({ currency }) => {
               <span dir="ltr" className="font-mono font-bold text-red-600">{fmt(r.remaining, currency)}</span>,
             ])}
           />
+          {rows.length === 0 && <EmptyState message="لا توجد نتائج مطابقة للبحث الحالي."/>}
         </>
       )}
+      {state === 'done' && !data && <EmptyState message="لا توجد فواتير متأخرة حالياً."/>}
+      {state === 'error' && <ErrorState message="تعذر تحميل تقرير المتأخرات." onRetry={load}/>}
     </div>
   );
 };
@@ -484,7 +591,7 @@ const TenantStatementView: React.FC<{ currency: string; contracts: any[] }> = ({
   const load = useCallback(async () => {
     if (!contractId) return;
     setState('loading');
-    const { data: d, error } = await runReportRpcRaw('rpt_tenant_statement', { p_contract_id: contractId });
+    const { data: d, error } = await reportEngine.generate({ reportId: 'tenant_statement', rpcName: 'rpt_tenant_statement', params: { p_contract_id: contractId } });
     if (error) { setState('error'); return; }
     setData(d); setState('done');
   }, [contractId]);
@@ -505,7 +612,9 @@ const TenantStatementView: React.FC<{ currency: string; contracts: any[] }> = ({
           {state === 'loading' ? '...' : 'عرض'}
         </button>
       </div>
-      {state === 'loading' && <Spinner/>}
+      {state === 'loading' && <LoadingState title="جاري تحميل كشف المستأجر..." message="يتم تجهيز حركة الحساب."/>}
+      {state === 'idle' && <EmptyState message="اختر عقدًا ثم اضغط عرض لعرض كشف حساب المستأجر."/>}
+      {state === 'done' && data?.error && <ErrorState message={String(data.error)} onRetry={load}/>}
       {state === 'done' && data && !data.error && (
         <>
           <div className="grid grid-cols-3 gap-3">
@@ -526,6 +635,8 @@ const TenantStatementView: React.FC<{ currency: string; contracts: any[] }> = ({
           />
         </>
       )}
+      {state === 'done' && !data && <EmptyState message="لا توجد بيانات متاحة لهذا العقد."/>}
+      {state === 'error' && <ErrorState message="تعذر تحميل كشف حساب المستأجر." onRetry={load}/>}
     </div>
   );
 };
@@ -540,7 +651,7 @@ const OwnerStatementView: React.FC<{ currency: string; owners: any[] }> = ({ cur
   const load = useCallback(async () => {
     if (!ownerId) return;
     setState('loading');
-    const { data: d, error } = await runReportRpcRaw('rpt_owner_statement', { p_owner_id: ownerId, p_from: range.from, p_to: range.to });
+    const { data: d, error } = await reportEngine.generate({ reportId: 'owner_statement', rpcName: 'rpt_owner_statement', params: { p_owner_id: ownerId, p_from: range.from, p_to: range.to } });
     if (error) { setState('error'); return; }
     setData(d); setState('done');
   }, [ownerId, range]);
@@ -562,7 +673,9 @@ const OwnerStatementView: React.FC<{ currency: string; owners: any[] }> = ({ cur
           {state === 'loading' ? '...' : 'عرض'}
         </button>
       </div>
-      {state === 'loading' && <Spinner/>}
+      {state === 'loading' && <LoadingState title="جاري تحميل كشف المالك..." message="يتم تجهيز الحركات المالية للمالك."/>}
+      {state === 'idle' && <EmptyState message="اختر مالكًا وحدد الفترة ثم اضغط عرض."/>}
+      {state === 'done' && data?.error && <ErrorState message={String(data.error)} onRetry={load}/>}
       {state === 'done' && data && !data.error && (
         <>
           <div className="grid grid-cols-3 gap-3">
@@ -587,6 +700,8 @@ const OwnerStatementView: React.FC<{ currency: string; owners: any[] }> = ({ cur
           />
         </>
       )}
+      {state === 'done' && !data && <EmptyState message="لا توجد حركات ضمن الفترة المختارة."/>}
+      {state === 'error' && <ErrorState message="تعذر تحميل كشف حساب المالك." onRetry={load}/>}
     </div>
   );
 };
@@ -599,7 +714,7 @@ const DailyCollectionView: React.FC<{ currency: string }> = ({ currency }) => {
 
   const load = useCallback(async () => {
     setState('loading');
-    const { data: d, error } = await runReportRpcRaw('rpt_daily_collection', { p_from: range.from, p_to: range.to });
+    const { data: d, error } = await reportEngine.generate({ reportId: 'daily_collection', rpcName: 'rpt_daily_collection', params: { p_from: range.from, p_to: range.to } });
     if (error) { setState('error'); return; }
     setData(d); setState('done');
   }, [range]);
@@ -609,7 +724,7 @@ const DailyCollectionView: React.FC<{ currency: string }> = ({ currency }) => {
   return (
     <div className="space-y-5">
       <DatePicker range={range} onChange={setRange} onGo={load} loading={state === 'loading'}/>
-      {state === 'loading' && <Spinner/>}
+      {state === 'loading' && <LoadingState title="جاري تحميل التحصيل اليومي..." message="يتم تحليل التدفقات اليومية."/>}
       {state === 'done' && data && (
         <>
           <KPI label="إجمالي التحصيل" value={fmt(data.total, currency)} color="text-emerald-600"/>
@@ -638,6 +753,8 @@ const DailyCollectionView: React.FC<{ currency: string }> = ({ currency }) => {
           />
         </>
       )}
+      {state === 'done' && !data && <EmptyState message="لا توجد بيانات تحصيل للفترة المختارة."/>}
+      {state === 'error' && <ErrorState message="تعذر تحميل تقرير التحصيل اليومي." onRetry={load}/>}
     </div>
   );
 };
@@ -649,7 +766,7 @@ const RentRollView: React.FC<{ currency: string }> = ({ currency }) => {
 
   const load = useCallback(async () => {
     setState('loading');
-    const { data: d, error } = await runReportRpcRaw('rpt_rent_roll', { p_as_of: today() });
+    const { data: d, error } = await reportEngine.generate({ reportId: 'rent_roll', rpcName: 'rpt_rent_roll', params: { p_as_of: today() } });
     if (error) { setState('error'); return; }
     setData(d); setState('done');
   }, []);
@@ -661,7 +778,7 @@ const RentRollView: React.FC<{ currency: string }> = ({ currency }) => {
 
   return (
     <div className="space-y-4">
-      {state === 'loading' && <Spinner/>}
+      {state === 'loading' && <LoadingState title="جاري تحميل قائمة الإيجارات..." message="يتم تجهيز تفاصيل الوحدات والعقود."/>}
       {state === 'done' && (
         <>
           <div className="grid grid-cols-3 gap-3">
@@ -687,6 +804,8 @@ const RentRollView: React.FC<{ currency: string }> = ({ currency }) => {
           />
         </>
       )}
+      {state === 'done' && rows.length === 0 && <EmptyState message="لا توجد بيانات لقائمة الإيجارات حالياً."/>}
+      {state === 'error' && <ErrorState message="تعذر تحميل قائمة الإيجارات." onRetry={load}/>}
     </div>
   );
 };
@@ -727,7 +846,7 @@ const ReportsDashboard: React.FC = () => {
       case 'owner_statement':  return <OwnerStatementView currency={currency} owners={owners}/>;
       case 'daily_collection': return <DailyCollectionView currency={currency}/>;
       case 'rent_roll':        return <RentRollView currency={currency}/>;
-      case 'balance_sheet':    return <TrialBalanceView currency={currency}/>; // placeholder
+      case 'balance_sheet':    return <BalanceSheetView currency={currency}/>;
       default:                 return null;
     }
   };
@@ -735,6 +854,7 @@ const ReportsDashboard: React.FC = () => {
   const currentLabel = REPORTS.find(r => r.id === active)?.label || '';
 
   return (
+    <AppShellLayout>
     <div className="flex gap-5 items-start min-h-screen">
       {/* Sidebar */}
       <aside className="w-52 flex-shrink-0 bg-card border border-border rounded-2xl p-3 sticky top-4">
@@ -743,7 +863,7 @@ const ReportsDashboard: React.FC = () => {
             <p className="text-[10px] font-black text-text-muted uppercase tracking-widest px-2 mb-1">{group}</p>
             {REPORTS.filter(r => r.group === group).map(r => (
               <button key={r.id} onClick={() => setActive(r.id)}
-                className={`w-full text-right text-sm px-3 py-2 rounded-xl font-bold transition-all ${
+                className={`w-full text-right text-sm px-3 py-2 rounded-xl font-bold transition-all active:scale-[0.98] ${
                   active === r.id
                     ? 'bg-primary text-white shadow-sm'
                     : 'text-text-muted hover:text-text hover:bg-background'
@@ -767,6 +887,7 @@ const ReportsDashboard: React.FC = () => {
         </div>
       </main>
     </div>
+    </AppShellLayout>
   );
 };
 
