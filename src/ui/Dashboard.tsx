@@ -218,7 +218,7 @@ const DashboardRevenueChart: React.FC<{ receipts: ReceiptType[]; expenses: Expen
                         <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
                         <XAxis dataKey="name" fontSize={12} />
                         <YAxis fontSize={11} tickFormatter={v => (v > 0 ? `${(v / 1000).toFixed(0)}k` : '0')} />
-                        <Tooltip formatter={(value: any) => formatCurrency(value as number, currency as 'OMR' | 'SAR' | 'EGP')} />
+                        <Tooltip formatter={(value) => formatCurrency(Number(value ?? 0), currency as 'OMR' | 'SAR' | 'EGP')} />
                         <Area type="monotone" dataKey="revenue" stroke="#10b981" fill="#10b98133" strokeWidth={2} />
                         <Area type="monotone" dataKey="expenses" stroke="#ef4444" fill="#ef444433" strokeWidth={2} />
                     </AreaChart>
