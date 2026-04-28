@@ -10,7 +10,8 @@
     "typecheck": "tsc --noEmit",
     "lint": "tsc --noEmit && echo 'Type checking passed'",
     "type-check": "tsc -p tsconfig.typecheck.json --noEmit",
-    "check:freeze": "node scripts/check-core-freeze.mjs"
+    "check:freeze": "node scripts/check-core-freeze.mjs",
+    "skills:import:anthropic": "node scripts/import-anthropic-skills.mjs"
   },
   "author": "Mohamed Masoud",
   "license": "UNLICENSED",

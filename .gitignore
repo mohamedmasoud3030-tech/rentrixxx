@@ -32,3 +32,6 @@ dist-ssr
 *.sw?
 
 /generated/prisma
+
+# Local imported external skills (development-only)
+skills/external/anthropics/
