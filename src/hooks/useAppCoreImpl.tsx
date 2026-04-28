@@ -239,7 +239,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       disableUser: auth.disableUser,
       enableUser: auth.enableUser,
     },
-    dataService: { add, update, remove, refreshData },
+    dataService: { add, update, remove },
     financeService: {
       addReceiptWithAllocations: async () => ({ success: false }),
       addManualJournalVoucher: async () => {},
@@ -270,7 +270,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     generateOwnerPortalLink: async () => '',
     createSnapshot: async () => {},
     sendWhatsApp: () => {},
-    runManualAutomation: async () => ({ success: true, errors: [], warnings: [], runId: '' }),
+    runManualAutomation: async () => ({ success: true, errors: [], snapshotsRebuilt: 0, lateFeesApplied: 0, notificationsSent: 0, ts: new Date().toISOString() }),
     getFinancialSummary: async () => null,
   };
 

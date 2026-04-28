@@ -76,7 +76,7 @@ describe('FinanceService Utility Functions', () => {
 
   describe('computeLateFeeAmount', () => {
     const lateFeeFixed = { isEnabled: true, type: 'FIXED_AMOUNT' as const, value: 50, graceDays: 5 };
-    const lateFeePercent = { isEnabled: true, type: 'PERCENTAGE' as const, value: 10, graceDays: 5 };
+    const lateFeePercent = { isEnabled: true, type: 'PERCENTAGE_OF_RENT' as const, value: 10, graceDays: 5 };
     const lateFeeDisabled = { isEnabled: false, type: 'FIXED_AMOUNT' as const, value: 50, graceDays: 5 };
 
     it('should calculate fixed late fee', () => {

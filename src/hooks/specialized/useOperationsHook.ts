@@ -70,10 +70,10 @@ export const useOperationsHook = (
       const result = await renewContractAtomic(oldContractId, newContract as Contract);
       if (!result.success) throw new Error(result.error || 'فشل تجديد العقد');
       
-      await audit('RENEW', 'contracts', oldContractId, `Renewed to ${result.contractId}`);
+      await audit('RENEW', 'contracts', oldContractId, `Renewed to ${result.oldContractId}`);
       await refreshData();
       toast.success('تم تجديد العقد بنجاح.');
-      return result.contractId;
+      return result.oldContractId;
     } catch (err: any) {
       toast.error(err.message || 'فشل تجديد العقد');
       return null;
