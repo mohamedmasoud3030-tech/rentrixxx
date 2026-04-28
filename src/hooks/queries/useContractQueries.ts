@@ -23,14 +23,7 @@ export function useContracts() {
   // Override or extend mutations if they affect other data (like property status)
   const extendedMutations = {
     ...baseMutations,
-    create: {
-      ...baseMutations.create,
-      onSuccess: (data: any, variables: any, context: any) => {
-        baseMutations.create.onSuccess?.(data, variables, context);
-        // Also invalidate properties because a new contract might change property status
-        queryClient.invalidateQueries({ queryKey: ['properties'] });
-      }
-    }
+    create: baseMutations.create
   };
 
   return {
