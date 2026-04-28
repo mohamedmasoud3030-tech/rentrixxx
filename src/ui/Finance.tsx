@@ -11,10 +11,6 @@ import FinanceIntelligenceHub from '../components/finance/FinanceIntelligenceHub
 import Arrears from './financial/Arrears';
 import { AR_LABELS } from '../config/labels.ar';
 import { FINANCIAL_ROUTES } from '@/config/routes';
-import { useApp } from '@/contexts/AppContext';
-import { PageStateCard } from '@/components/ui/PageStates';
-import { AppShellLayout } from '@/app/layouts/AppShellLayout';
-import { DSButton } from '@/design-system';
 
 const FinanceTab: React.FC<{ to: string, icon: React.ReactNode, label: string }> = ({ to, icon, label }) => (
     <NavLink
