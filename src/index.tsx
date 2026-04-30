@@ -9,6 +9,19 @@ import { queryClient } from './config/queryClient';
 import { errorTracker } from './services/errorTracker';
 import { logger } from './services/logger';
 import './index.css';
+import { registerSW } from 'virtual:pwa-register';
+
+// Register Service Worker
+const updateSW = registerSW({
+  onNeedRefresh() {
+    if (confirm('يتوفر تحديث جديد للتطبيق. هل تريد التحديث الآن؟')) {
+      updateSW(true);
+    }
+  },
+  onOfflineReady() {
+    console.log('التطبيق جاهز للعمل بدون اتصال.');
+  },
+});
 
 const rootElement = document.getElementById('root');
 if (!rootElement) {
