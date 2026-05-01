@@ -10,6 +10,7 @@ import { WhatsAppComposerModal } from '../components/shared/WhatsAppComposerModa
 import { formatDate, formatCurrency, exportToCsv, TENANT_STATUS_AR, CHANNEL_AR, normalizeArabicNumerals, getEffectiveInvoiceStatus } from '../utils/helpers';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
+import { logger } from '../services/logger';
 
 const Tenants: React.FC = () => {
     const { db, dataService } = useApp();
@@ -271,7 +272,7 @@ const TenantDetailView: React.FC<{ tenant: Tenant; onBack: () => void }> = ({ te
                                     <td className="px-4 py-2 border border-border">{formatCurrency(c.rent, currency)}</td>
                                     <td className="px-4 py-2 border border-border">
                                         <span className={`px-2 py-0.5 text-xs rounded-full ${c.status === 'ACTIVE' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
-                                            {c.status === 'ACTIVE' ? 'نشط' : c.status === 'ENDED' ? 'منتهي' : c.status}
+                                            {c.status === 'ACTIVE' ? 'نشط' : (c.status === 'ENDED' ? 'منتهي' : c.status)}
                                         </span>
                                     </td>
                                 </tr>
@@ -394,7 +395,7 @@ const TenantForm: React.FC<{ isOpen: boolean, onClose: () => void, tenant: Tenan
             onClose();
         } catch (error: unknown) {
             const errorMsg = error instanceof Error ? error.message : 'فشل الحفظ';
-            console.error('TenantForm error:', error);
+            logger.error('Tenant form failed', { message: error instanceof Error ? error.message : 'unknown_error' });
             toast.error(`خطأ: ${errorMsg}`);
         } finally {
             isSavingRef.current = false;

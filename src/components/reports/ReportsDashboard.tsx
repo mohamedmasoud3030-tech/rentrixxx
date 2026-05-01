@@ -62,8 +62,8 @@ const useLoadOnce = (loader: () => Promise<void>) => {
   }, [loader]);
 };
 
-// ─── KPI Card ─────────────────────────────────────────────────
-const KPI: React.FC<{ label: string; value: string; sub?: string; color?: string }> = memo(({ label, value, sub, color = 'text-primary' }) => (
+// ─── Kpi Card ─────────────────────────────────────────────────
+const Kpi: React.FC<{ label: string; value: string; sub?: string; color?: string }> = memo(({ label, value, sub, color = 'text-primary' }) => (
   <div className="bg-card border border-border rounded-2xl p-4 flex flex-col gap-1">
     <p className="text-xs text-text-muted font-medium">{label}</p>
     <p className={`text-xl font-black font-mono ${color}`} dir="ltr">{value}</p>
@@ -72,7 +72,7 @@ const KPI: React.FC<{ label: string; value: string; sub?: string; color?: string
 ));
 
 // ─── Section Header ───────────────────────────────────────────
-const SH: React.FC<{ title: string; onPrint?: () => void }> = memo(({ title, onPrint }) => (
+const SectionHeader: React.FC<{ title: string; onPrint?: () => void }> = memo(({ title, onPrint }) => (
   <div className="flex items-center justify-between mb-4">
     <h3 className="font-black text-base text-text">{title}</h3>
     {onPrint && (
@@ -89,12 +89,12 @@ const Tbl: React.FC<{ heads: string[]; rows: React.ReactNode[][]; footer?: React
   <div className="overflow-x-auto rounded-xl border border-border">
     <table className="w-full text-sm text-right">
       <thead className="bg-background text-text-muted text-xs">
-        <tr>{heads.map((h, i) => <th key={i} className="px-4 py-3 font-bold">{h}</th>)}</tr>
+        <tr>{heads.map((h, i) => <th key={`head-${h}-${i}`} className="px-4 py-3 font-bold">{h}</th>)}</tr>
       </thead>
       <tbody className="divide-y divide-border">
         {rows.map((r, i) => (
-          <tr key={i} className="hover:bg-background/60 transition-colors">
-            {r.map((c, j) => <td key={j} className="px-4 py-3">{c}</td>)}
+          <tr key={`row-${i}-${r.length}`} className="hover:bg-background/60 transition-colors">
+            {r.map((c, j) => <td key={`cell-${i}-${j}`} className="px-4 py-3">{c}</td>)}
           </tr>
         ))}
         {rows.length === 0 && (
@@ -103,7 +103,7 @@ const Tbl: React.FC<{ heads: string[]; rows: React.ReactNode[][]; footer?: React
       </tbody>
       {footer && (
         <tfoot className="bg-background border-t-2 border-border font-black text-text">
-          <tr>{footer.map((c, i) => <td key={i} className="px-4 py-3">{c}</td>)}</tr>
+          <tr>{footer.map((c, i) => <td key={`footer-${i}`} className="px-4 py-3">{c}</td>)}</tr>
         </tfoot>
       )}
     </table>
@@ -178,15 +178,15 @@ const SummaryView: React.FC<{ currency: string }> = ({ currency }) => {
       {state === 'done' && data && (
         <>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            <KPI label="إجمالي المحصّل"    value={fmt(data.collected, currency)}   color="text-emerald-600"/>
-            <KPI label="إجمالي المصروفات"  value={fmt(data.expenses, currency)}    color="text-red-500"/>
-            <KPI label="صافي الفترة"        value={fmt(data.net, currency)}         color={data.net >= 0 ? 'text-primary' : 'text-red-600'}/>
-            <KPI label="المتأخرات"          value={fmt(data.overdue_amount, currency)} sub={`${data.overdue_count} فاتورة`} color="text-orange-600"/>
+            <Kpi label="إجمالي المحصّل"    value={fmt(data.collected, currency)}   color="text-emerald-600"/>
+            <Kpi label="إجمالي المصروفات"  value={fmt(data.expenses, currency)}    color="text-red-500"/>
+            <Kpi label="صافي الفترة"        value={fmt(data.net, currency)}         color={data.net >= 0 ? 'text-primary' : 'text-red-600'}/>
+            <Kpi label="المتأخرات"          value={fmt(data.overdue_amount, currency)} sub={`${data.overdue_count} فاتورة`} color="text-orange-600"/>
           </div>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-            <KPI label="العقود النشطة"   value={String(data.active_contracts)}/>
-            <KPI label="نسبة الإشغال"    value={`${data.occupancy_rate}%`} sub={`${data.occupied_units} / ${data.total_units} وحدة`}/>
-            <KPI label="فواتير معلّقة"   value={fmt(data.pending_invoices, currency)} color="text-yellow-600"/>
+            <Kpi label="العقود النشطة"   value={String(data.active_contracts)}/>
+            <Kpi label="نسبة الإشغال"    value={`${data.occupancy_rate}%`} sub={`${data.occupied_units} / ${data.total_units} وحدة`}/>
+            <Kpi label="فواتير معلّقة"   value={fmt(data.pending_invoices, currency)} color="text-yellow-600"/>
           </div>
           {occupancy.length > 0 && (
             <div className="bg-card border border-border rounded-2xl p-4">
@@ -237,9 +237,9 @@ const IncomeView: React.FC<{ currency: string }> = ({ currency }) => {
       {state === 'done' && data && (
         <>
           <div className="grid grid-cols-3 gap-3">
-            <KPI label="إجمالي الإيرادات" value={fmt(data.total_revenue, currency)} color="text-emerald-600"/>
-            <KPI label="إجمالي المصروفات" value={fmt(data.total_expense, currency)} color="text-red-500"/>
-            <KPI label="صافي الدخل"        value={fmt(data.net_income, currency)}    color={data.net_income >= 0 ? 'text-primary' : 'text-red-600'}/>
+            <Kpi label="إجمالي الإيرادات" value={fmt(data.total_revenue, currency)} color="text-emerald-600"/>
+            <Kpi label="إجمالي المصروفات" value={fmt(data.total_expense, currency)} color="text-red-500"/>
+            <Kpi label="صافي الدخل"        value={fmt(data.net_income, currency)}    color={data.net_income >= 0 ? 'text-primary' : 'text-red-600'}/>
           </div>
           <div className="bg-card border border-border rounded-2xl p-4">
             <ResponsiveContainer width="100%" height={200}>
@@ -249,14 +249,14 @@ const IncomeView: React.FC<{ currency: string }> = ({ currency }) => {
                 <YAxis tick={{ fontSize: 11 }}/>
                 <Tooltip formatter={(v: any) => fmt(Number(v), currency)}/>
                 <Bar dataKey="amount" radius={[8,8,0,0]}>
-                  {chartData.map((d, i) => <Cell key={i} fill={d.fill}/>)}
+                  {chartData.map((d, i) => <Cell key={`income-cell-${d.name}-${i}`} fill={d.fill}/>)}
                 </Bar>
               </BarChart>
             </ResponsiveContainer>
           </div>
           <div className="grid md:grid-cols-2 gap-4">
             <div>
-              <SH title="الإيرادات"/>
+              <SectionHeader title="الإيرادات"/>
               <Tbl
                 heads={['رقم', 'الحساب', 'المبلغ']}
                 rows={(data.revenues || []).map((r: any) => [r.no, r.name, <span dir="ltr" className="font-mono text-emerald-700">{fmt(r.balance, currency)}</span>])}
@@ -264,7 +264,7 @@ const IncomeView: React.FC<{ currency: string }> = ({ currency }) => {
               />
             </div>
             <div>
-              <SH title="المصروفات"/>
+              <SectionHeader title="المصروفات"/>
               <Tbl
                 heads={['رقم', 'الحساب', 'المبلغ']}
                 rows={(data.expenses || []).map((r: any) => [r.no, r.name, <span dir="ltr" className="font-mono text-red-600">{fmt(r.balance, currency)}</span>])}
@@ -355,7 +355,7 @@ const BalanceSheetView: React.FC<{ currency: string }> = ({ currency }) => {
 
   const printPdf = useCallback(() => {
     if (!reportRef.current) return;
-    const printWindow = window.open('', '', 'height=900,width=1200');
+    const printWindow = globalThis.open('', '', 'height=900,width=1200');
     if (!printWindow) return;
     const css = Array.from(document.querySelectorAll('style, link[rel="stylesheet"]'))
       .map((node) => node.outerHTML)
@@ -399,15 +399,15 @@ const BalanceSheetView: React.FC<{ currency: string }> = ({ currency }) => {
       {state === 'loading' && <LoadingState title="جاري تحميل الميزانية العمومية..." message="يتم إعداد الأصول والالتزامات وحقوق الملكية."/>}
       {state === 'done' && data && (
         <div ref={reportRef} className="space-y-5">
-          <SH title="الميزانية العمومية" onPrint={printPdf}/>
+          <SectionHeader title="الميزانية العمومية" onPrint={printPdf}/>
           <div className="grid grid-cols-3 gap-3">
-            <KPI label="إجمالي الأصول" value={fmt(Number(data.total_assets || 0), currency)} color="text-primary"/>
-            <KPI label="إجمالي الالتزامات" value={fmt(Number(data.total_liabilities || 0), currency)} color="text-red-500"/>
-            <KPI label="إجمالي حقوق الملكية" value={fmt(Number(data.total_equity || 0), currency)} color="text-emerald-600"/>
+            <Kpi label="إجمالي الأصول" value={fmt(Number(data.total_assets || 0), currency)} color="text-primary"/>
+            <Kpi label="إجمالي الالتزامات" value={fmt(Number(data.total_liabilities || 0), currency)} color="text-red-500"/>
+            <Kpi label="إجمالي حقوق الملكية" value={fmt(Number(data.total_equity || 0), currency)} color="text-emerald-600"/>
           </div>
           <div className="grid md:grid-cols-3 gap-4">
             <div>
-              <SH title="الأصول"/>
+              <SectionHeader title="الأصول"/>
               <Tbl
                 heads={['رقم', 'الحساب', 'الرصيد']}
                 rows={toRows(data.assets || [])}
@@ -415,7 +415,7 @@ const BalanceSheetView: React.FC<{ currency: string }> = ({ currency }) => {
               />
             </div>
             <div>
-              <SH title="الالتزامات"/>
+              <SectionHeader title="الالتزامات"/>
               <Tbl
                 heads={['رقم', 'الحساب', 'الرصيد']}
                 rows={toRows(data.liabilities || [])}
@@ -423,7 +423,7 @@ const BalanceSheetView: React.FC<{ currency: string }> = ({ currency }) => {
               />
             </div>
             <div>
-              <SH title="حقوق الملكية"/>
+              <SectionHeader title="حقوق الملكية"/>
               <Tbl
                 heads={['رقم', 'الحساب', 'الرصيد']}
                 rows={toRows(data.equity || [])}
@@ -478,8 +478,8 @@ const AgedReceivablesView: React.FC<{ currency: string }> = ({ currency }) => {
         <>
           <div className="grid grid-cols-5 gap-2">
             {buckets.map((b, i) => (
-              <KPI key={b.name} label={b.name} value={fmt(b.value, currency)}
-                color={i === 0 ? 'text-emerald-600' : i === 1 ? 'text-blue-600' : i === 2 ? 'text-yellow-600' : 'text-red-600'}/>
+              <Kpi key={b.name} label={b.name} value={fmt(b.value, currency)}
+                color={['text-emerald-600', 'text-blue-600', 'text-yellow-600'][i] ?? 'text-red-600'}/>
             ))}
           </div>
           <div className="bg-card border border-border rounded-2xl p-4">
@@ -490,7 +490,7 @@ const AgedReceivablesView: React.FC<{ currency: string }> = ({ currency }) => {
                 <YAxis tick={{ fontSize: 11 }}/>
                 <Tooltip formatter={(v: any) => fmt(Number(v), currency)}/>
                 <Bar dataKey="value" radius={[6,6,0,0]}>
-                  {buckets.map((_, i) => <Cell key={i} fill={AGING_COLORS[i]}/>)}
+                  {buckets.map((bucket, i) => <Cell key={`aging-cell-${bucket.name}-${i}`} fill={AGING_COLORS[i]}/>)}
                 </Bar>
               </BarChart>
             </ResponsiveContainer>
@@ -553,10 +553,10 @@ const OverdueView: React.FC<{ currency: string }> = ({ currency }) => {
       {state === 'done' && data && (
         <>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            <KPI label="إجمالي المتأخرات"  value={fmt(data.total, currency)} color="text-red-600"/>
-            <KPI label="عدد الفواتير"       value={String(data.count)}/>
-            <KPI label="المتأخرون > 90 يوم" value={String(overdue90Count)} color="text-red-700"/>
-            <KPI label="متوسط أيام التأخر"  value={averageOverdueDays !== null ? `${averageOverdueDays} يوم` : '—'}/>
+            <Kpi label="إجمالي المتأخرات"  value={fmt(data.total, currency)} color="text-red-600"/>
+            <Kpi label="عدد الفواتير"       value={String(data.count)}/>
+            <Kpi label="المتأخرون > 90 يوم" value={String(overdue90Count)} color="text-red-700"/>
+            <Kpi label="متوسط أيام التأخر"  value={averageOverdueDays !== null ? `${averageOverdueDays} يوم` : '—'}/>
           </div>
           <input value={search} onChange={e => setSearch(e.target.value)} placeholder="بحث باسم المستأجر أو الوحدة..."
             className="w-full text-sm border border-border rounded-xl px-4 py-2.5 bg-card outline-none focus:ring-2 focus:ring-primary/20"/>
@@ -618,9 +618,9 @@ const TenantStatementView: React.FC<{ currency: string; contracts: any[] }> = ({
       {state === 'done' && data && !data.error && (
         <>
           <div className="grid grid-cols-3 gap-3">
-            <KPI label="المستأجر"   value={data.tenant_name}/>
-            <KPI label="الوحدة"     value={`${data.property_name} / ${data.unit_name}`}/>
-            <KPI label="الرصيد الإجمالي" value={fmt(data.final_balance, currency)}
+            <Kpi label="المستأجر"   value={data.tenant_name}/>
+            <Kpi label="الوحدة"     value={`${data.property_name} / ${data.unit_name}`}/>
+            <Kpi label="الرصيد الإجمالي" value={fmt(data.final_balance, currency)}
               color={data.final_balance > 0 ? 'text-red-600' : 'text-emerald-600'}/>
           </div>
           <Tbl
@@ -679,9 +679,9 @@ const OwnerStatementView: React.FC<{ currency: string; owners: any[] }> = ({ cur
       {state === 'done' && data && !data.error && (
         <>
           <div className="grid grid-cols-3 gap-3">
-            <KPI label="الإجمالي المحصّل" value={fmt(data.total_gross, currency)} color="text-emerald-600"/>
-            <KPI label="الاستقطاعات"      value={fmt(data.total_deductions, currency)} color="text-red-500"/>
-            <KPI label="صافي المالك"      value={fmt(data.total_net, currency)} color="text-primary"/>
+            <Kpi label="الإجمالي المحصّل" value={fmt(data.total_gross, currency)} color="text-emerald-600"/>
+            <Kpi label="الاستقطاعات"      value={fmt(data.total_deductions, currency)} color="text-red-500"/>
+            <Kpi label="صافي المالك"      value={fmt(data.total_net, currency)} color="text-primary"/>
           </div>
           <Tbl
             heads={['التاريخ','البيان','العقار','الإجمالي','الاستقطاع','الصافي']}
@@ -727,7 +727,7 @@ const DailyCollectionView: React.FC<{ currency: string }> = ({ currency }) => {
       {state === 'loading' && <LoadingState title="جاري تحميل التحصيل اليومي..." message="يتم تحليل التدفقات اليومية."/>}
       {state === 'done' && data && (
         <>
-          <KPI label="إجمالي التحصيل" value={fmt(data.total, currency)} color="text-emerald-600"/>
+          <Kpi label="إجمالي التحصيل" value={fmt(data.total, currency)} color="text-emerald-600"/>
           <div className="bg-card border border-border rounded-2xl p-4">
             <ResponsiveContainer width="100%" height={200}>
               <LineChart data={data.rows || []}>
@@ -782,9 +782,9 @@ const RentRollView: React.FC<{ currency: string }> = ({ currency }) => {
       {state === 'done' && (
         <>
           <div className="grid grid-cols-3 gap-3">
-            <KPI label="إجمالي الوحدات"  value={String(rows.length)}/>
-            <KPI label="وحدات مشغولة"    value={String(rows.filter((r:any) => r.tenant_name).length)} color="text-emerald-600"/>
-            <KPI label="إيجار شهري"      value={fmt(totalRent, currency)} color="text-primary"/>
+            <Kpi label="إجمالي الوحدات"  value={String(rows.length)}/>
+            <Kpi label="وحدات مشغولة"    value={String(rows.filter((r:any) => r.tenant_name).length)} color="text-emerald-600"/>
+            <Kpi label="إيجار شهري"      value={fmt(totalRent, currency)} color="text-primary"/>
           </div>
           <Tbl
             heads={['العقار','الوحدة','النوع','المستأجر','الهاتف','بداية العقد','نهاية العقد','الإيجار','المتأخر']}

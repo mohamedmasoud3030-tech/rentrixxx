@@ -19,7 +19,7 @@ const updateSW = registerSW({
     }
   },
   onOfflineReady() {
-    console.log('التطبيق جاهز للعمل بدون اتصال.');
+    logger.info('App offline ready');
   },
 });
 
@@ -28,12 +28,12 @@ if (!rootElement) {
   throw new Error("Could not find root element to mount to");
 }
 
-window.addEventListener('error', (event) => {
+globalThis.addEventListener('error', (event) => {
   logger.error('[GlobalError] Uncaught error', event.error ?? event.message);
   errorTracker.capture(event.error ?? event.message, { area: 'window', action: 'error-event' });
 });
 
-window.addEventListener('unhandledrejection', (event) => {
+globalThis.addEventListener('unhandledrejection', (event) => {
   logger.error('[GlobalError] Unhandled rejection', event.reason);
   errorTracker.capture(event.reason, { area: 'window', action: 'unhandled-rejection' });
 });

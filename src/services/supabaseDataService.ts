@@ -210,7 +210,7 @@ export const supabaseData = {
   async fetchOne<T>(jsTable: string, id: string | number): Promise<T | null> {
     const sqlTable = resolveTable(jsTable);
     const { data, error } = await applyContractsVisibility(supabase.from(sqlTable).select('*').eq('id', id), jsTable).single();
-    if (error) { console.error(`[SupabaseData] fetchOne ${sqlTable}:`, error); return null; }
+    if (error) { logger.error(`[SupabaseData] fetchOne ${sqlTable} failed`, { message: error.message, code: error.code }); return null; }
     return data ? toCamelObj(data, jsTable) as T : null;
   },
 
@@ -220,7 +220,7 @@ export const supabaseData = {
     const { data, error } = await supabase.from(sqlTable).insert([snakeRecord]).select().single();
     if (error) { 
       const errorMsg = error.message || 'خطأ غير معروف';
-      console.error(`[SupabaseData] insert ${sqlTable}:`, error, snakeRecord); 
+      logger.error(`[SupabaseData] insert ${sqlTable} failed`, { message: error.message, code: error.code });
       return { data: null, error: errorMsg };
     }
     clearTableCache(jsTable);
@@ -231,7 +231,7 @@ export const supabaseData = {
     const sqlTable = resolveTable(jsTable);
     const snakeRecord = toSnakeObj(record, jsTable);
     const { data, error } = await supabase.from(sqlTable).upsert(snakeRecord).select().single();
-    if (error) { console.error(`[SupabaseData] upsert ${sqlTable}:`, error, snakeRecord); return null; }
+    if (error) { logger.error(`[SupabaseData] upsert ${sqlTable} failed`, { message: error.message, code: error.code }); return null; }
     clearTableCache(jsTable);
     return data ? toCamelObj(data, jsTable) as T : null;
   },
@@ -242,7 +242,7 @@ export const supabaseData = {
     const { error } = await supabase.from(sqlTable).update(snakeUpdates).eq('id', id);
     if (error) { 
       const errorMsg = error.message || 'خطأ غير معروف';
-      console.error(`[SupabaseData] update ${sqlTable}:`, error); 
+      logger.error(`[SupabaseData] update ${sqlTable} failed`, { message: error.message, code: error.code });
       return { ok: false, error: errorMsg };
     }
     clearTableCache(jsTable);
@@ -258,7 +258,7 @@ export const supabaseData = {
           .eq('id', id)
           .is('deleted_at', null)
       : await supabase.from(sqlTable).delete().eq('id', id);
-    if (error) { console.error(`[SupabaseData] remove ${sqlTable}:`, error); return false; }
+    if (error) { logger.error(`[SupabaseData] remove ${sqlTable} failed`, { message: error.message, code: error.code }); return false; }
     clearTableCache(jsTable);
     return true;
   },
@@ -273,7 +273,7 @@ export const supabaseData = {
           .eq(snakeCol, value)
           .is('deleted_at', null)
       : await supabase.from(sqlTable).delete().eq(snakeCol, value);
-    if (error) { console.error(`[SupabaseData] removeWhere ${sqlTable}:`, error); return false; }
+    if (error) { logger.error(`[SupabaseData] removeWhere ${sqlTable} failed`, { message: error.message, code: error.code }); return false; }
     clearTableCache(jsTable);
     return true;
   },
@@ -284,7 +284,7 @@ export const supabaseData = {
       ? SPECIAL_FIELD_MAP[jsTable][column]
       : camelToSnake(column);
     const { data, error } = await applyContractsVisibility(supabase.from(sqlTable).select('*').eq(snakeCol, value), jsTable);
-    if (error) { console.error(`[SupabaseData] fetchWhere ${sqlTable}:`, error); return []; }
+    if (error) { logger.error(`[SupabaseData] fetchWhere ${sqlTable} failed`, { message: error.message, code: error.code }); return []; }
     return (data || []).map(row => toCamelObj(row, jsTable) as T);
   },
 
@@ -292,7 +292,7 @@ export const supabaseData = {
     const sqlTable = resolveTable(jsTable);
     const snakeRecords = records.map(r => toSnakeObj(r, jsTable));
     const { data, error } = await supabase.from(sqlTable).insert(snakeRecords).select();
-    if (error) { console.error(`[SupabaseData] bulkInsert ${sqlTable}:`, error); return []; }
+    if (error) { logger.error(`[SupabaseData] bulkInsert ${sqlTable} failed`, { message: error.message, code: error.code }); return []; }
     clearTableCache(jsTable);
     return (data || []).map(row => toCamelObj(row, jsTable) as T);
   },
@@ -331,7 +331,7 @@ export const supabaseData = {
     const sqlTable = resolveTable(jsTable);
     const snakeRecords = records.map(r => toSnakeObj(r, jsTable));
     const { error } = await supabase.from(sqlTable).upsert(snakeRecords);
-    if (error) { console.error(`[SupabaseData] upsertMany ${sqlTable}:`, error); return false; }
+    if (error) { logger.error(`[SupabaseData] upsertMany ${sqlTable} failed`, { message: error.message, code: error.code }); return false; }
     clearTableCache(jsTable);
     return true;
   },
@@ -344,7 +344,7 @@ export const supabaseData = {
 
   async saveSettings(settings: Settings): Promise<boolean> {
     const { error } = await supabase.from('settings').upsert({ id: 1, data: settings });
-    if (error) { console.error('[SupabaseData] saveSettings:', error); return false; }
+    if (error) { logger.error('[SupabaseData] saveSettings failed', { message: error.message, code: error.code }); return false; }
     return true;
   },
 
@@ -365,7 +365,7 @@ export const supabaseData = {
     const { error } = await supabase.from('governance').upsert({
       id: 1, read_only: gov.readOnly, locked_periods: gov.lockedPeriods
     });
-    if (error) { console.error('[SupabaseData] saveGovernance:', error); return false; }
+    if (error) { logger.error('[SupabaseData] saveGovernance failed', { message: error.message, code: error.code }); return false; }
     return true;
   },
 

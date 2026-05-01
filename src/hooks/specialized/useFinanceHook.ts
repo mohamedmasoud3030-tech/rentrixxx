@@ -1,5 +1,6 @@
 import { useCallback } from 'react';
 import { toast } from 'react-hot-toast';
+import { logger } from '../../services/logger';
 import { supabaseData } from '../../services/supabaseDataService';
 import { financeFacade } from '@/domain/finance/finance.facade';
 import { toNumber, round3 } from '../../services/financeService';
@@ -132,7 +133,7 @@ export const useFinanceHook = (
       await refreshData();
       toast.success('تم إلغاء السند وتحديث الفواتير بنجاح.');
     } catch (err: unknown) {
-      console.error('voidReceipt failed:', err);
+      logger.error('voidReceipt failed', { message: err instanceof Error ? err.message : 'unknown_error' });
       toast.error('حدث خطأ أثناء إلغاء السند: ' + (err instanceof Error ? err.message : 'خطأ غير معروف'));
       await refreshData();
     }
@@ -150,7 +151,7 @@ export const useFinanceHook = (
       await refreshData();
       toast.success('تم إلغاء المصروف بنجاح.');
     } catch (err: unknown) {
-      console.error('voidExpense failed:', err);
+      logger.error('voidExpense failed', { message: err instanceof Error ? err.message : 'unknown_error' });
       toast.error('حدث خطأ أثناء إلغاء المصروف: ' + (err instanceof Error ? err.message : 'خطأ غير معروف'));
       await refreshData();
     }

@@ -33,9 +33,9 @@ const OwnersHub = lazy(() => import('@/ui/OwnersHub'));
 
 const hexToHsl = (hex: string): string => {
   hex = hex.replace('#', '');
-  const r = parseInt(hex.substring(0, 2), 16) / 255;
-  const g = parseInt(hex.substring(2, 4), 16) / 255;
-  const b = parseInt(hex.substring(4, 6), 16) / 255;
+  const r = Number.parseInt(hex.substring(0, 2), 16) / 255;
+  const g = Number.parseInt(hex.substring(2, 4), 16) / 255;
+  const b = Number.parseInt(hex.substring(4, 6), 16) / 255;
   const max = Math.max(r, g, b);
   const min = Math.min(r, g, b);
   let h = 0,
@@ -111,7 +111,7 @@ const App: React.FC = () => {
       if (ogTitleEl && routeMeta) ogTitleEl.setAttribute('content', `${routeMeta.title} — ${companyName}`);
       const ogDescEl = document.querySelector('meta[property="og:description"]');
       if (ogDescEl && routeMeta) ogDescEl.setAttribute('content', routeMeta.description);
-      const canonicalUrl = `${window.location.origin}${location.pathname}`;
+      const canonicalUrl = `${globalThis.location.origin}${location.pathname}`;
       const canonicalEl = document.getElementById('canonical-link') as HTMLLinkElement | null;
       if (canonicalEl) canonicalEl.href = canonicalUrl;
       const ogUrlEl = document.getElementById('og-url') as HTMLMetaElement | null;
