@@ -25,6 +25,17 @@
    VITE_SUPABASE_URL=your_supabase_project_url
    VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
    ```
+### Optional: Codacy CLI Environment Variables
+If you run Codacy tooling locally, export these variables before executing Codacy commands:
+```bash
+export CODACY_API_TOKEN=<your_codacy_api_token>
+export CODACY_ORGANIZATION_PROVIDER=gh
+export CODACY_USERNAME=mohamedmasoud3030-tech
+export CODACY_PROJECT_NAME=rentrixxx
+```
+
+> Note: Keep API tokens out of committed files and shell history when possible.
+
 
 4. **Start the development server**:
    ```bash
