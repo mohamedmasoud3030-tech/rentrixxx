@@ -158,7 +158,7 @@ export const WhatsAppModal: React.FC<SimpleWhatsAppModalProps> = ({
   const handleSend = () => {
     if (!recipientPhone || !simpleMsg) { toast.error('الرجاء إدخال رسالة.'); return; }
     const url = `https://wa.me/${sanitizePhoneNumber(recipientPhone)}?text=${encodeURIComponent(simpleMsg)}`;
-    window.open(url, '_blank');
+    globalThis.open(url, '_blank');
     onClose();
     setSimpleMsg('');
   };

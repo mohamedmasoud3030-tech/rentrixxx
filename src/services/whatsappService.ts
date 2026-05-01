@@ -5,7 +5,7 @@ export const sendWhatsAppMessage = (phone: string, message: string) => {
     
     // استخدام wa.me للربط المباشر
     const url = `https://wa.me/${cleanPhone}?text=${encodedMessage}`;
-    window.open(url, '_blank');
+    globalThis.open(url, '_blank');
 };
 
 export const templates = {

@@ -16,7 +16,7 @@ const normalizeAmount = (value: number): string => Number(value || 0).toFixed(3)
 const buildReceiptRequestFingerprint = (payload: ReceiptPostingPayload): string => {
   const allocationKey = payload.allocations
     .map((a) => `${a.invoice_id}:${normalizeAmount(a.amount)}`)
-    .sort()
+    .sort((a, b) => a.localeCompare(b, 'en'))
     .join('|');
   const bucket = toFiveMinuteBucket(payload.receipt.date_time);
   return [

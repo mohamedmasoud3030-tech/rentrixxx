@@ -6,21 +6,20 @@ import { useApp } from '../contexts/AppContext';
 import { Receipt, Expense, DepositTx, OwnerSettlement, Invoice } from '../types';
 import Card from '../components/ui/Card';
 import Modal from '../components/ui/Modal';
-import ActionsMenu, { EditAction, VoidAction, DeleteAction, PrintAction } from '../components/shared/ActionsMenu';
 import { formatCurrency, formatDateTime, formatDate, exportToCsv, RECEIPT_STATUS_AR, CHANNEL_AR, EXPENSE_STATUS_AR } from '../utils/helpers';
 import NumberInput from '../components/ui/NumberInput';
 import HardGateBanner from '../components/shared/HardGateBanner';
-import AttachmentsManager from '../components/shared/AttachmentsManager';
 import { 
     Receipt as ReceiptIcon, CreditCard, Landmark, PiggyBank, 
     MessageCircle, Download, FileText, Plus, ArrowUpRight, 
-    ArrowDownRight, History, Wallet, UserCheck, Search, Filter,
-    Printer, MoreVertical, Trash2, Edit2, XCircle, CheckCircle2
+    ArrowDownRight, History, Wallet, UserCheck, Search ,
+    Printer, Trash2, Edit2, XCircle
 } from 'lucide-react';
 import PrintPreviewModal from '../components/shared/PrintPreviewModal';
 import { WhatsAppComposerModal } from '../components/shared/WhatsAppComposerModal';
 import { ReceiptPrint } from '../components/print/PrintTemplate';
 import { toast } from 'react-hot-toast';
+import { logger } from '../services/logger';
 import { exportExpenseToPdf } from '../services/pdfService';
 import { AR_LABELS } from '../config/labels.ar';
 import { distributeAmount } from '../services/financeService';
@@ -32,12 +31,10 @@ const Financials: React.FC<{ initialTab?: FinancialTab }> = ({ initialTab = 'rec
     const { db, getFinancialSummary } = useApp();
     const [financialSummary, setFinancialSummary] = useState<{ receiptsToday: number; expensesMonth: number; totalDeposits: number; pendingSettlements: number; openInvoices: number } | null>(null);
     const [loadingSummary, setLoadingSummary] = useState(true);
-    const [errorSummary, setErrorSummary] = useState<string | null>(null);
 
     const refreshFinancialSummary = useCallback(async () => {
       try {
         setLoadingSummary(true);
-        setErrorSummary(null);
         const summary = await getFinancialSummary();
         if (summary) {
           setFinancialSummary({
@@ -49,8 +46,7 @@ const Financials: React.FC<{ initialTab?: FinancialTab }> = ({ initialTab = 'rec
           });
         }
       } catch (err) {
-        setErrorSummary('فشل في جلب الملخص المالي');
-        console.error('Financial summary error:', err);
+        logger.error('Financial summary error', { message: err instanceof Error ? err.message : 'unknown_error' });
       } finally {
         setLoadingSummary(false);
       }

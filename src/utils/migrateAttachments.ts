@@ -1,4 +1,5 @@
 import { supabase } from '@/services/api/supabaseClient';
+import { logger } from '@/services/logger';
 import { uploadAttachment } from '../services/attachmentService';
 
 const BATCH_SIZE = 10;
@@ -52,12 +53,12 @@ const processLegacyAttachments = async () => {
         .is('storage_path', null);
 
       if (updateError) {
-        console.error(`[AttachmentMigration] Failed updating attachment row ${row.id}`, updateError);
+        logger.error('[AttachmentMigration] Failed updating attachment row', { message: updateError.message, code: updateError.code, context: { rowId: row.id } });
       } else {
         successCount += 1;
       }
     } catch (migrateError) {
-      console.error(`[AttachmentMigration] Failed migrating attachment row ${row.id}`, migrateError);
+      logger.error('[AttachmentMigration] Failed migrating attachment row', { message: migrateError instanceof Error ? migrateError.message : 'unknown_error', context: { rowId: row.id } });
     }
   }
 
@@ -112,12 +113,12 @@ const processLegacyUtilityBills = async () => {
         .like('bill_image_url', 'data:%');
 
       if (clearError) {
-        console.error(`[AttachmentMigration] Utility bill ${row.id} uploaded but not cleared`, clearError);
+        logger.error('[AttachmentMigration] Utility bill uploaded but not cleared', { message: clearError.message, code: clearError.code, context: { rowId: row.id } });
       } else {
         successCount += 1;
       }
     } catch (migrateError) {
-      console.error(`[AttachmentMigration] Failed migrating utility bill ${row.id}`, migrateError);
+      logger.error('[AttachmentMigration] Failed migrating utility bill', { message: migrateError instanceof Error ? migrateError.message : 'unknown_error', context: { rowId: row.id } });
     }
   }
 

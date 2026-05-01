@@ -1,12 +1,9 @@
-import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
-import { Database, User, Settings, Contract, Expense, Invoice, Receipt, AppContextType, PerformanceMetrics, Tenant, OwnerSettlement, DepositTx, Account, NotificationTemplate, AccountBalance, ContractBalance, TenantBalance, OwnerBalance, KpiSnapshot, AppNotification } from '../types';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { Database, User, Settings, Expense, Invoice, AppContextType, PerformanceMetrics } from '../types';
 import { supabaseData } from '../services/supabaseDataService';
-import { supabase } from '@/services/api/supabaseClient';
 import { toast } from 'react-hot-toast';
+import { logger } from '../services/logger';
 import { confirmDialog } from '../components/shared/confirmDialog';
-import { toNumber, round3 } from '../services/financeService';
-import { operationsFacade } from '@/domain/operations/operations.facade';
-import { deriveInvoiceStatus } from '../services/financeService';
 
 // Import specialized hooks
 import { useFinanceHook } from './specialized/useFinanceHook';
@@ -33,7 +30,7 @@ const DEFAULT_SETTINGS: Settings = {
     },
 };
 
-const FINANCIAL_TABLES: (keyof Database)[] = ['receipts', 'expenses', 'invoices', 'ownerSettlements', 'maintenanceRecords', 'depositTxs', 'journalEntries', 'receiptAllocations'];
+const FINANCIAL_TABLES = new Set<keyof Database>(['receipts', 'expenses', 'invoices', 'ownerSettlements', 'maintenanceRecords', 'depositTxs', 'journalEntries', 'receiptAllocations']);
 const TABLES_WITHOUT_UPDATED_AT = new Set<keyof Database>(['outgoingNotifications', 'appNotifications', 'notificationTemplates', 'snapshots', 'auditLog']);
 
 const DEFAULT_EMPTY_DB: Database = {
@@ -87,12 +84,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [db, setDb] = useState<Database>(DEFAULT_EMPTY_DB);
   const [isLoading, setIsLoading] = useState(true);
   const [isDataStale, setIsDataStale] = useState(false);
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [currentUser] = useState<User | null>(null);
   const [performanceMetrics, setPerformanceMetrics] = useState<PerformanceMetrics>({
     addReceipt: [], addExpense: [], voidReceipt: [], voidExpense: [], generateInvoices: [], addManualJournalVoucher: [], gateChecks: []
   });
-  const reconcileRef = useRef(false);
-
   const settings = db?.settings || DEFAULT_SETTINGS;
   const isReadOnly = db?.governance?.readOnly || false;
 
@@ -111,7 +106,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         createdAt: Date.now(),
       });
     } catch (err) {
-      console.error('Audit log failed:', err);
+      logger.error('Audit log failed', { message: err instanceof Error ? err.message : 'unknown_error' });
     }
   }, [currentUser]);
 
@@ -121,7 +116,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       setDb(data);
       setIsDataStale(false);
     } catch (err) {
-      console.error('Failed to refresh data:', err);
+      logger.error('Refresh data failed', { message: err instanceof Error ? err.message : 'unknown_error' });
       toast.error('فشل تحديث البيانات');
     } finally {
       setIsLoading(false);
@@ -195,7 +190,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       if (!result.ok) throw new Error(result.error || 'Update failed');
       
       await audit('UPDATE', String(table), id);
-      if (FINANCIAL_TABLES.includes(table as any)) setIsDataStale(true);
+      if (FINANCIAL_TABLES.has(table as keyof Database)) setIsDataStale(true);
       await refreshData();
       toast.success('تم التحديث بنجاح!');
     } catch (err: any) {
@@ -212,7 +207,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     try {
       if (await supabaseData.remove(table as string, id)) {
         await audit('DELETE', String(table), id);
-        if (FINANCIAL_TABLES.includes(table as any)) setIsDataStale(true);
+        if (FINANCIAL_TABLES.has(table as keyof Database)) setIsDataStale(true);
         await refreshData();
         toast.success('تم الحذف بنجاح');
       }

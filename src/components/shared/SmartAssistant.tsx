@@ -6,6 +6,7 @@ import { queryAssistant } from '../../services/geminiService';
 import { logger } from '../../services/logger';
 
 interface Message {
+    id: string;
     sender: 'user' | 'ai' | 'error';
     text: string;
 }
@@ -31,7 +32,7 @@ const SmartAssistant: React.FC = () => {
 const AssistantModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
     const { db, ownerBalances, contractBalances } = useApp();
     const [messages, setMessages] = useState<Message[]>([
-        { sender: 'ai', text: 'أهلاً بك! أنا مساعدك الذكي. كيف يمكنني مساعدتك في تحليل بياناتك اليوم؟' }
+        { id: crypto.randomUUID(), sender: 'ai', text: 'أهلاً بك! أنا مساعدك الذكي. كيف يمكنني مساعدتك في تحليل بياناتك اليوم؟' }
     ]);
     const [input, setInput] = useState('');
     const [isLoading, setIsLoading] = useState(false);
@@ -79,18 +80,18 @@ const AssistantModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
     const handleSend = async () => {
         if (!input.trim() || isLoading || !contextData) return;
 
-        const userMessage: Message = { sender: 'user', text: input };
+        const userMessage: Message = { id: crypto.randomUUID(), sender: 'user', text: input };
         setMessages(prev => [...prev, userMessage]);
         setInput('');
         setIsLoading(true);
 
         try {
             const responseText = await queryAssistant('', input, JSON.stringify(contextData));
-            setMessages(prev => [...prev, { sender: 'ai', text: responseText }]);
+            setMessages(prev => [...prev, { id: crypto.randomUUID(), sender: 'ai', text: responseText }]);
         } catch (error) {
-            logger.error('[SmartAssistant] query failed', error);
+            logger.error('[SmartAssistant] query failed', { message: error instanceof Error ? error.message : 'unknown_error' });
             const errorMessage = "حدث خطأ أثناء التواصل مع المساعد الذكي. يرجى المحاولة مرة أخرى.";
-            setMessages(prev => [...prev, { sender: 'error', text: errorMessage }]);
+            setMessages(prev => [...prev, { id: crypto.randomUUID(), sender: 'error', text: errorMessage }]);
         } finally {
             setIsLoading(false);
         }
@@ -106,8 +107,8 @@ const AssistantModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
                 <button onClick={onClose} className="text-text-muted hover:text-text"><X size={20} /></button>
             </header>
             <main className="flex-1 overflow-y-auto p-4 space-y-4">
-                {messages.map((msg, index) => (
-                    <div key={index} className={`flex items-start gap-2.5 ${msg.sender === 'user' ? 'justify-end' : ''}`}>
+                {messages.map((msg) => (
+                    <div key={msg.id} className={`flex items-start gap-2.5 ${msg.sender === 'user' ? 'justify-end' : ''}`}>
                          {msg.sender !== 'user' && <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0"><Bot size={18} className="text-primary"/></div>}
                         <div className={`p-3 rounded-lg max-w-[80%] ${
                             msg.sender === 'ai' ? 'bg-background text-text' :

@@ -6,6 +6,7 @@ import { formatCurrency, getEffectiveInvoiceStatus } from '@/utils/helpers';
 import { AlertCircle, Clock, ArrowUpRight } from 'lucide-react';
 import { useLocation } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
+import { logger } from '../services/logger';
 import { StatCard } from '../components/invoices/StatCard';
 import { QuickPayModal } from '../components/invoices/QuickPayModal';
 import { InvoiceForm } from '../components/invoices/InvoiceForm';
@@ -121,7 +122,7 @@ const Invoices: React.FC = () => {
             const msg = encodeURIComponent(
                 `مرحباً ${inv.tenant?.name}،\nتذكير: فاتورتك رقم ${inv.no} متأخرة بمبلغ ${formatCurrency(inv.remaining, settings.operational?.currency ?? 'OMR')}.`
             );
-            window.open(`https://wa.me/${phone.replace(/\D/g, '')}?text=${msg}`, '_blank');
+            globalThis.open(`https://wa.me/${phone.replace(/\D/g, '')}?text=${msg}`, '_blank');
             sent++;
         }
 
@@ -151,7 +152,7 @@ const Invoices: React.FC = () => {
             setDeletingInvoice(null);
         } catch (error) {
             toast.error('حدث خطأ عند حذف الفاتورة');
-            console.error(error);
+            logger.error('Operation failed', { message: error instanceof Error ? error.message : 'unknown_error' });
         }
     }, [deletingInvoice, dataService]);
 
@@ -276,7 +277,7 @@ const Invoices: React.FC = () => {
                             setQuickPayInvoice(null);
                         } catch (error) {
                             toast.error('حدث خطأ عند تسجيل الدفعة');
-                            console.error(error);
+                            logger.error('Operation failed', { message: error instanceof Error ? error.message : 'unknown_error' });
                         }
                     }}
                 />

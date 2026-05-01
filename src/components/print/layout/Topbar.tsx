@@ -17,7 +17,7 @@ const Topbar: React.FC<TopbarProps> = ({ setSidebarOpen }) => {
     const currentTheme = settings.appearance?.theme ?? 'light';
     const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
     updateSettings({ appearance: { ...settings.appearance, theme: newTheme } });
-    document.documentElement.setAttribute('data-theme', newTheme);
+    document.documentElement.dataset.theme = newTheme;
   };
 
   const currentTheme = settings.appearance?.theme ?? 'light';

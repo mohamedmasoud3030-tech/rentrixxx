@@ -1,10 +1,9 @@
 import { useCallback } from 'react';
 import { toast } from 'react-hot-toast';
-import { Database, Settings, Contract, AppContextType } from '../../types';
+import { logger } from '../../services/logger';
+import { Database, Settings, Contract } from '../../types';
 import { softDeleteContract, renewContractAtomic } from '../../services/operationsService';
-import { operationsFacade } from '@/domain/operations/operations.facade';
 import { confirmDialog } from '../../components/shared/confirmDialog';
-import { supabaseData } from '../../services/supabaseDataService';
 import { runManualAutomation as runManualAutomationService } from '../../services/automationService';
 
 export const useOperationsHook = (
@@ -60,7 +59,7 @@ export const useOperationsHook = (
       toast.success('تم حذف العقد بنجاح (حذف منطقي).');
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : 'حدث خطأ أثناء محاولة الحذف.';
-      console.error('Delete error:', error);
+      logger.error('Delete contract failed', { message: error instanceof Error ? error.message : 'unknown_error' });
       toast.error(message);
     }
   }, [audit, refreshData]);
