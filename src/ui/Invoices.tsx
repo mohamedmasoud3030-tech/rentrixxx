@@ -104,6 +104,22 @@ const Invoices: React.FC = () => {
         });
     }, []);
 
+    const onQuickPay = useCallback((inv: any) => {
+        const rawInvoice = db.invoices.find((row) => row.id === inv.id);
+        if (rawInvoice) setQuickPayInvoice(rawInvoice);
+    }, [db.invoices]);
+
+    const onEdit = useCallback((inv: any) => {
+        const rawInvoice = db.invoices.find((row) => row.id === inv.id) || null;
+        setEditingInvoice(rawInvoice);
+        setIsModalOpen(true);
+    }, [db.invoices]);
+
+    const onDelete = useCallback((inv: any) => setDeletingInvoice(inv as any), []);
+
+    const onDateFromChange = useCallback((value: string) => updateDateRange(value, filters.dateTo), [filters.dateTo, updateDateRange]);
+    const onDateToChange = useCallback((value: string) => updateDateRange(filters.dateFrom, value), [filters.dateFrom, updateDateRange]);
+
     const handleBulkSendWhatsApp = useCallback(() => {
         const selected = invoicesWithDetails
             .filter(i => selectedIds.has(i.id))
@@ -189,8 +205,8 @@ const Invoices: React.FC = () => {
                     onStatusChange={updateStatus as any}
                     onTypeChange={updateType as any}
                     onSearchChange={updateSearch}
-                    onDateFromChange={(value) => updateDateRange(value, filters.dateTo)}
-                    onDateToChange={(value) => updateDateRange(filters.dateFrom, value)}
+                    onDateFromChange={onDateFromChange}
+                    onDateToChange={onDateToChange}
                     onGenerateInvoices={handleGenerateInvoices}
                     onAddManualInvoice={() => setIsModalOpen(true)}
                     onSendWhatsApp={handleBulkSendWhatsApp}
@@ -204,16 +220,9 @@ const Invoices: React.FC = () => {
                     invoices={invoicesWithDetails}
                     selectedIds={selectedIds}
                     onSelectToggle={toggleSelect}
-                    onQuickPay={(inv) => {
-                        const rawInvoice = db.invoices.find((row) => row.id === inv.id);
-                        if (rawInvoice) setQuickPayInvoice(rawInvoice);
-                    }}
-                    onEdit={(inv) => {
-                        const rawInvoice = db.invoices.find((row) => row.id === inv.id) || null;
-                        setEditingInvoice(rawInvoice);
-                        setIsModalOpen(true);
-                    }}
-                    onDelete={(inv) => setDeletingInvoice(inv as any)}
+                    onQuickPay={onQuickPay}
+                    onEdit={onEdit}
+                    onDelete={onDelete}
                     db={db}
                 />
             </Card>

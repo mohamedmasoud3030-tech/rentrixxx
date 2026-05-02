@@ -19,7 +19,7 @@ interface InvoiceFiltersProps {
   isLoadingMonths?: boolean;
 }
 
-export const InvoiceFilters: React.FC<InvoiceFiltersProps> = ({
+export const InvoiceFilters: React.FC<InvoiceFiltersProps> = React.memo(({
   filters,
   onStatusChange,
   onTypeChange,
@@ -142,4 +142,4 @@ export const InvoiceFilters: React.FC<InvoiceFiltersProps> = ({
       </div>
     </div>
   );
-};
+});

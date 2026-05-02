@@ -16,7 +16,7 @@ const colorClasses: Record<string, string> = {
   emerald: 'text-emerald-600 bg-emerald-50 border-emerald-100',
 };
 
-export const StatCard: React.FC<StatCardProps> = ({ label, value, icon, color, currency = 'OMR' }) => {
+export const StatCard: React.FC<StatCardProps> = React.memo(({ label, value, icon, color, currency = 'OMR' }) => {
   return (
     <div className={`p-4 rounded-2xl border ${colorClasses[color]} flex items-center justify-between`}>
       <div className="flex items-center gap-3">
@@ -33,4 +33,4 @@ export const StatCard: React.FC<StatCardProps> = ({ label, value, icon, color, c
       </div>
     </div>
   );
-};
+});
