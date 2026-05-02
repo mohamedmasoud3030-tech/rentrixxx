@@ -78,7 +78,7 @@ export const useAuthCore = (onAudit: (action: string, entity: string, entityId: 
         salt: '',
         role: (profile?.role as 'ADMIN' | 'USER') || 'USER',
         mustChange: profile?.must_change_password || false,
-        createdAt: profile?.created_at ? new Date(profile.created_at).getTime() : Date.now(),
+        createdAt: profile?.created_at ? profile.created_at : Date.now().toString(),
         isDisabled: false,
       };
 

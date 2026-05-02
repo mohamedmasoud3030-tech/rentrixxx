@@ -170,11 +170,11 @@ export const useFinanceCore = (
       const endTime = performance.now();
       logOperationTime('generateMonthlyInvoices', endTime - startTime);
       
-      if (result.invoicesCreated > 0) {
+      if (result.stats.invoicesCreated > 0) {
         setIsDataStale(true);
         await refreshData();
       }
-      return result.invoicesCreated;
+      return result.stats.invoicesCreated;
     } catch (err) {
       logger.error('[useFinanceCore] generateMonthlyInvoices error', err);
       toast.error('حدث خطأ أثناء توليد الفواتير');
