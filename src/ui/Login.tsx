@@ -9,6 +9,7 @@ import {
   EyeOff,
   Lock,
 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 const Login: React.FC = () => {
   const [email, setEmail] = useState("");
@@ -18,6 +19,7 @@ const Login: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
   const isSubmittingRef = useRef(false);
   const { auth } = useApp();
+  const { t } = useTranslation();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -58,10 +60,10 @@ const Login: React.FC = () => {
                 <span className="text-sm font-bold text-primary">Rentrix-Egy</span>
               </div>
               <h1 className="text-4xl md:text-5xl font-black bg-gradient-to-l from-primary to-primary/70 bg-clip-text text-transparent mb-3">
-                مرحباً بعودتك
+                {t('auth.welcomeBack')}
               </h1>
               <p className="text-muted-foreground text-lg">
-                سجل الدخول لإدارة عقاراتك بكفاءة
+                {t('auth.subtitle')}
               </p>
             </div>
 
@@ -70,7 +72,7 @@ const Login: React.FC = () => {
               {/* Email Input */}
               <div className="group">
                 <label className="block text-sm font-semibold text-text mb-2">
-                  البريد الإلكتروني
+                  {t('auth.email')}
                 </label>
                 <div className="relative">
                   <Mail className="absolute right-4 top-1/2 -translate-y-1/2 h-5 w-5 text-text-muted group-focus-within:text-primary transition-colors" />
@@ -90,7 +92,7 @@ const Login: React.FC = () => {
               {/* Password Input */}
               <div className="group">
                 <label className="block text-sm font-semibold text-text mb-2">
-                  كلمة المرور
+                  {t('auth.password')}
                 </label>
                 <div className="relative">
                   <Lock className="absolute right-4 top-1/2 -translate-y-1/2 h-5 w-5 text-text-muted group-focus-within:text-primary transition-colors" />
@@ -133,12 +135,12 @@ const Login: React.FC = () => {
                 <span
                   className={`transition-all ${isLoading ? "opacity-0" : "opacity-100"}`}
                 >
-                  تسجيل الدخول
+                  {t('auth.login')}
                 </span>
                 {isLoading && (
                   <div className="absolute flex items-center gap-2">
                     <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                    <span>جاري الدخول...</span>
+                    <span>{t('auth.loggingIn')}</span>
                   </div>
                 )}
               </button>

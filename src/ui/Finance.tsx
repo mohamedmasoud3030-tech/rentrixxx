@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Routes, Route, NavLink, Navigate, useLocation } from 'react-router-dom';
 import Invoices from './Invoices';
 import Financials from './Financials';
@@ -40,6 +41,7 @@ const FINANCIAL_BASE_PATH = '/financial';
 const Finance: React.FC = () => {
     const location = useLocation();
     const { db, settings, isDataStale } = useApp();
+    const { t } = useTranslation();
     const financeBasePath = FINANCIAL_BASE_PATH;
 
     useEffect(() => {
@@ -60,8 +62,8 @@ const Finance: React.FC = () => {
     if (isDataStale) {
         return (
             <PageStateCard
-                title="جاري تحميل البيانات المالية..."
-                message="يتم تجهيز الفواتير والسندات والحركات المالية."
+                title={t('finance.loadingTitle')}
+                message={t('finance.loadingMessage')}
             />
         );
     }
@@ -69,10 +71,10 @@ const Finance: React.FC = () => {
     if (hasConfigError) {
         return (
             <PageStateCard
-                title="تعذر فتح الإدارة المالية"
-                message="بيانات الشركة غير مكتملة في الإعدادات."
+                title={t('finance.configErrorTitle')}
+                message={t('finance.configErrorMessage')}
                 tone="error"
-                action={<NavLink to="/settings"><DSButton variant="secondary" className="border-red-300 text-red-700 hover:bg-red-50">الانتقال إلى الإعدادات</DSButton></NavLink>}
+                action={<NavLink to="/settings"><DSButton variant="secondary" className="border-red-300 text-red-700 hover:bg-red-50">{t('finance.goToSettings')}</DSButton></NavLink>}
             />
         );
     }
@@ -83,13 +85,13 @@ const Finance: React.FC = () => {
             {/* Page Header */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
-                    <h1 className="text-3xl font-black tracking-tight text-primary">الإدارة المالية</h1>
-                    <p className="text-text-muted text-sm mt-1">منصة موحدة للحسابات والمالية تربط العقود والفواتير والسندات والتقارير بذكاء</p>
+                    <h1 className="text-3xl font-black tracking-tight text-primary">{t('finance.title')}</h1>
+                    <p className="text-text-muted text-sm mt-1">{t('finance.subtitle')}</p>
                 </div>
                 <div className="flex items-center gap-3">
                     <div className="px-4 py-2 bg-emerald-50 border border-emerald-100 rounded-2xl flex items-center gap-2">
                         <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
-                        <span className="text-[10px] font-black text-emerald-700 uppercase tracking-widest">النظام المالي متصل</span>
+                        <span className="text-[10px] font-black text-emerald-700 uppercase tracking-widest">{t('finance.systemOnline')}</span>
                     </div>
                 </div>
             </div>

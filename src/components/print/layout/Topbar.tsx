@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { useApp } from '../../../contexts/AppContext';
 import { Sun, Moon, LogOut, Menu } from 'lucide-react';
 import Notifications from './Notifications';
@@ -11,6 +12,7 @@ interface TopbarProps {
 
 const Topbar: React.FC<TopbarProps> = ({ setSidebarOpen }) => {
   const { auth, settings, updateSettings } = useApp();
+  const { t, i18n } = useTranslation();
   const { pathname } = useLocation();
 
   const toggleTheme = () => {
@@ -22,7 +24,7 @@ const Topbar: React.FC<TopbarProps> = ({ setSidebarOpen }) => {
 
   const currentTheme = settings.appearance?.theme ?? 'light';
   const username = auth.currentUser?.username || '';
-  const role = auth.currentUser?.role === 'ADMIN' ? 'مدير النظام' : 'مستخدم';
+  const role = auth.currentUser?.role === 'ADMIN' ? t('nav.admin') : t('nav.user');
 
   const pageKey = Object.keys(NAVIGATION_META)
     .filter(k => k !== '/')
@@ -42,7 +44,7 @@ const Topbar: React.FC<TopbarProps> = ({ setSidebarOpen }) => {
           <button
             onClick={() => setSidebarOpen(true)}
             className="flex items-center justify-center w-9 h-9 rounded-xl hover:bg-background text-text-muted transition-colors active:scale-95 flex-shrink-0"
-            aria-label="فتح القائمة"
+            aria-label={t('nav.menuOpen')}
           >
             <Menu size={20} />
           </button>
@@ -58,13 +60,23 @@ const Topbar: React.FC<TopbarProps> = ({ setSidebarOpen }) => {
           <button
             onClick={toggleTheme}
             className="flex items-center justify-center h-9 w-9 rounded-xl hover:bg-background transition-colors active:scale-95"
-            title={currentTheme === 'dark' ? 'التبديل إلى الوضع الفاتح' : 'التبديل إلى الوضع الداكن'}
+            title={currentTheme === 'dark' ? t('nav.themeToLight') : t('nav.themeToDark')}
           >
             {currentTheme === 'dark'
               ? <Sun className="w-[18px] h-[18px] text-text-muted" />
               : <Moon className="w-[18px] h-[18px] text-text-muted" />
             }
           </button>
+
+          <select
+            aria-label={t('language.label')}
+            className="h-9 rounded-xl border border-border bg-card px-2 text-xs"
+            value={i18n.language}
+            onChange={(e) => void i18n.changeLanguage(e.target.value)}
+          >
+            <option value="ar">{t('language.ar')}</option>
+            <option value="en">{t('language.en')}</option>
+          </select>
 
           {/* Notifications */}
           <Notifications />
@@ -89,10 +101,10 @@ const Topbar: React.FC<TopbarProps> = ({ setSidebarOpen }) => {
             <button
               onClick={auth.logout}
               className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl hover:bg-danger-bg hover:text-danger-text transition-colors text-sm text-text-muted active:scale-95"
-              title="تسجيل الخروج"
+              title={t('nav.logout')}
             >
               <LogOut size={16} />
-              <span className="hidden sm:inline">خروج</span>
+              <span className="hidden sm:inline">{t('nav.exit')}</span>
             </button>
           </div>
         </div>

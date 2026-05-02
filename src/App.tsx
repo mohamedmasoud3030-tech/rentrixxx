@@ -1,4 +1,5 @@
 import React, { lazy, Suspense, useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { useApp } from '@/contexts/AppContext';
 import Layout from '@/components/print/layout/Layout';
@@ -63,14 +64,17 @@ const hexToHsl = (hex: string): string => {
   return `${Math.round(h * 360)} ${Math.round(s * 100)}% ${Math.round(l * 100)}%`;
 };
 
-const PageLoader: React.FC = () => (
+const PageLoader: React.FC = () => {
+  const { t } = useTranslation();
+  return (
   <div className="flex h-screen w-full items-center justify-center bg-background">
     <div className="flex flex-col items-center gap-4">
       <div className="h-12 w-12 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
-      <p className="animate-pulse text-sm font-bold text-text-muted">جاري تحميل نظام Rentrix...</p>
+      <p className="animate-pulse text-sm font-bold text-text-muted">{t('app.loading')}</p>
     </div>
   </div>
 );
+};
 
 const ROUTE_META: Record<string, { title: string; description: string }> = Object.fromEntries(
   Object.entries(NAVIGATION_META)
