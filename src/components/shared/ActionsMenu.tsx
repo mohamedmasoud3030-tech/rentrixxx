@@ -45,7 +45,7 @@ const ActionsMenu: React.FC<ActionsMenuProps> = ({ items }) => {
           <div className="py-1" role="menu" aria-orientation="vertical">
             {items.map((item, index) => (
               <button
-                key={index}
+                key={`action-${item.label}-${index}`}
                 onClick={() => {
                   item.onClick();
                   setIsOpen(false);

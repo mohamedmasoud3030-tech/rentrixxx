@@ -2,7 +2,7 @@ import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { useApp } from '../contexts/AppContext';
 import { renewContractAtomic } from '../services/operationsService';
 import { checkUnitMaintenanceBlock, type MaintenanceBlockResult } from '../services/operationsService';
-import { supabaseData } from '../services/supabaseDataService';
+import { getNextContractSerial, fetchContractsAndBalances } from '../services/operationsService';
 import { Contract, Receipt, Expense } from '../types';
 import Card from '../components/ui/Card';
 import Modal from '../components/ui/Modal';
@@ -143,7 +143,7 @@ const Contracts: React.FC = () => {
             const frequency = (contract as Contract & { rentFrequency?: string }).rentFrequency;
             const newEnd = getNewEndDate(newStart, frequency);
 
-            const nextNo = String(await supabaseData.incrementSerial('contract'));
+            const nextNo = await getNextContractSerial();
             const payload = {
                 id: crypto.randomUUID(),
                 no: nextNo,
@@ -175,10 +175,7 @@ const Contracts: React.FC = () => {
                 return;
             }
 
-            await Promise.all([
-                supabaseData.fetchAll<Contract>('contracts'),
-                supabaseData.fetchAll('contractBalances'),
-            ]);
+            await fetchContractsAndBalances();
             toast.success('تم تجديد العقد بنجاح.');
         } catch (err: unknown) {
             toast.error(err instanceof Error ? err.message : 'فشل التجديد');

@@ -9,6 +9,7 @@ import { MessageCircle, Users, BookOpen, Link as LinkIcon } from 'lucide-react';
 import NumberInput from '../components/ui/NumberInput';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
+import { logger } from '../services/logger';
 import { ROUTES } from '@/config/routes';
 import { AR_LABELS } from '../config/labels.ar';
 
@@ -189,7 +190,7 @@ const OwnerForm: React.FC<{ isOpen: boolean, onClose: () => void, owner: Owner |
             onClose();
         } catch (error: unknown) {
             const errorMsg = error instanceof Error ? error.message : 'فشل الحفظ';
-            console.error('OwnerForm error:', error);
+            logger.error('Owner form failed', { message: error instanceof Error ? error.message : 'unknown_error' });
             toast.error(`خطأ: ${errorMsg}`);
         } finally {
             isSavingRef.current = false;

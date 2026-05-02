@@ -1,4 +1,5 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { corsHeaders, handleOptions } from '../_shared/cors.ts';
 
 type AutomationResult = {
   success: boolean;
@@ -61,11 +62,7 @@ type AppNotificationRow = {
   type: string;
 };
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-  'Access-Control-Allow-Methods': 'POST,OPTIONS',
-};
+
 
 const getAdminClient = () => {
   const supabaseUrl = Deno.env.get('SUPABASE_URL');
@@ -279,7 +276,7 @@ const autoGenerateNotifications = async (adminClient: ReturnType<typeof createCl
   const overdueInvoices = allInvoices.filter(isRentOverdue);
   for (const invoice of overdueInvoices) {
     const alreadyExists = existingNotifs.some(
-      (n) => n.link === `/finance/invoices?invoiceId=${invoice.id}` && n.type === 'OVERDUE_BALANCE',
+      (n) => n.link === `/financial/invoices?invoiceId=${invoice.id}` && n.type === 'OVERDUE_BALANCE',
     );
     if (alreadyExists) continue;
 
@@ -291,7 +288,7 @@ const autoGenerateNotifications = async (adminClient: ReturnType<typeof createCl
       type: 'OVERDUE_BALANCE',
       title: 'فاتورة إيجار متأخرة',
       message: `الفاتورة رقم ${invoice.no} متأخرة بمبلغ ${invoice.amount - invoice.paid_amount}`,
-      link: `/finance/invoices?invoiceId=${invoice.id}`,
+      link: `/financial/invoices?invoiceId=${invoice.id}`,
     });
     if (insertError) throw insertError;
     count += 1;
@@ -381,12 +378,12 @@ const executeAutomationTasks = async (
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders });
+    return handleOptions(req);
   }
 
   if (req.method !== 'POST') {
     return new Response(JSON.stringify({ error: { code: 'method_not_allowed', message: 'Only POST is supported' } }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      headers: { ...corsHeaders(req.headers.get('Origin')), 'Content-Type': 'application/json' },
       status: 405,
     });
   }
@@ -430,7 +427,7 @@ Deno.serve(async (req) => {
     }
 
     return new Response(JSON.stringify(result), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      headers: { ...corsHeaders(req.headers.get('Origin')), 'Content-Type': 'application/json' },
       status: 200,
     });
   } catch (error: unknown) {
@@ -460,7 +457,7 @@ Deno.serve(async (req) => {
     }
 
     return new Response(JSON.stringify(failedResult), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      headers: { ...corsHeaders(req.headers.get('Origin')), 'Content-Type': 'application/json' },
       status: 500,
     });
   }

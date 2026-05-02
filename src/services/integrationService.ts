@@ -11,7 +11,7 @@ export const IntegrationService = {
             return;
         }
         const url = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(message)}`;
-        window.open(url, '_blank', 'noopener,noreferrer');
+        globalThis.open(url, '_blank', 'noopener,noreferrer');
     },
 
     syncToCloud: async (data: unknown, fileName: string) => {
@@ -21,7 +21,7 @@ export const IntegrationService = {
     },
 
     generateOwnerLink: async (ownerId: string) => {
-        const baseUrl = window.location.href.split('#')[0];
+        const baseUrl = globalThis.location.href.split('#')[0];
         const token = await createOwnerAccessToken(ownerId);
         return `${baseUrl}#/owner-view/${ownerId}?auth=${encodeURIComponent(token)}`;
     },
