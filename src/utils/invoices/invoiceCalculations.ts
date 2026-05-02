@@ -1,4 +1,5 @@
 import { Invoice } from '../../types';
+import type { ContractLite, InvoiceSearchContext } from '../../types/contractInvoiceLite';
 
 export const getInvoiceTotal = (invoice: Invoice): number => {
   return (invoice.amount || 0) + (invoice.taxAmount || 0);
@@ -67,14 +68,13 @@ export const filterInvoiceByDate = (
 export const filterInvoiceBySearch = (
   invoices: Invoice[],
   search: string,
-  contracts: any[],
-  tenants: any[]
+  context: InvoiceSearchContext
 ): Invoice[] => {
   if (!search.trim()) return invoices;
   
   return invoices.filter(inv => {
-    const contract = contracts.find(c => c.id === inv.contractId);
-    const tenant = contract ? tenants.find(t => t.id === contract.tenantId) : null;
+    const contract: ContractLite | undefined = context.contracts.find(c => c.id === inv.contractId);
+    const tenant = contract ? context.tenants.find(t => t.id === contract.tenantId) : null;
     return inv.no.includes(search) || tenant?.name.includes(search);
   });
 };
