@@ -29,12 +29,12 @@ if (!rootElement) {
 }
 
 globalThis.addEventListener('error', (event) => {
-  logger.error('[GlobalError] Uncaught error', event.error ?? event.message);
+  logger.error('[GlobalError] Uncaught error', { message: event.error?.message || event.message, code: event.error?.code });
   errorTracker.capture(event.error ?? event.message, { area: 'global', action: 'error-event' });
 });
 
 globalThis.addEventListener('unhandledrejection', (event) => {
-  logger.error('[GlobalError] Unhandled rejection', event.reason);
+  logger.error('[GlobalError] Unhandled rejection', { message: event.reason?.message || String(event.reason), code: event.reason?.code });
   errorTracker.capture(event.reason, { area: 'global', action: 'unhandled-rejection' });
 });
 

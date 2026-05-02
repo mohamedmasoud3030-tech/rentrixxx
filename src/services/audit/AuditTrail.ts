@@ -44,10 +44,10 @@ export const AuditTrail = {
         }),
       });
       if (error) {
-        logger.error('[AuditTrail] insert failed', error);
+        logger.error('[AuditTrail] insert failed', { message: error?.message, code: error?.code });
       }
     } catch (err) {
-      logger.error('[AuditTrail] unexpected error', err);
+      logger.error('[AuditTrail] unexpected error', { message: (err as any)?.message, code: (err as any)?.code });
     }
   },
 };

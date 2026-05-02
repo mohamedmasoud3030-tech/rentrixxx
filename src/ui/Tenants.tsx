@@ -147,7 +147,11 @@ const Tenants: React.FC = () => {
                                     <td className="px-6 py-4 border border-border">{t.phone}</td>
                                     <td className="px-6 py-4 border border-border">{t.idNo}</td>
                                     <td className="px-6 py-4 border border-border">
-                                        <span className={`px-2 py-1 text-xs rounded-full ${t.status === 'ACTIVE' ? 'bg-green-100 text-green-800 dark:bg-green-900/50' : 'bg-red-100 text-red-800 dark:bg-red-900/50'}`}>
+                                        <span className={`px-2 py-1 text-xs rounded-full ${
+                                            t.status === 'ACTIVE' 
+                                                ? 'bg-green-100 text-green-800 dark:bg-green-900/50' 
+                                                : 'bg-red-100 text-red-800 dark:bg-red-900/50'
+                                        }`}>
                                             {TENANT_STATUS_AR[t.status] || t.status}
                                         </span>
                                     </td>
@@ -271,8 +275,14 @@ const TenantDetailView: React.FC<{ tenant: Tenant; onBack: () => void }> = ({ te
                                     <td className="px-4 py-2 border border-border">{formatDate(c.end)}</td>
                                     <td className="px-4 py-2 border border-border">{formatCurrency(c.rent, currency)}</td>
                                     <td className="px-4 py-2 border border-border">
-                                        <span className={`px-2 py-0.5 text-xs rounded-full ${c.status === 'ACTIVE' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
-                                            {c.status === 'ACTIVE' ? 'نشط' : (c.status === 'ENDED' ? 'منتهي' : c.status)}
+                                        <span className={`px-2 py-0.5 text-xs rounded-full ${
+                                            c.status === 'ACTIVE' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
+                                        }`}>
+                                            {(() => {
+                                                if (c.status === 'ACTIVE') return 'نشط';
+                                                if (c.status === 'ENDED') return 'منتهي';
+                                                return c.status;
+                                            })()}
                                         </span>
                                     </td>
                                 </tr>

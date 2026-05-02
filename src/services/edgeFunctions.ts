@@ -15,7 +15,7 @@ export async function createOwnerAccessToken(ownerId: string): Promise<string> {
     body: { ownerId, action: 'issue' },
   });
   if (error || !data?.token) {
-    logger.error('[EdgeFunction] owner-access-token issue failed', error || data);
+    logger.error('[EdgeFunction] owner-access-token issue failed', { message: error?.message || (data as any)?.error, code: error?.code });
     throw new Error('تعذر إنشاء رابط البوابة الآمن.');
   }
   return data.token as string;
@@ -26,7 +26,7 @@ export async function verifyOwnerAccessToken(ownerId: string, token: string): Pr
     body: { ownerId, token, action: 'verify' },
   });
   if (error || !data?.owner) {
-    logger.warn('[EdgeFunction] owner-access-token verify failed', error || data);
+    logger.warn('[EdgeFunction] owner-access-token verify failed', { message: error?.message || (data as any)?.error, code: error?.code });
     throw new Error('الرابط غير صالح أو منتهي الصلاحية.');
   }
   return data as OwnerPortalPayload;
@@ -35,7 +35,7 @@ export async function verifyOwnerAccessToken(ownerId: string, token: string): Pr
 export async function adminCreateUser(payload: { email: string; password: string; username: string; role: 'ADMIN' | 'USER' }): Promise<{ id: string }> {
   const { data, error } = await supabase.functions.invoke('admin-create-user', { body: payload });
   if (error || !data?.id) {
-    logger.error('[EdgeFunction] admin-create-user failed', error || data);
+    logger.error('[EdgeFunction] admin-create-user failed', { message: error?.message || (data as any)?.error, code: error?.code });
     throw new Error(data?.error || error?.message || 'فشل إنشاء المستخدم');
   }
   return data as { id: string };
@@ -46,7 +46,7 @@ export async function askAssistant(prompt: string, context: unknown): Promise<st
     body: { prompt, context },
   });
   if (error || !data?.text) {
-    logger.error('[EdgeFunction] assistant-proxy failed', error || data);
+    logger.error('[EdgeFunction] assistant-proxy failed', { message: error?.message || (data as any)?.error, code: error?.code });
     throw new Error('تعذر الاتصال بالمساعد الذكي.');
   }
   return data.text as string;

@@ -15,7 +15,7 @@ export const queryClient = new QueryClient({
     },
     mutations: {
       onError: (error: any) => {
-        logger.error('[QueryClient] Mutation error:', error);
+        logger.error('[QueryClient] Mutation error', { message: error?.message, code: error?.code });
       },
     },
   },

@@ -65,7 +65,7 @@ export function useDataMutation<T extends { id?: string | number }>(tableName: s
       if (context?.previousData) {
         queryClient.setQueryData([tableName, 'all'], context.previousData);
       }
-      logger.error(`[Cache] Error updating ${tableName}, rolled back`, err);
+      logger.error(`[Cache] Error updating ${tableName}, rolled back`, { message: (err as any)?.message, code: (err as any)?.code });
     },
     onSettled: () => {
       // Always refetch after error or success to ensure sync with server

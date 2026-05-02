@@ -79,14 +79,14 @@ class AccountingDocumentEngine {
       });
 
       if (error) {
-        logger.error('[AccountingDocumentEngine] post_receipt_atomic RPC error', error);
+        logger.error('[AccountingDocumentEngine] post_receipt_atomic RPC error', { message: error?.message, code: error?.code });
         return { success: false, error: error.message || 'تعذر تنفيذ ترحيل السند.' };
       }
 
       const result = (data || {}) as { success?: boolean; receipt_id?: string; error?: string };
       if (!result.success) {
         const rpcError = result.error || 'فشل ترحيل السند.';
-        logger.error('[AccountingDocumentEngine] receipt post failed', rpcError);
+        logger.error('[AccountingDocumentEngine] receipt post failed', { message: rpcError });
         return { success: false, error: rpcError };
       }
 
@@ -101,7 +101,7 @@ class AccountingDocumentEngine {
       return { success: true, receiptId: result.receipt_id };
     } catch (err) {
       const message = err instanceof Error ? err.message : 'حدث خطأ غير متوقع.';
-      logger.error('[AccountingDocumentEngine] postReceiptDocument unexpected error', err);
+      logger.error('[AccountingDocumentEngine] postReceiptDocument unexpected error', { message: (err as any)?.message, code: (err as any)?.code });
       return { success: false, error: message };
     }
   }
@@ -121,7 +121,7 @@ class AccountingDocumentEngine {
       p_reverse_entries: payload.reverseEntries,
     });
     if (error) {
-      logger.error('[AccountingDocumentEngine] voidReceiptDocument failed', error);
+      logger.error('[AccountingDocumentEngine] voidReceiptDocument failed', { message: error?.message, code: error?.code });
       return { ok: false, step: 'void_receipt_atomic', details: { message: error.message } };
     }
     await AuditTrail.log({
