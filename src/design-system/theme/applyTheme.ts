@@ -21,7 +21,7 @@ export const applyThemePreset = (mode: ThemeMode): void => {
 };
 
 export const getStoredTheme = (): ThemeMode | null => {
-  if (typeof globalThis.window === 'undefined') return null;
+  if (typeof globalThis === 'undefined') return null;
   const saved = globalThis.localStorage.getItem(THEME_STORAGE_KEY);
   return saved && saved in themePresets ? (saved as ThemeMode) : null;
 };

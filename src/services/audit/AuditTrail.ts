@@ -64,7 +64,7 @@ const buildReferenceId = (event: Required<Pick<AuditEvent, 'action' | 'entityTyp
   ].join('|');
   let hash = 0;
   for (let i = 0; i < raw.length; i += 1) {
-    hash = (hash << 5) - hash + raw.charCodeAt(i);
+    hash = (hash << 5) - hash + (raw.codePointAt(i) || 0);
     hash |= 0;
   }
   return `evt_${Math.abs(hash).toString(16).padStart(8, '0')}`;

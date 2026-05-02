@@ -30,12 +30,12 @@ if (!rootElement) {
 
 globalThis.addEventListener('error', (event) => {
   logger.error('[GlobalError] Uncaught error', event.error ?? event.message);
-  errorTracker.capture(event.error ?? event.message, { area: 'window', action: 'error-event' });
+  errorTracker.capture(event.error ?? event.message, { area: 'global', action: 'error-event' });
 });
 
 globalThis.addEventListener('unhandledrejection', (event) => {
   logger.error('[GlobalError] Unhandled rejection', event.reason);
-  errorTracker.capture(event.reason, { area: 'window', action: 'unhandled-rejection' });
+  errorTracker.capture(event.reason, { area: 'global', action: 'unhandled-rejection' });
 });
 
 const root = createRoot(rootElement);

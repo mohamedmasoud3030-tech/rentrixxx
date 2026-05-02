@@ -45,7 +45,7 @@ const Invoices: React.FC = () => {
     useEffect(() => {
         const params = new URLSearchParams(location.search);
         const filterParam = params.get('filter');
-        if (filterParam && ['all', 'unpaid', 'overdue', 'paid'].includes(filterParam)) {
+        if (filterParam && new Set(['all', 'unpaid', 'overdue', 'paid']).has(filterParam)) {
             updateStatus(filterParam as any);
         }
     }, [location.search, updateStatus]);
@@ -88,7 +88,7 @@ const Invoices: React.FC = () => {
 
     const stats = useMemo(() => {
         const unpaid = db.invoices
-            .filter(i => ['UNPAID', 'PARTIALLY_PAID'].includes(getEffectiveStatus(i)))
+            .filter(i => new Set(['UNPAID', 'PARTIALLY_PAID']).has(getEffectiveStatus(i)))
             .reduce((sum, invoice) => sum + getInvoiceRemaining(invoice), 0);
         const overdueInvoices = db.invoices.filter(i => getEffectiveStatus(i) === 'OVERDUE');
         const overdue = getArrearsAmount(overdueInvoices);

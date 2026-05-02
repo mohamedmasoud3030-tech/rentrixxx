@@ -153,9 +153,10 @@ const LandForm: React.FC<{ isOpen: boolean, onClose: () => void, land: Land | nu
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
         const { name, value } = e.target;
-        const numericFields = ['area', 'ownerPrice', 'commission'];
-        const normalized = numericFields.includes(name) ? normalizeArabicNumerals(value) : value;
-        setData(prev => ({ ...prev, [name]: numericFields.includes(name) ? Number.parseFloat(normalized) : normalized }));
+        const numericFields = new Set(['area', 'ownerPrice', 'commission']);
+        const isNumeric = numericFields.has(name);
+        const normalized = isNumeric ? normalizeArabicNumerals(value) : value;
+        setData(prev => ({ ...prev, [name]: isNumeric ? Number.parseFloat(normalized) : normalized }));
     };
 
     const recordCommissionEntry = async (landId: string) => {

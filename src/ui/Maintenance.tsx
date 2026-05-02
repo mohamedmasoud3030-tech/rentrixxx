@@ -53,7 +53,7 @@ const Maintenance: React.FC = () => {
         if (!saved) return;
         try {
             const parsed = JSON.parse(saved) as { status?: MaintenanceStatusFilter; fromDate?: string; toDate?: string };
-            if (parsed.status && ['ALL', 'NEW', 'IN_PROGRESS', 'COMPLETED', 'CLOSED'].includes(parsed.status)) {
+            if (parsed.status && new Set(['ALL', 'NEW', 'IN_PROGRESS', 'COMPLETED', 'CLOSED']).has(parsed.status)) {
                 setStatusFilter(parsed.status);
             }
             if (parsed.fromDate) setFromDate(parsed.fromDate);
@@ -266,7 +266,7 @@ const Maintenance: React.FC = () => {
                                             </span>
                                         </td>
                                         <td className="px-4 py-3 border border-border">
-                                            {['COMPLETED', 'CLOSED'].includes(rec.status) && completionDate ? formatDate(completionDate) : '—'}
+                                            {new Set(['COMPLETED', 'CLOSED']).has(rec.status) && completionDate ? formatDate(completionDate) : '—'}
                                         </td>
                                         <td className="px-4 py-3 border border-border" onClick={e => e.stopPropagation()}>
                                             <ActionsMenu
@@ -476,7 +476,7 @@ const MaintenanceForm: React.FC<{ isOpen: boolean; onClose: () => void; record: 
                         <label className="block text-sm font-medium mb-1">مُكلَّف إلى</label>
                         <input value={assignedTo} onChange={e => setAssignedTo(e.target.value)} placeholder="اسم الفني / المقاول" />
                     </div>
-                    {['COMPLETED', 'CLOSED'].includes(status) && (
+                    {new Set(['COMPLETED', 'CLOSED']).has(status) && (
                         <div>
                             <label className="block text-sm font-medium mb-1">تاريخ الإنجاز</label>
                             <input type="date" value={completionDate} onChange={e => setCompletionDate(e.target.value)} />

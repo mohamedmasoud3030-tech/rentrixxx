@@ -41,7 +41,7 @@ export const errorTracker = {
       context,
       error: normalized,
       userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : 'server',
-      url: typeof globalThis.window !== 'undefined' ? globalThis.location.href : '',
+      url: typeof globalThis !== 'undefined' ? globalThis.location.href : '',
     });
 
     if (!dsn) {

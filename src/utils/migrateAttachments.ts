@@ -12,7 +12,7 @@ const dataUrlToFile = (dataUrl: string, fileName: string): File => {
   const binary = atob(base64Data);
   const bytes = new Uint8Array(binary.length);
   for (let i = 0; i < binary.length; i++) {
-    bytes[i] = binary.charCodeAt(i);
+    bytes[i] = binary.codePointAt(i) || 0;
   }
   return new File([bytes], fileName, { type: mimeType });
 };
