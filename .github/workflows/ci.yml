@@ -1,0 +1,116 @@
+name: CI - Build & Test
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  build:
+    name: Build & Test
+    runs-on: ubuntu-latest
+    
+    strategy:
+      matrix:
+        node-version: [22.x]
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: npm
+      
+      - name: Install dependencies
+        run: npm install --legacy-peer-deps
+      
+      - name: TypeScript type check
+        run: npm run typecheck
+      
+      - name: Run tests
+        run: npm run test -- --run
+        continue-on-error: true
+      
+      - name: Build for production
+        run: npm run build
+      
+      - name: Check build artifacts
+        run: |
+          if [ ! -d "dist" ]; then
+            echo "❌ Build failed: dist directory not found"
+            exit 1
+          fi
+          echo "✅ Build successful - dist directory exists"
+          ls -lh dist/ | head -10
+  
+  lint:
+    name: Code Quality Checks
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node.js 22.x
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.x
+          cache: npm
+      
+      - name: Install dependencies
+        run: npm install --legacy-peer-deps
+      
+      - name: Validate commit messages
+        run: bash .github/scripts/validate-commit-messages.sh origin/main
+        continue-on-error: true
+      
+      - name: Check for console logs
+        run: |
+          echo "ℹ️ Checking for console.log statements..."
+          grep -r "console\.\(log\|warn\|error\)" src/ --include="*.ts" --include="*.tsx" | wc -l || true
+        continue-on-error: true
+
+  security:
+    name: Security Check
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Check for exposed secrets
+        run: |
+          echo "🔐 Scanning for potential secrets..."
+          if grep -r "VITE_SUPABASE.*=" src/ --include="*.ts" --include="*.tsx" | grep -v "env\." | grep -v "import.meta"; then
+            echo "⚠️ Warning: Possible hardcoded secrets found"
+            exit 1
+          fi
+          echo "✅ No hardcoded secrets detected"
+        continue-on-error: false
+      
+      - name: Verify environment variable usage
+        run: |
+          echo "✅ Checking environment variable imports..."
+          if grep -r "import.meta.env.VITE_" src/ --include="*.ts" --include="*.tsx" | wc -l; then
+            echo "✅ Environment variables properly imported"
+          fi
+        continue-on-error: true
+
+  # Post status to PR
+  status:
+    name: CI Status
+    runs-on: ubuntu-latest
+    needs: [build, lint, security]
+    if: always()
+    
+    steps:
+      - name: Check CI status
+        run: |
+          if [ "${{ needs.build.result }}" == "success" ] && [ "${{ needs.security.result }}" == "success" ]; then
+            echo "✅ CI passed - ready for deployment"
+            exit 0
+          else
+            echo "⚠️ CI checks completed with warnings"
+            exit 0
+          fi

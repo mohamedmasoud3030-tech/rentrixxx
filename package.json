@@ -1,7 +1,7 @@
 {
   "name": "rentrix-pwa",
   "version": "2.0.0",
-  "description": "نظام إدارة العقارات الذكي - Rentrix Property Management System",
+  "description": "\u0646\u0638\u0627\u0645 \u0625\u062f\u0627\u0631\u0629 \u0627\u0644\u0639\u0642\u0627\u0631\u0627\u062a \u0627\u0644\u0630\u0643\u064a - Rentrix Property Management System",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -15,10 +15,11 @@
     "test:watch": "vitest",
     "test:ui": "vitest --ui"
   },
-  "author": "Mohamed Masoud",
-  "license": "UNLICENSED",
+  "author": "Rentrix",
+  "license": "SEE LICENSE IN LICENSE",
   "engines": {
-    "node": ">=22"
+    "node": ">=22.0.0",
+    "npm": ">=10.0.0"
   },
   "dependencies": {
     "@google/genai": "^1.40.0",
@@ -53,5 +54,9 @@
     "vite": "^5.3.4",
     "vite-plugin-pwa": "^0.20.5",
     "vitest": "^4.1.5"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/mohamedmasoud3030-tech/rentrixxx.git"
   }
 }

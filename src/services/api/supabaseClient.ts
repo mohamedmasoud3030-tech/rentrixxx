@@ -1,11 +1,15 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '@/types/supabase';
 
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL?.trim()
-  || 'https://nnggcnpcuomwfuupupwg.supabase.co';
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY?.trim()
-  || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5uZ2djbnBjdW9td2Z1dXB1cHdnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM4MTcyMjQsImV4cCI6MjA4OTM5MzIyNH0.i_3dknmkEjUONYx0bF_6CujPsBKMH4zfrC_qPz-XxZE';
+if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+  throw new Error(
+    'Missing Supabase credentials. ' +
+    'Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY environment variables.'
+  );
+}
 
 let supabaseInstance: SupabaseClient<Database> | null = null;
 
