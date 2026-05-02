@@ -2,7 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { useApp } from '@/contexts/AppContext';
 import { formatCurrency } from '@/utils/helpers';
 import { useNavigate } from 'react-router-dom';
-import { Search, Building2, Users, FileText, Banknote, TrendingUp, TrendingDown, AlertTriangle, Wrench, Home, Percent, DollarSign, CalendarClock } from 'lucide-react';
+import { Search, Building2, Users, FileText, Banknote, TrendingUp, TrendingDown, AlertTriangle, Home, Percent, DollarSign } from 'lucide-react';
 import { Contract, Receipt as ReceiptType, Expense, Invoice } from '@/types';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 import { startOfMonth, endOfMonth, subMonths, eachMonthOfInterval, isWithinInterval, format } from 'date-fns';

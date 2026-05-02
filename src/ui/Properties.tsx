@@ -6,14 +6,13 @@ import Modal from '../components/ui/Modal';
 import ActionsMenu, { EditAction, DeleteAction } from '../components/shared/ActionsMenu';
 import AttachmentsManager from '../components/shared/AttachmentsManager';
 import ConfirmActionModal from '../components/shared/ConfirmActionModal';
-import { formatCurrency, toArabicDigits, formatDate, normalizeArabicNumerals } from '../utils/helpers';
+import { formatCurrency, toArabicDigits, normalizeArabicNumerals } from '../utils/helpers';
 import NumberInput from '../components/ui/NumberInput';
-import { Building, Home, ArrowRight, User, Map as MapIcon, AlertCircle, Clock, FileText, Wrench, Phone, Percent, TrendingUp, Zap, Droplets, Flame, Wifi, ChevronRight, Plus, Image, Trash2 } from 'lucide-react';
+import { Building, Home, ArrowRight, User, Map as MapIcon, AlertCircle, Percent, Zap, ChevronRight, Plus, Image, Trash2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 import { logger } from '../services/logger';
 import PropertyMapView from './PropertyMap';
-import { PieChart as RechartsPie, Pie, Cell, ResponsiveContainer, Legend } from 'recharts';
 import SearchFilterBar from '../components/shared/SearchFilterBar';
 import { getAttachmentUrl, uploadAttachment } from '../services/attachmentService';
 

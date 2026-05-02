@@ -1,4 +1,4 @@
-import React, { lazy, Suspense, useEffect } from 'react';
+import React, { lazy, Suspense, useEffect, useState } from 'react';
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { useApp } from '@/contexts/AppContext';
 import Layout from '@/components/print/layout/Layout';
@@ -8,6 +8,7 @@ import OwnerView from '@/ui/OwnerView';
 import { Toaster } from 'react-hot-toast';
 import ProtectedRoute from '@/components/shared/ProtectedRoute';
 import { NAVIGATION_META } from '@/config/navigationMeta';
+import { supabase } from '@/services/supabase';
 import { applyThemePreset, initThemePreset, type ThemeMode } from '@/design-system';
 import { applyBrandConfig } from '@/branding/brand-config/defaultBrand';
 import { tenantThemeRegistry } from '@/branding/tenant-themes/tenantThemeRegistry';

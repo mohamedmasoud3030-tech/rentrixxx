@@ -45,7 +45,7 @@ export const errorTracker = {
     });
 
     if (!dsn) {
-      // eslint-disable-next-line no-console
+       
       console.error('[error-tracker:fallback]', payload);
       return;
     }

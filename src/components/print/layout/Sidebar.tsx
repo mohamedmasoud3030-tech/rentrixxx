@@ -16,7 +16,7 @@ interface SidebarProps {
 const Sidebar: React.FC<SidebarProps> = ({ sidebarOpen, setSidebarOpen }) => {
   const { auth, settings, db } = useApp();
   const { pathname } = useLocation();
-  const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>({});
+
   const [lastRunDate, setLastRunDate] = useState<string | null>(null);
   const [expandedItems, setExpandedItems] = useState<Record<string, boolean>>({});
 
@@ -79,7 +79,6 @@ const Sidebar: React.FC<SidebarProps> = ({ sidebarOpen, setSidebarOpen }) => {
   }, [pathname, navItems]);
 
   const companyName = settings.general?.company?.name ?? 'Rentrix';
-  const getGroupKey = (title: string) => `group:${title}`;
 
   useEffect(() => {
     if (!sidebarOpen) return;

@@ -1,4 +1,4 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useFetchAll, useDataMutation } from './useDataQueries';
 import { supabaseData } from '@/services/supabaseDataService';
 

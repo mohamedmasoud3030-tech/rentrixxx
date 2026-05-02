@@ -33,23 +33,23 @@ const formatPayload = (message: string, meta?: unknown) => {
 export const logger = {
   debug(message: string, meta?: unknown) {
     if (!shouldLog('debug')) return;
-    // eslint-disable-next-line no-console
+     
     console.debug(...formatPayload(message, meta));
   },
   info(message: string, meta?: unknown) {
     if (!shouldLog('info')) return;
-    // eslint-disable-next-line no-console
+     
     console.info(...formatPayload(message, meta));
   },
   warn(message: string, meta?: unknown) {
     if (!shouldLog('warn')) return;
-    // eslint-disable-next-line no-console
+     
     console.warn(...formatPayload(message, meta));
   },
   error(message: string, meta?: unknown) {
     if (!shouldLog('error')) return;
     const payload = formatPayload(message, meta);
-    // eslint-disable-next-line no-console
+     
     console.error(...payload);
     errorTracker.capture(meta ?? message, { area: 'logger', action: message });
   },

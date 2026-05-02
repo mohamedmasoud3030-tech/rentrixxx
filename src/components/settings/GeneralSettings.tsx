@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useApp } from '../../contexts/AppContext';
 import { toast } from 'react-hot-toast';
 import { Settings } from '../../types';
-import { Building2, Phone, MapPin, Mail, FileText, DollarSign, Clock, Hash, Shield, AlertTriangle } from 'lucide-react';
+import { Building2, Phone, MapPin, Mail, FileText, DollarSign, Clock, Hash, AlertTriangle } from 'lucide-react';
 import { normalizeArabicNumerals } from '../../utils/helpers';
 
 type GeneralCompany = Settings['general']['company'];
