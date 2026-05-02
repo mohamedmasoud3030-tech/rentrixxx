@@ -8,6 +8,9 @@ import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianG
 import { startOfMonth, endOfMonth, subMonths, eachMonthOfInterval, isWithinInterval, format } from 'date-fns';
 import { ar } from 'date-fns/locale';
 import { getArrearsAmount, getArrearsInvoices, getCashInflow, getExpenseImpact, getRevenueFromPaidInvoices } from '@/services/financeService';
+import { PageStateCard } from '@/components/ui/PageStates';
+import { AppShellLayout } from '@/app/layouts/AppShellLayout';
+import { DSButton } from '@/design-system';
 
 const QuickSearch = () => {
     const [query, setQuery] = useState('');
@@ -29,7 +32,12 @@ const QuickSearch = () => {
             <input type="text" placeholder="🔍 ابحث عن مستأجر أو وحدة..." className="w-full px-4 py-3 pr-12 rounded-full border-2 border-border/50" onChange={e => setQuery(e.target.value)} value={query} />
             {results.length > 0 && (
                 <div className="absolute top-full left-0 right-0 mt-2 bg-card border border-border rounded-lg shadow-lg z-10">
-                    {results.map(r => <button key={r.id} onClick={() => navigate(`/contracts?contractId=${r.id}`)} className="w-full p-3 hover:bg-background text-sm text-right">{r.unitName} — {r.tenantName}</button>)}
+                    {results.map(r => <button key={r.id} onClick={() => navigate(`/contracts?contractId=${r.id}`)} className="w-full p-3 hover:bg-background text-sm text-right transition active:scale-[0.98]">{r.unitName} — {r.tenantName}</button>)}
+                </div>
+            )}
+            {query.length >= 2 && results.length === 0 && (
+                <div className="absolute top-full left-0 right-0 mt-2 bg-card border border-border rounded-lg shadow-lg z-10 p-3 text-sm text-text-muted text-right">
+                    لا توجد نتائج مطابقة.
                 </div>
             )}
         </div>
@@ -98,16 +106,57 @@ const Dashboard: React.FC = () => {
         { key: 'maintenance', title: 'صيانة معلقة', detail: `${stats.pendingMaintenance} طلب`, path: '/properties' },
     ];
 
+    const isLoading = !settings;
+    const hasConfigError = !settings?.general?.company?.name;
+    const hasData = db.properties.length > 0 || db.units.length > 0 || db.contracts.length > 0;
+
+    if (isLoading) {
+        return (
+            <PageStateCard
+                title="جاري تحميل لوحة التحكم..."
+                message="يتم تجهيز البيانات والمؤشرات الآن."
+            />
+        );
+    }
+
+    if (hasConfigError) {
+        return (
+            <PageStateCard
+                title="تعذر عرض لوحة التحكم"
+                message="بيانات الشركة الأساسية غير مكتملة في الإعدادات."
+                tone="error"
+                action={
+                    <DSButton onClick={() => navigate('/settings')} variant="secondary" className="border-red-300 text-red-700 hover:bg-red-50">الانتقال إلى الإعدادات</DSButton>
+                }
+            />
+        );
+    }
+
+    if (!hasData) {
+        return (
+            <PageStateCard
+                title="لا توجد بيانات بعد"
+                message="ابدأ بإضافة عقار أو وحدة أو عقد حتى تظهر مؤشرات لوحة التحكم."
+                action={
+                    <DSButton onClick={() => navigate('/properties')}>إضافة أول عقار</DSButton>
+                }
+            />
+        );
+    }
+
     return (
+        <AppShellLayout>
         <div className="space-y-6">
             <header className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
                 <div>
-                    <h1 className="text-3xl font-black">لوحة التحكم</h1>
-                    <p className="text-text-muted">{settings.general.company.name}</p>
+                    <h1 className="text-[28px] leading-tight font-black">لوحة التحكم</h1>
+                    <p className="text-sm text-text-muted mt-1">{settings.general.company.name}</p>
                 </div>
             </header>
 
-            <QuickSearch />
+            <div className="bg-card border border-border rounded-xl p-4">
+                <QuickSearch />
+            </div>
 
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
                 <KpiMini label="العقارات" value={stats.totalProperties} icon={<Building2 size={18} />} color="blue" />
@@ -118,19 +167,22 @@ const Dashboard: React.FC = () => {
                 <KpiMini label="الإشغال" value={`${stats.occupancyRate.toFixed(0)}%`} icon={<Percent size={18} />} color="green" />
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+            <section className="space-y-3">
+                <h2 className="text-[22px] font-semibold text-text">المؤشرات المالية</h2>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
                 <KpiCard title="إيرادات الشهر" value={formatCurrency(stats.monthlyRevenue, currency)} icon={<TrendingUp size={22} />} gradient="from-emerald-600 to-emerald-400" />
                 <KpiCard title="مصروفات الشهر" value={formatCurrency(stats.monthlyExpenses, currency)} icon={<TrendingDown size={22} />} gradient="from-rose-600 to-rose-400" />
                 <KpiCard title="صافي الشهر" value={formatCurrency(stats.netMonthly, currency)} icon={<DollarSign size={22} />} gradient="from-blue-600 to-blue-400" />
                 <KpiCard title="رصيد الخزنة" value={formatCurrency(stats.treasuryBalance, currency)} icon={<Banknote size={22} />} gradient="from-amber-600 to-yellow-400" />
                 <KpiCard title="أرصدة دائنة" value={formatCurrency(stats.totalCreditBalances, currency)} icon={<AlertTriangle size={22} />} gradient="from-violet-600 to-fuchsia-400" />
-            </div>
+                </div>
+            </section>
 
-            <div className="bg-card p-5 rounded-2xl border border-border">
-                <h3 className="font-bold mb-3">تنبيهات اليوم</h3>
+            <div className="bg-card p-6 rounded-xl border border-border">
+                <h3 className="text-[18px] font-medium mb-3">تنبيهات اليوم</h3>
                 <div className="grid md:grid-cols-3 gap-3">
                     {alerts.map(a => (
-                        <button key={a.key} onClick={() => navigate(a.path)} className="text-right p-3 rounded-xl border border-border hover:bg-background">
+                        <button key={a.key} onClick={() => navigate(a.path)} className="text-right p-3 rounded-xl border border-border hover:bg-background/60 transition active:scale-[0.98]">
                             <div className="font-bold">{a.title}</div>
                             <div className="text-sm text-text-muted">{a.detail}</div>
                         </button>
@@ -140,6 +192,7 @@ const Dashboard: React.FC = () => {
 
             <DashboardRevenueChart receipts={db.receipts} expenses={db.expenses} currency={currency} />
         </div>
+        </AppShellLayout>
     );
 };
 
@@ -157,14 +210,15 @@ const DashboardRevenueChart: React.FC<{ receipts: ReceiptType[]; expenses: Expen
     }, [receipts, expenses]);
 
     return (
-        <div className="bg-card p-5 rounded-2xl border border-border">
+        <div className="bg-card p-6 rounded-xl border border-border">
+            <h3 className="text-[18px] font-medium mb-4">اتجاه الإيرادات والمصروفات</h3>
             <div className="h-52" dir="ltr">
                 <ResponsiveContainer width="100%" height="100%">
                     <AreaChart data={chartData}>
                         <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
                         <XAxis dataKey="name" fontSize={12} />
                         <YAxis fontSize={11} tickFormatter={v => (v > 0 ? `${(v / 1000).toFixed(0)}k` : '0')} />
-                        <Tooltip formatter={(value: any) => formatCurrency(value as number, currency as 'OMR' | 'SAR' | 'EGP')} />
+                        <Tooltip formatter={(value) => formatCurrency(Number(value ?? 0), currency as 'OMR' | 'SAR' | 'EGP')} />
                         <Area type="monotone" dataKey="revenue" stroke="#10b981" fill="#10b98133" strokeWidth={2} />
                         <Area type="monotone" dataKey="expenses" stroke="#ef4444" fill="#ef444433" strokeWidth={2} />
                     </AreaChart>
@@ -175,17 +229,20 @@ const DashboardRevenueChart: React.FC<{ receipts: ReceiptType[]; expenses: Expen
 };
 
 const KpiMini: React.FC<{ label: string; value: string | number; icon: React.ReactNode; color: string }> = ({ label, value, icon, color }) => (
-    <div className="bg-card p-4 rounded-lg border border-border text-center">
-        <div className="w-10 h-10 mx-auto rounded-lg flex items-center justify-center mb-2 bg-background">{icon}</div>
-        <p className="text-lg font-bold">{value}</p>
+    <div className="bg-card p-4 rounded-xl border border-border text-center hover:shadow-sm transition">
+        <div className="w-10 h-10 mx-auto rounded-lg flex items-center justify-center mb-2 bg-background/70">{icon}</div>
+        <p className="text-lg font-bold leading-tight">{value}</p>
         <p className="text-xs text-text-muted mt-1">{label}</p>
     </div>
 );
 
 const KpiCard: React.FC<{ title: string; value: string; icon: React.ReactNode; gradient: string }> = ({ title, value, icon, gradient }) => (
-    <div className={`bg-gradient-to-br ${gradient} p-5 rounded-2xl text-white`}>
-        <div className="flex justify-between items-start"><p className="opacity-80 text-sm">{title}</p><div className="opacity-60">{icon}</div></div>
-        <h2 className="text-2xl font-bold mt-3" dir="ltr">{value}</h2>
+    <div className="bg-card p-5 rounded-xl border border-border hover:shadow-sm transition">
+        <div className="flex justify-between items-start">
+            <p className="text-sm text-text-muted">{title}</p>
+            <div className="text-primary">{icon}</div>
+        </div>
+        <h2 className="text-2xl font-bold mt-3 text-text" dir="ltr">{value}</h2>
     </div>
 );
 

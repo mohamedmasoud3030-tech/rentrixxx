@@ -42,7 +42,7 @@ const CommunicationHub: React.FC = () => {
         }
         const text = encodeURIComponent(notification.message);
         const url = `https://wa.me/${phone}?text=${text}`;
-        window.open(url, '_blank');
+        globalThis.open(url, '_blank');
         // Optimistically mark as sent
         handleMarkAsSent(notification.id);
     };

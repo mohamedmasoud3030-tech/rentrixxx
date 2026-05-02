@@ -49,6 +49,7 @@
     }
     </script>
 
+    <!-- Trusted Google-hosted resources; SRI is not stable for these dynamic endpoints. -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;900&display=swap" rel="stylesheet">
@@ -184,10 +185,10 @@
     <script>
       (function() {
         const theme = localStorage.getItem('theme') || 'light';
-        document.documentElement.setAttribute('data-theme', theme);
+        document.documentElement.dataset.theme = theme;
       })();
     </script>
-    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <script src="https://accounts.google.com/gsi/client" async defer crossorigin="anonymous" referrerpolicy="strict-origin-when-cross-origin"></script>
 
 </head>
   <body>

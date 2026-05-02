@@ -10,6 +10,12 @@ import Accounting from './Accounting';
 import FinanceIntelligenceHub from '../components/finance/FinanceIntelligenceHub';
 import Arrears from './financial/Arrears';
 import { AR_LABELS } from '../config/labels.ar';
+import { FINANCIAL_ROUTES } from '@/config/routes';
+import { useApp } from '@/contexts/AppContext';
+import { PageStateCard } from '@/components/ui/PageStates';
+import { DSButton } from '@/design-system';
+import { AppShellLayout } from '@/app/layouts/AppShellLayout';
+
 
 const FinanceTab: React.FC<{ to: string, icon: React.ReactNode, label: string }> = ({ to, icon, label }) => (
     <NavLink
@@ -29,24 +35,50 @@ const FinanceTab: React.FC<{ to: string, icon: React.ReactNode, label: string }>
 );
 
 const LAST_FINANCE_TAB_KEY = 'rentrix:last-finance-tab';
+const FINANCIAL_BASE_PATH = '/financial';
 
 const Finance: React.FC = () => {
     const location = useLocation();
-    const financeBasePath = location.pathname.startsWith('/financial') ? '/financial' : '/finance';
+    const { db, settings, isDataStale } = useApp();
+    const financeBasePath = FINANCIAL_BASE_PATH;
 
     useEffect(() => {
-        if ((location.pathname.startsWith('/finance/') || location.pathname.startsWith('/financial/')) && location.pathname !== '/finance' && location.pathname !== '/financial') {
-            window.localStorage.setItem(LAST_FINANCE_TAB_KEY, location.pathname);
+        if (location.pathname.startsWith('/financial/') && location.pathname !== '/financial') {
+            globalThis.localStorage.setItem(LAST_FINANCE_TAB_KEY, location.pathname);
         }
     }, [location.pathname]);
 
     const defaultFinancePath = useMemo(() => {
-        const savedPath = window.localStorage.getItem(LAST_FINANCE_TAB_KEY);
-        const isSupportedSavedPath = savedPath && (savedPath.startsWith('/finance/') || savedPath.startsWith('/financial/'));
-        return isSupportedSavedPath ? savedPath : `${financeBasePath}/invoices`;
+        const savedPath = globalThis.localStorage.getItem(LAST_FINANCE_TAB_KEY);
+        if (!savedPath) return `${financeBasePath}/invoices`;
+        return savedPath.startsWith('/financial/') ? savedPath : `${financeBasePath}/invoices`;
     }, [financeBasePath]);
 
+    const hasConfigError = !settings?.general?.company?.name;
+    const hasFinancialData = db.invoices.length > 0 || db.receipts.length > 0 || db.expenses.length > 0 || db.journalEntries.length > 0;
+
+    if (isDataStale) {
+        return (
+            <PageStateCard
+                title="جاري تحميل البيانات المالية..."
+                message="يتم تجهيز الفواتير والسندات والحركات المالية."
+            />
+        );
+    }
+
+    if (hasConfigError) {
+        return (
+            <PageStateCard
+                title="تعذر فتح الإدارة المالية"
+                message="بيانات الشركة غير مكتملة في الإعدادات."
+                tone="error"
+                action={<NavLink to="/settings"><DSButton variant="secondary" className="border-red-300 text-red-700 hover:bg-red-50">الانتقال إلى الإعدادات</DSButton></NavLink>}
+            />
+        );
+    }
+
     return (
+        <AppShellLayout>
         <div className="space-y-8 animate-in fade-in duration-500">
             {/* Page Header */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -64,14 +96,22 @@ const Finance: React.FC = () => {
 
             <FinanceIntelligenceHub />
 
+            {!hasFinancialData && (
+                <PageStateCard
+                    title="لا توجد بيانات مالية حتى الآن"
+                    message="ابدأ بإصدار فاتورة أو تسجيل سند قبض/مصروف حتى تظهر التحليلات المالية."
+                    action={<NavLink to={FINANCIAL_ROUTES.invoices}><DSButton>إنشاء أول فاتورة</DSButton></NavLink>}
+                />
+            )}
+
             {/* Navigation Tabs */}
-            <Card className="p-1.5 overflow-hidden border-none shadow-lg bg-card/50 backdrop-blur-md sticky top-4 z-10">
+            <Card className="p-1.5 overflow-hidden border-none shadow-lg glass-card sticky top-4 z-10">
                 <nav className="flex items-center gap-1 overflow-x-auto whitespace-nowrap scrollbar-hide">
-                    <FinanceTab to="/finance/invoices" icon={<ReceiptText size={20}/>} label={AR_LABELS.invoices} />
-                    <FinanceTab to="/finance/financials" icon={<Wallet size={20}/>} label={AR_LABELS.paymentsAndExpenses} />
-                    <FinanceTab to="/finance/maintenance" icon={<Wrench size={20}/>} label="الصيانة" />
-                    <FinanceTab to="/finance/gl" icon={<Calculator size={20}/>} label="الأستاذ العام" />
-                    <FinanceTab to="/finance/accounting" icon={<BookOpen size={20}/>} label="دليل الحسابات" />
+                    <FinanceTab to={FINANCIAL_ROUTES.invoices} icon={<ReceiptText size={20}/>} label={AR_LABELS.invoices} />
+                    <FinanceTab to={FINANCIAL_ROUTES.receipts} icon={<Wallet size={20}/>} label={AR_LABELS.paymentsAndExpenses} />
+                    <FinanceTab to={FINANCIAL_ROUTES.maintenance} icon={<Wrench size={20}/>} label="الصيانة" />
+                    <FinanceTab to={FINANCIAL_ROUTES.gl} icon={<Calculator size={20}/>} label="الأستاذ العام" />
+                    <FinanceTab to={FINANCIAL_ROUTES.accounting} icon={<BookOpen size={20}/>} label="دليل الحسابات" />
                 </nav>
             </Card>
 
@@ -82,7 +122,6 @@ const Finance: React.FC = () => {
                     <Route path="payments" element={<Financials initialTab="receipts" />} />
                     <Route path="expenses" element={<Financials initialTab="expenses" />} />
                     <Route path="receipts" element={<Financials initialTab="receipts" />} />
-                    <Route path="financials" element={<Navigate to="../receipts" replace />} />
                     <Route path="arrears" element={<Arrears />} />
                     <Route path="maintenance" element={<Maintenance />} />
                     <Route path="gl" element={<GeneralLedger />} />
@@ -91,6 +130,7 @@ const Finance: React.FC = () => {
                 </Routes>
             </div>
         </div>
+        </AppShellLayout>
     );
 };
 

@@ -11,6 +11,7 @@ import NumberInput from '../components/ui/NumberInput';
 import { Building, Home, ArrowRight, User, Map as MapIcon, AlertCircle, Clock, FileText, Wrench, Phone, Percent, TrendingUp, Zap, Droplets, Flame, Wifi, ChevronRight, Plus, Image, Trash2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
+import { logger } from '../services/logger';
 import PropertyMapView from './PropertyMap';
 import { PieChart as RechartsPie, Pie, Cell, ResponsiveContainer, Legend } from 'recharts';
 import SearchFilterBar from '../components/shared/SearchFilterBar';
@@ -26,7 +27,7 @@ class ErrorBoundary extends Component<{ children: ReactNode; fallback?: ReactNod
         return { hasError: true, error };
     }
     componentDidCatch(error: Error, info: ErrorInfo) {
-        console.error('[ErrorBoundary] UnitDetailView crashed:', error, info);
+        logger.error('[ErrorBoundary] UnitDetailView crashed', { message: error instanceof Error ? error.message : 'unknown_error', context: { componentStack: info.componentStack ? 'available' : 'unavailable' } });
     }
     render() {
         if (this.state.hasError) {
@@ -459,7 +460,7 @@ const UtilityRecordForm: React.FC<{
                 setBillImageMime(file.type);
                 toast.success('تم رفع المرفق بنجاح');
             } catch (error) {
-                console.error(error);
+                logger.error('Operation failed', { message: error instanceof Error ? error.message : 'unknown_error' });
                 toast.error('تعذر رفع مرفق الفاتورة');
             }
         };
@@ -490,7 +491,9 @@ const UtilityRecordForm: React.FC<{
                     const UTILITY_AR: Record<string, string> = { WATER: 'مياه', ELECTRICITY: 'كهرباء', GAS: 'غاز', INTERNET: 'إنترنت', OTHER: 'مرافق' };
                     const expenseCategory = `مرافق - ${UTILITY_AR[type] || type}`;
                     const expenseNotes = `فاتورة ${UTILITY_AR[type] || type} - وحدة ${unit?.name || ''} - شهر ${month}`;
-                    const chargedTo = paidBy === 'OWNER' ? 'OWNER' : paidBy === 'TENANT' ? 'TENANT' : 'OFFICE';
+                    const chargedTo = paidBy === 'OWNER'
+                        ? 'OWNER'
+                        : (paidBy === 'TENANT' ? 'TENANT' : 'OFFICE');
                     const unitContracts = contracts.filter(c => c.unitId === unitId);
                     const linkedContract =
                         unitContracts.find(c => c.status === 'ACTIVE') ||
@@ -617,7 +620,7 @@ const UtilityBillThumbnail: React.FC<{ path: string }> = ({ path }) => {
             src={url}
             alt="فاتورة"
             className="h-16 w-16 object-cover rounded-lg border border-white/50 cursor-pointer"
-            onClick={() => window.open(url, '_blank', 'noopener,noreferrer')}
+            onClick={() => globalThis.open(url, '_blank', 'noopener,noreferrer')}
         />
     );
 };
@@ -735,8 +738,8 @@ const UnitDetailView: React.FC<{ unit: Unit; property: Property; onBack: () => v
                                 <div className="flex items-center gap-2 mb-2">
                                     <span className="font-bold">{UTILITY_TYPE_AR[r.type as UtilityType]}</span>
                                     <span className="text-sm">{r.month}</span>
-                                    <span className={`text-xs px-2 py-0.5 rounded-full ${r.paidBy === 'TENANT' ? 'bg-blue-200 text-blue-800' : r.paidBy === 'OWNER' ? 'bg-green-200 text-green-800' : 'bg-gray-200 text-gray-800'}`}>
-                                        {r.paidBy === 'TENANT' ? 'مستأجر' : r.paidBy === 'OWNER' ? 'مالك' : 'مكتب'}
+                                    <span className={`text-xs px-2 py-0.5 rounded-full ${r.paidBy === 'TENANT' ? 'bg-blue-200 text-blue-800' : (r.paidBy === 'OWNER' ? 'bg-green-200 text-green-800' : 'bg-gray-200 text-gray-800')}`}>
+                                        {r.paidBy === 'TENANT' ? 'مستأجر' : (r.paidBy === 'OWNER' ? 'مالك' : 'مكتب')}
                                     </span>
                                 </div>
                                 <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-sm">

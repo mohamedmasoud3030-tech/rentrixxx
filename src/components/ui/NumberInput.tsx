@@ -19,7 +19,7 @@ const NumberInput: React.FC<NumberInputProps> = ({
   const [display, setDisplay] = useState('');
 
   useEffect(() => {
-    const numVal = value === undefined || value === '' || isNaN(Number(value)) ? '' : String(value);
+    const numVal = value === undefined || value === '' || Number.isNaN(Number(value)) ? '' : String(value);
     if (numVal !== display) {
       setDisplay(numVal);
     }
@@ -45,14 +45,14 @@ const NumberInput: React.FC<NumberInputProps> = ({
     if (!pattern.test(normalized)) return;
 
     setDisplay(raw);
-    const parsed = parseFloat(normalized);
-    onChange(isNaN(parsed) ? 0 : parsed);
+    const parsed = Number.parseFloat(normalized);
+    onChange(Number.isNaN(parsed) ? 0 : parsed);
   };
 
   const handleBlur = () => {
     const normalized = normalizeLocalizedNumber(display);
-    const parsed = parseFloat(normalized);
-    if (isNaN(parsed) || normalized === '' || normalized === '-') {
+    const parsed = Number.parseFloat(normalized);
+    if (Number.isNaN(parsed) || normalized === '' || normalized === '-') {
       setDisplay('');
       onChange(0);
     } else {

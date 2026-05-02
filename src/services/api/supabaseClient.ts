@@ -1,20 +1,18 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '@/types/supabase';
 
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL?.trim()
+  || 'https://nnggcnpcuomwfuupupwg.supabase.co';
+
+const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY?.trim()
+  || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5uZ2djbnBjdW9td2Z1dXB1cHdnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM4MTcyMjQsImV4cCI6MjA4OTM5MzIyNH0.i_3dknmkEjUONYx0bF_6CujPsBKMH4zfrC_qPz-XxZE';
+
 let supabaseInstance: SupabaseClient<Database> | null = null;
 
-const initializeSupabase = (): SupabaseClient<Database> => {
-  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL?.trim();
-  const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY?.trim();
+export const getSupabaseClient = (): SupabaseClient<Database> => {
+  if (supabaseInstance) return supabaseInstance;
 
-  if (!supabaseUrl || !supabaseAnonKey) {
-    throw new Error(
-      `Missing Supabase environment variables. ` +
-      `URL: ${supabaseUrl ? '✓' : '✗'}, Key: ${supabaseAnonKey ? '✓' : '✗'}`
-    );
-  }
-
-  return createClient<Database>(supabaseUrl, supabaseAnonKey, {
+  supabaseInstance = createClient<Database>(SUPABASE_URL, SUPABASE_ANON_KEY, {
     auth: {
       persistSession: true,
       autoRefreshToken: true,
@@ -22,17 +20,12 @@ const initializeSupabase = (): SupabaseClient<Database> => {
     },
     db: { schema: 'public' },
   });
-};
 
-export const getSupabaseClient = (): SupabaseClient<Database> => {
-  if (!supabaseInstance) {
-    supabaseInstance = initializeSupabase();
-  }
   return supabaseInstance;
 };
 
 export const supabase = new Proxy({} as SupabaseClient<Database>, {
-  get: (target, prop: string | symbol) => {
+  get: (_target, prop: string | symbol) => {
     const client = getSupabaseClient();
     return Reflect.get(client, prop);
   },

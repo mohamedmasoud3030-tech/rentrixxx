@@ -139,7 +139,7 @@ const FinancialSettings: React.FC = () => {
                             <p className="font-bold text-red-700 dark:text-red-400 text-sm">تحذير: روابط محاسبية مفقودة أو مكسورة</p>
                             <ul className="mt-1 space-y-0.5">
                                 {missingMappings.map((m, i) => (
-                                    <li key={i} className="text-xs text-red-600 dark:text-red-400">• {m}</li>
+                                    <li key={`missing-mapping-${m}-${i}`} className="text-xs text-red-600 dark:text-red-400">• {m}</li>
                                 ))}
                             </ul>
                         </div>
