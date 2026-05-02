@@ -1,3 +1,45 @@
+
+class CircuitBreaker {
+  private state: 'CLOSED' | 'OPEN' | 'HALF_OPEN' = 'CLOSED';
+  private failureThreshold: number = 5;
+  private failureCount: number = 0;
+  private nextAttempt: number = 0;
+  private timeout: number = 30000;
+
+  async execute<T>(fn: () => Promise<T>): Promise<T> {
+    if (this.state === 'OPEN') {
+      if (Date.now() > this.nextAttempt) {
+        this.state = 'HALF_OPEN';
+      } else {
+        throw new Error('Circuit Breaker is OPEN');
+      }
+    }
+
+    try {
+      const result = await fn();
+      this.onSuccess();
+      return result;
+    } catch (error) {
+      this.onFailure();
+      throw error;
+    }
+  }
+
+  private onSuccess() {
+    this.failureCount = 0;
+    this.state = 'CLOSED';
+  }
+
+  private onFailure() {
+    this.failureCount++;
+    if (this.failureCount >= this.failureThreshold) {
+      this.state = 'OPEN';
+      this.nextAttempt = Date.now() + this.timeout;
+    }
+  }
+}
+
+const breaker = new CircuitBreaker();
 import { ApiErrorHandler } from './errorHandler';
 
 export class ApiClient {
@@ -23,7 +65,7 @@ export class ApiClient {
         throw new Error(`HTTP ${response.status}`);
       }
 
-      return await response.json();
+      return await breaker.execute(async () => await response.json());
     } catch (error) {
       const apiError = ApiErrorHandler.handle(error);
       console.error('API Error:', apiError);
