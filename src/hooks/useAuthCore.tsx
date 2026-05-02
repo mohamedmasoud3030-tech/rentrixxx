@@ -62,7 +62,7 @@ export const useAuthCore = (onAudit: (action: string, entity: string, entityId: 
 
       const { data: profile } = await supabase.from('profiles').select('*').eq('id', data.user.id).single<ProfileRow>();
       if (!profile) {
-        const newProfile: ProfileRow = { id: data.user.id, username: email.split('@')[0], role: 'USER', is_disabled: false, must_change_password: false, created_at: new Date().toISOString() };
+        const newProfile: ProfileRow = { id: data.user.id, username: email.split('@')[0], role: 'USER', is_disabled: false, must_change_password: false, created_at: Date.now() };
         await supabase.from('profiles').insert(newProfile);
       }
       if (profile?.is_disabled) {
@@ -78,7 +78,7 @@ export const useAuthCore = (onAudit: (action: string, entity: string, entityId: 
         salt: '',
         role: (profile?.role as 'ADMIN' | 'USER') || 'USER',
         mustChange: profile?.must_change_password || false,
-        createdAt: profile?.created_at ? profile.created_at : Date.now().toString(),
+        createdAt: profile?.created_at ? Number(profile.created_at) : Date.now(),
         isDisabled: false,
       };
 

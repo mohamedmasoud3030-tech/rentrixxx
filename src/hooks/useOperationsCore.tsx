@@ -65,7 +65,7 @@ export const useOperationsCore = (
   const updateContract = useCallback(async (id: string, updates: any) => {
     const startTime = performance.now();
     try {
-      const mappedUpdates = mapContractPayload(updates as Record<string, unknown>);
+      const mappedUpdates = mapContractPayload(typeof updates === 'string' ? JSON.parse(updates) : updates as Record<string, unknown>);
       const current = db?.contracts?.find(c => c.id === id);
       
       const nextTenantId = mappedUpdates.tenant_id ?? (current as any)?.tenantId;
@@ -98,7 +98,7 @@ export const useOperationsCore = (
   const renewContract = useCallback(async (contractId: string, newEnd: string) => {
     const startTime = performance.now();
     try {
-      const result = await renewContractAtomic(contractId, newEnd);
+      const result = await renewContractAtomic(contractId, { end_date: newEnd });
       if (!(result as any).ok) throw new Error('renewal failed');
 
       await onAudit('RENEW', 'contracts', contractId, `Renewed until ${newEnd}`);
