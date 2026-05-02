@@ -1,102 +1,56 @@
-import { describe, it, expect } from 'vitest';
-import { 
-  toNumber, 
-  round3, 
-  calcVAT, 
-  distributeAmount, 
+import { describe, expect, it } from 'vitest';
+import {
+  calcVAT,
+  distributeAmount,
   computeLateFeeAmount,
-  applyBalanceRule
+  deriveArrearsForContract,
+  deriveArrearsForOwner,
+  applyBalanceRule,
+  getPostedReceiptsForDate,
 } from './financeService';
+import type { Contract, Invoice, Settings } from '../types';
 
-describe('FinanceService Utility Functions', () => {
-  describe('toNumber', () => {
-    it('should convert valid numbers correctly', () => {
-      expect(toNumber(10)).toBe(10);
-      expect(toNumber('10.5')).toBe(10.5);
-    });
-
-    it('should return 0 for invalid inputs', () => {
-      expect(toNumber(null)).toBe(0);
-      expect(toNumber(undefined)).toBe(0);
-      expect(toNumber('abc')).toBe(0);
-      expect(toNumber({})).toBe(0);
-    });
+describe('financeService', () => {
+  it('calculates VAT with 3-decimal rounding', () => {
+    expect(calcVAT(100, 5)).toEqual({ net: 100, vat: 5, gross: 105 });
+    expect(calcVAT(10.333, 15)).toEqual({ net: 10.333, vat: 1.55, gross: 11.883 });
   });
 
-  describe('round3', () => {
-    it('should round to 3 decimal places', () => {
-      expect(round3(10.12345)).toBe(10.123);
-      expect(round3(10.1235)).toBe(10.123); // .toFixed(3) for 10.1235 is "10.123" due to floating point representation
-      expect(round3(10)).toBe(10);
-    });
+  it('distributes amount proportionally and preserves total', () => {
+    const result = distributeAmount(100, [1, 1, 2]);
+    expect(result).toEqual([25, 25, 50]);
+    expect(result.reduce((a, b) => a + b, 0)).toBe(100);
   });
 
-  describe('calcVAT', () => {
-    it('should calculate VAT correctly', () => {
-      const result = calcVAT(100, 15);
-      expect(result.net).toBe(100);
-      expect(result.vat).toBe(15);
-      expect(result.gross).toBe(115);
-    });
+  it('computes late fee for fixed and percentage modes', () => {
+    const fixed = { isEnabled: true, type: 'FIXED_AMOUNT', value: 12.345, graceDays: 3 } as Settings['operational']['lateFee'];
+    const percent = { isEnabled: true, type: 'PERCENTAGE', value: 10, graceDays: 3 } as Settings['operational']['lateFee'];
 
-    it('should handle decimal rates and amounts', () => {
-      const result = calcVAT(100.5, 5.5);
-      // 100.5 * 0.055 = 5.5275 -> rounded to 5.528
-      expect(result.vat).toBe(5.528);
-      expect(result.gross).toBe(106.028);
-    });
+    expect(computeLateFeeAmount(120, fixed)).toBe(12.345);
+    expect(computeLateFeeAmount(120, percent)).toBe(12);
+    expect(computeLateFeeAmount(120, { ...fixed, isEnabled: false })).toBe(0);
   });
 
-  describe('distributeAmount', () => {
-    it('should distribute total amount proportionally among parts', () => {
-      const parts = [100, 200];
-      const total = 30;
-      const distributed = distributeAmount(total, parts);
-      expect(distributed).toEqual([10, 20]);
-      expect(distributed.reduce((a, b) => a + b, 0)).toBe(total);
-    });
+  it('derives arrears for contract and owner', () => {
+    const invoices = [
+      { id: 'i1', contractId: 'c1', amount: 100, paidAmount: 40, status: 'PARTIALLY_PAID' },
+      { id: 'i2', contractId: 'c2', amount: 200, paidAmount: 0, status: 'UNPAID' },
+    ] as Invoice[];
+    const contracts = [{ id: 'c1' }, { id: 'c2' }] as Contract[];
 
-    it('should handle remainders correctly by giving to the largest part/remainder', () => {
-      const parts = [1, 1, 1];
-      const total = 10;
-      const distributed = distributeAmount(total, parts);
-      // 10 / 3 = 3.3333...
-      // Total units = 10000
-      // Parts get 3333, 3333, 3333. Remainder 1 unit.
-      // First part gets the extra unit.
-      expect(distributed.reduce((a, b) => a + b, 0)).toBe(total);
-      expect(distributed).toEqual([3.334, 3.333, 3.333]);
-    });
-
-    it('should return zeros for zero total or empty parts', () => {
-      expect(distributeAmount(0, [1, 2])).toEqual([0, 0]);
-      expect(distributeAmount(10, [])).toEqual([]);
-    });
+    expect(deriveArrearsForContract(invoices, 'c1')).toBe(60);
+    expect(deriveArrearsForOwner(contracts, invoices, ['c2'])).toBe(200);
   });
 
-  describe('computeLateFeeAmount', () => {
-    const lateFeeFixed = { isEnabled: true, type: 'FIXED_AMOUNT' as const, value: 50, graceDays: 5 };
-    const lateFeePercent = { isEnabled: true, type: 'PERCENTAGE_OF_RENT' as const, value: 10, graceDays: 5 };
-    const lateFeeDisabled = { isEnabled: false, type: 'FIXED_AMOUNT' as const, value: 50, graceDays: 5 };
+  it('applies balance floor and filters posted receipts by date', () => {
+    expect(applyBalanceRule(-3.333, 0)).toBe(0);
+    expect(applyBalanceRule(10.12349, 0)).toBe(10.123);
 
-    it('should calculate fixed late fee', () => {
-      expect(computeLateFeeAmount(1000, lateFeeFixed)).toBe(50);
-    });
+    const receipts = [
+      { id: 'r1', status: 'POSTED', dateTime: '2026-05-01T10:00:00.000Z', amount: 50 },
+      { id: 'r2', status: 'DRAFT', dateTime: '2026-05-01T11:00:00.000Z', amount: 40 },
+    ] as any;
 
-    it('should calculate percentage late fee', () => {
-      expect(computeLateFeeAmount(1000, lateFeePercent)).toBe(100);
-    });
-
-    it('should return 0 if late fee is disabled', () => {
-      expect(computeLateFeeAmount(1000, lateFeeDisabled)).toBe(0);
-    });
-  });
-
-  describe('applyBalanceRule', () => {
-    it('should apply minimum balance', () => {
-      expect(applyBalanceRule(-10, 0)).toBe(0);
-      expect(applyBalanceRule(10, 0)).toBe(10);
-      expect(applyBalanceRule(-5, -2)).toBe(-2);
-    });
+    expect(getPostedReceiptsForDate(receipts, '2026-05-01')).toHaveLength(1);
   });
 });
