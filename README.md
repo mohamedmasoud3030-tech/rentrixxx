@@ -1,5 +1,9 @@
 # Rentrix — نظام إدارة الممتلكات العقارية
 
+[![Build](https://github.com/mohamedmasoud3030-tech/rentrixxx/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/mohamedmasoud3030-tech/rentrixxx/actions/workflows/ci.yml)
+[![Test](https://github.com/mohamedmasoud3030-tech/rentrixxx/actions/workflows/ci.yml/badge.svg?branch=main&event=pull_request)](https://github.com/mohamedmasoud3030-tech/rentrixxx/actions/workflows/ci.yml)
+[![Coverage](https://codecov.io/gh/mohamedmasoud3030-tech/rentrixxx/branch/main/graph/badge.svg)](https://codecov.io/gh/mohamedmasoud3030-tech/rentrixxx)
+
 نظام SaaS متكامل لإدارة الممتلكات العقارية باللغة العربية.
 
 ## ⚠️ متطلبات النظام
@@ -110,3 +114,17 @@ pnpm test:watch  # مراقبة التغييرات
 
 **الإصدار:** 2.0.0  
 **آخر تحديث:** 30 أبريل 2026
+
+## 🛡️ حماية الفرع (Branch Protection)
+
+لمنع الدمج عند فشل الفحوصات، فعّل **Branch protection rule** على فرع `main` مع الإعدادات التالية:
+
+- تفعيل **Require a pull request before merging**
+- تفعيل **Require status checks to pass before merging**
+- إضافة الفحوصات المطلوبة:
+  - `install-typecheck-lint-test-build`
+  - `validate-commits`
+  - `typecheck`
+- تفعيل **Require branches to be up to date before merging**
+
+يمكنك اتباع الخطوات التفصيلية في: `./.github/branch-protection.md`.
