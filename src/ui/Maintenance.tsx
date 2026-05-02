@@ -337,10 +337,39 @@ const MaintenanceForm: React.FC<{ isOpen: boolean; onClose: () => void; record: 
         }
     }, [record, isOpen, db, prefilledUnitId, settings.operational.maintenance.defaultChargedTo]);
 
+    const createFinancialDocument = async (activeContract: any) => {
+        if (chargedTo === 'TENANT') {
+            if (!activeContract) {
+                toast.error('لا يمكن تحميل التكلفة على المستأجر لعدم وجود عقد نشط لهذه الوحدة.');
+                return null;
+            }
+            const inv = await dataService.add('invoices', {
+                contractId: activeContract.id,
+                dueDate: new Date().toISOString().slice(0, 10),
+                amount: cost,
+                paidAmount: 0,
+                status: 'UNPAID',
+                type: 'MAINTENANCE',
+                notes: `فاتورة صيانة: ${description}`.slice(0, 100),
+            });
+            return inv ? { invoiceId: inv.id, completedAt: Date.now() } : null;
+        }
+        const exp = await dataService.add('expenses', {
+            contractId: activeContract?.id || null,
+            dateTime: new Date().toISOString(),
+            category: 'صيانة',
+            amount: cost,
+            ref: `صيانة للوحدة ${db.units.find(u => u.id === unitId)?.name}`,
+            notes: description,
+            chargedTo,
+            status: 'POSTED',
+        });
+        return exp ? { expenseId: exp.id, completedAt: Date.now() } : null;
+    };
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (isSavingRef.current) return;
-        if (!db) return;
+        if (isSavingRef.current || !db) return;
         if (!unitId || !description) {
             toast.error('الوحدة والوصف مطلوبان.');
             return;
@@ -349,76 +378,35 @@ const MaintenanceForm: React.FC<{ isOpen: boolean; onClose: () => void; record: 
         isSavingRef.current = true;
         setIsSaving(true);
         try {
-            if (record) {
-                if ((record.expenseId || record.invoiceId) && (record.status !== status || record.cost !== cost || record.chargedTo !== chargedTo)) {
-                    toast.error('لا يمكن تعديل البيانات المالية لطلب صيانة مرتبط بالفعل بحركة مالية. لإجراء تغيير، يجب إلغاء المصروف أو الفاتورة أولاً.');
-                    return;
-                }
+            const isCompleted = ['COMPLETED', 'CLOSED'].includes(status);
+            const baseData = {
+                unitId, requestDate, description, status, cost, chargedTo, priority,
+                assignedTo: assignedTo || undefined,
+                completionDate: isCompleted ? (completionDate || new Date().toISOString().slice(0, 10)) : undefined,
+            };
 
-                const isNewlyCompleted = ['COMPLETED', 'CLOSED'].includes(status) && !['COMPLETED', 'CLOSED'].includes(record.status) && cost > 0;
-                const updates: Partial<MaintenanceRecord> = {
-                    unitId,
-                    requestDate,
-                    description,
-                    status,
-                    cost,
-                    chargedTo,
-                    priority,
-                    assignedTo: assignedTo || undefined,
-                    completionDate: ['COMPLETED', 'CLOSED'].includes(status) ? (completionDate || new Date().toISOString().slice(0, 10)) : undefined,
-                };
-
-                if (isNewlyCompleted) {
-                    const activeContract = db.contracts.find(c => c.unitId === unitId && c.status === 'ACTIVE');
-                    if (chargedTo === 'TENANT') {
-                        if (!activeContract) {
-                            toast.error('لا يمكن تحميل التكلفة على المستأجر لعدم وجود عقد نشط لهذه الوحدة.');
-                            return;
-                        }
-                        const newInvoice = await dataService.add('invoices', {
-                            contractId: activeContract.id,
-                            dueDate: new Date().toISOString().slice(0, 10),
-                            amount: cost,
-                            paidAmount: 0,
-                            status: 'UNPAID',
-                            type: 'MAINTENANCE',
-                            notes: `فاتورة صيانة: ${description}`.slice(0, 100),
-                        });
-                        if (newInvoice) {
-                            updates.invoiceId = newInvoice.id;
-                            updates.completedAt = Date.now();
-                        }
-                    } else {
-                        const newExpense = await dataService.add('expenses', {
-                            contractId: activeContract?.id || null,
-                            dateTime: new Date().toISOString(),
-                            category: 'صيانة',
-                            amount: cost,
-                            ref: `صيانة للوحدة ${db.units.find(u => u.id === unitId)?.name}`,
-                            notes: description,
-                            chargedTo,
-                            status: 'POSTED',
-                        });
-                        if (newExpense) {
-                            updates.expenseId = newExpense.id;
-                            updates.completedAt = Date.now();
-                        }
-                    }
-                }
-                await dataService.update('maintenanceRecords', record.id, updates);
-            } else {
-                await dataService.add('maintenanceRecords', {
-                    unitId,
-                    requestDate,
-                    description,
-                    status,
-                    cost,
-                    chargedTo,
-                    priority,
-                    assignedTo: assignedTo || undefined,
-                    completionDate: ['COMPLETED', 'CLOSED'].includes(status) ? (completionDate || new Date().toISOString().slice(0, 10)) : undefined,
-                });
+            if (!record) {
+                await dataService.add('maintenanceRecords', baseData);
+                onClose();
+                return;
             }
+
+            if ((record.expenseId || record.invoiceId) && (record.status !== status || record.cost !== cost || record.chargedTo !== chargedTo)) {
+                toast.error('لا يمكن تعديل البيانات المالية لطلب صيانة مرتبط بالفعل بحركة مالية. لإجراء تغيير، يجب إلغاء المصروف أو الفاتورة أولاً.');
+                return;
+            }
+
+            const updates: Partial<MaintenanceRecord> = { ...baseData };
+            const isNewlyCompleted = isCompleted && !['COMPLETED', 'CLOSED'].includes(record.status) && cost > 0;
+
+            if (isNewlyCompleted) {
+                const activeContract = db.contracts.find(c => c.unitId === unitId && c.status === 'ACTIVE');
+                const finDoc = await createFinancialDocument(activeContract);
+                if (finDoc) Object.assign(updates, finDoc);
+                else if (chargedTo === 'TENANT') return; // Error already toasted
+            }
+
+            await dataService.update('maintenanceRecords', record.id, updates);
             onClose();
         } finally {
             isSavingRef.current = false;

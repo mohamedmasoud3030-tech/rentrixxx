@@ -158,6 +158,23 @@ const LandForm: React.FC<{ isOpen: boolean, onClose: () => void, land: Land | nu
         setData(prev => ({ ...prev, [name]: numericFields.includes(name) ? Number.parseFloat(normalized) : normalized }));
     };
 
+    const recordCommissionEntry = async (landId: string) => {
+        if (!data.commission || data.commission <= 0) return;
+        try {
+            const mappings = settings.accounting?.accountMappings;
+            const cashAccount = mappings?.paymentMethods?.CASH || '1111';
+            const commissionRevenueAccount = mappings?.revenue?.OFFICE_COMMISSION || '4120';
+            const date = new Date().toISOString().slice(0, 10);
+            const sourceId = `LAND-SALE-${landId}`;
+
+            await dataService.add('journalEntries', { date, accountId: cashAccount, amount: data.commission, type: 'DEBIT', sourceId });
+            await dataService.add('journalEntries', { date, accountId: commissionRevenueAccount, amount: data.commission, type: 'CREDIT', sourceId });
+            toast.success('تم تسجيل قيد إيراد عمولة بيع الأرض.');
+        } catch (err) {
+            logger.error('Land commission journal entry failed', { message: err instanceof Error ? err.message : 'unknown_error' });
+        }
+    };
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (isSavingRef.current) return;
@@ -171,43 +188,16 @@ const LandForm: React.FC<{ isOpen: boolean, onClose: () => void, land: Land | nu
                 await dataService.update('lands', land.id, data);
             } else {
                 const newLand: Omit<Land, 'id' | 'createdAt' | 'updatedAt'> = {
-                    plotNo: data.plotNo || '',
-                    name: data.name || '',
-                    location: data.location || '',
-                    area: data.area || 0,
+                    plotNo: data.plotNo || '', name: data.name || '', location: data.location || '', area: data.area || 0,
                     category: (data.category as Land['category']) || 'سكني',
                     status: (data.status as Land['status']) || 'AVAILABLE',
-                    ownerPrice: data.ownerPrice || 0,
-                    commission: data.commission || 0,
-                    notes: data.notes || '',
+                    ownerPrice: data.ownerPrice || 0, commission: data.commission || 0, notes: data.notes || '',
                 };
                 await dataService.add('lands', newLand);
             }
 
-            if (wasPreviouslyNotSold && isNowSold && data.commission && data.commission > 0) {
-                try {
-                    const mappings = settings.accounting?.accountMappings;
-                    const cashAccount = mappings?.paymentMethods?.CASH || '1111';
-                    const commissionRevenueAccount = mappings?.revenue?.OFFICE_COMMISSION || '4120';
-                    const landId = land?.id || 'new-land';
-                    await dataService.add('journalEntries', {
-                        date: new Date().toISOString().slice(0, 10),
-                        accountId: cashAccount,
-                        amount: data.commission!,
-                        type: 'DEBIT',
-                        sourceId: `LAND-SALE-${landId}`,
-                    });
-                    await dataService.add('journalEntries', {
-                        date: new Date().toISOString().slice(0, 10),
-                        accountId: commissionRevenueAccount,
-                        amount: data.commission!,
-                        type: 'CREDIT',
-                        sourceId: `LAND-SALE-${landId}`,
-                    });
-                    toast.success('تم تسجيل قيد إيراد عمولة بيع الأرض.');
-                } catch (err) {
-                    logger.error('Land commission journal entry failed', { message: err instanceof Error ? err.message : 'unknown_error' });
-                }
+            if (wasPreviouslyNotSold && isNowSold) {
+                await recordCommissionEntry(land?.id || 'new-land');
             }
             onClose();
         } finally {
