@@ -84,7 +84,7 @@ src/
 
 ### Adding a New Database Table
 1. Create a new migration in `supabase/migrations/`.
-2. Define the table with `organization_id` and RLS policies.
+2. Define the table with single-office access rules and role-based RLS policies.
 3. Update `src/types/database.ts` with the new schema.
 4. Add the table mapping to `src/services/supabaseDataService.ts`.
 

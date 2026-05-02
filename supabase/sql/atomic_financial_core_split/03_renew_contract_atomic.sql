@@ -59,7 +59,8 @@ begin
     updated_at = (extract(epoch from now()) * 1000)::bigint
   where id = old_contract_id;
 
-  select organization_id into v_tenant_id
+  -- single-office mode: tenant scoping comes from the contract tenant_id
+  select tenant_id into v_tenant_id
   from public.contracts
   where id = old_contract_id;
 

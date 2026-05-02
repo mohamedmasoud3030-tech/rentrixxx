@@ -2,7 +2,7 @@ openapi: 3.0.3
 info:
   title: Rentrix Platform API
   version: 1.0.0
-  description: Public multi-tenant financial API.
+  description: Public single-office financial API.
 servers:
   - url: https://{project}.supabase.co/functions/v1/public-api
     variables:

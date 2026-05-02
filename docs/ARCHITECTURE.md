@@ -1,7 +1,7 @@
 # Rentrix Architecture Documentation
 
 ## Overview
-Rentrix is a modern, enterprise-grade Property Management System (PMS) built as a multi-tenant SaaS platform. It leverages a serverless, event-driven architecture to provide high scalability, bank-grade financial integrity, and a seamless user experience.
+Rentrix is a modern, enterprise-grade Property Management System (PMS) built as a single-office property management platform. It leverages a serverless, event-driven architecture to provide high scalability, bank-grade financial integrity, and a seamless user experience.
 
 ## Tech Stack
 | Layer | Technology |
@@ -53,6 +53,6 @@ The system implements an immutable ledger model for financial transactions:
 4. **Audit**: The operation is logged in the `audit_log` and hashed in the `financial_events` chain.
 
 ## Scalability & Multi-tenancy
-- **Tenant Isolation**: Every table includes an `organization_id` or `tenant_id`. RLS policies ensure users only see data belonging to their organization.
+- **Access Model**: The application is now single-office. Data is globally scoped within one office and authorization is enforced by role (`admin`, `accountant`, `staff`).
 - **Edge Functions**: Heavy logic (AI, Automations, PDF generation) is offloaded to Supabase Edge Functions to keep the frontend lightweight.
 - **Database Performance**: Materialized views and optimized indexes are used for real-time financial reporting across large datasets.

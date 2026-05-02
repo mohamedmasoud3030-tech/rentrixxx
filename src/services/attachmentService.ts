@@ -20,14 +20,14 @@ const sanitizeFileName = (name: string): string =>
     .replace(/[^a-zA-Z0-9._-]/g, '_')
     .replace(/_+/g, '_');
 
-const resolveOrgFolder = async (): Promise<string> => {
+const resolveOfficeFolder = async (): Promise<string> => {
   const { data, error } = await supabase.auth.getUser();
   if (error || !data.user) throw new Error('تعذر التحقق من هوية المستخدم.');
-  const orgId =
-    (data.user.app_metadata?.org_id as string | undefined) ||
-    (data.user.user_metadata?.org_id as string | undefined) ||
-    data.user.id;
-  return orgId;
+  const officeId =
+    (data.user.app_metadata?.office_id as string | undefined) ||
+    (data.user.user_metadata?.office_id as string | undefined) ||
+    'default-office';
+  return officeId;
 };
 
 const assertValidUpload = (file: File) => {
@@ -44,9 +44,9 @@ export const uploadAttachment = async (
   context: AttachmentContext,
 ): Promise<{ path: string; url: string }> => {
   assertValidUpload(file);
-  const orgFolder = await resolveOrgFolder();
+  const officeFolder = await resolveOfficeFolder();
   const fileName = sanitizeFileName(file.name || `file-${Date.now()}`);
-  const path = `${orgFolder}/${context.entityType}/${context.entityId}/${Date.now()}-${fileName}`;
+  const path = `${officeFolder}/${context.entityType}/${context.entityId}/${Date.now()}-${fileName}`;
 
   const { error } = await supabase.storage.from(ATTACHMENTS_BUCKET).upload(path, file, {
     cacheControl: '3600',

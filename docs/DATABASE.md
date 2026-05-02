@@ -1,7 +1,7 @@
 # Database Documentation
 
 ## Overview
-Rentrix uses PostgreSQL hosted on Supabase. The schema is designed for multi-tenant property management with a focus on financial integrity, auditability, and performance.
+Rentrix uses PostgreSQL hosted on Supabase. The schema is designed for a single-office property management deployment with financial integrity, auditability, and performance.
 
 ## Core Schema Entities
 
@@ -9,8 +9,6 @@ Rentrix uses PostgreSQL hosted on Supabase. The schema is designed for multi-ten
 | Table | Description |
 |-------|-------------|
 | `profiles` | Extended user profiles linked to Supabase Auth. |
-| `organizations` | The top-level tenant entity. |
-| `memberships` | Maps users to organizations with specific roles. |
 | `roles` & `permissions` | RBAC (Role-Based Access Control) substrate. |
 
 ### 2. Property Management
@@ -46,7 +44,7 @@ Rentrix uses PostgreSQL hosted on Supabase. The schema is designed for multi-ten
 Security is enforced at the database level. Most tables have policies similar to:
 ```sql
 CREATE POLICY "Tenant Isolation" ON public.contracts
-FOR ALL USING (organization_id = (SELECT current_setting('app.current_tenant_id')::uuid));
+FOR ALL USING (true); -- single-office scope
 ```
 *Note: The actual implementation uses JWT claims for `tenant_id` for maximum security.*
 
