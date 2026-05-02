@@ -75,9 +75,29 @@ const ROUTE_META: Record<string, { title: string; description: string }> = Objec
     .map(([path, meta]) => [path, { title: meta.titleAr, description: meta.description as string }]),
 );
 
+
+type Todo = {
+  id: number | string;
+  name: string;
+};
+
 const App: React.FC = () => {
   const { settings, auth } = useApp();
   const location = useLocation();
+  const [todos, setTodos] = useState<Todo[]>([]);
+
+
+  useEffect(() => {
+    async function getTodos() {
+      const { data } = await supabase.from('todos').select('id, name');
+
+      if (data) {
+        setTodos(data as Todo[]);
+      }
+    }
+
+    getTodos();
+  }, []);
 
   useEffect(() => {
     initThemePreset('light');
@@ -126,6 +146,18 @@ const App: React.FC = () => {
   return (
     <>
       <Toaster position="top-center" />
+
+      {todos.length > 0 && (
+        <div className="fixed bottom-4 left-4 z-50 max-h-40 overflow-auto rounded-md border border-border bg-card/95 p-3 shadow-lg">
+          <p className="mb-2 text-xs font-semibold text-text-muted">Supabase Todos</p>
+          <ul className="space-y-1 text-xs">
+            {todos.map((todo) => (
+              <li key={todo.id}>{todo.name}</li>
+            ))}
+          </ul>
+        </div>
+      )}
+
       <Suspense fallback={<PageLoader />}>
         <Routes>
           <Route path="/owner-view/:ownerId" element={<OwnerView />} />
