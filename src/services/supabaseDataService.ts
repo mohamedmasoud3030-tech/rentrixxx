@@ -1,6 +1,6 @@
 import { supabase } from '@/services/api/supabaseClient';
 import { Database, Settings, Governance, Serials } from '../types';
-import { logger } from './logger';
+import { logger } from '@/infrastructure/observability';
 import type { GovernanceRow, SerialsRow, SettingsRow, UsersRow } from '../types/database';
 
 function clearTableCache(jsTable: string): void {

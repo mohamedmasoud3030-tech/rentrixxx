@@ -1,6 +1,6 @@
 import { useCallback } from 'react';
 import { toast } from 'react-hot-toast';
-import { logger } from '../../services/logger';
+import { logger } from '../../infrastructure/observability';
 import { Database, Settings, Contract } from '../../types';
 import { softDeleteContract, renewContractAtomic } from '../../services/operationsService';
 import { confirmDialog } from '../../components/shared/confirmDialog';

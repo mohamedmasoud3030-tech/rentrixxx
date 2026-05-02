@@ -1,5 +1,5 @@
 import { supabase } from '@/services/api/supabaseClient';
-import { logger } from '@/services/logger';
+import { logger } from '@/infrastructure/observability';
 import type { AccountingDocument, ReceiptPostingPayload, ReceiptPostingResult } from './types';
 import { ledgerEngine } from '@/services/ledger/LedgerEngine';
 import { AuditTrail } from '@/services/audit/AuditTrail';

@@ -1,7 +1,7 @@
 import { sanitizePhoneNumber } from '../utils/helpers';
 import { toast } from 'react-hot-toast';
 import { createOwnerAccessToken } from './edgeFunctions';
-import { logger } from './logger';
+import { logger } from '@/infrastructure/observability';
 
 export const IntegrationService = {
     sendWhatsApp: (phone: string, message: string) => {

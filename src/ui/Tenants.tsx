@@ -10,7 +10,7 @@ import { WhatsAppComposerModal } from '../components/shared/WhatsAppComposerModa
 import { formatDate, formatCurrency, exportToCsv, TENANT_STATUS_AR, CHANNEL_AR, normalizeArabicNumerals, getEffectiveInvoiceStatus } from '../utils/helpers';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
-import { logger } from '../services/logger';
+import { logger } from '../infrastructure/observability';
 
 const Tenants: React.FC = () => {
     const { db, dataService } = useApp();

@@ -1,5 +1,5 @@
 import { QueryClient } from '@tanstack/react-query';
-import { logger } from '@/services/logger';
+import { logger } from '@/infrastructure/observability';
 
 export const queryClient = new QueryClient({
   defaultOptions: {

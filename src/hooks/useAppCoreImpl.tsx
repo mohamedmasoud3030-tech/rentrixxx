@@ -2,7 +2,7 @@ import React, { createContext, useContext, useState, useEffect, useCallback } fr
 import { Database, User, Settings, Expense, Invoice, AppContextType, PerformanceMetrics } from '../types';
 import { supabaseData } from '../services/supabaseDataService';
 import { toast } from 'react-hot-toast';
-import { logger } from '../services/logger';
+import { logger } from '../infrastructure/observability';
 import { confirmDialog } from '../components/shared/confirmDialog';
 
 // Import specialized hooks
