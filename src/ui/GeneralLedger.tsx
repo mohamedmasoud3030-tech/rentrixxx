@@ -19,10 +19,11 @@ const GeneralLedger: React.FC = () => {
 
   const accounts = (db.accounts || []).filter((acc) => !acc.isParent);
 
-  const rows = useMemo(() => {
-    if (!accountId) return [];
+  const ledger = useMemo(() => {
+    if (!accountId) return { openingBalance: 0, lines: [] };
     return calculateGeneralLedgerForAccount(db, accountId, startDate, endDate);
   }, [db, accountId, startDate, endDate]);
+  const { openingBalance, lines: rows } = ledger;
 
   const pageCount = Math.max(1, Math.ceil(rows.length / PAGE_SIZE));
   const currentRows = rows.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
@@ -77,6 +78,13 @@ const GeneralLedger: React.FC = () => {
             <div className="text-xs text-text-muted">عدد القيود: <span className="font-black" dir="ltr">{rows.length}</span></div>
           </div>
         </div>
+
+        {accountId && (
+          <div className="mb-3 rounded-lg border border-border bg-background/50 px-3 py-2 text-sm">
+            <span className="text-text-muted">الرصيد الافتتاحي: </span>
+            <span className="font-black font-mono" dir="ltr">{formatCurrency(openingBalance)}</span>
+          </div>
+        )}
 
         <div className="overflow-x-auto border border-border rounded-xl">
           <table className="w-full text-sm">
