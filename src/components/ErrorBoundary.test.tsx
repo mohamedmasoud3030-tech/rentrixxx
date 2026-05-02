@@ -2,11 +2,14 @@ import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { ErrorBoundary } from './ErrorBoundary';
-import { logger } from '@/services/logger';
+import { logger, errorTracker } from '@/infrastructure/observability';
 
-vi.mock('@/services/logger', () => ({
+vi.mock('@/infrastructure/observability', () => ({
   logger: {
     error: vi.fn(),
+  },
+  errorTracker: {
+    capture: vi.fn(),
   },
 }));
 
@@ -24,6 +27,7 @@ describe('ErrorBoundary', () => {
 
     expect(screen.getByRole('alert').textContent).toContain('حدث خلل غير متوقع');
     expect(logger.error).toHaveBeenCalledTimes(1);
+    expect(errorTracker.capture).toHaveBeenCalledTimes(1);
   });
 
   it('retries rendering when retry button is clicked', () => {
@@ -46,5 +50,18 @@ describe('ErrorBoundary', () => {
     fireEvent.click(retryButton);
 
     expect(screen.getByText('ok-now')).toBeTruthy();
+  });
+
+  it('renders custom fallback for subtree throw with recoverable classification', () => {
+    render(
+      <ErrorBoundary
+        boundaryName="subtree-boundary"
+        fallback={({ severity }) => <div role="alert">severity:{severity}</div>}
+      >
+        <Boom />
+      </ErrorBoundary>,
+    );
+
+    expect(screen.getByRole('alert').textContent).toContain('severity:recoverable');
   });
 });

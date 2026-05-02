@@ -14,7 +14,7 @@ export const AppShellLayout: React.FC<AppShellLayoutProps> = ({ children, header
     <PageContainer header={header} footer={footer}>
       <ErrorBoundary
         boundaryName="app-shell-layout"
-        fallback={({ retry }) => <AppErrorFallback retry={retry} />}
+        fallback={({ retry, severity }) => <AppErrorFallback retry={retry} severity={severity} />}
       >
         {children}
       </ErrorBoundary>

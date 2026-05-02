@@ -1,2 +1,2 @@
-export { logger } from '@/infrastructure/observability';
+export { logger } from './logger';
 export { errorTracker } from './errorTracker';
