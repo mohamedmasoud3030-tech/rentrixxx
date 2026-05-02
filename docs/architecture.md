@@ -1,26 +1,53 @@
-# Architecture Rules
+# Architecture Overview
 
-## Cross-cutting services location
+هذا المستند يشرح خريطة المشروع الحالية وكيف تتدفق البيانات بين الطبقات الرئيسية.
 
-To keep service boundaries clean, any cross-cutting concern (for example logging, telemetry,
-error tracking, tracing, metrics, and similar observability utilities) **must not** live under
-`src/services/`.
+## Folder map (actual)
 
-- Place these modules in `src/infrastructure/observability/`.
-- Expose shared observability utilities via a local barrel file:
-  `src/infrastructure/observability/index.ts`.
-- Application and domain/service code should import observability utilities from the
-  infrastructure barrel (for example `@/infrastructure/observability`).
+```text
+src/
+  app/              # application shells and route-level composition
+  contexts/         # React Context providers for cross-cutting state
+  hooks/            # reusable hooks (queries, mutations, UI behavior)
+  services/         # I/O boundaries (Supabase/API/storage integrations)
+  domain/           # business entities, rules, value objects, use-cases
+  design-system/    # tokens, shared UI primitives, and component variants
+```
 
-## Barrel file guideline
+> المرجع العملي: أي feature جديدة تمر غالبًا عبر hook -> service -> domain (validation/normalization) -> UI rendering.
 
-For heavily used modules, add `index.ts` barrel files at the folder boundary to simplify imports
-and to reduce deep relative paths.
+## Data flow examples
 
-Current examples:
+### 1) Auth flow (Login)
+1. شاشة تسجيل الدخول في `src/app` أو `src/components` تستدعي hook مثل `useAuth...`.
+2. الـ hook يدير loading/error ويستدعي service في `src/services`.
+3. service تنفذ طلب Supabase Auth وتعيد raw result.
+4. domain layer (عند الحاجة) تطبق قواعد مثل التحقق من الدور/حالة الحساب.
+5. contexts layer تحدّث حالة المستخدم الحالية ليستهلكها باقي التطبيق.
 
-- `src/infrastructure/observability/index.ts`
-- `src/services/index.ts`
-- `src/services/documents/index.ts`
-- `src/services/reports/index.ts`
-- `src/services/accountingDocuments/index.ts`
+### 2) Finance flow (Transaction/Invoice)
+1. UI يرسل action (إضافة/تعديل حركة مالية).
+2. hook يبني payload واضح typed ويستدعي service مخصص للتمويل.
+3. service تتواصل مع DB/API وتعيد record.
+4. domain يطبق invariants (currency, amount sign, required references).
+5. context أو query cache يتم تحديثه ثم تنعكس البيانات في جداول ولوحات المؤشرات.
+
+## Layer responsibilities
+
+- **contexts/**: state عالمي مشترك عبر الشاشات (session, tenant, preferences...).
+- **hooks/**: orchestration محلي قابل لإعادة الاستخدام؛ لا يحتوي business rules معقدة.
+- **services/**: مسؤول عن الاتصال الخارجي فقط، بدون UI concerns.
+- **domain/**: المصدر الأساسي لقواعد العمل والتحقق من سلامة البيانات.
+- **design-system/**: مكونات وتوكنز موحّدة لضمان تناسق الواجهة.
+
+## File placement decision rules
+
+عند إنشاء ملف جديد:
+
+1. **هل الملف يتعامل مع API/DB مباشرة؟** ضعه في `src/services`.
+2. **هل هو قاعدة عمل أو type/domain model؟** ضعه في `src/domain`.
+3. **هل هو تنسيق state reusable مربوط بواجهة React؟** ضعه في `src/hooks`.
+4. **هل هو state cross-feature؟** ضعه في `src/contexts`.
+5. **هل هو UI primitive أو style token؟** ضعه في `src/design-system`.
+
+إذا تداخلت المسؤوليات، افصل المنطق إلى أكثر من ملف بدل تحميل ملف واحد بكل الأدوار.
