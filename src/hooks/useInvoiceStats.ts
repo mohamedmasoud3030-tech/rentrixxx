@@ -6,15 +6,16 @@ import { InvoiceStats } from '../utils/invoices/types';
 export const useInvoiceStats = (
   invoices: Invoice[],
   receipts: Receipt[],
-  graceDays: number = 0
+  graceDays: number = 0,
+  referenceDate: Date = new Date()
 ): InvoiceStats => {
   return useMemo(() => {
     const unpaid = invoices
-      .filter(i => ['UNPAID', 'PARTIALLY_PAID'].includes(getEffectiveStatus(i, graceDays)))
+      .filter(i => ['UNPAID', 'PARTIALLY_PAID'].includes(getEffectiveStatus(i, graceDays, referenceDate)))
       .reduce((sum, i) => sum + getInvoiceRemaining(i), 0);
 
     const overdue = invoices
-      .filter(i => getEffectiveStatus(i, graceDays) === 'OVERDUE')
+      .filter(i => getEffectiveStatus(i, graceDays, referenceDate) === 'OVERDUE')
       .reduce((sum, i) => sum + getInvoiceRemaining(i), 0);
 
     const month = new Date().toISOString().slice(0, 7);
@@ -23,5 +24,5 @@ export const useInvoiceStats = (
       .reduce((sum, r) => sum + r.amount, 0);
 
     return { unpaid, overdue, collectedThisMonth };
-  }, [invoices, receipts, graceDays]);
+  }, [invoices, receipts, graceDays, referenceDate]);
 };

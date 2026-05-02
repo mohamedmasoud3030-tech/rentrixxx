@@ -11,7 +11,8 @@ export const getInvoiceRemaining = (invoice: Invoice): number => {
 
 export const getEffectiveStatus = (
   invoice: Invoice,
-  graceDays: number = 0
+  graceDays: number = 0,
+  referenceDate: Date = new Date()
 ): 'PAID' | 'UNPAID' | 'PARTIALLY_PAID' | 'OVERDUE' => {
   const total = getInvoiceTotal(invoice);
   const paid = invoice.paidAmount || 0;
@@ -21,7 +22,7 @@ export const getEffectiveStatus = (
   const dueWithGrace = new Date(invoice.dueDate);
   dueWithGrace.setDate(dueWithGrace.getDate() + graceDays);
 
-  if (dueWithGrace < new Date()) return 'OVERDUE';
+  if (dueWithGrace < referenceDate) return 'OVERDUE';
   if (paid > 0.001) return 'PARTIALLY_PAID';
 
   return 'UNPAID';
