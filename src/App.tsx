@@ -105,6 +105,10 @@ const App: React.FC = () => {
   }, []);
 
   useEffect(() => {
+    initThemePreset('light');
+  }, []);
+
+  useEffect(() => {
     if (settings) {
       const tenantKey = settings.general?.company?.name?.toLowerCase().includes('enterprise') ? 'enterprise' : 'rentrix';
       const brand = tenantThemeRegistry[tenantKey] ?? tenantThemeRegistry.rentrix;
