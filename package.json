@@ -8,13 +8,14 @@
     "build": "vite build",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
-    "lint": "npm run lint:no-any-targets && tsc --noEmit && echo 'Type checking passed'",
+    "lint": "npm run lint:no-any-targets && npm run check:i18n-hardcoded && tsc --noEmit && echo 'Type checking passed'",
     "type-check": "tsc -p tsconfig.typecheck.json --noEmit",
     "check:freeze": "node scripts/check-core-freeze.mjs",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:ui": "vitest --ui",
-    "lint:no-any-targets": "node scripts/lint-no-explicit-any.mjs"
+    "lint:no-any-targets": "node scripts/lint-no-explicit-any.mjs",
+    "check:i18n-hardcoded": "node scripts/check-i18n-hardcoded.mjs"
   },
   "author": "Rentrix",
   "license": "SEE LICENSE IN LICENSE",

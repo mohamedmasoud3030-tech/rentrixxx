@@ -1,0 +1,10 @@
+{
+  "title": "Finance Management",
+  "subtitle": "A unified finance platform connecting contracts, invoices, receipts, and reports",
+  "systemOnline": "Financial system online",
+  "loadingTitle": "Loading financial data...",
+  "loadingMessage": "Preparing invoices, receipts, and ledger entries.",
+  "configErrorTitle": "Cannot open finance module",
+  "configErrorMessage": "Company profile is incomplete in settings.",
+  "goToSettings": "Go to settings"
+}
