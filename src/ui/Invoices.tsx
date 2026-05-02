@@ -2,7 +2,7 @@ import React, { useCallback, useMemo, useState, useEffect } from 'react';
 import { useApp } from '@/contexts/AppContext';
 import { Invoice } from '@/types';
 import Card from '@/components/ui/Card';
-import { formatCurrency, getEffectiveInvoiceStatus } from '@/utils/helpers';
+import { formatCurrency } from '@/utils/helpers';
 import { AlertCircle, Clock, ArrowUpRight } from 'lucide-react';
 import { useLocation } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
@@ -21,6 +21,7 @@ import {
     filterInvoiceByType,
     filterInvoiceByDate,
     filterInvoiceBySearch,
+    getEffectiveStatus as calculateEffectiveStatus,
 } from '../utils/invoices/invoiceCalculations';
 import { getArrearsAmount, getCashInflow } from '@/services/financeService';
 import { receiptService } from '@/services/receiptService';
@@ -37,10 +38,12 @@ const Invoices: React.FC = () => {
     const [isMonthlyLoading, setIsMonthlyLoading] = useState(false);
     const [deletingInvoice, setDeletingInvoice] = useState<Invoice | null>(null);
 
+    const graceDays = settings.operational?.lateFee?.graceDays ?? 0;
+    const referenceDate = useMemo(() => new Date(), []);
+
     const getEffectiveStatus = useCallback((invoice: Invoice): Invoice['status'] => {
-        const graceDays = settings.operational?.lateFee?.graceDays ?? 0;
-        return getEffectiveInvoiceStatus(invoice, graceDays);
-    }, [settings.operational?.lateFee?.graceDays]);
+        return calculateEffectiveStatus(invoice, graceDays, referenceDate);
+    }, [graceDays, referenceDate]);
 
     useEffect(() => {
         const params = new URLSearchParams(location.search);
@@ -50,7 +53,6 @@ const Invoices: React.FC = () => {
         }
     }, [location.search, updateStatus]);
 
-    const graceDays = settings.operational?.lateFee?.graceDays ?? 0;
 
     const invoicesWithDetails = useMemo(() => {
         const invoices = db.invoices || [];
@@ -84,7 +86,7 @@ const Invoices: React.FC = () => {
                 };
             })
             .sort((a, b) => new Date(b.dueDate).getTime() - new Date(a.dueDate).getTime());
-    }, [db, filters, getEffectiveStatus]);
+    }, [db, filters, getEffectiveStatus, graceDays]);
 
     const stats = useMemo(() => {
         const unpaid = db.invoices
