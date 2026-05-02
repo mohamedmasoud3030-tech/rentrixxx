@@ -30,9 +30,11 @@ jobs:
       - name: TypeScript type check
         run: npm run typecheck
       
-      - name: Run tests
-        run: npm run test -- --run
-        continue-on-error: true
+      - name: Run smoke suite (required)
+        run: npm run test:smoke
+
+      - name: Run tests with coverage thresholds (required)
+        run: npm run test:coverage
       
       - name: Build for production
         run: npm run build
