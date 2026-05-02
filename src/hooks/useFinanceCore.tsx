@@ -5,7 +5,7 @@ import { supabase } from '@/services/api/supabaseClient';
 import { voidReceiptAtomic } from '../services/receiptService';
 import { runManualAutomation as runManualAutomationService } from '../services/automationService';
 import { toast } from 'react-hot-toast';
-import { logger } from '../services/logger';
+import { logger } from '../infrastructure/observability';
 
 /**
  * useFinanceCore Hook

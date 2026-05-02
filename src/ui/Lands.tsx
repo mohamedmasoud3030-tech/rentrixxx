@@ -7,7 +7,7 @@ import { Land } from '../types';
 import { formatCurrency, normalizeArabicNumerals, exportToCsv } from '../utils/helpers';
 import NumberInput from '../components/ui/NumberInput';
 import { toast } from 'react-hot-toast';
-import { logger } from '../services/logger';
+import { logger } from '../infrastructure/observability';
 import ActionsMenu, { EditAction, DeleteAction } from '../components/shared/ActionsMenu';
 
 const Lands: React.FC = () => {

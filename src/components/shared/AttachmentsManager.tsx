@@ -4,7 +4,7 @@ import { Attachment as AttachmentType } from '../../types';
 import { Paperclip, Eye, Trash2, Loader2 } from 'lucide-react';
 import { toArabicDigits } from '../../utils/helpers';
 import { toast } from 'react-hot-toast';
-import { logger } from '../../services/logger';
+import { logger } from '../../infrastructure/observability';
 import { deleteAttachment, getAttachmentUrl, uploadAttachment } from '../../services/attachmentService';
 
 interface AttachmentsManagerProps {

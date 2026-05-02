@@ -7,7 +7,7 @@ import { AlertTriangle, AlertCircle, Info, RefreshCw, ChevronsRight, SearchCheck
 import { Link } from 'react-router-dom';
 import { migrateAttachments } from '../utils/migrateAttachments';
 import { toast } from 'react-hot-toast';
-import { logger } from '../services/logger';
+import { logger } from '../infrastructure/observability';
 import { AR_LABELS } from '../config/labels.ar';
 
 const IssueCard: React.FC<{ issue: AuditIssue }> = ({ issue }) => {

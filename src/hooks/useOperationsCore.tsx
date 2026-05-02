@@ -5,7 +5,7 @@ import { renewContractAtomic } from '../services/operationsService';
 import { softDeleteContract } from '../services/operationsService';
 import { mapContractPayload } from '../mappers/contractMapper';
 import { toast } from 'react-hot-toast';
-import { logger } from '../services/logger';
+import { logger } from '../infrastructure/observability';
 
 /**
  * useOperationsCore Hook

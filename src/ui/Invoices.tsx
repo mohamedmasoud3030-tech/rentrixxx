@@ -6,7 +6,7 @@ import { formatCurrency, getEffectiveInvoiceStatus } from '@/utils/helpers';
 import { AlertCircle, Clock, ArrowUpRight } from 'lucide-react';
 import { useLocation } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
-import { logger } from '../services/logger';
+import { logger } from '../infrastructure/observability';
 import { StatCard } from '../components/invoices/StatCard';
 import { QuickPayModal } from '../components/invoices/QuickPayModal';
 import { InvoiceForm } from '../components/invoices/InvoiceForm';

@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabaseData } from '@/services/supabaseDataService';
-import { logger } from '@/services/logger';
+import { logger } from '@/infrastructure/observability';
 
 /**
  * Generic hook for fetching all records from a table with caching

@@ -9,7 +9,7 @@ import { MessageCircle, Users, BookOpen, Link as LinkIcon } from 'lucide-react';
 import NumberInput from '../components/ui/NumberInput';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
-import { logger } from '../services/logger';
+import { logger } from '../infrastructure/observability';
 import { ROUTES } from '@/config/routes';
 import { AR_LABELS } from '../config/labels.ar';
 

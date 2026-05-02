@@ -6,8 +6,8 @@ import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import App from './App';
 import { AppProvider } from './contexts/AppContext';
 import { queryClient } from './config/queryClient';
-import { errorTracker } from './services/errorTracker';
-import { logger } from './services/logger';
+import { errorTracker } from './infrastructure/observability';
+import { logger } from './infrastructure/observability';
 import './index.css';
 import { registerSW } from 'virtual:pwa-register';
 

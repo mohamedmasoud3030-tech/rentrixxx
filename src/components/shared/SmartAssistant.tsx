@@ -3,7 +3,7 @@ import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { useApp } from '../../contexts/AppContext';
 import { Sparkles, Bot, User, X, Send } from 'lucide-react';
 import { queryAssistant } from '../../services/geminiService';
-import { logger } from '../../services/logger';
+import { logger } from '../../infrastructure/observability';
 
 interface Message {
     id: string;

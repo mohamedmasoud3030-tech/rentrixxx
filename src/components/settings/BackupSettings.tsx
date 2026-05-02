@@ -3,7 +3,7 @@ import { useApp } from '../../contexts/AppContext';
 import { exportToJson, importFromJson } from '../../services/financeService';
 import { confirmDialog } from '../shared/confirmDialog';
 import { toast } from 'react-hot-toast';
-import { logger } from '../../services/logger';
+import { logger } from '../../infrastructure/observability';
 import { Download } from 'lucide-react';
 
 const BackupSettings: React.FC = () => {

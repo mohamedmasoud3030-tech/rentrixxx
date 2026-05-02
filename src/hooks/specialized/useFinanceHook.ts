@@ -1,6 +1,6 @@
 import { useCallback } from 'react';
 import { toast } from 'react-hot-toast';
-import { logger } from '../../services/logger';
+import { logger } from '../../infrastructure/observability';
 import { supabaseData } from '../../services/supabaseDataService';
 import { financeFacade } from '@/domain/finance/finance.facade';
 import { toNumber, round3 } from '../../services/financeService';
