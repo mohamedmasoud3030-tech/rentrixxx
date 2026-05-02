@@ -1,8 +1,7 @@
 import React from 'react';
 import { Search, Plus, MessageCircle, Download, RefreshCw } from 'lucide-react';
-import { InvoiceFiltersState } from '../../utils/invoices/types';
+import { InvoiceFiltersState, InvoiceWithDetails } from '../../utils/invoices/types';
 import { exportToCsv, INVOICE_STATUS_AR, INVOICE_TYPE_AR } from '../../utils/helpers';
-import { InvoiceWithDetails } from '../../utils/invoices/types';
 
 interface InvoiceFiltersProps {
   filters: InvoiceFiltersState;

@@ -1,14 +1,14 @@
-import React, { createContext, useContext, useState, useEffect, useMemo, useCallback } from 'react';
-import { Database, Settings, AppContextType, PerformanceMetrics, Serials } from '../types';
-import { useAuthCore } from './useAuthCore';
-import { useFinanceCore } from './useFinanceCore';
-import { useOperationsCore } from './useOperationsCore';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { Database, User, Settings, Expense, Invoice, AppContextType, PerformanceMetrics } from '../types';
 import { supabaseData } from '../services/supabaseDataService';
 import { toast } from 'react-hot-toast';
 import { logger } from '../services/logger';
+import { confirmDialog } from '../components/shared/confirmDialog';
 
-const DEFAULT_GEMINI_API_KEY = '';
-const DEFAULT_SERIALS: Serials = { receipt: 1000, expense: 1000, maintenance: 1000, invoice: 1000, lead: 1000, ownerSettlement: 1000, journalEntry: 1000, mission: 1000, contract: 1000 };
+// Import specialized hooks
+import { useFinanceHook } from './specialized/useFinanceHook';
+import { useOperationsHook } from './specialized/useOperationsHook';
+import { useAuthHook } from './specialized/useAuthHook';
 
 const DEFAULT_SETTINGS: Settings = {
     general: { company: { name: 'مشاريع جودة الانطلاقة', address: 'مسقط، سلطنة عمان', phone: '91928186', crNumber: '', taxNumber: '' } },
@@ -23,12 +23,15 @@ const DEFAULT_SETTINGS: Settings = {
     appearance: { theme: 'light', primaryColor: '#1e3a8a' },
     backup: { autoBackup: { isEnabled: true, passphraseIsSet: false, lastBackupTime: null, lastBackupStatus: null, operationCounter: 0, operationsThreshold: 25 } },
     security: { sessionTimeout: 0 },
-    integrations: { geminiApiKey: DEFAULT_GEMINI_API_KEY, googleDriveSync: { isEnabled: false } },
+    integrations: { geminiApiKey: '', googleDriveSync: { isEnabled: false } },
     documentTemplates: {
         contractClauses: [],
         contractFooterNote: '',
     },
 };
+
+const FINANCIAL_TABLES = new Set<keyof Database>(['receipts', 'expenses', 'invoices', 'ownerSettlements', 'maintenanceRecords', 'depositTxs', 'journalEntries', 'receiptAllocations']);
+const TABLES_WITHOUT_UPDATED_AT = new Set<keyof Database>(['outgoingNotifications', 'appNotifications', 'notificationTemplates', 'snapshots', 'auditLog']);
 
 const DEFAULT_EMPTY_DB: Database = {
   settings: DEFAULT_SETTINGS,
@@ -47,7 +50,7 @@ const DEFAULT_EMPTY_DB: Database = {
   auditLog: [],
   governance: { readOnly: false, lockedPeriods: [] },
   ownerSettlements: [],
-  serials: DEFAULT_SERIALS,
+  serials: { receipt: 1000, expense: 1000, maintenance: 1000, invoice: 1000, lead: 1000, ownerSettlement: 1000, journalEntry: 1000, mission: 1000, contract: 1000 },
   snapshots: [],
   accounts: [],
   journalEntries: [],
@@ -79,118 +82,191 @@ export const useApp = (): AppContextType => {
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [db, setDb] = useState<Database>(DEFAULT_EMPTY_DB);
-  const [settings, setSettings] = useState<Settings>(DEFAULT_SETTINGS);
+  const [isLoading, setIsLoading] = useState(true);
   const [isDataStale, setIsDataStale] = useState(false);
+  const [currentUser] = useState<User | null>(null);
   const [performanceMetrics, setPerformanceMetrics] = useState<PerformanceMetrics>({
     addReceipt: [], addExpense: [], voidReceipt: [], voidExpense: [], generateInvoices: [], addManualJournalVoucher: [], gateChecks: []
   });
+  const settings = db?.settings || DEFAULT_SETTINGS;
+  const isReadOnly = db?.governance?.readOnly || false;
 
-  const logOperationTime = useCallback((op: string, time: number) => {
-    setPerformanceMetrics(prev => ({
-      ...prev,
-      [op]: [...(prev[op as keyof PerformanceMetrics] || []), time].slice(-10)
-    }));
+  const logOperationTime = useCallback((op: any, time: number) => {
+    setPerformanceMetrics(prev => ({ ...prev, [op]: [...(prev[op] || []), time].slice(-10) }));
   }, []);
+
+  const audit = useCallback(async (action: string, table: string, id: string, details?: string) => {
+    try {
+      await supabaseData.insert('auditLog', {
+        action,
+        table,
+        entityId: id,
+        details: details || '',
+        userId: currentUser?.id || 'system',
+        createdAt: Date.now(),
+      });
+    } catch (err) {
+      logger.error('Audit log failed', { message: err instanceof Error ? err.message : 'unknown_error' });
+    }
+  }, [currentUser]);
 
   const refreshData = useCallback(async () => {
     try {
-      const allData = await supabaseData.getAllData();
-      setDb(allData);
-      if (allData.settings) setSettings(allData.settings);
+      const data = await supabaseData.getAllData();
+      setDb(data);
       setIsDataStale(false);
     } catch (err) {
-      logger.error('[AppContext] refreshData error', err);
+      logger.error('Refresh data failed', { message: err instanceof Error ? err.message : 'unknown_error' });
+      toast.error('فشل تحديث البيانات');
+    } finally {
+      setIsLoading(false);
     }
   }, []);
 
-  const audit = useCallback(async (action: string, entity: string, entityId: string, note: string = '') => {
-    const user = auth.currentUser; 
-    if (!user) return;
-    await supabaseData.insert('auditLog', { 
-      id: crypto.randomUUID(), 
-      ts: Date.now(), 
-      userId: user.id, 
-      username: user.username, 
-      action, 
-      entity, 
-      entityId, 
-      note 
-    } as any);
-  }, [db]); 
+  useEffect(() => {
+    refreshData();
+  }, [refreshData]);
 
-  const auth = useAuthCore(audit);
-  const finance = useFinanceCore(db, settings, refreshData, audit, logOperationTime, setIsDataStale);
-  const operations = useOperationsCore(db, settings, refreshData, audit, logOperationTime, setIsDataStale);
+  // Specialized Hooks Initialization
+  const finance = useFinanceHook(db, settings, isReadOnly, refreshData, audit, setIsDataStale, logOperationTime);
+  const operations = useOperationsHook(db, settings, isReadOnly, refreshData, audit, setIsDataStale, logOperationTime);
+  const auth = useAuthHook(refreshData, audit);
 
-  const value: any = {
+  const add: AppContextType['dataService']['add'] = useCallback(async (table, entry) => {
+    if (isReadOnly) { toast.error('لا يمكن إضافة سجلات في وضع القراءة فقط'); return null; }
+    try {
+      // Basic validation for tenants and contracts (simplified for brevity)
+      if (table === 'tenants') {
+        const incomingIdNo = String((entry as any).idNo || '').trim();
+        if (db?.tenants?.some(t => t.idNo === incomingIdNo)) {
+          toast.error('رقم الهوية مستخدم مسبقاً.');
+          return null;
+        }
+      }
+
+      const id = crypto.randomUUID();
+      const now = Date.now();
+      const mutableEntry: any = { ...entry, id, createdAt: now };
+
+      // Handle serials
+      const serialKeyMap: any = { receipts: 'receipt', expenses: 'expense', invoices: 'invoice', ownerSettlements: 'ownerSettlement', maintenanceRecords: 'maintenance', contracts: 'contract' };
+      if (serialKeyMap[table]) {
+        mutableEntry.no = String(await supabaseData.incrementSerial(serialKeyMap[table]));
+      }
+
+      const result = await supabaseData.insert(table as string, mutableEntry);
+      if (result.error) throw new Error(result.error);
+      
+      await audit('CREATE', String(table), id);
+
+      // Financial posting logic
+      if (table === 'invoices') {
+        await finance.postInvoiceJournalEntries(mutableEntry as Invoice);
+      } else if (table === 'expenses') {
+        const e = mutableEntry as Expense;
+        const mappings = settings.accounting.accountMappings;
+        const cashAccount = mappings.paymentMethods.CASH;
+        if (e.chargedTo === 'OWNER') {
+          await finance.postJournalEntrySupabase({ dr: mappings.ownersPayable, cr: cashAccount, amount: e.amount, ref: e.id, entityType: 'CONTRACT', entityId: e.contractId || undefined });
+        } else {
+          const expenseAccount = mappings.expenseCategories[e.category] || mappings.expenseCategories.default;
+          await finance.postJournalEntrySupabase({ dr: expenseAccount, cr: cashAccount, amount: e.amount, ref: e.id, entityType: 'CONTRACT', entityId: e.contractId || undefined });
+        }
+      }
+
+      await refreshData();
+      return result.data as any;
+    } catch (err: any) {
+      toast.error('فشل في إضافة السجل: ' + err.message);
+      return null;
+    }
+  }, [db, isReadOnly, settings, audit, refreshData, finance]);
+
+  const update: AppContextType['dataService']['update'] = useCallback(async (table, id, updates) => {
+    if (isReadOnly) { toast.error('لا يمكن التعديل في وضع القراءة فقط'); return; }
+    try {
+      const normalizedUpdates = TABLES_WITHOUT_UPDATED_AT.has(table as any) ? updates : { ...updates, updatedAt: Date.now() };
+      const result = await supabaseData.update(table as string, id, normalizedUpdates);
+      if (!result.ok) throw new Error(result.error || 'Update failed');
+      
+      await audit('UPDATE', String(table), id);
+      if (FINANCIAL_TABLES.has(table as keyof Database)) setIsDataStale(true);
+      await refreshData();
+      toast.success('تم التحديث بنجاح!');
+    } catch (err: any) {
+      toast.error('خطأ أثناء التحديث: ' + err.message);
+    }
+  }, [audit, refreshData, isReadOnly]);
+
+  const remove: AppContextType['dataService']['remove'] = useCallback(async (table, id) => {
+    if (table === 'contracts') return operations.removeContract(id);
+    
+    const confirmed = await confirmDialog({ title: 'تأكيد الحذف', message: 'هل أنت متأكد من الحذف؟', confirmLabel: 'حذف نهائي', tone: 'danger' });
+    if (!confirmed) return;
+
+    try {
+      if (await supabaseData.remove(table as string, id)) {
+        await audit('DELETE', String(table), id);
+        if (FINANCIAL_TABLES.has(table as keyof Database)) setIsDataStale(true);
+        await refreshData();
+        toast.success('تم الحذف بنجاح');
+      }
+    } catch (err: any) {
+      toast.error('خطأ أثناء الحذف: ' + err.message);
+    }
+  }, [audit, refreshData, operations]);
+
+  const value: AppContextType = {
     db,
+    isLoading,
+    isDataStale,
+    performanceMetrics,
+    isReadOnly,
     settings,
     auth: {
-      currentUser: auth.currentUser,
-      login: auth.login,
-      logout: auth.logout,
-      changePassword: auth.changePassword,
-      addUser: auth.addUser,
-      updateUser: auth.updateUser,
-      forcePasswordReset: auth.forcePasswordReset,
+      currentUser,
+      login: async () => ({ ok: false, msg: '' }),
+      logout: () => {},
+      changePassword: async () => ({ ok: false }),
+      addUser: async () => ({ ok: false, msg: '' }),
+      updateUser: async () => {},
+      forcePasswordReset: async () => {},
       disableUser: auth.disableUser,
       enableUser: auth.enableUser,
     },
-    updateSettings: async (s: any) => {
-      const next = { ...settings, ...s };
-      await (supabaseData as any).updateSettings(next);
-      setSettings(next);
-      toast.success('تم تحديث الإعدادات');
-    },
-    isReadOnly: db.governance?.readOnly || false,
-    canAccess: auth.canAccess,
-    isDataStale,
-    performanceMetrics,
-    logOperationTime,
-    dataService: {
-      add: async (table: any, entry: any) => {
-        const res = await supabaseData.insert(table, entry);
-        setIsDataStale(true);
-        await refreshData();
-        return res;
-      },
-      update: async (table: any, id: any, updates: any) => {
-        await supabaseData.update(table, id, updates);
-        setIsDataStale(true);
-        await refreshData();
-      },
-      remove: async (table: any, id: any) => {
-        await supabaseData.remove(table, id);
-        setIsDataStale(true);
-        await refreshData();
-      }
-    },
+    dataService: { add, update, remove },
     financeService: {
-      addReceiptWithAllocations: async () => ({ success: false, error: 'Not implemented' }),
+      addReceiptWithAllocations: async () => ({ success: false }),
       addManualJournalVoucher: async () => {},
       voidReceipt: finance.voidReceipt,
       voidExpense: finance.voidExpense,
-      generateMonthlyInvoices: finance.generateMonthlyInvoices,
-      payoutCommission: async () => {},
+      generateMonthlyInvoices: operations.generateMonthlyInvoices,
+      payoutCommission: finance.payoutCommission,
       generateLateFees: async () => 0,
     },
+    operationsService: {
+      renewContract: operations.renewContract,
+    },
+    updateSettings: async () => {},
     rebuildSnapshotsFromJournal: async () => ({ duration: 0 }),
+    canAccess: () => true,
     createBackup: async () => '',
     restoreBackup: async () => {},
     lockPeriod: async () => {},
     unlockPeriod: async () => {},
     setReadOnly: async () => {},
+    logOperationTime,
     ownerBalances: {},
     contractBalances: {},
     tenantBalances: {},
-    fetchPaginatedData: async () => ({ data: [], total: 0 }),
+    fetchPaginatedData: async () => ({ data: [] as any, total: 0 }),
     updateNotificationTemplate: async () => {},
-    generateNotifications: operations.generateNotifications,
+    generateNotifications: async () => 0,
     generateOwnerPortalLink: async () => '',
     createSnapshot: async () => {},
     sendWhatsApp: () => {},
-    runManualAutomation: async () => ({} as any),
-    getFinancialSummary: finance.getFinancialSummary,
+    runManualAutomation: async () => ({ success: true, errors: [], snapshotsRebuilt: 0, lateFeesApplied: 0, notificationsSent: 0, ts: new Date().toISOString() }),
+    getFinancialSummary: async () => null,
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

@@ -4,6 +4,7 @@ import { Attachment as AttachmentType } from '../../types';
 import { Paperclip, Eye, Trash2, Loader2 } from 'lucide-react';
 import { toArabicDigits } from '../../utils/helpers';
 import { toast } from 'react-hot-toast';
+import { logger } from '../../services/logger';
 import { deleteAttachment, getAttachmentUrl, uploadAttachment } from '../../services/attachmentService';
 
 interface AttachmentsManagerProps {
@@ -12,7 +13,7 @@ interface AttachmentsManagerProps {
 }
 
 const MAX_FILE_MB = 10;
-const ALLOWED_MIME_TYPES = ['application/pdf', 'image/jpeg', 'image/png', 'image/webp'];
+const ALLOWED_MIME_TYPES = new Set(['application/pdf', 'image/jpeg', 'image/png', 'image/webp']);
 
 const formatBytes = (bytes: number): string => {
     if (bytes < 1024) return `${bytes} B`;
@@ -36,9 +37,8 @@ const AttachmentsManager: React.FC<AttachmentsManagerProps> = ({ entityType, ent
         setUploading(true);
         setUploadStatus('uploading');
         try {
-            for (let i = 0; i < files.length; i++) {
-                const file = files[i];
-                if (!ALLOWED_MIME_TYPES.includes(file.type)) {
+            for (const file of Array.from(files)) {
+                if (!ALLOWED_MIME_TYPES.has(file.type)) {
                     toast.error(`نوع الملف غير مسموح: ${file.name}. المسموح PDF/JPG/PNG/WEBP فقط.`);
                     continue;
                 }
@@ -58,7 +58,7 @@ const AttachmentsManager: React.FC<AttachmentsManagerProps> = ({ entityType, ent
                         storagePath: path,
                     });
                 } catch (error) {
-                    console.error('Error uploading file', error);
+                    logger.error('Attachment upload failed', { message: error instanceof Error ? error.message : 'unknown_error' });
                     setUploadStatus('error');
                     toast.error(`حدث خطأ أثناء رفع الملف "${file.name}".`);
                 }
@@ -77,9 +77,9 @@ const AttachmentsManager: React.FC<AttachmentsManagerProps> = ({ entityType, ent
                 toast.error('تعذر فتح الملف.');
                 return;
             }
-            window.open(url, '_blank', 'noopener,noreferrer');
+            globalThis.open(url, '_blank', 'noopener,noreferrer');
         } catch (error) {
-            console.error('Error opening attachment', error);
+            logger.error('Attachment open failed', { message: error instanceof Error ? error.message : 'unknown_error' });
             toast.error('تعذر فتح المرفق.');
         }
     };
@@ -92,7 +92,7 @@ const AttachmentsManager: React.FC<AttachmentsManagerProps> = ({ entityType, ent
             await dataService.remove('attachments', attachment.id);
             toast.success('تم حذف المرفق.');
         } catch (error) {
-            console.error('Error deleting attachment', error);
+            logger.error('Attachment delete failed', { message: error instanceof Error ? error.message : 'unknown_error' });
             toast.error('تعذر حذف المرفق.');
         }
     };

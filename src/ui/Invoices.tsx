@@ -6,6 +6,7 @@ import { formatCurrency, getEffectiveInvoiceStatus } from '@/utils/helpers';
 import { AlertCircle, Clock, ArrowUpRight } from 'lucide-react';
 import { useLocation } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
+import { logger } from '../services/logger';
 import { StatCard } from '../components/invoices/StatCard';
 import { QuickPayModal } from '../components/invoices/QuickPayModal';
 import { InvoiceForm } from '../components/invoices/InvoiceForm';
@@ -44,7 +45,7 @@ const Invoices: React.FC = () => {
     useEffect(() => {
         const params = new URLSearchParams(location.search);
         const filterParam = params.get('filter');
-        if (filterParam && ['all', 'unpaid', 'overdue', 'paid'].includes(filterParam)) {
+        if (filterParam && new Set(['all', 'unpaid', 'overdue', 'paid']).has(filterParam)) {
             updateStatus(filterParam as any);
         }
     }, [location.search, updateStatus]);
@@ -87,7 +88,7 @@ const Invoices: React.FC = () => {
 
     const stats = useMemo(() => {
         const unpaid = db.invoices
-            .filter(i => ['UNPAID', 'PARTIALLY_PAID'].includes(getEffectiveStatus(i)))
+            .filter(i => new Set(['UNPAID', 'PARTIALLY_PAID']).has(getEffectiveStatus(i)))
             .reduce((sum, invoice) => sum + getInvoiceRemaining(invoice), 0);
         const overdueInvoices = db.invoices.filter(i => getEffectiveStatus(i) === 'OVERDUE');
         const overdue = getArrearsAmount(overdueInvoices);
@@ -137,7 +138,7 @@ const Invoices: React.FC = () => {
             const msg = encodeURIComponent(
                 `مرحباً ${inv.tenant?.name}،\nتذكير: فاتورتك رقم ${inv.no} متأخرة بمبلغ ${formatCurrency(inv.remaining, settings.operational?.currency ?? 'OMR')}.`
             );
-            window.open(`https://wa.me/${phone.replace(/\D/g, '')}?text=${msg}`, '_blank');
+            globalThis.open(`https://wa.me/${phone.replace(/\D/g, '')}?text=${msg}`, '_blank');
             sent++;
         }
 
@@ -167,7 +168,7 @@ const Invoices: React.FC = () => {
             setDeletingInvoice(null);
         } catch (error) {
             toast.error('حدث خطأ عند حذف الفاتورة');
-            console.error(error);
+            logger.error('Operation failed', { message: error instanceof Error ? error.message : 'unknown_error' });
         }
     }, [deletingInvoice, dataService]);
 
@@ -285,7 +286,7 @@ const Invoices: React.FC = () => {
                             setQuickPayInvoice(null);
                         } catch (error) {
                             toast.error('حدث خطأ عند تسجيل الدفعة');
-                            console.error(error);
+                            logger.error('Operation failed', { message: error instanceof Error ? error.message : 'unknown_error' });
                         }
                     }}
                 />

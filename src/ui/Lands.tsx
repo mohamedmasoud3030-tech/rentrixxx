@@ -7,6 +7,7 @@ import { Land } from '../types';
 import { formatCurrency, normalizeArabicNumerals, exportToCsv } from '../utils/helpers';
 import NumberInput from '../components/ui/NumberInput';
 import { toast } from 'react-hot-toast';
+import { logger } from '../services/logger';
 import ActionsMenu, { EditAction, DeleteAction } from '../components/shared/ActionsMenu';
 
 const Lands: React.FC = () => {
@@ -124,7 +125,7 @@ const Lands: React.FC = () => {
                                     <button onClick={(e) => { e.stopPropagation(); handleOpenModal(land); }} className="flex-1 border border-primary text-primary py-2 rounded-md hover:bg-primary hover:text-white transition-all text-sm flex items-center justify-center gap-2">
                                         <Eye size={16} /> عرض التفاصيل
                                     </button>
-                                    <button onClick={(e) => { e.stopPropagation(); const q = encodeURIComponent(`${land.location} ${land.plotNo}`); window.open(`https://www.google.com/maps/search/?api=1&query=${q}`, '_blank'); }} className="p-2 border border-border rounded-md text-text-muted hover:bg-background">
+                                    <button onClick={(e) => { e.stopPropagation(); const q = encodeURIComponent(`${land.location} ${land.plotNo}`); globalThis.open(`https://www.google.com/maps/search/?api=1&query=${q}`, '_blank'); }} className="p-2 border border-border rounded-md text-text-muted hover:bg-background">
                                         <MapPin size={16} />
                                     </button>
                                 </div>
@@ -152,9 +153,27 @@ const LandForm: React.FC<{ isOpen: boolean, onClose: () => void, land: Land | nu
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
         const { name, value } = e.target;
-        const numericFields = ['area', 'ownerPrice', 'commission'];
-        const normalized = numericFields.includes(name) ? normalizeArabicNumerals(value) : value;
-        setData(prev => ({ ...prev, [name]: numericFields.includes(name) ? parseFloat(normalized) : normalized }));
+        const numericFields = new Set(['area', 'ownerPrice', 'commission']);
+        const isNumeric = numericFields.has(name);
+        const normalized = isNumeric ? normalizeArabicNumerals(value) : value;
+        setData(prev => ({ ...prev, [name]: isNumeric ? Number.parseFloat(normalized) : normalized }));
+    };
+
+    const recordCommissionEntry = async (landId: string) => {
+        if (!data.commission || data.commission <= 0) return;
+        try {
+            const mappings = settings.accounting?.accountMappings;
+            const cashAccount = mappings?.paymentMethods?.CASH || '1111';
+            const commissionRevenueAccount = mappings?.revenue?.OFFICE_COMMISSION || '4120';
+            const date = new Date().toISOString().slice(0, 10);
+            const sourceId = `LAND-SALE-${landId}`;
+
+            await dataService.add('journalEntries', { date, accountId: cashAccount, amount: data.commission, type: 'DEBIT', sourceId });
+            await dataService.add('journalEntries', { date, accountId: commissionRevenueAccount, amount: data.commission, type: 'CREDIT', sourceId });
+            toast.success('تم تسجيل قيد إيراد عمولة بيع الأرض.');
+        } catch (err) {
+            logger.error('Land commission journal entry failed', { message: err instanceof Error ? err.message : 'unknown_error' });
+        }
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -170,43 +189,16 @@ const LandForm: React.FC<{ isOpen: boolean, onClose: () => void, land: Land | nu
                 await dataService.update('lands', land.id, data);
             } else {
                 const newLand: Omit<Land, 'id' | 'createdAt' | 'updatedAt'> = {
-                    plotNo: data.plotNo || '',
-                    name: data.name || '',
-                    location: data.location || '',
-                    area: data.area || 0,
+                    plotNo: data.plotNo || '', name: data.name || '', location: data.location || '', area: data.area || 0,
                     category: (data.category as Land['category']) || 'سكني',
                     status: (data.status as Land['status']) || 'AVAILABLE',
-                    ownerPrice: data.ownerPrice || 0,
-                    commission: data.commission || 0,
-                    notes: data.notes || '',
+                    ownerPrice: data.ownerPrice || 0, commission: data.commission || 0, notes: data.notes || '',
                 };
                 await dataService.add('lands', newLand);
             }
 
-            if (wasPreviouslyNotSold && isNowSold && data.commission && data.commission > 0) {
-                try {
-                    const mappings = settings.accounting?.accountMappings;
-                    const cashAccount = mappings?.paymentMethods?.CASH || '1111';
-                    const commissionRevenueAccount = mappings?.revenue?.OFFICE_COMMISSION || '4120';
-                    const landId = land?.id || 'new-land';
-                    await dataService.add('journalEntries', {
-                        date: new Date().toISOString().slice(0, 10),
-                        accountId: cashAccount,
-                        amount: data.commission!,
-                        type: 'DEBIT',
-                        sourceId: `LAND-SALE-${landId}`,
-                    });
-                    await dataService.add('journalEntries', {
-                        date: new Date().toISOString().slice(0, 10),
-                        accountId: commissionRevenueAccount,
-                        amount: data.commission!,
-                        type: 'CREDIT',
-                        sourceId: `LAND-SALE-${landId}`,
-                    });
-                    toast.success('تم تسجيل قيد إيراد عمولة بيع الأرض.');
-                } catch (err) {
-                    console.error('Failed to post land commission journal entry', err);
-                }
+            if (wasPreviouslyNotSold && isNowSold) {
+                await recordCommissionEntry(land?.id || 'new-land');
             }
             onClose();
         } finally {

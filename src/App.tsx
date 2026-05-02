@@ -1,4 +1,4 @@
-import React, { lazy, Suspense, useEffect } from 'react';
+import React, { lazy, Suspense, useEffect, useState } from 'react';
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { useApp } from '@/contexts/AppContext';
 import Layout from '@/components/print/layout/Layout';
@@ -8,6 +8,7 @@ import OwnerView from '@/ui/OwnerView';
 import { Toaster } from 'react-hot-toast';
 import ProtectedRoute from '@/components/shared/ProtectedRoute';
 import { NAVIGATION_META } from '@/config/navigationMeta';
+import { supabase } from '@/services/supabase';
 import { applyThemePreset, initThemePreset, type ThemeMode } from '@/design-system';
 import { applyBrandConfig } from '@/branding/brand-config/defaultBrand';
 import { tenantThemeRegistry } from '@/branding/tenant-themes/tenantThemeRegistry';
@@ -30,11 +31,12 @@ const AuditLog = lazy(() => import('@/ui/AuditLog'));
 const SmartAssistant = lazy(() => import('@/ui/SmartAssistant'));
 const OwnersHub = lazy(() => import('@/ui/OwnersHub'));
 
+
 const hexToHsl = (hex: string): string => {
   hex = hex.replace('#', '');
-  const r = parseInt(hex.substring(0, 2), 16) / 255;
-  const g = parseInt(hex.substring(2, 4), 16) / 255;
-  const b = parseInt(hex.substring(4, 6), 16) / 255;
+  const r = Number.parseInt(hex.substring(0, 2), 16) / 255;
+  const g = Number.parseInt(hex.substring(2, 4), 16) / 255;
+  const b = Number.parseInt(hex.substring(4, 6), 16) / 255;
   const max = Math.max(r, g, b);
   const min = Math.min(r, g, b);
   let h = 0,
@@ -74,9 +76,33 @@ const ROUTE_META: Record<string, { title: string; description: string }> = Objec
     .map(([path, meta]) => [path, { title: meta.titleAr, description: meta.description as string }]),
 );
 
+
+type Todo = {
+  id: number | string;
+  name: string;
+};
+
 const App: React.FC = () => {
   const { settings, auth } = useApp();
   const location = useLocation();
+  const [todos, setTodos] = useState<Todo[]>([]);
+
+
+  useEffect(() => {
+    async function getTodos() {
+      const { data } = await supabase.from('todos').select('id, name');
+
+      if (data) {
+        setTodos(data as Todo[]);
+      }
+    }
+
+    getTodos();
+  }, []);
+
+  useEffect(() => {
+    initThemePreset('light');
+  }, []);
 
   useEffect(() => {
     initThemePreset('light');
@@ -90,7 +116,12 @@ const App: React.FC = () => {
 
       const theme = (settings.appearance?.theme as ThemeMode | undefined) ?? brand.defaultTheme ?? 'light';
       applyThemePreset(theme);
-      applyUIPack(theme === 'glass' ? 'glass' : theme === 'dark' ? 'enterprise' : 'minimal');
+      const getUIPack = (t: string) => {
+        if (t === 'glass') return 'glass';
+        if (t === 'dark') return 'enterprise';
+        return 'minimal';
+      };
+      applyUIPack(getUIPack(theme));
 
       const companyName = settings.general?.company?.name ?? brand.companyName;
       const primaryColor = settings.appearance?.primaryColor ?? brand.primaryColor;
@@ -110,7 +141,7 @@ const App: React.FC = () => {
       if (ogTitleEl && routeMeta) ogTitleEl.setAttribute('content', `${routeMeta.title} — ${companyName}`);
       const ogDescEl = document.querySelector('meta[property="og:description"]');
       if (ogDescEl && routeMeta) ogDescEl.setAttribute('content', routeMeta.description);
-      const canonicalUrl = `${window.location.origin}${location.pathname}`;
+      const canonicalUrl = `${globalThis.location.origin}${location.pathname}`;
       const canonicalEl = document.getElementById('canonical-link') as HTMLLinkElement | null;
       if (canonicalEl) canonicalEl.href = canonicalUrl;
       const ogUrlEl = document.getElementById('og-url') as HTMLMetaElement | null;
@@ -125,6 +156,18 @@ const App: React.FC = () => {
   return (
     <>
       <Toaster position="top-center" />
+
+      {todos.length > 0 && (
+        <div className="fixed bottom-4 left-4 z-50 max-h-40 overflow-auto rounded-md border border-border bg-card/95 p-3 shadow-lg">
+          <p className="mb-2 text-xs font-semibold text-text-muted">Supabase Todos</p>
+          <ul className="space-y-1 text-xs">
+            {todos.map((todo) => (
+              <li key={todo.id}>{todo.name}</li>
+            ))}
+          </ul>
+        </div>
+      )}
+
       <Suspense fallback={<PageLoader />}>
         <Routes>
           <Route path="/owner-view/:ownerId" element={<OwnerView />} />

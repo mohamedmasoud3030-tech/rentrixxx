@@ -33,5 +33,6 @@ dist-ssr
 
 /generated/prisma
 
-# Local imported external skills (development-only)
-skills/external/anthropics/
+# GitNexus local index
+.gitnexus/
+.gitnexusignore

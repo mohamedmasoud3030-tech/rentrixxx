@@ -13,8 +13,9 @@ import { AR_LABELS } from '../config/labels.ar';
 import { FINANCIAL_ROUTES } from '@/config/routes';
 import { useApp } from '@/contexts/AppContext';
 import { PageStateCard } from '@/components/ui/PageStates';
-import { DSButton } from '@/design-system/atoms/DSButton';
+import { DSButton } from '@/design-system';
 import { AppShellLayout } from '@/app/layouts/AppShellLayout';
+
 
 const FinanceTab: React.FC<{ to: string, icon: React.ReactNode, label: string }> = ({ to, icon, label }) => (
     <NavLink
@@ -43,12 +44,12 @@ const Finance: React.FC = () => {
 
     useEffect(() => {
         if (location.pathname.startsWith('/financial/') && location.pathname !== '/financial') {
-            window.localStorage.setItem(LAST_FINANCE_TAB_KEY, location.pathname);
+            globalThis.localStorage.setItem(LAST_FINANCE_TAB_KEY, location.pathname);
         }
     }, [location.pathname]);
 
     const defaultFinancePath = useMemo(() => {
-        const savedPath = window.localStorage.getItem(LAST_FINANCE_TAB_KEY);
+        const savedPath = globalThis.localStorage.getItem(LAST_FINANCE_TAB_KEY);
         if (!savedPath) return `${financeBasePath}/invoices`;
         return savedPath.startsWith('/financial/') ? savedPath : `${financeBasePath}/invoices`;
     }, [financeBasePath]);

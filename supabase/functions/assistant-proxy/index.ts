@@ -1,4 +1,5 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { corsHeaders, handleOptions } from '../_shared/cors.ts';
 
 // Security utilities
 function sanitizeInput(input: string): string {
@@ -24,17 +25,14 @@ const ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY')!;
 const WINDOW_MS = 60_000;
 const WINDOW_MAX = 20;
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+
 
 const logEvent = (level: 'info' | 'warn' | 'error', message: string, meta: Record<string, unknown> = {}) => {
   console[level](JSON.stringify({ level, message, ...meta, ts: Date.now() }));
 };
 
 Deno.serve(async req => {
-  if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
+  if (req.method === 'OPTIONS') return handleOptions(req);
 
   try {
     if (!ANTHROPIC_API_KEY) throw new Error('Claude Opus 4.5 is not configured (ANTHROPIC_API_KEY missing)');
@@ -124,14 +122,14 @@ Deno.serve(async req => {
     if (!text) throw new Error('No response text from Claude');
 
     return new Response(JSON.stringify({ text }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      headers: { ...corsHeaders(req.headers.get('Origin')), 'Content-Type': 'application/json' },
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown error';
     const status = message.includes('Rate limit') ? 429 : message === 'Unauthorized' ? 401 : message === 'Forbidden' ? 403 : 400;
     return new Response(JSON.stringify({ error: message }), {
       status,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      headers: { ...corsHeaders(req.headers.get('Origin')), 'Content-Type': 'application/json' },
     });
   }
 });

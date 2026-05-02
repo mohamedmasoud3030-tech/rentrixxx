@@ -1,8 +1,7 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { useApp } from '../contexts/AppContext';
-import { renewContractAtomic } from '../services/operationsService';
+import { renewContractAtomic , getNextContractSerial, fetchContractsAndBalances } from '../services/operationsService';
 import { checkUnitMaintenanceBlock, type MaintenanceBlockResult } from '../services/operationsService';
-import { getNextContractSerial, fetchContractsAndBalances } from '../services/operationsService';
 import { Contract, Receipt, Expense } from '../types';
 import Card from '../components/ui/Card';
 import Modal from '../components/ui/Modal';
@@ -11,7 +10,7 @@ import { formatCurrency, toArabicDigits, getStatusBadgeClass, formatDateTime, fo
 import NumberInput from '../components/ui/NumberInput';
 import HardGateBanner from '../components/shared/HardGateBanner';
 import AttachmentsManager from '../components/shared/AttachmentsManager';
-import { FileText, Download, CheckCircle, AlertTriangle, Clock, Users, RefreshCw, Search, ChevronDown, Printer, Ban } from 'lucide-react';
+import { FileText, Download, CheckCircle, AlertTriangle, Clock, Users, RefreshCw, Search, Printer, Ban } from 'lucide-react';
 import PrintPreviewModal from '../components/shared/PrintPreviewModal';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { exportContractToPdf } from '../services/pdfService';

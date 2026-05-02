@@ -54,7 +54,12 @@ export function normalizeLocalizedNumber(value: unknown): string {
 
   if (!normalized) return '';
 
-  const sign = normalized.startsWith('-') ? '-' : normalized.startsWith('+') ? '+' : '';
+  let sign = '';
+  if (normalized.startsWith('-')) {
+    sign = '-';
+  } else if (normalized.startsWith('+')) {
+    sign = '+';
+  }
   const unsigned = normalized.replace(/^[+-]/, '').replace(/[+-]/g, '');
   const [intPart = '', ...fractionParts] = unsigned.split('.');
   const decimalPart = fractionParts.join('');

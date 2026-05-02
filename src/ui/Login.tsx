@@ -7,10 +7,8 @@ import {
   CheckCircle2,
   Eye,
   EyeOff,
-  Zap,
   Lock,
 } from "lucide-react";
-import toast from "react-hot-toast";
 
 const Login: React.FC = () => {
   const [email, setEmail] = useState("");
@@ -19,7 +17,7 @@ const Login: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const isSubmittingRef = useRef(false);
-  const { auth, settings } = useApp();
+  const { auth } = useApp();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -194,7 +192,7 @@ const Login: React.FC = () => {
                   " نظام محاسبة مزدوج الدخول",
                 ].map((feature, i) => (
                   <div
-                    key={i}
+                    key={`feature-${feature.trim()}-${i}`}
                     className="flex items-center gap-3 text-white/90 justify-center"
                   >
                     <CheckCircle2

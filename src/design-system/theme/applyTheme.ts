@@ -9,7 +9,7 @@ export const applyThemePreset = (mode: ThemeMode): void => {
 
   Object.entries(preset).forEach(([key, value]) => root.style.setProperty(key, value));
   root.dataset.dsTheme = mode;
-  root.setAttribute('data-theme', mode === 'glass' ? 'dark' : mode);
+  root.dataset.theme = mode === 'glass' ? 'dark' : mode;
 
   if (mode === 'glass') {
     root.classList.add('ds-glass-mode');
@@ -17,12 +17,12 @@ export const applyThemePreset = (mode: ThemeMode): void => {
     root.classList.remove('ds-glass-mode');
   }
 
-  window.localStorage.setItem(THEME_STORAGE_KEY, mode);
+  globalThis.localStorage.setItem(THEME_STORAGE_KEY, mode);
 };
 
 export const getStoredTheme = (): ThemeMode | null => {
-  if (typeof window === 'undefined') return null;
-  const saved = window.localStorage.getItem(THEME_STORAGE_KEY);
+  if (typeof globalThis === 'undefined') return null;
+  const saved = globalThis.localStorage.getItem(THEME_STORAGE_KEY);
   return saved && saved in themePresets ? (saved as ThemeMode) : null;
 };
 

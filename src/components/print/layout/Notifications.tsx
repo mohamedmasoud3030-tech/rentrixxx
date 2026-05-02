@@ -128,7 +128,13 @@ const Notifications: React.FC = () => {
                         {filteredItems.length === 0 ? (
                             <div className="flex flex-col items-center justify-center py-10 gap-2">
                                 <Bell className="w-8 h-8 text-text-muted opacity-40" />
-                                <p className="text-sm text-text-muted">{filter === 'unread' ? 'لا توجد تنبيهات غير مقروءة' : filter === 'read' ? 'لا توجد تنبيهات مقروءة' : 'لا توجد تنبيهات جديدة'}</p>
+                                <p className="text-sm text-text-muted">
+                                    {(() => {
+                                        if (filter === 'unread') return 'لا توجد تنبيهات غير مقروءة';
+                                        if (filter === 'read') return 'لا توجد تنبيهات مقروءة';
+                                        return 'لا توجد تنبيهات جديدة';
+                                    })()}
+                                </p>
                             </div>
                         ) : (
                             <>

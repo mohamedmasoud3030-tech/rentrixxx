@@ -131,20 +131,22 @@ DROP VIEW IF EXISTS public.management_commissions CASCADE;
 CREATE OR REPLACE VIEW public.management_commissions AS
 SELECT 
     c.id as contract_id,
-    c.property_id,
+    u.property_id,
     c.tenant_id,
     o.id as owner_id,
     o.name as owner_name,
     c.rent_amount,
-    c.commission_type,
-    c.commission_rate,
-    c.commission_amount as fixed_commission,
-    -- Fixed commission calculation
+    o.commission_type,
+    o.commission_value as commission_value,
+    CASE
+        WHEN o.commission_type = 'FIXED_MONTHLY' THEN COALESCE(o.commission_value, 0)
+        ELSE NULL
+    END as fixed_commission,
     CASE 
-        WHEN c.commission_type = 'fixed_monthly' THEN 
-            COALESCE(c.commission_amount, 0)
-        WHEN c.commission_type = 'percentage' THEN 
-            ROUND((c.rent_amount * COALESCE(c.commission_rate, 0) / 100), 2)
+        WHEN o.commission_type = 'FIXED_MONTHLY' THEN 
+            COALESCE(o.commission_value, 0)
+        WHEN o.commission_type = 'RATE' THEN 
+            ROUND((c.rent_amount * COALESCE(o.commission_value, 0) / 100), 2)
         ELSE 0
     END as calculated_commission,
     c.start_date,
@@ -153,9 +155,10 @@ SELECT
     c.created_at,
     c.updated_at
 FROM public.contracts c
-LEFT JOIN public.properties p ON c.property_id = p.id
+LEFT JOIN public.units u ON c.unit_id = u.id
+LEFT JOIN public.properties p ON u.property_id = p.id
 LEFT JOIN public.owners o ON p.owner_id = o.id
-WHERE c.status = 'active';
+WHERE c.status = 'ACTIVE';
 
 -- Grant access to the view
 GRANT SELECT ON public.management_commissions TO authenticated;
@@ -166,109 +169,22 @@ GRANT SELECT ON public.management_commissions TO service_role;
 -- ============================================================================
 
 -- Create security_deposits_liability account if it doesn't exist
-INSERT INTO public.accounts (id, name, type, category, parent_id, is_active, created_at, updated_at)
+INSERT INTO public.accounts (id, name, type, parent_id, is_active, created_at, updated_at)
 VALUES (
     'acc_security_deposits_liability',
     'Security Deposits - Tenant Liability',
     'liability',
-    'current_liability',
     NULL,
     true,
-    NOW(),
+    (extract(epoch from now()) * 1000)::bigint,
     NOW()
 )
 ON CONFLICT (id) DO NOTHING;
 
--- Create function to handle deposit transactions correctly
-CREATE OR REPLACE FUNCTION public.handle_deposit_transaction()
-RETURNS TRIGGER AS $$
+DO $$
 BEGIN
-    -- When deposit is received
-    IF (TG_OP = 'INSERT' AND NEW.transaction_type = 'deposit_received') THEN
-        -- Debit: Cash/Bank (Asset increases)
-        INSERT INTO public.journal_entries (
-            transaction_id,
-            account_id,
-            debit,
-            credit,
-            description,
-            created_at
-        ) VALUES (
-            NEW.id,
-            'acc_cash_bank',  -- Assuming this account exists
-            NEW.amount,
-            0,
-            'Security deposit received from tenant: ' || NEW.description,
-            NOW()
-        );
-        
-        -- Credit: Security Deposits Liability (Liability increases)
-        INSERT INTO public.journal_entries (
-            transaction_id,
-            account_id,
-            debit,
-            credit,
-            description,
-            created_at
-        ) VALUES (
-            NEW.id,
-            'acc_security_deposits_liability',
-            0,
-            NEW.amount,
-            'Security deposit liability for tenant: ' || NEW.description,
-            NOW()
-        );
-    
-    -- When deposit is refunded
-    ELSIF (TG_OP = 'INSERT' AND NEW.transaction_type = 'deposit_refunded') THEN
-        -- Debit: Security Deposits Liability (Liability decreases)
-        INSERT INTO public.journal_entries (
-            transaction_id,
-            account_id,
-            debit,
-            credit,
-            description,
-            created_at
-        ) VALUES (
-            NEW.id,
-            'acc_security_deposits_liability',
-            NEW.amount,
-            0,
-            'Security deposit refund to tenant: ' || NEW.description,
-            NOW()
-        );
-        
-        -- Credit: Cash/Bank (Asset decreases)
-        INSERT INTO public.journal_entries (
-            transaction_id,
-            account_id,
-            debit,
-            credit,
-            description,
-            created_at
-        ) VALUES (
-            NEW.id,
-            'acc_cash_bank',
-            0,
-            NEW.amount,
-            'Cash paid for deposit refund: ' || NEW.description,
-            NOW()
-        );
-    END IF;
-    
-    RETURN NEW;
-END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
-
--- Drop existing trigger if exists
-DROP TRIGGER IF EXISTS deposit_accounting_trigger ON public.transactions;
-
--- Create trigger for deposit transactions
-CREATE TRIGGER deposit_accounting_trigger
-    AFTER INSERT ON public.transactions
-    FOR EACH ROW
-    WHEN (NEW.transaction_type IN ('deposit_received', 'deposit_refunded'))
-    EXECUTE FUNCTION public.handle_deposit_transaction();
+    RAISE NOTICE 'Skipped deposit accounting trigger setup: current schema uses deposit_txs/journal_entries, not the draft transactions model in this migration.';
+END $$;
 
 -- ============================================================================
 -- PART 7: Add Indexes for Performance Optimization
@@ -278,43 +194,25 @@ CREATE TRIGGER deposit_accounting_trigger
 CREATE INDEX IF NOT EXISTS idx_contracts_status_dates 
 ON public.contracts(status, start_date, end_date);
 
-CREATE INDEX IF NOT EXISTS idx_transactions_type_date 
-ON public.transactions(transaction_type, transaction_date);
-
 CREATE INDEX IF NOT EXISTS idx_journal_entries_account 
 ON public.journal_entries(account_id, created_at);
 
-CREATE INDEX IF NOT EXISTS idx_properties_owner 
-ON public.properties(owner_id, status);
-
-CREATE INDEX IF NOT EXISTS idx_contracts_property_tenant 
-ON public.contracts(property_id, tenant_id, status);
+CREATE INDEX IF NOT EXISTS idx_contracts_unit_tenant_status 
+ON public.contracts(unit_id, tenant_id, status);
 
 -- ============================================================================
 -- PART 8: Add Comments for Documentation
 -- ============================================================================
 
-COMMENT ON COLUMN public.contracts.commission_type IS 'Type of commission: percentage or fixed_monthly';
-COMMENT ON COLUMN public.contracts.commission_rate IS 'Percentage rate when commission_type is percentage';
-COMMENT ON COLUMN public.contracts.commission_amount IS 'Fixed monthly amount when commission_type is fixed_monthly';
 COMMENT ON VIEW public.management_commissions IS 'Calculated management commissions for all active contracts';
-COMMENT ON FUNCTION public.handle_deposit_transaction() IS 'Automatically creates correct double-entry accounting for deposit transactions';
 
 -- ============================================================================
 -- PART 9: Data Validation and Cleanup
 -- ============================================================================
 
--- Update any NULL commission amounts for fixed_monthly to 0
-UPDATE public.contracts 
-SET commission_amount = 0 
-WHERE commission_type = 'fixed_monthly' 
-AND commission_amount IS NULL;
-
--- Update any NULL commission rates for percentage to 0
-UPDATE public.contracts 
-SET commission_rate = 0 
-WHERE commission_type = 'percentage' 
-AND commission_rate IS NULL;
+UPDATE public.owners
+SET commission_value = 0
+WHERE commission_value IS NULL;
 
 -- ============================================================================
 -- PART 10: Create Helper Functions
@@ -329,18 +227,16 @@ CREATE OR REPLACE FUNCTION public.calculate_contract_commission(
 RETURNS numeric AS $$
 DECLARE
     v_commission_type text;
-    v_commission_rate numeric;
-    v_commission_amount numeric;
+    v_commission_value numeric;
     v_rent_amount numeric;
     v_months integer;
     v_total_commission numeric;
 BEGIN
-    -- Get contract details
+    -- Get contract details from the owner attached through unit -> property
     SELECT 
-        commission_type,
-        commission_rate,
-        commission_amount,
-        rent_amount,
+        o.commission_type,
+        o.commission_value,
+        c.rent_amount,
         CASE 
             WHEN p_start_date IS NULL AND p_end_date IS NULL THEN
                 EXTRACT(YEAR FROM AGE(end_date, start_date)) * 12 + 
@@ -351,18 +247,20 @@ BEGIN
         END
     INTO 
         v_commission_type,
-        v_commission_rate,
-        v_commission_amount,
+        v_commission_value,
         v_rent_amount,
         v_months
-    FROM public.contracts
-    WHERE id = p_contract_id;
+    FROM public.contracts c
+    LEFT JOIN public.units u ON u.id = c.unit_id
+    LEFT JOIN public.properties p ON p.id = u.property_id
+    LEFT JOIN public.owners o ON o.id = p.owner_id
+    WHERE c.id = p_contract_id;
     
     -- Calculate total commission
-    IF v_commission_type = 'fixed_monthly' THEN
-        v_total_commission := COALESCE(v_commission_amount, 0) * v_months;
-    ELSIF v_commission_type = 'percentage' THEN
-        v_total_commission := ROUND((v_rent_amount * COALESCE(v_commission_rate, 0) / 100) * v_months, 2);
+    IF v_commission_type = 'FIXED_MONTHLY' THEN
+        v_total_commission := COALESCE(v_commission_value, 0) * GREATEST(v_months, 1);
+    ELSIF v_commission_type = 'RATE' THEN
+        v_total_commission := ROUND((v_rent_amount * COALESCE(v_commission_value, 0) / 100) * GREATEST(v_months, 1), 2);
     ELSE
         v_total_commission := 0;
     END IF;

@@ -9,7 +9,7 @@ const isPlaceholder = (value: string): boolean => {
 
 const ensureAscii = (value: string): string => value.replace(/[^\x00-\x7F]/g, '');
 
-const readRequired = (key: 'VITE_SUPABASE_URL' | 'VITE_SUPABASE_ANON_KEY'): string => {
+const readRequired = (key: 'VITE_SUPABASE_URL' | 'VITE_SUPABASE_ANON_KEY' | 'VITE_SUPABASE_PUBLISHABLE_KEY'): string => {
   const raw = normalize(import.meta.env[key] as string | undefined);
   const value = ensureAscii(raw);
 
@@ -23,6 +23,7 @@ const readRequired = (key: 'VITE_SUPABASE_URL' | 'VITE_SUPABASE_ANON_KEY'): stri
 export type AppEnv = {
   supabaseUrl: string;
   supabaseAnonKey: string;
+  supabasePublishableKey?: string;
   logLevel?: 'debug' | 'info' | 'warn' | 'error';
   errorTrackerDsn?: string;
   releaseVersion?: string;
@@ -36,6 +37,7 @@ export const getAppEnv = (): AppEnv => {
   envCache = {
     supabaseUrl: readRequired('VITE_SUPABASE_URL'),
     supabaseAnonKey: readRequired('VITE_SUPABASE_ANON_KEY'),
+    supabasePublishableKey: normalize(import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string | undefined) || undefined,
     logLevel: normalize(import.meta.env.VITE_LOG_LEVEL as string | undefined) as AppEnv['logLevel'] || undefined,
     errorTrackerDsn: normalize(import.meta.env.VITE_ERROR_TRACKER_DSN as string | undefined) || undefined,
     releaseVersion: normalize(import.meta.env.VITE_RELEASE_VERSION as string | undefined) || undefined,

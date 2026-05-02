@@ -125,7 +125,7 @@ const DocumentTemplatesSettings: React.FC = () => {
                 <div className="space-y-3">
                     {clauses.map((clause, idx) => (
                         <div
-                            key={idx}
+                            key={`clause-editor-${idx}-${clause.slice(0, 32)}`}
                             draggable
                             onDragStart={() => handleDragStart(idx)}
                             onDragOver={(e) => handleDragOver(e, idx)}
@@ -180,7 +180,7 @@ const DocumentTemplatesSettings: React.FC = () => {
                 <h4 className="font-bold text-sm text-blue-800 mb-2">معاينة ترقيم البنود</h4>
                 <div className="space-y-1 text-xs text-blue-700 max-h-48 overflow-y-auto">
                     {clauses.filter(c => c.trim()).map((clause, idx) => (
-                        <p key={idx}><strong>{idx + 1}.</strong> {clause.slice(0, 80)}{clause.length > 80 ? '...' : ''}</p>
+                        <p key={`clause-preview-${idx}-${clause.slice(0, 32)}`}><strong>{idx + 1}.</strong> {clause.slice(0, 80)}{clause.length > 80 ? '...' : ''}</p>
                     ))}
                     {clauses.filter(c => c.trim()).length === 0 && (
                         <p className="text-text-muted">لا توجد بنود. أضف بنداً أعلاه.</p>

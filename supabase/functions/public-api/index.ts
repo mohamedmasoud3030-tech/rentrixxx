@@ -1,4 +1,5 @@
 import { createClient } from 'npm:@supabase/supabase-js@2';
+import { corsHeaders, handleOptions } from '../_shared/cors.ts';
 
 type ApiError = { error: { code: string; message: string; details?: unknown } };
 type JsonObject = Record<string, unknown>;
@@ -25,20 +26,16 @@ type IdempotencyRow = {
 
 type AlertSeverity = 'INFO' | 'WARNING' | 'CRITICAL';
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-api-key, x-request-id, content-type',
-  'Access-Control-Allow-Methods': 'GET,POST,OPTIONS',
-};
 
-const json = (body: unknown, status = 200): Response =>
+
+const json = (body: unknown, status = 200, origin: string | null = null): Response =>
   new Response(JSON.stringify(body), {
     status,
-    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    headers: { ...corsHeaders(origin), 'Content-Type': 'application/json' },
   });
 
-const apiError = (code: string, message: string, status = 400, details?: unknown): Response =>
-  json({ error: { code, message, details } satisfies ApiError['error'] }, status);
+const apiError = (code: string, message: string, status = 400, details?: unknown, origin: string | null = null): Response =>
+  json({ error: { code, message, details } satisfies ApiError['error'] }, status, origin);
 
 const normalizePath = (url: URL): string => {
   const marker = '/public-api';
@@ -89,7 +86,7 @@ const blockSnakeCaseInput = (payload: JsonObject): string[] => {
 };
 
 Deno.serve(async (req) => {
-  if (req.method === 'OPTIONS') return new Response(null, { headers: corsHeaders });
+  if (req.method === 'OPTIONS') return handleOptions(req);
 
   const supabaseUrl = Deno.env.get('SUPABASE_URL');
   const serviceRole = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
@@ -100,7 +97,7 @@ Deno.serve(async (req) => {
       hasSupabaseUrl: Boolean(supabaseUrl),
       hasServiceRole: Boolean(serviceRole),
     });
-    return apiError('config_error', 'Missing Supabase service configuration', 500);
+    return apiError('config_error', 'Missing Supabase service configuration', 500, undefined, req.headers.get('Origin'));
   }
 
   const supabase = createClient(supabaseUrl, serviceRole);
@@ -109,11 +106,11 @@ Deno.serve(async (req) => {
   const method = req.method.toUpperCase();
   const requiredScope = requiredScopeByEndpoint(path, method);
 
-  if (!requiredScope) return apiError('not_found', 'Endpoint not found', 404);
+  if (!requiredScope) return apiError('not_found', 'Endpoint not found', 404, undefined, req.headers.get('Origin'));
 
   const apiKey = req.headers.get('x-api-key') || req.headers.get('authorization')?.replace(/^Bearer\s+/i, '') || '';
   if (!apiKey) {
-    return apiError('auth_failed', 'Missing API key', 401);
+    return apiError('auth_failed', 'Missing API key', 401, undefined, req.headers.get('Origin'));
   }
 
   const { data: authData, error: authError } = await supabase.rpc('platform_authenticate_api_key', {
@@ -123,12 +120,12 @@ Deno.serve(async (req) => {
 
   if (authError) {
     console.error('[public-api] authentication rpc failed', { path, method, error: authError.message });
-    return apiError('auth_failed', authError.message, 401);
+    return apiError('auth_failed', authError.message, 401, undefined, req.headers.get('Origin'));
   }
 
   const authPayload = (authData || {}) as { ok?: boolean; error?: string; tenant_id?: string; role?: string; api_key_id?: string };
   if (!authPayload.ok || !authPayload.tenant_id) {
-    return apiError('auth_failed', authPayload.error || 'Invalid API key', 401);
+    return apiError('auth_failed', authPayload.error || 'Invalid API key', 401, undefined, req.headers.get('Origin'));
   }
 
   const rawBody = method === 'GET' ? {} : await req.json().catch(() => ({}));
@@ -141,6 +138,7 @@ Deno.serve(async (req) => {
       'Use camelCase API fields only. snake_case fields are internal and not accepted from client payloads.',
       422,
       { fields: snakeCaseViolations },
+      req.headers.get('Origin'),
     );
   }
 
@@ -150,7 +148,7 @@ Deno.serve(async (req) => {
   const finalRequestId = requestIdHeader || requestIdBody;
 
   if (method === 'POST' && !finalRequestId) {
-    return apiError('validation_error', 'requestId is required for write operations', 422);
+    return apiError('validation_error', 'requestId is required for write operations', 422, undefined, req.headers.get('Origin'));
   }
 
   const tenantId = authPayload.tenant_id;
@@ -411,14 +409,14 @@ Deno.serve(async (req) => {
 
       if (cachedResponse?.response_payload) {
         await logApi(200, { idempotent: true, request_id: finalRequestId });
-        return json({ data: cachedResponse.response_payload, idempotent: true, audit_reference: null });
+        return json({ data: cachedResponse.response_payload, idempotent: true, audit_reference: null }, 200, req.headers.get('Origin'));
       }
 
       mappedPayload.request_id = finalRequestId;
       const { data, error } = await supabase.rpc('post_receipt_atomic', { payload: mappedPayload });
       if (error) {
         await logApi(400, { error: error.message });
-        return apiError('receipt_post_failed', error.message, 400);
+        return apiError('receipt_post_failed', error.message, 400, undefined, req.headers.get('Origin'));
       }
 
       const receiptId = (data as JsonObject)?.receipt_id as string | undefined;
@@ -444,7 +442,7 @@ Deno.serve(async (req) => {
         .maybeSingle();
 
       await logApi(200, { receipt_id: receiptId });
-      return json({ data, idempotent: false, audit_reference: auditRow?.id || null });
+return json({ data: data, idempotent: false, audit_reference: auditRow?.id || null }, 200, req.headers.get('Origin'));
     }
 
     if (method === 'POST' && (path === '/contracts' || path === '/invoices' || path === '/journal-entries')) {
@@ -453,6 +451,8 @@ Deno.serve(async (req) => {
         'write_path_disabled',
         'Direct table writes are disabled for this endpoint. Use an approved atomic RPC workflow instead.',
         409,
+        undefined,
+        req.headers.get('Origin'),
       );
     }
 
@@ -472,11 +472,11 @@ Deno.serve(async (req) => {
       const { data, error } = await query;
       if (error) {
         await logApi(400, { error: error.message });
-        return apiError('ledger_fetch_failed', error.message, 400);
+        return apiError('ledger_fetch_failed', error.message, 400, undefined, req.headers.get('Origin'));
       }
 
       await logApi(200, { count: data?.length || 0 });
-      return json({ data: data || [] });
+      return json({ data: data || [] }, 200, req.headers.get('Origin'));
     }
 
     if (method === 'GET' && path.startsWith('/reports/')) {
@@ -490,7 +490,7 @@ Deno.serve(async (req) => {
       const rpcName = reportMap[reportName];
       if (!rpcName) {
         await logApi(404, { error: 'unknown_report' });
-        return apiError('not_found', 'Unknown report endpoint', 404);
+        return apiError('not_found', 'Unknown report endpoint', 404, undefined, req.headers.get('Origin'));
       }
 
       const rpcParams: Record<string, unknown> = {};
@@ -507,7 +507,7 @@ Deno.serve(async (req) => {
       const { data, error } = await supabase.rpc(rpcName, rpcParams);
       if (error) {
         await logApi(400, { error: error.message, report: reportName });
-        return apiError('report_failed', error.message, 400);
+        return apiError('report_failed', error.message, 400, undefined, req.headers.get('Origin'));
       }
 
       if (reportName !== 'reconciliation') {
@@ -520,15 +520,15 @@ Deno.serve(async (req) => {
       }
 
       await logApi(200, { report: reportName });
-      return json({ data });
+      return json({ data }, 200, req.headers.get('Origin'));
     }
 
     await logApi(404, { error: 'unknown_route' });
-    return apiError('not_found', 'Endpoint not found', 404);
+    return apiError('not_found', 'Endpoint not found', 404, undefined, req.headers.get('Origin'));
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown error';
     console.error('[public-api] unhandled error', { message, path, method, tenantId, requestId: finalRequestId || null });
     await logApi(500, { error: message });
-    return apiError('internal_error', message, 500);
+    return apiError('internal_error', message, 500, undefined, req.headers.get('Origin'));
   }
 });

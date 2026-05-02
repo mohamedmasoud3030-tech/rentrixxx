@@ -2,7 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { useApp } from '@/contexts/AppContext';
 import { formatCurrency } from '@/utils/helpers';
 import { useNavigate } from 'react-router-dom';
-import { Search, Building2, Users, FileText, Banknote, TrendingUp, TrendingDown, AlertTriangle, Wrench, Home, Percent, DollarSign, CalendarClock } from 'lucide-react';
+import { Search, Building2, Users, FileText, Banknote, TrendingUp, TrendingDown, AlertTriangle, Home, Percent, DollarSign } from 'lucide-react';
 import { Contract, Receipt as ReceiptType, Expense, Invoice } from '@/types';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 import { startOfMonth, endOfMonth, subMonths, eachMonthOfInterval, isWithinInterval, format } from 'date-fns';
@@ -218,7 +218,7 @@ const DashboardRevenueChart: React.FC<{ receipts: ReceiptType[]; expenses: Expen
                         <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
                         <XAxis dataKey="name" fontSize={12} />
                         <YAxis fontSize={11} tickFormatter={v => (v > 0 ? `${(v / 1000).toFixed(0)}k` : '0')} />
-                        <Tooltip formatter={(value: any) => formatCurrency(value as number, currency as 'OMR' | 'SAR' | 'EGP')} />
+                        <Tooltip formatter={(value) => formatCurrency(Number(value ?? 0), currency as 'OMR' | 'SAR' | 'EGP')} />
                         <Area type="monotone" dataKey="revenue" stroke="#10b981" fill="#10b98133" strokeWidth={2} />
                         <Area type="monotone" dataKey="expenses" stroke="#ef4444" fill="#ef444433" strokeWidth={2} />
                     </AreaChart>

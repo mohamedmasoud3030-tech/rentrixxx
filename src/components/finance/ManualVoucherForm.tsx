@@ -5,14 +5,16 @@ import { useApp } from '../../contexts/AppContext';
 import NumberInput from '../ui/NumberInput';
 
 interface VoucherLine {
+  id: string;
   accountId: string;
   debit: number;
   credit: number;
   query?: string;
 }
+type VoucherPostingLine = Omit<VoucherLine, 'id' | 'query'>;
 
 interface ManualVoucherFormProps {
-  onSubmit: (payload: { date: string; notes: string; lines: VoucherLine[] }) => Promise<void>;
+  onSubmit: (payload: { date: string; notes: string; lines: VoucherPostingLine[] }) => Promise<void>;
   onCancel?: () => void;
   compact?: boolean;
 }
@@ -26,15 +28,15 @@ const ManualVoucherForm: React.FC<ManualVoucherFormProps> = ({ onSubmit, onCance
   const [notes, setNotes] = useState('');
   const [loading, setLoading] = useState(false);
   const [lines, setLines] = useState<VoucherLine[]>([
-    { accountId: '', debit: 0, credit: 0, query: '' },
-    { accountId: '', debit: 0, credit: 0, query: '' },
+    { id: crypto.randomUUID(), accountId: '', debit: 0, credit: 0, query: '' },
+    { id: crypto.randomUUID(), accountId: '', debit: 0, credit: 0, query: '' },
   ]);
 
   const setLine = (index: number, updates: Partial<VoucherLine>) => {
     setLines((prev) => prev.map((line, i) => (i === index ? { ...line, ...updates } : line)));
   };
 
-  const addLine = () => setLines((prev) => [...prev, { accountId: '', debit: 0, credit: 0, query: '' }]);
+  const addLine = () => setLines((prev) => [...prev, { id: crypto.randomUUID(), accountId: '', debit: 0, credit: 0, query: '' }]);
   const removeLine = (index: number) => setLines((prev) => prev.filter((_, i) => i !== index));
 
   const accountSearch = (query: string) => {
@@ -80,8 +82,8 @@ const ManualVoucherForm: React.FC<ManualVoucherFormProps> = ({ onSubmit, onCance
     try {
       await onSubmit({ date, notes, lines: postedLines });
       setLines([
-        { accountId: '', debit: 0, credit: 0, query: '' },
-        { accountId: '', debit: 0, credit: 0, query: '' },
+        { id: crypto.randomUUID(), accountId: '', debit: 0, credit: 0, query: '' },
+        { id: crypto.randomUUID(), accountId: '', debit: 0, credit: 0, query: '' },
       ]);
       setNotes('');
       if (compact && onCancel) onCancel();
@@ -117,7 +119,7 @@ const ManualVoucherForm: React.FC<ManualVoucherFormProps> = ({ onSubmit, onCance
             {lines.map((line, i) => {
               const suggestions = accountSearch(line.query || '');
               return (
-                <tr key={i}>
+                <tr key={line.id}>
                   <td className="px-3 py-2 align-top min-w-[280px]">
                     <input
                       className="w-full mb-1"

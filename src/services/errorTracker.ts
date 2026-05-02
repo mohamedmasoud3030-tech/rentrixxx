@@ -41,11 +41,11 @@ export const errorTracker = {
       context,
       error: normalized,
       userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : 'server',
-      url: typeof window !== 'undefined' ? window.location.href : '',
+      url: typeof globalThis !== 'undefined' ? globalThis.location.href : '',
     });
 
     if (!dsn) {
-      // eslint-disable-next-line no-console
+       
       console.error('[error-tracker:fallback]', payload);
       return;
     }

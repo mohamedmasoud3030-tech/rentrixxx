@@ -271,6 +271,7 @@ export interface Tenant {
 }
 
 export interface Contract {
+  [key: string]: unknown;
   id: string;
   no?: string;
   unitId: string;
@@ -689,6 +690,7 @@ export interface Database {
 export type OperationType = 'addReceipt' | 'addExpense' | 'voidReceipt' | 'voidExpense' | 'generateInvoices' | 'addManualJournalVoucher';
 
 export interface PerformanceMetrics {
+    [key: string]: number[];
     addReceipt: number[];
     addExpense: number[];
     voidReceipt: number[];
@@ -701,6 +703,7 @@ export interface PerformanceMetrics {
 // FIX: Refactored AppContextType to align with new service-oriented architecture. Removed direct data manipulation methods and auth functions, exposing services and auth state instead.
 export interface AppContextType {
   db: Database;
+  isLoading: boolean;
   auth: {
     currentUser: User | null | undefined;
     login: (username: string, password: string) => Promise<{ ok: boolean; msg: string; mustChange?: boolean }>;
@@ -735,6 +738,10 @@ export interface AppContextType {
     generateLateFees: () => Promise<number>;
   };
   
+  operationsService: {
+    renewContract: (oldContractId: string, newContract: Partial<Contract>) => Promise<string | null | undefined>;
+  };
+
   // Backup and System
   createBackup: () => Promise<string>;
   restoreBackup: (data: string) => Promise<void>;

@@ -1,4 +1,5 @@
 import { supabase } from '@/services/api/supabaseClient';
+import { logger } from '@/services/logger';
 import { uploadAttachment } from '../services/attachmentService';
 
 const BATCH_SIZE = 10;
@@ -11,7 +12,7 @@ const dataUrlToFile = (dataUrl: string, fileName: string): File => {
   const binary = atob(base64Data);
   const bytes = new Uint8Array(binary.length);
   for (let i = 0; i < binary.length; i++) {
-    bytes[i] = binary.charCodeAt(i);
+    bytes[i] = binary.codePointAt(i) || 0;
   }
   return new File([bytes], fileName, { type: mimeType });
 };
@@ -52,13 +53,12 @@ const processLegacyAttachments = async () => {
         .is('storage_path', null);
 
       if (updateError) {
-        console.error(`[AttachmentMigration] Failed updating attachment row ${row.id}`, updateError);
+        logger.error('[AttachmentMigration] Failed updating attachment row', { message: updateError.message, code: updateError.code, context: { rowId: row.id } });
       } else {
-        console.log(`[AttachmentMigration] Migrated attachment row ${row.id}`);
         successCount += 1;
       }
     } catch (migrateError) {
-      console.error(`[AttachmentMigration] Failed migrating attachment row ${row.id}`, migrateError);
+      logger.error('[AttachmentMigration] Failed migrating attachment row', { message: migrateError instanceof Error ? migrateError.message : 'unknown_error', context: { rowId: row.id } });
     }
   }
 
@@ -88,7 +88,6 @@ const processLegacyUtilityBills = async () => {
         .maybeSingle();
 
       if (existing.data?.id) {
-        console.log(`[AttachmentMigration] Utility bill ${row.id} already migrated.`);
         continue;
       }
 
@@ -114,13 +113,12 @@ const processLegacyUtilityBills = async () => {
         .like('bill_image_url', 'data:%');
 
       if (clearError) {
-        console.error(`[AttachmentMigration] Utility bill ${row.id} uploaded but not cleared`, clearError);
+        logger.error('[AttachmentMigration] Utility bill uploaded but not cleared', { message: clearError.message, code: clearError.code, context: { rowId: row.id } });
       } else {
-        console.log(`[AttachmentMigration] Migrated utility bill ${row.id}`);
         successCount += 1;
       }
     } catch (migrateError) {
-      console.error(`[AttachmentMigration] Failed migrating utility bill ${row.id}`, migrateError);
+      logger.error('[AttachmentMigration] Failed migrating utility bill', { message: migrateError instanceof Error ? migrateError.message : 'unknown_error', context: { rowId: row.id } });
     }
   }
 
