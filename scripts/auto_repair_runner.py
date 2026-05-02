@@ -39,6 +39,8 @@ async def main():
     
     # Simulate a check and fix
     repo_root = Path(__file__).resolve().parents[1]
+    if os.getenv("AUTO_REPAIR_DIAG") == "1":
+        print(f"DIAG repo_root={repo_root}")
     finance_path = repo_root / "src/ui/Finance.tsx"
 
     if finance_path.exists():
