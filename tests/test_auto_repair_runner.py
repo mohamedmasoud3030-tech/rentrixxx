@@ -20,7 +20,7 @@ class TestAutoRepairRunner(TestCase):
     def test_missing_finance_file_marks_step_skipped_and_warns(self):
         buffer = io.StringIO()
 
-        with patch("pathlib.Path.exists", return_value=False), redirect_stdout(buffer):
+        with patch("pathlib.Path.exists", side_effect=lambda self: False if "Finance.tsx" in str(self) else True), redirect_stdout(buffer):
             try:
                 asyncio.run(auto_repair_runner.main())
             except Exception as exc:  # pragma: no cover - explicit safety assertion
