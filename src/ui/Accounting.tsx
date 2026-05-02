@@ -156,10 +156,11 @@ const ChartOfAccounts: React.FC = () => {
     exportToCsv(`accounts_${type.toLowerCase()}`, rows);
   };
 
-  const accountLines = useMemo(() => {
-    if (!account) return [];
+  const accountLedger = useMemo(() => {
+    if (!account) return { openingBalance: 0, lines: [] };
     return calculateGeneralLedgerForAccount(db, account.id, startDate, endDate);
   }, [db, account, startDate, endDate]);
+  const { openingBalance: accountOpeningBalance, lines: accountLines } = accountLedger;
 
   return (
     <div className="space-y-3">
@@ -199,6 +200,10 @@ const ChartOfAccounts: React.FC = () => {
         <div className="grid grid-cols-2 gap-2 mb-3">
           <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
           <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
+        </div>
+        <div className="mb-3 rounded-lg border border-border bg-background/50 px-3 py-2 text-sm">
+          <span className="text-text-muted">الرصيد الافتتاحي: </span>
+          <span className="font-black font-mono" dir="ltr">{formatCurrency(accountOpeningBalance)}</span>
         </div>
         <div className="max-h-[50vh] overflow-auto border border-border rounded-lg">
           <table className="w-full text-sm">

@@ -33,6 +33,11 @@ interface LedgerLine {
   runningBalance: number;
 }
 
+interface GeneralLedgerResult {
+  openingBalance: number;
+  lines: LedgerLine[];
+}
+
 const round3 = (value: number): number => Math.round((Number.isFinite(value) ? value : 0) * 1000) / 1000;
 const toNumber = (value: unknown): number => (typeof value === 'number' && Number.isFinite(value) ? value : 0);
 
@@ -177,16 +182,29 @@ export const calculateTrialBalanceData = (db: Database, endDate: string) => {
   }
 };
 
-export const calculateGeneralLedgerForAccount = (db: Database, accountId: string, startDate: string, endDate: string) => {
+export const calculateGeneralLedgerForAccount = (db: Database, accountId: string, startDate: string, endDate: string): GeneralLedgerResult => {
   try {
     const { accounts, journalEntries } = getArrays(db);
     const account = accounts.find((acc) => acc.id === accountId);
     const start = safeDate(startDate);
     const end = safeDate(endDate);
 
-    if (!account || !start || !end) return [] as LedgerLine[];
+    if (!account || !start || !end) return { openingBalance: 0, lines: [] };
 
-    let runningBalance = 0;
+    const openingBalance = round3(
+      journalEntries
+        .filter((je) => {
+          const d = safeDate(je?.date);
+          return je?.accountId === accountId && !!d && d < start;
+        })
+        .reduce((sum, je) => {
+          const debit = je.type === 'DEBIT' ? toNumber(je.amount) : 0;
+          const credit = je.type === 'CREDIT' ? toNumber(je.amount) : 0;
+          return round3(sum + signedByNormal(account.type, debit, credit));
+        }, 0),
+    );
+
+    let runningBalance = openingBalance;
 
     const entries = journalEntries
       .filter((je) => {
@@ -217,9 +235,9 @@ export const calculateGeneralLedgerForAccount = (db: Database, accountId: string
         };
       });
 
-    return entries;
+    return { openingBalance, lines: entries };
   } catch {
-    return [] as LedgerLine[];
+    return { openingBalance: 0, lines: [] };
   }
 };
 
