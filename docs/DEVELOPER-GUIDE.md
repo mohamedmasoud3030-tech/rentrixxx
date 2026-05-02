@@ -36,12 +36,6 @@ export CODACY_PROJECT_NAME=rentrixxx
 
 > Note: Keep API tokens out of committed files and shell history when possible.
 
-To publish coverage to Codacy, first generate a coverage file, then pass it explicitly:
-```bash
-pnpm vitest run --coverage
-bash <(curl -Ls https://coverage.codacy.com/get.sh) report   -r coverage/lcov.info
-```
-
 
 4. **Start the development server**:
    ```bash
