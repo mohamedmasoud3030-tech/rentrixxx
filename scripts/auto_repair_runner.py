@@ -1,6 +1,6 @@
 import asyncio
 import os
-import sys
+from pathlib import Path
 
 # Simple standalone implementation of necessary tools to avoid dependency issues
 class SimplePlanner:
@@ -21,8 +21,13 @@ class SimplePlanner:
         print(f"\n📋 {self.plan['title']}")
         for i, step in enumerate(self.plan['steps']):
             status = self.plan['statuses'][i]
-            symbol = "[✓]" if status == "completed" else "[ ]"
-            print(f"{i}. {symbol} {step}")
+            if status == "completed":
+                symbol = "[✓]"
+            elif status == "skipped":
+                symbol = "[-]"
+            else:
+                symbol = "[ ]"
+            print(f"{i + 1}. {symbol} {step}")
 
 async def main():
     print("🚀 Starting Standalone Automated Repair for Rentrix...")
@@ -33,14 +38,21 @@ async def main():
     print("\n▶️ Checking for further optimizations...")
     
     # Simulate a check and fix
-    finance_path = "src/ui/Finance.tsx"
-    if os.path.exists(finance_path):
-        with open(finance_path, 'r') as f:
-            content = f.read()
+    repo_root = Path(__file__).resolve().parents[1]
+    finance_path = repo_root / "src/ui/Finance.tsx"
+
+    if finance_path.exists():
+        content = finance_path.read_text(encoding="utf-8")
         
         if "React.memo" in content:
             print("✅ Performance optimization already applied to Finance.tsx")
             planner.plan['statuses'][0] = "completed"
+        else:
+            print("ℹ️ Finance.tsx found, but React.memo was not detected.")
+            planner.plan['statuses'][0] = "skipped"
+    else:
+        print(f"⚠️ Could not find target file: {finance_path}")
+        planner.plan['statuses'][0] = "skipped"
     
     planner.display()
     print("\n✨ Automated run finished.")
