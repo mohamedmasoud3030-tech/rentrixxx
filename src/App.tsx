@@ -86,7 +86,23 @@ const ROUTE_META: Record<string, { title: string; description: string }> = Objec
 const withRouteBoundary = (element: React.ReactNode, boundaryName: string): React.ReactNode => (
   <ErrorBoundary
     boundaryName={boundaryName}
-    fallback={({ retry }) => <AppErrorFallback retry={retry} />}
+    fallback={({ retry, severity }) => <AppErrorFallback retry={retry} severity={severity} />}
+  >
+    {element}
+  </ErrorBoundary>
+);
+
+const withRouteGroupBoundary = (element: React.ReactNode, boundaryName: string): React.ReactNode => (
+  <ErrorBoundary
+    boundaryName={boundaryName}
+    fallback={({ retry, severity }) => (
+      <AppErrorFallback
+        retry={retry}
+        severity={severity}
+        title="حدث خطأ في وحدة تشغيل حرجة / Critical module failure"
+        description="تعذر تحميل هذه الوحدة حالياً. حاول مرة أخرى أو تواصل مع الدعم. / We could not load this module right now."
+      />
+    )}
   >
     {element}
   </ErrorBoundary>
@@ -196,22 +212,22 @@ const App: React.FC = () => {
           ) : auth.currentUser.mustChange ? (
             <Route path="*" element={withRouteBoundary(<ChangePassword />, 'route-change-password')} />
           ) : (
-            <Route element={<Layout />}>
+            <Route element={withRouteBoundary(<Layout />, 'shell-layout')}>
               <Route path="/" element={withRouteBoundary(<Dashboard />, 'route-dashboard')} />
               <Route path="/properties" element={withRouteBoundary(<Properties />, 'route-properties')} />
               <Route path="/tenants" element={withRouteBoundary(<Tenants />, 'route-tenants')} />
               <Route path="/owners" element={withRouteBoundary(<Owners />, 'route-owners')} />
               <Route path="/owners/:ownerId/hub" element={withRouteBoundary(<OwnersHub />, 'route-owners-hub')} />
               <Route path="/contracts" element={withRouteBoundary(<Contracts />, 'route-contracts')} />
-              <Route path="/maintenance" element={withRouteBoundary(<Maintenance />, 'route-maintenance')} />
-              <Route path="/financial/*" element={withRouteBoundary(<ProtectedRoute capability="VIEW_FINANCIALS"><Finance /></ProtectedRoute>, 'route-financial')} />
+              <Route path="/maintenance" element={withRouteGroupBoundary(<Maintenance />, 'route-group-ops')} />
+              <Route path="/financial/*" element={withRouteGroupBoundary(<ProtectedRoute capability="VIEW_FINANCIALS"><Finance /></ProtectedRoute>, 'route-group-finance')} />
 
               {/* CRM & Growth */}
               <Route path="/leads" element={withRouteBoundary(<Leads />, 'route-leads')} />
               <Route path="/communication" element={withRouteBoundary(<CommunicationHub />, 'route-communication')} />
               <Route path="/lands" element={withRouteBoundary(<Lands />, 'route-lands')} />
               <Route path="/commissions" element={withRouteBoundary(<Commissions />, 'route-commissions')} />
-              <Route path="/reports" element={withRouteBoundary(<Reports />, 'route-reports')} />
+              <Route path="/reports" element={withRouteGroupBoundary(<Reports />, 'route-group-reports')} />
               <Route path="/smart-assistant" element={withRouteBoundary(<ProtectedRoute capability="USE_SMART_ASSISTANT"><SmartAssistant /></ProtectedRoute>, 'route-smart-assistant')} />
               {auth.currentUser.role === 'ADMIN' && (
                 <>

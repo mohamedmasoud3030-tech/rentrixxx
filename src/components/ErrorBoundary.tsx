@@ -1,8 +1,10 @@
 import React, { ReactNode } from 'react';
-import { logger } from '@/services/logger';
+import { logger, errorTracker } from '@/infrastructure/observability';
+import { classifyError, type ErrorSeverity } from './errorClassification';
 
 type FallbackRenderContext = {
   error: Error | null;
+  severity: ErrorSeverity;
   retry: () => void;
 };
 
@@ -28,13 +30,26 @@ export class ErrorBoundary extends React.Component<Props, State> {
   }
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
+    const classification = classifyError(error);
     logger.error(`[ErrorBoundary] ${this.props.boundaryName ?? 'unknown'} render failure`, {
       area: 'ui',
       action: 'render',
       boundaryName: this.props.boundaryName ?? 'unknown',
+      severity: classification.severity,
+      classificationCode: classification.code,
       componentStack: errorInfo.componentStack,
       message: error.message,
       stack: error.stack,
+    });
+
+    errorTracker.capture(error, {
+      area: 'ui',
+      action: `boundary:${this.props.boundaryName ?? 'unknown'}`,
+      extra: {
+        severity: classification.severity,
+        classificationCode: classification.code,
+        componentStack: errorInfo.componentStack,
+      },
     });
   }
 
@@ -44,8 +59,9 @@ export class ErrorBoundary extends React.Component<Props, State> {
 
   render() {
     if (this.state.hasError) {
+      const classification = classifyError(this.state.error);
       if (typeof this.props.fallback === 'function') {
-        return this.props.fallback({ error: this.state.error, retry: this.handleRetry });
+        return this.props.fallback({ error: this.state.error, severity: classification.severity, retry: this.handleRetry });
       }
 
       if (this.props.fallback) {
