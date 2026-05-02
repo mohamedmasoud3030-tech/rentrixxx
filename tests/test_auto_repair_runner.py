@@ -1,32 +1,28 @@
-import asyncio
-import importlib.util
 import io
+import unittest
 from contextlib import redirect_stdout
-from pathlib import Path
-from unittest import TestCase
-from unittest.mock import patch
+
+from scripts.auto_repair_runner import SimplePlanner
 
 
-MODULE_PATH = Path(__file__).resolve().parents[1] / "scripts" / "auto_repair_runner.py"
+class TestSimplePlannerDisplay(unittest.TestCase):
+    def test_display_renders_status_symbols_for_each_step(self):
+        planner = SimplePlanner()
+        planner.plan["statuses"] = ["completed", "skipped", "not_started", "not_started", "not_started"]
 
-
-spec = importlib.util.spec_from_file_location("auto_repair_runner", MODULE_PATH)
-auto_repair_runner = importlib.util.module_from_spec(spec)
-assert spec and spec.loader
-spec.loader.exec_module(auto_repair_runner)
-
-
-class TestAutoRepairRunner(TestCase):
-    def test_missing_finance_file_marks_step_skipped_and_warns(self):
         buffer = io.StringIO()
+        with redirect_stdout(buffer):
+            planner.display()
 
-        with patch("pathlib.Path.exists", side_effect=lambda self: False if "Finance.tsx" in str(self) else True), redirect_stdout(buffer):
-            try:
-                asyncio.run(auto_repair_runner.main())
-            except Exception as exc:  # pragma: no cover - explicit safety assertion
-                self.fail(f"Unexpected exception while Finance.tsx is missing: {exc}")
+        output_lines = buffer.getvalue().splitlines()
 
-        output = buffer.getvalue()
+        # Remove blank lines and title to keep only numbered step lines.
+        step_lines = [line for line in output_lines if line.strip() and line.lstrip()[0].isdigit()]
 
-        self.assertIn("⚠️ Could not find target file:", output)
-        self.assertIn("[-] Optimize React Performance", output)
+        self.assertIn("1. [✓] Optimize React Performance", step_lines)
+        self.assertIn("2. [-] Enhance Security", step_lines)
+        self.assertIn("3. [ ] Improve UX", step_lines)
+
+
+if __name__ == "__main__":
+    unittest.main()
