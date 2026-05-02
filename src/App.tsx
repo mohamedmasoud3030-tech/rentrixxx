@@ -30,9 +30,6 @@ const AuditLog = lazy(() => import('@/ui/AuditLog'));
 const SmartAssistant = lazy(() => import('@/ui/SmartAssistant'));
 const OwnersHub = lazy(() => import('@/ui/OwnersHub'));
 
-import ProtectedRoute from '@/components/shared/ProtectedRoute';
-import { NAVIGATION_META } from '@/config/navigationMeta';
-
 const hexToHsl = (hex: string): string => {
   hex = hex.replace('#', '');
   const r = parseInt(hex.substring(0, 2), 16) / 255;
