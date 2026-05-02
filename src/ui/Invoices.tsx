@@ -60,7 +60,10 @@ const Invoices: React.FC = () => {
         filtered = filterInvoiceByStatus(filtered, filters.status as any, (inv) => getEffectiveStatus(inv), graceDays);
         filtered = filterInvoiceByType(filtered, filters.type as any);
         filtered = filterInvoiceByDate(filtered, filters.dateFrom, filters.dateTo);
-        filtered = filterInvoiceBySearch(filtered, filters.search, db.contracts || [], db.tenants || []);
+        filtered = filterInvoiceBySearch(filtered, filters.search, {
+            contracts: db.contracts || [],
+            tenants: db.tenants || [],
+        });
 
         // Enrich with details
         return filtered

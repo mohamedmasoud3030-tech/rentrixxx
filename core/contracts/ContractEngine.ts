@@ -41,7 +41,7 @@ export const ContractEngine = {
     }
 
     // Create new contract
-    const result = await _dataService.add('contracts', rest as any);
+    const result = await _dataService.add('contracts', rest);
     return result as Contract | null;
   },
 
