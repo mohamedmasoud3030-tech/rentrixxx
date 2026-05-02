@@ -14,7 +14,9 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:ui": "vitest --ui",
-    "lint:no-any-targets": "node scripts/lint-no-explicit-any.mjs"
+    "lint:no-any-targets": "node scripts/lint-no-explicit-any.mjs",
+    "test:coverage": "vitest run --coverage",
+    "test:smoke": "vitest run src/ui/__tests__/smoke.test.ts src/services/coreFlows.integration.test.ts"
   },
   "author": "Rentrix",
   "license": "SEE LICENSE IN LICENSE",
