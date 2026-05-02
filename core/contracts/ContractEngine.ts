@@ -45,14 +45,18 @@ export const ContractEngine = {
     return result as Contract | null;
   },
 
-  async end(contractId: string): Promise<void> {
+  async end(contractId: string, endDate: string): Promise<void> {
     if (!_dataService) {
       console.error('[ContractEngine] dataService not configured');
       return;
     }
+    const isValidDate = /^\d{4}-\d{2}-\d{2}$/.test(endDate) && !Number.isNaN(Date.parse(`${endDate}T00:00:00.000Z`));
+    if (!isValidDate) {
+      throw new Error('[ContractEngine] Invalid endDate. Expected YYYY-MM-DD');
+    }
     await _dataService.update('contracts', contractId, {
       status: 'ENDED',
-      end: new Date().toISOString().slice(0, 10),
+      end: endDate,
     });
   },
 
