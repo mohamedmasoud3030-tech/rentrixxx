@@ -1,0 +1,67 @@
+{
+  "name": "rentrix-pwa",
+  "version": "2.0.0",
+  "description": "نظام إدارة العقارات الذكي - Rentrix Property Management System",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit",
+    "lint": "npm run lint:no-any-targets && tsc --noEmit && echo 'Type checking passed'",
+    "type-check": "tsc -p tsconfig.typecheck.json --noEmit",
+    "check:freeze": "node scripts/check-core-freeze.mjs",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:ui": "vitest --ui",
+    "lint:no-any-targets": "node scripts/lint-no-explicit-any.mjs",
+    "test:coverage": "vitest run --coverage",
+    "test:smoke": "vitest run src/ui/__tests__/smoke.test.ts src/services/coreFlows.integration.test.ts"
+  },
+  "author": "Rentrix",
+  "license": "SEE LICENSE IN LICENSE",
+  "engines": {
+    "node": ">=22.0.0",
+    "npm": ">=10.0.0"
+  },
+  "dependencies": {
+    "@google/genai": "^1.40.0",
+    "@supabase/supabase-js": "^2.100.0",
+    "@tanstack/react-query": "^5.100.6",
+    "@tanstack/react-query-devtools": "^5.100.6",
+    "date-fns": "^4.1.0",
+    "i18next": "^26.0.8",
+    "jspdf": "^4.1.0",
+    "jspdf-autotable": "^5.0.7",
+    "lucide-react": "^0.563.0",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4",
+    "react-hot-toast": "^2.6.0",
+    "react-i18next": "^17.0.6",
+    "react-is": "^18.3.1",
+    "react-router-dom": "^7.13.0",
+    "recharts": "^3.8.0"
+  },
+  "devDependencies": {
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.2",
+    "@types/node": "^20.0.0",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^4.3.1",
+    "@vitest/ui": "^4.1.5",
+    "autoprefixer": "^10.4.19",
+    "jsdom": "^29.1.0",
+    "postcss": "^8.4.39",
+    "prisma": "^7.8.0",
+    "tailwindcss": "^3.4.6",
+    "typescript": "^5.8.3",
+    "vite": "^5.3.4",
+    "vite-plugin-pwa": "^0.20.5",
+    "vitest": "^4.1.5"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/mohamedmasoud3030-tech/rentrixxx.git"
+  }
+}
