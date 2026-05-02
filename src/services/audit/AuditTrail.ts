@@ -1,5 +1,5 @@
 import { supabase } from '@/services/api/supabaseClient';
-import { logger } from '@/services/logger';
+import { logger } from '@/infrastructure/observability';
 
 type AuditEvent = {
   action: 'CREATE_DOCUMENT' | 'POST_JOURNAL' | 'VOID_JOURNAL' | 'UPDATE_DOCUMENT' | 'EXPORT_PDF';

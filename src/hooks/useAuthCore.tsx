@@ -7,7 +7,7 @@ import { validateLoginPayload, validatePasswordStrength, validateRequiredString,
 import { canUserAccess, mapProfileToUser } from '../services/authService';
 import { adminCreateUser } from '../services/edgeFunctions';
 import { supabaseData } from '../services/supabaseDataService';
-import { logger } from '../services/logger';
+import { logger } from '../infrastructure/observability';
 import { confirmDialog } from '../components/shared/confirmDialog';
 import { createSessionRefreshScheduler } from '@/services/security/sessionManager';
 

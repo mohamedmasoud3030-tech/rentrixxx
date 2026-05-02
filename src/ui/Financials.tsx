@@ -19,7 +19,7 @@ import PrintPreviewModal from '../components/shared/PrintPreviewModal';
 import { WhatsAppComposerModal } from '../components/shared/WhatsAppComposerModal';
 import { ReceiptPrint } from '../components/print/PrintTemplate';
 import { toast } from 'react-hot-toast';
-import { logger } from '../services/logger';
+import { logger } from '../infrastructure/observability';
 import { exportExpenseToPdf } from '../services/pdfService';
 import { AR_LABELS } from '../config/labels.ar';
 import { distributeAmount } from '../services/financeService';

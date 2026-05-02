@@ -1,4 +1,4 @@
-import { getAppEnv } from '../config/env';
+import { getAppEnv } from '../../config/env';
 import { errorTracker } from './errorTracker';
 
 export type LogLevel = 'debug' | 'info' | 'warn' | 'error';

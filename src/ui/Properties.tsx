@@ -11,7 +11,7 @@ import NumberInput from '../components/ui/NumberInput';
 import { Building, Home, ArrowRight, User, Map as MapIcon, AlertCircle, Percent, Zap, ChevronRight, Plus, Image, Trash2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
-import { logger } from '../services/logger';
+import { logger } from '../infrastructure/observability';
 import PropertyMapView from './PropertyMap';
 import SearchFilterBar from '../components/shared/SearchFilterBar';
 import { getAttachmentUrl, uploadAttachment } from '../services/attachmentService';

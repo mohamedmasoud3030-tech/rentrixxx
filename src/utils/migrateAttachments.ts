@@ -1,5 +1,5 @@
 import { supabase } from '@/services/api/supabaseClient';
-import { logger } from '@/services/logger';
+import { logger } from '@/infrastructure/observability';
 import { uploadAttachment } from '../services/attachmentService';
 
 const BATCH_SIZE = 10;
