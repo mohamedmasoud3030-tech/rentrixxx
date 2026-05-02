@@ -5,6 +5,7 @@ import { Database, Settings, Contract } from '../../types';
 import { softDeleteContract, renewContractAtomic } from '../../services/operationsService';
 import { confirmDialog } from '../../components/shared/confirmDialog';
 import { runManualAutomation as runManualAutomationService } from '../../services/automationService';
+import { computeNotificationCount } from '../../services/notificationService';
 
 export const useOperationsHook = (
   db: Database | null,
@@ -79,8 +80,24 @@ export const useOperationsHook = (
     }
   }, [audit, refreshData]);
 
+  const runManualAutomation = useCallback(async () => {
+    if (!settings || !db) {
+      return { success: false, errors: ['missing_context'], snapshotsRebuilt: 0, lateFeesApplied: 0, notificationsSent: 0, ts: new Date().toISOString() };
+    }
+    const result = await runManualAutomationService(db, settings);
+    await refreshData();
+    return result;
+  }, [db, settings, refreshData]);
+
+  const generateNotifications = useCallback(async (): Promise<number> => {
+    if (!db || !settings) return 0;
+    return computeNotificationCount(db.invoices, db.contracts, settings);
+  }, [db, settings]);
+
   return {
     generateMonthlyInvoices,
+    runManualAutomation,
+    generateNotifications,
     removeContract,
     renewContract,
   };

@@ -4,7 +4,25 @@ import { logger } from '@/infrastructure/observability';
 import type { GovernanceRow, SerialsRow, SettingsRow, UsersRow } from '../types/database';
 
 function clearTableCache(jsTable: string): void {
-  void jsTable;
+  tableCache.delete(jsTable);
+}
+
+const CACHE_TTL_MS = 30_000;
+type CacheEntry = { expiresAt: number; value: unknown };
+const tableCache = new Map<string, CacheEntry>();
+
+function getFromCache<T>(key: string): T | null {
+  const entry = tableCache.get(key);
+  if (!entry) return null;
+  if (entry.expiresAt <= Date.now()) {
+    tableCache.delete(key);
+    return null;
+  }
+  return entry.value as T;
+}
+
+function setCache<T>(key: string, value: T): void {
+  tableCache.set(key, { value, expiresAt: Date.now() + CACHE_TTL_MS });
 }
 
 const TABLE_MAP: Record<string, string> = {
@@ -126,6 +144,9 @@ function applyContractsVisibility<T extends { is: (column: string, value: null) 
 
 export const supabaseData = {
   async fetchAll<T>(jsTable: string): Promise<T[]> {
+    const cacheKey = `fetchAll:${jsTable}`;
+    const cached = getFromCache<T[]>(cacheKey);
+    if (cached) return cached;
     const sqlTable = resolveTable(jsTable);
     try {
       const columns = '*';
@@ -135,6 +156,7 @@ export const supabaseData = {
         return [];
       }
       const result = (data || []).map(row => toCamelObj(row, jsTable) as T);
+      setCache(cacheKey, result);
       return result;
     } catch (err) {
       logger.error(`[SupabaseData] fetchAll ${sqlTable} exception`, { message: (err as any)?.message, code: (err as any)?.code });
@@ -213,6 +235,9 @@ export const supabaseData = {
   },
 
   async fetchOne<T>(jsTable: string, id: string | number): Promise<T | null> {
+    const cacheKey = `fetchOne:${jsTable}:${id}`;
+    const cached = getFromCache<T | null>(cacheKey);
+    if (cached !== null) return cached;
     const sqlTable = resolveTable(jsTable);
     const columns = '*';
     const { data, error } = await applyContractsVisibility(supabase.from(sqlTable).select(columns).eq('id', id), jsTable).single();
@@ -220,7 +245,9 @@ export const supabaseData = {
       logger.error(`[SupabaseData] fetchOne ${sqlTable} failed`, { message: error?.message, code: error?.code });
       return null;
     }
-    return data ? toCamelObj(data, jsTable) as T : null;
+    const result = data ? toCamelObj(data, jsTable) as T : null;
+    if (result !== null) setCache(cacheKey, result);
+    return result;
   },
 
   async insert<T>(jsTable: string, record: object): Promise<{ data: T | null; error: string | null }> {

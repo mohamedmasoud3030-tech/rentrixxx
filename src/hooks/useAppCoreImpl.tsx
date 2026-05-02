@@ -261,11 +261,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     tenantBalances: {},
     fetchPaginatedData: async () => ({ data: [] as any, total: 0 }),
     updateNotificationTemplate: async () => {},
-    generateNotifications: async () => 0,
     generateOwnerPortalLink: async () => '',
     createSnapshot: async () => {},
     sendWhatsApp: () => {},
-    runManualAutomation: async () => ({ success: true, errors: [], snapshotsRebuilt: 0, lateFeesApplied: 0, notificationsSent: 0, ts: new Date().toISOString() }),
+    generateNotifications: operations.generateNotifications,
+    runManualAutomation: operations.runManualAutomation,
     getFinancialSummary: async () => null,
   };
 
