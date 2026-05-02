@@ -7,6 +7,7 @@ import { AlertTriangle, AlertCircle, Info, RefreshCw, ChevronsRight, SearchCheck
 import { Link } from 'react-router-dom';
 import { migrateAttachments } from '../utils/migrateAttachments';
 import { toast } from 'react-hot-toast';
+import { logger } from '../services/logger';
 import { AR_LABELS } from '../config/labels.ar';
 
 const IssueCard: React.FC<{ issue: AuditIssue }> = ({ issue }) => {
@@ -77,7 +78,7 @@ const DataIntegrityAudit: React.FC = () => {
             const migratedCount = await migrateAttachments();
             toast.success(`اكتملت الهجرة. عدد العناصر المعالجة: ${migratedCount}`);
         } catch (error) {
-            console.error(error);
+            logger.error('Operation failed', { message: error instanceof Error ? error.message : 'unknown_error' });
             toast.error('فشلت عملية ترحيل المرفقات.');
         } finally {
             setIsMigratingAttachments(false);

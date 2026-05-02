@@ -293,11 +293,11 @@ const PrintPreviewModal: React.FC<PrintPreviewModalProps> = ({ isOpen, onClose, 
         const computedStyles: string[] = [];
         clone.querySelectorAll('[style]').forEach(el => {
             const id = 'ps-' + Math.random().toString(36).slice(2, 9);
-            el.setAttribute('data-print-id', id);
+            (el as HTMLElement).dataset.printId = id;
             computedStyles.push(`[data-print-id="${id}"] { ${(el as HTMLElement).style.cssText} }`);
         });
 
-        const printWindow = window.open('', '', 'height=900,width=1100');
+        const printWindow = globalThis.open('', '', 'height=900,width=1100');
         if (printWindow) {
             printWindow.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8"><title>');
             printWindow.document.write(title);

@@ -6,9 +6,6 @@ on:
   push:
     branches: [main]
 
-env:
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
-
 jobs:
   validate-commits:
     runs-on: ubuntu-latest
@@ -18,12 +15,7 @@ jobs:
           fetch-depth: 0
 
       - name: Validate commit messages
-        run: |
-          BASE_REF="origin/main"
-          if [ "${{ github.event_name }}" = "pull_request" ]; then
-            BASE_REF="origin/${{ github.base_ref }}"
-          fi
-          bash .github/scripts/validate-commit-messages.sh "$BASE_REF"
+        run: bash .github/scripts/validate-commit-messages.sh "origin/main"
 
   typecheck:
     runs-on: ubuntu-latest
@@ -32,9 +24,8 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
-          cache: npm
+          node-version: 22
 
-      - run: npm ci --legacy-peer-deps
+      - run: npm install --legacy-peer-deps
 
       - run: npm run typecheck

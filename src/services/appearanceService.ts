@@ -1,4 +1,4 @@
-import { supabase } from '@/services/supabase';
+import { supabase } from '@/services/api/supabaseClient';
 
 export async function uploadCompanyLogo(file: File): Promise<string> {
   const filePath = `company-logo-${Date.now()}.${file.name.split('.').pop()}`;

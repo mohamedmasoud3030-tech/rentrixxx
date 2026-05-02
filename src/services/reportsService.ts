@@ -1,5 +1,5 @@
 import type { PostgrestError } from '@supabase/supabase-js';
-import { supabase } from '@/services/supabase';
+import { supabase } from '@/services/api/supabaseClient';
 
 type ReportResponse<T> = { data: T | null; error: PostgrestError | null };
 
