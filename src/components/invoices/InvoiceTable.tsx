@@ -14,7 +14,7 @@ interface InvoiceTableProps {
   db: any;
 }
 
-export const InvoiceTable: React.FC<InvoiceTableProps> = ({
+export const InvoiceTable: React.FC<InvoiceTableProps> = React.memo(({
   invoices,
   selectedIds,
   onSelectToggle,
@@ -115,4 +115,4 @@ export const InvoiceTable: React.FC<InvoiceTableProps> = ({
       </table>
     </div>
   );
-};
+});

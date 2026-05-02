@@ -12,7 +12,8 @@ def main() -> None:
     client = Anthropic()
 
     response = client.beta.messages.create(
-        model="claude-opus-4-7",
+        model="claude-opus-4-5-20251101",
+        extra_body={"effort": "high"},
         max_tokens=4096,
         betas=["code-execution-2025-08-25", "skills-2025-10-02"],
         container={

@@ -5,7 +5,7 @@ interface CardProps {
   className?: string;
 }
 
-const Card: React.FC<CardProps> = ({ children, className = '' }) => {
+const Card: React.FC<CardProps> = React.memo(({ children, className = '' }) => {
   return (
     <div
       className={`bg-card border border-border rounded-xl p-4 sm:p-5 md:p-6 ${className}`}
@@ -14,6 +14,6 @@ const Card: React.FC<CardProps> = ({ children, className = '' }) => {
       {children}
     </div>
   );
-};
+});
 
 export default Card;
