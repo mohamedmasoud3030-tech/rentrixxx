@@ -13,6 +13,8 @@ import { applyThemePreset, initThemePreset, type ThemeMode } from '@/design-syst
 import { applyBrandConfig } from '@/branding/brand-config/defaultBrand';
 import { tenantThemeRegistry } from '@/branding/tenant-themes/tenantThemeRegistry';
 import { applyUIPack } from '@/design-system/marketplace/uiPackRegistry';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
+import { AppErrorFallback } from '@/components/AppErrorFallback';
 
 const Dashboard = lazy(() => import('@/ui/Dashboard'));
 const Properties = lazy(() => import('@/ui/Properties'));
@@ -76,6 +78,15 @@ const ROUTE_META: Record<string, { title: string; description: string }> = Objec
     .map(([path, meta]) => [path, { title: meta.titleAr, description: meta.description as string }]),
 );
 
+
+const withRouteBoundary = (element: React.ReactNode, boundaryName: string): React.ReactNode => (
+  <ErrorBoundary
+    boundaryName={boundaryName}
+    fallback={({ retry }) => <AppErrorFallback retry={retry} />}
+  >
+    {element}
+  </ErrorBoundary>
+);
 
 type Todo = {
   id: number | string;
@@ -170,39 +181,39 @@ const App: React.FC = () => {
 
       <Suspense fallback={<PageLoader />}>
         <Routes>
-          <Route path="/owner-view/:ownerId" element={<OwnerView />} />
-          <Route path="/portal/:ownerId" element={<OwnerView />} />
+          <Route path="/owner-view/:ownerId" element={withRouteBoundary(<OwnerView />, 'route-owner-view')} />
+          <Route path="/portal/:ownerId" element={withRouteBoundary(<OwnerView />, 'route-portal-owner-view')} />
 
           {!auth.currentUser ? (
             <>
-              <Route path="/login" element={<Login />} />
+              <Route path="/login" element={withRouteBoundary(<Login />, 'route-login')} />
               <Route path="*" element={<Navigate to="/login" replace />} />
             </>
           ) : auth.currentUser.mustChange ? (
-            <Route path="*" element={<ChangePassword />} />
+            <Route path="*" element={withRouteBoundary(<ChangePassword />, 'route-change-password')} />
           ) : (
             <Route element={<Layout />}>
-              <Route path="/" element={<Dashboard />} />
-              <Route path="/properties" element={<Properties />} />
-              <Route path="/tenants" element={<Tenants />} />
-              <Route path="/owners" element={<Owners />} />
-              <Route path="/owners/:ownerId/hub" element={<OwnersHub />} />
-              <Route path="/contracts" element={<Contracts />} />
-              <Route path="/maintenance" element={<Maintenance />} />
-              <Route path="/financial/*" element={<ProtectedRoute capability="VIEW_FINANCIALS"><Finance /></ProtectedRoute>} />
+              <Route path="/" element={withRouteBoundary(<Dashboard />, 'route-dashboard')} />
+              <Route path="/properties" element={withRouteBoundary(<Properties />, 'route-properties')} />
+              <Route path="/tenants" element={withRouteBoundary(<Tenants />, 'route-tenants')} />
+              <Route path="/owners" element={withRouteBoundary(<Owners />, 'route-owners')} />
+              <Route path="/owners/:ownerId/hub" element={withRouteBoundary(<OwnersHub />, 'route-owners-hub')} />
+              <Route path="/contracts" element={withRouteBoundary(<Contracts />, 'route-contracts')} />
+              <Route path="/maintenance" element={withRouteBoundary(<Maintenance />, 'route-maintenance')} />
+              <Route path="/financial/*" element={withRouteBoundary(<ProtectedRoute capability="VIEW_FINANCIALS"><Finance /></ProtectedRoute>, 'route-financial')} />
 
               {/* CRM & Growth */}
-              <Route path="/leads" element={<Leads />} />
-              <Route path="/communication" element={<CommunicationHub />} />
-              <Route path="/lands" element={<Lands />} />
-              <Route path="/commissions" element={<Commissions />} />
-              <Route path="/reports" element={<Reports />} />
-              <Route path="/smart-assistant" element={<ProtectedRoute capability="USE_SMART_ASSISTANT"><SmartAssistant /></ProtectedRoute>} />
+              <Route path="/leads" element={withRouteBoundary(<Leads />, 'route-leads')} />
+              <Route path="/communication" element={withRouteBoundary(<CommunicationHub />, 'route-communication')} />
+              <Route path="/lands" element={withRouteBoundary(<Lands />, 'route-lands')} />
+              <Route path="/commissions" element={withRouteBoundary(<Commissions />, 'route-commissions')} />
+              <Route path="/reports" element={withRouteBoundary(<Reports />, 'route-reports')} />
+              <Route path="/smart-assistant" element={withRouteBoundary(<ProtectedRoute capability="USE_SMART_ASSISTANT"><SmartAssistant /></ProtectedRoute>, 'route-smart-assistant')} />
               {auth.currentUser.role === 'ADMIN' && (
                 <>
-                  <Route path="/audit-log" element={<ProtectedRoute capability="VIEW_AUDIT_LOG"><AuditLog /></ProtectedRoute>} />
+                  <Route path="/audit-log" element={withRouteBoundary(<ProtectedRoute capability="VIEW_AUDIT_LOG"><AuditLog /></ProtectedRoute>, 'route-audit-log')} />
                   {/* Users: settings sub-module by design — see docs/architecture/ADR-001 */}
-                  <Route path="/settings/*" element={<ProtectedRoute capability="MANAGE_SETTINGS"><Settings /></ProtectedRoute>} />
+                  <Route path="/settings/*" element={withRouteBoundary(<ProtectedRoute capability="MANAGE_SETTINGS"><Settings /></ProtectedRoute>, 'route-settings')} />
                 </>
               )}
               <Route path="*" element={<Navigate to="/" replace />} />
