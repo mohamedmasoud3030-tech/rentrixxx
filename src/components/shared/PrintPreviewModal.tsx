@@ -1,4 +1,5 @@
 import React, { useRef } from 'react';
+import { sanitizeHtmlInput } from '@/services/security/sessionManager';
 import { Printer, X } from 'lucide-react';
 
 interface PrintPreviewModalProps {
@@ -300,7 +301,7 @@ const PrintPreviewModal: React.FC<PrintPreviewModalProps> = ({ isOpen, onClose, 
         const printWindow = globalThis.open('', '', 'height=900,width=1100');
         if (printWindow) {
             printWindow.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8"><title>');
-            printWindow.document.write(title);
+            printWindow.document.write(sanitizeHtmlInput(title));
             printWindow.document.write('</title><style>');
             printWindow.document.write(PRINT_STYLES);
             if (computedStyles.length > 0) {

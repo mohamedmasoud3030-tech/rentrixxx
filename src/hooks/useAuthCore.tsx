@@ -9,6 +9,7 @@ import { adminCreateUser } from '../services/edgeFunctions';
 import { supabaseData } from '../services/supabaseDataService';
 import { logger } from '../services/logger';
 import { confirmDialog } from '../components/shared/confirmDialog';
+import { createSessionRefreshScheduler } from '@/services/security/sessionManager';
 
 /**
  * useAuthCore Hook
@@ -48,6 +49,14 @@ export const useAuthCore = (onAudit: (action: string, entity: string, entityId: 
     };
 
     initAuth();
+  }, []);
+
+
+  const handleInvalidSession = useCallback(async (reason: 'expired' | 'refresh_failed') => {
+    logger.warn('[useAuthCore] invalid session detected', { reason });
+    await supabase.auth.signOut();
+    setCurrentUser(null);
+    toast.error('انتهت صلاحية الجلسة أو تعذّر تجديدها. تم تسجيل الخروج بأمان.');
   }, []);
 
   /**
@@ -237,6 +246,35 @@ export const useAuthCore = (onAudit: (action: string, entity: string, entityId: 
   const canAccess = useCallback((action: string) => {
     return canUserAccess(currentUser, action);
   }, [currentUser]);
+
+
+  useEffect(() => {
+    const { data: subscription } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (event === 'SIGNED_OUT') {
+        setCurrentUser(null);
+        return;
+      }
+
+      if (!session?.user) return;
+
+      const { data: profile } = await supabase.from('profiles').select('*').eq('id', session.user.id).single<ProfileRow>();
+      if (!profile || profile.is_disabled) {
+        await handleInvalidSession('expired');
+        return;
+      }
+
+      setCurrentUser(mapProfileToUser(session, profile));
+    });
+
+    const stopScheduler = createSessionRefreshScheduler(supabase, {
+      onInvalidSession: handleInvalidSession,
+    });
+
+    return () => {
+      subscription.subscription.unsubscribe();
+      stopScheduler();
+    };
+  }, [handleInvalidSession]);
 
   return {
     currentUser,
