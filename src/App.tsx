@@ -112,7 +112,12 @@ const App: React.FC = () => {
 
       const theme = (settings.appearance?.theme as ThemeMode | undefined) ?? brand.defaultTheme ?? 'light';
       applyThemePreset(theme);
-      applyUIPack(theme === 'glass' ? 'glass' : theme === 'dark' ? 'enterprise' : 'minimal');
+      const getUIPack = (t: string) => {
+        if (t === 'glass') return 'glass';
+        if (t === 'dark') return 'enterprise';
+        return 'minimal';
+      };
+      applyUIPack(getUIPack(theme));
 
       const companyName = settings.general?.company?.name ?? brand.companyName;
       const primaryColor = settings.appearance?.primaryColor ?? brand.primaryColor;

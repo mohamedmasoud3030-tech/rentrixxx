@@ -33,7 +33,13 @@ const InputField: React.FC<{
     icon?: React.ReactNode;
     dir?: string;
 }> = ({ label, name, value, onChange, placeholder, type = 'text', colSpan = 1, icon, dir }) => (
-    <div className={colSpan === 2 ? 'md:col-span-2' : colSpan === 3 ? 'md:col-span-3' : ''}>
+    const getColSpanClass = (span: number) => {
+        if (span === 2) return 'md:col-span-2';
+        if (span === 3) return 'md:col-span-3';
+        return '';
+    };
+    return (
+        <div className={getColSpanClass(colSpan)}>
         <label className="text-xs font-medium text-text-muted flex items-center gap-1.5 mb-1">
             {icon && <span className="text-text-muted">{icon}</span>}
             {label}
