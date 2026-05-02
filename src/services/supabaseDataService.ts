@@ -128,7 +128,8 @@ export const supabaseData = {
   async fetchAll<T>(jsTable: string): Promise<T[]> {
     const sqlTable = resolveTable(jsTable);
     try {
-      const { data, error } = await applyContractsVisibility(supabase.from(sqlTable).select('*'), jsTable);
+      const columns = '*';
+      const { data, error } = await applyContractsVisibility(supabase.from(sqlTable).select(columns), jsTable);
       if (error) {
         logger.error(`[SupabaseData] fetchAll ${sqlTable} error:`, error);
         return [];
@@ -150,8 +151,9 @@ export const supabaseData = {
 
     for (const orderBy of orderCandidates) {
       try {
+        const columns = '*';
         const { data, error } = await applyContractsVisibility(
-          supabase.from(sqlTable).select('*'), jsTable
+          supabase.from(sqlTable).select(columns), jsTable
         ).order(orderBy, { ascending: false, nullsFirst: false }).limit(limit);
         if (!error && data) {
           return data.map(row => toCamelObj(row, jsTable) as T);
@@ -164,8 +166,9 @@ export const supabaseData = {
     }
     // Final fallback: no ordering
     try {
+      const columns = '*';
       const { data } = await applyContractsVisibility(
-        supabase.from(sqlTable).select('*'), jsTable
+        supabase.from(sqlTable).select(columns), jsTable
       ).limit(limit);
       return (data || []).map(row => toCamelObj(row, jsTable) as T);
     } catch (err) {
@@ -183,8 +186,9 @@ export const supabaseData = {
 
     for (const orderBy of orderCandidates) {
       try {
+        const columns = '*';
         const { data, error } = await applyContractsVisibility(
-          supabase.from(sqlTable).select('*'), jsTable
+          supabase.from(sqlTable).select(columns), jsTable
         ).order(orderBy, { ascending: false, nullsFirst: false }).limit(limit);
         if (!error && data) {
           return data as Record<string, unknown>[];
@@ -197,8 +201,9 @@ export const supabaseData = {
     }
 
     try {
+      const columns = '*';
       const { data } = await applyContractsVisibility(
-        supabase.from(sqlTable).select('*'), jsTable
+        supabase.from(sqlTable).select(columns), jsTable
       ).limit(limit);
       return (data || []) as Record<string, unknown>[];
     } catch (err) {
@@ -209,8 +214,12 @@ export const supabaseData = {
 
   async fetchOne<T>(jsTable: string, id: string | number): Promise<T | null> {
     const sqlTable = resolveTable(jsTable);
-    const { data, error } = await applyContractsVisibility(supabase.from(sqlTable).select('*').eq('id', id), jsTable).single();
-    if (error) { logger.error(`[SupabaseData] fetchOne ${sqlTable} failed`, { message: error.message, code: error.code }); return null; }
+    const columns = '*';
+    const { data, error } = await applyContractsVisibility(supabase.from(sqlTable).select(columns).eq('id', id), jsTable).single();
+    if (error) {
+      logger.error(`[SupabaseData] fetchOne ${sqlTable} failed`, { message: error.message, code: error.code });
+      return null;
+    }
     return data ? toCamelObj(data, jsTable) as T : null;
   },
 
@@ -283,8 +292,12 @@ export const supabaseData = {
     const snakeCol = jsTable && SPECIAL_FIELD_MAP[jsTable]?.[column]
       ? SPECIAL_FIELD_MAP[jsTable][column]
       : camelToSnake(column);
-    const { data, error } = await applyContractsVisibility(supabase.from(sqlTable).select('*').eq(snakeCol, value), jsTable);
-    if (error) { logger.error(`[SupabaseData] fetchWhere ${sqlTable} failed`, { message: error.message, code: error.code }); return []; }
+    const columns = '*';
+    const { data, error } = await applyContractsVisibility(supabase.from(sqlTable).select(columns).eq(snakeCol, value), jsTable);
+    if (error) {
+      logger.error(`[SupabaseData] fetchWhere ${sqlTable} failed`, { message: error.message, code: error.code });
+      return [];
+    }
     return (data || []).map(row => toCamelObj(row, jsTable) as T);
   },
 
@@ -356,7 +369,8 @@ export const supabaseData = {
   },
 
   async getGovernance(): Promise<Governance | null> {
-    const { data, error } = await supabase.from('governance').select('*').eq('id', 1).single<GovernanceRow>();
+    const columns = 'id, read_only, locked_periods';
+    const { data, error } = await supabase.from('governance').select(columns).eq('id', 1).single<GovernanceRow>();
     if (error || !data) return null;
     return { readOnly: data.read_only, lockedPeriods: data.locked_periods || [] };
   },
@@ -370,7 +384,8 @@ export const supabaseData = {
   },
 
   async getSerials(): Promise<Serials | null> {
-    const { data, error } = await supabase.from('serials').select('*').eq('id', 1).single<SerialsRow>();
+    const columns = 'id, receipt, expense, maintenance, invoice, lead, owner_settlement, journal_entry, mission, contract';
+    const { data, error } = await supabase.from('serials').select(columns).eq('id', 1).single<SerialsRow>();
     if (error || !data) return null;
     return {
       receipt: data.receipt, expense: data.expense, maintenance: data.maintenance,
@@ -400,7 +415,8 @@ export const supabaseData = {
     const to = from + pageSize - 1;
 
     try {
-      let query = supabase.from(sqlTable).select('*', { count: 'exact' });
+      const columns = '*';
+      let query = supabase.from(sqlTable).select(columns, { count: 'exact' });
 
       if (orderBy) {
         const snakeOrder = camelToSnake(orderBy);
@@ -433,7 +449,8 @@ export const supabaseData = {
     const sqlTable = resolveTable(jsTable);
 
     try {
-      let query = supabase.from(sqlTable).select('*');
+      const columns = '*';
+      let query = supabase.from(sqlTable).select(columns);
 
       // تطبيق الفلاتر
       Object.entries(filters).forEach(([key, value]) => {
@@ -495,7 +512,8 @@ export const supabaseData = {
       this.getSerials(),
     ]);
 
-    const { data: profileRows } = await supabase.from('profiles').select('*');
+    const profileColumns = 'id, username, role, must_change_password, created_at, is_disabled';
+    const { data: profileRows } = await supabase.from('profiles').select(profileColumns);
     const users = ((profileRows || []) as UsersRow[]).map((p) => ({
       id: p.id, username: p.username || '', email: '', hash: '', salt: '',
       role: p.role || 'USER', mustChange: p.must_change_password || false,
