@@ -1,4 +1,4 @@
-import React, { lazy, Suspense, useEffect, useState } from 'react';
+import React, { lazy, Suspense, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { useApp } from '@/contexts/AppContext';
@@ -9,7 +9,6 @@ import OwnerView from '@/ui/OwnerView';
 import { Toaster } from 'react-hot-toast';
 import ProtectedRoute from '@/components/shared/ProtectedRoute';
 import { NAVIGATION_META } from '@/config/navigationMeta';
-import { supabase } from '@/services/supabase';
 import { applyThemePreset, initThemePreset, type ThemeMode } from '@/design-system';
 import { applyBrandConfig } from '@/branding/brand-config/defaultBrand';
 import { tenantThemeRegistry } from '@/branding/tenant-themes/tenantThemeRegistry';
@@ -108,32 +107,9 @@ const withRouteGroupBoundary = (element: React.ReactNode, boundaryName: string):
   </ErrorBoundary>
 );
 
-type Todo = {
-  id: number | string;
-  name: string;
-};
-
 const App: React.FC = () => {
   const { settings, auth } = useApp();
   const location = useLocation();
-  const [todos, setTodos] = useState<Todo[]>([]);
-
-
-  useEffect(() => {
-    async function getTodos() {
-      const { data } = await supabase.from('todos').select('id, name');
-
-      if (data) {
-        setTodos(data as Todo[]);
-      }
-    }
-
-    getTodos();
-  }, []);
-
-  useEffect(() => {
-    initThemePreset('light');
-  }, []);
 
   useEffect(() => {
     initThemePreset('light');
@@ -188,17 +164,6 @@ const App: React.FC = () => {
     <>
       <Toaster position="top-center" />
 
-      {todos.length > 0 && (
-        <div className="fixed bottom-4 left-4 z-50 max-h-40 overflow-auto rounded-md border border-border bg-card/95 p-3 shadow-lg">
-          <p className="mb-2 text-xs font-semibold text-text-muted">Supabase Todos</p>
-          <ul className="space-y-1 text-xs">
-            {todos.map((todo) => (
-              <li key={todo.id}>{todo.name}</li>
-            ))}
-          </ul>
-        </div>
-      )}
-
       <Suspense fallback={<PageLoader />}>
         <Routes>
           <Route path="/owner-view/:ownerId" element={withRouteBoundary(<OwnerView />, 'route-owner-view')} />
@@ -232,7 +197,6 @@ const App: React.FC = () => {
               {auth.currentUser.role === 'ADMIN' && (
                 <>
                   <Route path="/audit-log" element={withRouteBoundary(<ProtectedRoute capability="VIEW_AUDIT_LOG"><AuditLog /></ProtectedRoute>, 'route-audit-log')} />
-                  {/* Users: settings sub-module by design — see docs/architecture/ADR-001 */}
                   <Route path="/settings/*" element={withRouteBoundary(<ProtectedRoute capability="MANAGE_SETTINGS"><Settings /></ProtectedRoute>, 'route-settings')} />
                 </>
               )}
