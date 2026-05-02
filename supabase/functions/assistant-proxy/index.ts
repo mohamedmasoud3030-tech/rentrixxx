@@ -1,5 +1,21 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
+// Security utilities
+function sanitizeInput(input: string): string {
+  return input
+    .trim()
+    .replace(/[<>]/g, '') // Remove potential XSS vectors
+    .substring(0, 5000); // Limit input size
+}
+
+function validateInput(input: any): boolean {
+  if (typeof input !== 'string') return false;
+  if (input.length === 0 || input.length > 5000) return false;
+  return true;
+}
+
+
+
 const ANTHROPIC_API_KEY = Deno.env.get('ANTHROPIC_API_KEY') || '';
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
 const SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
