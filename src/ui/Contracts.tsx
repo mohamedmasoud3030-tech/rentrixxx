@@ -381,20 +381,7 @@ const Contracts: React.FC = () => {
                                                             <button className="btn btn-secondary" onClick={() => handleRenewContract(c)}><RefreshCw size={14} /> تجديد</button>
                                                             <button
                                                                 className="btn btn-ghost"
-                                                                onClick={() => ContractEngine.create({
-                                                                    id: c.id,
-                                                                    unitId: c.unitId,
-                                                                    tenantId: c.tenantId,
-                                                                    rent: c.rent,
-                                                                    dueDay: c.dueDay,
-                                                                    start: c.start,
-                                                                    end: c.end,
-                                                                    deposit: c.deposit,
-                                                                    status: 'ENDED',
-                                                                    sponsorName: c.sponsorName,
-                                                                    sponsorId: c.sponsorId,
-                                                                    sponsorPhone: c.sponsorPhone,
-                                                                })}
+                                                                onClick={() => ContractEngine.end(c.id, new Date().toISOString().slice(0, 10))}
                                                             >
                                                                 <Ban size={14} /> إنهاء
                                                             </button>
