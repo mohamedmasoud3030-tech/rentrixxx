@@ -12,11 +12,17 @@ export const DataTable: React.FC<{ headers: string[]; rows: React.ReactNode[][];
             <td colSpan={headers.length} className="px-4 py-8 text-center text-text-muted">{emptyMessage}</td>
           </tr>
         ) : (
-          rows.map((row, idx) => (
-            <tr key={idx} className="transition-colors hover:bg-background/50">
-              {row.map((cell, cIdx) => <td key={cIdx} className="px-4 py-3">{cell}</td>)}
+          rows.map((row) => {
+            const rowKey = row.map((cell) => (typeof cell === 'string' || typeof cell === 'number' ? String(cell) : typeof cell)).join('|');
+            return (
+            <tr key={`row-${rowKey}`} className="transition-colors hover:bg-background/50">
+              {row.map((cell) => {
+                const cellKey = typeof cell === 'string' || typeof cell === 'number' ? String(cell) : typeof cell;
+                return <td key={`cell-${rowKey}-${cellKey}`} className="px-4 py-3">{cell}</td>;
+              })}
             </tr>
-          ))
+          );
+          })
         )}
       </tbody>
     </table>

@@ -3,7 +3,7 @@ import { useApp } from '../contexts/AppContext';
 import { Unit } from '../types';
 import Card from '../components/ui/Card';
 import Modal from '../components/ui/Modal';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { Building, AlertCircle, Clock, Home, User, FileText, Wrench, Phone } from 'lucide-react';
 import { formatCurrency, formatDate } from '../utils/helpers';
 

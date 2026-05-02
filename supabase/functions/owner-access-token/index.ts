@@ -1,14 +1,12 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { corsHeaders, handleOptions } from '../_shared/cors.ts';
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
 const SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 const ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY')!;
 const OWNER_TOKEN_SECRET = Deno.env.get('OWNER_TOKEN_SECRET')!;
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+
 
 const encoder = new TextEncoder();
 
@@ -46,7 +44,7 @@ function createToken(ownerId: string) {
 }
 
 Deno.serve(async req => {
-  if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
+  if (req.method === 'OPTIONS') return handleOptions(req);
 
   try {
     const body = await req.json();
@@ -79,7 +77,7 @@ Deno.serve(async req => {
       const { payload } = createToken(ownerId);
       const signature = await sign(payload);
       return new Response(JSON.stringify({ token: `${payload}.${signature}` }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        headers: { ...corsHeaders(req.headers.get('Origin')), 'Content-Type': 'application/json' },
       });
     }
 
@@ -116,7 +114,7 @@ Deno.serve(async req => {
         },
         currency,
       }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        headers: { ...corsHeaders(req.headers.get('Origin')), 'Content-Type': 'application/json' },
       });
     }
 
@@ -126,7 +124,7 @@ Deno.serve(async req => {
     const status = message === 'Unauthorized' || message === 'Forbidden' ? 401 : 400;
     return new Response(JSON.stringify({ error: message }), {
       status,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      headers: { ...corsHeaders(req.headers.get('Origin')), 'Content-Type': 'application/json' },
     });
   }
 });

@@ -1,5 +1,5 @@
 import { supabaseData } from '@/services/supabaseDataService';
-import type { Account, Database, NotificationTemplate, Serials, Settings } from '@/types';
+import type { Database, Serials, Settings } from '@/types';
 
 export type BootstrapFacadeDelegates = {
   initializeApp?: () => Promise<void>;
@@ -11,13 +11,13 @@ export const createBootstrapFacade = (delegates: BootstrapFacadeDelegates = {}) 
 
   seedDefaults: (
     settings: Settings,
-    accounts: Account[],
-    templates: NotificationTemplate[],
+    accounts: Record<string, unknown>[],
+    templates: Record<string, unknown>[],
     serials: Serials,
   ) => supabaseData.seedDefaults(
     settings,
-    accounts as unknown as Record<string, unknown>[],
-    templates as unknown as Record<string, unknown>[],
+    accounts,
+    templates,
     serials,
   ),
 

@@ -32,7 +32,7 @@ export interface SidebarNavItem {
 export const LAST_FINANCE_TAB_KEY = 'rentrix:last-finance-tab';
 
 const getDefaultFinancePath = () =>
-  window.localStorage.getItem(LAST_FINANCE_TAB_KEY) || FINANCIAL_ROUTES.invoices;
+  globalThis.localStorage.getItem(LAST_FINANCE_TAB_KEY) || FINANCIAL_ROUTES.invoices;
 
 const withMeta = (path: string) => ({
   label: NAVIGATION_META[path]?.titleAr ?? NAVIGATION_META[path]?.title ?? path,

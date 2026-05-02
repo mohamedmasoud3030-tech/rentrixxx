@@ -35,7 +35,7 @@ export const filterInvoiceByStatus = (
 ): Invoice[] => {
   return invoices.filter(inv => {
     const effectiveStatus = getStatus(inv);
-    if (status === 'unpaid') return ['UNPAID', 'PARTIALLY_PAID'].includes(effectiveStatus);
+    if (status === 'unpaid') return new Set(['UNPAID', 'PARTIALLY_PAID']).has(effectiveStatus);
     if (status === 'overdue') return effectiveStatus === 'OVERDUE';
     if (status === 'paid') return effectiveStatus === 'PAID';
     return true;
@@ -48,7 +48,7 @@ export const filterInvoiceByType = (
 ): Invoice[] => {
   return invoices.filter(inv => {
     if (type === 'all') return true;
-    if (type === 'OTHER') return !['RENT', 'LATE_FEE', 'UTILITY'].includes(inv.type);
+    if (type === 'OTHER') return !new Set(['RENT', 'LATE_FEE', 'UTILITY']).has(inv.type);
     return inv.type === type;
   });
 };

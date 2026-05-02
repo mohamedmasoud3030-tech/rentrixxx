@@ -21,13 +21,14 @@ async function validate() {
 
   if (!res.ok) {
     const text = await res.text();
-    console.error('VALIDATION FAILED: non-2xx response', res.status, text);
+    console.error('VALIDATION FAILED: non-2xx response', { status: res.status, bodyLength: text.length });
     process.exit(1);
   }
 
   const data = await res.json();
   if (!data?.ok) {
-    console.error('VALIDATION FAILED', data?.issues ?? data);
+    const issuesCount = Array.isArray(data?.issues) ? data.issues.length : 0;
+    console.error('VALIDATION FAILED', { issuesCount });
     process.exit(1);
   }
 
@@ -35,6 +36,6 @@ async function validate() {
 }
 
 validate().catch((err) => {
-  console.error('VALIDATION FAILED: unexpected error', err);
+  console.error('VALIDATION FAILED: unexpected error', { message: err instanceof Error ? err.message : 'unknown_error' });
   process.exit(1);
 });

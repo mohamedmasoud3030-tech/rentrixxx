@@ -3,14 +3,14 @@ import type { Governance, Settings } from '@/types';
 
 export type SettingsFacadeDelegates = {
   getSettings?: () => Promise<Settings>;
-  updateSettings?: (settings: Settings) => Promise<boolean>;
+  updateSettings?: (settings: Partial<Settings>) => Promise<boolean>;
   saveGovernance?: (governance: Governance) => Promise<void>;
 };
 
 export const createSettingsFacade = (delegates: SettingsFacadeDelegates = {}) => ({
   getSettings: () => delegates.getSettings?.() ?? supabaseData.getSettings(),
 
-  updateSettings: (settings: Settings) =>
+  updateSettings: (settings: Partial<Settings>) =>
     delegates.updateSettings?.(settings) ?? supabaseData.updateSettingsPartial(settings),
 
   saveGovernance: (governance: Governance) =>

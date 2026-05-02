@@ -73,7 +73,7 @@ async function autoFix() {
 
   if (!issuesRes.ok) {
     const text = await issuesRes.text();
-    console.error('AUTO-FIX FAILED: unable to fetch issues', issuesRes.status, text);
+    console.error('AUTO-FIX FAILED: unable to fetch issues', { status: issuesRes.status, bodyLength: text.length });
     process.exit(1);
   }
 
@@ -83,7 +83,7 @@ async function autoFix() {
   for (const issue of issues) {
     const actionBody = buildAction(issue);
     if (!actionBody) {
-      console.log('AUTO-FIX SKIPPED', { reason: 'unsupported_or_disallowed', issue });
+      console.log('AUTO-FIX SKIPPED', { reason: 'unsupported_or_disallowed', issueType: issue?.type ?? 'unknown' });
       continue;
     }
 
@@ -97,7 +97,7 @@ async function autoFix() {
 
     if (!fixRes.ok) {
       const text = await fixRes.text();
-      console.error('AUTO-FIX FAILED', { issue, status: fixRes.status, body: text });
+      console.error('AUTO-FIX FAILED', { issueType: issue?.type ?? 'unknown', status: fixRes.status, bodyLength: text.length });
       process.exit(1);
     }
   }
@@ -106,6 +106,6 @@ async function autoFix() {
 }
 
 autoFix().catch((err) => {
-  console.error('AUTO-FIX FAILED: unexpected error', err);
+  console.error('AUTO-FIX FAILED: unexpected error', { message: err instanceof Error ? err.message : 'unknown_error' });
   process.exit(1);
 });

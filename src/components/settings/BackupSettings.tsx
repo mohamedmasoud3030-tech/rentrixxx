@@ -3,7 +3,8 @@ import { useApp } from '../../contexts/AppContext';
 import { exportToJson, importFromJson } from '../../services/financeService';
 import { confirmDialog } from '../shared/confirmDialog';
 import { toast } from 'react-hot-toast';
-import { Database, Download } from 'lucide-react';
+import { logger } from '../../services/logger';
+import { Download } from 'lucide-react';
 
 const BackupSettings: React.FC = () => {
     const { createBackup, restoreBackup } = useApp();
@@ -16,7 +17,7 @@ const BackupSettings: React.FC = () => {
             toast.success("تم تنزيل نسخة احتياطية بنجاح.");
         } catch (error) {
             toast.error("فشل إنشاء النسخة الاحتياطية.");
-            console.error(error);
+            logger.error('Operation failed', { message: error instanceof Error ? error.message : 'unknown_error' });
         }
     };
     
@@ -43,7 +44,7 @@ const BackupSettings: React.FC = () => {
             // The app will reload automatically after restore
         } catch (error) {
             toast.error("فشل استعادة النسخة الاحتياطية. تأكد من أن الملف صحيح.");
-            console.error(error);
+            logger.error('Operation failed', { message: error instanceof Error ? error.message : 'unknown_error' });
         }
         // Reset file input
         if(event.target) event.target.value = '';
