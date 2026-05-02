@@ -1,0 +1,1276 @@
+src/App.tsx:177:Supabase Todos
+src/App.tsx:188:, 'route-owner-view')} />
+src/App.tsx:193:, 'route-login')} />
+src/App.tsx:195:) : auth.currentUser.mustChange ? (
+src/App.tsx:200:, 'route-dashboard')} />
+src/App.tsx:201:, 'route-properties')} />
+src/App.tsx:202:, 'route-tenants')} />
+src/App.tsx:203:, 'route-owners')} />
+src/App.tsx:204:, 'route-owners-hub')} />
+src/App.tsx:205:, 'route-contracts')} />
+src/App.tsx:206:, 'route-maintenance')} />
+src/App.tsx:210:, 'route-leads')} />
+src/App.tsx:211:, 'route-communication')} />
+src/App.tsx:212:, 'route-lands')} />
+src/App.tsx:213:, 'route-commissions')} />
+src/App.tsx:214:, 'route-reports')} />
+src/App.tsx:220:, 'route-settings')} />
+src/ai/orchestrator.ts:11:(promise: Promise
+src/ai/orchestrator.ts:11:): Promise
+src/components/AppErrorFallback.tsx:22:إعادة المحاولة
+src/components/ErrorBoundary.tsx:57:حدث خلل غير متوقع
+src/components/ErrorBoundary.tsx:58:تعذر عرض هذا الجزء حالياً. حاول مرة أخرى.
+src/components/ErrorBoundary.tsx:63:إعادة المحاولة
+src/components/finance/FinanceIntelligenceHub.tsx:101:Finance Intelligence Layer
+src/components/finance/FinanceIntelligenceHub.tsx:102:ربط ذكي بين العقود والفواتير والسندات والتقارير
+src/components/finance/FinanceIntelligenceHub.tsx:107:سير الفواتير
+src/components/finance/FinanceIntelligenceHub.tsx:110:فتح التقارير المرتبطة
+src/components/finance/ManualVoucherForm.tsx:100:setDate(e.target.value)} required />
+src/components/finance/ManualVoucherForm.tsx:103:الوصف
+src/components/finance/ManualVoucherForm.tsx:104:setNotes(e.target.value)} placeholder="وصف القيد" />
+src/components/finance/ManualVoucherForm.tsx:104:وصف القيد
+src/components/finance/ManualVoucherForm.tsx:112:الحساب
+src/components/finance/ManualVoucherForm.tsx:113:مدين (Debit)
+src/components/finance/ManualVoucherForm.tsx:114:دائن (Credit)
+src/components/finance/ManualVoucherForm.tsx:126:ابحث باسم أو رقم الحساب
+src/components/finance/ManualVoucherForm.tsx:139:— اختر الحساب —
+src/components/finance/ManualVoucherForm.tsx:17:Promise
+src/components/finance/ManualVoucherForm.tsx:183:removeLine(i)}>
+src/components/finance/ManualVoucherForm.tsx:185:) : null}
+src/components/finance/ManualVoucherForm.tsx:194:الإجمالي
+src/components/finance/ManualVoucherForm.tsx:205:إضافة سطر
+src/components/finance/ManualVoucherForm.tsx:214:إلغاء
+src/components/finance/ManualVoucherForm.tsx:66:!line.accountId || (line.debit > 0 && line.credit > 0) || (line.debit
+src/components/finance/ManualVoucherForm.tsx:68:= 2 && !hasInvalidLines && Math.abs(totalDebits - totalCredits)
+src/components/finance/ManualVoucherForm.tsx:99:تاريخ القيد
+src/components/invoices/InvoiceFilters.tsx:131:إضافة فاتورة يدوية
+src/components/invoices/InvoiceFilters.tsx:135:إرسال تذكير واتساب
+src/components/invoices/InvoiceFilters.tsx:139:تصدير
+src/components/invoices/InvoiceFilters.tsx:82:بحث برقم الفاتورة أو اسم المستأجر...
+src/components/invoices/InvoiceFilters.tsx:95:جميع الأنواع
+src/components/invoices/InvoiceFilters.tsx:96:إيجار
+src/components/invoices/InvoiceFilters.tsx:97:رسوم تأخير
+src/components/invoices/InvoiceFilters.tsx:98:مرافق
+src/components/invoices/InvoiceFilters.tsx:99:أخرى
+src/components/invoices/InvoiceForm.tsx:105:النوع
+src/components/invoices/InvoiceForm.tsx:113:إيجار
+src/components/invoices/InvoiceForm.tsx:114:مرافق
+src/components/invoices/InvoiceForm.tsx:115:صيانة
+src/components/invoices/InvoiceForm.tsx:116:رسوم تأخير
+src/components/invoices/InvoiceForm.tsx:121:تاريخ الاستحقاق
+src/components/invoices/InvoiceForm.tsx:133:المبلغ
+src/components/invoices/InvoiceForm.tsx:141:ملاحظات
+src/components/invoices/InvoiceForm.tsx:154:إلغاء
+src/components/invoices/InvoiceForm.tsx:87:الوحدة
+src/components/invoices/InvoiceForm.tsx:95:اختر وحدة
+src/components/invoices/InvoiceTable.tsx:105:حذف
+src/components/invoices/InvoiceTable.tsx:32:رقم
+src/components/invoices/InvoiceTable.tsx:33:المستأجر/الوحدة
+src/components/invoices/InvoiceTable.tsx:34:النوع
+src/components/invoices/InvoiceTable.tsx:35:الاستحقاق
+src/components/invoices/InvoiceTable.tsx:36:المبلغ
+src/components/invoices/InvoiceTable.tsx:37:المتبقي
+src/components/invoices/InvoiceTable.tsx:38:الحالة
+src/components/invoices/InvoiceTable.tsx:39:إجراءات
+src/components/invoices/InvoiceTable.tsx:45:لا توجد فواتير
+src/components/invoices/InvoiceTable.tsx:72:0 ? formatCurrency(inv.remaining) : '—'}
+src/components/invoices/InvoiceTable.tsx:84:تسجيل دفع
+src/components/invoices/InvoiceTable.tsx:91:تعديل
+src/components/invoices/InvoiceTable.tsx:98:تصدير PDF
+src/components/invoices/QuickPayModal.tsx:10:Promise
+src/components/invoices/QuickPayModal.tsx:32:تسجيل دفع
+src/components/invoices/QuickPayModal.tsx:35:رقم الفاتورة:
+src/components/invoices/QuickPayModal.tsx:42:المبلغ
+src/components/invoices/QuickPayModal.tsx:46:طريقة الدفع
+src/components/invoices/QuickPayModal.tsx:47:setChannel(e.target.value as typeof channel)}>
+src/components/invoices/QuickPayModal.tsx:48:نقد
+src/components/invoices/QuickPayModal.tsx:49:بنك
+src/components/invoices/QuickPayModal.tsx:50:نقطة بيع
+src/components/invoices/QuickPayModal.tsx:51:شيك
+src/components/invoices/QuickPayModal.tsx:52:أخرى
+src/components/invoices/QuickPayModal.tsx:57:إلغاء
+src/components/print/PrintTemplate.tsx:38:استلمنا من السيد/ة:
+src/components/print/PrintTemplate.tsx:39:مبلغاً وقدره:
+src/components/print/PrintTemplate.tsx:40:وذلك عن:
+src/components/print/PrintTemplate.tsx:47:التاريخ:
+src/components/print/PrintTemplate.tsx:52:توقيع المستلم:
+src/components/print/PrintTemplate.tsx:54:الاسم: ..................
+src/components/print/PrintTemplate.tsx:57:ختم المؤسسة / التوقيع:
+src/components/print/layout/Layout.tsx:17:النظام في وضع القراءة فقط. لا يمكن إجراء أي تغييرات.
+src/components/print/layout/Notifications.tsx:101:التنبيهات
+src/components/print/layout/Notifications.tsx:107:تعليم الكل كمقروء
+src/components/print/layout/Notifications.tsx:143:فواتير متأخرة
+src/components/print/layout/Notifications.tsx:160:فاتورة متأخرة —
+src/components/print/layout/Notifications.tsx:181:عقود تنتهي قريباً
+src/components/print/layout/Notifications.tsx:197:عقد ينتهي قريباً —
+src/components/print/layout/Notifications.tsx:84:التنبيهات
+src/components/print/layout/Notifications.tsx:89:9 ? '9+' : unreadCount)}
+src/components/print/layout/Sidebar.tsx:166:renderNavItem(child, depth + 1))}
+src/components/print/layout/Sidebar.tsx:207:renderNavItem(item))}
+src/components/print/layout/Sidebar.tsx:235:تسجيل الخروج
+src/components/print/layout/Sidebar.tsx:40:c.status === 'ACTIVE' && new Date(c.end)
+src/components/print/layout/Sidebar.tsx:41:i.status === 'OVERDUE' || (i.status === 'UNPAID' && new Date(i.dueDate)
+src/components/reports/ReportsDashboard.tsx:107:لا توجد بيانات
+src/components/reports/ReportsDashboard.tsx:132:من
+src/components/reports/ReportsDashboard.tsx:137:إلى
+src/components/reports/ReportsDashboard.tsx:183:جاري تحميل الملخص المالي...
+src/components/reports/ReportsDashboard.tsx:187:إجمالي المحصّل
+src/components/reports/ReportsDashboard.tsx:188:إجمالي المصروفات
+src/components/reports/ReportsDashboard.tsx:189:= 0 ? 'text-emerald-700' : 'text-red-600'} />
+src/components/reports/ReportsDashboard.tsx:189:صافي الربح
+src/components/reports/ReportsDashboard.tsx:190:المتأخرات
+src/components/reports/ReportsDashboard.tsx:193:العقود النشطة
+src/components/reports/ReportsDashboard.tsx:194:نسبة الإشغال
+src/components/reports/ReportsDashboard.tsx:195:فواتير معلّقة
+src/components/reports/ReportsDashboard.tsx:199:الإشغال
+src/components/reports/ReportsDashboard.tsx:242:جاري تحميل قائمة الدخل...
+src/components/reports/ReportsDashboard.tsx:246:إجمالي الإيرادات
+src/components/reports/ReportsDashboard.tsx:247:إجمالي المصاريف
+src/components/reports/ReportsDashboard.tsx:248:= 0 ? 'text-primary' : 'text-red-600'}/>
+src/components/reports/ReportsDashboard.tsx:248:صافي الدخل
+src/components/reports/ReportsDashboard.tsx:256:fmt(Number(v), currency)}/>
+src/components/reports/ReportsDashboard.tsx:265:الإيرادات
+src/components/reports/ReportsDashboard.tsx:268:[r.no, r.name,
+src/components/reports/ReportsDashboard.tsx:273:المصروفات
+src/components/reports/ReportsDashboard.tsx:276:[r.no, r.name,
+src/components/reports/ReportsDashboard.tsx:307:حتى تاريخ
+src/components/reports/ReportsDashboard.tsx:320:جاري تحميل ميزان المراجعة...
+src/components/reports/ReportsDashboard.tsx:369:الميزانية العمومية
+src/components/reports/ReportsDashboard.tsx:380:(lines || []).map((r: any) => [
+src/components/reports/ReportsDashboard.tsx:389:حتى تاريخ
+src/components/reports/ReportsDashboard.tsx:405:جاري تحميل الميزانية العمومية...
+src/components/reports/ReportsDashboard.tsx:408:الميزانية العمومية
+src/components/reports/ReportsDashboard.tsx:410:إجمالي الأصول
+src/components/reports/ReportsDashboard.tsx:411:إجمالي الالتزامات
+src/components/reports/ReportsDashboard.tsx:412:إجمالي حقوق الملكية
+src/components/reports/ReportsDashboard.tsx:416:الأصول
+src/components/reports/ReportsDashboard.tsx:424:الالتزامات
+src/components/reports/ReportsDashboard.tsx:432:حقوق الملكية
+src/components/reports/ReportsDashboard.tsx:474:حتى تاريخ
+src/components/reports/ReportsDashboard.tsx:482:جاري تحميل أعمار الديون...
+src/components/reports/ReportsDashboard.tsx:497:fmt(Number(v), currency)}/>
+src/components/reports/ReportsDashboard.tsx:558:جاري تحميل تقرير المتأخرات...
+src/components/reports/ReportsDashboard.tsx:562:إجمالي المتأخرات
+src/components/reports/ReportsDashboard.tsx:563:عدد الفواتير
+src/components/reports/ReportsDashboard.tsx:564:المتأخرون > 90 يوم
+src/components/reports/ReportsDashboard.tsx:565:متوسط أيام التأخر
+src/components/reports/ReportsDashboard.tsx:567:بحث باسم المستأجر أو الوحدة...
+src/components/reports/ReportsDashboard.tsx:56:Promise
+src/components/reports/ReportsDashboard.tsx:608:العقد
+src/components/reports/ReportsDashboard.tsx:611:— اختر العقد —
+src/components/reports/ReportsDashboard.tsx:621:جاري تحميل كشف المستأجر...
+src/components/reports/ReportsDashboard.tsx:627:المستأجر
+src/components/reports/ReportsDashboard.tsx:628:الوحدة
+src/components/reports/ReportsDashboard.tsx:629:الرصيد الإجمالي
+src/components/reports/ReportsDashboard.tsx:630:0 ? 'text-red-600' : 'text-emerald-600'}/>
+src/components/reports/ReportsDashboard.tsx:670:— اختر المالك —
+src/components/reports/ReportsDashboard.tsx:682:جاري تحميل كشف المالك...
+src/components/reports/ReportsDashboard.tsx:688:الإجمالي المحصّل
+src/components/reports/ReportsDashboard.tsx:689:الاستقطاعات
+src/components/reports/ReportsDashboard.tsx:690:صافي المالك
+src/components/reports/ReportsDashboard.tsx:733:جاري تحميل التحصيل اليومي...
+src/components/reports/ReportsDashboard.tsx:736:إجمالي التحصيل
+src/components/reports/ReportsDashboard.tsx:743:fmt(Number(v), currency)}/>
+src/components/reports/ReportsDashboard.tsx:787:جاري تحميل قائمة الإيجارات...
+src/components/reports/ReportsDashboard.tsx:791:إجمالي الوحدات
+src/components/reports/ReportsDashboard.tsx:792:r.tenant_name).length)} color="text-emerald-600"/>
+src/components/reports/ReportsDashboard.tsx:792:وحدات مشغولة
+src/components/reports/ReportsDashboard.tsx:793:إيجار شهري
+src/components/reports/ReportsDashboard.tsx:801:شاغر
+src/components/reports/ReportsDashboard.tsx:80:طباعة / PDF
+src/components/reports/ReportsDashboard.tsx:870:r.group === group).map(r => (
+src/components/reports/ReportsDashboard.tsx:887:التقارير
+src/components/settings/AppearanceSettings.tsx:129:المظهر والتخصيص
+src/components/settings/AppearanceSettings.tsx:132:السمة واللون الأساسي
+src/components/settings/AppearanceSettings.tsx:135:السمة (Theme)
+src/components/settings/AppearanceSettings.tsx:137:فاتح
+src/components/settings/AppearanceSettings.tsx:138:داكن
+src/components/settings/AppearanceSettings.tsx:142:اللون الأساسي
+src/components/settings/AppearanceSettings.tsx:150:شعار المؤسسة
+src/components/settings/AppearanceSettings.tsx:164:ختم المؤسسة
+src/components/settings/AutomationSettings.tsx:102:إعدادات الأتمتة
+src/components/settings/AutomationSettings.tsx:103:تُشغَّل المهام مجدولاً عبر Edge Function أو يدوياً عند الطلب.
+src/components/settings/AutomationSettings.tsx:145:سجل آخر 10 تشغيلات
+src/components/settings/AutomationSettings.tsx:147:لم يتم تشغيل الأتمتة بعد.
+src/components/settings/AutomationSettings.tsx:153:0 ? 'border-red-300 bg-red-50 dark:bg-red-900/10' : 'border-border bg-card'}`}>
+src/components/settings/AutomationSettings.tsx:163:الأحدث
+src/components/settings/AutomationSettings.tsx:167:الأخطاء:
+src/components/settings/AutomationSettings.tsx:176:غرامات
+src/components/settings/AutomationSettings.tsx:177:إشعارات
+src/components/settings/AutomationSettings.tsx:178:لقطات
+src/components/settings/AutomationSettings.tsx:181:جاري تحديث النتائج...
+src/components/settings/AutomationSettings.tsx:185:فشل التشغيل بدون تفاصيل أخطاء.
+src/components/settings/BackupSettings.tsx:55:النسخ الاحتياطي والاستعادة
+src/components/settings/BackupSettings.tsx:58:تصدير نسخة احتياطية
+src/components/settings/BackupSettings.tsx:59:قم بتنزيل نسخة كاملة من قاعدة بياناتك بصيغة JSON. احتفظ بهذا الملف في مكان آمن لاستعادة النظام عند الحاجة.
+src/components/settings/BackupSettings.tsx:63:تنزيل نسخة احتياطية الآن
+src/components/settings/BackupSettings.tsx:68:استعادة من نسخة احتياطية
+src/components/settings/BackupSettings.tsx:72:اختيار ملف للاستعادة...
+src/components/settings/DocumentTemplatesSettings.tsx:105:قالب عقد الإيجار — البنود والشروط
+src/components/settings/DocumentTemplatesSettings.tsx:111:تراجع
+src/components/settings/DocumentTemplatesSettings.tsx:144:اكتب نص البند هنا...
+src/components/settings/DocumentTemplatesSettings.tsx:150:حذف البند
+src/components/settings/DocumentTemplatesSettings.tsx:162:إضافة بند جديد
+src/components/settings/DocumentTemplatesSettings.tsx:167:ملاحظة تذييل العقد (اختياري)
+src/components/settings/DocumentTemplatesSettings.tsx:168:تظهر هذه الملاحظة أسفل بنود العقد مباشرةً قبل خط التوقيع.
+src/components/settings/DocumentTemplatesSettings.tsx:174:مثال: هذا العقد خاضع لأحكام وتشريعات سلطنة عُمان...
+src/components/settings/DocumentTemplatesSettings.tsx:180:معاينة ترقيم البنود
+src/components/settings/DocumentTemplatesSettings.tsx:182:c.trim()).map((clause, idx) => (
+src/components/settings/DocumentTemplatesSettings.tsx:185:c.trim()).length === 0 && (
+src/components/settings/DocumentTemplatesSettings.tsx:186:لا توجد بنود. أضف بنداً أعلاه.
+src/components/settings/DocumentTemplatesSettings.tsx:193:إعدادات تخطيط الطباعة (A4)
+src/components/settings/DocumentTemplatesSettings.tsx:199:الهامش العلوي (ملم)
+src/components/settings/DocumentTemplatesSettings.tsx:210:الهامش السفلي (ملم)
+src/components/settings/DocumentTemplatesSettings.tsx:221:الهامش الأيمن (ملم)
+src/components/settings/DocumentTemplatesSettings.tsx:232:الهامش الأيسر (ملم)
+src/components/settings/DocumentTemplatesSettings.tsx:245:إعدادات التوقيعات
+src/components/settings/DocumentTemplatesSettings.tsx:254:إضافة منطقة التوقيعات في المستندات المطبوعة
+src/components/settings/DocumentTemplatesSettings.tsx:259:عدد مربعات التوقيع
+src/components/settings/DocumentTemplatesSettings.tsx:265:اثنان (المُصدِر والمستقبِل)
+src/components/settings/DocumentTemplatesSettings.tsx:266:ثلاثة (المُصدِر والمستقبِل والختم)
+src/components/settings/DocumentTemplatesSettings.tsx:267:أربعة (مع شاهد إضافي)
+src/components/settings/DocumentTemplatesSettings.tsx:72:m
+src/components/settings/FinancialSettings.tsx:114:-- اختر الحساب --
+src/components/settings/FinancialSettings.tsx:132:إعدادات الحسابات المالية
+src/components/settings/FinancialSettings.tsx:139:تحذير: روابط محاسبية مفقودة أو مكسورة
+src/components/settings/FinancialSettings.tsx:151:جميع الروابط المحاسبية الأساسية صحيحة وتشير إلى حسابات موجودة.
+src/components/settings/FinancialSettings.tsx:156:طرق الدفع (الحسابات النقدية)
+src/components/settings/FinancialSettings.tsx:158:setPaymentMethod('CASH', v)} />
+src/components/settings/FinancialSettings.tsx:158:نقدي (صندوق)
+src/components/settings/FinancialSettings.tsx:159:setPaymentMethod('BANK', v)} />
+src/components/settings/FinancialSettings.tsx:159:تحويل بنكي
+src/components/settings/FinancialSettings.tsx:160:setPaymentMethod('POS', v)} />
+src/components/settings/FinancialSettings.tsx:160:شبكة (POS)
+src/components/settings/FinancialSettings.tsx:161:setPaymentMethod('CHECK', v)} />
+src/components/settings/FinancialSettings.tsx:161:شيك
+src/components/settings/FinancialSettings.tsx:162:setPaymentMethod('OTHER', v)} />
+src/components/settings/FinancialSettings.tsx:162:أخرى
+src/components/settings/FinancialSettings.tsx:167:حسابات الإيرادات
+src/components/settings/FinancialSettings.tsx:169:setRevenue('RENT', v)} />
+src/components/settings/FinancialSettings.tsx:169:إيرادات الإيجار
+src/components/settings/FinancialSettings.tsx:170:setRevenue('OFFICE_COMMISSION', v)} />
+src/components/settings/FinancialSettings.tsx:170:إيرادات عمولة المكتب
+src/components/settings/FinancialSettings.tsx:171:setRevenue('LATE_FEE', v)} />
+src/components/settings/FinancialSettings.tsx:171:إيرادات رسوم التأخير
+src/components/settings/FinancialSettings.tsx:176:الحسابات الختامية
+src/components/settings/FinancialSettings.tsx:178:setTopLevel('accountsReceivable', v)} />
+src/components/settings/FinancialSettings.tsx:178:ذمم المستأجرين (الحسابات المدينة)
+src/components/settings/FinancialSettings.tsx:179:setTopLevel('ownersPayable', v)} />
+src/components/settings/FinancialSettings.tsx:179:ذمم الملاك (الحسابات الدائنة)
+src/components/settings/FinancialSettings.tsx:180:setTopLevel('depositsHeld', v)} />
+src/components/settings/FinancialSettings.tsx:180:تأمينات مستلمة (التزامات)
+src/components/settings/FinancialSettings.tsx:181:setTopLevel('vatPayable', v)} />
+src/components/settings/FinancialSettings.tsx:181:ضريبة القيمة المضافة (مستحق)
+src/components/settings/FinancialSettings.tsx:182:setTopLevel('vatReceivable', v)} />
+src/components/settings/FinancialSettings.tsx:182:ضريبة القيمة المضافة (مدين)
+src/components/settings/FinancialSettings.tsx:187:تصنيفات المصروفات
+src/components/settings/FinancialSettings.tsx:188:ربط كل تصنيف مصروفات بالحساب المحاسبي المناسب. يتم توليد القائمة تلقائياً من المصروفات المسجّلة.
+src/components/settings/FinancialSettings.tsx:199:افتراضي (لباقي التصنيفات)
+src/components/settings/GeneralSettings.tsx:110:الإعدادات العامة
+src/components/settings/GeneralSettings.tsx:116:} description="اسم المؤسسة والمعلومات التعريفية التي تظهر في ترويسة المستندات المطبوعة">
+src/components/settings/GeneralSettings.tsx:116:بيانات المؤسسة الأساسية
+src/components/settings/GeneralSettings.tsx:118:اسم المؤسسة
+src/components/settings/GeneralSettings.tsx:118:مثال: شركة النور العقارية
+src/components/settings/GeneralSettings.tsx:119:رقم السجل التجاري
+src/components/settings/GeneralSettings.tsx:119:مثال: 1234567
+src/components/settings/GeneralSettings.tsx:120:الرقم الضريبي
+src/components/settings/GeneralSettings.tsx:120:مثال: 300000000000003
+src/components/settings/GeneralSettings.tsx:124:} description="معلومات التواصل والعنوان التي تظهر في الترويسة والمستندات">
+src/components/settings/GeneralSettings.tsx:124:بيانات الاتصال والعنوان
+src/components/settings/GeneralSettings.tsx:126:العنوان الكامل
+src/components/settings/GeneralSettings.tsx:126:المدينة - الحي - الشارع
+src/components/settings/GeneralSettings.tsx:127:رقم الهاتف الرئيسي
+src/components/settings/GeneralSettings.tsx:127:مثال: 0512345678
+src/components/settings/GeneralSettings.tsx:128:اختياري
+src/components/settings/GeneralSettings.tsx:128:رقم هاتف إضافي
+src/components/settings/GeneralSettings.tsx:129:info@company.com
+src/components/settings/GeneralSettings.tsx:129:} dir="ltr" />
+src/components/settings/GeneralSettings.tsx:129:البريد الإلكتروني
+src/components/settings/GeneralSettings.tsx:130:الرمز البريدي
+src/components/settings/GeneralSettings.tsx:130:مثال: 12345
+src/components/settings/GeneralSettings.tsx:134:} description="العملة والضرائب وأيام التنبيه للعقود">
+src/components/settings/GeneralSettings.tsx:134:إعدادات التشغيل والمالية
+src/components/settings/GeneralSettings.tsx:138:العملة
+src/components/settings/GeneralSettings.tsx:142:ريال عماني (OMR)
+src/components/settings/GeneralSettings.tsx:143:ريال سعودي (SAR)
+src/components/settings/GeneralSettings.tsx:144:جنيه مصري (EGP)
+src/components/settings/GeneralSettings.tsx:149:نسبة الضريبة (%)
+src/components/settings/GeneralSettings.tsx:156:أيام تنبيه انتهاء العقد
+src/components/settings/GeneralSettings.tsx:164:} description="تطبيق غرامات تلقائية على المستأجرين المتأخرين في السداد">
+src/components/settings/GeneralSettings.tsx:164:إعدادات غرامات التأخير
+src/components/settings/GeneralSettings.tsx:173:تفعيل غرامات التأخير تلقائياً
+src/components/settings/GeneralSettings.tsx:178:نوع الغرامة
+src/components/settings/GeneralSettings.tsx:183:مبلغ ثابت
+src/components/settings/GeneralSettings.tsx:184:نسبة من الإيجار (%)
+src/components/settings/GeneralSettings.tsx:199:أيام السماح قبل تطبيق الغرامة
+src/components/settings/GeneralSettings.tsx:211:} description="بادئة مميزة لكل نوع مستند لتسهيل التمييز والتتبع">
+src/components/settings/GeneralSettings.tsx:211:ترقيم المستندات
+src/components/settings/GeneralSettings.tsx:214:الفواتير
+src/components/settings/GeneralSettings.tsx:215:INV-
+src/components/settings/GeneralSettings.tsx:218:سندات القبض
+src/components/settings/GeneralSettings.tsx:219:REC-
+src/components/settings/GeneralSettings.tsx:222:المصروفات
+src/components/settings/GeneralSettings.tsx:223:EXP-
+src/components/settings/GeneralSettings.tsx:226:العقود
+src/components/settings/GeneralSettings.tsx:227:CNTR-
+src/components/settings/GeneralSettings.tsx:232:} description="اختر بين التقويم الهجري والميلادي لعرض التواريخ في كل أنحاء التطبيق">
+src/components/settings/GeneralSettings.tsx:232:نوع التاريخ
+src/components/settings/GeneralSettings.tsx:236:نوع التقويم
+src/components/settings/GeneralSettings.tsx:244:التقويم الميلادي (Gregorian)
+src/components/settings/GeneralSettings.tsx:245:التقويم الهجري (Hijri)
+src/components/settings/GeneralSettings.tsx:253:يؤثر على جميع التواريخ في التطبيق والمستندات المطبوعة
+src/components/settings/GeneralSettings.tsx:262:حفظ جميع التغييرات
+src/components/settings/IntegrationsSettings.tsx:101:Tenant ID
+src/components/settings/IntegrationsSettings.tsx:102:UUID
+src/components/settings/IntegrationsSettings.tsx:102:setTenantId(e.target.value)} placeholder="UUID" />
+src/components/settings/IntegrationsSettings.tsx:105:Key Name
+src/components/settings/IntegrationsSettings.tsx:106:setApiKeyName(e.target.value)} />
+src/components/settings/IntegrationsSettings.tsx:110:إنشاء API Key
+src/components/settings/IntegrationsSettings.tsx:111:تحميل الاستخدام
+src/components/settings/IntegrationsSettings.tsx:115:API Key (اعرضه مرة واحدة):
+src/components/settings/IntegrationsSettings.tsx:124:Metric
+src/components/settings/IntegrationsSettings.tsx:125:Quantity
+src/components/settings/IntegrationsSettings.tsx:126:Events
+src/components/settings/IntegrationsSettings.tsx:127:Month
+src/components/settings/IntegrationsSettings.tsx:60:التكاملات والربط الخارجي
+src/components/settings/IntegrationsSettings.tsx:63:Google Gemini AI
+src/components/settings/IntegrationsSettings.tsx:64:تم نقل التكامل إلى Proxy آمن على الخادم. إدارة المفتاح تتم عبر متغيرات البيئة الخلفية فقط.
+src/components/settings/IntegrationsSettings.tsx:68:Gemini API Key (Server Managed)
+src/components/settings/IntegrationsSettings.tsx:74:Managed on backend
+src/components/settings/IntegrationsSettings.tsx:81:Google Drive Sync (قريباً)
+src/components/settings/IntegrationsSettings.tsx:82:قم بربط حسابك في Google Drive لتمكين النسخ الاحتياطي السحابي التلقائي.
+src/components/settings/IntegrationsSettings.tsx:86:Google Client ID
+src/components/settings/IntegrationsSettings.tsx:91:مطلوب لتفعيل المزامنة
+src/components/settings/IntegrationsSettings.tsx:98:Platform API Management
+src/components/settings/NotificationsSettings.tsx:10:) => Promise
+src/components/settings/NotificationsSettings.tsx:37:اسم القالب
+src/components/settings/NotificationsSettings.tsx:38:setName(e.target.value)} className="w-full" />
+src/components/settings/NotificationsSettings.tsx:41:نص الرسالة
+src/components/settings/NotificationsSettings.tsx:54:معاينة الرسالة
+src/components/settings/NotificationsSettings.tsx:60:إلغاء
+src/components/settings/NotificationsSettings.tsx:80:قوالب الإشعارات
+src/components/settings/NotificationsSettings.tsx:97:تعديل القالب
+src/components/settings/NotificationsSettings.tsx:99:تعديل
+src/components/settings/SecuritySettings.tsx:8:الأمان والتحكم
+src/components/settings/SecuritySettings.tsx:9:مراقبة شاملة لجميع الأنشطة وفحص سلامة البيانات لضمان استقرار النظام وأمانه.
+src/components/settings/UsersSettings.tsx:126:اسم المستخدم (للعرض)
+src/components/settings/UsersSettings.tsx:134:البريد الإلكتروني
+src/components/settings/UsersSettings.tsx:139:setRole(e.target.value as User['role'])}>
+src/components/settings/UsersSettings.tsx:140:مستخدم
+src/components/settings/UsersSettings.tsx:141:مدير
+src/components/settings/UsersSettings.tsx:150:كلمة المرور المؤقتة (8 أحرف على الأقل)
+src/components/settings/UsersSettings.tsx:155:إلغاء
+src/components/settings/UsersSettings.tsx:156:حفظ
+src/components/settings/UsersSettings.tsx:23:إدارة المستخدمين والصلاحيات
+src/components/settings/UsersSettings.tsx:24:handleOpenModal()} className="btn btn-primary">إضافة مستخدم
+src/components/settings/UsersSettings.tsx:28:تسجيل الدخول عبر Supabase
+src/components/settings/UsersSettings.tsx:36:اسم المستخدم
+src/components/settings/UsersSettings.tsx:37:البريد الإلكتروني
+src/components/settings/UsersSettings.tsx:38:الدور
+src/components/settings/UsersSettings.tsx:39:الحالة
+src/components/settings/UsersSettings.tsx:40:تاريخ الإنشاء
+src/components/settings/UsersSettings.tsx:41:إجراءات
+src/components/settings/UsersSettings.tsx:52:معطّل
+src/components/settings/UsersSettings.tsx:54:نشط
+src/components/settings/UsersSettings.tsx:60:handleOpenModal(u)} className="text-primary text-xs flex items-center gap-1 hover:underline">
+src/components/settings/UsersSettings.tsx:60:تعديل
+src/components/settings/UsersSettings.tsx:61:auth.forcePasswordReset(u.id)} className="text-yellow-600 text-xs flex items-center gap-1 hover:underline">
+src/components/settings/UsersSettings.tsx:61:تصفير كلمة المرور
+src/components/settings/UsersSettings.tsx:64:auth.enableUser(u.id)} className="text-green-600 text-xs flex items-center gap-1 hover:underline">
+src/components/settings/UsersSettings.tsx:64:تفعيل
+src/components/settings/UsersSettings.tsx:66:auth.disableUser(u.id)} className="text-red-600 text-xs flex items-center gap-1 hover:underline">
+src/components/settings/UsersSettings.tsx:66:تعطيل
+src/components/shared/AttachmentsManager.tsx:119:handleView(att.storagePath, att.dataUrl)} className="text-primary hover:text-opacity-80" title="عرض">
+src/components/shared/AttachmentsManager.tsx:119:عرض
+src/components/shared/AttachmentsManager.tsx:120:handleDelete(att)} className="text-red-500 hover:text-red-700" title="حذف">
+src/components/shared/AttachmentsManager.tsx:120:حذف
+src/components/shared/AttachmentsManager.tsx:128:جاري الرفع...
+src/components/shared/AttachmentsManager.tsx:129:إضافة مرفق
+src/components/shared/DeleteConfirmationModal.tsx:41:هذا الإجراء لا يمكن التراجع عنه.
+src/components/shared/DeleteConfirmationModal.tsx:48:إلغاء
+src/components/shared/DeleteConfirmationModal.tsx:9:Promise
+src/components/shared/DocumentHeader.tsx:64:الشعار
+src/components/shared/DocumentHeader.tsx:77:رقم:
+src/components/shared/DocumentHeader.tsx:78:التاريخ:
+src/components/shared/PrintPreviewModal.tsx:334:طباعة / حفظ PDF
+src/components/shared/SearchFilterBar.tsx:26:: null}
+src/components/shared/SmartAssistant.tsx:105:المساعد الذكي
+src/components/shared/SmartAssistant.tsx:146:اسأل عن أي شيء في بياناتك...
+src/components/shared/SmartAssistant.tsx:23:افتح المساعد الذكي
+src/components/shared/SmartAssistant.tsx:27:setIsOpen(false)} />}
+src/components/shared/WhatsAppComposerModal.tsx:109:اختر قالب (اختياري)
+src/components/shared/WhatsAppComposerModal.tsx:117:نص الرسالة
+src/components/shared/WhatsAppComposerModal.tsx:123:اكتب رسالتك هنا...
+src/components/shared/WhatsAppComposerModal.tsx:127:إلغاء
+src/components/shared/WhatsAppComposerModal.tsx:133:إرسال عبر واتساب
+src/components/shared/WhatsAppComposerModal.tsx:170:نص الرسالة
+src/components/shared/WhatsAppComposerModal.tsx:173:اكتب رسالتك هنا...
+src/components/shared/WhatsAppComposerModal.tsx:176:إلغاء
+src/components/shared/WhatsAppComposerModal.tsx:179:إرسال عبر واتساب
+src/components/ui/PageStates.tsx:40:إعادة المحاولة
+src/design-system/templates/PageContainer.tsx:12:: null}
+src/design-system/templates/PageContainer.tsx:14:: null}
+src/domain/bootstrap/bootstrap.facade.ts:5:Promise
+src/domain/bootstrap/bootstrap.facade.ts:6:Promise
+src/domain/finance/finance.facade.ts:13:Promise
+src/domain/finance/finance.facade.ts:14:Promise
+src/domain/finance/finance.facade.ts:15:Promise
+src/domain/settings/settings.facade.ts:5:Promise
+src/domain/settings/settings.facade.ts:6:) => Promise
+src/domain/settings/settings.facade.ts:7:Promise
+src/hooks/queries/useDataQueries.ts:11:supabaseData.fetchAll
+src/hooks/queries/useDataQueries.ts:22:id ? supabaseData.fetchOne
+src/hooks/queries/useDataQueries.ts:36:) => supabaseData.insert
+src/hooks/queries/useFinancialQueries.ts:45:) => supabaseData.insert
+src/hooks/specialized/useAuthHook.ts:7:Promise
+src/hooks/specialized/useAuthHook.ts:8:Promise
+src/hooks/specialized/useFinanceHook.ts:13:Promise
+src/hooks/specialized/useFinanceHook.ts:14:Promise
+src/hooks/specialized/useOperationsHook.ts:13:Promise
+src/hooks/specialized/useOperationsHook.ts:14:Promise
+src/hooks/useAuthCore.tsx:24:Promise
+src/hooks/useDataLoader.ts:13:Promise
+src/hooks/useDataLoader.ts:14:(table: T, entity: TableEntity
+src/hooks/useDataLoader.ts:15:(table: T, id: string, updates: Partial
+src/hooks/useDataLoader.ts:20:Promise
+src/hooks/useDataLoader.ts:44:(table: T, entity: TableEntity
+src/hooks/useDataLoader.ts:51:(table: T, id: string, updates: Partial
+src/hooks/useDataLoader.ts:53:[] | undefined) || []) as Array
+src/hooks/useDataLoader.ts:61:[] | undefined) || []) as Array
+src/hooks/useDataLoader.ts:7:= Database[T] extends Array
+src/hooks/useFinanceCore.tsx:23:Promise
+src/hooks/useFinanceCore.tsx:24:Promise
+src/hooks/useOperationsCore.tsx:150:0 && daysUntilEnd
+src/hooks/useOperationsCore.tsx:20:Promise
+src/hooks/useOperationsCore.tsx:21:Promise
+src/i18n/index.ts:13:Promise
+src/middleware/apiClient.ts:9:(fn: () => Promise
+src/middleware/apiClient.ts:9:): Promise
+src/middleware/errorHandler.ts:52:Promise
+src/services/accountingService.ts:212:= start && d
+src/services/accountingService.ts:372:= start && d
+src/services/accountingService.ts:96:= start && d
+src/services/audit/AuditTrail.ts:55:> & Pick
+src/services/auditEngine.ts:126:0 && db.owners.every(o => o.commissionValue
+src/services/automationService.ts:18:Promise
+src/services/automationService.ts:19:Promise
+src/services/automationService.ts:20:Promise
+src/services/automationService.ts:21:Promise
+src/services/financeService.ts:101:= fromIso && dateIso
+src/services/reports/ReportEngine.ts:17:(request: ReportRequest): Promise
+src/services/reports/ReportSnapshotManager.ts:24:(reportId: string, params: Record
+src/services/reports/ReportSnapshotManager.ts:35:(reportId: string, params: Record
+src/services/reportsService.ts:12:(name: string, params: Record
+src/services/reportsService.ts:12:): Promise
+src/services/security/sessionManager.ts:35:Promise
+src/services/supabaseDataService.ts:105:, tableName?: string): Record
+src/services/supabaseDataService.ts:128:(jsTable: string): Promise
+src/services/supabaseDataService.ts:145:(jsTable: string, limit = 200): Promise
+src/services/supabaseDataService.ts:215:(jsTable: string, id: string | number): Promise
+src/services/supabaseDataService.ts:226:(jsTable: string, record: object): Promise
+src/services/supabaseDataService.ts:239:(jsTable: string, record: object): Promise
+src/services/supabaseDataService.ts:290:(jsTable: string, column: string, value: unknown): Promise
+src/services/supabaseDataService.ts:304:(jsTable: string, records: object[]): Promise
+src/services/supabaseDataService.ts:364:): Promise
+src/services/supabaseDataService.ts:412:(jsTable: string, page = 1, pageSize = 50, orderBy?: string, ascending = false): Promise
+src/services/supabaseDataService.ts:448:(jsTable: string, filters: Record
+src/services/supabaseDataService.ts:448:, orderBy?: string, ascending = false, limit?: number): Promise
+src/services/supabaseDataService.ts:564:[], defaultSerials: Serials): Promise
+src/services/supabaseDataService.ts:564:[], defaultTemplates: Record
+src/services/supabaseDataService.ts:599:): Record
+src/services/supabaseDataService.ts:599:, source: Record
+src/services/supabaseDataService.ts:611:, sourceValue as Record
+src/types.ts:709:Promise
+src/types.ts:711:Promise
+src/types.ts:712:, pass: string) => Promise
+src/types.ts:713:) => Promise
+src/types.ts:714:Promise
+src/types.ts:715:Promise
+src/types.ts:716:Promise
+src/types.ts:719:) => Promise
+src/types.ts:720:Promise
+src/types.ts:726:) => Promise
+src/types.ts:726:>(table: T, entry: Omit
+src/types.ts:727:(table: T, id: string, updates: Partial
+src/types.ts:727:) => Promise
+src/types.ts:728:(table: T, id: string) => Promise
+src/types.ts:731:Promise
+src/types.ts:732:Promise
+src/types.ts:733:Promise
+src/types.ts:734:Promise
+src/types.ts:735:Promise
+src/types.ts:736:Promise
+src/types.ts:738:Promise
+src/types.ts:742:) => Promise
+src/types.ts:746:Promise
+src/types.ts:747:Promise
+src/types.ts:748:Promise
+src/types.ts:749:Promise
+src/types.ts:750:Promise
+src/types.ts:767:Promise
+src/types.ts:768:) => Promise
+src/types.ts:769:Promise
+src/types.ts:770:Promise
+src/types.ts:771:Promise
+src/types.ts:775:Promise
+src/types.ts:776:Promise
+src/types/supabase.ts:24:& Pick
+src/ui/Accounting.tsx:173:exportGroupCsv(key)}>
+src/ui/Accounting.tsx:173:تحميل CSV
+src/ui/Accounting.tsx:179:رقم
+src/ui/Accounting.tsx:180:الحساب
+src/ui/Accounting.tsx:181:الرصيد
+src/ui/Accounting.tsx:186:setAccount(acc)}>
+src/ui/Accounting.tsx:201:setStartDate(e.target.value)} />
+src/ui/Accounting.tsx:202:setEndDate(e.target.value)} />
+src/ui/Accounting.tsx:205:الرصيد الافتتاحي:
+src/ui/Accounting.tsx:212:تاريخ
+src/ui/Accounting.tsx:213:رقم قيد
+src/ui/Accounting.tsx:214:مدين (Debit)
+src/ui/Accounting.tsx:215:دائن (Credit)
+src/ui/Accounting.tsx:216:رصيد متراكم
+src/ui/Accounting.tsx:264:حتى تاريخ
+src/ui/Accounting.tsx:265:setEndDate(e.target.value)} />
+src/ui/Accounting.tsx:281:PDF
+src/ui/Accounting.tsx:290:رقم
+src/ui/Accounting.tsx:291:الحساب
+src/ui/Accounting.tsx:292:إجمالي مدين (Debit)
+src/ui/Accounting.tsx:293:إجمالي دائن (Credit)
+src/ui/Accounting.tsx:294:صافي الرصيد
+src/ui/Accounting.tsx:310:الإجمالي
+src/ui/Accounting.tsx:62:المحاسبة
+src/ui/Accounting.tsx:63:مركز القيود، دليل الحسابات، وميزان المراجعة.
+src/ui/Accounting.tsx:65:الانتقال للتقارير
+src/ui/Accounting.tsx:69:الأصول
+src/ui/Accounting.tsx:70:الالتزامات
+src/ui/Accounting.tsx:71:حقوق الملكية
+src/ui/Accounting.tsx:72:الإيرادات
+src/ui/Accounting.tsx:73:المصروفات
+src/ui/Accounting.tsx:75:Health Check
+src/ui/Accounting.tsx:82:} text="دليل الحسابات" />
+src/ui/Accounting.tsx:83:} text="قيد يدوي" />
+src/ui/Accounting.tsx:84:} text="ميزان المراجعة" />
+src/ui/Accounting.tsx:93:setShowHealth(false)} title="تفاصيل الفحص المحاسبي">
+src/ui/Accounting.tsx:93:تفاصيل الفحص المحاسبي
+src/ui/Accounting.tsx:95:الحالة:
+src/ui/Accounting.tsx:96:الفرق:
+src/ui/Accounting.tsx:97:عدد القيود:
+src/ui/Accounting.tsx:98:عدد الحسابات:
+src/ui/AuditLog.tsx:102:لا توجد نقاط استعادة محفوظة.
+src/ui/AuditLog.tsx:108:سجل تدقيق العمليات
+src/ui/AuditLog.tsx:109:هنا يمكنك مراقبة جميع العمليات التي تحدث في النظام بدقة (إنشاء، تعديل، حذف، ...إلخ). استخدم الفلاتر للبحث عن حركات معينة.
+src/ui/AuditLog.tsx:113:بحث بالمعرّف أو الملاحظات
+src/ui/AuditLog.tsx:116:بحث...
+src/ui/AuditLog.tsx:124:فلترة بالمستخدم
+src/ui/AuditLog.tsx:130:فلترة بالإجراء
+src/ui/AuditLog.tsx:138:تصفية الفلاتر
+src/ui/AuditLog.tsx:148:الوقت
+src/ui/AuditLog.tsx:149:المستخدم
+src/ui/AuditLog.tsx:150:الإجراء
+src/ui/AuditLog.tsx:151:الكيان
+src/ui/AuditLog.tsx:152:معرّف الكيان
+src/ui/AuditLog.tsx:153:ملاحظات
+src/ui/AuditLog.tsx:171:لا توجد نتائج تطابق بحثك.
+src/ui/AuditLog.tsx:177:إنشاء نقطة استعادة
+src/ui/AuditLog.tsx:179:أدخل وصفاً واضحاً ليسهل الرجوع لهذه النقطة لاحقاً.
+src/ui/AuditLog.tsx:181:ملاحظة النقطة
+src/ui/AuditLog.tsx:186:مثال: قبل تعديلات نهاية الشهر
+src/ui/AuditLog.tsx:191:إلغاء
+src/ui/AuditLog.tsx:194:حفظ النقطة
+src/ui/AuditLog.tsx:205:تأكيد استعادة النظام
+src/ui/AuditLog.tsx:78:نقاط استعادة النظام (Snapshots)
+src/ui/AuditLog.tsx:79:setIsCreateSnapshotOpen(true)} className="btn btn-primary flex items-center gap-2">
+src/ui/AuditLog.tsx:80:إنشاء نقطة استعادة
+src/ui/AuditLog.tsx:95:handleRestore(snapshot)} className="btn btn-danger flex items-center gap-2">
+src/ui/AuditLog.tsx:96:استعادة لهذه النقطة
+src/ui/ChangePassword.tsx:44:تغيير كلمة المرور
+src/ui/ChangePassword.tsx:45:لأسباب أمنية، يجب عليك تغيير كلمة المرور الافتراضية قبل المتابعة.
+src/ui/ChangePassword.tsx:51:كلمة المرور الجديدة
+src/ui/ChangePassword.tsx:63:تأكيد كلمة المرور الجديدة
+src/ui/Commissions.tsx:130:تأكيد صرف العمولة
+src/ui/Commissions.tsx:210:قيمة الصفقة
+src/ui/Commissions.tsx:214:النسبة %
+src/ui/Commissions.tsx:219:المبلغ المستحق
+src/ui/Commissions.tsx:224:تأجير وحدة
+src/ui/Commissions.tsx:225:بيع أرض
+src/ui/Commissions.tsx:226:تعاقد إداري
+src/ui/Commissions.tsx:229:قيد الانتظار
+src/ui/Commissions.tsx:22:new Map
+src/ui/Commissions.tsx:230:تم الصرف
+src/ui/Commissions.tsx:234:إلغاء
+src/ui/Commissions.tsx:48:عمولات قيد الانتظار
+src/ui/Commissions.tsx:52:عمولات تم صرفها
+src/ui/Commissions.tsx:56:إجمالي العمولات
+src/ui/Commissions.tsx:62:💰 سجل نسب وعمولات الموظفين
+src/ui/Commissions.tsx:63:إضافة عمولة
+src/ui/Commissions.tsx:69:لا توجد عمولات مسجلة
+src/ui/Commissions.tsx:70:ابدأ بإضافة عمولات الموظفين.
+src/ui/Commissions.tsx:77:الموظف
+src/ui/Commissions.tsx:78:العملية
+src/ui/Commissions.tsx:79:قيمة الصفقة
+src/ui/Commissions.tsx:80:النسبة
+src/ui/Commissions.tsx:81:المستحق
+src/ui/Commissions.tsx:82:الحالة
+src/ui/Commissions.tsx:83:إجراءات
+src/ui/CommunicationHub.tsx:102:نسخ
+src/ui/CommunicationHub.tsx:105:حذف
+src/ui/CommunicationHub.tsx:114:لا توجد إشعارات حاليًا.
+src/ui/CommunicationHub.tsx:115:اضغط على "توليد الإشعارات" للبدء.
+src/ui/CommunicationHub.tsx:58:مركز التواصل
+src/ui/CommunicationHub.tsx:70:يقوم النظام بالبحث عن الفواتير المتأخرة والعقود التي قاربت على الانتهاء لإنشاء رسائل تذكيرية جاهزة.
+src/ui/CommunicationHub.tsx:93:إرسال واتساب
+src/ui/CommunicationHub.tsx:98:تأشير كمرسل
+src/ui/Contracts.tsx:213:new Date(c.end)
+src/ui/Contracts.tsx:246:عقود نشطة
+src/ui/Contracts.tsx:251:تنتهي قريباً
+src/ui/Contracts.tsx:256:إجمالي المتأخرات
+src/ui/Contracts.tsx:261:إجمالي الإيجار الشهري
+src/ui/Contracts.tsx:267:قائمة العقود
+src/ui/Contracts.tsx:269:تصدير CSV
+src/ui/Contracts.tsx:270:handleOpenModal()} className="btn btn-primary">إضافة عقد
+src/ui/Contracts.tsx:291:بحث باسم المستأجر / الوحدة / رقم العقد
+src/ui/Contracts.tsx:298:لا توجد عقود مطابقة.
+src/ui/Contracts.tsx:304:العقد
+src/ui/Contracts.tsx:305:المستأجر / الوحدة
+src/ui/Contracts.tsx:306:الفترة
+src/ui/Contracts.tsx:307:الرصيد
+src/ui/Contracts.tsx:308:الحالة
+src/ui/Contracts.tsx:309:إجراءات
+src/ui/Contracts.tsx:325:setExpandedId(prev => (prev === c.id ? null : c.id))}>
+src/ui/Contracts.tsx:332:0 ? 'text-red-600' : balance
+src/ui/Contracts.tsx:338:e.stopPropagation()}>
+src/ui/Contracts.tsx:353:بيانات المستأجر
+src/ui/Contracts.tsx:358:بيانات الوحدة
+src/ui/Contracts.tsx:363:الرصيد
+src/ui/Contracts.tsx:364:0 ? 'text-red-600' : balance
+src/ui/Contracts.tsx:369:آخر 3 دفعات
+src/ui/Contracts.tsx:370:لا توجد دفعات
+src/ui/Contracts.tsx:380:setPrintingContract(c)}>
+src/ui/Contracts.tsx:380:طباعة
+src/ui/Contracts.tsx:381:handleRenewContract(c)}>
+src/ui/Contracts.tsx:381:تجديد
+src/ui/Contracts.tsx:386:إنهاء
+src/ui/Contracts.tsx:403:setPrintingContract(null)} title="معاينة طباعة العقد">
+src/ui/Contracts.tsx:403:معاينة طباعة العقد
+src/ui/Contracts.tsx:554:الوحدة
+src/ui/Contracts.tsx:555:setUnitId(e.target.value)} required>
+src/ui/Contracts.tsx:556:-- اختر وحدة --
+src/ui/Contracts.tsx:557:p.id === u.propertyId)?.name})
+src/ui/Contracts.tsx:561:المستأجر
+src/ui/Contracts.tsx:562:setTenantId(e.target.value)} required>
+src/ui/Contracts.tsx:563:-- اختر --
+src/ui/Contracts.tsx:567:setRentInput(sanitizeNonNegativeMoneyInput(e.target.value))} />
+src/ui/Contracts.tsx:567:الإيجار
+src/ui/Contracts.tsx:568:يوم الاستحقاق
+src/ui/Contracts.tsx:569:setStart(e.target.value)} />
+src/ui/Contracts.tsx:569:تاريخ البدء
+src/ui/Contracts.tsx:570:setEnd(e.target.value)} />
+src/ui/Contracts.tsx:570:تاريخ الانتهاء
+src/ui/Contracts.tsx:571:setDepositInput(sanitizeNonNegativeMoneyInput(e.target.value))} />
+src/ui/Contracts.tsx:571:الوديعة
+src/ui/Contracts.tsx:573:الحالة
+src/ui/Contracts.tsx:574:setStatus(e.target.value as Contract['status'])}>
+src/ui/Contracts.tsx:575:نشط
+src/ui/Contracts.tsx:576:منتهي
+src/ui/Contracts.tsx:577:معلق
+src/ui/Contracts.tsx:584:لا يمكن إنشاء عقد — يوجد طلبات صيانة حرجة مفتوحة على هذه الوحدة
+src/ui/Contracts.tsx:599:سجل الحركات المالية
+src/ui/Contracts.tsx:60:المستأجر:
+src/ui/Contracts.tsx:615:إلغاء
+src/ui/Contracts.tsx:61:الوحدة:
+src/ui/Contracts.tsx:62:بداية العقد:
+src/ui/Contracts.tsx:63:نهاية العقد:
+src/ui/Contracts.tsx:64:الإيجار:
+src/ui/Contracts.tsx:68:توقيع المؤجر: __________________
+src/ui/Contracts.tsx:69:توقيع المستأجر: __________________
+src/ui/Dashboard.tsx:116:جاري تحميل لوحة التحكم...
+src/ui/Dashboard.tsx:125:تعذر عرض لوحة التحكم
+src/ui/Dashboard.tsx:129:navigate('/settings')} variant="secondary" className="border-red-300 text-red-700 hover:bg-red-50">الانتقال إلى الإعدادات
+src/ui/Dashboard.tsx:138:لا توجد بيانات بعد
+src/ui/Dashboard.tsx:141:navigate('/properties')}>إضافة أول عقار
+src/ui/Dashboard.tsx:152:لوحة التحكم
+src/ui/Dashboard.tsx:162:} color="blue" />
+src/ui/Dashboard.tsx:162:العقارات
+src/ui/Dashboard.tsx:163:} color="indigo" />
+src/ui/Dashboard.tsx:163:الوحدات
+src/ui/Dashboard.tsx:164:} color="amber" />
+src/ui/Dashboard.tsx:164:الشاغرة
+src/ui/Dashboard.tsx:165:} color="green" />
+src/ui/Dashboard.tsx:165:العقود النشطة
+src/ui/Dashboard.tsx:166:} color="violet" />
+src/ui/Dashboard.tsx:166:المستأجرون
+src/ui/Dashboard.tsx:167:} color="green" />
+src/ui/Dashboard.tsx:167:الإشغال
+src/ui/Dashboard.tsx:171:المؤشرات المالية
+src/ui/Dashboard.tsx:173:} gradient="from-emerald-600 to-emerald-400" />
+src/ui/Dashboard.tsx:173:إيرادات الشهر
+src/ui/Dashboard.tsx:174:} gradient="from-rose-600 to-rose-400" />
+src/ui/Dashboard.tsx:174:مصروفات الشهر
+src/ui/Dashboard.tsx:175:} gradient="from-blue-600 to-blue-400" />
+src/ui/Dashboard.tsx:175:صافي الشهر
+src/ui/Dashboard.tsx:176:} gradient="from-amber-600 to-yellow-400" />
+src/ui/Dashboard.tsx:176:رصيد الخزنة
+src/ui/Dashboard.tsx:177:} gradient="from-violet-600 to-fuchsia-400" />
+src/ui/Dashboard.tsx:177:أرصدة دائنة
+src/ui/Dashboard.tsx:182:تنبيهات اليوم
+src/ui/Dashboard.tsx:214:اتجاه الإيرادات والمصروفات
+src/ui/Dashboard.tsx:221:formatCurrency(Number(value ?? 0), currency as 'OMR' | 'SAR' | 'EGP')} />
+src/ui/Dashboard.tsx:32:🔍 ابحث عن مستأجر أو وحدة...
+src/ui/Dashboard.tsx:38:= 2 && results.length === 0 && (
+src/ui/Dashboard.tsx:39:لا توجد نتائج مطابقة.
+src/ui/Dashboard.tsx:78:0 && diff
+src/ui/Dashboard.tsx:82:sum + (b.balance
+src/ui/DataIntegrityAudit.tsx:148:✓ لم يتم العثور على أي مشاكل. تبدو بيانات النظام سليمة.
+src/ui/DataIntegrityAudit.tsx:154:اضغط على "بدء فحص النظام" لتشخيص أي مشاكل محتملة.
+src/ui/DataIntegrityAudit.tsx:39:اذهب للإصلاح
+src/ui/DataIntegrityAudit.tsx:93:أداة تدقيق سلامة البيانات
+src/ui/DataIntegrityAudit.tsx:95:تقوم هذه الأداة بفحص النظام لكشف انقطاع تدفق البيانات، الأخطاء في العلاقات، وأسباب ظهور التقارير فارغة.
+src/ui/Finance.tsx:103:لا توجد بيانات مالية حتى الآن
+src/ui/Finance.tsx:105:إنشاء أول فاتورة
+src/ui/Finance.tsx:114:} label="الصيانة" />
+src/ui/Finance.tsx:114:الصيانة
+src/ui/Finance.tsx:115:} label="الأستاذ العام" />
+src/ui/Finance.tsx:115:الأستاذ العام
+src/ui/Finance.tsx:116:} label="دليل الحسابات" />
+src/ui/Finance.tsx:116:دليل الحسابات
+src/ui/Financials.tsx:1004:إلغاء
+src/ui/Financials.tsx:1005:حفظ المصروف
+src/ui/Financials.tsx:1034:حركة وديعة / تأمين
+src/ui/Financials.tsx:1037:اختيار العقد
+src/ui/Financials.tsx:1039:u.id===c.unitId)?.name}
+src/ui/Financials.tsx:1043:نوع الحركة
+src/ui/Financials.tsx:1045:إيداع تأمين جديد
+src/ui/Financials.tsx:1046:إرجاع التأمين للمستأجر
+src/ui/Financials.tsx:1047:خصم من التأمين للإصلاحات
+src/ui/Financials.tsx:1051:المبلغ
+src/ui/Financials.tsx:105:تسويات الملاك
+src/ui/Financials.tsx:1088:اختيار المالك
+src/ui/Financials.tsx:1094:التاريخ
+src/ui/Financials.tsx:1098:المبلغ المدفوع
+src/ui/Financials.tsx:118:} label="الودائع" />
+src/ui/Financials.tsx:118:الودائع
+src/ui/Financials.tsx:119:} label="تسويات الملاك" />
+src/ui/Financials.tsx:119:تسويات الملاك
+src/ui/Financials.tsx:243:بحث برقم السند أو اسم المستأجر...
+src/ui/Financials.tsx:251:تصدير CSV
+src/ui/Financials.tsx:254:إضافة سند قبض
+src/ui/Financials.tsx:260:) : filteredReceipts.length === 0 ? (
+src/ui/Financials.tsx:260:جاري تحميل البيانات...
+src/ui/Financials.tsx:264:لا توجد سندات قبض
+src/ui/Financials.tsx:265:لم يتم العثور على سندات قبض مطابقة لبحثك.
+src/ui/Financials.tsx:273:رقم السند
+src/ui/Financials.tsx:274:التاريخ
+src/ui/Financials.tsx:275:المستأجر
+src/ui/Financials.tsx:276:المبلغ
+src/ui/Financials.tsx:277:طريقة الدفع
+src/ui/Financials.tsx:278:الحالة
+src/ui/Financials.tsx:279:الإجراءات
+src/ui/Financials.tsx:305:setPrintingReceipt(r)} className="p-2 text-text-muted hover:text-primary hover:bg-primary/10 rounded-xl" title="طباعة">
+src/ui/Financials.tsx:305:طباعة
+src/ui/Financials.tsx:306:واتساب
+src/ui/Financials.tsx:327:السابق
+src/ui/Financials.tsx:329:= total} className="btn">التالي
+src/ui/Financials.tsx:336:setPrintingReceipt(null)} title="طباعة سند قبض">
+src/ui/Financials.tsx:336:طباعة سند قبض
+src/ui/Financials.tsx:391:بحث بالتصنيف أو الملاحظات...
+src/ui/Financials.tsx:399:تصدير CSV
+src/ui/Financials.tsx:402:إضافة مصروف جديد
+src/ui/Financials.tsx:408:) : filteredExpenses.length === 0 ? (
+src/ui/Financials.tsx:408:جاري تحميل البيانات...
+src/ui/Financials.tsx:412:لا توجد مصروفات
+src/ui/Financials.tsx:413:لم يتم العثور على مصروفات مطابقة لبحثك.
+src/ui/Financials.tsx:421:رقم السند
+src/ui/Financials.tsx:422:التاريخ
+src/ui/Financials.tsx:423:التصنيف
+src/ui/Financials.tsx:424:المبلغ
+src/ui/Financials.tsx:425:الحالة
+src/ui/Financials.tsx:426:الإجراءات
+src/ui/Financials.tsx:443:تعديل
+src/ui/Financials.tsx:444:setPrintingExpense(e)} className="p-2 text-text-muted hover:text-primary hover:bg-primary/10 rounded-xl" title="طباعة">
+src/ui/Financials.tsx:444:طباعة
+src/ui/Financials.tsx:448:تصدير PDF
+src/ui/Financials.tsx:468:السابق
+src/ui/Financials.tsx:470:= total} className="btn">التالي
+src/ui/Financials.tsx:476:setPrintingExpense(null)} title="طباعة سند صرف">
+src/ui/Financials.tsx:476:طباعة سند صرف
+src/ui/Financials.tsx:520:بحث باسم المستأجر أو الملاحظات...
+src/ui/Financials.tsx:526:setIsModalOpen(true)} className="btn btn-primary flex items-center gap-2 shadow-lg shadow-primary/20">
+src/ui/Financials.tsx:527:إضافة حركة وديعة
+src/ui/Financials.tsx:532:) : filteredDeposits.length === 0 ? (
+src/ui/Financials.tsx:532:جاري تحميل البيانات...
+src/ui/Financials.tsx:536:لا توجد حركات ودائع
+src/ui/Financials.tsx:537:لم يتم العثور على حركات مطابقة لبحثك.
+src/ui/Financials.tsx:545:التاريخ
+src/ui/Financials.tsx:546:العقد / المستأجر
+src/ui/Financials.tsx:547:النوع
+src/ui/Financials.tsx:548:المبلغ
+src/ui/Financials.tsx:549:الإجراءات
+src/ui/Financials.tsx:584:السابق
+src/ui/Financials.tsx:586:= total} className="btn">التالي
+src/ui/Financials.tsx:590:setIsModalOpen(false)} />}
+src/ui/Financials.tsx:632:بحث برقم التسوية أو اسم المالك...
+src/ui/Financials.tsx:638:setIsModalOpen(true)} className="btn btn-primary flex items-center gap-2 shadow-lg shadow-primary/20 px-6">
+src/ui/Financials.tsx:639:إضافة تسوية للمالك
+src/ui/Financials.tsx:644:) : filtered.length === 0 ? (
+src/ui/Financials.tsx:644:جاري تحميل البيانات...
+src/ui/Financials.tsx:648:لا توجد تسويات
+src/ui/Financials.tsx:649:لم يتم العثور على تسويات مطابقة لبحثك.
+src/ui/Financials.tsx:657:رقم التسوية
+src/ui/Financials.tsx:658:التاريخ
+src/ui/Financials.tsx:659:المالك
+src/ui/Financials.tsx:660:المبلغ
+src/ui/Financials.tsx:661:الإجراءات
+src/ui/Financials.tsx:675:تعديل
+src/ui/Financials.tsx:676:حذف
+src/ui/Financials.tsx:686:السابق
+src/ui/Financials.tsx:688:= total} className="btn">التالي
+src/ui/Financials.tsx:710:سند صرف
+src/ui/Financials.tsx:712:رقم السند:
+src/ui/Financials.tsx:713:التاريخ:
+src/ui/Financials.tsx:718:يصرف للسيد/ة:
+src/ui/Financials.tsx:719:مبلغاً وقدره:
+src/ui/Financials.tsx:720:وذلك عن:
+src/ui/Financials.tsx:723:توقيع المحاسب
+src/ui/Financials.tsx:724:توقيع المستلم
+src/ui/Financials.tsx:72:السندات والمصروفات مرتبطة تلقائيًا بدورة الفاتورة والعقد لضبط التدفق النقدي.
+src/ui/Financials.tsx:73:الفواتير المفتوحة الآن:
+src/ui/Financials.tsx:77:تحديث
+src/ui/Financials.tsx:77:جاري التحديث...
+src/ui/Financials.tsx:79:سير الفوترة
+src/ui/Financials.tsx:80:تقرير التدفقات
+src/ui/Financials.tsx:843:اختيار العقد
+src/ui/Financials.tsx:845:u.id===c.unitId)?.name}
+src/ui/Financials.tsx:849:التاريخ والوقت
+src/ui/Financials.tsx:853:المبلغ الإجمالي
+src/ui/Financials.tsx:857:طريقة الدفع
+src/ui/Financials.tsx:859:أخرى
+src/ui/Financials.tsx:859:تحويل بنكي
+src/ui/Financials.tsx:859:شبكة
+src/ui/Financials.tsx:859:شيك
+src/ui/Financials.tsx:859:نقدي
+src/ui/Financials.tsx:866:توزيع المبلغ على الفواتير
+src/ui/Financials.tsx:867:توزيع تلقائي
+src/ui/Financials.tsx:87:تحصيلات اليوم
+src/ui/Financials.tsx:889:الإجمالي الموزع
+src/ui/Financials.tsx:898:رقم الشيك
+src/ui/Financials.tsx:899:البنك
+src/ui/Financials.tsx:900:تاريخ الاستحقاق
+src/ui/Financials.tsx:901:setCheckStatus(e.target.value as NonNullable
+src/ui/Financials.tsx:901:الحالة
+src/ui/Financials.tsx:901:محصّل
+src/ui/Financials.tsx:901:مرتجع
+src/ui/Financials.tsx:901:معلق
+src/ui/Financials.tsx:901:مودع
+src/ui/Financials.tsx:906:رقم المرجع (إن وجد)...
+src/ui/Financials.tsx:907:ملاحظات إضافية...
+src/ui/Financials.tsx:913:فشل ترحيل سند القبض
+src/ui/Financials.tsx:915:تم الاحتفاظ بالبيانات داخل النموذج، يمكنك تعديلها وإعادة المحاولة.
+src/ui/Financials.tsx:920:إلغاء
+src/ui/Financials.tsx:93:مصروفات الشهر
+src/ui/Financials.tsx:968:تصنيف المصروف
+src/ui/Financials.tsx:969:مثال: صيانة سباكة
+src/ui/Financials.tsx:972:المبلغ
+src/ui/Financials.tsx:976:جهة التحميل
+src/ui/Financials.tsx:978:على المالك
+src/ui/Financials.tsx:978:على المستأجر
+src/ui/Financials.tsx:978:على المكتب
+src/ui/Financials.tsx:982:التاريخ
+src/ui/Financials.tsx:987:العقد المرتبط
+src/ui/Financials.tsx:989:-- مصروف مكتب عام (غير مرتبط بعقد) --
+src/ui/Financials.tsx:990:u.id===c.unitId)?.name}
+src/ui/Financials.tsx:993:تفاصيل المصروف...
+src/ui/Financials.tsx:997:فشل ترحيل سند القبض
+src/ui/Financials.tsx:999:تم الاحتفاظ بالبيانات داخل النموذج، يمكنك تعديلها وإعادة المحاولة.
+src/ui/Financials.tsx:99:إجمالي التأمينات
+src/ui/GeneralLedger.tsx:103:) : currentRows.length === 0 ? (
+src/ui/GeneralLedger.tsx:103:اختر حسابًا لعرض دفتر الأستاذ.
+src/ui/GeneralLedger.tsx:105:) : currentRows.map((line) => (
+src/ui/GeneralLedger.tsx:105:لا توجد قيود ضمن هذا النطاق.
+src/ui/GeneralLedger.tsx:122:PAGE_SIZE && (
+src/ui/GeneralLedger.tsx:124:setPage((p) => Math.max(1, p - 1))}>السابق
+src/ui/GeneralLedger.tsx:125:صفحة
+src/ui/GeneralLedger.tsx:126:setPage((p) => Math.min(pageCount, p + 1))}>التالي
+src/ui/GeneralLedger.tsx:131:setIsModalOpen(false)} title="قيد يومية يدوي">
+src/ui/GeneralLedger.tsx:131:قيد يومية يدوي
+src/ui/GeneralLedger.tsx:46:دفتر الأستاذ العام
+src/ui/GeneralLedger.tsx:47:setIsModalOpen(true)}>
+src/ui/GeneralLedger.tsx:48:قيد يدوي
+src/ui/GeneralLedger.tsx:54:الحساب
+src/ui/GeneralLedger.tsx:63:— اختر حسابًا —
+src/ui/GeneralLedger.tsx:70:من تاريخ
+src/ui/GeneralLedger.tsx:71:setStartDate(e.target.value)} />
+src/ui/GeneralLedger.tsx:74:إلى تاريخ
+src/ui/GeneralLedger.tsx:75:setEndDate(e.target.value)} />
+src/ui/GeneralLedger.tsx:78:عدد القيود:
+src/ui/GeneralLedger.tsx:84:الرصيد الافتتاحي:
+src/ui/GeneralLedger.tsx:93:التاريخ
+src/ui/GeneralLedger.tsx:94:رقم القيد
+src/ui/GeneralLedger.tsx:95:مدين (Debit)
+src/ui/GeneralLedger.tsx:96:دائن (Credit)
+src/ui/GeneralLedger.tsx:97:رصيد متراكم
+src/ui/GeneralLedger.tsx:98:المصدر
+src/ui/Invoices.tsx:187:مستحقات غير محصلة
+src/ui/Invoices.tsx:193:فواتير متأخرة
+src/ui/Invoices.tsx:199:تحصيلات الشهر
+src/ui/Invoices.tsx:301:حذف الفاتورة
+src/ui/Lands.tsx:107:handleOpenModal(land)} className="cursor-pointer">
+src/ui/Lands.tsx:115:صافي المالك:
+src/ui/Lands.tsx:119:عمولة المكتب:
+src/ui/Lands.tsx:126:عرض التفاصيل
+src/ui/Lands.tsx:214:رقم القطعة
+src/ui/Lands.tsx:215:اسم/وصف الموقع
+src/ui/Lands.tsx:216:الموقع (مثال: الخوض)
+src/ui/Lands.tsx:218:المساحة (م²)
+src/ui/Lands.tsx:222:سكني
+src/ui/Lands.tsx:223:تجاري
+src/ui/Lands.tsx:224:صناعي
+src/ui/Lands.tsx:227:متاحة
+src/ui/Lands.tsx:228:محجوزة
+src/ui/Lands.tsx:229:مباعة
+src/ui/Lands.tsx:234:صافي المالك
+src/ui/Lands.tsx:238:عمولة المكتب
+src/ui/Lands.tsx:242:ملاحظات...
+src/ui/Lands.tsx:244:إلغاء
+src/ui/Lands.tsx:68:🗺️ مستودع عروض الأراضي
+src/ui/Lands.tsx:71:تصدير CSV
+src/ui/Lands.tsx:73:handleOpenModal()} className="btn btn-primary flex items-center gap-2">
+src/ui/Lands.tsx:74:إضافة أرض جديدة
+src/ui/Lands.tsx:82:لا توجد أراضي مسجلة
+src/ui/Lands.tsx:83:ابدأ بإضافة عروض الأراضي المتاحة للبيع.
+src/ui/Lands.tsx:84:handleOpenModal()} className="btn btn-primary">إضافة أرض جديدة
+src/ui/Lands.tsx:99:e.stopPropagation()}>
+src/ui/Leads.tsx:190:الاسم
+src/ui/Leads.tsx:191:setName(e.target.value)} required />
+src/ui/Leads.tsx:194:الهاتف
+src/ui/Leads.tsx:195:setPhone(e.target.value)} required />
+src/ui/Leads.tsx:198:البريد الإلكتروني
+src/ui/Leads.tsx:199:setEmail(e.target.value)} />
+src/ui/Leads.tsx:202:نوع الوحدة المطلوبة
+src/ui/Leads.tsx:203:setDesiredUnitType(e.target.value)} placeholder="مثال: شقة غرفتين"/>
+src/ui/Leads.tsx:203:مثال: شقة غرفتين
+src/ui/Leads.tsx:207:setMinBudget(Number(normalizeArabicNumerals(e.target.value)) || undefined)} />
+src/ui/Leads.tsx:211:setMaxBudget(Number(normalizeArabicNumerals(e.target.value)) || undefined)} />
+src/ui/Leads.tsx:215:الحالة
+src/ui/Leads.tsx:216:setStatus(e.target.value as Lead['status'])}>
+src/ui/Leads.tsx:217:جديد
+src/ui/Leads.tsx:218:تم التواصل
+src/ui/Leads.tsx:219:مهتم
+src/ui/Leads.tsx:220:غير مهتم
+src/ui/Leads.tsx:221:مغلق
+src/ui/Leads.tsx:225:ملاحظات
+src/ui/Leads.tsx:229:إلغاء
+src/ui/Leads.tsx:65:العملاء المحتملين
+src/ui/Leads.tsx:68:تصدير CSV
+src/ui/Leads.tsx:71:handleOpenFormModal()} className="btn btn-primary">إضافة عميل محتمل
+src/ui/Leads.tsx:78:الاسم
+src/ui/Leads.tsx:79:الهاتف
+src/ui/Leads.tsx:80:البريد الإلكتروني
+src/ui/Leads.tsx:81:الحالة
+src/ui/Leads.tsx:82:إجراءات
+src/ui/Login.tsx:151:نظام إدارة العقارات المتقدم
+src/ui/Login.tsx:155:آمن تماماً
+src/ui/Login.tsx:157:متاح على الويب والسطح المكتب
+src/ui/Login.tsx:180:Rentrix
+src/ui/Login.tsx:183:نظام إدارة العقارات
+src/ui/Login.tsx:218:Developed by Mohamed Masoud
+src/ui/Login.tsx:222:Mohamedms.oud@outlook.com
+src/ui/Login.tsx:229:Version 2.8.0
+src/ui/Login.tsx:239:Rentrix-Egy- نظام إدارة العقارات المتقدم
+src/ui/Login.tsx:60:Rentrix-Egy
+src/ui/Login.tsx:83:your@email.com
+src/ui/Maintenance.tsx:142:إجمالي الطلبات
+src/ui/Maintenance.tsx:147:طلبات جديدة
+src/ui/Maintenance.tsx:152:قيد التنفيذ
+src/ui/Maintenance.tsx:157:مكتملة
+src/ui/Maintenance.tsx:162:إجمالي التكاليف
+src/ui/Maintenance.tsx:168:طلبات الصيانة
+src/ui/Maintenance.tsx:193:تصدير CSV
+src/ui/Maintenance.tsx:195:handleOpenModal()} className="btn btn-primary">إضافة طلب صيانة
+src/ui/Maintenance.tsx:201:بحث برقم الطلب، الوصف، أو اسم الوحدة...
+src/ui/Maintenance.tsx:216:من تاريخ الطلب
+src/ui/Maintenance.tsx:217:setFromDate(e.target.value)} />
+src/ui/Maintenance.tsx:220:إلى تاريخ الطلب
+src/ui/Maintenance.tsx:221:setToDate(e.target.value)} />
+src/ui/Maintenance.tsx:228:رقم الطلب
+src/ui/Maintenance.tsx:229:الوحدة
+src/ui/Maintenance.tsx:230:تاريخ الطلب
+src/ui/Maintenance.tsx:231:مُكلَّف إلى
+src/ui/Maintenance.tsx:232:الأولوية
+src/ui/Maintenance.tsx:233:المصروف/الفاتورة
+src/ui/Maintenance.tsx:234:التكلفة
+src/ui/Maintenance.tsx:235:الحالة
+src/ui/Maintenance.tsx:236:تاريخ الإنجاز
+src/ui/Maintenance.tsx:237:إجراءات
+src/ui/Maintenance.tsx:249:handleOpenModal(rec)} className="bg-card hover:bg-background cursor-pointer">
+src/ui/Maintenance.tsx:271:e.stopPropagation()}>
+src/ui/Maintenance.tsx:286:إجمالي تكاليف الفترة المفلترة:
+src/ui/Maintenance.tsx:424:الوحدة
+src/ui/Maintenance.tsx:428:p.id === u.propertyId)?.name})
+src/ui/Maintenance.tsx:434:تاريخ الطلب
+src/ui/Maintenance.tsx:435:setRequestDate(e.target.value)} required />
+src/ui/Maintenance.tsx:439:الوصف
+src/ui/Maintenance.tsx:444:الحالة
+src/ui/Maintenance.tsx:445:setStatus(e.target.value as MaintenanceRecord['status'])}>
+src/ui/Maintenance.tsx:446:جديد
+src/ui/Maintenance.tsx:447:قيد التنفيذ
+src/ui/Maintenance.tsx:448:مكتمل
+src/ui/Maintenance.tsx:449:مغلق
+src/ui/Maintenance.tsx:454:setCost(Number(normalizeArabicNumerals(e.target.value)))} />
+src/ui/Maintenance.tsx:457:تحميل على
+src/ui/Maintenance.tsx:458:setChargedTo(e.target.value as MaintenanceRecord['chargedTo'])}>
+src/ui/Maintenance.tsx:459:المالك
+src/ui/Maintenance.tsx:460:المكتب
+src/ui/Maintenance.tsx:461:المستأجر
+src/ui/Maintenance.tsx:467:الأولوية
+src/ui/Maintenance.tsx:468:setPriority(e.target.value as 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT')}>
+src/ui/Maintenance.tsx:469:منخفضة
+src/ui/Maintenance.tsx:470:متوسطة
+src/ui/Maintenance.tsx:471:عالية
+src/ui/Maintenance.tsx:472:عاجلة
+src/ui/Maintenance.tsx:476:مُكلَّف إلى
+src/ui/Maintenance.tsx:477:setAssignedTo(e.target.value)} placeholder="اسم الفني / المقاول" />
+src/ui/Maintenance.tsx:477:اسم الفني / المقاول
+src/ui/Maintenance.tsx:481:تاريخ الإنجاز
+src/ui/Maintenance.tsx:482:setCompletionDate(e.target.value)} />
+src/ui/Maintenance.tsx:487:إلغاء
+src/ui/OwnerView.tsx:51:جاري التحقق من الرابط الآمن...
+src/ui/OwnerView.tsx:61:خطأ في الوصول
+src/ui/OwnerView.tsx:74:بوابة تقارير المالك
+src/ui/OwnerView.tsx:80:إجمالي التحصيلات
+src/ui/OwnerView.tsx:84:إجمالي المصاريف والعمولة
+src/ui/OwnerView.tsx:88:صافي المستحق لك
+src/ui/Owners.tsx:103:السابق
+src/ui/Owners.tsx:105:= total} className="btn">التالي
+src/ui/Owners.tsx:206:المعلومات الأساسية
+src/ui/Owners.tsx:209:الاسم
+src/ui/Owners.tsx:210:setName(e.target.value)} required />
+src/ui/Owners.tsx:213:الهاتف
+src/ui/Owners.tsx:214:setPhone(e.target.value)} />
+src/ui/Owners.tsx:218:العنوان
+src/ui/Owners.tsx:219:setAddress(e.target.value)} />
+src/ui/Owners.tsx:224:معلومات التعاقد والعمولة
+src/ui/Owners.tsx:227:تاريخ التعاقد
+src/ui/Owners.tsx:228:setManagementContractDate(e.target.value)} />
+src/ui/Owners.tsx:231:نوع عمولة المكتب
+src/ui/Owners.tsx:232:setCommissionType(e.target.value as Owner['commissionType'])}>
+src/ui/Owners.tsx:233:نسبة مئوية (%)
+src/ui/Owners.tsx:234:مبلغ شهري ثابت
+src/ui/Owners.tsx:247:المعلومات البنكية
+src/ui/Owners.tsx:250:اسم البنك
+src/ui/Owners.tsx:251:setBankName(e.target.value)} />
+src/ui/Owners.tsx:254:رقم الحساب
+src/ui/Owners.tsx:255:setBankAccountNumber(e.target.value)} />
+src/ui/Owners.tsx:262:العقار الأول (مطلوب)
+src/ui/Owners.tsx:263:يجب ربط عقار بالمالك عند إنشائه. يمكنك إضافة عقارات أخرى لاحقاً من صفحة العقارات.
+src/ui/Owners.tsx:266:اسم العقار
+src/ui/Owners.tsx:270:الموقع
+src/ui/Owners.tsx:278:ملاحظات
+src/ui/Owners.tsx:286:إلغاء
+src/ui/Owners.tsx:51:قائمة الملاك
+src/ui/Owners.tsx:52:handleOpenModal()} className="btn btn-primary">إضافة مالك
+src/ui/Owners.tsx:55:) : owners.length === 0 ? (
+src/ui/Owners.tsx:55:جاري تحميل البيانات...
+src/ui/Owners.tsx:59:لا يوجد ملاك بعد
+src/ui/Owners.tsx:60:أضف الملاك لتتمكن من ربطهم بالعقارات.
+src/ui/Owners.tsx:61:handleOpenModal()} className="mt-6 btn btn-primary">إضافة مالك جديد
+src/ui/Owners.tsx:69:handleOpenModal(owner)} className="cursor-pointer">
+src/ui/Owners.tsx:77:إرسال واتساب
+src/ui/Owners.tsx:89:رابط المالك
+src/ui/OwnersHub.tsx:38:المالك غير موجود.
+src/ui/OwnersHub.tsx:45:عرض موحد للعقود والعقارات والفواتير والمدفوعات والمتأخرات.
+src/ui/OwnersHub.tsx:49:إجمالي الفواتير
+src/ui/OwnersHub.tsx:50:إجمالي المدفوعات
+src/ui/OwnersHub.tsx:51:إجمالي المصروفات
+src/ui/OwnersHub.tsx:52:إجمالي المتأخرات
+src/ui/OwnersHub.tsx:59:لا توجد عقارات.
+src/ui/OwnersHub.tsx:67:لا توجد عقود.
+src/ui/Properties.tsx:1001:العدادات
+src/ui/Properties.tsx:1004:رقم عداد المياه
+src/ui/Properties.tsx:1008:رقم عداد الكهرباء
+src/ui/Properties.tsx:1014:مميزات إضافية
+src/ui/Properties.tsx:1015:مثال: مكيف مركزي، موقف سيارة، بلكونة
+src/ui/Properties.tsx:1018:ملاحظات
+src/ui/Properties.tsx:1023:إلغاء
+src/ui/Properties.tsx:117:عقارات
+src/ui/Properties.tsx:122:وحدات
+src/ui/Properties.tsx:127:مؤجرة
+src/ui/Properties.tsx:132:شاغرة
+src/ui/Properties.tsx:137:نسبة الإشغال
+src/ui/Properties.tsx:142:قائمة العقارات
+src/ui/Properties.tsx:143:إضافة عقار
+src/ui/Properties.tsx:145:بحث باسم العقار، الموقع أو المالك...
+src/ui/Properties.tsx:158:e.stopPropagation()}>
+src/ui/Properties.tsx:159:await handleDeleteProperty(p.id)) ]} />
+src/ui/Properties.tsx:165:o.id===p.ownerId)?.name || '-'}
+src/ui/Properties.tsx:168:إجمالي الإيرادات الشهرية:
+src/ui/Properties.tsx:169:نسبة الإشغال:
+src/ui/Properties.tsx:170:صافي مستحق المالك:
+src/ui/Properties.tsx:234:setSelectedUnit(null)} />
+src/ui/Properties.tsx:246:إضافة وحدة
+src/ui/Properties.tsx:252:إجمالي الوحدات
+src/ui/Properties.tsx:256:مؤجرة
+src/ui/Properties.tsx:260:شاغرة
+src/ui/Properties.tsx:264:معلقة
+src/ui/Properties.tsx:268:setStatusFilter('ALL')}>الكل
+src/ui/Properties.tsx:269:setStatusFilter('RENTED')}>مؤجرة
+src/ui/Properties.tsx:270:setStatusFilter('AVAILABLE')}>شاغرة
+src/ui/Properties.tsx:271:setStatusFilter('MAINTENANCE')}>صيانة
+src/ui/Properties.tsx:272:setStatusFilter('ON_HOLD')}>معلقة
+src/ui/Properties.tsx:344:الإيجار الشهري:
+src/ui/Properties.tsx:359:إضافة عقد جديد
+src/ui/Properties.tsx:35:حدث خطأ أثناء عرض تفاصيل الوحدة
+src/ui/Properties.tsx:37:إعادة المحاولة
+src/ui/Properties.tsx:526:نوع المرفق
+src/ui/Properties.tsx:534:الشهر
+src/ui/Properties.tsx:53:العقارات والوحدات
+src/ui/Properties.tsx:540:القراءة السابقة
+src/ui/Properties.tsx:544:القراءة الحالية
+src/ui/Properties.tsx:553:الاستهلاك:
+src/ui/Properties.tsx:553:وحدة
+src/ui/Properties.tsx:554:المبلغ:
+src/ui/Properties.tsx:557:على حساب
+src/ui/Properties.tsx:559:المستأجر
+src/ui/Properties.tsx:560:المالك
+src/ui/Properties.tsx:561:المكتب
+src/ui/Properties.tsx:565:صورة الفاتورة
+src/ui/Properties.tsx:56:الخارطة
+src/ui/Properties.tsx:570:📄 PDF مرفق
+src/ui/Properties.tsx:575:رفع صورة الفاتورة
+src/ui/Properties.tsx:580:ملاحظات
+src/ui/Properties.tsx:585:إلغاء
+src/ui/Properties.tsx:682:إضافة قراءة مرافق
+src/ui/Properties.tsx:688:رقم عداد المياه
+src/ui/Properties.tsx:693:رقم عداد الكهرباء
+src/ui/Properties.tsx:698:المستأجر الحالي
+src/ui/Properties.tsx:703:إجمالي فواتير المرافق
+src/ui/Properties.tsx:711:totals[t]).map(t => (
+src/ui/Properties.tsx:712:setActiveType(activeType === t ? 'ALL' : t)}>
+src/ui/Properties.tsx:724:totals[t]).map(t => (
+src/ui/Properties.tsx:745:سابق:
+src/ui/Properties.tsx:746:حالي:
+src/ui/Properties.tsx:747:استهلاك:
+src/ui/Properties.tsx:748:المبلغ:
+src/ui/Properties.tsx:771:لا توجد سجلات مرافق لهذه الوحدة
+src/ui/Properties.tsx:772:ابدأ بإضافة قراءات العداد والفواتير
+src/ui/Properties.tsx:774:إضافة أول سجل
+src/ui/Properties.tsx:786:تأكيد حذف سجل المرافق
+src/ui/Properties.tsx:829:بيانات العقار
+src/ui/Properties.tsx:831:اسم العقار
+src/ui/Properties.tsx:833:الموقع
+src/ui/Properties.tsx:899:0 && val
+src/ui/Properties.tsx:909:0 && rent
+src/ui/Properties.tsx:940:رقم/اسم الوحدة
+src/ui/Properties.tsx:944:نوع الوحدة
+src/ui/Properties.tsx:950:الدور
+src/ui/Properties.tsx:952:-- اختر الدور --
+src/ui/Properties.tsx:957:الحالة
+src/ui/Properties.tsx:958:setStatus(e.target.value as Unit['status'])} disabled>
+src/ui/Properties.tsx:959:شاغرة
+src/ui/Properties.tsx:960:مؤجرة
+src/ui/Properties.tsx:961:صيانة
+src/ui/Properties.tsx:962:معلقة
+src/ui/Properties.tsx:964:تتحدد الحالة تلقائياً وفق العقد النشط والصيانة.
+src/ui/Properties.tsx:967:الإيجار الافتراضي
+src/ui/Properties.tsx:972:الحد الأدنى للإيجار
+src/ui/Properties.tsx:976:المساحة (م²)
+src/ui/Properties.tsx:981:خصائص الوحدة
+src/ui/Properties.tsx:984:غرف النوم
+src/ui/Properties.tsx:988:الحمامات
+src/ui/Properties.tsx:992:المطابخ
+src/ui/Properties.tsx:996:الصالات
+src/ui/PropertyMap.tsx:101:setSelectedUnit(unit)} />)}
+src/ui/PropertyMap.tsx:106:setSelectedUnit(null)} />}
+src/ui/PropertyMap.tsx:146:الوحدة شاغرة
+src/ui/PropertyMap.tsx:151:المستأجر:
+src/ui/PropertyMap.tsx:152:الهاتف:
+src/ui/PropertyMap.tsx:153:انتهاء العقد:
+src/ui/PropertyMap.tsx:154:الرصيد المستحق:
+src/ui/PropertyMap.tsx:160:handleNavigate('/contracts')} className="flex items-center gap-2 px-4 py-2 rounded-md bg-primary text-white">
+src/ui/PropertyMap.tsx:161:عرض العقد
+src/ui/PropertyMap.tsx:164:handleNavigate('/financial/maintenance')} className="flex items-center gap-2 px-4 py-2 rounded-md border border-border">
+src/ui/PropertyMap.tsx:165:إضافة صيانة
+src/ui/PropertyMap.tsx:85:خارطة العقارات
+src/ui/System.tsx:106:الإعدادات الحساسة
+src/ui/System.tsx:112:هذه الإعدادات تؤثر على البيانات المالية والأمان. تأكد قبل أي تغيير.
+src/ui/System.tsx:71:صلاحية غير كافية
+src/ui/System.tsx:72:هذا القسم مخصص للمديرين فقط. تواصل مع مدير النظام للحصول على الصلاحيات اللازمة.
+src/ui/System.tsx:91:مركز التحكم
+src/ui/Tenants.tsx:104:بحث بالاسم / الهاتف / الهوية
+src/ui/Tenants.tsx:112:كل الحالات
+src/ui/Tenants.tsx:113:نشط
+src/ui/Tenants.tsx:114:غير نشط
+src/ui/Tenants.tsx:115:قائمة سوداء
+src/ui/Tenants.tsx:118:تصدير CSV
+src/ui/Tenants.tsx:121:handleOpenModal()} className="btn btn-primary">إضافة مستأجر
+src/ui/Tenants.tsx:127:لا يوجد مستأجرون بعد
+src/ui/Tenants.tsx:128:ابدأ بإضافة بيانات المستأجرين لتتمكن من إنشاء العقود.
+src/ui/Tenants.tsx:129:handleOpenModal()} className="mt-6 btn btn-primary">إضافة مستأجر جديد
+src/ui/Tenants.tsx:136:الاسم
+src/ui/Tenants.tsx:137:الهاتف
+src/ui/Tenants.tsx:138:رقم الهوية
+src/ui/Tenants.tsx:139:الحالة
+src/ui/Tenants.tsx:140:إجراءات
+src/ui/Tenants.tsx:209:كشف حساب
+src/ui/Tenants.tsx:216:إجمالي الفوترة
+src/ui/Tenants.tsx:220:إجمالي المدفوع
+src/ui/Tenants.tsx:224:الرصيد المتبقي
+src/ui/Tenants.tsx:230:البيانات الشخصية
+src/ui/Tenants.tsx:243:الوحدة والعقد الحالي
+src/ui/Tenants.tsx:247:الإيجار الشهري:
+src/ui/Tenants.tsx:253:لا يوجد عقد نشط حالياً
+src/ui/Tenants.tsx:263:الوحدة
+src/ui/Tenants.tsx:264:البداية
+src/ui/Tenants.tsx:265:النهاية
+src/ui/Tenants.tsx:266:الإيجار
+src/ui/Tenants.tsx:267:الحالة
+src/ui/Tenants.tsx:292:لا توجد عقود
+src/ui/Tenants.tsx:300:الرقم
+src/ui/Tenants.tsx:301:التاريخ
+src/ui/Tenants.tsx:302:المبلغ
+src/ui/Tenants.tsx:303:طريقة الدفع
+src/ui/Tenants.tsx:314:لا توجد مدفوعات
+src/ui/Tenants.tsx:322:الوصف
+src/ui/Tenants.tsx:323:التاريخ
+src/ui/Tenants.tsx:324:التكلفة
+src/ui/Tenants.tsx:325:الحالة
+src/ui/Tenants.tsx:33:getEffectiveInvoiceStatus(i, graceDays) === 'OVERDUE' && i.dueDate
+src/ui/Tenants.tsx:422:الاسم
+src/ui/Tenants.tsx:423:setName(e.target.value)} required />
+src/ui/Tenants.tsx:426:نوع المستأجر
+src/ui/Tenants.tsx:427:setTenantType(e.target.value as 'INDIVIDUAL' | 'COMPANY')}>
+src/ui/Tenants.tsx:428:فرد
+src/ui/Tenants.tsx:429:شركة
+src/ui/Tenants.tsx:433:الهاتف
+src/ui/Tenants.tsx:434:setPhone(e.target.value)} />
+src/ui/Tenants.tsx:437:البريد الإلكتروني
+src/ui/Tenants.tsx:438:setEmail(e.target.value)} />
+src/ui/Tenants.tsx:441:رقم الهوية
+src/ui/Tenants.tsx:442:setIdNo(e.target.value)} />
+src/ui/Tenants.tsx:445:الجنسية
+src/ui/Tenants.tsx:446:setNationality(e.target.value)} />
+src/ui/Tenants.tsx:450:رقم السجل التجاري
+src/ui/Tenants.tsx:451:setCrNumber(e.target.value)} />
+src/ui/Tenants.tsx:455:الحالة
+src/ui/Tenants.tsx:456:setStatus(e.target.value as Tenant['status'])}>
+src/ui/Tenants.tsx:457:نشط
+src/ui/Tenants.tsx:458:غير نشط
+src/ui/Tenants.tsx:459:قائمة سوداء
+src/ui/Tenants.tsx:464:العنوان
+src/ui/Tenants.tsx:467:العنوان
+src/ui/Tenants.tsx:468:setAddress(e.target.value)} />
+src/ui/Tenants.tsx:471:الرمز البريدي
+src/ui/Tenants.tsx:472:setPostalCode(e.target.value)} />
+src/ui/Tenants.tsx:475:صندوق البريد
+src/ui/Tenants.tsx:476:setPoBox(e.target.value)} />
+src/ui/Tenants.tsx:481:ملاحظات
+src/ui/Tenants.tsx:482:setNotes(e.target.value)} />
+src/ui/Tenants.tsx:489:إلغاء
+src/ui/Tenants.tsx:99:قائمة المستأجرين
+src/ui/financial/Arrears.tsx:13:(invoice.status === 'OVERDUE' || invoice.status === 'UNPAID') && new Date(invoice.dueDate)
+src/ui/financial/Arrears.tsx:33:المتأخرات
+src/ui/financial/Arrears.tsx:36:عرض الفواتير
+src/ui/financial/Arrears.tsx:42:لا توجد متأخرات حالياً.
+src/utils/invoices/invoiceCalculations.ts:63:(!dateFrom || inv.dueDate >= dateFrom) && (!dateTo || inv.dueDate
+src/utils/sanitizeHeaders.ts:1:): Record
+src/utils/validation.ts:30:(fn: () => Promise
+src/utils/validation.ts:30:, fallbackMessage: string): Promise
