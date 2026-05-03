@@ -16,6 +16,22 @@ type GenericTable = {
   Relationships: never[];
 };
 
+export type BalanceReconciliationRow = {
+  entity_type: string;
+  entity_id: string;
+  entity_name: string;
+  ledger_value: number;
+  cached_value: number;
+  drift: number;
+  reconciliation_status: 'OK' | 'WARN' | 'CRITICAL';
+  checked_at: string;
+};
+
+type GenericView = {
+  Row: Record<string, unknown>;
+  Relationships: never[];
+};
+
 export interface Database {
   public: {
     Tables: {
@@ -27,7 +43,17 @@ export interface Database {
       };
       [key: string]: GenericTable;
     };
-    Views: Record<string, never>;
+    Views: {
+      v_balance_reconciliation: {
+        Row: BalanceReconciliationRow;
+        Relationships: never[];
+      };
+      v_balance_reconciliation_drift: {
+        Row: BalanceReconciliationRow;
+        Relationships: never[];
+      };
+      [key: string]: GenericView;
+    };
     Functions: Record<string, { Args: Record<string, any>; Returns: any }>;
     Enums: Record<string, string>;
     CompositeTypes: Record<string, never>;

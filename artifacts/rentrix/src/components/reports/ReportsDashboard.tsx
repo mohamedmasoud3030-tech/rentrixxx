@@ -9,6 +9,7 @@ import {
 } from 'recharts';
 import { Lock, RefreshCw, CheckCircle, AlertTriangle, XCircle } from 'lucide-react';
 import { supabase } from '@/services/api/supabaseClient';
+import type { BalanceReconciliationRow } from '@/types/supabase';
 
 // ─── Types ───────────────────────────────────────────────────
 type ReportId =
@@ -17,16 +18,7 @@ type ReportId =
   | 'rent_roll' | 'owner_statement' | 'tenant_statement'
   | 'reconciliation';
 
-interface ReconciliationRow {
-  entity_type: string;
-  entity_id: string;
-  entity_name: string;
-  ledger_value: number;
-  cached_value: number;
-  drift: number;
-  reconciliation_status: 'OK' | 'WARN' | 'CRITICAL';
-  checked_at: string;
-}
+type ReconciliationRow = BalanceReconciliationRow;
 
 interface DateRange { from: string; to: string }
 type LoadState = 'idle' | 'loading' | 'done' | 'error';
@@ -870,17 +862,19 @@ const ReconciliationView: React.FC = () => {
 
   const load = useCallback(async () => {
     setLoadState('loading');
-    const { data, error } = await (supabase as any)
+    const { data, error } = await supabase
       .from('v_balance_reconciliation')
-      .select('entity_type,entity_id,entity_name,ledger_value,cached_value,drift,reconciliation_status,checked_at')
-      .order('drift', { ascending: false, nullsFirst: false });
+      .select('entity_type,entity_id,entity_name,ledger_value,cached_value,drift,reconciliation_status,checked_at');
     if (error) { setLoadState('error'); return; }
-    setRows((data ?? []) as ReconciliationRow[]);
-    if ((data ?? []).length > 0) setLastChecked((data as ReconciliationRow[])[0].checked_at);
+    setRows(data ?? []);
+    if (data && data.length > 0) setLastChecked(data[0].checked_at);
     setLoadState('done');
   }, []);
 
-  useEffect(() => { void load(); }, [load]);
+  useEffect(() => {
+    if (!isAdmin) return;
+    void load();
+  }, [isAdmin, load]);
 
   const handleRebuild = useCallback(async () => {
     if (!isAdmin) return;
@@ -1037,13 +1031,15 @@ const REPORTS: { id: ReportId; label: string; group: string }[] = [
 ];
 
 const ReportsDashboard: React.FC = () => {
-  const { settings, db } = useApp();
+  const { settings, db, auth } = useApp();
   const currency = settings.operational?.currency ?? 'OMR';
   const owners = db.owners || [];
   const contracts = db.contracts || [];
+  const isAdmin = auth.currentUser?.role === 'ADMIN';
   const [active, setActive] = useState<ReportId>('summary');
 
-  const groups = Array.from(new Set(REPORTS.map(r => r.group)));
+  const visibleReports = REPORTS.filter(r => r.id !== 'reconciliation' || isAdmin);
+  const groups = Array.from(new Set(visibleReports.map(r => r.group)));
 
   const renderContent = () => {
     switch (active) {
@@ -1072,7 +1068,7 @@ const ReportsDashboard: React.FC = () => {
         {groups.map(group => (
           <div key={group} className="mb-3">
             <p className="text-[10px] font-black text-text-muted uppercase tracking-widest px-2 mb-1">{group}</p>
-            {REPORTS.filter(r => r.group === group).map(r => (
+            {visibleReports.filter(r => r.group === group).map(r => (
               <button key={r.id} onClick={() => setActive(r.id)}
                 className={`w-full text-right text-sm px-3 py-2 rounded-xl font-bold transition-all active:scale-[0.98] ${
                   active === r.id
