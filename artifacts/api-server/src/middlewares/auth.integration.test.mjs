@@ -161,3 +161,73 @@ describe('requireRole("ADMIN") — PATCH /api/properties/:id', () => {
     );
   });
 });
+
+// ---------------------------------------------------------------------------
+// New core read routes — auth enforcement + response shape
+// ---------------------------------------------------------------------------
+
+for (const route of ['/api/units', '/api/contracts', '/api/invoices']) {
+  describe(`requireAuth — GET ${route}`, () => {
+    test('returns 401 without token', async () => {
+      const res = await request(route);
+      assert.equal(res.status, 401, `${route} should require auth: ${JSON.stringify(res.body)}`);
+    });
+
+    test('returns 401 with malformed token', async () => {
+      const res = await request(route, { token: 'bad.token.here' });
+      assert.equal(res.status, 401, `${route} should reject bad token: ${JSON.stringify(res.body)}`);
+    });
+  });
+
+  describe(`requireRole("USER") — GET ${route}`, () => {
+    test('USER token: 200 with data array', async () => {
+      const token = await signJwt('USER');
+      const res = await request(route, { token });
+      assert.equal(res.status, 200, `USER should access ${route}: ${JSON.stringify(res.body)}`);
+      assert.ok('data' in res.body, `${route} response must have a data field`);
+      assert.ok(Array.isArray(res.body.data), `${route} data must be an array`);
+    });
+
+    test('ADMIN token: 200 with data array (ADMIN satisfies USER requirement)', async () => {
+      const token = await signJwt('ADMIN');
+      const res = await request(route, { token });
+      assert.equal(res.status, 200, `ADMIN should access ${route}: ${JSON.stringify(res.body)}`);
+      assert.ok(Array.isArray(res.body.data), `${route} data must be an array`);
+    });
+  });
+}
+
+describe('contracts response shape — field mapping', () => {
+  test('contract rows use frontend aliases (rent, start, end) not DB names (rentAmount, startDate, endDate)', async () => {
+    const token = await signJwt('USER');
+    const res = await request('/api/contracts', { token });
+    assert.equal(res.status, 200, JSON.stringify(res.body));
+
+    // If there are any rows, validate the field mapping
+    if (res.body.data.length > 0) {
+      const first = res.body.data[0];
+      assert.ok('rent'  in first, `contract row must have 'rent' alias, got: ${Object.keys(first).join(', ')}`);
+      assert.ok('start' in first, `contract row must have 'start' alias`);
+      assert.ok('end'   in first, `contract row must have 'end' alias`);
+      assert.ok(!('rentAmount' in first), `contract row must NOT expose raw 'rentAmount' DB field`);
+      assert.ok(!('startDate'  in first), `contract row must NOT expose raw 'startDate' DB field`);
+      assert.ok(!('endDate'    in first), `contract row must NOT expose raw 'endDate' DB field`);
+    }
+    // Empty dataset is still a valid pass (no rows in test DB)
+  });
+});
+
+describe('properties response shape — full column set', () => {
+  test('property rows include all expected fields', async () => {
+    const token = await signJwt('USER');
+    const res = await request('/api/properties', { token });
+    assert.equal(res.status, 200, JSON.stringify(res.body));
+
+    if (res.body.data.length > 0) {
+      const first = res.body.data[0];
+      for (const field of ['id', 'name', 'type', 'location', 'ownerId', 'organizationId', 'createdAt']) {
+        assert.ok(field in first, `property row must include '${field}'`);
+      }
+    }
+  });
+});

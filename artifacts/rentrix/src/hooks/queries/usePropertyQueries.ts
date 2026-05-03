@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { useFetchAll, useDataMutation } from './useDataQueries';
-import { supabaseData } from '@/services/supabaseDataService';
+import { apiGet } from '@/services/api/apiClient';
 
 export interface Property {
   id: string;
@@ -8,14 +8,14 @@ export interface Property {
   address?: string;
   type?: string;
   status?: string;
-  // Add other relevant fields
 }
 
 /**
- * Hook for managing properties with optimized caching
+ * Hook for managing properties with optimized caching.
+ * Reads go through the Express API layer (/api/properties).
  */
 export function useProperties() {
-  const query = useFetchAll<Property>('properties', 1000 * 60 * 10); // 10 mins stale time for properties
+  const query = useFetchAll<Property>('properties', 1000 * 60 * 10);
   const mutations = useDataMutation<Property>('properties');
 
   return {
@@ -29,19 +29,19 @@ export function useProperties() {
 }
 
 /**
- * Specialized hook for property stats or dashboard data
+ * Specialized hook for property stats derived from the API-fetched list.
  */
 export function usePropertyStats() {
   return useQuery({
     queryKey: ['properties', 'stats'],
     queryFn: async () => {
-      const data = await supabaseData.fetchAll<Property>('properties');
+      const result = await apiGet<{ data: Property[] }>('/api/properties');
+      const data = result.data;
       return {
         total: data.length,
         active: data.filter(p => p.status === 'active').length,
-        // Add more complex logic as needed
       };
     },
-    staleTime: 1000 * 60 * 15, // Stats can be more stale
+    staleTime: 1000 * 60 * 15,
   });
 }

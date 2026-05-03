@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import { Database, Settings, Expense, Invoice, AppContextType, PerformanceMetrics } from '../types';
 import { supabaseData } from '../services/supabaseDataService';
+import { apiGet } from '../services/api/apiClient';
 import { toast } from 'react-hot-toast';
 import { logger } from '../infrastructure/observability';
 import { confirmDialog } from '../components/shared/confirmDialog';
@@ -110,9 +111,29 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   useEffect(() => { auditFnRef.current = audit; }, [audit]);
 
+  const CORE_TABLES = new Set(['properties', 'units', 'contracts', 'invoices']);
+
   const refreshData = useCallback(async () => {
     try {
-      const data = await supabaseData.getAllData();
+      // Core tables (properties, units, contracts, invoices) are fetched exclusively
+      // through the authenticated Express API layer so server-side business rules and
+      // access control are enforced. Supabase is used for all other tables only.
+      const [baseData, propertiesRes, unitsRes, contractsRes, invoicesRes] = await Promise.all([
+        supabaseData.getAllData(CORE_TABLES),
+        apiGet<{ data: Database['properties'] }>('/api/properties'),
+        apiGet<{ data: Database['units'] }>('/api/units'),
+        apiGet<{ data: Database['contracts'] }>('/api/contracts'),
+        apiGet<{ data: Database['invoices'] }>('/api/invoices'),
+      ]);
+
+      const data: Database = {
+        ...baseData,
+        properties: propertiesRes.data,
+        units: unitsRes.data,
+        contracts: contractsRes.data,
+        invoices: invoicesRes.data,
+      };
+
       setDb(data);
       setIsDataStale(false);
     } catch (err) {

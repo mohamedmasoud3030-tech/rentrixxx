@@ -6,6 +6,13 @@ export interface AuthUser {
   id: string;
   email: string;
   role: "ADMIN" | "USER";
+  /**
+   * Organization ID extracted exclusively from the server-controlled
+   * `app_metadata.organization_id` JWT claim (set by a Supabase custom access
+   * token hook). Never populated from user_metadata or top-level claims to
+   * prevent authenticated users from forging their own tenant scope.
+   */
+  organizationId?: string;
 }
 
 declare global {
@@ -72,6 +79,10 @@ export async function requireAuth(
 
     const email = (payload["email"] as string) ?? "";
 
+    // Role resolution: prefer server-controlled app_metadata so ADMIN cannot be
+    // self-assigned via user_metadata. Fall back through user_metadata and the
+    // top-level claim only for the USER role — the worst outcome of a spoofed
+    // USER claim is no privilege escalation (USER is the minimum allowed role).
     const appMetadata = (payload["app_metadata"] as Record<string, unknown>) ?? {};
     const userMetadata = (payload["user_metadata"] as Record<string, unknown>) ?? {};
     const rawRole =
@@ -82,7 +93,16 @@ export async function requireAuth(
       userMetadata["role"];
     const role: AuthUser["role"] = rawRole === "ADMIN" ? "ADMIN" : "USER";
 
-    req.user = { id: sub, email, role };
+    // organization_id is read ONLY from server-controlled app_metadata (set by
+    // a Supabase custom access token hook). Reading it from user_metadata or
+    // top-level claims is intentionally avoided to prevent cross-tenant access.
+    const rawOrgId = appMetadata["organization_id"];
+    const organizationId =
+      typeof rawOrgId === "string" && rawOrgId.trim() !== ""
+        ? rawOrgId.trim()
+        : undefined;
+
+    req.user = { id: sub, email, role, ...(organizationId ? { organizationId } : {}) };
     next();
   } catch (err) {
     logger.warn({ err }, "[requireAuth] JWT verification failed");

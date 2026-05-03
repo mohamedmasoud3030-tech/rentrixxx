@@ -531,7 +531,7 @@ export const supabaseData = {
     }
   },
 
-  async getAllData(): Promise<Database> {
+  async getAllData(skipTables?: Set<string>): Promise<Database> {
     const tables = [
       'owners', 'properties', 'units', 'tenants', 'contracts',
       'invoices', 'receipts', 'receiptAllocations', 'expenses',
@@ -544,7 +544,10 @@ export const supabaseData = {
 
     const limitedTables = new Set(['auditLog', 'snapshots', 'appNotifications', 'outgoingNotifications']);
     const results = await Promise.all(
-      tables.map(t => limitedTables.has(t) ? this.fetchRecent(t, 200) : this.fetchAll(t))
+      tables.map(t => {
+        if (skipTables?.has(t)) return Promise.resolve([]);
+        return limitedTables.has(t) ? this.fetchRecent(t, 200) : this.fetchAll(t);
+      })
     );
     const dataMap: Record<string, unknown[]> = {};
     tables.forEach((t, i) => { dataMap[t] = results[i]; });
