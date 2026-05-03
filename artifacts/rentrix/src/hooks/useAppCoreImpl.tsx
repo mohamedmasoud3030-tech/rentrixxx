@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
-import { Database, Settings, Expense, Invoice, AppContextType, PerformanceMetrics, Receipt } from '../types';
+import { Database, Settings, Expense, Invoice, AppContextType, PerformanceMetrics } from '../types';
 import { supabaseData } from '../services/supabaseDataService';
 import { toast } from 'react-hot-toast';
 import { logger } from '../infrastructure/observability';
@@ -52,6 +52,13 @@ const DEFAULT_EMPTY_DB: Database = {
   leads: [], lands: [], commissions: [], missions: [], budgets: [], attachments: [], utilityRecords: [],
 };
 
+/** Extracts a human-readable message from an unknown error value. */
+function errMsg(err: unknown): string {
+  if (err instanceof Error) return err.message;
+  if (typeof err === 'string') return err;
+  return 'خطأ غير معروف';
+}
+
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export const useApp = (): AppContextType => {
@@ -97,7 +104,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         createdAt: Date.now(),
       });
     } catch (err) {
-      logger.error('Audit log failed', { message: err instanceof Error ? err.message : 'unknown_error' });
+      logger.error('Audit log failed', { message: errMsg(err) });
     }
   }, []);
 
@@ -109,7 +116,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       setDb(data);
       setIsDataStale(false);
     } catch (err) {
-      logger.error('Refresh data failed', { message: err instanceof Error ? err.message : 'unknown_error' });
+      logger.error('Refresh data failed', { message: errMsg(err) });
       toast.error('فشل تحديث البيانات');
     } finally {
       setIsLoading(false);
@@ -121,15 +128,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const finance = useFinanceHook(db, settings, isReadOnly, refreshData, audit, setIsDataStale, logOperationTime);
   const operations = useOperationsHook(db, settings, isReadOnly, refreshData, audit, setIsDataStale, logOperationTime);
 
-  // ─────────────────────────────────────────────────────────────────────────────
-  // DATA SERVICE
-  // ─────────────────────────────────────────────────────────────────────────────
+  // ── Data Service ─────────────────────────────────────────────────────────────
 
   const add: AppContextType['dataService']['add'] = useCallback(async (table, entry) => {
     if (isReadOnly) { toast.error('لا يمكن إضافة سجلات في وضع القراءة فقط'); return null; }
     try {
       if (table === 'tenants') {
-        const incomingIdNo = String((entry as any).idNo || '').trim();
+        const incomingIdNo = String((entry as { idNo?: unknown }).idNo || '').trim();
         if (db?.tenants?.some(t => t.idNo === incomingIdNo)) {
           toast.error('رقم الهوية مستخدم مسبقاً.');
           return null;
@@ -138,11 +143,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
       const id = crypto.randomUUID();
       const now = Date.now();
-      const mutableEntry: any = { ...entry, id, createdAt: now };
+      const mutableEntry: Record<string, unknown> = { ...entry, id, createdAt: now };
 
-      const serialKeyMap: any = { receipts: 'receipt', expenses: 'expense', invoices: 'invoice', ownerSettlements: 'ownerSettlement', maintenanceRecords: 'maintenance', contracts: 'contract' };
-      if (serialKeyMap[table]) {
-        mutableEntry.no = String(await supabaseData.incrementSerial(serialKeyMap[table]));
+      const serialKeyMap: Record<string, string> = { receipts: 'receipt', expenses: 'expense', invoices: 'invoice', ownerSettlements: 'ownerSettlement', maintenanceRecords: 'maintenance', contracts: 'contract' };
+      if (serialKeyMap[table as string]) {
+        mutableEntry['no'] = String(await supabaseData.incrementSerial(serialKeyMap[table as string]));
       }
 
       const result = await supabaseData.insert(table as string, mutableEntry);
@@ -151,9 +156,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       await audit('CREATE', String(table), id);
 
       if (table === 'invoices') {
-        await finance.postInvoiceJournalEntries(mutableEntry as Invoice);
+        await finance.postInvoiceJournalEntries(mutableEntry as unknown as Invoice);
       } else if (table === 'expenses') {
-        const e = mutableEntry as Expense;
+        const e = mutableEntry as unknown as Expense;
         const mappings = settings.accounting.accountMappings;
         const cashAccount = mappings.paymentMethods.CASH;
         if (e.chargedTo === 'OWNER') {
@@ -165,9 +170,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       }
 
       await refreshData();
-      return result.data as any;
-    } catch (err: any) {
-      toast.error('فشل في إضافة السجل: ' + err.message);
+      return result.data as ReturnType<AppContextType['dataService']['add']> extends Promise<infer R> ? R : never;
+    } catch (err) {
+      toast.error('فشل في إضافة السجل: ' + errMsg(err));
       return null;
     }
   }, [db, isReadOnly, settings, audit, refreshData, finance]);
@@ -175,7 +180,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const update: AppContextType['dataService']['update'] = useCallback(async (table, id, updates) => {
     if (isReadOnly) { toast.error('لا يمكن التعديل في وضع القراءة فقط'); return; }
     try {
-      const normalizedUpdates = TABLES_WITHOUT_UPDATED_AT.has(table as any) ? updates : { ...updates, updatedAt: Date.now() };
+      const normalizedUpdates = TABLES_WITHOUT_UPDATED_AT.has(table as keyof Database) ? updates : { ...updates, updatedAt: Date.now() };
       const result = await supabaseData.update(table as string, id, normalizedUpdates);
       if (!result.ok) throw new Error(result.error || 'Update failed');
 
@@ -183,8 +188,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       if (FINANCIAL_TABLES.has(table as keyof Database)) setIsDataStale(true);
       await refreshData();
       toast.success('تم التحديث بنجاح!');
-    } catch (err: any) {
-      toast.error('خطأ أثناء التحديث: ' + err.message);
+    } catch (err) {
+      toast.error('خطأ أثناء التحديث: ' + errMsg(err));
     }
   }, [audit, refreshData, isReadOnly]);
 
@@ -201,15 +206,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         await refreshData();
         toast.success('تم الحذف بنجاح');
       }
-    } catch (err: any) {
-      toast.error('خطأ أثناء الحذف: ' + err.message);
+    } catch (err) {
+      toast.error('خطأ أثناء الحذف: ' + errMsg(err));
     }
   }, [audit, refreshData, operations]);
 
-  // ─────────────────────────────────────────────────────────────────────────────
-  // P0 — CRITICAL: addReceiptWithAllocations
-  // Validates contract/invoice integrity, builds journal entries, posts atomically
-  // ─────────────────────────────────────────────────────────────────────────────
+  // ── addReceiptWithAllocations ─────────────────────────────────────────────────
+  // Validates referential integrity, builds journal entries, then posts atomically
+  // via the post_receipt_atomic Supabase RPC (idempotent, single transaction).
 
   const addReceiptWithAllocations: AppContextType['financeService']['addReceiptWithAllocations'] = useCallback(
     async (receiptData, allocations) => {
@@ -219,18 +223,18 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       }
       const startTime = performance.now();
       try {
-        // RULE: Contract must exist
+        // Contract must exist
         const contract = db.contracts.find(c => c.id === receiptData.contractId);
         if (!contract) return { success: false, error: 'العقد غير موجود أو محذوف' };
 
-        // RULE: Allocations must sum to receipt amount (within rounding tolerance)
+        // Allocations must sum to receipt amount (within rounding tolerance)
         const totalAllocated = round3(allocations.reduce((s, a) => s + a.amount, 0));
         if (Math.abs(totalAllocated - receiptData.amount) > 0.01) {
           toast.error(`مجموع التخصيصات (${totalAllocated}) لا يساوي مبلغ السند (${receiptData.amount})`);
           return { success: false, error: 'allocation_mismatch' };
         }
 
-        // RULE: Every invoice must exist and belong to this contract
+        // Every invoice must exist and belong to this contract (no cross-contract allocations)
         for (const alloc of allocations) {
           const invoice = db.invoices.find(i => i.id === alloc.invoiceId);
           if (!invoice) return { success: false, error: `الفاتورة ${alloc.invoiceId.slice(0, 8)} غير موجودة` };
@@ -239,28 +243,27 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           }
         }
 
-        // Build receipt identifiers
         const receiptId = crypto.randomUUID();
         const now = Date.now();
         const receiptNo = String(await supabaseData.incrementSerial('receipt'));
         const voucherNo = String(await supabaseData.incrementSerial('journalEntry'));
         const date = receiptData.dateTime?.slice(0, 10) || new Date().toISOString().slice(0, 10);
 
-        // Build journal entries (DR: Cash/Bank account, CR: Accounts Receivable)
+        // DR: Cash/Bank account per payment channel; CR: Accounts Receivable
         const mappings = settings.accounting.accountMappings;
         const arAccount = mappings.accountsReceivable;
         const cashAccount =
           mappings.paymentMethods[receiptData.channel as keyof typeof mappings.paymentMethods] ||
           mappings.paymentMethods.CASH;
 
-        const journalEntries = [
+        const journalEntries: ReceiptPostingPayload['journalEntries'] = [
           {
             id: crypto.randomUUID(), no: voucherNo, date,
             account_id: cashAccount,
             amount: round3(receiptData.amount),
-            type: 'DEBIT' as const,
+            type: 'DEBIT',
             source_id: receiptId,
-            entity_type: 'CONTRACT' as const,
+            entity_type: 'CONTRACT',
             entity_id: receiptData.contractId,
             created_at: now,
           },
@@ -268,9 +271,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             id: crypto.randomUUID(), no: voucherNo, date,
             account_id: arAccount,
             amount: round3(receiptData.amount),
-            type: 'CREDIT' as const,
+            type: 'CREDIT',
             source_id: receiptId,
-            entity_type: 'CONTRACT' as const,
+            entity_type: 'CONTRACT',
             entity_id: receiptData.contractId,
             created_at: now,
           },
@@ -287,10 +290,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             ref: receiptData.ref || '',
             notes: receiptData.notes || '',
             status: 'POSTED',
-            check_number: receiptData.checkNumber || null,
-            check_bank: receiptData.checkBank || null,
-            check_date: receiptData.checkDate || null,
-            check_status: receiptData.checkStatus || null,
+            check_number: receiptData.checkNumber ?? null,
+            check_bank: receiptData.checkBank ?? null,
+            check_date: receiptData.checkDate ?? null,
+            check_status: receiptData.checkStatus ?? null,
             voided_at: null,
             created_at: now,
             updated_at: now,
@@ -315,21 +318,19 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         logOperationTime('addReceipt', performance.now() - startTime);
         setIsDataStale(true);
         await refreshData();
-        toast.success(`✓ تم تسجيل السند رقم ${receiptNo} بنجاح`);
+        toast.success(`تم تسجيل السند رقم ${receiptNo} بنجاح`);
         return { success: true, receiptNo, allocatedTotal: totalAllocated };
-      } catch (err: any) {
-        logger.error('[addReceiptWithAllocations] failed', { message: err?.message });
-        toast.error('فشل تسجيل السند: ' + (err?.message || 'خطأ غير معروف'));
-        return { success: false, error: err?.message || 'unknown' };
+      } catch (err) {
+        logger.error('[addReceiptWithAllocations] failed', { message: errMsg(err) });
+        toast.error('فشل تسجيل السند: ' + errMsg(err));
+        return { success: false, error: errMsg(err) };
       }
     },
     [db, isReadOnly, settings, audit, refreshData, logOperationTime, setIsDataStale]
   );
 
-  // ─────────────────────────────────────────────────────────────────────────────
-  // P0 — CRITICAL: addManualJournalVoucher
-  // Enforces debit == credit balance invariant before posting
-  // ─────────────────────────────────────────────────────────────────────────────
+  // ── addManualJournalVoucher ────────────────────────────────────────────────────
+  // Enforces debit == credit balance invariant before posting any lines.
 
   const addManualJournalVoucher: AppContextType['financeService']['addManualJournalVoucher'] = useCallback(
     async (voucher) => {
@@ -353,20 +354,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         const sourceId = `MJV-${voucherNo}`;
 
         const entries = voucher.lines.flatMap(line => {
-          const rows = [];
+          const rows: object[] = [];
           if ((line.debit || 0) > 0.001) {
-            rows.push({
-              id: crypto.randomUUID(), no: voucherNo, date: voucher.date,
-              accountId: line.accountId, amount: round3(line.debit),
-              type: 'DEBIT' as const, sourceId, createdAt: now,
-            });
+            rows.push({ id: crypto.randomUUID(), no: voucherNo, date: voucher.date, accountId: line.accountId, amount: round3(line.debit), type: 'DEBIT', sourceId, createdAt: now });
           }
           if ((line.credit || 0) > 0.001) {
-            rows.push({
-              id: crypto.randomUUID(), no: voucherNo, date: voucher.date,
-              accountId: line.accountId, amount: round3(line.credit),
-              type: 'CREDIT' as const, sourceId, createdAt: now,
-            });
+            rows.push({ id: crypto.randomUUID(), no: voucherNo, date: voucher.date, accountId: line.accountId, amount: round3(line.credit), type: 'CREDIT', sourceId, createdAt: now });
           }
           return rows;
         });
@@ -376,52 +369,41 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         logOperationTime('addManualJournalVoucher', performance.now() - startTime);
         setIsDataStale(true);
         await refreshData();
-        toast.success(`✓ تم ترحيل القيد اليدوي رقم ${voucherNo}`);
-      } catch (err: any) {
-        logger.error('[addManualJournalVoucher] failed', { message: err?.message });
-        toast.error('فشل ترحيل القيد: ' + (err?.message || 'خطأ غير معروف'));
+        toast.success(`تم ترحيل القيد اليدوي رقم ${voucherNo}`);
+      } catch (err) {
+        logger.error('[addManualJournalVoucher] failed', { message: errMsg(err) });
+        toast.error('فشل ترحيل القيد: ' + errMsg(err));
       }
     },
     [isReadOnly, audit, refreshData, logOperationTime, setIsDataStale]
   );
 
-  // ─────────────────────────────────────────────────────────────────────────────
-  // P0 — CRITICAL: fetchPaginatedData
-  // Wired to supabaseData.fetchPaginated — replaces the stub that returned []
-  // ─────────────────────────────────────────────────────────────────────────────
+  // ── fetchPaginatedData ────────────────────────────────────────────────────────
 
   const fetchPaginatedData: AppContextType['fetchPaginatedData'] = useCallback(
     async (table, page, pageSize, orderBy, ascending) => {
       try {
-        const result = await supabaseData.fetchPaginated<any>(
+        const result = await supabaseData.fetchPaginated<unknown>(
           table as string, page, pageSize, orderBy, ascending
         );
-        return { data: result.data as any, total: result.total };
-      } catch (err: any) {
-        logger.error('[fetchPaginatedData] failed', { message: err?.message, table });
-        return { data: [] as any, total: 0 };
+        return { data: result.data as unknown as Database[typeof table], total: result.total };
+      } catch (err) {
+        logger.error('[fetchPaginatedData] failed', { message: errMsg(err), table });
+        return { data: [] as unknown as Database[typeof table], total: 0 };
       }
     },
     []
   );
 
-  // ─────────────────────────────────────────────────────────────────────────────
-  // P0 — CRITICAL: sendWhatsApp
-  // Opens wa.me deep-link — primary collection communication channel in Arabic markets
-  // ─────────────────────────────────────────────────────────────────────────────
+  // ── sendWhatsApp ──────────────────────────────────────────────────────────────
+  // Opens a wa.me deep-link — primary tenant communication channel in Arabic markets.
 
   const sendWhatsApp = useCallback((phone: string, message: string) => {
-    if (!phone || !message) {
-      toast.error('رقم الهاتف والرسالة مطلوبان');
-      return;
-    }
+    if (!phone || !message) { toast.error('رقم الهاتف والرسالة مطلوبان'); return; }
     sendWhatsAppMessage(phone, message);
   }, []);
 
-  // ─────────────────────────────────────────────────────────────────────────────
-  // P1 — updateSettings
-  // Deep-merges partial settings and persists to Supabase settings table
-  // ─────────────────────────────────────────────────────────────────────────────
+  // ── updateSettings ────────────────────────────────────────────────────────────
 
   const updateSettings: AppContextType['updateSettings'] = useCallback(async (newSettings) => {
     try {
@@ -430,66 +412,54 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       await audit('UPDATE', 'settings', 'global', JSON.stringify(Object.keys(newSettings)));
       await refreshData();
       toast.success('تم حفظ الإعدادات بنجاح');
-    } catch (err: any) {
-      logger.error('[updateSettings] failed', { message: err?.message });
-      toast.error('فشل حفظ الإعدادات: ' + err?.message);
+    } catch (err) {
+      logger.error('[updateSettings] failed', { message: errMsg(err) });
+      toast.error('فشل حفظ الإعدادات: ' + errMsg(err));
     }
   }, [audit, refreshData]);
 
-  // ─────────────────────────────────────────────────────────────────────────────
-  // P1 — lockPeriod / unlockPeriod / setReadOnly
-  // Persists governance state to Supabase, enforced on every write operation
-  // ─────────────────────────────────────────────────────────────────────────────
+  // ── lockPeriod / unlockPeriod / setReadOnly ───────────────────────────────────
 
   const lockPeriod: AppContextType['lockPeriod'] = useCallback(async (ym) => {
     try {
-      const current = db.governance;
-      const next = lockPeriodState(current, ym);
-      const ok = await supabaseData.saveGovernance(next);
+      const ok = await supabaseData.saveGovernance(lockPeriodState(db.governance, ym));
       if (!ok) throw new Error('saveGovernance failed');
       await audit('UPDATE', 'governance', 'lock', `Locked period: ${ym}`);
       await refreshData();
       toast.success(`تم قفل الفترة ${ym}`);
-    } catch (err: any) {
-      logger.error('[lockPeriod] failed', { message: err?.message });
-      toast.error('فشل قفل الفترة: ' + err?.message);
+    } catch (err) {
+      logger.error('[lockPeriod] failed', { message: errMsg(err) });
+      toast.error('فشل قفل الفترة: ' + errMsg(err));
     }
   }, [db.governance, audit, refreshData]);
 
   const unlockPeriod: AppContextType['unlockPeriod'] = useCallback(async (ym) => {
     try {
-      const current = db.governance;
-      const next = unlockPeriodState(current, ym);
-      const ok = await supabaseData.saveGovernance(next);
+      const ok = await supabaseData.saveGovernance(unlockPeriodState(db.governance, ym));
       if (!ok) throw new Error('saveGovernance failed');
       await audit('UPDATE', 'governance', 'unlock', `Unlocked period: ${ym}`);
       await refreshData();
       toast.success(`تم فتح الفترة ${ym}`);
-    } catch (err: any) {
-      logger.error('[unlockPeriod] failed', { message: err?.message });
-      toast.error('فشل فتح الفترة: ' + err?.message);
+    } catch (err) {
+      logger.error('[unlockPeriod] failed', { message: errMsg(err) });
+      toast.error('فشل فتح الفترة: ' + errMsg(err));
     }
   }, [db.governance, audit, refreshData]);
 
   const setReadOnly: AppContextType['setReadOnly'] = useCallback(async (readOnly) => {
     try {
-      const current = db.governance;
-      const next = setReadOnlyState(current, readOnly);
-      const ok = await supabaseData.saveGovernance(next);
+      const ok = await supabaseData.saveGovernance(setReadOnlyState(db.governance, readOnly));
       if (!ok) throw new Error('saveGovernance failed');
       await audit('UPDATE', 'governance', 'readOnly', `Set readOnly: ${readOnly}`);
       await refreshData();
       toast.success(readOnly ? 'تم تفعيل وضع القراءة فقط' : 'تم إلغاء وضع القراءة فقط');
-    } catch (err: any) {
-      logger.error('[setReadOnly] failed', { message: err?.message });
-      toast.error('فشل تحديث الصلاحيات: ' + err?.message);
+    } catch (err) {
+      logger.error('[setReadOnly] failed', { message: errMsg(err) });
+      toast.error('فشل تحديث الصلاحيات: ' + errMsg(err));
     }
   }, [db.governance, audit, refreshData]);
 
-  // ─────────────────────────────────────────────────────────────────────────────
-  // P1 — createSnapshot
-  // Persists a full DB snapshot (JSON blob) to the snapshots table
-  // ─────────────────────────────────────────────────────────────────────────────
+  // ── createSnapshot ────────────────────────────────────────────────────────────
 
   const createSnapshot: AppContextType['createSnapshot'] = useCallback(async (note) => {
     try {
@@ -498,17 +468,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       await supabaseData.insert('snapshots', snapshot);
       await audit('CREATE', 'snapshots', snapshot.id, note);
       await refreshData();
-      toast.success('✓ تم إنشاء نقطة استرداد بنجاح');
-    } catch (err: any) {
-      logger.error('[createSnapshot] failed', { message: err?.message });
-      toast.error('فشل إنشاء نقطة الاسترداد: ' + err?.message);
+      toast.success('تم إنشاء نقطة استرداد بنجاح');
+    } catch (err) {
+      logger.error('[createSnapshot] failed', { message: errMsg(err) });
+      toast.error('فشل إنشاء نقطة الاسترداد: ' + errMsg(err));
     }
   }, [db, audit, refreshData]);
 
-  // ─────────────────────────────────────────────────────────────────────────────
-  // P1 — rebuildSnapshotsFromJournal
-  // Recomputes all balance views from journal entries ground truth
-  // ─────────────────────────────────────────────────────────────────────────────
+  // ── rebuildSnapshotsFromJournal ───────────────────────────────────────────────
+  // Recomputes all five balance-view tables from the journal entries ground truth.
 
   const rebuildSnapshotsFromJournal: AppContextType['rebuildSnapshotsFromJournal'] = useCallback(async () => {
     const startTime = performance.now();
@@ -528,117 +496,108 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       setIsDataStale(true);
       await refreshData();
       const duration = Math.round(performance.now() - startTime);
-      toast.success(`✓ تم إعادة بناء الأرصدة (${duration}ms)`);
+      toast.success(`تم إعادة بناء الأرصدة (${duration}ms)`);
       return { duration };
-    } catch (err: any) {
-      logger.error('[rebuildSnapshotsFromJournal] failed', { message: err?.message });
-      toast.error('فشل إعادة بناء الأرصدة: ' + err?.message);
+    } catch (err) {
+      logger.error('[rebuildSnapshotsFromJournal] failed', { message: errMsg(err) });
+      toast.error('فشل إعادة بناء الأرصدة: ' + errMsg(err));
       return { duration: 0 };
     }
   }, [db, audit, refreshData, setIsDataStale]);
 
-  // ─────────────────────────────────────────────────────────────────────────────
-  // P1 — generateOwnerPortalLink
-  // Generates a time-stamped token URL for owner self-service access
-  // ─────────────────────────────────────────────────────────────────────────────
+  // ── generateOwnerPortalLink ───────────────────────────────────────────────────
+  // Generates a cryptographically random UUID token, persists it in the owner
+  // record (owners.portalToken), and returns the portal URL. The portal page must
+  // query Supabase to verify the token matches the owner before showing data —
+  // the token alone is the credential for this read-only view.
 
   const generateOwnerPortalLink: AppContextType['generateOwnerPortalLink'] = useCallback(async (ownerId) => {
     try {
       const owner = db.owners.find(o => o.id === ownerId);
       if (!owner) throw new Error('المالك غير موجود');
 
-      // Encode a signed token: ownerId + expiry (48h) + simple HMAC-like checksum
-      const expires = Date.now() + 48 * 60 * 60 * 1000;
-      const payload = btoa(JSON.stringify({ ownerId, expires, name: owner.name }));
-      const checksum = btoa(`${ownerId}:${expires}`).slice(0, 12);
-      const token = `${payload}.${checksum}`;
+      // Use a cryptographically random token (UUID v4 = 128 bits of randomness).
+      // Stored server-side so the portal page can validate it via Supabase lookup.
+      const token = crypto.randomUUID();
+      await supabaseData.update('owners', ownerId, { portalToken: token });
+      await audit('CREATE', 'owners', ownerId, 'Generated portal access token');
 
-      const baseUrl = window.location.origin;
-      const link = `${baseUrl}/owner-portal?token=${encodeURIComponent(token)}`;
-
-      await audit('READ', 'owners', ownerId, 'Generated portal link');
+      const link = `${window.location.origin}/owner-portal?token=${encodeURIComponent(token)}`;
       return link;
-    } catch (err: any) {
-      logger.error('[generateOwnerPortalLink] failed', { message: err?.message });
-      toast.error('فشل إنشاء رابط البوابة: ' + err?.message);
+    } catch (err) {
+      logger.error('[generateOwnerPortalLink] failed', { message: errMsg(err) });
+      toast.error('فشل إنشاء رابط البوابة: ' + errMsg(err));
       return '';
     }
   }, [db.owners, audit]);
 
-  // ─────────────────────────────────────────────────────────────────────────────
-  // P1 — createBackup / restoreBackup
-  // Serializes full DB to JSON string (browser download) / restores from JSON
-  // ─────────────────────────────────────────────────────────────────────────────
+  // ── createBackup / restoreBackup ──────────────────────────────────────────────
 
   const createBackup: AppContextType['createBackup'] = useCallback(async () => {
     try {
-      const snapshot = createSnapshotPayload(db, 'Manual Backup', currentUserRef.current?.id || 'system');
+      const userId = currentUserRef.current?.id || 'system';
+      const snapshot = createSnapshotPayload(db, 'Manual Backup', userId);
       const jsonStr = JSON.stringify({ version: 1, createdAt: Date.now(), snapshot }, null, 2);
       await audit('CREATE', 'autoBackups', 'backup', 'Manual backup created');
-      toast.success('✓ تم إنشاء النسخة الاحتياطية — سيبدأ التنزيل');
+      toast.success('تم إنشاء النسخة الاحتياطية — سيبدأ التنزيل');
       return jsonStr;
-    } catch (err: any) {
-      logger.error('[createBackup] failed', { message: err?.message });
-      toast.error('فشل إنشاء النسخة الاحتياطية: ' + err?.message);
+    } catch (err) {
+      logger.error('[createBackup] failed', { message: errMsg(err) });
+      toast.error('فشل إنشاء النسخة الاحتياطية: ' + errMsg(err));
       return '';
     }
   }, [db, audit]);
 
   const restoreBackup: AppContextType['restoreBackup'] = useCallback(async (data) => {
     try {
-      const parsed = JSON.parse(data);
-      const snapshotData: string = parsed?.snapshot?.data;
-      if (!snapshotData) throw new Error('ملف النسخة الاحتياطية غير صالح أو تالف');
+      const parsed: unknown = JSON.parse(data);
+      if (typeof parsed !== 'object' || parsed === null) throw new Error('ملف غير صالح');
+      const snapshotData = (parsed as Record<string, unknown>)?.snapshot;
+      if (typeof snapshotData !== 'object' || snapshotData === null) throw new Error('ملف النسخة الاحتياطية غير صالح');
+      const rawData = (snapshotData as Record<string, unknown>)?.data;
+      if (typeof rawData !== 'string') throw new Error('محتوى النسخة الاحتياطية مفقود');
 
-      const restoredDb: Database = JSON.parse(snapshotData);
-      if (!restoredDb?.owners || !restoredDb?.contracts) throw new Error('البيانات المستردة ناقصة');
+      const restoredDb = JSON.parse(rawData) as Database;
+      if (!Array.isArray(restoredDb?.owners) || !Array.isArray(restoredDb?.contracts)) {
+        throw new Error('البيانات المستردة ناقصة أو تالفة');
+      }
 
-      // Persist restored settings and governance; full tables restored via snapshot
       await supabaseData.saveSettings(restoredDb.settings);
       await supabaseData.saveGovernance(restoredDb.governance);
       await audit('UPDATE', 'autoBackups', 'restore', 'Database restored from backup file');
       await refreshData();
-      toast.success('✓ تم استعادة النسخة الاحتياطية بنجاح');
-    } catch (err: any) {
-      logger.error('[restoreBackup] failed', { message: err?.message });
-      toast.error('فشل استعادة النسخة الاحتياطية: ' + err?.message);
+      toast.success('تم استعادة النسخة الاحتياطية بنجاح');
+    } catch (err) {
+      logger.error('[restoreBackup] failed', { message: errMsg(err) });
+      toast.error('فشل استعادة النسخة الاحتياطية: ' + errMsg(err));
     }
   }, [audit, refreshData]);
 
-  // ─────────────────────────────────────────────────────────────────────────────
-  // P1 — generateLateFees
-  // Delegates to automation service (same as generateMonthlyInvoices path)
-  // ─────────────────────────────────────────────────────────────────────────────
+  // ── generateLateFees ──────────────────────────────────────────────────────────
 
   const generateLateFees = useCallback(async (): Promise<number> => {
     if (!settings || !db) return 0;
     try {
       const result = await runManualAutomationService(db, settings, {
-        invoices: false,
-        lateFees: true,
-        notifications: false,
-        snapshots: false,
+        invoices: false, lateFees: true, notifications: false, snapshots: false,
       });
-      const created = (result as any).stats?.lateFeesCreated || 0;
+      const created = ((result as unknown) as Record<string, Record<string, number>>)?.stats?.lateFeesCreated || 0;
       if (created > 0) {
         setIsDataStale(true);
         await refreshData();
-        toast.success(`✓ تم توليد ${created} رسوم تأخير`);
+        toast.success(`تم توليد ${created} رسوم تأخير`);
       } else {
         toast('لا توجد فواتير مؤهلة لرسوم التأخير حالياً', { icon: 'ℹ️' });
       }
       return created;
-    } catch (err: any) {
-      logger.error('[generateLateFees] failed', { message: err?.message });
-      toast.error('فشل توليد رسوم التأخير: ' + err?.message);
+    } catch (err) {
+      logger.error('[generateLateFees] failed', { message: errMsg(err) });
+      toast.error('فشل توليد رسوم التأخير: ' + errMsg(err));
       return 0;
     }
   }, [db, settings, refreshData, setIsDataStale]);
 
-  // ─────────────────────────────────────────────────────────────────────────────
-  // P1 — updateNotificationTemplate
-  // Persists template updates to Supabase
-  // ─────────────────────────────────────────────────────────────────────────────
+  // ── updateNotificationTemplate ────────────────────────────────────────────────
 
   const updateNotificationTemplate: AppContextType['updateNotificationTemplate'] = useCallback(
     async (id, updates) => {
@@ -648,17 +607,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         await audit('UPDATE', 'notificationTemplates', id);
         await refreshData();
         toast.success('تم تحديث القالب بنجاح');
-      } catch (err: any) {
-        logger.error('[updateNotificationTemplate] failed', { message: err?.message });
-        toast.error('فشل تحديث القالب: ' + err?.message);
+      } catch (err) {
+        logger.error('[updateNotificationTemplate] failed', { message: errMsg(err) });
+        toast.error('فشل تحديث القالب: ' + errMsg(err));
       }
     },
     [audit, refreshData]
   );
 
-  // ─────────────────────────────────────────────────────────────────────────────
-  // CONTEXT VALUE — all methods wired, zero stubs remaining
-  // ─────────────────────────────────────────────────────────────────────────────
+  // ── Context value ─────────────────────────────────────────────────────────────
 
   const value: AppContextType = {
     db,
