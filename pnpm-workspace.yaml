@@ -169,6 +169,8 @@ overrides:
   path-to-regexp: ">=8.4.0"
   # GHSA-r5fr-rjxr-66jc / GHSA-f23m-r3pf-42rh (lodash <4.18.0)
   lodash: ">=4.18.0"
+  # GHSA-92pp-h63x-v22m (@hono/node-server <1.20.1)
+  "@hono/node-server": ">=1.20.1"
   # GHSA-c2c7-rcm5-vvqj / GHSA-3v7f-55p6-f55p (picomatch — fix all vulnerable paths)
   "vite>picomatch": ">=4.0.4"
   "micromatch>picomatch": ">=4.0.4"
