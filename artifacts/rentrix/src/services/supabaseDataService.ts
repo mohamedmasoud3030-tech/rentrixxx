@@ -153,14 +153,14 @@ export const supabaseData = {
       const { data, error } = await applyContractsVisibility(supabase.from(sqlTable).select(columns), jsTable);
       if (error) {
         logger.error(`[SupabaseData] fetchAll ${sqlTable} error`, { message: error?.message, code: error?.code });
-        return [];
+        throw new Error(`fetchAll ${sqlTable}: ${error.message}`);
       }
       const result = (data || []).map(row => toCamelObj(row, jsTable) as T);
       setCache(cacheKey, result);
       return result;
     } catch (err) {
       logger.error(`[SupabaseData] fetchAll ${sqlTable} exception`, { message: (err as any)?.message, code: (err as any)?.code });
-      return [];
+      throw err;
     }
   },
 
@@ -189,14 +189,18 @@ export const supabaseData = {
     // Final fallback: no ordering
     try {
       const columns = '*';
-      const { data } = await applyContractsVisibility(
+      const { data, error } = await applyContractsVisibility(
         supabase.from(sqlTable).select(columns), jsTable
       ).limit(limit);
+      if (error) {
+        logger.error(`[SupabaseData] fetchRecent ${sqlTable} fallback error`, { message: error?.message, code: error?.code });
+        throw new Error(`fetchRecent ${sqlTable}: ${error.message}`);
+      }
       return (data || []).map(row => toCamelObj(row, jsTable) as T);
     } catch (err) {
       logger.error(`[SupabaseData] fetchRecent ${sqlTable} failed`, { message: (err as any)?.message, code: (err as any)?.code });
+      throw err;
     }
-    return [];
   },
 
   async fetchRecentRaw(jsTable: string, limit = 1): Promise<Record<string, unknown>[]> {
@@ -224,14 +228,18 @@ export const supabaseData = {
 
     try {
       const columns = '*';
-      const { data } = await applyContractsVisibility(
+      const { data, error } = await applyContractsVisibility(
         supabase.from(sqlTable).select(columns), jsTable
       ).limit(limit);
+      if (error) {
+        logger.error(`[SupabaseData] fetchRecentRaw ${sqlTable} fallback error`, { message: error?.message, code: error?.code });
+        throw new Error(`fetchRecentRaw ${sqlTable}: ${error.message}`);
+      }
       return (data || []) as Record<string, unknown>[];
     } catch (err) {
       logger.error(`[SupabaseData] fetchRecentRaw ${sqlTable} failed`, { message: (err as any)?.message, code: (err as any)?.code });
+      throw err;
     }
-    return [];
   },
 
   async fetchOne<T>(jsTable: string, id: string | number): Promise<T | null> {
@@ -243,7 +251,9 @@ export const supabaseData = {
     const { data, error } = await applyContractsVisibility(supabase.from(sqlTable).select(columns).eq('id', id), jsTable).single();
     if (error) {
       logger.error(`[SupabaseData] fetchOne ${sqlTable} failed`, { message: error?.message, code: error?.code });
-      return null;
+      // PGRST116 = "no rows returned" — that is a valid "not found", not a DB failure
+      if (error.code === 'PGRST116') return null;
+      throw new Error(`fetchOne ${sqlTable} [${id}]: ${error.message}`);
     }
     const result = data ? toCamelObj(data, jsTable) as T : null;
     if (result !== null) setCache(cacheKey, result);
@@ -267,7 +277,10 @@ export const supabaseData = {
     const sqlTable = resolveTable(jsTable);
     const snakeRecord = toSnakeObj(record, jsTable);
     const { data, error } = await supabase.from(sqlTable).upsert(snakeRecord).select().single();
-    if (error) { logger.error(`[SupabaseData] upsert ${sqlTable} failed`, { message: error?.message, code: error?.code }); return null; }
+    if (error) {
+      logger.error(`[SupabaseData] upsert ${sqlTable} failed`, { message: error?.message, code: error?.code });
+      throw new Error(`upsert ${sqlTable}: ${error.message}`);
+    }
     clearTableCache(jsTable);
     return data ? toCamelObj(data, jsTable) as T : null;
   },
@@ -290,7 +303,7 @@ export const supabaseData = {
     const { error } = jsTable === 'contracts'
       ? await supabase
           .from(sqlTable)
-          .update({ deleted_at: new Date().toISOString(), updated_at: Date.now() })
+          .update({ deleted_at: new Date().toISOString(), updated_at: new Date().toISOString() })
           .eq('id', id)
           .is('deleted_at', null)
       : await supabase.from(sqlTable).delete().eq('id', id);
@@ -305,7 +318,7 @@ export const supabaseData = {
     const { error } = jsTable === 'contracts'
       ? await supabase
           .from(sqlTable)
-          .update({ deleted_at: new Date().toISOString(), updated_at: Date.now() })
+          .update({ deleted_at: new Date().toISOString(), updated_at: new Date().toISOString() })
           .eq(snakeCol, value)
           .is('deleted_at', null)
       : await supabase.from(sqlTable).delete().eq(snakeCol, value);
@@ -323,7 +336,7 @@ export const supabaseData = {
     const { data, error } = await applyContractsVisibility(supabase.from(sqlTable).select(columns).eq(snakeCol, value), jsTable);
     if (error) {
       logger.error(`[SupabaseData] fetchWhere ${sqlTable} failed`, { message: error?.message, code: error?.code });
-      return [];
+      throw new Error(`fetchWhere ${sqlTable} [${column}=${String(value)}]: ${error.message}`);
     }
     return (data || []).map(row => toCamelObj(row, jsTable) as T);
   },
@@ -332,7 +345,10 @@ export const supabaseData = {
     const sqlTable = resolveTable(jsTable);
     const snakeRecords = records.map(r => toSnakeObj(r, jsTable));
     const { data, error } = await supabase.from(sqlTable).insert(snakeRecords).select();
-    if (error) { logger.error(`[SupabaseData] bulkInsert ${sqlTable} failed`, { message: error?.message, code: error?.code }); return []; }
+    if (error) {
+      logger.error(`[SupabaseData] bulkInsert ${sqlTable} failed`, { message: error?.message, code: error?.code });
+      throw new Error(`bulkInsert ${sqlTable}: ${error.message}`);
+    }
     clearTableCache(jsTable);
     return (data || []).map(row => toCamelObj(row, jsTable) as T);
   },
@@ -345,7 +361,7 @@ export const supabaseData = {
     const upsertRecords = records.map(({ id, updates }) => ({
       id,
       ...toSnakeObj(updates, jsTable),
-      updated_at: Date.now() // إضافة timestamp للتحديث
+      updated_at: new Date().toISOString(),
     }));
 
     try {
@@ -455,7 +471,7 @@ export const supabaseData = {
       const { data, error, count } = await query;
       if (error) {
         logger.error(`[SupabaseData] fetchPaginated ${sqlTable} error`, { message: error?.message, code: error?.code });
-        return { data: [], total: 0, hasMore: false };
+        throw new Error(`fetchPaginated ${sqlTable}: ${error.message}`);
       }
 
       const total = count || 0;
@@ -468,7 +484,7 @@ export const supabaseData = {
       };
     } catch (err) {
       logger.error(`[SupabaseData] fetchPaginated ${sqlTable} exception`, { message: (err as any)?.message, code: (err as any)?.code });
-      return { data: [], total: 0, hasMore: false };
+      throw err;
     }
   },
 
@@ -505,13 +521,13 @@ export const supabaseData = {
       const { data, error } = await query;
       if (error) {
         logger.error(`[SupabaseData] fetchFiltered ${sqlTable} error`, { message: error?.message, code: error?.code });
-        return [];
+        throw new Error(`fetchFiltered ${sqlTable}: ${error.message}`);
       }
 
       return (data || []).map(row => toCamelObj(row, jsTable) as T);
     } catch (err) {
       logger.error(`[SupabaseData] fetchFiltered ${sqlTable} exception`, { message: (err as any)?.message, code: (err as any)?.code });
-      return [];
+      throw err;
     }
   },
 

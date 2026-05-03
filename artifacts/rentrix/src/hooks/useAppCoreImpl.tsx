@@ -245,8 +245,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
         const receiptId = crypto.randomUUID();
         const now = Date.now();
-        const receiptNo = String(await supabaseData.incrementSerial('receipt'));
-        const voucherNo = String(await supabaseData.incrementSerial('journalEntry'));
+        // Use UUID-derived short references instead of pre-incrementing the serial
+        // counter before the atomic RPC call. Pre-incrementing consumed a serial
+        // number even when the RPC failed, creating gaps. The RPC itself is
+        // responsible for atomically assigning the final human-readable number;
+        // the UUID-based reference here is only used to build journal entry IDs.
+        const receiptNo = receiptId.slice(0, 8).toUpperCase();
+        const voucherNo = crypto.randomUUID().slice(0, 8).toUpperCase();
         const date = receiptData.dateTime?.slice(0, 10) || new Date().toISOString().slice(0, 10);
 
         // DR: Cash/Bank account per payment channel; CR: Accounts Receivable
@@ -314,7 +319,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           return { success: false, error: result.error };
         }
 
-        await audit('CREATE', 'receipts', receiptId, `SND#${receiptNo} - ${receiptData.amount}`);
+        // Use the RPC-confirmed receipt ID so audit/toast reference what was
+        // actually persisted, not what the client assumed would be stored.
+        const confirmedReceiptId = result.receiptId || receiptId;
+        await audit('CREATE', 'receipts', confirmedReceiptId, `SND#${receiptNo} - ${receiptData.amount}`);
         logOperationTime('addReceipt', performance.now() - startTime);
         setIsDataStale(true);
         await refreshData();

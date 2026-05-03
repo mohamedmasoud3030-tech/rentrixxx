@@ -19,8 +19,13 @@ const buildReceiptRequestFingerprint = (payload: ReceiptPostingPayload): string 
     .sort((a, b) => a.localeCompare(b, 'en'))
     .join('|');
   const bucket = toFiveMinuteBucket(payload.receipt.date_time);
+  // Include the receipt UUID so two distinct receipts for the same
+  // amount/contract within the same 5-minute window are never collapsed.
+  // Retries of the exact same receipt (same UUID) still hit the same
+  // fingerprint and are correctly de-duplicated by the RPC.
   return [
     'receipt_post',
+    payload.receipt.id,
     payload.receipt.contract_id,
     payload.receipt.channel,
     normalizeAmount(payload.receipt.amount),
