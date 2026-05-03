@@ -1,6 +1,13 @@
 import app from "./app";
 import { logger } from "./lib/logger";
 
+if (!process.env["SUPABASE_JWT_SECRET"]) {
+  logger.warn(
+    "SUPABASE_JWT_SECRET is not set — all protected endpoints will return 401. " +
+    "Add the secret from Supabase project settings → API → JWT secret.",
+  );
+}
+
 const rawPort = process.env["PORT"];
 
 if (!rawPort) {
