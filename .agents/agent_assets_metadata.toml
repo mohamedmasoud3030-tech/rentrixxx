@@ -1,0 +1,8 @@
+uploads = []
+outputs = []
+
+[[generated]]
+id = "eB2Ahc7yjw-QUTffQIFoc"
+uri = "file://artifacts/rentrix-mobile/assets/images/icon.png"
+type = "image"
+title = "rentrix mobile icon"
