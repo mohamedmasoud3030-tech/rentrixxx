@@ -7,6 +7,20 @@
  *
  * Run:  node --test src/middlewares/auth.integration.test.mjs
  * (from artifacts/api-server directory with the server running on port 8080)
+ *
+ * CI REQUIREMENTS:
+ *   This is a live-server integration test — it REQUIRES:
+ *     1. The API server to be running on localhost:8080 before the test starts.
+ *        Start it with:  pnpm --filter @workspace/api-server run start
+ *     2. SUPABASE_JWT_SECRET set in the environment (same value the server uses).
+ *     3. VITE_SUPABASE_URL set (required for issuer validation to match).
+ *   In CI, gate this behind an "integration" profile or a step that starts the
+ *   server and injects secrets before running `node --test`.
+ *
+ * Note: These tests validate the API middleware directly by signing crafted
+ * JWTs. They do NOT exercise the Supabase Auth hook itself (which runs inside
+ * GoTrue on the Supabase side). To verify the hook is active after dashboard
+ * activation, run:  node scripts/verify-hook.mjs  (see project root/scripts/).
  */
 
 import { test, describe } from 'node:test';
