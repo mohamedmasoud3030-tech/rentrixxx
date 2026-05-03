@@ -1,0 +1,31 @@
+kind = "video"
+previewPath = "/rentrix-promo/"
+title = "Rentrix Promo Video"
+version = "1.0.0"
+id = "artifacts/rentrix-promo"
+router = "path"
+
+[[integratedSkills]]
+name = "video-js"
+version = "1.0.0"
+
+[[services]]
+name = "web"
+paths = [ "/rentrix-promo/" ]
+localPort = 21969
+
+[services.development]
+run = "pnpm --filter @workspace/rentrix-promo run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/rentrix-promo", "run", "build" ]
+publicDir = "artifacts/rentrix-promo/dist/public"
+serve = "static"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "21969"
+BASE_PATH = "/rentrix-promo/"

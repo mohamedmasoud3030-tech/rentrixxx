@@ -1,0 +1,56 @@
+@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;900&display=swap');
+@import "tailwindcss";
+
+:root {
+  --color-primary: #B8860B; /* Gold */
+  --color-secondary: #D4AF37; /* Lighter Gold */
+  --color-accent: #DAA520; /* Goldenrod */
+
+  --color-bg-light: #F5F0E8; /* Warm Ivory */
+  --color-bg-dark: #0D1117; /* Deep Navy */
+  --color-bg-muted: #EBE4D8;
+
+  --color-text-primary: #0D1117;
+  --color-text-secondary: #4B5563;
+  --color-text-muted: #9CA3AF;
+  --color-text-inverse: #F5F0E8;
+  --color-text-gold: #B8860B;
+
+  --color-success: #10B981;
+  --color-warning: #F59E0B;
+  --color-error: #EF4444;
+
+  --font-display: 'Cairo', sans-serif;
+  --font-body: 'Cairo', sans-serif;
+  --font-mono: monospace;
+}
+
+@theme inline {
+  --color-primary: var(--color-primary);
+  --color-secondary: var(--color-secondary);
+  --color-accent: var(--color-accent);
+  --color-bg-light: var(--color-bg-light);
+  --color-bg-dark: var(--color-bg-dark);
+  --color-bg-muted: var(--color-bg-muted);
+  --color-text-primary: var(--color-text-primary);
+  --color-text-secondary: var(--color-text-secondary);
+  --color-text-muted: var(--color-text-muted);
+  --color-text-inverse: var(--color-text-inverse);
+  --color-text-gold: var(--color-text-gold);
+  --color-success: var(--color-success);
+  --color-warning: var(--color-warning);
+  --color-error: var(--color-error);
+  --font-display: var(--font-display);
+  --font-body: var(--font-body);
+  --font-mono: var(--font-mono);
+}
+
+body {
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background-color: var(--color-bg-dark);
+  color: var(--color-text-inverse);
+  margin: 0;
+  overflow: hidden;
+}
