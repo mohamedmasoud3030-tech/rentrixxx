@@ -18,6 +18,21 @@ declare global {
 
 const SUPABASE_JWT_SECRET = process.env["SUPABASE_JWT_SECRET"];
 
+// Accept SUPABASE_URL or fall back to VITE_SUPABASE_URL (same secret, both
+// are global Replit secrets available to every service in the workspace).
+const SUPABASE_URL =
+  process.env["SUPABASE_URL"] ?? process.env["VITE_SUPABASE_URL"];
+
+// Supabase issues JWTs with issuer = <project-url>/auth/v1
+const EXPECTED_ISSUER = SUPABASE_URL ? `${SUPABASE_URL}/auth/v1` : undefined;
+
+if (!EXPECTED_ISSUER) {
+  logger.warn(
+    "Neither SUPABASE_URL nor VITE_SUPABASE_URL is set — " +
+    "JWT issuer validation is disabled. Set one of these to harden auth.",
+  );
+}
+
 function getJwtSecret(): Uint8Array {
   if (!SUPABASE_JWT_SECRET) {
     throw new Error(
@@ -45,6 +60,8 @@ export async function requireAuth(
     const secret = getJwtSecret();
     const { payload } = await jwtVerify(token, secret, {
       algorithms: ["HS256"],
+      // Validate issuer when SUPABASE_URL is available, fail-closed on mismatch
+      ...(EXPECTED_ISSUER ? { issuer: EXPECTED_ISSUER } : {}),
     });
 
     const sub = payload.sub;
