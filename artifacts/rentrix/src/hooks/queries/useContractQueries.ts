@@ -2,14 +2,28 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useFetchAll, useDataMutation } from './useDataQueries';
 import { apiGet } from '@/services/api/apiClient';
 
+/**
+ * Shape returned by GET /api/contracts (toFrontendContract alias).
+ * The API maps DB column names to frontend-friendly short aliases:
+ *   startDate  → start
+ *   endDate    → end
+ *   rentAmount → rent
+ */
 export interface Contract {
   id: string;
-  unitId?: string;
+  no?: string | null;
+  unitId?: string | null;
   tenantId: string;
-  startDate: string;
-  endDate: string;
-  rentAmount: number;
+  start: string;
+  end: string;
+  rent: number;
+  dueDay?: number | null;
+  deposit?: number;
   status: string;
+  deletedAt?: string | null;
+  organizationId?: string | null;
+  createdAt?: string | null;
+  updatedAt?: string | null;
 }
 
 /**
