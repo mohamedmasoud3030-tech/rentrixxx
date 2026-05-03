@@ -15,8 +15,8 @@ export interface OwnersRow {
   commission_value: number;
   portal_token: string | null;
   is_demo: boolean | null;
-  created_at: number;
-  updated_at: number | null;
+  created_at: string;
+  updated_at: string | null;
 }
 
 export interface PropertiesRow {
@@ -30,8 +30,8 @@ export interface PropertiesRow {
   facilities: string | null;
   notes: string;
   is_demo: boolean | null;
-  created_at: number;
-  updated_at: number | null;
+  created_at: string;
+  updated_at: string | null;
 }
 
 export interface UnitsRow {
@@ -53,8 +53,8 @@ export interface UnitsRow {
   features: string | null;
   notes: string;
   is_demo: boolean | null;
-  created_at: number;
-  updated_at: number | null;
+  created_at: string;
+  updated_at: string | null;
 }
 
 export interface TenantsRow {
@@ -72,8 +72,8 @@ export interface TenantsRow {
   status: 'ACTIVE' | 'INACTIVE' | 'BLACKLIST';
   notes: string;
   is_demo: boolean | null;
-  created_at: number;
-  updated_at: number | null;
+  created_at: string;
+  updated_at: string | null;
 }
 
 export interface ContractsRow {
@@ -92,8 +92,8 @@ export interface ContractsRow {
   sponsor_phone: string | null;
   is_demo: boolean | null;
   deleted_at: string | null;
-  created_at: number;
-  updated_at: number | null;
+  created_at: string;
+  updated_at: string | null;
 }
 
 export interface InvoicesRow {
@@ -110,8 +110,8 @@ export interface InvoicesRow {
   related_invoice_id: string | null;
   payment_method: 'Cash' | 'Bank' | 'Online' | 'Other' | null;
   external_payment_ref: string | null;
-  created_at: number;
-  updated_at: number | null;
+  created_at: string;
+  updated_at: string | null;
 }
 
 export interface ReceiptsRow {
@@ -128,9 +128,9 @@ export interface ReceiptsRow {
   check_bank: string | null;
   check_date: string | null;
   check_status: 'PENDING' | 'DEPOSITED' | 'CLEARED' | 'BOUNCED' | null;
-  voided_at: number | null;
-  created_at: number;
-  updated_at: number | null;
+  voided_at: string | null;
+  created_at: string;
+  updated_at: string | null;
 }
 
 export interface ExpensesRow {
@@ -148,9 +148,9 @@ export interface ExpensesRow {
   notes: string;
   status: 'POSTED' | 'VOID';
   charged_to: 'OWNER' | 'OFFICE' | 'TENANT' | null;
-  voided_at: number | null;
-  created_at: number;
-  updated_at: number | null;
+  voided_at: string | null;
+  created_at: string;
+  updated_at: string | null;
 }
 
 export interface MaintenanceRequestsRow {
@@ -167,8 +167,8 @@ export interface MaintenanceRequestsRow {
   completion_date: string | null;
   expense_id: string | null;
   invoice_id: string | null;
-  created_at: number;
-  completed_at: number | null;
+  created_at: string;
+  completed_at: string | null;
 }
 
 export interface UsersRow {
@@ -177,7 +177,7 @@ export interface UsersRow {
   role: 'ADMIN' | 'USER';
   must_change_password: boolean;
   is_disabled: boolean;
-  created_at: number;
+  created_at: string;
 }
 
 export interface SettingsRow {

@@ -13,7 +13,7 @@ export interface AccountingLedgerEntry {
   source_id: string;
   entity_type?: 'CONTRACT' | 'TENANT' | '';
   entity_id?: string;
-  created_at: number;
+  created_at: string;
 }
 
 export interface AccountingDocument {
@@ -30,13 +30,13 @@ export interface AccountingDocument {
 }
 
 export interface ReceiptPostingPayload {
-  receipt: Omit<ReceiptsRow, 'id' | 'created_at' | 'updated_at'> & { id: string; created_at: number; updated_at?: number | null };
+  receipt: Omit<ReceiptsRow, 'id' | 'created_at' | 'updated_at'> & { id: string; created_at: string; updated_at?: string | null };
   allocations: Array<{
     id: string;
     receipt_id: string;
     invoice_id: string;
     amount: number;
-    created_at: number;
+    created_at: string;
   }>;
   journalEntries: AccountingLedgerEntry[];
 }

@@ -43,8 +43,8 @@ export const useOperationsCore = (
       await supabaseData.insert('contracts', {
         id,
         ...mapped,
-        created_at: Date.now(),
-        updated_at: Date.now(),
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
       });
 
       await onAudit('CREATE', 'contracts', id, `Created contract`);
@@ -80,7 +80,7 @@ export const useOperationsCore = (
 
       await supabaseData.update('contracts', id, {
         ...mappedUpdates,
-        updated_at: Date.now(),
+        updated_at: new Date().toISOString(),
       });
 
       await onAudit('UPDATE', 'contracts', id, 'Updated contract');

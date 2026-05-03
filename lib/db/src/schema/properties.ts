@@ -1,4 +1,4 @@
-import { pgTable, uuid, text, numeric, integer, boolean, bigint } from "drizzle-orm/pg-core";
+import { pgTable, uuid, text, numeric, integer, boolean, timestamp } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 
@@ -14,8 +14,8 @@ export const propertiesTable = pgTable("properties", {
   notes: text("notes").default(""),
   isDemo: boolean("is_demo"),
   organizationId: uuid("organization_id"),
-  createdAt: bigint("created_at", { mode: "number" }).notNull(),
-  updatedAt: bigint("updated_at", { mode: "number" }),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }),
 });
 
 export const insertPropertySchema = createInsertSchema(propertiesTable);

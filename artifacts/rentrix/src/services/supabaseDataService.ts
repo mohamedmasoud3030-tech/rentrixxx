@@ -560,7 +560,7 @@ export const supabaseData = {
     const users = ((profileRows || []) as UsersRow[]).map((p) => ({
       id: p.id, username: p.username || '', email: '', hash: '', salt: '',
       role: p.role || 'USER', mustChange: p.must_change_password || false,
-      createdAt: p.created_at || Date.now(),
+      createdAt: p.created_at ? new Date(p.created_at).getTime() : Date.now(),
       isDisabled: p.is_disabled || false,
     }));
 

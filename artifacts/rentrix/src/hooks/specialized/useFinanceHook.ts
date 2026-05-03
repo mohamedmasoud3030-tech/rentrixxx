@@ -24,8 +24,8 @@ export const useFinanceHook = (
       throw new Error(`Invalid entityType: ${params.entityType}. Must be 'CONTRACT' or 'TENANT'`);
     }
     
-    const now = Date.now();
-    const date = params.date || new Date().toISOString().slice(0, 10);
+    const now = new Date().toISOString();
+    const date = params.date || now.slice(0, 10);
     const voucherNo = String(await supabaseData.incrementSerial('journalEntry'));
     const entries = [
       { id: crypto.randomUUID(), no: voucherNo, date, accountId: params.dr, amount: params.amount, type: 'DEBIT' as const, sourceId: params.ref, entityType: params.entityType, entityId: params.entityId, createdAt: now },
@@ -118,11 +118,11 @@ export const useFinanceHook = (
       }));
       const atomic = await financeFacade.voidReceipt({
         receiptId: id,
-        voidedAt: Date.now(),
+        voidedAt: new Date().toISOString(),
         invoiceUpdates,
         reverseEntries: reverseEntries.map(j => ({
           id: j.id, no: j.no, date: j.date, account_id: j.accountId, amount: round3(j.amount), type: j.type, source_id: j.sourceId,
-          entity_type: j.entityType || '', entity_id: j.entityId || '', created_at: j.createdAt
+          entity_type: j.entityType || '', entity_id: j.entityId || '', created_at: new Date(j.createdAt).toISOString()
         })),
       });
       if (!atomic.ok) throw new Error(String(atomic.details?.message || 'atomic void failed'));

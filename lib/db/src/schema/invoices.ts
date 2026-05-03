@@ -1,4 +1,4 @@
-import { pgTable, uuid, text, numeric, boolean, bigint, date } from "drizzle-orm/pg-core";
+import { pgTable, uuid, text, numeric, boolean, date, timestamp } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 
@@ -16,8 +16,8 @@ export const invoicesTable = pgTable("invoices", {
   relatedInvoiceId: uuid("related_invoice_id"),
   paymentMethod: text("payment_method"),
   externalPaymentRef: text("external_payment_ref"),
-  createdAt: bigint("created_at", { mode: "number" }).notNull(),
-  updatedAt: bigint("updated_at", { mode: "number" }),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }),
 });
 
 export const insertInvoiceSchema = createInsertSchema(invoicesTable);

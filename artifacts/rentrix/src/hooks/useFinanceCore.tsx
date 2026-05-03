@@ -95,12 +95,12 @@ export const useFinanceCore = (
         source_id: `${e.sourceId}-void`,
         entity_type: e.entityType || '',
         entity_id: e.entityId || '',
-        created_at: Date.now()
+        created_at: new Date().toISOString()
       }));
 
       const atomic = await voidReceiptAtomic({
         receiptId: id,
-        voidedAt: Date.now(),
+        voidedAt: new Date().toISOString(),
         invoiceUpdates,
         reverseEntries,
       });
@@ -125,7 +125,7 @@ export const useFinanceCore = (
   const voidExpense: AppContextType['financeService']['voidExpense'] = useCallback(async (id) => {
     const startTime = performance.now();
     try {
-      await supabaseData.update('expenses', id, { status: 'VOID', voidedAt: Date.now() });
+      await supabaseData.update('expenses', id, { status: 'VOID', voidedAt: new Date().toISOString() });
       await onAudit('VOID', 'expenses', id);
       
       // Note: reverseAllJournalEntries logic should be implemented or imported
@@ -137,7 +137,7 @@ export const useFinanceCore = (
           id: crypto.randomUUID(),
           sourceId: `${id}-void`,
           type: entry.type === 'DEBIT' ? 'CREDIT' : 'DEBIT',
-          createdAt: Date.now(),
+          createdAt: new Date().toISOString(),
         });
       }
 

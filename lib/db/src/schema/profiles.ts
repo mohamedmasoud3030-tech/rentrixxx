@@ -1,4 +1,4 @@
-import { pgTable, uuid, text, boolean, bigint } from "drizzle-orm/pg-core";
+import { pgTable, uuid, text, boolean, timestamp } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 
@@ -8,7 +8,7 @@ export const profilesTable = pgTable("profiles", {
   role: text("role"),
   mustChangePassword: boolean("must_change_password").default(false),
   isDisabled: boolean("is_disabled").default(false),
-  createdAt: bigint("created_at", { mode: "number" }),
+  createdAt: timestamp("created_at", { withTimezone: true }),
 });
 
 export const insertProfileSchema = createInsertSchema(profilesTable);

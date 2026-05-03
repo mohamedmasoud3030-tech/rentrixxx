@@ -23,7 +23,7 @@ export interface ProfileLike {
   username?: string | null;
   role?: 'ADMIN' | 'USER' | null;
   must_change_password?: boolean | null;
-  created_at?: number | null;
+  created_at?: string | null;
   is_disabled?: boolean | null;
 }
 
@@ -52,6 +52,6 @@ export const mapProfileToUser = (session: SupabaseSessionLike, profile: ProfileL
   salt: '',
   role: resolveRole(profile),
   mustChange: mustChangePassword(profile),
-  createdAt: profile.created_at || Date.now(),
+  createdAt: profile.created_at ? new Date(profile.created_at).getTime() : Date.now(),
   isDisabled: Boolean(profile.is_disabled),
 });

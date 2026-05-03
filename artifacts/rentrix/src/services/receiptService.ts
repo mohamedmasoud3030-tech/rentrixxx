@@ -12,7 +12,7 @@ export const receiptService = {
 
 export async function voidReceiptAtomic(payload: {
   receiptId: string;
-  voidedAt: number;
+  voidedAt: string;
   invoiceUpdates: Record<string, unknown>[];
   reverseEntries: Record<string, unknown>[];
 }): Promise<{ ok: boolean; step: string; details?: Record<string, unknown> }> {

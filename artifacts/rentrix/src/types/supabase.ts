@@ -6,7 +6,7 @@ export type ProfileRow = {
   role: 'ADMIN' | 'USER' | null;
   must_change_password: boolean | null;
   is_disabled: boolean | null;
-  created_at: number | null;
+  created_at: string | null;
 };
 
 type GenericTable = {

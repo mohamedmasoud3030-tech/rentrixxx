@@ -169,7 +169,7 @@ export async function softDeleteContract(contractId: string): Promise<SoftDelete
 
   const { error } = await supabase
     .from('contracts')
-    .update({ deleted_at: new Date().toISOString(), updated_at: Date.now() })
+    .update({ deleted_at: new Date().toISOString(), updated_at: new Date().toISOString() })
     .eq('id', contractId)
     .is('deleted_at', null);
 

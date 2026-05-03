@@ -1,4 +1,4 @@
-import { pgTable, uuid, text, numeric, integer, boolean, bigint, date, timestamp } from "drizzle-orm/pg-core";
+import { pgTable, uuid, text, numeric, integer, boolean, date, timestamp } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 
@@ -20,8 +20,8 @@ export const contractsTable = pgTable("contracts", {
   organizationId: uuid("organization_id"),
   deletedAt: timestamp("deleted_at", { withTimezone: true }),
   endedAt: timestamp("ended_at", { withTimezone: true }),
-  createdAt: bigint("created_at", { mode: "number" }).notNull(),
-  updatedAt: bigint("updated_at", { mode: "number" }),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }),
 });
 
 export const insertContractSchema = createInsertSchema(contractsTable);

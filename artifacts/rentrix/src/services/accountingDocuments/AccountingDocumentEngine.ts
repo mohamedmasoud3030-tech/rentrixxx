@@ -113,7 +113,7 @@ class AccountingDocumentEngine {
 
   async voidReceiptDocument(payload: {
     receiptId: string;
-    voidedAt: number;
+    voidedAt: string;
     invoiceUpdates: Record<string, unknown>[];
     reverseEntries: Record<string, unknown>[];
   }): Promise<{ ok: boolean; step: string; details?: Record<string, unknown> }> {

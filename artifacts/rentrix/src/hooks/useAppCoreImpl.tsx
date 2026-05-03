@@ -101,7 +101,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         entityId: id,
         details: details || '',
         userId: currentUserRef.current?.id || 'system',
-        createdAt: Date.now(),
+        createdAt: new Date().toISOString(),
       });
     } catch (err) {
       logger.error('Audit log failed', { message: errMsg(err) });
@@ -142,7 +142,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       }
 
       const id = crypto.randomUUID();
-      const now = Date.now();
+      const now = new Date().toISOString();
       const mutableEntry: Record<string, unknown> = { ...entry, id, createdAt: now };
 
       const serialKeyMap: Record<string, string> = { receipts: 'receipt', expenses: 'expense', invoices: 'invoice', ownerSettlements: 'ownerSettlement', maintenanceRecords: 'maintenance', contracts: 'contract' };
@@ -180,7 +180,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const update: AppContextType['dataService']['update'] = useCallback(async (table, id, updates) => {
     if (isReadOnly) { toast.error('لا يمكن التعديل في وضع القراءة فقط'); return; }
     try {
-      const normalizedUpdates = TABLES_WITHOUT_UPDATED_AT.has(table as keyof Database) ? updates : { ...updates, updatedAt: Date.now() };
+      const normalizedUpdates = TABLES_WITHOUT_UPDATED_AT.has(table as keyof Database) ? updates : { ...updates, updatedAt: new Date().toISOString() };
       const result = await supabaseData.update(table as string, id, normalizedUpdates);
       if (!result.ok) throw new Error(result.error || 'Update failed');
 
@@ -244,7 +244,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         }
 
         const receiptId = crypto.randomUUID();
-        const now = Date.now();
+        const now = new Date().toISOString();
         // Use UUID-derived short references instead of pre-incrementing the serial
         // counter before the atomic RPC call. Pre-incrementing consumed a serial
         // number even when the RPC failed, creating gaps. The RPC itself is
@@ -358,7 +358,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         }
 
         const voucherNo = String(await supabaseData.incrementSerial('journalEntry'));
-        const now = Date.now();
+        const now = new Date().toISOString();
         const sourceId = `MJV-${voucherNo}`;
 
         const entries = voucher.lines.flatMap(line => {

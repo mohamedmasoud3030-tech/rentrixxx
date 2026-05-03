@@ -1,4 +1,4 @@
-import { pgTable, uuid, text, numeric, bigint, date } from "drizzle-orm/pg-core";
+import { pgTable, uuid, text, numeric, date, timestamp } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 
@@ -12,8 +12,8 @@ export const journalEntriesTable = pgTable("journal_entries", {
   sourceId: text("source_id"),
   entityType: text("entity_type"),
   entityId: text("entity_id"),
-  createdAt: bigint("created_at", { mode: "number" }),
-  updatedAt: bigint("updated_at", { mode: "number" }),
+  createdAt: timestamp("created_at", { withTimezone: true }),
+  updatedAt: timestamp("updated_at", { withTimezone: true }),
 });
 
 export const insertJournalEntrySchema = createInsertSchema(journalEntriesTable);

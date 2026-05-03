@@ -251,7 +251,7 @@ const Invoices: React.FC = () => {
                     onSaved={async (amount, channel) => {
                         try {
                             const nowIso = new Date().toISOString();
-                            const createdAt = Date.now();
+                            const createdAt = nowIso;
                             const receiptId = crypto.randomUUID();
 
                             const result = await receiptService.postReceipt({
