@@ -1,0 +1,148 @@
+Act as a senior software architect, UX designer, and principal engineer.
+
+You are working on a web application (Property Management System: contracts, tenants, payments, receipts).
+
+Your mission is to:
+- Understand the system
+- Detect problems
+- Redesign UX
+- Create a full execution plan
+- Start implementing immediately
+
+Switch to FULL PRODUCT + ENGINEERING MODE.
+
+---
+
+🔍 PHASE 1: SYSTEM UNDERSTANDING
+
+- Identify:
+  - Core business logic
+  - Main entities (Contract, Tenant, Unit, Payment, Receipt)
+  - Key workflows
+
+- Output:
+  - Simple system summary
+  - Key flows (contract → payment → receipt)
+
+---
+
+⚠️ PHASE 2: SYSTEM AUDIT
+
+Detect:
+
+1. Data issues:
+   - Broken relations
+   - Missing constraints
+   - Orphan records
+
+2. Logic issues:
+   - Invalid flows
+   - Edge cases
+   - Duplicate logic
+
+3. UX issues:
+   - Confusing navigation
+   - Too many steps
+   - Poor forms
+
+---
+
+🎯 PHASE 3: UX REDESIGN
+
+Redesign for:
+- Simplicity
+- Speed
+- Clarity
+
+Tasks:
+
+1. Improve user journeys:
+   - Create contract
+   - Add tenant
+   - Add payment
+   - Generate receipt
+
+2. Redesign navigation:
+   - Sidebar structure
+   - Page hierarchy
+
+3. For each page provide:
+   - Layout structure (Header / Actions / Content)
+   - Components (tables, forms, modals)
+
+4. Add:
+   - Empty states
+   - Loading states
+   - Error states
+
+---
+
+🧩 PHASE 4: ARCHITECTURE REFACTOR
+
+- Improve:
+  - Module separation
+  - Service layer
+  - Validation layer
+
+- Fix data model:
+  - Contract → exactly 1 Unit + 1 Tenant
+  - Payment → exactly 1 Contract
+  - Receipt → only from Payment
+
+---
+
+🚀 PHASE 5: EXECUTION PLAN
+
+Convert everything into:
+
+Phase 0: Critical fixes  
+Phase 1: Core logic  
+Phase 2: UX implementation  
+Phase 3: Enhancements  
+
+For each task:
+- Title
+- What to fix
+- Where (files/modules)
+- Expected result
+
+---
+
+⚡ PHASE 6: START IMPLEMENTATION
+
+IMPORTANT:
+- Do NOT stop at planning
+- Start immediately
+
+For each task:
+
+1. Explain briefly
+2. Show exact code changes
+3. Use clean architecture
+4. Apply best practices
+
+---
+
+🔁 EXECUTION RULES
+
+- Work step-by-step
+- Mark each task as DONE
+- Move automatically to next task
+- No long explanations
+- No returning to analysis
+
+---
+
+📦 OUTPUT FORMAT
+
+1. System summary
+2. Issues list
+3. UX redesign
+4. Execution plan
+5. Then:
+
+Task 1 → Fix → Code  
+Task 2 → Fix → Code  
+Task 3 → Fix → Code  
+
+Continue until meaningful progress is done.
