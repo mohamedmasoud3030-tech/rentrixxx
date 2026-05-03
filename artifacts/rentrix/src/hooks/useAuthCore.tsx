@@ -9,7 +9,6 @@ import { adminCreateUser } from '../services/edgeFunctions';
 import { supabaseData } from '../services/supabaseDataService';
 import { logger } from '../infrastructure/observability';
 import { confirmDialog } from '../components/shared/confirmDialog';
-import { createSessionRefreshScheduler } from '@/services/security/sessionManager';
 
 /**
  * useAuthCore Hook
@@ -266,13 +265,12 @@ export const useAuthCore = (onAudit: (action: string, entity: string, entityId: 
       setCurrentUser(mapProfileToUser(session, profile));
     });
 
-    const stopScheduler = createSessionRefreshScheduler(supabase, {
-      onInvalidSession: handleInvalidSession,
-    });
-
+    // Token refresh is handled automatically by Supabase's autoRefreshToken:true.
+    // A custom scheduler was removed because it competed with Supabase's own
+    // internal refresh loop for the Navigator Lock every 30 s, producing
+    // "lock was stolen" errors and causing spurious 401 responses.
     return () => {
       subscription.subscription.unsubscribe();
-      stopScheduler();
     };
   }, [handleInvalidSession]);
 

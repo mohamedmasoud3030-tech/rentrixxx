@@ -94,6 +94,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const currentUserRef = useRef(authCore.currentUser);
   useEffect(() => { currentUserRef.current = authCore.currentUser; }, [authCore.currentUser]);
 
+  // true only once auth has fully initialised and a user is confirmed logged-in.
+  // undefined = still loading; null = no session; User object = authenticated.
+  const isAuthenticated = authCore.currentUser != null && authCore.currentUser !== undefined;
+
   const audit = useCallback(async (action: string, table: string, id: string, details?: string) => {
     try {
       await supabaseData.insert('auditLog', {
@@ -102,7 +106,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         entityId: id,
         details: details || '',
         userId: currentUserRef.current?.id || 'system',
-        createdAt: new Date().toISOString(),
+        // created_at is set by the DB DEFAULT (NOW()); omitting it here avoids
+        // a "column not found in schema cache" error from PostgREST when the
+        // schema cache hasn't picked up the column yet after migrations.
       });
     } catch (err) {
       logger.error('Audit log failed', { message: errMsg(err) });
@@ -144,7 +150,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   }, []);
 
-  useEffect(() => { refreshData(); }, [refreshData]);
+  // Only fetch data once auth has settled and a session exists.
+  // Without this guard, refreshData fires on mount while currentUser is still
+  // `undefined` (Supabase is restoring the session from localStorage), which
+  // causes all four concurrent apiGet() calls to race for the auth lock and
+  // return 401 because the token is not yet available.
+  useEffect(() => {
+    if (isAuthenticated) refreshData();
+  }, [isAuthenticated, refreshData]);
 
   const finance = useFinanceHook(db, settings, isReadOnly, refreshData, audit, setIsDataStale, logOperationTime);
   const operations = useOperationsHook(db, settings, isReadOnly, refreshData, audit, setIsDataStale, logOperationTime);

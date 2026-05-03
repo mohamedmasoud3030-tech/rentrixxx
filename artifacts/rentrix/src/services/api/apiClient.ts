@@ -8,18 +8,33 @@
  * Using `useAuth` / `authService` for this would require threading the token
  * through React context into non-React service code — unnecessary indirection
  * given that `supabase` is a singleton shared across both layers.
+ *
+ * Deduplication: The Supabase auth client uses the Navigator Locks API to
+ * serialize token operations. When multiple concurrent apiGet() calls all
+ * invoke getSession() simultaneously, they race for the lock — some lose and
+ * return null, causing spurious 401 responses. The _inflightToken promise
+ * ensures all concurrent calls within the same tick share a single
+ * getSession() invocation. The promise is cleared after it settles so the
+ * next round of calls gets a fresh (potentially refreshed) token.
  */
 import { setAuthTokenGetter } from '@workspace/api-client-react';
 import { supabase } from './supabaseClient';
 
-setAuthTokenGetter(async () => {
-  const { data } = await supabase.auth.getSession();
-  return data.session?.access_token ?? null;
-});
+let _inflightToken: Promise<string | null> | null = null;
+
+function getToken(): Promise<string | null> {
+  if (!_inflightToken) {
+    _inflightToken = supabase.auth.getSession()
+      .then(({ data }) => data.session?.access_token ?? null)
+      .finally(() => { _inflightToken = null; });
+  }
+  return _inflightToken;
+}
+
+setAuthTokenGetter(getToken);
 
 async function getAuthHeaders(): Promise<Record<string, string>> {
-  const { data } = await supabase.auth.getSession();
-  const token = data.session?.access_token;
+  const token = await getToken();
   return token ? { Authorization: `Bearer ${token}` } : {};
 }
 

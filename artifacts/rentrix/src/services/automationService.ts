@@ -67,15 +67,25 @@ const normalizeRunRow = (row: Partial<AutomationRunsRow> | null): AutomationResu
 };
 
 export const getAutomationRunLog = async (): Promise<AutomationResult[]> => {
-  const rows = await supabaseData.fetchRecent<AutomationRunsRow>('automationRuns', 10);
-  return rows.map(normalizeRunRow).filter((item): item is AutomationResult => item !== null);
+  try {
+    const rows = await supabaseData.fetchRecent<AutomationRunsRow>('automationRuns', 10);
+    return rows.map(normalizeRunRow).filter((item): item is AutomationResult => item !== null);
+  } catch {
+    // automation_runs table may not exist yet in this environment
+    return [];
+  }
 };
 
 export const getLastRunDate = async (): Promise<string | null> => {
-  const rows = await supabaseData.fetchRecent<AutomationRunsRow>('automationRuns', 1);
-  const row = rows[0];
-  if (!row || typeof row.ts !== 'number') return null;
-  return new Date(row.ts).toISOString().slice(0, 10);
+  try {
+    const rows = await supabaseData.fetchRecent<AutomationRunsRow>('automationRuns', 1);
+    const row = rows[0];
+    if (!row || typeof row.ts !== 'number') return null;
+    return new Date(row.ts).toISOString().slice(0, 10);
+  } catch {
+    // automation_runs table may not exist yet in this environment
+    return null;
+  }
 };
 
 const getTodayStr = (): string => new Date().toISOString().slice(0, 10);
