@@ -179,7 +179,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       const now = new Date().toISOString();
       const mutableEntry: Record<string, unknown> = { ...entry, id, createdAt: now };
 
-      const serialKeyMap: Record<string, string> = { receipts: 'receipt', expenses: 'expense', invoices: 'invoice', ownerSettlements: 'ownerSettlement', maintenanceRecords: 'maintenance', contracts: 'contract' };
+      // Receipts are excluded here — their serial is assigned atomically inside
+      // post_receipt_atomic so incrementing it outside that transaction would
+      // risk consuming a number on rollback.  Receipts must go through
+      // addReceiptWithAllocations instead of this generic add() path.
+      const serialKeyMap: Record<string, string> = { expenses: 'expense', invoices: 'invoice', ownerSettlements: 'ownerSettlement', maintenanceRecords: 'maintenance', contracts: 'contract' };
       if (serialKeyMap[table as string]) {
         mutableEntry['no'] = String(await supabaseData.incrementSerial(serialKeyMap[table as string]));
       }
@@ -353,15 +357,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           return { success: false, error: result.error };
         }
 
-        // Use the RPC-confirmed receipt ID so audit/toast reference what was
-        // actually persisted, not what the client assumed would be stored.
+        // Use the RPC-confirmed values: the DB assigns the sequential receipt
+        // number atomically, so we always trust what was actually persisted.
         const confirmedReceiptId = result.receiptId || receiptId;
-        await audit('CREATE', 'receipts', confirmedReceiptId, `SND#${receiptNo} - ${receiptData.amount}`);
+        const confirmedReceiptNo = result.receiptNo || receiptNo;
+        await audit('CREATE', 'receipts', confirmedReceiptId, `SND#${confirmedReceiptNo} - ${receiptData.amount}`);
         logOperationTime('addReceipt', performance.now() - startTime);
         setIsDataStale(true);
         await refreshData();
-        toast.success(`تم تسجيل السند رقم ${receiptNo} بنجاح`);
-        return { success: true, receiptNo, allocatedTotal: totalAllocated };
+        toast.success(`تم تسجيل السند رقم ${confirmedReceiptNo} بنجاح`);
+        return { success: true, receiptNo: confirmedReceiptNo, allocatedTotal: totalAllocated };
       } catch (err) {
         logger.error('[addReceiptWithAllocations] failed', { message: errMsg(err) });
         toast.error('فشل تسجيل السند: ' + errMsg(err));

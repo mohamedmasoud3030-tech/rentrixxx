@@ -44,5 +44,6 @@ export interface ReceiptPostingPayload {
 export interface ReceiptPostingResult {
   success: boolean;
   receiptId?: string;
+  receiptNo?: string;
   error?: string;
 }

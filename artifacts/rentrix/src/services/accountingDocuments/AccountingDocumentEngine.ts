@@ -88,22 +88,22 @@ class AccountingDocumentEngine {
         return { success: false, error: error.message || 'تعذر تنفيذ ترحيل السند.' };
       }
 
-      const result = (data || {}) as { success?: boolean; receipt_id?: string; error?: string };
+      const result = (data || {}) as { success?: boolean; receipt_id?: string; receipt_no?: string; error?: string };
       if (!result.success) {
         const rpcError = result.error || 'فشل ترحيل السند.';
         logger.error('[AccountingDocumentEngine] receipt post failed', { message: rpcError });
         return { success: false, error: rpcError };
       }
 
-      logger.info('[AccountingDocumentEngine] receipt posted', { id: document.id, receiptId: result.receipt_id });
+      logger.info('[AccountingDocumentEngine] receipt posted', { id: document.id, receiptId: result.receipt_id, receiptNo: result.receipt_no });
       await AuditTrail.log({
         action: 'UPDATE_DOCUMENT',
         entityType: 'RECEIPT_DOCUMENT',
         entityId: document.id,
         before: { status: document.status },
-        after: { status: 'posted', receiptId: result.receipt_id },
+        after: { status: 'posted', receiptId: result.receipt_id, receiptNo: result.receipt_no },
       });
-      return { success: true, receiptId: result.receipt_id };
+      return { success: true, receiptId: result.receipt_id, receiptNo: result.receipt_no };
     } catch (err) {
       const message = err instanceof Error ? err.message : 'حدث خطأ غير متوقع.';
       logger.error('[AccountingDocumentEngine] postReceiptDocument unexpected error', { message: (err as any)?.message, code: (err as any)?.code });
