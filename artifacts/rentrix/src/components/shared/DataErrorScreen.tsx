@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { Toaster } from 'react-hot-toast';
 import { AlertTriangle, RefreshCw } from 'lucide-react';
 
 interface DataErrorScreenProps {
@@ -35,9 +34,9 @@ const DataErrorScreen: React.FC<DataErrorScreenProps> = ({ message, onRetry }) =
         <div className="space-y-2">
           <h2 className="text-xl font-bold text-text">تعذر تحميل البيانات</h2>
           <p className="text-sm leading-relaxed text-text-muted">
-            تحقق من الاتصال وحاول مرة أخرى
+            فشل الاتصال بقاعدة البيانات. تحقق من الاتصال وحاول مرة أخرى.
           </p>
-          {message && (
+          {import.meta.env.DEV && message && (
             <p className="mt-2 break-all rounded-md bg-red-50 px-3 py-2 font-mono text-xs text-red-600 dark:bg-red-900/10 dark:text-red-400">
               {message}
             </p>

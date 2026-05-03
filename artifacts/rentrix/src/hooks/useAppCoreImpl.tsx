@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import DataErrorScreen from '../components/shared/DataErrorScreen';
+import { Toaster } from 'react-hot-toast';
 import { Database, Settings, Expense, Invoice, AppContextType, PerformanceMetrics } from '../types';
 import { supabaseData } from '../services/supabaseDataService';
 import { apiGet } from '../services/api/apiClient';
@@ -725,6 +726,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   return (
     <AppContext.Provider value={value}>
+      <Toaster position="top-center" />
       {dataError ? (
         <DataErrorScreen message={dataError} onRetry={refreshData} />
       ) : (

@@ -6,7 +6,6 @@ import Layout from '@/components/print/layout/Layout';
 import Login from '@/ui/Login';
 import ChangePassword from '@/ui/ChangePassword';
 import OwnerView from '@/ui/OwnerView';
-import { Toaster } from 'react-hot-toast';
 import ProtectedRoute from '@/components/shared/ProtectedRoute';
 import { NAVIGATION_META } from '@/config/navigationMeta';
 import { applyThemePreset, initThemePreset, type ThemeMode } from '@/design-system';
@@ -162,8 +161,6 @@ const App: React.FC = () => {
 
   return (
     <>
-      <Toaster position="top-center" />
-
       <Suspense fallback={<PageLoader />}>
         <Routes>
           <Route path="/owner-view/:ownerId" element={withRouteBoundary(<OwnerView />, 'route-owner-view')} />
