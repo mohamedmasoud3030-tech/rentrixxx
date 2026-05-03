@@ -7,12 +7,26 @@ import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
   CartesianGrid, Cell, LineChart, Line, PieChart, Pie, Legend
 } from 'recharts';
+import { Lock, RefreshCw, CheckCircle, AlertTriangle, XCircle } from 'lucide-react';
+import { supabase } from '@/services/api/supabaseClient';
 
 // ─── Types ───────────────────────────────────────────────────
 type ReportId =
   | 'summary' | 'income_statement' | 'trial_balance' | 'balance_sheet'
   | 'aged_receivables' | 'overdue' | 'daily_collection'
-  | 'rent_roll' | 'owner_statement' | 'tenant_statement';
+  | 'rent_roll' | 'owner_statement' | 'tenant_statement'
+  | 'reconciliation';
+
+interface ReconciliationRow {
+  entity_type: string;
+  entity_id: string;
+  entity_name: string;
+  ledger_value: number;
+  cached_value: number;
+  drift: number;
+  reconciliation_status: 'OK' | 'WARN' | 'CRITICAL';
+  checked_at: string;
+}
 
 interface DateRange { from: string; to: string }
 type LoadState = 'idle' | 'loading' | 'done' | 'error';
@@ -817,6 +831,195 @@ const RentRollView: React.FC<{ currency: string }> = ({ currency }) => {
 };
 
 // ════════════════════════════════════════════════════════════════
+// 11. مطابقة الأرصدة — Balance Reconciliation (ADMIN only)
+// ════════════════════════════════════════════════════════════════
+
+const ENTITY_LABELS: Record<string, string> = {
+  account:  'حساب',
+  owner:    'مالك',
+  contract: 'عقد',
+  tenant:   'مستأجر',
+};
+
+const StatusBadge: React.FC<{ status: ReconciliationRow['reconciliation_status'] }> = memo(({ status }) => {
+  if (status === 'OK') return (
+    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-700">
+      <CheckCircle size={11}/> OK
+    </span>
+  );
+  if (status === 'WARN') return (
+    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold bg-yellow-100 text-yellow-700">
+      <AlertTriangle size={11}/> تحذير
+    </span>
+  );
+  return (
+    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold bg-red-100 text-red-700">
+      <XCircle size={11}/> حرج
+    </span>
+  );
+});
+
+const ReconciliationView: React.FC = () => {
+  const { auth, rebuildSnapshotsFromJournal } = useApp();
+  const isAdmin = auth.currentUser?.role === 'ADMIN';
+
+  const [rows, setRows] = useState<ReconciliationRow[]>([]);
+  const [loadState, setLoadState] = useState<LoadState>('idle');
+  const [rebuilding, setRebuilding] = useState(false);
+  const [lastChecked, setLastChecked] = useState<string | null>(null);
+
+  const load = useCallback(async () => {
+    setLoadState('loading');
+    const { data, error } = await (supabase as any)
+      .from('v_balance_reconciliation')
+      .select('entity_type,entity_id,entity_name,ledger_value,cached_value,drift,reconciliation_status,checked_at')
+      .order('drift', { ascending: false, nullsFirst: false });
+    if (error) { setLoadState('error'); return; }
+    setRows((data ?? []) as ReconciliationRow[]);
+    if ((data ?? []).length > 0) setLastChecked((data as ReconciliationRow[])[0].checked_at);
+    setLoadState('done');
+  }, []);
+
+  useEffect(() => { void load(); }, [load]);
+
+  const handleRebuild = useCallback(async () => {
+    if (!isAdmin) return;
+    setRebuilding(true);
+    await rebuildSnapshotsFromJournal();
+    setRebuilding(false);
+    void load();
+  }, [isAdmin, rebuildSnapshotsFromJournal, load]);
+
+  const criticalCount = rows.filter(r => r.reconciliation_status === 'CRITICAL').length;
+  const warnCount     = rows.filter(r => r.reconciliation_status === 'WARN').length;
+  const okCount       = rows.filter(r => r.reconciliation_status === 'OK').length;
+
+  if (!isAdmin) {
+    return (
+      <div className="flex flex-col items-center justify-center py-16 text-center gap-4">
+        <Lock size={40} className="text-amber-500"/>
+        <h3 className="text-lg font-bold">صلاحية غير كافية</h3>
+        <p className="text-sm text-text-muted max-w-xs">مطابقة الأرصدة متاحة للمديرين فقط.</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-5">
+      {/* Header bar */}
+      <div className="flex flex-wrap items-center gap-3 justify-between">
+        <div>
+          <h3 className="font-black text-base text-text">مطابقة الأرصدة</h3>
+          {lastChecked && (
+            <p className="text-xs text-text-muted mt-0.5">
+              آخر فحص: {new Date(lastChecked).toLocaleString('ar-SA')}
+            </p>
+          )}
+        </div>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={load}
+            disabled={loadState === 'loading'}
+            className="inline-flex items-center gap-1.5 text-xs px-3 py-2 rounded-xl border border-border hover:border-primary hover:text-primary transition active:scale-[0.98] font-bold disabled:opacity-50"
+          >
+            <RefreshCw size={13} className={loadState === 'loading' ? 'animate-spin' : ''}/>
+            تحديث
+          </button>
+          <button
+            onClick={handleRebuild}
+            disabled={rebuilding || loadState === 'loading'}
+            className="inline-flex items-center gap-1.5 text-xs px-4 py-2 rounded-xl bg-primary text-white font-black hover:bg-primary/90 transition active:scale-[0.98] disabled:opacity-60"
+          >
+            <RefreshCw size={13} className={rebuilding ? 'animate-spin' : ''}/>
+            {rebuilding ? 'جارٍ إعادة البناء...' : 'إعادة بناء الأرصدة'}
+          </button>
+        </div>
+      </div>
+
+      {/* KPI summary */}
+      {loadState === 'done' && (
+        <div className="grid grid-cols-3 gap-3">
+          <KpiCardReport label="سجلات سليمة"   value={String(okCount)}       color="text-emerald-600"/>
+          <KpiCardReport label="تحذيرات"        value={String(warnCount)}     color="text-yellow-600"/>
+          <KpiCardReport label="حالات حرجة"    value={String(criticalCount)} color={criticalCount > 0 ? 'text-red-600' : 'text-emerald-600'}/>
+        </div>
+      )}
+
+      {loadState === 'loading' && <LoadingState title="جاري فحص الأرصدة..." message="يتم مقارنة الأرصدة المخزنة مع سجلات القيود."/>}
+      {loadState === 'error'   && <ErrorState message="تعذر تحميل بيانات المطابقة." onRetry={load}/>}
+
+      {loadState === 'done' && (
+        <div className="overflow-x-auto rounded-xl border border-border">
+          <table className="w-full text-sm text-right">
+            <thead className="bg-background text-text-muted text-xs">
+              <tr>
+                <th className="px-4 py-3 font-bold">النوع</th>
+                <th className="px-4 py-3 font-bold">الاسم / المعرف</th>
+                <th className="px-4 py-3 font-bold text-left" dir="ltr">الرصيد المخزّن</th>
+                <th className="px-4 py-3 font-bold text-left" dir="ltr">رصيد القيود</th>
+                <th className="px-4 py-3 font-bold text-left" dir="ltr">الفارق</th>
+                <th className="px-4 py-3 font-bold">الحالة</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-border">
+              {rows.length === 0 && (
+                <tr>
+                  <td colSpan={6} className="px-4 py-10 text-center text-text-muted">لا توجد بيانات للمطابقة</td>
+                </tr>
+              )}
+              {rows.map((row, i) => {
+                const rowBg =
+                  row.reconciliation_status === 'CRITICAL' ? 'bg-red-50 dark:bg-red-900/10' :
+                  row.reconciliation_status === 'WARN'     ? 'bg-yellow-50 dark:bg-yellow-900/10' :
+                  '';
+                const driftColor =
+                  row.reconciliation_status === 'CRITICAL' ? 'text-red-600 font-black' :
+                  row.reconciliation_status === 'WARN'     ? 'text-yellow-600 font-bold' :
+                  'text-emerald-600';
+                return (
+                  <tr key={`recon-${row.entity_type}-${row.entity_id}-${i}`} className={`transition-colors ${rowBg}`}>
+                    <td className="px-4 py-3">
+                      <span className="px-2 py-0.5 rounded-md text-[11px] font-bold bg-background border border-border">
+                        {ENTITY_LABELS[row.entity_type] ?? row.entity_type}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 font-medium max-w-[180px] truncate" title={row.entity_name}>
+                      {row.entity_name || '—'}
+                    </td>
+                    <td className="px-4 py-3 font-mono text-left" dir="ltr">
+                      {Number(row.cached_value).toFixed(3)}
+                    </td>
+                    <td className="px-4 py-3 font-mono text-left" dir="ltr">
+                      {Number(row.ledger_value).toFixed(3)}
+                    </td>
+                    <td className={`px-4 py-3 font-mono text-left ${driftColor}`} dir="ltr">
+                      {Number(row.drift) >= 0 ? '+' : ''}{Number(row.drift).toFixed(3)}
+                    </td>
+                    <td className="px-4 py-3">
+                      <StatusBadge status={row.reconciliation_status}/>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {loadState === 'done' && criticalCount > 0 && (
+        <div className="flex items-start gap-3 p-4 bg-red-50 dark:bg-red-900/10 border border-red-200 dark:border-red-800 rounded-2xl text-sm text-red-700 dark:text-red-400">
+          <XCircle size={18} className="flex-shrink-0 mt-0.5"/>
+          <div>
+            <p className="font-black">يوجد {criticalCount} {criticalCount === 1 ? 'سجل حرج' : 'سجلات حرجة'} تستوجب الإصلاح</p>
+            <p className="text-xs mt-0.5">استخدم زر "إعادة بناء الأرصدة" لمزامنة الأرصدة مع سجلات القيود المحاسبية.</p>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+// ════════════════════════════════════════════════════════════════
 // MAIN COMPONENT
 // ════════════════════════════════════════════════════════════════
 const REPORTS: { id: ReportId; label: string; group: string }[] = [
@@ -830,6 +1033,7 @@ const REPORTS: { id: ReportId; label: string; group: string }[] = [
   { id: 'rent_roll',        label: 'قائمة الإيجارات',       group: 'إيجار' },
   { id: 'owner_statement',  label: 'كشف حساب المالك',       group: 'كشوف' },
   { id: 'tenant_statement', label: 'كشف حساب المستأجر',     group: 'كشوف' },
+  { id: 'reconciliation',   label: 'مطابقة الأرصدة',        group: 'إدارة' },
 ];
 
 const ReportsDashboard: React.FC = () => {
@@ -853,6 +1057,7 @@ const ReportsDashboard: React.FC = () => {
       case 'daily_collection': return <DailyCollectionView currency={currency}/>;
       case 'rent_roll':        return <RentRollView currency={currency}/>;
       case 'balance_sheet':    return <BalanceSheetView currency={currency}/>;
+      case 'reconciliation':   return <ReconciliationView/>;
       default:                 return null;
     }
   };
