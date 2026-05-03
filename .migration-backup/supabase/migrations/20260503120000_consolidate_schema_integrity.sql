@@ -751,36 +751,72 @@ END $$;
 -- =============================================================================
 -- SECTION 7: BALANCE RECONCILIATION VIEWS
 --
--- v_balance_reconciliation — unified view spanning all four balance tables:
+-- v_balance_reconciliation — unified view covering all four balance tables.
+-- ALL four parts derive their ledger_value solely from journal_entries.
 --
---   PART A: account_balances vs journal_entries (per account, most precise)
---   PART B: owner_balances cache vs journal_entries aggregated per owner
---           (via properties → contracts → journal_entries chain)
---   PART C: contract_balances cache vs (invoices_total – receipts_total)
---   PART D: tenant_balances cache vs (invoices_total – receipts_total) per tenant
+-- Mapping assumptions (document per entity type):
 --
--- Each part produces rows with: entity_type, entity_id, entity_name,
---   ledger_value, cached_value, drift, reconciliation_status.
+--   PART A: account_balances vs journal_entries.account_id
+--     ledger_value = SUM(DEBIT) - SUM(CREDIT) per account_id
+--     cached_value = SUM(debit_total) - SUM(credit_total) from account_balances
 --
--- v_balance_reconciliation_drift — filtered companion view: |drift| > 0.01
+--   PART B: owner_balances vs journal_entries where entity_type ILIKE 'owner'
+--             and entity_id = owner_id::text
+--     ledger_value = SUM(CREDIT) - SUM(DEBIT) per owner entity
+--                   (credits are income; debits are expenses for owner perspective)
+--     cached_value = net_balance from owner_balances
+--                   (= total_income - total_expenses - commission)
+--
+--   PART C: contract_balances vs journal_entries where entity_type ILIKE 'contract'
+--             and entity_id = contract_id::text
+--     ledger_value = SUM(DEBIT) - SUM(CREDIT) per contract entity
+--                   (debits increase balance_due; credits reduce it)
+--     cached_value = balance_due from contract_balances
+--
+--   PART D: tenant_balances vs journal_entries where entity_type ILIKE 'tenant'
+--             and entity_id = tenant_id::text
+--     ledger_value = SUM(DEBIT) - SUM(CREDIT) per tenant entity
+--     cached_value = balance_due from tenant_balances
+--
+-- v_balance_reconciliation_drift — filtered companion: |drift| > 0.01 only.
 --
 -- Security: GRANT SELECT only to `authenticated`. Never to `anon`.
---   Reconciliation data contains financial totals and account codes —
---   restricting to authenticated users is required by least-privilege.
+--   Reconciliation data contains financial account codes and totals.
 -- =============================================================================
 
 CREATE OR REPLACE VIEW public.v_balance_reconciliation AS
 
--- PART A: account_balances vs journal_entries per account
+-- Pre-aggregate all journal_entries once, split by key:
+--   (a) by account_id   — for account_balances reconciliation
+--   (b) by entity       — for owner / contract / tenant reconciliation
 WITH je_by_account AS (
+  -- Aggregate per account_id (FK to accounts table)
   SELECT
     account_id,
-    COALESCE(SUM(amount) FILTER (WHERE type = 'DEBIT'),  0::numeric) AS ledger_debit,
-    COALESCE(SUM(amount) FILTER (WHERE type = 'CREDIT'), 0::numeric) AS ledger_credit
+    COALESCE(SUM(amount) FILTER (WHERE type = 'DEBIT'),  0::numeric) AS je_debit,
+    COALESCE(SUM(amount) FILTER (WHERE type = 'CREDIT'), 0::numeric) AS je_credit
   FROM public.journal_entries
   WHERE account_id IS NOT NULL
   GROUP BY account_id
 ),
+je_by_entity AS (
+  -- Aggregate per (entity_type, entity_id) for owner/contract/tenant lookup.
+  -- entity_type comparison is case-insensitive via LOWER().
+  -- entity_id is stored as text in the schema.
+  SELECT
+    LOWER(entity_type)                                              AS etype,
+    entity_id                                                       AS eid,
+    COALESCE(SUM(amount) FILTER (WHERE type = 'DEBIT'),  0::numeric) AS je_debit,
+    COALESCE(SUM(amount) FILTER (WHERE type = 'CREDIT'), 0::numeric) AS je_credit
+  FROM public.journal_entries
+  WHERE entity_type IS NOT NULL
+    AND entity_id   IS NOT NULL
+  GROUP BY LOWER(entity_type), entity_id
+),
+
+-- ─────────────────────────────────────────────────────────────
+-- PART A: account_balances vs journal_entries per account
+-- ─────────────────────────────────────────────────────────────
 ab_cache AS (
   SELECT
     account_id,
@@ -790,158 +826,148 @@ ab_cache AS (
   WHERE account_id IS NOT NULL
   GROUP BY account_id
 ),
-account_drift AS (
+account_recon AS (
   SELECT
-    'account'::text                                           AS entity_type,
-    COALESCE(j.account_id, ab.account_id)                    AS entity_id,
+    'account'::text                                               AS entity_type,
+    COALESCE(j.account_id, ab.account_id)                        AS entity_id,
     COALESCE(a.name, COALESCE(j.account_id, ab.account_id)::text) AS entity_name,
+    -- ledger_value: net from journal_entries (debit positive convention)
     ROUND(
-      (COALESCE(j.ledger_debit, 0) - COALESCE(j.ledger_credit, 0))::numeric, 2
-    )                                                         AS ledger_value,
+      (COALESCE(j.je_debit, 0) - COALESCE(j.je_credit, 0))::numeric, 2
+    )                                                             AS ledger_value,
+    -- cached_value: net from account_balances cache
     ROUND(
       (COALESCE(ab.cache_debit, 0) - COALESCE(ab.cache_credit, 0))::numeric, 2
-    )                                                         AS cached_value
+    )                                                             AS cached_value
   FROM je_by_account j
   FULL OUTER JOIN ab_cache ab USING (account_id)
   LEFT JOIN public.accounts a ON a.id = COALESCE(j.account_id, ab.account_id)
 ),
 
--- PART B: owner_balances cache vs net journal_entries for each owner
--- Owner income journal entries are debits on the owner's revenue account;
--- owner expenses are credits.  Net = total_income - total_expenses.
-je_by_owner AS (
-  SELECT
-    c.organization_id                                        AS owner_id,
-    COALESCE(SUM(je.amount) FILTER (WHERE je.entity_type = 'owner'), 0::numeric) AS ledger_net
-  FROM public.contracts c
-  JOIN public.journal_entries je
-    ON je.entity_id   = c.tenant_id::text
-    OR je.source_id   = c.id::text
-  GROUP BY c.organization_id
-),
+-- ─────────────────────────────────────────────────────────────
+-- PART B: owner_balances vs journal_entries (entity_type='owner')
+-- Assumption: application writes je.entity_type='owner', je.entity_id=owner_id
+-- ledger convention: credits = income, debits = expenses → net = credit - debit
+-- ─────────────────────────────────────────────────────────────
 ob_cache AS (
   SELECT
     owner_id,
-    COALESCE(total_income, 0) - COALESCE(total_expenses, 0) AS cached_net
+    COALESCE(net_balance, 0::numeric) AS cached_net
   FROM public.owner_balances
   WHERE owner_id IS NOT NULL
 ),
-owner_drift AS (
+owner_recon AS (
   SELECT
-    'owner'::text                                             AS entity_type,
-    ob.owner_id                                              AS entity_id,
-    COALESCE(o.name, ob.owner_id::text)                      AS entity_name,
-    COALESCE(
-      (SELECT ledger_net FROM je_by_owner j WHERE j.owner_id = ob.owner_id),
-      0::numeric
-    )                                                         AS ledger_value,
-    ROUND(ob.cached_net::numeric, 2)                          AS cached_value
+    'owner'::text                                                  AS entity_type,
+    ob.owner_id                                                    AS entity_id,
+    COALESCE(o.name, ob.owner_id::text)                            AS entity_name,
+    -- ledger_value: net owner balance from journal_entries (credit - debit)
+    ROUND(
+      COALESCE(
+        (SELECT je_credit - je_debit
+         FROM   je_by_entity e
+         WHERE  e.etype = 'owner'
+           AND  e.eid   = ob.owner_id::text),
+        0::numeric
+      ), 2
+    )                                                              AS ledger_value,
+    ROUND(ob.cached_net::numeric, 2)                               AS cached_value
   FROM ob_cache ob
   LEFT JOIN public.owners o ON o.id = ob.owner_id
 ),
 
--- PART C: contract_balances cache vs (invoices_billed - receipts_collected)
-invoice_totals AS (
-  SELECT contract_id,
-    COALESCE(SUM(amount + COALESCE(tax_amount, 0)), 0::numeric) AS billed
-  FROM public.invoices
-  WHERE contract_id IS NOT NULL
-  GROUP BY contract_id
-),
-receipt_totals AS (
-  SELECT contract_id,
-    COALESCE(SUM(amount), 0::numeric) AS collected
-  FROM public.receipts
-  WHERE contract_id IS NOT NULL AND status != 'VOID'
-  GROUP BY contract_id
-),
+-- ─────────────────────────────────────────────────────────────
+-- PART C: contract_balances vs journal_entries (entity_type='contract')
+-- Assumption: application writes je.entity_type='contract', je.entity_id=contract_id
+-- ledger convention: debits = charges (increase balance_due), credits = payments
+-- ─────────────────────────────────────────────────────────────
 cb_cache AS (
-  SELECT contract_id,
-    COALESCE(balance_due, 0) AS cached_balance
+  SELECT
+    contract_id,
+    COALESCE(balance_due, 0::numeric) AS cached_balance
   FROM public.contract_balances
   WHERE contract_id IS NOT NULL
 ),
-contract_drift AS (
+contract_recon AS (
   SELECT
-    'contract'::text                                          AS entity_type,
-    cb.contract_id                                           AS entity_id,
-    COALESCE(ct.no, cb.contract_id::text)                    AS entity_name,
+    'contract'::text                                               AS entity_type,
+    cb.contract_id                                                 AS entity_id,
+    COALESCE(ct.no, cb.contract_id::text)                         AS entity_name,
+    -- ledger_value: net contract balance from journal_entries (debit - credit)
     ROUND(
-      (COALESCE(it.billed, 0) - COALESCE(rt.collected, 0))::numeric, 2
-    )                                                         AS ledger_value,
-    ROUND(cb.cached_balance::numeric, 2)                      AS cached_value
+      COALESCE(
+        (SELECT je_debit - je_credit
+         FROM   je_by_entity e
+         WHERE  e.etype = 'contract'
+           AND  e.eid   = cb.contract_id::text),
+        0::numeric
+      ), 2
+    )                                                              AS ledger_value,
+    ROUND(cb.cached_balance::numeric, 2)                           AS cached_value
   FROM cb_cache cb
   LEFT JOIN public.contracts ct ON ct.id = cb.contract_id
-  LEFT JOIN invoice_totals   it ON it.contract_id = cb.contract_id
-  LEFT JOIN receipt_totals   rt ON rt.contract_id = cb.contract_id
 ),
 
--- PART D: tenant_balances cache vs (invoices_billed - receipts_collected) per tenant
-tenant_invoice_totals AS (
-  SELECT c.tenant_id,
-    COALESCE(SUM(i.amount + COALESCE(i.tax_amount, 0)), 0::numeric) AS billed
-  FROM public.invoices i
-  JOIN public.contracts c ON c.id = i.contract_id
-  WHERE i.contract_id IS NOT NULL
-  GROUP BY c.tenant_id
-),
-tenant_receipt_totals AS (
-  SELECT c.tenant_id,
-    COALESCE(SUM(r.amount), 0::numeric) AS collected
-  FROM public.receipts r
-  JOIN public.contracts c ON c.id = r.contract_id
-  WHERE r.contract_id IS NOT NULL AND r.status != 'VOID'
-  GROUP BY c.tenant_id
-),
+-- ─────────────────────────────────────────────────────────────
+-- PART D: tenant_balances vs journal_entries (entity_type='tenant')
+-- Assumption: application writes je.entity_type='tenant', je.entity_id=tenant_id
+-- ledger convention: debits = charges (increase balance_due), credits = payments
+-- ─────────────────────────────────────────────────────────────
 tb_cache AS (
-  SELECT tenant_id,
-    COALESCE(balance_due, 0) AS cached_balance
+  SELECT
+    tenant_id,
+    COALESCE(balance_due, 0::numeric) AS cached_balance
   FROM public.tenant_balances
   WHERE tenant_id IS NOT NULL
 ),
-tenant_drift AS (
+tenant_recon AS (
   SELECT
-    'tenant'::text                                            AS entity_type,
-    tb.tenant_id                                             AS entity_id,
-    COALESCE(t.name, tb.tenant_id::text)                     AS entity_name,
+    'tenant'::text                                                 AS entity_type,
+    tb.tenant_id                                                   AS entity_id,
+    COALESCE(t.name, tb.tenant_id::text)                          AS entity_name,
+    -- ledger_value: net tenant balance from journal_entries (debit - credit)
     ROUND(
-      (COALESCE(tit.billed, 0) - COALESCE(trt.collected, 0))::numeric, 2
-    )                                                         AS ledger_value,
-    ROUND(tb.cached_balance::numeric, 2)                      AS cached_value
+      COALESCE(
+        (SELECT je_debit - je_credit
+         FROM   je_by_entity e
+         WHERE  e.etype = 'tenant'
+           AND  e.eid   = tb.tenant_id::text),
+        0::numeric
+      ), 2
+    )                                                              AS ledger_value,
+    ROUND(tb.cached_balance::numeric, 2)                           AS cached_value
   FROM tb_cache tb
-  LEFT JOIN public.tenants             t   ON t.id   = tb.tenant_id
-  LEFT JOIN tenant_invoice_totals      tit ON tit.tenant_id = tb.tenant_id
-  LEFT JOIN tenant_receipt_totals      trt ON trt.tenant_id = tb.tenant_id
-),
-
--- Union all four parts
-all_drift AS (
-  SELECT * FROM account_drift
-  UNION ALL
-  SELECT * FROM owner_drift
-  UNION ALL
-  SELECT * FROM contract_drift
-  UNION ALL
-  SELECT * FROM tenant_drift
+  LEFT JOIN public.tenants t ON t.id = tb.tenant_id
 )
+
+-- Union all four parts into the final view
 SELECT
   entity_type,
   entity_id,
   entity_name,
   ledger_value,
   cached_value,
-  ROUND(ledger_value - cached_value, 2)   AS drift,
+  ROUND(ledger_value - cached_value, 2)                           AS drift,
   CASE
     WHEN ABS(ledger_value - cached_value) < 0.01 THEN 'OK'
     WHEN ABS(ledger_value - cached_value) < 1.00 THEN 'WARN'
     ELSE 'CRITICAL'
-  END                                     AS reconciliation_status,
-  now()                                   AS checked_at
-FROM all_drift
+  END                                                             AS reconciliation_status,
+  now()                                                           AS checked_at
+FROM (
+  SELECT * FROM account_recon
+  UNION ALL
+  SELECT * FROM owner_recon
+  UNION ALL
+  SELECT * FROM contract_recon
+  UNION ALL
+  SELECT * FROM tenant_recon
+) all_recon
 ORDER BY ABS(ledger_value - cached_value) DESC NULLS LAST;
 
 
--- Filtered companion: only rows where drift exceeds the rounding tolerance
+-- Filtered companion: only rows where |drift| exceeds the rounding tolerance.
+-- Use this view for monitoring queries, scheduled alerts, and health checks.
 CREATE OR REPLACE VIEW public.v_balance_reconciliation_drift AS
 SELECT *
 FROM   public.v_balance_reconciliation
