@@ -864,7 +864,8 @@ const ReconciliationView: React.FC = () => {
     setLoadState('loading');
     const { data, error } = await supabase
       .from('v_balance_reconciliation')
-      .select('entity_type,entity_id,entity_name,ledger_value,cached_value,drift,reconciliation_status,checked_at');
+      .select('entity_type,entity_id,entity_name,ledger_value,cached_value,drift,reconciliation_status,checked_at')
+      .order('checked_at', { ascending: false });
     if (error) { setLoadState('error'); return; }
     setRows(data ?? []);
     if (data && data.length > 0) setLastChecked(data[0].checked_at);
