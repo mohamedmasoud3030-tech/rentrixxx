@@ -176,3 +176,10 @@ overrides:
   "micromatch>picomatch": ">=4.0.4"
   "anymatch>picomatch": ">=2.3.2"
   "readdirp>picomatch": ">=2.3.2"
+  # GHSA-qx2v-qp2m-jg93 (postcss <8.4.50 — line return parsing bug)
+  postcss: ">=8.4.50"
+  # GHSA-w5hq-g745-h8pq (uuid — buffer bounds check missing in v3/v5/v6 when buf is provided)
+  # Patched in >=14.0.0. Node.js v24 supports require() of ESM packages, so uuid@14 (ESM-only)
+  # is compatible with xcode's CJS require('uuid') usage.
+  "@expo/ngrok>uuid": ">=14.0.0"
+  "xcode>uuid": ">=14.0.0"
