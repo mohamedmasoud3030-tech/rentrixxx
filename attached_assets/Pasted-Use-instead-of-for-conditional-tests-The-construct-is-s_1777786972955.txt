@@ -1,0 +1,2275 @@
+Use '[[' instead of '[' for conditional tests. The '[[' construct is safer and more feature-rich.
+
+Consistency
+Reliability
+
+
+4
+High
+bash
+best-practices
+...
++
+Confirmed
+mohamedmasoud3030-tech
+mohamedmasoud3030-tech
+L9
+2min effort
+13 days ago
+Code Smell
+Major
+mohamedmasoud3030-techrentrixxxartifacts/rentrix/core/contracts/ContractEngine.ts
+This assertion is unnecessary since it does not change the type of the expression.
+
+Intentionality
+Maintainability
+
+
+3
+Low
+redundant
+type-dependent
++
+Open
+mohamedmasoud3030-tech
+mohamedmasoud3030-tech
+L45
+1min effort
+16 hours ago
+Code Smell
+Minor
+mohamedmasoud3030-techrentrixxxartifacts/rentrix/index.html
+Make sure not using resource integrity feature is safe here.
+
+Intentionality
+Security
+
+
+3
+Low
+cwe
+former-hotspot
++
+Open
+mohamedmasoud3030-tech
+mohamedmasoud3030-tech
+L55
+5min effort
+28 days ago
+Vulnerability
+Minor
+Make sure not using resource integrity feature is safe here.
+
+Intentionality
+Security
+
+
+3
+Low
+cwe
+former-hotspot
++
+Open
+mohamedmasoud3030-tech
+mohamedmasoud3030-tech
+L191
+5min effort
+1 day ago
+Vulnerability
+Minor
+mohamedmasoud3030-techrentrixxxartifacts/rentrix/src/App.tsx
+Refactor this function to reduce its Cognitive Complexity from 20 to the 15 allowed.
+
+Adaptability
+Maintainability
+
+
+4
+High
+brain-overload
++
+Open
+mohamedmasoud3030-tech
+mohamedmasoud3030-tech
+L118
+10min effort
+5 days ago
+Code Smell
+Critical
+Extract this nested ternary operation into an independent statement.
+
+Intentionality
+Maintainability
+
+
+2
+Medium
+confusing
++
+Open
+mohamedmasoud3030-tech
+mohamedmasoud3030-tech
+L177
+5min effort
+5 days ago
+Code Smell
+Major
+mohamedmasoud3030-techrentrixxxartifacts/rentrix/src/app/layouts/AppShellLayout.tsx
+Move this component definition out of the parent component and pass data as props.
+
+Intentionality
+Maintainability
+
+
+2
+Medium
+jsx
+performance
+...
++
+Open
+mohamedmasoud3030-tech
+mohamedmasoud3030-tech
+L17
+5min effort
+16 hours ago
+Code Smell
+Major
+mohamedmasoud3030-techrentrixxxartifacts/rentrix/src/components/finance/ManualVoucherForm.tsx
+A form label must be associated with a control.
+
+Intentionality
+Reliability
+
+
+2
+Medium
+accessibility
+react
++
+Open
+mohamedmasoud3030-tech
+mohamedmasoud3030-tech
+L99
+5min effort
+1 month ago
+Code Smell
+Major
+A form label must be associated with a control.
+
+Intentionality
+Reliability
+
+
+2
+Medium
+accessibility
+react
++
+Open
+mohamedmasoud3030-tech
+mohamedmasoud3030-tech
+L103
+5min effort
+1 month ago
+Code Smell
+Major
+mohamedmasoud3030-techrentrixxxartifacts/.../src/components/print/layout/Sidebar.tsx
+Refactor this function to reduce its Cognitive Complexity from 18 to the 15 allowed.
+
+Adaptability
+Maintainability
+
+
+4
+High
+brain-overload
++
+Open
+mohamedmasoud3030-tech
+mohamedmasoud3030-tech
+L107
+8min effort
+28 days ago
+Code Smell
+Critical
+Extract this nested ternary operation into an independent statement.
+
+Intentionality
+Maintainability
+
+
+2
+Medium
+confusing
++
+Open
+mohamedmasoud3030-tech
+mohamedmasoud3030-tech
+L114
+5min effort
+28 days ago
+Code Smell
+Major
+Use <dialog> instead of the "dialog" role to ensure accessibility across all devices.
+
+Consistency
+Maintainability
+
+
+2
+Medium
+accessibility
+react
++
+Open
+mohamedmasoud3030-tech
+mohamedmasoud3030-tech
+L174
+5min effort
+28 days ago
+Code Smell
+Major
+mohamedmasoud3030-techrentrixxxartifacts/.../src/components/print/layout/Topbar.tsx
+Remove this use of the "void" operator.
+
+Intentionality
+Maintainability
+
+
+4
+High
+confusing
+type-dependent
++
+Open
+mohamedmasoud3030-tech
+mohamedmasoud3030-tech
+L75
+5min effort
+16 hours ago
+Code Smell
+Critical
+mohamedmasoud3030-techrentrixxxartifacts/rentrix/src/components/reports/ReportsDashboard.tsx
+Extract this nested ternary operation into an independent statement.
+
+Intentionality
+Maintainability
+
+
+2
+Medium
+confusing
++
+Open
+mohamedmasoud3030-tech
+mohamedmasoud3030-tech
+L122
+5min effort
+28 days ago
+Code Smell
+Major
+Extract this nested ternary operation into an independent statement.
+
+Intentionality
+Maintainability
+
+
+2
+Medium
+confusing
++
+Open
+mohamedmasoud3030-tech
+mohamedmasoud3030-tech
+L123
+5min effort
+28 days ago
+Code Smell
+Major
+The signature '(...text: string[]): void' of 'printWindow.document.write' is deprecated.
+
+Consistency
+Maintainability
+
+
+3
+Low
+cwe
+obsolete
+...
++
+Open
+mohamedmasoud3030-tech
+mohamedmasoud3030-tech
+L369
+15min effort
+5 days ago
+Code Smell
+Minor
+The signature '(...text: string[]): void' of 'printWindow.document.write' is deprecated.
+
+Consistency
+Maintainability
+
+
+3
+Low
+cwe
+obsolete
+...
++
+Open
+mohamedmasoud3030-tech
+mohamedmasoud3030-tech
+L370
+15min effort
+5 days ago
+Code Smell
+Minor
+The signature '(...text: string[]): void' of 'printWindow.document.write' is deprecated.
+
+Consistency
+Maintainability
+
+
+3
+Low
+cwe
+obsolete
+...
++
+Open
+mohamedmasoud3030-tech
+mohamedmasoud3030-tech
+L371
+15min effort
+5 days ago
+Code Smell
+Minor
+Missing "key" prop for element in array
+
+Intentionality
+Maintainability
+
+
+2
+Medium
+jsx
+performance
+...
++
+Open
+mohamedmasoud3030-tech
+mohamedmasoud3030-tech
+L381
+5min effort
+5 days ago
+Code Smell
+Major
+Missing "key" prop for element in array
+
+Intentionality
+Maintainability
+
+
+2
+Medium
+jsx
+performance
+...
++
+Open
+mohamedmasoud3030-tech
+mohamedmasoud3030-tech
+L383
+5min effort
+5 days ago
+Code Smell
+Major
+A form label must be associated with a control.
+
+Intentionality
+Reliability
+
+
+2
+Medium
+accessibility
+react
++
+Open
+mohamedmasoud3030-tech
+mohamedmasoud3030-tech
+L389
+5min effort
+5 days ago
+Code Smell
+Major
+Missing "key" prop for element in array
+
+Intentionality
+Maintainability
+
+
+2
+Medium
+jsx
+performance
+...
++
+Open
+mohamedmasoud3030-tech
+mohamedmasoud3030-tech
+L420
+5min effort
+5 days ago
+Code Smell
+Major
+Missing "key" prop for element in array
+
+Intentionality
+Maintainability
+
+
+2
+Medium
+jsx
+performance
+...
++
+Open
+mohamedmasoud3030-tech
+mohamedmasoud3030-tech
+L428
+5min effort
+5 days ago
+Code Smell
+Major
+Missing "key" prop for element in array
+
+Intentionality
+Maintainability
+
+
+2
+Medium
+jsx
+performance
+...
++
+Open
+mohamedmasoud3030-tech
+mohamedmasoud3030-tech
+L436
+5min effort
+5 days ago
+Code Smell
+Major
+Missing "key" prop for element in array
+
+Intentionality
+Maintainability
+
+
+2
+Medium
+jsx
+performance
+...
++
+Open
+mohamedmasoud3030-tech
+mohamedmasoud3030-tech
+L578
+5min effort
+28 days ago
+Code Smell
+Major
+mohamedmasoud3030-techrentrixxxartifacts/.../src/components/settings/IntegrationsSettings.tsx
+A form label must be associated with a control.
+
+Intentionality
+Reliability
+
+
+2
+Medium
+accessibility
+react
++
+Open
+mohamedmasoud3030-tech
+mohamedmasoud3030-tech
+L68
+5min effort
+1 month ago
+Code Smell
+Major
+A form label must be associated with a control.
+
+Intentionality
+Reliability
+
+
+2
+Medium
+accessibility
+react
++
+Open
+mohamedmasoud3030-tech
+mohamedmasoud3030-tech
+L101
+5min effort
+14 days ago
+Code Smell
+Major
+A form label must be associated with a control.
+
+Intentionality
+Reliability
+
+
+2
+Medium
+accessibility
+react
++
+Open
+mohamedmasoud3030-tech
+mohamedmasoud3030-tech
+L105
+5min effort
+14 days ago
+Code Smell
+Major
+mohamedmasoud3030-techrentrixxxartifacts/rentrix/src/components/shared/PrintPreviewModal.tsx
+`String.raw` should be used to avoid escaping `\`.
+
+Intentionality
+Maintainability
+
+
+3
+Low
+es2015
+readability
++
+Open
+mohamedmasoud3030-tech
+mohamedmasoud3030-tech
+L12
+5min effort
+29 days ago
+Code Smell
+Minor
+The signature '(...text: string[]): void' of 'printWindow.document.write' is deprecated.
+
+Consistency
+Maintainability
+
+
+3
+Low
+cwe
+obsolete
+...
++
+Open
+mohamedmasoud3030-tech
+mohamedmasoud3030-tech
+L304
+15min effort
+16 hours ago
+Code Smell
+Minor
+mohamedmasoud3030-techrentrixxxartifacts/rentrix/src/components/shared/WhatsAppComposerModal.tsx
+Unexpected lexical declaration in case block.
+
+Consistency
+Maintainability
+
+
+2
+Medium
+No tags
++
+Open
+mohamedmasoud3030-tech
+mohamedmasoud3030-tech
+L68
+5min effort
+1 month ago
+Code Smell
+Major
+Unexpected lexical declaration in case block.
+
+Consistency
+Maintainability
+
+
+2
+Medium
+No tags
++
+Open
+mohamedmasoud3030-tech
+mohamedmasoud3030-tech
+L75
+5min effort
+1 month ago
+Code Smell
+Major
+Unexpected lexical declaration in case block.
+
+Consistency
+Maintainability
+
+
+2
+Medium
+No tags
++
+Open
+mohamedmasoud3030-tech
+mohamedmasoud3030-tech
+L86
+5min effort
+1 month ago
+Code Smell
+Major
+mohamedmasoud3030-techrentrixxxartifacts/rentrix/src/components/ui/Modal.tsx
+Avoid non-native interactive elements. If using native HTML is not possible, add an appropriate role and support for tabbing, mouse, keyboard, and touch inputs to an interactive content element.
+
+Consistency
+Reliability
+
+
+2
+Medium
+Maintainability
+
+
+3
+Low
+accessibility
+react
++
+Open
+mohamedmasoud3030-tech
+mohamedmasoud3030-tech
+L39
+5min effort
+28 days ago
+Code Smell
+Major
+Visible, non-interactive elements with click handlers must have at least one keyboard listener.
+
+Intentionality
+Reliability
+
+
+3
+Low
+accessibility
+react
++
+Open
+mohamedmasoud3030-tech
+mohamedmasoud3030-tech
+L39
+5min effort
+28 days ago
+Bug
+Minor
+Avoid non-native interactive elements. If using native HTML is not possible, add an appropriate role and support for tabbing, mouse, keyboard, and touch inputs to an interactive content element.
+
+Consistency
+Reliability
+
+
+2
+Medium
+Maintainability
+
+
+3
+Low
+accessibility
+react
++
+Open
+mohamedmasoud3030-tech
+mohamedmasoud3030-tech
+L44
+5min effort
+28 days ago
+Code Smell
+Major
+Visible, non-interactive elements with click handlers must have at least one keyboard listener.
+
+Intentionality
+Reliability
+
+
+3
+Low
+accessibility
+react
++
+Open
+mohamedmasoud3030-tech
+mohamedmasoud3030-tech
+L44
+5min effort
+28 days ago
+Bug
+Minor
+mohamedmasoud3030-techrentrixxxartifacts/rentrix/src/components/ui/NumberInput.tsx
+The empty object is useless.
+
+Intentionality
+Maintainability
+
+
+3
+Low
+spread-operator
+unnecessary
++
+Open
+mohamedmasoud3030-tech
+mohamedmasoud3030-tech
+L76
+5min effort
+28 days ago
+Code Smell
+Minor
+mohamedmasoud3030-techrentrixxxartifacts/rentrix/src/contexts/AppContext.tsx
+Use `export…from` to re-export `AppProvider`.
+
+Consistency
+Maintainability
+
+
+3
+Low
+convention
+es2015
++
+Open
+mohamedmasoud3030-tech
+mohamedmasoud3030-tech
+L3
+5min effort
+29 days ago
+Code Smell
+Minor
+Use `export…from` to re-export `useApp`.
+
+Consistency
+Maintainability
+
+
+3
+Low
+convention
+es2015
++
+Open
+mohamedmasoud3030-tech
+mohamedmasoud3030-tech
+L3
+5min effort
+29 days ago
+Code Smell
+Minor
+mohamedmasoud3030-techrentrixxxartifacts/.../src/design-system/molecules/KpiCard.tsx
+Extract this nested ternary operation into an independent statement.
+
+Intentionality
+Maintainability
+
+
+2
+Medium
+confusing
++
+Open
+mohamedmasoud3030-tech
+mohamedmasoud3030-tech
+L13
+5min effort
+5 days ago
+Code Smell
+Major
+Extract this nested ternary operation into an independent statement.
+
+Intentionality
+Maintainability
+
+
+2
+Medium
+confusing
++
+Open
+mohamedmasoud3030-tech
+mohamedmasoud3030-tech
+L13
+5min effort
+5 days ago
+Code Smell
+Major
+mohamedmasoud3030-techrentrixxxartifacts/rentrix/src/domain/finance/finance.facade.ts
+Use `export…from` to re-export `JournalEntryRow`.
+
+Consistency
+Maintainability
+
+
+3
+Low
+convention
+es2015
++
+Open
+mohamedmasoud3030-tech
+mohamedmasoud3030-tech
+L36
+5min effort
+4 days ago
+Code Smell
+Minor
+mohamedmasoud3030-techrentrixxxartifacts/rentrix/src/hooks/useDataLoader.ts
+Remove this use of the "void" operator.
+
+Intentionality
+Maintainability
+
+
+4
+High
+confusing
+type-dependent
++
+Open
+mohamedmasoud3030-tech
+mohamedmasoud3030-tech
+L41
+5min effort
+28 days ago
+Code Smell
+Critical
+mohamedmasoud3030-techrentrixxxartifacts/rentrix/src/i18n/index.ts
+Remove this use of the "void" operator.
+
+Intentionality
+Maintainability
+
+
+4
+High
+confusing
+type-dependent
++
+Open
+mohamedmasoud3030-tech
+mohamedmasoud3030-tech
+L9
+5min effort
+16 hours ago
+Code Smell
+Critical
+mohamedmasoud3030-techrentrixxxartifacts/rentrix/src/index.css
+Unexpected duplicate selector ":root", first used at line 5
+
+Intentionality
+Maintainability
+
+
+2
+Medium
+No tags
++
+Open
+mohamedmasoud3030-tech
+mohamedmasoud3030-tech
+L485
+1min effort
+5 days ago
+Code Smell
+Major
+mohamedmasoud3030-techrentrixxxartifacts/.../infrastructure/observability/errorTracker.ts
+Unexpected negated condition.
+
+Intentionality
+Maintainability
+
+
+3
+Low
+readability
++
+Open
+mohamedmasoud3030-tech
+mohamedmasoud3030-tech
+L43
+2min effort
+1 month ago
+Code Smell
+Minor
+Unexpected negated condition.
+
+Intentionality
+Maintainability
+
+
+3
+Low
+readability
++
+Open
+mohamedmasoud3030-tech
+mohamedmasoud3030-tech
+L44
+2min effort
+1 month ago
+Code Smell
+Minor
+mohamedmasoud3030-techrentrixxxartifacts/.../src/infrastructure/security/tokenLifecycle.ts
+Prefer `globalThis` over `window`.
+
+Consistency
+Maintainability
+
+
+3
+Low
+es2020
+portability
++
+Open
+mohamedmasoud3030-tech
+mohamedmasoud3030-tech
+L75
+2min effort
+15 hours ago
+Code Smell
+Minor
+Prefer `globalThis` over `window`.
+
+Consistency
+Maintainability
+
+
+3
+Low
+es2020
+portability
++
+Open
+mohamedmasoud3030-tech
+mohamedmasoud3030-tech
+L81
+2min effort
+15 hours ago
+Code Smell
+Minor
+mohamedmasoud3030-techrentrixxxartifacts/rentrix/src/services/accountingService.ts
+'value' will use Object's default stringification format ('[object Object]') when stringified.
+
+Intentionality
+Maintainability
+
+
+3
+Low
+object
+string
+...
++
+Open
+mohamedmasoud3030-tech
+mohamedmasoud3030-tech
+L46
+5min effort
+1 month ago
+Code Smell
+Minor
+mohamedmasoud3030-techrentrixxxartifacts/rentrix/src/services/audit/AuditTrail.ts
+Use `Math.trunc` instead of `|= 0`.
+
+Intentionality
+Reliability
+
+
+4
+High
+Maintainability
+
+
+4
+High
+confusing
+es2015
++
+Open
+mohamedmasoud3030-tech
+mohamedmasoud3030-tech
+L68
+5min effort
+5 days ago
+Code Smell
+Major
+mohamedmasoud3030-techrentrixxxartifacts/rentrix/src/services/documents/TableGenerator.ts
+'value' will use Object's default stringification format ('[object Object]') when stringified.
+
+Intentionality
+Maintainability
+
+
+3
+Low
+object
+string
+...
++
+Open
+mohamedmasoud3030-tech
+mohamedmasoud3030-tech
+L6
+5min effort
+5 days ago
+Code Smell
+Minor
+mohamedmasoud3030-techrentrixxxartifacts/rentrix/src/services/financeService.ts
+This assertion is unnecessary since it does not change the type of the expression.
+
+Intentionality
+Maintainability
+
+
+3
+Low
+redundant
+type-dependent
++
+Open
+mohamedmasoud3030-tech
+mohamedmasoud3030-tech
+L53
+1min effort
+29 days ago
+Code Smell
+Minor
+Prefer `Math.max()` to simplify ternary expressions.
+
+Intentionality
+Maintainability
+
+
+3
+Low
+confusing
+readability
++
+Open
+mohamedmasoud3030-tech
+mohamedmasoud3030-tech
+L90
+5min effort
+29 days ago
+Code Smell
+Minor
+mohamedmasoud3030-techrentrixxxartifacts/rentrix/src/services/operationsService.ts
+Extract this nested ternary operation into an independent statement.
+
+Intentionality
+Maintainability
+
+
+2
+Medium
+confusing
++
+Open
+mohamedmasoud3030-tech
+mohamedmasoud3030-tech
+L159
+5min effort
+29 days ago
+Code Smell
+Major
+mohamedmasoud3030-techrentrixxxartifacts/rentrix/src/services/receiptService.ts
+Use `export…from` to re-export `JournalEntryRow`.
+
+Consistency
+Maintainability
+
+
+3
+Low
+convention
+es2015
++
+Open
+mohamedmasoud3030-tech
+mohamedmasoud3030-tech
+L3
+5min effort
+5 days ago
+Code Smell
+Minor
+Use `export…from` to re-export `ReceiptPostingPayload`.
+
+Consistency
+Maintainability
+
+
+3
+Low
+convention
+es2015
++
+Open
+mohamedmasoud3030-tech
+mohamedmasoud3030-tech
+L3
+5min effort
+5 days ago
+Code Smell
+Minor
+Use `export…from` to re-export `ReceiptPostingResult`.
+
+Consistency
+Maintainability
+
+
+3
+Low
+convention
+es2015
++
+Open
+mohamedmasoud3030-tech
+mohamedmasoud3030-tech
+L3
+5min effort
+5 days ago
+Code Smell
+Minor
+mohamedmasoud3030-techrentrixxxartifacts/rentrix/src/services/reports/ReportEngine.ts
+'unknown' overrides all other types in this union type.
+
+Intentionality
+Maintainability
+
+
+3
+Low
+redundant
+type-dependent
++
+Open
+mohamedmasoud3030-tech
+mohamedmasoud3030-tech
+L12
+5min effort
+5 days ago
+Code Smell
+Minor
+mohamedmasoud3030-techrentrixxxartifacts/rentrix/src/services/reports/ReportSnapshotManager.ts
+Refactor this code to not use nested template literals.
+
+Intentionality
+Maintainability
+
+
+2
+Medium
+brain-overload
+confusing
+...
++
+Open
+mohamedmasoud3030-tech
+mohamedmasoud3030-tech
+L14
+10min effort
+5 days ago
+Code Smell
+Major
+mohamedmasoud3030-techrentrixxxartifacts/rentrix/src/services/snapshotService.ts
+This assertion is unnecessary since it does not change the type of the expression.
+
+Intentionality
+Maintainability
+
+
+3
+Low
+redundant
+type-dependent
++
+Open
+mohamedmasoud3030-tech
+mohamedmasoud3030-tech
+L100
+1min effort
+29 days ago
+Code Smell
+Minor
+mohamedmasoud3030-techrentrixxxartifacts/rentrix/src/types/domain.ts
+Remove this redundant type alias and replace its occurrences with "string".
+
+Intentionality
+Maintainability
+
+
+2
+Medium
+No tags
++
+Open
+mohamedmasoud3030-tech
+mohamedmasoud3030-tech
+L1
+5min effort
+21 days ago
+Code Smell
+Major
+mohamedmasoud3030-techrentrixxxartifacts/rentrix/src/ui/Accounting.tsx
+A form label must be associated with a control.
+
+Intentionality
+Reliability
+
+
+2
+Medium
+accessibility
+react
++
+Open
+mohamedmasoud3030-tech
+mohamedmasoud3030-tech
+L264
+5min effort
+1 month ago
+Code Smell
+Major
+mohamedmasoud3030-techrentrixxxartifacts/rentrix/src/ui/AuditLog.tsx
+A form label must be associated with a control.
+
+Intentionality
+Reliability
+
+
+2
+Medium
+accessibility
+react
++
+Open
+mohamedmasoud3030-tech
+mohamedmasoud3030-tech
+L181
+5min effort
+12 days ago
+Code Smell
+Major
+mohamedmasoud3030-techrentrixxxartifacts/rentrix/src/ui/Commissions.tsx
+Extract this nested ternary operation into an independent statement.
+
+Intentionality
+Maintainability
+
+
+2
+Medium
+confusing
++
+Open
+mohamedmasoud3030-tech
+mohamedmasoud3030-tech
+L91
+5min effort
+28 days ago
+Code Smell
+Major
+A form label must be associated with a control.
+
+Intentionality
+Reliability
+
+
+2
+Medium
+accessibility
+react
++
+Open
+mohamedmasoud3030-tech
+mohamedmasoud3030-tech
+L210
+5min effort
+28 days ago
+Code Smell
+Major
+A form label must be associated with a control.
+
+Intentionality
+Reliability
+
+
+2
+Medium
+accessibility
+react
++
+Open
+mohamedmasoud3030-tech
+mohamedmasoud3030-tech
+L214
+5min effort
+28 days ago
+Code Smell
+Major
+A form label must be associated with a control.
+
+Intentionality
+Reliability
+
+
+2
+Medium
+accessibility
+react
++
+Open
+mohamedmasoud3030-tech
+mohamedmasoud3030-tech
+L219
+5min effort
+28 days ago
+Code Smell
+Major
+mohamedmasoud3030-techrentrixxxartifacts/rentrix/src/ui/Contracts.tsx
+Remove this useless assignment to variable "expenses".
+
+Intentionality
+Maintainability
+
+
+2
+Medium
+cwe
+unused
++
+Open
+mohamedmasoud3030-tech
+mohamedmasoud3030-tech
+L83
+1min effort
+1 month ago
+Code Smell
+Major
+Prefer `Math.max()` to simplify ternary expressions.
+
+Intentionality
+Maintainability
+
+
+3
+Low
+confusing
+readability
++
+Open
+mohamedmasoud3030-tech
+mohamedmasoud3030-tech
+L214
+5min effort
+1 month ago
+Code Smell
+Minor
+Extract this nested ternary operation into an independent statement.
+
+Intentionality
+Maintainability
+
+
+2
+Medium
+confusing
++
+Open
+mohamedmasoud3030-tech
+mohamedmasoud3030-tech
+L332
+5min effort
+1 month ago
+Code Smell
+Major
+Extract this nested ternary operation into an independent statement.
+
+Intentionality
+Maintainability
+
+
+2
+Medium
+confusing
++
+Open
+mohamedmasoud3030-tech
+mohamedmasoud3030-tech
+L364
+5min effort
+1 month ago
+Code Smell
+Major
+A form label must be associated with a control.
+
+Intentionality
+Reliability
+
+
+2
+Medium
+accessibility
+react
++
+Open
+mohamedmasoud3030-tech
+mohamedmasoud3030-tech
+L554
+5min effort
+1 month ago
+Code Smell
+Major
+A form label must be associated with a control.
+
+Intentionality
+Reliability
+
+
+2
+Medium
+accessibility
+react
++
+Open
+mohamedmasoud3030-tech
+mohamedmasoud3030-tech
+L567
+5min effort
+27 days ago
+Code Smell
+Major
+A form label must be associated with a control.
+
+Intentionality
+Reliability
+
+
+2
+Medium
+accessibility
+react
++
+Open
+mohamedmasoud3030-tech
+mohamedmasoud3030-tech
+L568
+5min effort
+1 month ago
+Code Smell
+Major
+A form label must be associated with a control.
+
+Intentionality
+Reliability
+
+
+2
+Medium
+accessibility
+react
++
+Open
+mohamedmasoud3030-tech
+mohamedmasoud3030-tech
+L569
+5min effort
+1 month ago
+Code Smell
+Major
+A form label must be associated with a control.
+
+Intentionality
+Reliability
+
+
+2
+Medium
+accessibility
+react
++
+Open
+mohamedmasoud3030-tech
+mohamedmasoud3030-tech
+L570
+5min effort
+1 month ago
+Code Smell
+Major
+A form label must be associated with a control.
+
+Intentionality
+Reliability
+
+
+2
+Medium
+accessibility
+react
++
+Open
+mohamedmasoud3030-tech
+mohamedmasoud3030-tech
+L571
+5min effort
+27 days ago
+Code Smell
+Major
+mohamedmasoud3030-techrentrixxxartifacts/rentrix/src/ui/Dashboard.tsx
+Remove this useless assignment to variable "monthReceipts".
+
+Intentionality
+Maintainability
+
+
+2
+Medium
+cwe
+unused
++
+Open
+mohamedmasoud3030-tech
+mohamedmasoud3030-tech
+L63
+1min effort
+28 days ago
+Code Smell
+Major
+mohamedmasoud3030-techrentrixxxartifacts/rentrix/src/ui/Financials.tsx
+Extract this nested ternary operation into an independent statement.
+
+Intentionality
+Maintainability
+
+
+2
+Medium
+confusing
++
+Open
+mohamedmasoud3030-tech
+mohamedmasoud3030-tech
+L261
+5min effort
+28 days ago
+Code Smell
+Major
+Extract this nested ternary operation into an independent statement.
+
+Intentionality
+Maintainability
+
+
+2
+Medium
+confusing
++
+Open
+mohamedmasoud3030-tech
+mohamedmasoud3030-tech
+L409
+5min effort
+28 days ago
+Code Smell
+Major
+Extract this nested ternary operation into an independent statement.
+
+Intentionality
+Maintainability
+
+
+2
+Medium
+confusing
++
+Open
+mohamedmasoud3030-tech
+mohamedmasoud3030-tech
+L533
+5min effort
+28 days ago
+Code Smell
+Major
+Extract this nested ternary operation into an independent statement.
+
+Intentionality
+Maintainability
+
+
+2
+Medium
+confusing
++
+Open
+mohamedmasoud3030-tech
+mohamedmasoud3030-tech
+L645
+5min effort
+28 days ago
+Code Smell
+Major
+Prefer `Math.max()` to simplify ternary expressions.
+
+Intentionality
+Maintainability
+
+
+3
+Low
+confusing
+readability
++
+Open
+mohamedmasoud3030-tech
+mohamedmasoud3030-tech
+L778
+5min effort
+29 days ago
+Code Smell
+Minor
+A form label must be associated with a control.
+
+Intentionality
+Reliability
+
+
+2
+Medium
+accessibility
+react
++
+Open
+mohamedmasoud3030-tech
+mohamedmasoud3030-tech
+L901
+5min effort
+1 month ago
+Code Smell
+Major
+Remove this useless assignment to variable "submitError".
+
+Intentionality
+Maintainability
+
+
+2
+Medium
+cwe
+unused
++
+Open
+mohamedmasoud3030-tech
+mohamedmasoud3030-tech
+L1018
+1min effort
+29 days ago
+Code Smell
+Major
+Remove this useless assignment to variable "submitError".
+
+Intentionality
+Maintainability
+
+
+2
+Medium
+cwe
+unused
++
+Open
+mohamedmasoud3030-tech
+mohamedmasoud3030-tech
+L1066
+1min effort
+29 days ago
+Code Smell
+Major
+mohamedmasoud3030-techrentrixxxartifacts/rentrix/src/ui/GeneralLedger.tsx
+A form label must be associated with a control.
+
+Intentionality
+Reliability
+
+
+2
+Medium
+accessibility
+react
++
+Open
+mohamedmasoud3030-tech
+mohamedmasoud3030-tech
+L54
+5min effort
+1 month ago
+Code Smell
+Major
+A form label must be associated with a control.
+
+Intentionality
+Reliability
+
+
+2
+Medium
+accessibility
+react
++
+Open
+mohamedmasoud3030-tech
+mohamedmasoud3030-tech
+L70
+5min effort
+1 month ago
+Code Smell
+Major
+A form label must be associated with a control.
+
+Intentionality
+Reliability
+
+
+2
+Medium
+accessibility
+react
++
+Open
+mohamedmasoud3030-tech
+mohamedmasoud3030-tech
+L74
+5min effort
+1 month ago
+Code Smell
+Major
+Unexpected negated condition.
+
+Intentionality
+Maintainability
+
+
+3
+Low
+readability
++
+Open
+mohamedmasoud3030-tech
+mohamedmasoud3030-tech
+L102
+2min effort
+1 month ago
+Code Smell
+Minor
+Extract this nested ternary operation into an independent statement.
+
+Intentionality
+Maintainability
+
+
+2
+Medium
+confusing
++
+Open
+mohamedmasoud3030-tech
+mohamedmasoud3030-tech
+L104
+5min effort
+1 month ago
+Code Smell
+Major
+mohamedmasoud3030-techrentrixxxartifacts/rentrix/src/ui/Invoices.tsx
+Remove this useless assignment to variable "currency".
+
+Intentionality
+Maintainability
+
+
+2
+Medium
+cwe
+unused
++
+Open
+mohamedmasoud3030-tech
+mohamedmasoud3030-tech
+L180
+1min effort
+28 days ago
+Code Smell
+Major
+mohamedmasoud3030-techrentrixxxartifacts/rentrix/src/ui/Maintenance.tsx
+Extract this nested ternary operation into an independent statement.
+
+Intentionality
+Maintainability
+
+
+2
+Medium
+confusing
++
+Open
+mohamedmasoud3030-tech
+mohamedmasoud3030-tech
+L183
+5min effort
+28 days ago
+Code Smell
+Major
+Extract this nested ternary operation into an independent statement.
+
+Intentionality
+Maintainability
+
+
+2
+Medium
+confusing
++
+Open
+mohamedmasoud3030-tech
+mohamedmasoud3030-tech
+L185
+5min effort
+28 days ago
+Code Smell
+Major
+A form label must be associated with a control.
+
+Intentionality
+Reliability
+
+
+2
+Medium
+accessibility
+react
++
+Open
+mohamedmasoud3030-tech
+mohamedmasoud3030-tech
+L216
+5min effort
+1 month ago
+Code Smell
+Major
+A form label must be associated with a control.
+
+Intentionality
+Reliability
+
+
+2
+Medium
+accessibility
+react
++
+Open
+mohamedmasoud3030-tech
+mohamedmasoud3030-tech
+L220
+5min effort
+1 month ago
+Code Smell
+Major
+Extract this nested ternary operation into an independent statement.
+
+Intentionality
+Maintainability
+
+
+2
+Medium
+confusing
++
+Open
+mohamedmasoud3030-tech
+mohamedmasoud3030-tech
+L265
+5min effort
+28 days ago
+Code Smell
+Major
+Extract this nested ternary operation into an independent statement.
+
+Intentionality
+Maintainability
+
+
+2
+Medium
+confusing
++
+Open
+mohamedmasoud3030-tech
+mohamedmasoud3030-tech
+L265
+5min effort
+28 days ago
+Code Smell
+Major
+A form label must be associated with a control.
+
+Intentionality
+Reliability
+
+
+2
+Medium
+accessibility
+react
++
+Open
+mohamedmasoud3030-tech
+mohamedmasoud3030-tech
+L467
+5min effort
+1 month ago
+Code Smell
+Major
+A form label must be associated with a control.
+
+Intentionality
+Reliability
+
+
+2
+Medium
+accessibility
+react
++
+Open
+mohamedmasoud3030-tech
+mohamedmasoud3030-tech
+L476
+5min effort
+1 month ago
+Code Smell
+Major
+A form label must be associated with a control.
+
+Intentionality
+Reliability
+
+
+2
+Medium
+accessibility
+react
++
+Open
+mohamedmasoud3030-tech
+mohamedmasoud3030-tech
+L481
+5min effort
+1 month ago
+Code Smell
+Major
+mohamedmasoud3030-techrentrixxxartifacts/rentrix/src/ui/Owners.tsx
+Extract this nested ternary operation into an independent statement.
+
+Intentionality
+Maintainability
+
+
+2
+Medium
+confusing
++
+Open
+mohamedmasoud3030-tech
+mohamedmasoud3030-tech
+L56
+5min effort
+28 days ago
+Code Smell
+Major
+mohamedmasoud3030-techrentrixxxartifacts/rentrix/src/ui/Properties.tsx
+Avoid non-native interactive elements. If using native HTML is not possible, add an appropriate role and support for tabbing, mouse, keyboard, and touch inputs to an interactive content element.
+
+Consistency
+Reliability
+
+
+2
+Medium
+Maintainability
+
+
+3
+Low
+accessibility
+react
++
+Open
+mohamedmasoud3030-tech
+mohamedmasoud3030-tech
+L155
+5min effort
+28 days ago
+Code Smell
+Major
+Visible, non-interactive elements with click handlers must have at least one keyboard listener.
+
+Intentionality
+Reliability
+
+
+3
+Low
+accessibility
+react
++
+Open
+mohamedmasoud3030-tech
+mohamedmasoud3030-tech
+L155
+5min effort
+28 days ago
+Bug
+Minor
+Extract this nested ternary operation into an independent statement.
+
+Intentionality
+Maintainability
+
+
+2
+Medium
+confusing
++
+Open
+mohamedmasoud3030-tech
+mohamedmasoud3030-tech
+L495
+5min effort
+1 day ago
+Code Smell
+Major
+Non-interactive elements should not be assigned mouse or keyboard event listeners.
+
+Consistency
+Reliability
+
+
+3
+Low
+Maintainability
+
+
+2
+Medium
+accessibility
+react
++
+Open
+mohamedmasoud3030-tech
+mohamedmasoud3030-tech
+L618
+5min effort
+29 days ago
+Code Smell
+Major
+Visible, non-interactive elements with click handlers must have at least one keyboard listener.
+
+Intentionality
+Reliability
+
+
+3
+Low
+accessibility
+react
++
+Open
+mohamedmasoud3030-tech
+mohamedmasoud3030-tech
+L618
+5min effort
+29 days ago
+Bug
+Minor
+Extract this nested ternary operation into an independent statement.
+
+Intentionality
+Maintainability
+
+
+2
+Medium
+confusing
++
+Open
+mohamedmasoud3030-tech
+mohamedmasoud3030-tech
+L740
+5min effort
+1 day ago
+Code Smell
+Major
+Extract this nested ternary operation into an independent statement.
+
+Intentionality
+Maintainability
+
+
+2
+Medium
+confusing
++
+Open
+mohamedmasoud3030-tech
+mohamedmasoud3030-tech
+L741
+5min effort
+1 day ago
+Code Smell
+Major
+mohamedmasoud3030-techrentrixxxartifacts/rentrix/src/ui/Tenants.tsx
+Remove this useless assignment to variable "stats".
+
+Intentionality
+Maintainability
+
+
+2
+Medium
+cwe
+unused
++
+Open
+mohamedmasoud3030-tech
+mohamedmasoud3030-tech
+L54
+1min effort
+1 month ago
+Code Smell
+Major
+mohamedmasoud3030-techrentrixxxartifacts/rentrix/src/utils/helpers.ts
+Replace this union type with a type alias.
+
+Adaptability
+Maintainability
+
+
+3
+Low
+proficiency
++
+Open
+mohamedmasoud3030-tech
+mohamedmasoud3030-tech
+L18
+5min effort
+1 month ago
+Code Smell
+Minor
+'value' will use Object's default stringification format ('[object Object]') when stringified.
+
+Intentionality
+Maintainability
+
+
+3
+Low
+object
+string
+...
++
+Open
+mohamedmasoud3030-tech
+mohamedmasoud3030-tech
+L45
+5min effort
+1 month ago
+Code Smell
+Minor
+Replace this alternation with a character class.
+
+Intentionality
+Maintainability
+
+
+2
+Medium
+regex
+type-dependent
++
+Open
+mohamedmasoud3030-tech
+mohamedmasoud3030-tech
+L47
+5min effort
+1 month ago
+Code Smell
+Major
+mohamedmasoud3030-techrentrixxxartifacts/rentrix/src/utils/migrateAttachments.ts
+Use the "RegExp.exec()" method instead.
+
+Intentionality
+Maintainability
+
+
+3
+Low
+regex
+type-dependent
++
+Open
+mohamedmasoud3030-tech
+mohamedmasoud3030-tech
+L8
+5min effort
+29 days ago
+Code Smell
+Minor
+Refactor this function to reduce its Cognitive Complexity from 17 to the 15 allowed.
+
+Adaptability
+Maintainability
+
+
+4
+High
+brain-overload
++
+Open
+mohamedmasoud3030-tech
+mohamedmasoud3030-tech
+L68
+7min effort
+1 day ago
+Code Smell
+Critical
+117 of 117 shown
