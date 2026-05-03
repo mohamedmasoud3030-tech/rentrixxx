@@ -13,7 +13,7 @@ describe('FinanceContext', () => {
     const value = {
       financeService: {} as any,
       getFinancialSummary: async () => null,
-      rebuildSnapshotsFromJournal: async () => undefined,
+      rebuildSnapshotsFromJournal: async () => ({ duration: 0 }),
       ownerBalances: {},
       contractBalances: {},
       tenantBalances: {},

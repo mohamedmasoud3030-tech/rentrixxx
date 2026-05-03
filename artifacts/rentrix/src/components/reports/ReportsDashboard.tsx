@@ -484,7 +484,7 @@ const AgedReceivablesView: React.FC<{ currency: string }> = ({ currency }) => {
         <>
           <div className="grid grid-cols-5 gap-2">
             {buckets.map((b, i) => (
-              <Kpi key={b.name} label={b.name} value={fmt(b.value, currency)}
+              <KpiCardReport key={b.name} label={b.name} value={fmt(b.value, currency)}
                 color={['text-emerald-600', 'text-blue-600', 'text-yellow-600'][i] ?? 'text-red-600'}/>
             ))}
           </div>
