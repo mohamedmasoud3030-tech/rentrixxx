@@ -42,6 +42,9 @@ See the `pnpm-workspace` skill for workspace structure, TypeScript setup, and pa
 - **Type**: Express API server
 - **Preview path**: `/api`
 - Scaffold only — app data goes through Supabase directly from the frontend
+- **Required secrets**: `SUPABASE_JWT_SECRET` (Supabase project settings → API → JWT Settings → JWT Secret)
+- JWT verification is active on all protected routes (`requireAuth` middleware in `src/middlewares/auth.ts`). Without `SUPABASE_JWT_SECRET` every protected route returns 401.
+- Startup log confirms: `"SUPABASE_JWT_SECRET loaded — JWT verification is active"` when secret is present; WARN when missing.
 
 ## Migration Notes
 - Ported from Vercel/v0 import (original was a Vite + React app, not Next.js)
