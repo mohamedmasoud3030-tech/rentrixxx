@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
+import DataErrorScreen from '../components/shared/DataErrorScreen';
 import { Database, Settings, Expense, Invoice, AppContextType, PerformanceMetrics } from '../types';
 import { supabaseData } from '../services/supabaseDataService';
 import { apiGet } from '../services/api/apiClient';
@@ -72,6 +73,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [db, setDb] = useState<Database>(DEFAULT_EMPTY_DB);
   const [isLoading, setIsLoading] = useState(true);
   const [isDataStale, setIsDataStale] = useState(false);
+  const [dataError, setDataError] = useState<string | null>(null);
   const [performanceMetrics, setPerformanceMetrics] = useState<PerformanceMetrics>({
     addReceipt: [], addExpense: [], voidReceipt: [], voidExpense: [], generateInvoices: [], addManualJournalVoucher: [], gateChecks: []
   });
@@ -141,10 +143,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       };
 
       setDb(data);
+      setDataError(null);
       setIsDataStale(false);
     } catch (err) {
       logger.error('Refresh data failed', { message: errMsg(err) });
-      toast.error('فشل تحديث البيانات');
+      toast.error('فشل تحميل البيانات — تحقق من الاتصال وحاول مرة أخرى');
+      setDataError(errMsg(err));
     } finally {
       setIsLoading(false);
     }
@@ -715,7 +719,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     generateNotifications: operations.generateNotifications,
     runManualAutomation: operations.runManualAutomation,
     getFinancialSummary: async () => null,
+    dataError,
+    retryData: refreshData,
   };
 
-  return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
+  return (
+    <AppContext.Provider value={value}>
+      {dataError ? (
+        <DataErrorScreen message={dataError} onRetry={refreshData} />
+      ) : (
+        children
+      )}
+    </AppContext.Provider>
+  );
 };

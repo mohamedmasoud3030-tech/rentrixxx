@@ -774,4 +774,9 @@ export interface AppContextType {
   sendWhatsApp: (phone: string, message: string) => void;
   runManualAutomation: () => Promise<AutomationResult>;
   getFinancialSummary: () => Promise<any | null>;
+
+  // Data-load error state — set when getAllData throws, cleared on success.
+  // Components should gate table rendering on this being null.
+  dataError: string | null;
+  retryData: () => Promise<void>;
 }
