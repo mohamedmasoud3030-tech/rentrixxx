@@ -45,6 +45,35 @@ See the `pnpm-workspace` skill for workspace structure, TypeScript setup, and pa
 - **Required secrets**: `SUPABASE_JWT_SECRET` (Supabase project settings → API → JWT Settings → JWT Secret)
 - JWT verification is active on all protected routes (`requireAuth` middleware in `src/middlewares/auth.ts`). Without `SUPABASE_JWT_SECRET` every protected route returns 401.
 - Startup log confirms: `"SUPABASE_JWT_SECRET loaded — JWT verification is active"` when secret is present; WARN when missing.
+- **Role enforcement**: `requireRole('ADMIN')` reads `app_metadata.user_role` from the JWT. Roles only travel in tokens after the Custom Access Token Hook is activated (see below).
+- **Integration tests**: `pnpm --filter @workspace/api-server run test` — 7 tests covering `requireAuth` (missing/malformed/expired token) and `requireRole` (USER vs ADMIN) against the live server.
+
+## Supabase Custom Access Token Hook
+
+**Status**: Hook function deployed to production DB. **Manual activation required in Supabase dashboard.**
+
+The hook function `public.custom_access_token_hook` is in the database (migration `20260503140000`). It reads `public.profiles.role` and injects it as `app_metadata.user_role` into every JWT before it is signed by GoTrue.
+
+### Activate the hook (one-time manual step)
+
+1. Go to **Supabase Dashboard → Authentication → Hooks**
+2. Under **Custom Access Token Hook**, click **Enable**
+3. Set URI to: `pg-functions://postgres/public/custom_access_token_hook`
+4. Save
+
+OR via management API (requires a Personal Access Token):
+```
+PATCH https://api.supabase.com/v1/projects/nnggcnpcuomwfuupupwg/config/auth
+Authorization: Bearer <SUPABASE_PERSONAL_ACCESS_TOKEN>
+Content-Type: application/json
+
+{
+  "hook_custom_access_token_enabled": true,
+  "hook_custom_access_token_uri": "pg-functions://postgres/public/custom_access_token_hook"
+}
+```
+
+Until the hook is activated, all tokens fall back to role `USER` (the API server default), so ADMIN-only routes remain accessible only to users whose profile has `role = 'ADMIN'` once a new login session starts after activation.
 
 ## Migration Notes
 - Ported from Vercel/v0 import (original was a Vite + React app, not Next.js)
