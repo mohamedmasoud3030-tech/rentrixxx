@@ -8,7 +8,7 @@ export const profilesTable = pgTable("profiles", {
   role: text("role"),
   mustChangePassword: boolean("must_change_password").default(false),
   isDisabled: boolean("is_disabled").default(false),
-  createdAt: timestamp("created_at", { withTimezone: true }),
+  createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }),
 });
 
 export const insertProfileSchema = createInsertSchema(profilesTable);

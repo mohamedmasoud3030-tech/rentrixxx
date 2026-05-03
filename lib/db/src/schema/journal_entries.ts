@@ -12,8 +12,8 @@ export const journalEntriesTable = pgTable("journal_entries", {
   sourceId: text("source_id"),
   entityType: text("entity_type"),
   entityId: text("entity_id"),
-  createdAt: timestamp("created_at", { withTimezone: true }),
-  updatedAt: timestamp("updated_at", { withTimezone: true }),
+  createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }),
+  updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }),
 });
 
 export const insertJournalEntrySchema = createInsertSchema(journalEntriesTable);

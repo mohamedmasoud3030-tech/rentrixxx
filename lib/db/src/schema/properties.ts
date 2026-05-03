@@ -14,8 +14,8 @@ export const propertiesTable = pgTable("properties", {
   notes: text("notes").default(""),
   isDemo: boolean("is_demo"),
   organizationId: uuid("organization_id"),
-  createdAt: timestamp("created_at", { withTimezone: true }).notNull(),
-  updatedAt: timestamp("updated_at", { withTimezone: true }),
+  createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }),
 });
 
 export const insertPropertySchema = createInsertSchema(propertiesTable);

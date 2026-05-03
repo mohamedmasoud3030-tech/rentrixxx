@@ -16,8 +16,8 @@ export const invoicesTable = pgTable("invoices", {
   relatedInvoiceId: uuid("related_invoice_id"),
   paymentMethod: text("payment_method"),
   externalPaymentRef: text("external_payment_ref"),
-  createdAt: timestamp("created_at", { withTimezone: true }).notNull(),
-  updatedAt: timestamp("updated_at", { withTimezone: true }),
+  createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }),
 });
 
 export const insertInvoiceSchema = createInsertSchema(invoicesTable);

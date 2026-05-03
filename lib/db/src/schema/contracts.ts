@@ -18,10 +18,10 @@ export const contractsTable = pgTable("contracts", {
   sponsorPhone: text("sponsor_phone"),
   isDemo: boolean("is_demo"),
   organizationId: uuid("organization_id"),
-  deletedAt: timestamp("deleted_at", { withTimezone: true }),
-  endedAt: timestamp("ended_at", { withTimezone: true }),
-  createdAt: timestamp("created_at", { withTimezone: true }).notNull(),
-  updatedAt: timestamp("updated_at", { withTimezone: true }),
+  deletedAt: timestamp("deleted_at", { withTimezone: true, mode: 'string' }),
+  endedAt: timestamp("ended_at", { withTimezone: true, mode: 'string' }),
+  createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }),
 });
 
 export const insertContractSchema = createInsertSchema(contractsTable);
