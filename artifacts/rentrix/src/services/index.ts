@@ -1,3 +1,3 @@
 export * from '../infrastructure/observability';
 export { supabase } from './supabase';
-export { invokeEdgeFunction, mapEdgeError } from './edgeFunctions';
+export { createOwnerAccessToken, verifyOwnerAccessToken, adminCreateUser, askAssistant, runAutomationScheduler } from './edgeFunctions';
