@@ -3,6 +3,7 @@ import { useParams, useSearchParams } from 'react-router-dom';
 import { formatCurrency } from '../utils/helpers';
 import Card from '../components/ui/Card';
 import { OwnerPortalPayload, verifyOwnerAccessToken } from '../services/edgeFunctions';
+import { MetricCard } from '../components/ui/card-compositions';
 
 const OwnerView: React.FC = () => {
   const { ownerId } = useParams<{ ownerId: string }>();
@@ -76,18 +77,9 @@ const OwnerView: React.FC = () => {
       </header>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
-        <div className="p-5 bg-card rounded-lg shadow-md border-t-4 border-blue-500">
-          <p className="text-sm text-text-muted">إجمالي التحصيلات</p>
-          <p className="text-2xl font-bold text-blue-700 dark:text-blue-400 mt-2">{formatCurrency(stats.collections, safeCurrency)}</p>
-        </div>
-        <div className="p-5 bg-card rounded-lg shadow-md border-t-4 border-red-500">
-          <p className="text-sm text-text-muted">إجمالي المصاريف والعمولة</p>
-          <p className="text-2xl font-bold text-red-700 dark:text-red-400 mt-2">{formatCurrency(stats.expenses + stats.officeShare, safeCurrency)}</p>
-        </div>
-        <div className="p-5 bg-card rounded-lg shadow-md border-t-4 border-green-500">
-          <p className="text-sm text-text-muted">صافي المستحق لك</p>
-          <p className="text-2xl font-bold text-green-700 dark:text-green-400 mt-2">{formatCurrency(stats.net, safeCurrency)}</p>
-        </div>
+        <MetricCard label="إجمالي التحصيلات" value={formatCurrency(stats.collections, safeCurrency)} tone="info" className="border-t-4 border-blue-500" />
+        <MetricCard label="إجمالي المصاريف والعمولة" value={formatCurrency(stats.expenses + stats.officeShare, safeCurrency)} tone="danger" className="border-t-4 border-red-500" />
+        <MetricCard label="صافي المستحق لك" value={formatCurrency(stats.net, safeCurrency)} tone="success" className="border-t-4 border-green-500" />
       </div>
     </div>
   );
