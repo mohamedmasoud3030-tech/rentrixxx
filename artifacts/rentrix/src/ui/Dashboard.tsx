@@ -8,7 +8,7 @@ import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianG
 import { startOfMonth, endOfMonth, subMonths, eachMonthOfInterval, isWithinInterval, format } from 'date-fns';
 import { ar } from 'date-fns/locale';
 import { getArrearsAmount, getArrearsInvoices, getCashInflow, getExpenseImpact, getRevenueFromPaidInvoices } from '@/services/financeService';
-import { PageStateCard } from '@/components/ui/PageStates';
+import { PageStateCard } from '@/components/ui/page-states';
 import { AppShellLayout } from '@/app/layouts/AppShellLayout';
 import { DSButton } from '@/design-system';
 

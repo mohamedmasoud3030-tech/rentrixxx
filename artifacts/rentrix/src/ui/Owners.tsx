@@ -1,12 +1,12 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useApp } from '../contexts/AppContext';
 import { Owner } from '../types';
-import Card from '../components/ui/Card';
-import Modal from '../components/ui/Modal';
+import Card from '../components/ui/app-card';
+import Modal from '../components/ui/modal';
 import ActionsMenu, { EditAction, DeleteAction } from '../components/shared/ActionsMenu';
 import AttachmentsManager from '../components/shared/AttachmentsManager';
 import { MessageCircle, Users, BookOpen, Link as LinkIcon } from 'lucide-react';
-import NumberInput from '../components/ui/NumberInput';
+import NumberInput from '../components/ui/number-input';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 import { logger } from '../infrastructure/observability';

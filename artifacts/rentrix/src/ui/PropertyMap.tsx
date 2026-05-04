@@ -1,8 +1,8 @@
 import React, { useState, useMemo } from 'react';
 import { useApp } from '../contexts/AppContext';
 import { Unit } from '../types';
-import Card from '../components/ui/Card';
-import Modal from '../components/ui/Modal';
+import Card from '../components/ui/app-card';
+import Modal from '../components/ui/modal';
 import { useNavigate } from 'react-router-dom';
 import { Building, AlertCircle, Clock, Home, User, FileText, Wrench, Phone } from 'lucide-react';
 import { formatCurrency, formatDate } from '../utils/helpers';

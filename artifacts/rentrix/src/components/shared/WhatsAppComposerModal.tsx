@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
-import Modal from '../ui/Modal';
+import Modal from '../ui/modal';
 import { templates } from '../../services/whatsappService';
 import { IntegrationService } from '../../services/integrationService';
 import { Send } from 'lucide-react';

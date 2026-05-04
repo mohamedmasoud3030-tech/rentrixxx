@@ -4,7 +4,7 @@ import { Routes, Route, NavLink, Navigate, useLocation } from 'react-router-dom'
 import Invoices from './Invoices';
 import Financials from './Financials';
 import Maintenance from './Maintenance';
-import Card from '../components/ui/Card';
+import Card from '../components/ui/app-card';
 import { Wallet, ReceiptText, Wrench, Calculator, BookOpen } from 'lucide-react';
 import GeneralLedger from './GeneralLedger';
 import Accounting from './Accounting';
@@ -13,7 +13,7 @@ import Arrears from './financial/Arrears';
 import { AR_LABELS } from '../config/labels.ar';
 import { FINANCIAL_ROUTES } from '@/config/routes';
 import { useApp } from '@/contexts/AppContext';
-import { PageStateCard } from '@/components/ui/PageStates';
+import { PageStateCard } from '@/components/ui/page-states';
 import { DSButton } from '@/design-system';
 import { AppShellLayout } from '@/app/layouts/AppShellLayout';
 
