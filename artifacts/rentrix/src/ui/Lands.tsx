@@ -1,11 +1,11 @@
 import React, { useState, useRef } from 'react';
 import { useApp } from '../contexts/AppContext';
-import Card from '../components/ui/Card';
-import Modal from '../components/ui/Modal';
+import Card from '../components/ui/app-card';
+import Modal from '../components/ui/modal';
 import { Eye, MapPin, PlusCircle, Download } from 'lucide-react';
 import { Land } from '../types';
 import { formatCurrency, normalizeArabicNumerals, exportToCsv } from '../utils/helpers';
-import NumberInput from '../components/ui/NumberInput';
+import NumberInput from '../components/ui/number-input';
 import { toast } from 'react-hot-toast';
 import { logger } from '../infrastructure/observability';
 import ActionsMenu, { EditAction, DeleteAction } from '../components/shared/ActionsMenu';
