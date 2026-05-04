@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
-import Modal from '../ui/Modal';
-import NumberInput from '../ui/NumberInput';
+import Modal from '../ui/modal';
+import NumberInput from '../ui/number-input';
 import { Invoice } from '../../types';
 import { useApp } from '../../contexts/AppContext';
 
