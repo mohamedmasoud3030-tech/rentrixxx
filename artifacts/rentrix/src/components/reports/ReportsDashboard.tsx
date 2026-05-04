@@ -1,5 +1,5 @@
 import React, { memo, useState, useCallback, useEffect, useMemo, useRef } from 'react';
-import { reportEngine } from '@/services/reports/ReportEngine';
+import { reportEngine } from '@/services/reports';
 import { useApp } from '@/contexts/AppContext';
 import { EmptyState, ErrorState, LoadingState } from '@/components/ui/PageStates';
 import { AppShellLayout } from '@/app/layouts/AppShellLayout';
