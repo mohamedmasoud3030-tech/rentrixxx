@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { useApp } from '../contexts/AppContext';
-import Card from '../components/ui/Card';
+import Card from '../components/ui/card';
 import Modal from '../components/ui/Modal';
 import { Eye, MapPin, PlusCircle, Download } from 'lucide-react';
 import { Land } from '../types';

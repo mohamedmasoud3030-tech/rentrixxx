@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { useApp } from '@/contexts/AppContext';
-import Card from '@/components/ui/Card';
+import Card from '@/components/ui/card';
 import { formatCurrency } from '@/utils/helpers';
 import { AlertTriangle, ArrowRight, BarChart3, FileCheck2, FileWarning, Link2, Receipt, ScrollText } from 'lucide-react';
 import { getArrearsAmount } from '@/services/financeService';

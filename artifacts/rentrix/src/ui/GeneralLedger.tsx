@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { Calculator, PlusCircle } from 'lucide-react';
 import { useApp } from '../contexts/AppContext';
-import Card from '../components/ui/Card';
+import Card from '../components/ui/card';
 import Modal from '../components/ui/Modal';
 import ManualVoucherForm from '../components/finance/ManualVoucherForm';
 import { formatCurrency, formatDate } from '../utils/helpers';

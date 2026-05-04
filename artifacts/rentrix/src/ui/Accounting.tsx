@@ -2,7 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { BookOpen, Calculator, Download, FilePen, HeartPulse, Wallet, Scale, PieChart, TrendingUp, TrendingDown } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useApp } from '../contexts/AppContext';
-import Card from '../components/ui/Card';
+import Card from '../components/ui/card';
 import Modal from '../components/ui/Modal';
 import ManualVoucherForm from '../components/finance/ManualVoucherForm';
 import { Account } from '../types';

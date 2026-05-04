@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useRef, memo, useCallback, Component, ErrorInfo, ReactNode } from 'react';
 import { useApp } from '../contexts/AppContext';
 import { Property, Unit, UtilityRecord, UtilityType, UTILITY_TYPE_AR, UTILITY_ICON } from '../types';
-import Card from '../components/ui/Card';
+import Card from '../components/ui/card';
 import Modal from '../components/ui/Modal';
 import ActionsMenu, { EditAction, DeleteAction } from '../components/shared/ActionsMenu';
 import AttachmentsManager from '../components/shared/AttachmentsManager';
