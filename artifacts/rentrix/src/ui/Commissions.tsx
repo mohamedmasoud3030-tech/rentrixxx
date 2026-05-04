@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useRef } from 'react';
 import { useApp } from '../contexts/AppContext';
-import Card from '../components/ui/Card';
+import Card from '../components/ui/card';
 import Modal from '../components/ui/Modal';
 import { DollarSign } from 'lucide-react';
 import { Commission } from '../types';

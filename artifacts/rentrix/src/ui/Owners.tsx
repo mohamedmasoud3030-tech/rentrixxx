@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useApp } from '../contexts/AppContext';
 import { Owner } from '../types';
-import Card from '../components/ui/Card';
+import Card from '../components/ui/card';
 import Modal from '../components/ui/Modal';
 import ActionsMenu, { EditAction, DeleteAction } from '../components/shared/ActionsMenu';
 import AttachmentsManager from '../components/shared/AttachmentsManager';

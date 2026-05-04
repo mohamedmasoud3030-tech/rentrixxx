@@ -3,7 +3,7 @@ import { useApp } from '../contexts/AppContext';
 import { renewContractAtomic , getNextContractSerial, fetchContractsAndBalances } from '../services/operationsService';
 import { checkUnitMaintenanceBlock, type MaintenanceBlockResult } from '../services/operationsService';
 import { Contract, Receipt, Expense } from '../types';
-import Card from '../components/ui/Card';
+import Card from '../components/ui/card';
 import Modal from '../components/ui/Modal';
 import ActionsMenu, { EditAction, DeleteAction, PrintAction } from '../components/shared/ActionsMenu';
 import { formatCurrency, toArabicDigits, getStatusBadgeClass, formatDateTime, formatDate, exportToCsv, CONTRACT_STATUS_AR, normalizeLocalizedNumber, parseLocalizedNumber } from '../utils/helpers';

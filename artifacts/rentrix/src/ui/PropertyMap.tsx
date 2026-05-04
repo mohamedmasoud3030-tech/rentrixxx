@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { useApp } from '../contexts/AppContext';
 import { Unit } from '../types';
-import Card from '../components/ui/Card';
+import Card from '../components/ui/card';
 import Modal from '../components/ui/Modal';
 import { useNavigate } from 'react-router-dom';
 import { Building, AlertCircle, Clock, Home, User, FileText, Wrench, Phone } from 'lucide-react';

@@ -2,7 +2,7 @@
 import React, { useState, useMemo } from 'react';
 import { useApp } from '../contexts/AppContext';
 import { Snapshot } from '../types';
-import Card from '../components/ui/Card';
+import Card from '../components/ui/card';
 import Modal from '../components/ui/Modal';
 import ConfirmActionModal from '../components/shared/ConfirmActionModal';
 import { PlusCircle, RotateCcw, XCircle, Search } from 'lucide-react';

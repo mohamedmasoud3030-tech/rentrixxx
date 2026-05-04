@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useApp } from '../../contexts/AppContext';
-import Card from '../ui/Card';
+import Card from '../ui/card';
 import { toast } from 'react-hot-toast';
 import { Plus, Trash2, GripVertical, FileText, Save, RotateCcw } from 'lucide-react';
 
