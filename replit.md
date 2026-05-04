@@ -80,3 +80,9 @@ Until the hook is activated, all tokens fall back to role `USER` (the API server
 - `virtual:pwa-register` (vite-plugin-pwa) removed — PWA plugin dropped for Replit compatibility
 - Tailwind CSS v3 with PostCSS (not @tailwindcss/vite)
 - All source files live under `artifacts/rentrix/src/` (copied from `.migration-backup/src/`)
+
+## TypeScript import/filename casing conventions
+- `forceConsistentCasingInFileNames` is enforced via `tsconfig.base.json` for all extending TS projects.
+- Under `artifacts/rentrix/src/components/ui/` and `artifacts/rentrix/src/ui/`, filenames must be lowercase for primitive/shared UI modules (e.g., `card.tsx`, `button.tsx`, `app-card.tsx`).
+- Use canonical import casing that exactly matches on-disk paths.
+- Run `pnpm run lint:import-paths` locally (or `pnpm run ci:case-check` in CI) to catch case-only conflicts and mismatched import path casing before deploy.

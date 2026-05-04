@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import Card from '../../components/ui/Card';
+import Card from '../../components/ui/app-card';
 import { useApp } from '../../contexts/AppContext';
 import { formatCurrency } from '../../utils/helpers';
 
