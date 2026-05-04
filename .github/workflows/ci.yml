@@ -32,5 +32,7 @@ jobs:
       - name: Typecheck
         run: pnpm run typecheck
 
-      - name: Build API server
-        run: pnpm --filter @workspace/api-server run build
+      - name: Build
+        run: pnpm run build
+        env:
+          PORT: "3000"
