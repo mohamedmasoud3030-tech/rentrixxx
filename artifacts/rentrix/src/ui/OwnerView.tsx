@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 import { formatCurrency } from '../utils/helpers';
-import Card from '../components/ui/Card';
+import Card from '../components/ui/app-card';
 import { OwnerPortalPayload, verifyOwnerAccessToken } from '../services/edgeFunctions';
 
 const OwnerView: React.FC = () => {
