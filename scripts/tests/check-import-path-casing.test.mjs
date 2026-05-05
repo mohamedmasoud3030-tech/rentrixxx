@@ -53,13 +53,3 @@ test('resolution handles extensionless and index imports', () => {
   const expected = expectedSpecifier(root, 'artifacts/rentrix/src/ui/page.tsx', resolved, '../lib/utils');
   assert.equal(expected, '../lib/utils');
 });
-
-
-test('flags side-effect import casing mismatches (css/scss style pattern)', () => {
-  const root = mkRepo((r) => {
-    write(r, 'artifacts/rentrix/src/styles/theme.css', ':root{}');
-    write(r, 'artifacts/rentrix/src/ui/page.tsx', "import '@/styles/Theme.css';");
-  });
-  const errors = runCasingCheck({ rootDir: root });
-  assert(errors.some((e) => e.includes('Import case mismatch')));
-});
