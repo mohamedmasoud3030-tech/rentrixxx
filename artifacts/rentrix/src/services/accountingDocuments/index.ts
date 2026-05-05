@@ -1,3 +1,9 @@
 export { accountingDocumentEngine } from './AccountingDocumentEngine';
 export { assertDocumentTransition, isLockedDocumentStatus } from './DocumentLifecycle';
-export type { AccountingDocument, AccountingDocumentStatus, AccountingDocumentType, ReceiptPostingPayload, ReceiptPostingResult } from './types';
+export type {
+  AccountingDocument,
+  AccountingDocumentStatus,
+  AccountingLedgerEntry,
+  ReceiptPostingPayload,
+  ReceiptPostingResult,
+} from './types';

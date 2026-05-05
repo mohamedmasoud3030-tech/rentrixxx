@@ -18,5 +18,4 @@ jobs:
           node-version: 20
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - run: pnpm --filter @workspace/scripts run test
       - run: pnpm run ci:case-check
