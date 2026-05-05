@@ -8,7 +8,7 @@
     "build": "vite build --config vite.config.ts",
     "serve": "vite preview --config vite.config.ts --host 0.0.0.0",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "lint": "eslint \"src/**/*.{ts,tsx}\""
+    "typecheck:test": "tsc -p tsconfig.test.json --noEmit"
   },
   "devDependencies": {
     "@hookform/resolvers": "^3.10.0",
@@ -75,8 +75,8 @@
     "vite": "catalog:",
     "wouter": "^3.3.5",
     "zod": "catalog:",
-    "@eslint/js": "^9.26.0",
-    "eslint": "^9.26.0"
+    "vitest": "^2.1.8",
+    "@testing-library/jest-dom": "^6.6.3"
   },
   "dependencies": {
     "@google/genai": "^1.51.0",
