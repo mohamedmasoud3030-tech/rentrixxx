@@ -1,2 +1,2 @@
-export { ReportEngine } from './ReportEngine';
+export { reportEngine } from './ReportEngine';
 export { ReportSnapshotManager } from './ReportSnapshotManager';

@@ -4,7 +4,7 @@
  * Used by Contracts.tsx for create/update/end operations.
  */
 
-import type { AppContextType, Contract } from '../../src/types';
+import type { AppContextType, Contract } from '@/types';
 
 type DataService = AppContextType['dataService'];
 

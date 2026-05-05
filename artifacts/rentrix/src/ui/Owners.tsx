@@ -1,17 +1,18 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useApp } from '../contexts/AppContext';
 import { Owner } from '../types';
-import Card from '../components/ui/Card';
-import Modal from '../components/ui/Modal';
+import Card from '../components/ui/app-card';
+import Modal from '../components/ui/modal';
 import ActionsMenu, { EditAction, DeleteAction } from '../components/shared/ActionsMenu';
 import AttachmentsManager from '../components/shared/AttachmentsManager';
 import { MessageCircle, Users, BookOpen, Link as LinkIcon } from 'lucide-react';
-import NumberInput from '../components/ui/NumberInput';
+import NumberInput from '../components/ui/number-input';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 import { logger } from '../infrastructure/observability';
 import { ROUTES } from '@/config/routes';
 import { AR_LABELS } from '../config/labels.ar';
+import { SectionWrapper } from '../components/ui/page-primitives';
 
 const Owners: React.FC = () => {
     const { dataService, generateOwnerPortalLink, fetchPaginatedData, sendWhatsApp } = useApp();
@@ -46,11 +47,7 @@ const Owners: React.FC = () => {
     };
 
     return (
-        <Card>
-            <div className="flex justify-between items-center mb-4">
-                <h2 className="text-xl font-bold">قائمة الملاك</h2>
-                <button onClick={() => handleOpenModal()} className="btn btn-primary">إضافة مالك</button>
-            </div>
+        <SectionWrapper title="قائمة الملاك" action={<button onClick={() => handleOpenModal()} className="btn btn-primary">إضافة مالك</button>}>
             {loading ? (
                 <div className="text-center py-12">جاري تحميل البيانات...</div>
             ) : owners.length === 0 ? (
@@ -107,7 +104,7 @@ const Owners: React.FC = () => {
                 </div>
             )}
             <OwnerForm isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} owner={editingOwner} />
-        </Card>
+        </SectionWrapper>
     );
 };
 
