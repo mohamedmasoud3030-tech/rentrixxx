@@ -1,7 +1,7 @@
 import React, { memo, useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import { reportEngine } from '@/services/reports';
 import { useApp } from '@/contexts/AppContext';
-import { EmptyState, ErrorState, LoadingState } from '@/components/ui/PageStates';
+import { EmptyState, ErrorState, LoadingState } from '@/components/ui/page-states';
 import { AppShellLayout } from '@/app/layouts/AppShellLayout';
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,

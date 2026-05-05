@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useApp } from '../../contexts/AppContext';
 import { User } from '../../types';
-import Modal from '../ui/Modal';
+import Modal from '../ui/modal';
 import { toast } from 'react-hot-toast';
 import { KeyRound, Edit, UserX, UserCheck } from 'lucide-react';
 import { USER_ROLE_AR } from '../../utils/helpers';

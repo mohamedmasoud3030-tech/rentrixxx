@@ -1,8 +1,8 @@
 import React, { useState, useRef } from 'react';
 import { useApp } from '../contexts/AppContext';
 import { Lead } from '../types';
-import Card from '../components/ui/Card';
-import Modal from '../components/ui/Modal';
+import Card from '../components/ui/app-card';
+import Modal from '../components/ui/modal';
 import ActionsMenu, { EditAction, DeleteAction } from '../components/shared/ActionsMenu';
 import { getStatusBadgeClass, normalizeArabicNumerals, exportToCsv } from '../utils/helpers';
 import { UserPlus, MessageCircle, Download } from 'lucide-react';

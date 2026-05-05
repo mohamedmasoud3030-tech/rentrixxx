@@ -1,13 +1,13 @@
 import React, { useState, useMemo, useRef, memo, useCallback, Component, ErrorInfo, ReactNode } from 'react';
 import { useApp } from '../contexts/AppContext';
 import { Property, Unit, UtilityRecord, UtilityType, UTILITY_TYPE_AR, UTILITY_ICON } from '../types';
-import Card from '../components/ui/Card';
-import Modal from '../components/ui/Modal';
+import Card from '../components/ui/app-card';
+import Modal from '../components/ui/modal';
 import ActionsMenu, { EditAction, DeleteAction } from '../components/shared/ActionsMenu';
 import AttachmentsManager from '../components/shared/AttachmentsManager';
 import ConfirmActionModal from '../components/shared/ConfirmActionModal';
 import { formatCurrency, toArabicDigits, normalizeArabicNumerals } from '../utils/helpers';
-import NumberInput from '../components/ui/NumberInput';
+import NumberInput from '../components/ui/number-input';
 import { Building, Home, ArrowRight, User, Map as MapIcon, AlertCircle, Percent, Zap, ChevronRight, Plus, Image, Trash2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
@@ -15,6 +15,7 @@ import { logger } from '../infrastructure/observability';
 import PropertyMapView from './PropertyMap';
 import SearchFilterBar from '../components/shared/SearchFilterBar';
 import { getAttachmentUrl, uploadAttachment } from '../services/attachmentService';
+import { MetricCard } from '../components/ui/card-compositions';
 
 interface ErrorBoundaryState { hasError: boolean; error: Error | null; }
 class ErrorBoundary extends Component<{ children: ReactNode; fallback?: ReactNode }, ErrorBoundaryState> {
@@ -111,31 +112,11 @@ const PropertiesListView: React.FC = () => {
     return (
         <div className="space-y-6">
             <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-                <div className="bg-background rounded-xl border border-border p-3 text-center">
-                    <Building size={18} className="mx-auto mb-1 text-blue-500" />
-                    <p className="text-lg font-black">{properties.length}</p>
-                    <p className="text-[10px] text-text-muted">عقارات</p>
-                </div>
-                <div className="bg-background rounded-xl border border-border p-3 text-center">
-                    <Home size={18} className="mx-auto mb-1 text-indigo-500" />
-                    <p className="text-lg font-black">{stats.totalUnits}</p>
-                    <p className="text-[10px] text-text-muted">وحدات</p>
-                </div>
-                <div className="bg-background rounded-xl border border-border p-3 text-center">
-                    <User size={18} className="mx-auto mb-1 text-emerald-500" />
-                    <p className="text-lg font-black">{stats.rented}</p>
-                    <p className="text-[10px] text-text-muted">مؤجرة</p>
-                </div>
-                <div className="bg-background rounded-xl border border-border p-3 text-center">
-                    <AlertCircle size={18} className="mx-auto mb-1 text-amber-500" />
-                    <p className="text-lg font-black">{stats.available}</p>
-                    <p className="text-[10px] text-text-muted">شاغرة</p>
-                </div>
-                <div className="bg-background rounded-xl border border-border p-3 text-center">
-                    <Percent size={18} className="mx-auto mb-1 text-purple-500" />
-                    <p className="text-lg font-black">{stats.occupancy.toFixed(0)}%</p>
-                    <p className="text-[10px] text-text-muted">نسبة الإشغال</p>
-                </div>
+                <MetricCard label="عقارات" value={properties.length} icon={<Building size={18} className="text-blue-500" />} className="py-3" />
+                <MetricCard label="وحدات" value={stats.totalUnits} icon={<Home size={18} className="text-indigo-500" />} className="py-3" />
+                <MetricCard label="مؤجرة" value={stats.rented} icon={<User size={18} className="text-emerald-500" />} className="py-3" />
+                <MetricCard label="شاغرة" value={stats.available} icon={<AlertCircle size={18} className="text-amber-500" />} className="py-3" />
+                <MetricCard label="نسبة الإشغال" value={`${stats.occupancy.toFixed(0)}%`} icon={<Percent size={18} className="text-purple-500" />} className="py-3" />
             </div>
 
             <div className="flex justify-between items-center">

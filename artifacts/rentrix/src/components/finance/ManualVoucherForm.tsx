@@ -2,7 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { PlusCircle, Trash2, CheckCircle, AlertTriangle } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { useApp } from '../../contexts/AppContext';
-import NumberInput from '../ui/NumberInput';
+import NumberInput from '../ui/number-input';
 
 interface VoucherLine {
   id: string;

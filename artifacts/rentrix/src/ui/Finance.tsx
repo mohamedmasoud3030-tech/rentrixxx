@@ -4,7 +4,7 @@ import { Routes, Route, NavLink, Navigate, useLocation } from 'react-router-dom'
 import Invoices from './Invoices';
 import Financials from './Financials';
 import Maintenance from './Maintenance';
-import Card from '../components/ui/Card';
+import Card from '../components/ui/app-card';
 import { Wallet, ReceiptText, Wrench, Calculator, BookOpen } from 'lucide-react';
 import GeneralLedger from './GeneralLedger';
 import Accounting from './Accounting';
@@ -13,9 +13,10 @@ import Arrears from './financial/Arrears';
 import { AR_LABELS } from '../config/labels.ar';
 import { FINANCIAL_ROUTES } from '@/config/routes';
 import { useApp } from '@/contexts/AppContext';
-import { PageStateCard } from '@/components/ui/PageStates';
+import { PageStateCard } from '@/components/ui/page-states';
 import { DSButton } from '@/design-system';
 import { AppShellLayout } from '@/app/layouts/AppShellLayout';
+import { PageHeader } from '@/components/ui/page-primitives';
 
 
 const FinanceTab: React.FC<{ to: string, icon: React.ReactNode, label: string }> = ({ to, icon, label }) => (
@@ -83,18 +84,16 @@ const Finance: React.FC = () => {
         <AppShellLayout>
         <div className="space-y-8 animate-in fade-in duration-500">
             {/* Page Header */}
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                <div>
-                    <h1 className="text-3xl font-black tracking-tight text-primary">{t('finance.title')}</h1>
-                    <p className="text-text-muted text-sm mt-1">{t('finance.subtitle')}</p>
-                </div>
-                <div className="flex items-center gap-3">
+            <PageHeader
+                title={t('finance.title')}
+                subtitle={t('finance.subtitle')}
+                action={(
                     <div className="px-4 py-2 bg-emerald-50 border border-emerald-100 rounded-2xl flex items-center gap-2">
                         <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
                         <span className="text-[10px] font-black text-emerald-700 uppercase tracking-widest">{t('finance.systemOnline')}</span>
                     </div>
-                </div>
-            </div>
+                )}
+            />
 
             <FinanceIntelligenceHub />
 
