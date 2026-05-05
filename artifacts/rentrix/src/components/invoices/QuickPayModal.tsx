@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import Modal from '../ui/Modal';
-import NumberInput from '../ui/NumberInput';
+import Modal from '../ui/modal';
+import NumberInput from '../ui/number-input';
 import { formatCurrency } from '../../utils/helpers';
 import { Invoice } from '../../types';
 

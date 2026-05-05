@@ -1,5 +1,5 @@
-import { accountingDocumentEngine } from '@/services/accountingDocuments/AccountingDocumentEngine';
-import type { AccountingLedgerEntry as JournalEntryRow, ReceiptPostingPayload, ReceiptPostingResult } from '@/services/accountingDocuments/types';
+import { accountingDocumentEngine } from '@/services/accountingDocuments';
+import type { AccountingLedgerEntry as JournalEntryRow, ReceiptPostingPayload, ReceiptPostingResult } from '@/services/accountingDocuments';
 export type { JournalEntryRow, ReceiptPostingPayload, ReceiptPostingResult };
 
 export async function postReceiptAtomic(payload: ReceiptPostingPayload): Promise<ReceiptPostingResult> {
