@@ -11,6 +11,8 @@ import { formatDate, formatCurrency, exportToCsv, TENANT_STATUS_AR, CHANNEL_AR, 
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 import { logger } from '../infrastructure/observability';
+import { FilterActionToolbar, SectionWrapper } from '../components/ui/page-primitives';
+import { StatusBadge } from '../components/ui/card-compositions';
 
 const Tenants: React.FC = () => {
     const { db, dataService } = useApp();
@@ -94,10 +96,8 @@ const Tenants: React.FC = () => {
     };
 
     return (
-        <Card>
-            <div className="flex justify-between items-center mb-4">
-                <h2 className="text-xl font-bold">قائمة المستأجرين</h2>
-                <div className="flex gap-2">
+        <SectionWrapper title="قائمة المستأجرين" action={(
+            <FilterActionToolbar>
                     <input
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
@@ -119,8 +119,8 @@ const Tenants: React.FC = () => {
                         تصدير CSV
                     </button>
                     <button onClick={() => handleOpenModal()} className="btn btn-primary">إضافة مستأجر</button>
-                </div>
-            </div>
+            </FilterActionToolbar>
+        )}>
             {tenants.length === 0 ? (
                 <div className="text-center py-12">
                     <Users size={48} className="mx-auto text-text-muted" />
@@ -147,13 +147,7 @@ const Tenants: React.FC = () => {
                                     <td className="px-6 py-4 border border-border">{t.phone}</td>
                                     <td className="px-6 py-4 border border-border">{t.idNo}</td>
                                     <td className="px-6 py-4 border border-border">
-                                        <span className={`px-2 py-1 text-xs rounded-full ${
-                                            t.status === 'ACTIVE' 
-                                                ? 'bg-green-100 text-green-800 dark:bg-green-900/50' 
-                                                : 'bg-red-100 text-red-800 dark:bg-red-900/50'
-                                        }`}>
-                                            {TENANT_STATUS_AR[t.status] || t.status}
-                                        </span>
+                                        <StatusBadge ok={t.status === 'ACTIVE'} okText={TENANT_STATUS_AR[t.status] || t.status} badText={TENANT_STATUS_AR[t.status] || t.status} />
                                     </td>
                                     <td className="px-6 py-4 border border-border">
                                         <ActionsMenu items={[
@@ -171,7 +165,7 @@ const Tenants: React.FC = () => {
             )}
             <TenantForm isOpen={isModalOpen} onClose={handleCloseModals} tenant={editingTenant} />
             <WhatsAppComposerModal isOpen={!!whatsAppContext} onClose={() => setWhatsAppContext(null)} context={whatsAppContext} />
-        </Card>
+        </SectionWrapper>
     );
 };
 
