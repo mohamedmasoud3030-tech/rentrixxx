@@ -1,4 +1,4 @@
-import type { AccountingDocument, AccountingLedgerEntry } from '@/services/accountingDocuments/types';
+import type { AccountingDocument, AccountingLedgerEntry } from '@/services/accountingDocuments';
 import { AuditTrail } from '@/services/audit/AuditTrail';
 
 export interface LedgerEntryEnvelope {
