@@ -1,11 +1,11 @@
 import React, { useState, useMemo, useRef } from 'react';
 import { useApp } from '../contexts/AppContext';
-import Card from '../components/ui/card';
-import Modal from '../components/ui/Modal';
+import Card from '../components/ui/app-card';
+import Modal from '../components/ui/modal';
 import { DollarSign } from 'lucide-react';
 import { Commission } from '../types';
 import { formatCurrency } from '../utils/helpers';
-import NumberInput from '../components/ui/NumberInput';
+import NumberInput from '../components/ui/number-input';
 import { toast } from 'react-hot-toast';
 import ActionsMenu, { EditAction } from '../components/shared/ActionsMenu';
 import ConfirmActionModal from '../components/shared/ConfirmActionModal';

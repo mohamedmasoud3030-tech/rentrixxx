@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useApp } from '../contexts/AppContext';
 import { AuditIssue } from '../types';
 import { runDataIntegrityAudit } from '../services/auditEngine';
-import Card from '../components/ui/card';
+import Card from '../components/ui/app-card';
 import { AlertTriangle, AlertCircle, Info, RefreshCw, ChevronsRight, SearchCheck } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { migrateAttachments } from '../utils/migrateAttachments';

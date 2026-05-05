@@ -2,8 +2,8 @@
 import React, { useState, useMemo } from 'react';
 import { useApp } from '../contexts/AppContext';
 import { Snapshot } from '../types';
-import Card from '../components/ui/card';
-import Modal from '../components/ui/Modal';
+import Card from '../components/ui/app-card';
+import Modal from '../components/ui/modal';
 import ConfirmActionModal from '../components/shared/ConfirmActionModal';
 import { PlusCircle, RotateCcw, XCircle, Search } from 'lucide-react';
 import { formatDateTime } from '../utils/helpers';

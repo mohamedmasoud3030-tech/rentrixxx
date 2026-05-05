@@ -4,10 +4,10 @@ import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import { Link } from 'react-router-dom';
 import { useApp } from '../contexts/AppContext';
 import { Receipt, Expense, DepositTx, OwnerSettlement, Invoice } from '../types';
-import Card from '../components/ui/card';
-import Modal from '../components/ui/Modal';
+import Card from '../components/ui/app-card';
+import Modal from '../components/ui/modal';
 import { formatCurrency, formatDateTime, formatDate, exportToCsv, RECEIPT_STATUS_AR, CHANNEL_AR, EXPENSE_STATUS_AR } from '../utils/helpers';
-import NumberInput from '../components/ui/NumberInput';
+import NumberInput from '../components/ui/number-input';
 import HardGateBanner from '../components/shared/HardGateBanner';
 import { 
     Receipt as ReceiptIcon, CreditCard, Landmark, PiggyBank, 

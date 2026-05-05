@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useApp } from '../../contexts/AppContext';
 import { NotificationTemplate } from '../../types';
-import Modal from '../ui/Modal';
+import Modal from '../ui/modal';
 import { Edit2 } from 'lucide-react';
 
 const TemplateEditor: React.FC<{

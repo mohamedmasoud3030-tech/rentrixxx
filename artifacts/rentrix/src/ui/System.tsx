@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Routes, Route, NavLink, Navigate, useLocation } from 'react-router-dom';
-import Card from '../components/ui/card';
+import Card from '../components/ui/app-card';
 import {
     Settings as SettingsIcon, ShieldCheck, Database, Users, Bell,
     Palette, Zap, Bot, SearchCheck, Calculator, FileText,

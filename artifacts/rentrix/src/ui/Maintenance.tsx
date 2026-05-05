@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useApp } from '../contexts/AppContext';
 import { MaintenanceRecord, Expense, Invoice } from '../types';
-import Card from '../components/ui/card';
-import Modal from '../components/ui/Modal';
+import Card from '../components/ui/app-card';
+import Modal from '../components/ui/modal';
 import ActionsMenu, { EditAction, DeleteAction } from '../components/shared/ActionsMenu';
 import { formatCurrency, formatDate, getStatusBadgeClass, normalizeArabicNumerals, exportToCsv } from '../utils/helpers';
 import HardGateBanner from '../components/shared/HardGateBanner';

@@ -1,8 +1,8 @@
 import React, { useMemo, useState } from 'react';
 import { Calculator, PlusCircle } from 'lucide-react';
 import { useApp } from '../contexts/AppContext';
-import Card from '../components/ui/card';
-import Modal from '../components/ui/Modal';
+import Card from '../components/ui/app-card';
+import Modal from '../components/ui/modal';
 import ManualVoucherForm from '../components/finance/ManualVoucherForm';
 import { formatCurrency, formatDate } from '../utils/helpers';
 import { calculateGeneralLedgerForAccount } from '../services/accountingService';

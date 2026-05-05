@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { createRoot } from 'react-dom/client';
-import Modal from '../ui/Modal';
+import Modal from '../ui/modal';
 
 interface ConfirmDialogOptions {
   title: string;

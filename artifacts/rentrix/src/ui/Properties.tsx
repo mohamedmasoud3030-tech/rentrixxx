@@ -1,13 +1,13 @@
 import React, { useState, useMemo, useRef, memo, useCallback, Component, ErrorInfo, ReactNode } from 'react';
 import { useApp } from '../contexts/AppContext';
 import { Property, Unit, UtilityRecord, UtilityType, UTILITY_TYPE_AR, UTILITY_ICON } from '../types';
-import Card from '../components/ui/card';
-import Modal from '../components/ui/Modal';
+import Card from '../components/ui/app-card';
+import Modal from '../components/ui/modal';
 import ActionsMenu, { EditAction, DeleteAction } from '../components/shared/ActionsMenu';
 import AttachmentsManager from '../components/shared/AttachmentsManager';
 import ConfirmActionModal from '../components/shared/ConfirmActionModal';
 import { formatCurrency, toArabicDigits, normalizeArabicNumerals } from '../utils/helpers';
-import NumberInput from '../components/ui/NumberInput';
+import NumberInput from '../components/ui/number-input';
 import { Building, Home, ArrowRight, User, Map as MapIcon, AlertCircle, Percent, Zap, ChevronRight, Plus, Image, Trash2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';

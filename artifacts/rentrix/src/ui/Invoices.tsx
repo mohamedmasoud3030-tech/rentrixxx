@@ -1,7 +1,7 @@
 import React, { useCallback, useMemo, useState, useEffect } from 'react';
 import { useApp } from '@/contexts/AppContext';
 import { Invoice } from '@/types';
-import Card from '@/components/ui/card';
+import Card from '@/components/ui/app-card';
 import { formatCurrency } from '@/utils/helpers';
 import { AlertCircle, Clock, ArrowUpRight } from 'lucide-react';
 import { useLocation } from 'react-router-dom';

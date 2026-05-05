@@ -1,8 +1,8 @@
 import React, { useState, useMemo, useRef } from 'react';
 import { useApp } from '../contexts/AppContext';
 import { Tenant } from '../types';
-import Card from '../components/ui/card';
-import Modal from '../components/ui/Modal';
+import Card from '../components/ui/app-card';
+import Modal from '../components/ui/modal';
 import ActionsMenu, { EditAction, DeleteAction } from '../components/shared/ActionsMenu';
 import AttachmentsManager from '../components/shared/AttachmentsManager';
 import { MessageCircle, Users, BookOpen, Download, ArrowRight, FileText, Home, Phone, Mail, MapPin, CreditCard } from 'lucide-react';
