@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { AlertTriangle, RefreshCw } from 'lucide-react';
-import { Toaster } from 'sonner';
+import { Toaster } from 'react-hot-toast';
 
 interface DataErrorScreenProps {
   message: string;

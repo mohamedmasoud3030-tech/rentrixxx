@@ -3,7 +3,8 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 export const SOURCE_EXTENSIONS = ['.ts', '.tsx', '.js', '.jsx', '.mts', '.cts'];
-export const IMPORT_RE = /from\s+['\"]([^'\"]+)['\"]|import\(['\"]([^'\"]+)['\"]\)/g;
+export const IMPORT_TARGET_EXTENSIONS = [...SOURCE_EXTENSIONS, '.css', '.scss', '.sass', '.less'];
+export const IMPORT_RE = /from\s+['\"]([^'\"]+)['\"]|import\s+['\"]([^'\"]+)['\"]|import\(['\"]([^'\"]+)['\"]\)/g;
 
 function normalize(p) {
   return p.replace(/\\/g, '/');
@@ -41,8 +42,8 @@ export function resolveImportFile(rootDir, fromFileRel, specifier, srcRoot = 'ar
 
   const candidates = [
     base,
-    ...SOURCE_EXTENSIONS.map((ext) => `${base}${ext}`),
-    ...SOURCE_EXTENSIONS.map((ext) => path.join(base, `index${ext}`)),
+    ...IMPORT_TARGET_EXTENSIONS.map((ext) => `${base}${ext}`),
+    ...IMPORT_TARGET_EXTENSIONS.map((ext) => path.join(base, `index${ext}`)),
   ];
 
   for (const candidate of candidates) {
@@ -108,7 +109,7 @@ export function runCasingCheck({
     let match;
     IMPORT_RE.lastIndex = 0;
     while ((match = IMPORT_RE.exec(text))) {
-      const specifier = match[1] || match[2];
+      const specifier = match[1] || match[2] || match[3];
       const resolved = resolveImportFile(rootDir, fromRel, specifier);
       if (!resolved) continue;
 
