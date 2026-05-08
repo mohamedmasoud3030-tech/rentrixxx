@@ -7,7 +7,9 @@
     "build": "pnpm run typecheck && pnpm -r --if-present run build",
     "typecheck:libs": "tsc --build",
     "typecheck": "pnpm run typecheck:libs && pnpm -r --filter \"./artifacts/**\" --filter \"./scripts\" --if-present run typecheck",
-    "typecheck:test": "pnpm -r --filter \"./artifacts/**\" --if-present run typecheck:test"
+    "typecheck:test": "pnpm -r --filter \"./artifacts/**\" --if-present run typecheck:test",
+    "lint:import-paths": "node scripts/check-import-path-casing.mjs",
+    "ci:case-check": "node scripts/check-import-path-casing.mjs"
   },
   "private": true,
   "devDependencies": {
