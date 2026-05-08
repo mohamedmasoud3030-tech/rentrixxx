@@ -6,7 +6,7 @@ import { assertPeriodUnlocked, LockedPeriodError, ReadOnlyModeError } from "../l
 import { MULTI_TENANT_STRICT } from "../lib/tenancy";
 import { logger } from "../lib/logger";
 import { eq, and } from "drizzle-orm";
-import { z } from "zod/v4";
+import { z } from "zod";
 
 const router: IRouter = Router();
 
@@ -104,8 +104,8 @@ router.post(
         return;
       }
 
-      const { nanoid } = await import("nanoid");
-      const id = nanoid();
+      
+      const id = crypto.randomUUID();
       const now = new Date().toISOString();
 
       const [newProperty] = await db.insert(propertiesTable).values({
@@ -153,7 +153,7 @@ router.patch(
         return;
       }
 
-      const { id: propertyId } = req.params;
+      const propertyId = req.params['id'] as string;
       const { organizationId, id: userId } = req.user!;
 
       if (!propertyId) {
@@ -237,7 +237,7 @@ router.delete(
         return;
       }
 
-      const { id: propertyId } = req.params;
+      const propertyId = req.params['id'] as string;
       const { organizationId, id: userId } = req.user!;
 
       if (!propertyId) {

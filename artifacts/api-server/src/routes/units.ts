@@ -5,7 +5,7 @@ import { requireRole } from "../middlewares/auth";
 import { MULTI_TENANT_STRICT } from "../lib/tenancy";
 import { logger } from "../lib/logger";
 import { eq, and } from "drizzle-orm";
-import { z } from "zod/v4";
+import { z } from "zod";
 
 const router: IRouter = Router();
 
@@ -91,7 +91,7 @@ router.get(
   requireRole("USER"),
   async (req: Request, res: Response): Promise<void> => {
     try {
-      const { id: unitId } = req.params;
+      const unitId = req.params['id'] as string;
       const { organizationId } = req.user!;
 
       if (!unitId) {
@@ -150,8 +150,8 @@ router.post(
       const body = parseResult.data;
 
       // Generate ID and timestamps
-      const { nanoid } = await import("nanoid");
-      const id = nanoid();
+      
+      const id = crypto.randomUUID();
       const now = new Date().toISOString();
 
       const [newUnit] = await db.insert(unitsTable).values({
@@ -195,7 +195,7 @@ router.patch(
   requireRole("ADMIN"),
   async (req: Request, res: Response): Promise<void> => {
     try {
-      const { id: unitId } = req.params;
+      const unitId = req.params['id'] as string;
       const { organizationId, id: userId } = req.user!;
 
       if (!unitId) {
@@ -276,7 +276,7 @@ router.delete(
   requireRole("ADMIN"),
   async (req: Request, res: Response): Promise<void> => {
     try {
-      const { id: unitId } = req.params;
+      const unitId = req.params['id'] as string;
       const { organizationId, id: userId } = req.user!;
 
       if (!unitId) {

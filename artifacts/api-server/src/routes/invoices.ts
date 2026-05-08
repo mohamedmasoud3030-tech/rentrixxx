@@ -5,7 +5,7 @@ import { requireRole } from "../middlewares/auth";
 import { MULTI_TENANT_STRICT } from "../lib/tenancy";
 import { logger } from "../lib/logger";
 import { eq, inArray } from "drizzle-orm";
-import { z } from "zod/v4";
+import { z } from "zod";
 
 const router: IRouter = Router();
 
@@ -92,7 +92,7 @@ router.get(
   requireRole("USER"),
   async (req: Request, res: Response): Promise<void> => {
     try {
-      const { id: invoiceId } = req.params;
+      const invoiceId = req.params['id'] as string;
       const { organizationId } = req.user!;
 
       if (!invoiceId) {
@@ -110,7 +110,7 @@ router.get(
       // If organizationId is set, verify the invoice belongs to the org
       if (organizationId) {
         const contractIds = await getOrgContractIds(organizationId);
-        if (!contractIds.includes(row.contractId)) {
+        if (!contractIds.includes(row.contractId ?? '')) {
           res.status(404).json({ error: "Invoice not found" });
           return;
         }
@@ -162,8 +162,8 @@ router.post(
       }
 
       // Generate ID and timestamps
-      const { nanoid } = await import("nanoid");
-      const id = nanoid();
+      
+      const id = crypto.randomUUID();
       const now = new Date().toISOString();
 
       // Generate invoice number if not provided
@@ -203,7 +203,7 @@ router.patch(
   requireRole("ADMIN"),
   async (req: Request, res: Response): Promise<void> => {
     try {
-      const { id: invoiceId } = req.params;
+      const invoiceId = req.params['id'] as string;
       const { organizationId, id: userId } = req.user!;
 
       if (!invoiceId) {
@@ -234,7 +234,7 @@ router.patch(
       // If organizationId is set, verify the invoice belongs to the org
       if (organizationId) {
         const contractIds = await getOrgContractIds(organizationId);
-        if (!contractIds.includes(existing.contractId)) {
+        if (!contractIds.includes(existing.contractId ?? '')) {
           res.status(404).json({ error: "Invoice not found" });
           return;
         }
@@ -279,7 +279,7 @@ router.delete(
   requireRole("ADMIN"),
   async (req: Request, res: Response): Promise<void> => {
     try {
-      const { id: invoiceId } = req.params;
+      const invoiceId = req.params['id'] as string;
       const { organizationId, id: userId } = req.user!;
 
       if (!invoiceId) {
@@ -298,7 +298,7 @@ router.delete(
       // If organizationId is set, verify the invoice belongs to the org
       if (organizationId) {
         const contractIds = await getOrgContractIds(organizationId);
-        if (!contractIds.includes(existing.contractId)) {
+        if (!contractIds.includes(existing.contractId ?? '')) {
           res.status(404).json({ error: "Invoice not found" });
           return;
         }

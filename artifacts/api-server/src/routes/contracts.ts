@@ -5,7 +5,7 @@ import { requireRole } from "../middlewares/auth";
 import { MULTI_TENANT_STRICT } from "../lib/tenancy";
 import { logger } from "../lib/logger";
 import { and, isNull, eq } from "drizzle-orm";
-import { z } from "zod/v4";
+import { z } from "zod";
 
 const router: IRouter = Router();
 
@@ -112,7 +112,7 @@ router.get(
   requireRole("USER"),
   async (req: Request, res: Response): Promise<void> => {
     try {
-      const { id: contractId } = req.params;
+      const contractId = req.params['id'] as string;
       const { organizationId } = req.user!;
 
       if (!contractId) {
@@ -175,8 +175,8 @@ router.post(
       const body = parseResult.data;
 
       // Generate ID and timestamps
-      const { nanoid } = await import("nanoid");
-      const id = nanoid();
+      
+      const id = crypto.randomUUID();
       const now = new Date().toISOString();
 
       // Generate contract number if not provided
@@ -219,7 +219,7 @@ router.patch(
   requireRole("ADMIN"),
   async (req: Request, res: Response): Promise<void> => {
     try {
-      const { id: contractId } = req.params;
+      const contractId = req.params['id'] as string;
       const { organizationId, id: userId } = req.user!;
 
       if (!contractId) {
@@ -305,7 +305,7 @@ router.delete(
   requireRole("ADMIN"),
   async (req: Request, res: Response): Promise<void> => {
     try {
-      const { id: contractId } = req.params;
+      const contractId = req.params['id'] as string;
       const { organizationId, id: userId } = req.user!;
 
       if (!contractId) {
