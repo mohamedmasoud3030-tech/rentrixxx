@@ -279,7 +279,6 @@ router.delete(
       await db
         .update(propertiesTable)
         .set({
-          deletedAt: now,
           updatedAt: now
         })
         .where(eq(propertiesTable.id, propertyId));

@@ -1,6 +1,6 @@
 import { pgTable, uuid, text, numeric, boolean, date, timestamp } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
-import { z } from "zod/v4";
+import { z } from "zod";
 
 export const invoicesTable = pgTable("invoices", {
   id: uuid("id").primaryKey(),

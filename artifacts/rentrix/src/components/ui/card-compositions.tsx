@@ -1,5 +1,5 @@
 import React from 'react';
-import Card from './Card';
+import Card from './card';
 
 export const MetricCard: React.FC<{
   label: string;
