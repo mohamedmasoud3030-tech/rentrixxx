@@ -1,6 +1,6 @@
 {
-  "outputDirectory": "artifacts/rentrix/dist/public",
   "buildCommand": "pnpm run build",
+  "outputDirectory": "artifacts/rentrix/dist",
   "installCommand": "pnpm install --frozen-lockfile",
-  "framework": null
+  "framework": "vite"
 }

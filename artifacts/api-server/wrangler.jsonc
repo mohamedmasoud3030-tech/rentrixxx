@@ -1,0 +1,8 @@
+{
+  "name": "rentrix-edge",
+  "compatibility_date": "2026-05-10",
+  "main": "src/index.ts",
+  "assets": {
+    "directory": "./dist/public"
+  }
+}

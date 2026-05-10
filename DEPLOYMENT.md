@@ -1,40 +1,38 @@
 # Deployment Guide
 
-This project uses GitHub Actions for CI/CD, automatically building and deploying to Vercel on every push to `main`.
+This repo uses a unified deploy architecture where Vercel owns the frontend layer and Cloudflare owns the edge layer.
 
-## Required GitHub Actions Secrets
+## Platform responsibility split
 
-Before the CD pipeline can deploy, you must add these three secrets to the GitHub repository:
+- **Vercel**: hosts the frontend app from `artifacts/rentrix`.
+- **Cloudflare**: hosts edge runtime/assets from `artifacts/api-server`.
+- **CI router**: detects changed paths and deploys only the affected layer(s).
 
-**Settings → Secrets and variables → Actions → New repository secret**
+## Required GitHub Actions secrets
 
-| Secret name | Where to find it |
-|---|---|
-| `VERCEL_TOKEN` | [Vercel Dashboard](https://vercel.com/account/tokens) → Account Settings → Tokens → Create |
-| `VERCEL_ORG_ID` | Vercel Dashboard → Settings → General → **Team ID** (starts with `team_`) |
-| `VERCEL_PROJECT_ID` | Vercel Dashboard → Project `rentrixxx-jz7n` → Settings → General → **Project ID** (starts with `prj_`) |
+Add these repository secrets in **Settings → Secrets and variables → Actions**.
 
-## Workflows
+### Vercel
 
-### CI (`ci.yml`)
-Triggered on every push and pull request to `main`.
-- Installs dependencies with `pnpm install --frozen-lockfile`
-- Runs `pnpm run typecheck` across the full monorepo
-- Runs `pnpm -r run build` for all packages
+- `VERCEL_TOKEN`
+- `VERCEL_ORG_ID`
+- `VERCEL_PROJECT_ID`
 
-### CD (`deploy.yml`)
-Triggered on every push to `main` (runs in parallel with CI).
-- Pulls Vercel environment configuration
-- Builds via Vercel CLI
-- Deploys to production (`rentrixxx-jz7n`)
+### Cloudflare
 
-## Local Setup for New Contributors
+- `CLOUDFLARE_API_TOKEN`
+- `CLOUDFLARE_ACCOUNT_ID`
 
-```bash
-# Clone the repo
-git clone https://github.com/mohamedmasoud3030-tech/rentrixxx.git
-cd rentrixxx
+## Workflow behavior
 
-# Install dependencies
-pnpm install
-```
+Workflow: `.github/workflows/deploy.yml`
+
+1. Install dependencies with `pnpm install --frozen-lockfile`
+2. Build once with `pnpm run build`
+3. Run deploy router (`node scripts/deploy-router.mjs`) to classify changed files
+4. Deploy selectively:
+   - `artifacts/rentrix/**` changed → deploy to Vercel
+   - `artifacts/api-server/**` changed → deploy to Cloudflare
+   - both changed → deploy both in sequence
+
+This prevents overlapping deploy targets and avoids duplicate build pipelines.
