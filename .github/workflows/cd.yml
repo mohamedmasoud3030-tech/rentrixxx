@@ -1,0 +1,11 @@
+name: CD — Unified Deploy (Vercel + Cloudflare)
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  vercel:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "Vercel auto-deploys from git integration — no action needed"
