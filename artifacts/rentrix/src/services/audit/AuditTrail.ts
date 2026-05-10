@@ -25,7 +25,7 @@ export const AuditTrail = {
     try {
       const ts = event.timestamp ?? Date.now();
       const actor = event.performedBy || 'system';
-      const referenceId = event.referenceId || buildReferenceId({ ...event, performedBy: actor, timestamp: ts });
+      
       const { error } = await supabase.from('audit_log').insert({
         id: crypto.randomUUID(),
         ts,
@@ -34,38 +34,22 @@ export const AuditTrail = {
         action: event.action,
         entity: event.entityType,
         entity_id: event.entityId,
+        table: event.entityType,
         note: toJson({
           actor,
           timestamp: ts,
-          document_id: event.entityId,
-          reference_id: referenceId,
+        }),
+        details: toJson({
           before_state: event.before ?? null,
           after_state: event.after ?? null,
         }),
       });
+      
       if (error) {
-        logger.error('[AuditTrail] insert failed', { message: error?.message, code: error?.code });
+        logger.error('[AuditTrail] insert failed', { message: error?.message });
       }
     } catch (err) {
-      logger.error('[AuditTrail] unexpected error', { message: (err as any)?.message, code: (err as any)?.code });
+      logger.error('[AuditTrail] unexpected error', { message: (err as any)?.message });
     }
   },
-};
-
-const buildReferenceId = (event: Required<Pick<AuditEvent, 'action' | 'entityType' | 'entityId' | 'performedBy' | 'timestamp'>> & Pick<AuditEvent, 'before' | 'after'>): string => {
-  const raw = [
-    event.action,
-    event.entityType,
-    event.entityId,
-    event.performedBy,
-    String(event.timestamp),
-    toJson(event.before),
-    toJson(event.after),
-  ].join('|');
-  let hash = 0;
-  for (let i = 0; i < raw.length; i += 1) {
-    hash = (hash << 5) - hash + (raw.codePointAt(i) || 0);
-    hash |= 0;
-  }
-  return `evt_${Math.abs(hash).toString(16).padStart(8, '0')}`;
 };
