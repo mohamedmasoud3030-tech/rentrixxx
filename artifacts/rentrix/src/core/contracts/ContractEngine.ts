@@ -28,7 +28,7 @@ export const ContractEngine = {
     },
   ): Promise<Contract | null> {
     if (!_dataService) {
-      console.error('[ContractEngine] dataService not configured');
+      // Error: '[ContractEngine] dataService not configured';
       return null;
     }
 
@@ -47,7 +47,7 @@ export const ContractEngine = {
 
   async end(contractId: string, endDate: string): Promise<void> {
     if (!_dataService) {
-      console.error('[ContractEngine] dataService not configured');
+      // Error: '[ContractEngine] dataService not configured';
       return;
     }
     const isValidDate = /^\d{4}-\d{2}-\d{2}$/.test(endDate) && !Number.isNaN(Date.parse(`${endDate}T00:00:00.000Z`));
@@ -62,7 +62,7 @@ export const ContractEngine = {
 
   async suspend(contractId: string): Promise<void> {
     if (!_dataService) {
-      console.error('[ContractEngine] dataService not configured');
+      // Error: '[ContractEngine] dataService not configured';
       return;
     }
     await _dataService.update('contracts', contractId, { status: 'SUSPENDED' });

@@ -68,7 +68,7 @@ export class ApiClient {
       return await breaker.execute(async () => await response.json());
     } catch (error) {
       const apiError = ApiErrorHandler.handle(error);
-      console.error('API Error:', apiError);
+      // Error: 'API Error:', apiError;
       throw apiError;
     }
   }

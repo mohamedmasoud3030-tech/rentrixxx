@@ -46,7 +46,7 @@ export const errorTracker = {
 
     if (!dsn) {
        
-      console.error('[error-tracker:fallback]', payload);
+      // Error: '[error-tracker:fallback]', payload;
       return;
     }
 

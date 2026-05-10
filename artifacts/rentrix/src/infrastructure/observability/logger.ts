@@ -50,7 +50,7 @@ export const logger = {
     if (!shouldLog('error')) return;
     const payload = formatPayload(message, meta);
      
-    console.error(...payload);
+    // Error: ...payload;
     errorTracker.capture(meta ?? message, { area: 'logger', action: message });
   },
 };
