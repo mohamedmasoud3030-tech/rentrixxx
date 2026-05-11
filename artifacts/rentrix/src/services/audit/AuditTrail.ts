@@ -12,11 +12,14 @@ type AuditEvent = {
   referenceId?: string;
 };
 
-const toJson = (value: unknown): string => {
+export const toJson = (value: unknown): Record<string, unknown> => {
   try {
-    return JSON.stringify(value ?? {});
+    if (value && typeof value === 'object' && !Array.isArray(value)) {
+      return value as Record<string, unknown>;
+    }
+    return { value: value ?? null };
   } catch {
-    return '{}';
+    return {};
   }
 };
 
@@ -26,24 +29,22 @@ export const AuditTrail = {
       const ts = event.timestamp ?? Date.now();
       const actor = event.performedBy || 'system';
       
-      const { error } = await supabase.from('audit_log').insert({
-        id: crypto.randomUUID(),
-        ts,
+      const payload = {
         user_id: actor,
-        username: actor,
         action: event.action,
-        entity: event.entityType,
         entity_id: event.entityId,
         table: event.entityType,
-        note: toJson({
+        details: toJson({
           actor,
           timestamp: ts,
-        }),
-        details: toJson({
+          entity: event.entityType,
+          reference_id: event.referenceId ?? null,
           before_state: event.before ?? null,
           after_state: event.after ?? null,
         }),
-      });
+      };
+
+      const { error } = await supabase.from('audit_log').insert(payload);
       
       if (error) {
         logger.error('[AuditTrail] insert failed', { message: error?.message });
