@@ -1,38 +1,43 @@
-# Deployment Guide
+# Production Deployment
 
-This repo uses a unified deploy architecture where Vercel owns the frontend layer and Cloudflare owns the edge layer.
+## Runtime baseline
+- Node.js 20+
+- pnpm 10.11.1
 
-## Platform responsibility split
+## Environment configuration
+Set these public Vite variables in hosting provider settings:
+- `VITE_SUPABASE_URL`
+- `VITE_SUPABASE_ANON_KEY`
 
-- **Vercel**: hosts the frontend app from `artifacts/rentrix`.
-- **Cloudflare**: hosts edge runtime/assets from `artifacts/api-server`.
-- **CI router**: detects changed paths and deploys only the affected layer(s).
+Optional:
+- `VITE_SUPABASE_PUBLISHABLE_KEY`
+- `VITE_LOG_LEVEL`
+- `VITE_ERROR_TRACKER_DSN`
+- `VITE_RELEASE_VERSION`
 
-## Required GitHub Actions secrets
+Reference template: `.env.example`.
 
-Add these repository secrets in **Settings → Secrets and variables → Actions**.
+## Deterministic CI/CD verification
+Run before every production deployment:
 
-### Vercel
+```bash
+pnpm install --frozen-lockfile
+pnpm build
+pnpm typecheck
+pnpm lint
+```
 
-- `VERCEL_TOKEN`
-- `VERCEL_ORG_ID`
-- `VERCEL_PROJECT_ID`
+## Vercel
+The repository-level `vercel.json` is configured for:
+- frozen-lockfile installs
+- workspace build command
+- static output directory: `artifacts/rentrix/dist/public`
+- SPA rewrite to `index.html`
 
-### Cloudflare
+## Cloudflare Pages
+Use these settings:
+- Install command: `pnpm install --frozen-lockfile`
+- Build command: `pnpm build`
+- Build output directory: `artifacts/rentrix/dist/public`
 
-- `CLOUDFLARE_API_TOKEN`
-- `CLOUDFLARE_ACCOUNT_ID`
-
-## Workflow behavior
-
-Workflow: `.github/workflows/deploy.yml`
-
-1. Install dependencies with `pnpm install --frozen-lockfile`
-2. Build once with `pnpm run build`
-3. Run deploy router (`node scripts/deploy-router.mjs`) to classify changed files
-4. Deploy selectively:
-   - `artifacts/rentrix/**` changed → deploy to Vercel
-   - `artifacts/api-server/**` changed → deploy to Cloudflare
-   - both changed → deploy both in sequence
-
-This prevents overlapping deploy targets and avoids duplicate build pipelines.
+Enable SPA fallback to `/index.html` in Cloudflare routing.
