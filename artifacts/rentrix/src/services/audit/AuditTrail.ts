@@ -12,6 +12,12 @@ type AuditEvent = {
   referenceId?: string;
 };
 
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const toNullableUuid = (value: string | undefined): string | null => {
+  if (!value) return null;
+  return UUID_RE.test(value) ? value : null;
+};
+
 export const toJson = (value: unknown): Record<string, unknown> => {
   try {
     if (value && typeof value === 'object' && !Array.isArray(value)) {
@@ -29,9 +35,10 @@ export const AuditTrail = {
       const ts = event.timestamp ?? Date.now();
       const occurredAt = new Date(ts).toISOString();
       const actor = event.performedBy || 'system';
+      const userId = toNullableUuid(event.performedBy);
       
       const payload = {
-        user_id: actor,
+        user_id: userId,
         action: event.action,
         entity_id: event.entityId,
         table: event.entityType,

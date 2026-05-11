@@ -34,7 +34,7 @@ describe('AuditTrail', () => {
       action: 'CREATE_DOCUMENT',
       entityType: 'contracts',
       entityId: 'c-1',
-      performedBy: 'u-1',
+      performedBy: '123e4567-e89b-12d3-a456-426614174000',
       referenceId: 'ref-1',
       before: { old: true },
       after: { old: false },
@@ -45,7 +45,7 @@ describe('AuditTrail', () => {
     expect(insertMock).toHaveBeenCalledTimes(1);
     const payload = insertMock.mock.calls[0][0] as Record<string, unknown>;
     expect(payload).toMatchObject({
-      user_id: 'u-1',
+      user_id: '123e4567-e89b-12d3-a456-426614174000',
       action: 'CREATE_DOCUMENT',
       entity_id: 'c-1',
       table: 'contracts',
@@ -87,5 +87,17 @@ describe('AuditTrail', () => {
     })).resolves.toBeUndefined();
 
     expect(insertMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('sets user_id to null when actor is not a valid uuid', async () => {
+    await AuditTrail.log({
+      action: 'POST_JOURNAL',
+      entityType: 'journal_entries',
+      entityId: 'j-1',
+      performedBy: 'system',
+    });
+    const payload = insertMock.mock.calls[0][0] as Record<string, unknown>;
+    expect(payload.user_id).toBeNull();
+    expect(payload).toHaveProperty('details.actor', 'system');
   });
 });
