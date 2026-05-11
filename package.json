@@ -1,23 +1,21 @@
 {
-  "name": "workspace",
-  "version": "0.0.0",
+  "name": "rentrix-production-workspace",
+  "version": "1.0.0",
   "license": "MIT",
-  "scripts": {
-    "preinstall": "sh -c 'rm -f package-lock.json yarn.lock; case \"$npm_config_user_agent\" in pnpm/*) ;; *) echo \"Use pnpm instead\" >&2; exit 1 ;; esac'",
-    "build": "pnpm run typecheck && pnpm -r --if-present run build",
-    "typecheck:libs": "tsc --build",
-    "typecheck": "pnpm run typecheck:libs && pnpm -r --filter \"./artifacts/**\" --filter \"./scripts\" --if-present run typecheck",
-    "typecheck:test": "pnpm -r --filter \"./artifacts/**\" --if-present run typecheck:test",
-    "lint:import-paths": "node scripts/check-import-path-casing.mjs",
-    "ci:case-check": "node scripts/check-import-path-casing.mjs"
-  },
   "private": true,
-  "devDependencies": {
-    "typescript": "~5.9.2",
-    "prettier": "^3.8.1"
-  },
   "packageManager": "pnpm@10.11.1",
   "engines": {
     "pnpm": "10.11.1"
+  },
+  "scripts": {
+    "preinstall": "sh -c 'rm -f package-lock.json yarn.lock; case \"$npm_config_user_agent\" in pnpm/*) ;; *) echo \"Use pnpm instead\" >&2; exit 1 ;; esac'",
+    "install:clean": "pnpm install --frozen-lockfile",
+    "build": "pnpm -r --if-present run build",
+    "typecheck": "tsc -b && pnpm -r --filter ./artifacts/rentrix --if-present run typecheck",
+    "lint": "pnpm -r --filter ./artifacts/rentrix --if-present run lint"
+  },
+  "devDependencies": {
+    "prettier": "^3.8.1",
+    "typescript": "~5.9.2"
   }
 }
