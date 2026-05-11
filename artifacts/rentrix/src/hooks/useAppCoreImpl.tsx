@@ -103,7 +103,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const audit = useCallback(async (action: string, table: string, id: string, details?: string) => {
     try {
-      await supabaseData.insert('auditLog', {
+      const primary = await supabaseData.insert('auditLog', {
         action,
         table,
         entityId: id,
@@ -113,6 +113,20 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         // a "column not found in schema cache" error from PostgREST when the
         // schema cache hasn't picked up the column yet after migrations.
       });
+      if (!primary.error) return;
+
+      // Compatibility fallback for environments where `audit_log.details`
+      // is still `text` rather than json/jsonb.
+      const fallback = await supabaseData.insert('auditLog', {
+        action,
+        table,
+        entityId: id,
+        details: details || '',
+        userId: currentUserRef.current?.id ?? null,
+      });
+      if (fallback.error) {
+        logger.error('Audit log failed', { message: fallback.error });
+      }
     } catch (err) {
       logger.error('Audit log failed', { message: errMsg(err) });
     }

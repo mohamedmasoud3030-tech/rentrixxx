@@ -12,7 +12,7 @@ type AuditEvent = {
   referenceId?: string;
 };
 
-const toJson = (value: unknown): Record<string, unknown> => {
+export const toJson = (value: unknown): Record<string, unknown> => {
   try {
     if (value && typeof value === 'object' && !Array.isArray(value)) {
       return value as Record<string, unknown>;
