@@ -107,8 +107,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         action,
         table,
         entityId: id,
-        details: details || '',
-        userId: currentUserRef.current?.id || 'system',
+        details: details ? { message: details } : {},
+        userId: currentUserRef.current?.id ?? null,
         // created_at is set by the DB DEFAULT (NOW()); omitting it here avoids
         // a "column not found in schema cache" error from PostgREST when the
         // schema cache hasn't picked up the column yet after migrations.
@@ -124,23 +124,38 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const refreshData = useCallback(async () => {
     try {
+      type CoreTable = 'properties' | 'units' | 'contracts' | 'invoices';
+      const fetchCore = async <K extends CoreTable>(path: string, table: K): Promise<Database[K]> => {
+        try {
+          const result = await apiGet<{ data: Database[K] }>(path);
+          return result.data;
+        } catch (err: any) {
+          const status = err?.status ?? err?.response?.status;
+          if (status === 401 || status === 404) {
+            logger.warn(`API ${path} unavailable (${status}); falling back to Supabase table ${table}`);
+            return await supabaseData.fetchAll(table as string) as Database[K];
+          }
+          throw err;
+        }
+      };
+
       // Core tables (properties, units, contracts, invoices) are fetched exclusively
       // through the authenticated Express API layer so server-side business rules and
       // access control are enforced. Supabase is used for all other tables only.
       const [baseData, propertiesRes, unitsRes, contractsRes, invoicesRes] = await Promise.all([
         supabaseData.getAllData(CORE_TABLES),
-        apiGet<{ data: Database['properties'] }>('/api/properties'),
-        apiGet<{ data: Database['units'] }>('/api/units'),
-        apiGet<{ data: Database['contracts'] }>('/api/contracts'),
-        apiGet<{ data: Database['invoices'] }>('/api/invoices'),
+        fetchCore('/api/properties', 'properties'),
+        fetchCore('/api/units', 'units'),
+        fetchCore('/api/contracts', 'contracts'),
+        fetchCore('/api/invoices', 'invoices'),
       ]);
 
       const data: Database = {
         ...baseData,
-        properties: propertiesRes.data,
-        units: unitsRes.data,
-        contracts: contractsRes.data,
-        invoices: invoicesRes.data,
+        properties: propertiesRes,
+        units: unitsRes,
+        contracts: contractsRes,
+        invoices: invoicesRes,
       };
 
       setDb(data);
