@@ -1,38 +1,38 @@
-# Deployment Guide
+# Production Deployment
 
-This repo uses a unified deploy architecture where Vercel owns the frontend layer and Cloudflare owns the edge layer.
+## Prerequisites
+- Node.js 20+
+- pnpm 10.11.1
 
-## Platform responsibility split
+## Required environment variables
+Use `.env` (local) or deployment provider env settings:
+- `VITE_SUPABASE_URL`
+- `VITE_SUPABASE_ANON_KEY`
 
-- **Vercel**: hosts the frontend app from `artifacts/rentrix`.
-- **Cloudflare**: hosts edge runtime/assets from `artifacts/api-server`.
-- **CI router**: detects changed paths and deploys only the affected layer(s).
+Optional:
+- `VITE_SUPABASE_PUBLISHABLE_KEY`
+- `VITE_LOG_LEVEL`
+- `VITE_ERROR_TRACKER_DSN`
+- `VITE_RELEASE_VERSION`
 
-## Required GitHub Actions secrets
+## Deterministic build
+```bash
+pnpm install --frozen-lockfile
+pnpm build
+pnpm typecheck
+pnpm lint
+```
 
-Add these repository secrets in **Settings → Secrets and variables → Actions**.
+## Vercel
+`vercel.json` is configured to:
+- install with frozen lockfile
+- run workspace build
+- serve `artifacts/rentrix/dist/public`
 
-### Vercel
+## Cloudflare Pages
+- Build command: `pnpm build`
+- Build output directory: `artifacts/rentrix/dist/public`
+- Install command: `pnpm install --frozen-lockfile`
 
-- `VERCEL_TOKEN`
-- `VERCEL_ORG_ID`
-- `VERCEL_PROJECT_ID`
-
-### Cloudflare
-
-- `CLOUDFLARE_API_TOKEN`
-- `CLOUDFLARE_ACCOUNT_ID`
-
-## Workflow behavior
-
-Workflow: `.github/workflows/deploy.yml`
-
-1. Install dependencies with `pnpm install --frozen-lockfile`
-2. Build once with `pnpm run build`
-3. Run deploy router (`node scripts/deploy-router.mjs`) to classify changed files
-4. Deploy selectively:
-   - `artifacts/rentrix/**` changed → deploy to Vercel
-   - `artifacts/api-server/**` changed → deploy to Cloudflare
-   - both changed → deploy both in sequence
-
-This prevents overlapping deploy targets and avoids duplicate build pipelines.
+## SPA routing
+Ensure a catch-all rewrite to `/index.html` is enabled (already configured on Vercel).
