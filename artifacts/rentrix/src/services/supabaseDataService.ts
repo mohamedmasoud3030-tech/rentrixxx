@@ -393,7 +393,7 @@ export const supabaseData = {
   },
 
   async getSettings(): Promise<Settings | null> {
-    const { data, error } = await supabase.from('settings').select('data').eq('id', 1).single<SettingsRow>();
+    const { data, error } = await supabase.from('settings').select('data').eq('id', 1).maybeSingle<SettingsRow>();
     if (error || !data) return null;
     return data.data as unknown as Settings;
   },
@@ -413,7 +413,7 @@ export const supabaseData = {
 
   async getGovernance(): Promise<Governance | null> {
     const columns = 'id, read_only, locked_periods';
-    const { data, error } = await supabase.from('governance').select(columns).eq('id', 1).single<GovernanceRow>();
+    const { data, error } = await supabase.from('governance').select(columns).eq('id', 1).maybeSingle<GovernanceRow>();
     if (error || !data) return null;
     return { readOnly: data.read_only, lockedPeriods: data.locked_periods || [] };
   },
@@ -428,7 +428,7 @@ export const supabaseData = {
 
   async getSerials(): Promise<Serials | null> {
     const columns = 'id, receipt, expense, maintenance, invoice, lead, owner_settlement, journal_entry, mission, contract';
-    const { data, error } = await supabase.from('serials').select(columns).eq('id', 1).single<SerialsRow>();
+    const { data, error } = await supabase.from('serials').select(columns).eq('id', 1).maybeSingle<SerialsRow>();
     if (error || !data) return null;
     return {
       receipt: data.receipt, expense: data.expense, maintenance: data.maintenance,
@@ -613,12 +613,12 @@ export const supabaseData = {
       await this.saveSettings(defaultSettings);
     }
 
-    const { data: govData } = await supabase.from('governance').select('id').eq('id', 1).single();
+    const { data: govData } = await supabase.from('governance').select('id').eq('id', 1).maybeSingle();
     if (!govData) {
       await this.saveGovernance({ readOnly: false, lockedPeriods: [] });
     }
 
-    const { data: serialData } = await supabase.from('serials').select('id').eq('id', 1).single();
+    const { data: serialData } = await supabase.from('serials').select('id').eq('id', 1).maybeSingle();
     if (!serialData) {
       const snakeSerials: Record<string, unknown> = { id: 1 };
       for (const [k, v] of Object.entries(defaultSerials)) {
