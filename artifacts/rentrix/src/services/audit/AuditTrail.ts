@@ -27,6 +27,7 @@ export const AuditTrail = {
   async log(event: AuditEvent): Promise<void> {
     try {
       const ts = event.timestamp ?? Date.now();
+      const occurredAt = new Date(ts).toISOString();
       const actor = event.performedBy || 'system';
       
       const payload = {
@@ -36,7 +37,8 @@ export const AuditTrail = {
         table: event.entityType,
         details: toJson({
           actor,
-          timestamp: ts,
+          timestamp_ms: ts,
+          occurred_at: occurredAt,
           entity: event.entityType,
           reference_id: event.referenceId ?? null,
           before_state: event.before ?? null,

@@ -50,6 +50,8 @@ describe('AuditTrail', () => {
       entity_id: 'c-1',
       table: 'contracts',
     });
+    expect(payload).toHaveProperty('details.timestamp_ms', 1000);
+    expect(payload).toHaveProperty('details.occurred_at', '1970-01-01T00:00:01.000Z');
     expect(payload).not.toHaveProperty('id');
     expect(payload).not.toHaveProperty('ts');
     expect(payload).not.toHaveProperty('username');
