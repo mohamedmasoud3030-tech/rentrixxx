@@ -1,18 +1,10 @@
-export type EntityId = string;
+import type { Database } from './database';
 
-export interface BaseEntity {
-  id: EntityId;
-  createdAt?: number;
-  updatedAt?: number | null;
-}
+export type Property = Database['public']['Tables']['properties']['Row'];
+export type Contract = Database['public']['Tables']['contracts']['Row'];
+export type Invoice = Database['public']['Tables']['invoices']['Row'];
+export type Expense = Database['public']['Tables']['expenses']['Row'];
+export type Person = Database['public']['Tables']['people']['Row'];
+export type Unit = Database['public']['Tables']['units']['Row'];
 
-export interface MoneyBalance {
-  debit: number;
-  credit: number;
-  net: number;
-}
-
-export interface DateRange {
-  startDate: string;
-  endDate: string;
-}
+export type SyncStatus = 'idle' | 'syncing' | 'offline' | 'error';
