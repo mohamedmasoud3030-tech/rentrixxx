@@ -17,6 +17,8 @@ export function FinancialsPage() {
   const [filters] = useState({ propertyId: '', category: '', from: '', to: '' });
   const { data: expenses = [] } = useExpenses(filters);
   const createExpense = useCreateExpense();
+  const [expensePropertyId, setExpensePropertyId] = useState('');
+  const [expenseError, setExpenseError] = useState('');
   const remaining = useMemo(() => (invoiceDetail ? invoiceDetail.amount - invoiceDetail.paid_amount : 0), [invoiceDetail]);
 
   return <div className="space-y-6" dir="rtl">
@@ -37,7 +39,17 @@ export function FinancialsPage() {
 
     <Card><CardHeader><CardTitle>المصاريف</CardTitle></CardHeader><CardContent className="space-y-2">
       {expenses.map((e) => <p key={e.id}>{e.expense_date} — {e.category} — {e.amount}</p>)}
-      <Button onClick={() => createExpense.mutate({ property_id: '00000000-0000-0000-0000-000000000000', category: 'تشغيل', amount: 0.01, expense_date: new Date().toISOString().slice(0,10), description: 'تجريبي' })}>إضافة مصروف تجريبي</Button>
+      <div className="flex gap-2">
+        <input className="rounded border px-2" placeholder="property_id" value={expensePropertyId} onChange={(e) => { setExpensePropertyId(e.target.value); setExpenseError(''); }} />
+        <Button onClick={() => {
+          if (!expensePropertyId) {
+            setExpenseError('يرجى اختيار العقار أولاً');
+            return;
+          }
+          createExpense.mutate({ property_id: expensePropertyId, category: 'تشغيل', amount: 0.01, expense_date: new Date().toISOString().slice(0,10), description: 'تجريبي' });
+        }}>إضافة مصروف تجريبي</Button>
+      </div>
+      {expenseError ? <p className="text-sm text-red-600">{expenseError}</p> : null}
     </CardContent></Card>
   </div>;
 }
