@@ -136,6 +136,12 @@ export type Database = {
         Args: { contract_id: string; new_start: string; new_end: string; new_amount: number };
         Returns: string;
       };
+      post_receipt_atomic: {
+        Args: { invoice_id: string; amount: number; method: 'cash' | 'bank_transfer' | 'card' | 'check' | 'other'; date: string; reference: string | null };
+        Returns: string;
+      };
+      generate_invoices_from_active_contracts: { Args: Record<string, never>; Returns: number };
+      rpt_financial_summary: { Args: { month: number; year: number }; Returns: { total_collected: number; total_overdue_invoices: number; total_expenses: number; net_revenue: number } };
     };
     Enums: Record<string, never>;
     CompositeTypes: Record<string, never>;
