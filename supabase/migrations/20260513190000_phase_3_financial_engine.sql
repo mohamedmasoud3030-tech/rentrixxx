@@ -1,22 +1,26 @@
-create or replace function public.post_receipt_atomic(invoice_id uuid, amount numeric, method public.payment_method, date date, reference text)
+create or replace function public.post_receipt_atomic(p_invoice_id uuid, p_amount numeric, p_method public.payment_method, p_date date, p_reference text)
 returns text
 language plpgsql
 security definer
 as $$
 declare v_invoice public.invoices%rowtype;
 begin
-  select * into v_invoice from public.invoices where id = invoice_id and deleted_at is null for update;
+  select * into v_invoice from public.invoices where id = p_invoice_id and deleted_at is null for update;
   if v_invoice.id is null then raise exception 'Invoice not found'; end if;
-  if amount <= 0 then raise exception 'Amount must be positive'; end if;
-  if v_invoice.paid_amount + amount > v_invoice.amount then raise exception 'Payment exceeds remaining balance'; end if;
+  if p_amount <= 0 then raise exception 'Amount must be positive'; end if;
+  if v_invoice.paid_amount + p_amount > v_invoice.amount then raise exception 'Payment exceeds remaining balance'; end if;
 
   insert into public.payments(invoice_id, amount, payment_method, payment_date, reference_number)
-  values (invoice_id, round(amount::numeric,2), method, date, reference);
+  values (p_invoice_id, round(p_amount::numeric,2), p_method, p_date, p_reference);
 
   update public.invoices
-    set paid_amount = round((paid_amount + amount)::numeric,2),
-        status = case when (paid_amount + amount) >= amount then 'paid' when (paid_amount + amount) > 0 then 'partial' else status end
-  where id = invoice_id;
+    set paid_amount = round((paid_amount + p_amount)::numeric,2),
+        status = case
+          when (paid_amount + p_amount) >= v_invoice.amount then 'paid'
+          when (paid_amount + p_amount) > 0 then 'partial'
+          else status
+        end
+  where id = p_invoice_id;
 
   return 'ok';
 end; $$;
@@ -31,6 +35,13 @@ as $$
     select c.id, current_date, current_date + interval '10 day', round(c.rent_amount::numeric,2), 0, 'issued'
     from public.contracts c
     where c.status = 'active' and c.deleted_at is null
+      and not exists (
+        select 1
+        from public.invoices i
+        where i.contract_id = c.id
+          and i.deleted_at is null
+          and date_trunc('month', i.issue_date) = date_trunc('month', current_date)
+      )
     returning id
   )
   select count(*)::integer from generated;
