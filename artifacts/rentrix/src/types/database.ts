@@ -1,231 +1,136 @@
-export type JsonPrimitive = string | number | boolean | null;
-export type Json = JsonPrimitive | { [key: string]: Json } | Json[];
+export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[];
 
-export interface OwnersRow {
-  id: string;
-  name: string;
-  phone: string;
-  email: string | null;
-  address: string | null;
-  bank_name: string | null;
-  bank_account_number: string | null;
-  management_contract_date: string | null;
-  notes: string;
-  commission_type: 'RATE' | 'FIXED_MONTHLY';
-  commission_value: number;
-  portal_token: string | null;
-  is_demo: boolean | null;
-  created_at: string;
-  updated_at: string | null;
-}
-
-export interface PropertiesRow {
-  id: string;
-  owner_id: string;
-  name: string;
-  type: string;
-  location: string;
-  area: number | null;
-  year_built: number | null;
-  facilities: string | null;
-  notes: string;
-  is_demo: boolean | null;
-  created_at: string;
-  updated_at: string | null;
-}
-
-export interface UnitsRow {
-  id: string;
-  property_id: string;
-  name: string;
-  type: string;
-  floor: string | null;
-  status: 'AVAILABLE' | 'RENTED' | 'MAINTENANCE' | 'ON_HOLD';
-  rent_default: number;
-  min_rent: number | null;
-  area: number | null;
-  bedrooms: number | null;
-  bathrooms: number | null;
-  kitchens: number | null;
-  living_rooms: number | null;
-  water_meter: string | null;
-  electricity_meter: string | null;
-  features: string | null;
-  notes: string;
-  is_demo: boolean | null;
-  created_at: string;
-  updated_at: string | null;
-}
-
-export interface TenantsRow {
-  id: string;
-  name: string;
-  phone: string;
-  email: string | null;
-  nationality: string | null;
-  id_no: string;
-  tenant_type: 'INDIVIDUAL' | 'COMPANY' | null;
-  cr_number: string | null;
-  address: string | null;
-  postal_code: string | null;
-  po_box: string | null;
-  status: 'ACTIVE' | 'INACTIVE' | 'BLACKLIST';
-  notes: string;
-  is_demo: boolean | null;
-  created_at: string;
-  updated_at: string | null;
-}
-
-export interface ContractsRow {
-  id: string;
-  no: string | null;
-  unit_id: string;
-  tenant_id: string;
-  rent_amount: number;
-  due_day: number;
-  start_date: string;
-  end_date: string;
-  deposit: number;
-  status: 'ACTIVE' | 'ENDED' | 'SUSPENDED';
-  sponsor_name: string | null;
-  sponsor_id: string | null;
-  sponsor_phone: string | null;
-  is_demo: boolean | null;
-  deleted_at: string | null;
-  created_at: string;
-  updated_at: string | null;
-}
-
-export interface InvoicesRow {
-  id: string;
-  no: string;
-  contract_id: string;
-  due_date: string;
-  amount: number;
-  tax_amount: number | null;
-  paid_amount: number;
-  status: 'UNPAID' | 'PAID' | 'PARTIALLY_PAID' | 'OVERDUE';
-  type: 'RENT' | 'MAINTENANCE' | 'UTILITY' | 'LATE_FEE';
-  notes: string;
-  related_invoice_id: string | null;
-  payment_method: 'Cash' | 'Bank' | 'Online' | 'Other' | null;
-  external_payment_ref: string | null;
-  created_at: string;
-  updated_at: string | null;
-}
-
-export interface ReceiptsRow {
-  id: string;
-  no: string;
-  contract_id: string;
-  date_time: string;
-  channel: 'CASH' | 'BANK' | 'POS' | 'CHECK' | 'OTHER';
-  amount: number;
-  ref: string;
-  notes: string;
-  status: 'POSTED' | 'VOID';
-  check_number: string | null;
-  check_bank: string | null;
-  check_date: string | null;
-  check_status: 'PENDING' | 'DEPOSITED' | 'CLEARED' | 'BOUNCED' | null;
-  voided_at: string | null;
-  created_at: string;
-  updated_at: string | null;
-}
-
-export interface ExpensesRow {
-  id: string;
-  no: string;
-  contract_id: string | null;
-  owner_id: string | null;
-  property_id: string | null;
-  payee: string | null;
-  date_time: string;
-  category: string;
-  amount: number;
-  tax_amount: number | null;
-  ref: string;
-  notes: string;
-  status: 'POSTED' | 'VOID';
-  charged_to: 'OWNER' | 'OFFICE' | 'TENANT' | null;
-  voided_at: string | null;
-  created_at: string;
-  updated_at: string | null;
-}
-
-export interface MaintenanceRequestsRow {
-  id: string;
-  no: string;
-  unit_id: string;
-  request_date: string;
-  description: string;
-  status: 'NEW' | 'IN_PROGRESS' | 'COMPLETED' | 'CLOSED';
-  priority: 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT' | null;
-  assigned_to: string | null;
-  cost: number;
-  charged_to: 'OWNER' | 'OFFICE' | 'TENANT';
-  completion_date: string | null;
-  expense_id: string | null;
-  invoice_id: string | null;
-  created_at: string;
-  completed_at: string | null;
-}
-
-export interface UsersRow {
-  id: string;
-  username: string;
-  role: 'ADMIN' | 'USER';
-  must_change_password: boolean;
-  is_disabled: boolean;
-  created_at: string;
-}
-
-export interface SettingsRow {
-  id: number;
-  data: Json;
-}
-
-export interface AutomationRunsRow {
-  id: string;
-  ts: number;
-  invoices_created: number;
-  late_fees_applied: number;
-  notifications_created: number;
-  snapshots_rebuilt: boolean;
-  error: string | null;
-}
-
-export interface GovernanceRow {
-  id: number;
-  read_only: boolean;
-  locked_periods: string[] | null;
-}
-
-export interface SerialsRow {
-  id: number;
-  receipt: number;
-  expense: number;
-  maintenance: number;
-  invoice: number;
-  lead: number;
-  owner_settlement: number;
-  journal_entry: number;
-  mission: number;
-  contract: number;
-}
-
-export type SupabaseTableRow =
-  | OwnersRow
-  | PropertiesRow
-  | UnitsRow
-  | TenantsRow
-  | ContractsRow
-  | InvoicesRow
-  | ReceiptsRow
-  | ExpensesRow
-  | MaintenanceRequestsRow
-  | UsersRow
-  | SettingsRow
-  | AutomationRunsRow
-  | GovernanceRow
-  | SerialsRow;
+export type Database = {
+  public: {
+    Tables: {
+      properties: {
+        Row: {
+          id: string;
+          title: string;
+          type: string;
+          address: string;
+          owner_name: string | null;
+          purchase_value: number | null;
+          current_value: number | null;
+          status: 'active' | 'inactive' | 'maintenance' | 'sold';
+          notes: string | null;
+          created_at: string;
+          updated_at: string;
+          deleted_at: string | null;
+        };
+        Insert: Partial<Database['public']['Tables']['properties']['Row']> & Pick<Database['public']['Tables']['properties']['Row'], 'title' | 'type' | 'address'>;
+        Update: Partial<Database['public']['Tables']['properties']['Row']>;
+        Relationships: [];
+      };
+      units: {
+        Row: {
+          id: string;
+          property_id: string;
+          unit_number: string;
+          floor: string | null;
+          status: 'available' | 'occupied' | 'maintenance' | 'reserved';
+          rent_amount: number | null;
+          notes: string | null;
+          created_at: string;
+          updated_at: string;
+          deleted_at: string | null;
+        };
+        Insert: Partial<Database['public']['Tables']['units']['Row']> & Pick<Database['public']['Tables']['units']['Row'], 'property_id' | 'unit_number'>;
+        Update: Partial<Database['public']['Tables']['units']['Row']>;
+        Relationships: [];
+      };
+      people: {
+        Row: {
+          id: string;
+          full_name: string;
+          phone: string | null;
+          email: string | null;
+          national_id: string | null;
+          type: 'tenant' | 'owner' | 'contact';
+          address: string | null;
+          notes: string | null;
+          created_at: string;
+          updated_at: string;
+          deleted_at: string | null;
+        };
+        Insert: Partial<Database['public']['Tables']['people']['Row']> & Pick<Database['public']['Tables']['people']['Row'], 'full_name' | 'type'>;
+        Update: Partial<Database['public']['Tables']['people']['Row']>;
+        Relationships: [];
+      };
+      contracts: {
+        Row: {
+          id: string;
+          property_id: string;
+          unit_id: string | null;
+          tenant_id: string;
+          start_date: string;
+          end_date: string;
+          rent_amount: number;
+          payment_cycle: 'monthly' | 'quarterly' | 'semi_annual' | 'annual';
+          status: 'draft' | 'active' | 'expired' | 'terminated';
+          notes: string | null;
+          created_at: string;
+          updated_at: string;
+          deleted_at: string | null;
+        };
+        Insert: Partial<Database['public']['Tables']['contracts']['Row']> & Pick<Database['public']['Tables']['contracts']['Row'], 'property_id' | 'tenant_id' | 'start_date' | 'end_date' | 'rent_amount'>;
+        Update: Partial<Database['public']['Tables']['contracts']['Row']>;
+        Relationships: [];
+      };
+      invoices: {
+        Row: {
+          id: string;
+          contract_id: string;
+          issue_date: string;
+          due_date: string;
+          amount: number;
+          paid_amount: number;
+          status: 'draft' | 'issued' | 'partial' | 'paid' | 'overdue' | 'void';
+          notes: string | null;
+          created_at: string;
+          updated_at: string;
+          deleted_at: string | null;
+        };
+        Insert: Partial<Database['public']['Tables']['invoices']['Row']> & Pick<Database['public']['Tables']['invoices']['Row'], 'contract_id' | 'issue_date' | 'due_date' | 'amount'>;
+        Update: Partial<Database['public']['Tables']['invoices']['Row']>;
+        Relationships: [];
+      };
+      payments: {
+        Row: {
+          id: string;
+          invoice_id: string;
+          amount: number;
+          payment_method: 'cash' | 'bank_transfer' | 'card' | 'check' | 'other';
+          payment_date: string;
+          reference_number: string | null;
+          created_at: string;
+          updated_at: string;
+          deleted_at: string | null;
+        };
+        Insert: Partial<Database['public']['Tables']['payments']['Row']> & Pick<Database['public']['Tables']['payments']['Row'], 'invoice_id' | 'amount' | 'payment_method' | 'payment_date'>;
+        Update: Partial<Database['public']['Tables']['payments']['Row']>;
+        Relationships: [];
+      };
+      expenses: {
+        Row: {
+          id: string;
+          property_id: string;
+          category: string;
+          amount: number;
+          expense_date: string;
+          description: string | null;
+          created_at: string;
+          updated_at: string;
+          deleted_at: string | null;
+        };
+        Insert: Partial<Database['public']['Tables']['expenses']['Row']> & Pick<Database['public']['Tables']['expenses']['Row'], 'property_id' | 'category' | 'amount' | 'expense_date'>;
+        Update: Partial<Database['public']['Tables']['expenses']['Row']>;
+        Relationships: [];
+      };
+    };
+    Views: Record<string, never>;
+    Functions: Record<string, never>;
+    Enums: Record<string, never>;
+    CompositeTypes: Record<string, never>;
+  };
+};
