@@ -1,10 +1,24 @@
+import { zodResolver } from '@hookform/resolvers/zod';
 import { useMemo, useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { z } from 'zod';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useProperties } from '@/features/properties/use-properties';
 import { useInvoices, useGenerateInvoices, useInvoice } from './invoices/useInvoices';
 import { usePostPayment } from './payments/usePayments';
 import { useExpenses, useCreateExpense } from './expenses/useExpenses';
 import type { InvoiceStatusFilter } from './invoices/invoiceService';
+
+const expenseSchema = z.object({
+  property_id: z.string().uuid('اختر العقار'),
+  category: z.enum(['صيانة', 'مرافق', 'إدارية', 'تأمين', 'أخرى'], { message: 'اختر التصنيف' }),
+  amount: z.coerce.number().positive('المبلغ يجب أن يكون أكبر من صفر'),
+  expense_date: z.string().min(1, 'اختر التاريخ'),
+  description: z.string().optional(),
+});
+
+type ExpenseFormValues = z.infer<typeof expenseSchema>;
 
 export function FinancialsPage() {
   const [status, setStatus] = useState<InvoiceStatusFilter>('unpaid');
@@ -14,6 +28,7 @@ export function FinancialsPage() {
   const { data: invoiceDetail } = useInvoice(selectedInvoiceId);
   const generate = useGenerateInvoices();
   const postPayment = usePostPayment();
+  const { data: properties } = useProperties({ page: 1, pageSize: 100, search: '', status: 'all' });
   const [filters] = useState({ propertyId: '', category: '', from: '', to: '' });
   const { data: expenses = [] } = useExpenses(filters);
   const createExpense = useCreateExpense();

@@ -1,3 +1,4 @@
+import { zodResolver } from '@hookform/resolvers/zod';
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { EmptyState } from '@/components/empty-state';
@@ -5,10 +6,20 @@ import { DataTable } from '@/components/shared/DataTable';
 import { FormActions } from '@/components/shared/FormActions';
 import { useCreateMaintenance, useMaintenance } from './use-maintenance';
 
+const maintenanceSchema = z.object({
+  property_id: z.string().uuid('اختر العقار'),
+  unit_id: z.string().uuid('اختر الوحدة').nullable().optional(),
+  title: z.string().min(1, 'العنوان مطلوب'),
+  description: z.string().min(1, 'الوصف مطلوب'),
+  priority: z.enum(['low', 'medium', 'high', 'urgent']),
+});
+
+type MaintenanceFormValues = z.infer<typeof maintenanceSchema>;
+
 export function MaintenancePage() {
   const [status, setStatus] = useState<'all' | 'open' | 'in_progress' | 'resolved' | 'closed'>('all');
-  const [propertyId, setPropertyId] = useState('');
-  const { data = [] } = useMaintenance(status, propertyId);
+  const [propertyFilterId, setPropertyFilterId] = useState('');
+  const { data = [] } = useMaintenance(status, propertyFilterId);
   const createMutation = useCreateMaintenance();
   const [error, setError] = useState('');
   return <div className='space-y-6' dir='rtl'>

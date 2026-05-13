@@ -1,6 +1,7 @@
 import { supabase } from '@/integrations/supabase/client';
 import { handleSupabaseError } from '@/lib/supabase-error';
 import type { Database } from '@/types/database';
+
 export type Maintenance = Database['public']['Tables']['maintenance_requests']['Row'];
 export type MaintenanceStatus = Maintenance['status'] | 'all';
 export type MaintenancePayload = Database['public']['Tables']['maintenance_requests']['Insert'];

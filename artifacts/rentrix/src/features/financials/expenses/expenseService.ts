@@ -32,6 +32,7 @@ export async function createExpense(payload: ExpensePayload): Promise<Expense> {
     return null as never;
   }
 }
+
 export async function updateExpense(id: string, payload: ExpensePayload): Promise<Expense> {
   try {
     const { data, error } = await supabase.from('expenses').update(payload).eq('id', id).is('deleted_at', null).select('*').single().returns<Expense>();
