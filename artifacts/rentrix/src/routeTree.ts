@@ -21,6 +21,7 @@ import { FinancialsRouteComponent } from '@/routes/_protected.financials';
 import { AccountingRouteComponent } from '@/routes/_protected.accounting';
 import { ReportsRouteComponent } from '@/routes/_protected.reports';
 import { SettingsRouteComponent } from '@/routes/_protected.settings';
+import { MaintenanceRouteComponent } from '@/routes/_protected.maintenance';
 import { supabase } from '@/integrations/supabase/client';
 
 const rootRoute = createRootRoute({
@@ -68,6 +69,7 @@ const financialsRoute = createRoute({ getParentRoute: () => protectedRoute, path
 const accountingRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/accounting', component: AccountingRouteComponent, staticData: { title: 'المحاسبة' } });
 const reportsRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/reports', component: ReportsRouteComponent, staticData: { title: 'التقارير' } });
 const settingsRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/settings', component: SettingsRouteComponent, staticData: { title: 'الإعدادات' } });
+const maintenanceRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/maintenance', component: MaintenanceRouteComponent, staticData: { title: 'الصيانة' } });
 
 export const routeTree = rootRoute.addChildren([
   authRoute.addChildren([loginRoute]),
@@ -87,6 +89,7 @@ export const routeTree = rootRoute.addChildren([
     financialsRoute,
     accountingRoute,
     reportsRoute,
+    maintenanceRoute,
     settingsRoute,
   ]),
 ]);
