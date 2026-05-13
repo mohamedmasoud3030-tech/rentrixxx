@@ -32,11 +32,8 @@ export function FinancialsPage() {
   const [filters] = useState({ propertyId: '', category: '', from: '', to: '' });
   const { data: expenses = [] } = useExpenses(filters);
   const createExpense = useCreateExpense();
-  const form = useForm<ExpenseFormValues>({
-    resolver: zodResolver(expenseSchema),
-    defaultValues: { property_id: '', category: 'صيانة', amount: 0, expense_date: new Date().toISOString().slice(0, 10), description: '' },
-  });
-
+  const [expensePropertyId, setExpensePropertyId] = useState('');
+  const [expenseError, setExpenseError] = useState('');
   const remaining = useMemo(() => (invoiceDetail ? invoiceDetail.amount - invoiceDetail.paid_amount : 0), [invoiceDetail]);
 
   return <div className="space-y-6" dir="rtl">
@@ -57,22 +54,17 @@ export function FinancialsPage() {
 
     <Card><CardHeader><CardTitle>المصاريف</CardTitle></CardHeader><CardContent className="space-y-2">
       {expenses.map((e) => <p key={e.id}>{e.expense_date} — {e.category} — {e.amount}</p>)}
-      <form className='grid gap-2' onSubmit={form.handleSubmit((values) => createExpense.mutate({ ...values, description: values.description || null }))}>
-        <select className='rounded border px-2 py-2' {...form.register('property_id')}>
-          <option value=''>اختر العقار</option>
-          {properties?.rows.map((p) => <option key={p.id} value={p.id}>{p.title}</option>)}
-        </select>
-        {form.formState.errors.property_id ? <p className='text-sm text-red-600'>{form.formState.errors.property_id.message}</p> : null}
-        <select className='rounded border px-2 py-2' {...form.register('category')}>
-          <option value='صيانة'>صيانة</option><option value='مرافق'>مرافق</option><option value='إدارية'>إدارية</option><option value='تأمين'>تأمين</option><option value='أخرى'>أخرى</option>
-        </select>
-        <input className='rounded border px-2 py-2' type='number' step='0.01' {...form.register('amount')} placeholder='المبلغ' />
-        {form.formState.errors.amount ? <p className='text-sm text-red-600'>{form.formState.errors.amount.message}</p> : null}
-        <input className='rounded border px-2 py-2' type='date' {...form.register('expense_date')} />
-        {form.formState.errors.expense_date ? <p className='text-sm text-red-600'>{form.formState.errors.expense_date.message}</p> : null}
-        <textarea className='rounded border px-2 py-2' {...form.register('description')} placeholder='الوصف' />
-        <Button type='submit' disabled={createExpense.isPending}>إضافة مصروف</Button>
-      </form>
+      <div className="flex gap-2">
+        <input className="rounded border px-2" placeholder="property_id" value={expensePropertyId} onChange={(e) => { setExpensePropertyId(e.target.value); setExpenseError(''); }} />
+        <Button onClick={() => {
+          if (!expensePropertyId) {
+            setExpenseError('يرجى اختيار العقار أولاً');
+            return;
+          }
+          createExpense.mutate({ property_id: expensePropertyId, category: 'تشغيل', amount: 0.01, expense_date: new Date().toISOString().slice(0,10), description: 'تجريبي' });
+        }}>إضافة مصروف تجريبي</Button>
+      </div>
+      {expenseError ? <p className="text-sm text-red-600">{expenseError}</p> : null}
     </CardContent></Card>
   </div>;
 }
