@@ -20,6 +20,7 @@ export type Database = {
         };
         Insert: Partial<Database['public']['Tables']['properties']['Row']> & Pick<Database['public']['Tables']['properties']['Row'], 'title' | 'type' | 'address'>;
         Update: Partial<Database['public']['Tables']['properties']['Row']>;
+        Relationships: [];
       };
       units: {
         Row: {
@@ -36,6 +37,7 @@ export type Database = {
         };
         Insert: Partial<Database['public']['Tables']['units']['Row']> & Pick<Database['public']['Tables']['units']['Row'], 'property_id' | 'unit_number'>;
         Update: Partial<Database['public']['Tables']['units']['Row']>;
+        Relationships: [];
       };
       people: {
         Row: {
@@ -53,6 +55,7 @@ export type Database = {
         };
         Insert: Partial<Database['public']['Tables']['people']['Row']> & Pick<Database['public']['Tables']['people']['Row'], 'full_name' | 'type'>;
         Update: Partial<Database['public']['Tables']['people']['Row']>;
+        Relationships: [];
       };
       contracts: {
         Row: {
@@ -72,6 +75,7 @@ export type Database = {
         };
         Insert: Partial<Database['public']['Tables']['contracts']['Row']> & Pick<Database['public']['Tables']['contracts']['Row'], 'property_id' | 'tenant_id' | 'start_date' | 'end_date' | 'rent_amount'>;
         Update: Partial<Database['public']['Tables']['contracts']['Row']>;
+        Relationships: [];
       };
       invoices: {
         Row: {
@@ -89,6 +93,7 @@ export type Database = {
         };
         Insert: Partial<Database['public']['Tables']['invoices']['Row']> & Pick<Database['public']['Tables']['invoices']['Row'], 'contract_id' | 'issue_date' | 'due_date' | 'amount'>;
         Update: Partial<Database['public']['Tables']['invoices']['Row']>;
+        Relationships: [];
       };
       payments: {
         Row: {
@@ -104,6 +109,7 @@ export type Database = {
         };
         Insert: Partial<Database['public']['Tables']['payments']['Row']> & Pick<Database['public']['Tables']['payments']['Row'], 'invoice_id' | 'amount' | 'payment_method' | 'payment_date'>;
         Update: Partial<Database['public']['Tables']['payments']['Row']>;
+        Relationships: [];
       };
       expenses: {
         Row: {
@@ -119,6 +125,7 @@ export type Database = {
         };
         Insert: Partial<Database['public']['Tables']['expenses']['Row']> & Pick<Database['public']['Tables']['expenses']['Row'], 'property_id' | 'category' | 'amount' | 'expense_date'>;
         Update: Partial<Database['public']['Tables']['expenses']['Row']>;
+        Relationships: [];
       };
     };
     Views: Record<string, never>;

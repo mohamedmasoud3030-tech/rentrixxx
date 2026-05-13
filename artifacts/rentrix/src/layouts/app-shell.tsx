@@ -1,5 +1,5 @@
 import { Link, Outlet, useMatches, useRouter } from '@tanstack/react-router';
-import { Building2, ChevronLeft, FileText, Home, LayoutDashboard, LogOut, Menu, Moon, ReceiptText, Settings, Sun, WalletCards } from 'lucide-react';
+import { Building2, ChevronLeft, FileText, Home, LayoutDashboard, LogOut, Menu, Moon, ReceiptText, Settings, Sun, Users, WalletCards } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/use-auth';
@@ -9,6 +9,7 @@ import { useUiStore } from '@/store/ui-store';
 const navigation = [
   { to: '/', label: 'لوحة التحكم', icon: LayoutDashboard },
   { to: '/properties', label: 'العقارات', icon: Building2 },
+  { to: '/people', label: 'الأشخاص', icon: Users },
   { to: '/contracts', label: 'العقود', icon: FileText },
   { to: '/financials', label: 'المالية', icon: WalletCards },
   { to: '/accounting', label: 'المحاسبة', icon: ReceiptText },
