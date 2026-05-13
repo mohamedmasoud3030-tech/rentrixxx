@@ -15,7 +15,7 @@ const expenseSchema = z.object({
   category: z.enum(['صيانة', 'مرافق', 'إدارية', 'تأمين', 'أخرى'], { message: 'اختر التصنيف' }),
   amount: z.coerce.number().positive('المبلغ يجب أن يكون أكبر من صفر'),
   expense_date: z.string().min(1, 'اختر التاريخ'),
-  description: z.string().optional().transform((value) => value || null),
+  description: z.string().optional(),
 });
 
 type ExpenseFormValues = z.infer<typeof expenseSchema>;
@@ -32,8 +32,8 @@ export function FinancialsPage() {
   const [filters] = useState({ propertyId: '', category: '', from: '', to: '' });
   const { data: expenses = [] } = useExpenses(filters);
   const createExpense = useCreateExpense();
-  const form = useForm<ExpenseFormValues>({ resolver: zodResolver(expenseSchema), defaultValues: { property_id: '', category: 'صيانة', amount: 0, expense_date: new Date().toISOString().slice(0, 10), description: '' } });
-
+  const [expensePropertyId, setExpensePropertyId] = useState('');
+  const [expenseError, setExpenseError] = useState('');
   const remaining = useMemo(() => (invoiceDetail ? invoiceDetail.amount - invoiceDetail.paid_amount : 0), [invoiceDetail]);
 
   return <div className="space-y-6" dir="rtl">
@@ -44,15 +44,19 @@ export function FinancialsPage() {
 
     {invoiceDetail && <Card><CardHeader><CardTitle>تفاصيل الفاتورة وسجل المدفوعات</CardTitle></CardHeader><CardContent className="space-y-3"><p>الإجمالي: {invoiceDetail.amount} | المدفوع: {invoiceDetail.paid_amount} | المتبقي: {remaining}</p>{invoiceDetail.payments.map((p) => <p key={p.id}>{p.payment_date} — {p.amount} ({p.payment_method})</p>)}<div className="flex gap-2"><input className="rounded border px-2" placeholder="المبلغ" value={amount} onChange={(e) => setAmount(e.target.value)} /><Button onClick={() => { const value = Number(amount); if (value <= 0 || value > remaining) return; postPayment.mutate({ invoice_id: invoiceDetail.id, amount: value, method: 'cash', date: new Date().toISOString().slice(0,10), reference: null }); }}>تسجيل دفعة</Button></div></CardContent></Card>}
 
-    <Card><CardHeader><CardTitle>المصاريف</CardTitle></CardHeader><CardContent className="space-y-2">{expenses.map((e) => <p key={e.id}>{e.expense_date} — {e.category} — {e.amount}</p>)}
-      <form className='grid gap-2' onSubmit={form.handleSubmit((values) => createExpense.mutate(values))}>
-        <select className='rounded border px-2 py-2' {...form.register('property_id')}><option value=''>اختر العقار</option>{properties?.rows.map((p) => <option key={p.id} value={p.id}>{p.title}</option>)}</select>
-        <select className='rounded border px-2 py-2' {...form.register('category')}><option value='صيانة'>صيانة</option><option value='مرافق'>مرافق</option><option value='إدارية'>إدارية</option><option value='تأمين'>تأمين</option><option value='أخرى'>أخرى</option></select>
-        <input className='rounded border px-2 py-2' type='number' min='0.01' step='0.01' {...form.register('amount')} placeholder='المبلغ' />
-        <input className='rounded border px-2 py-2' type='date' {...form.register('expense_date')} />
-        <textarea className='rounded border px-2 py-2' {...form.register('description')} placeholder='الوصف' />
-        <Button type='submit' disabled={createExpense.isPending}>إضافة مصروف</Button>
-      </form>
+    <Card><CardHeader><CardTitle>المصاريف</CardTitle></CardHeader><CardContent className="space-y-2">
+      {expenses.map((e) => <p key={e.id}>{e.expense_date} — {e.category} — {e.amount}</p>)}
+      <div className="flex gap-2">
+        <input className="rounded border px-2" placeholder="property_id" value={expensePropertyId} onChange={(e) => { setExpensePropertyId(e.target.value); setExpenseError(''); }} />
+        <Button onClick={() => {
+          if (!expensePropertyId) {
+            setExpenseError('يرجى اختيار العقار أولاً');
+            return;
+          }
+          createExpense.mutate({ property_id: expensePropertyId, category: 'تشغيل', amount: 0.01, expense_date: new Date().toISOString().slice(0,10), description: 'تجريبي' });
+        }}>إضافة مصروف تجريبي</Button>
+      </div>
+      {expenseError ? <p className="text-sm text-red-600">{expenseError}</p> : null}
     </CardContent></Card>
   </div>;
 }
