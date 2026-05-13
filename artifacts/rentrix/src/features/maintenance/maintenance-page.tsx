@@ -1,6 +1,8 @@
 import { useState } from 'react';
-import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { EmptyState } from '@/components/empty-state';
+import { DataTable } from '@/components/shared/DataTable';
+import { FormActions } from '@/components/shared/FormActions';
 import { useCreateMaintenance, useMaintenance } from './use-maintenance';
 
 export function MaintenancePage() {
