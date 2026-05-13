@@ -113,6 +113,28 @@ export type Database = {
         Update: Partial<Database['public']['Tables']['payments']['Row']>;
         Relationships: [];
       };
+
+      maintenance_requests: {
+        Row: {
+          id: string;
+          property_id: string;
+          unit_id: string | null;
+          title: string;
+          description: string | null;
+          priority: 'low' | 'medium' | 'high' | 'urgent';
+          status: 'open' | 'in_progress' | 'resolved' | 'closed';
+          assigned_to: string | null;
+          cost: number;
+          resolved_at: string | null;
+          created_at: string;
+          updated_at: string;
+          deleted_at: string | null;
+        };
+        Insert: Partial<Database['public']['Tables']['maintenance_requests']['Row']> & Pick<Database['public']['Tables']['maintenance_requests']['Row'], 'property_id' | 'title' | 'priority' | 'status' | 'cost'>;
+        Update: Partial<Database['public']['Tables']['maintenance_requests']['Row']>;
+        Relationships: [];
+      };
+
       expenses: {
         Row: {
           id: string;
@@ -136,6 +158,12 @@ export type Database = {
         Args: { contract_id: string; new_start: string; new_end: string; new_amount: number };
         Returns: string;
       };
+      post_receipt_atomic: {
+        Args: { invoice_id: string; amount: number; method: 'cash' | 'bank_transfer' | 'card' | 'check' | 'other'; date: string; reference: string | null };
+        Returns: string;
+      };
+      generate_invoices_from_active_contracts: { Args: Record<string, never>; Returns: number };
+      rpt_financial_summary: { Args: { month: number; year: number }; Returns: { total_collected: number; total_overdue_invoices: number; total_expenses: number; net_revenue: number } };
     };
     Enums: Record<string, never>;
     CompositeTypes: Record<string, never>;

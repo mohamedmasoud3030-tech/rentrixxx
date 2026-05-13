@@ -81,7 +81,7 @@ export function PropertiesListPage() {
                       <div className="flex flex-wrap gap-2">
                         <Button variant="secondary" className="min-h-9 px-3" asChild><Link to="/properties/$propertyId" params={{ propertyId: property.id }}><Eye className="size-4" /></Link></Button>
                         <Button variant="secondary" className="min-h-9 px-3" asChild><Link to="/properties/$propertyId/edit" params={{ propertyId: property.id }}><Edit className="size-4" /></Link></Button>
-                        <Button variant="danger" className="min-h-9 px-3" onClick={() => void deleteMutation.mutate(property.id)} disabled={deleteMutation.isPending}><Trash2 className="size-4" /></Button>
+                        <Button variant="danger" className="min-h-9 px-3" onClick={() => { if (window.confirm('هل أنت متأكد من الأرشفة؟')) void deleteMutation.mutate(property.id); }} disabled={deleteMutation.isPending}><Trash2 className="size-4" /></Button>
                       </div>
                     </TableCell>
                   </TableRow>
