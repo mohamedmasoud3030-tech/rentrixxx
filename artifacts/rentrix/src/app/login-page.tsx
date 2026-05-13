@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { useAuth } from '@/hooks/use-auth';
+import { supabase } from '@/integrations/supabase/client';
 
 export function LoginPage() {
   const router = useRouter();
@@ -18,6 +19,8 @@ export function LoginPage() {
     setIsSubmitting(true);
     try {
       await login(email, password);
+      const { data } = await supabase.auth.getSession();
+      if (!data.session) throw new Error('لم يتم تأكيد الجلسة بعد');
       toast.success('تم تسجيل الدخول');
       await router.navigate({ to: '/' });
     } catch (error) {
