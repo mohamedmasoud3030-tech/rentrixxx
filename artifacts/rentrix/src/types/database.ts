@@ -68,6 +68,8 @@ export type Database = {
           rent_amount: number;
           payment_cycle: 'monthly' | 'quarterly' | 'semi_annual' | 'annual';
           status: 'draft' | 'active' | 'expired' | 'terminated';
+          cancellation_reason: string | null;
+          renewed_from_id: string | null;
           notes: string | null;
           created_at: string;
           updated_at: string;
@@ -129,7 +131,12 @@ export type Database = {
       };
     };
     Views: Record<string, never>;
-    Functions: Record<string, never>;
+    Functions: {
+      renew_contract_atomic: {
+        Args: { contract_id: string; new_start: string; new_end: string; new_amount: number };
+        Returns: string;
+      };
+    };
     Enums: Record<string, never>;
     CompositeTypes: Record<string, never>;
   };

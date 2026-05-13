@@ -22,7 +22,7 @@ export function Button({ asChild = false, className, variant = 'primary', type =
   return (
     <Component
       className={cn(
-        'inline-flex min-h-10 items-center justify-center rounded-xl px-4 py-2 text-sm font-bold transition-colors disabled:pointer-events-none disabled:opacity-50',
+        'pressable inline-flex min-h-10 items-center justify-center rounded-xl px-4 py-2 text-sm font-bold shadow-sm disabled:pointer-events-none disabled:opacity-50',
         variants[variant],
         className,
       )}

@@ -6,54 +6,61 @@
 }
 
 :root {
-  --background: 42 39% 97%;
-  --foreground: 222 36% 14%;
-  --card: 0 0% 100%;
-  --card-foreground: 222 36% 14%;
-  --primary: 160 64% 25%;
-  --primary-foreground: 44 100% 96%;
-  --secondary: 42 35% 91%;
-  --secondary-foreground: 222 36% 18%;
-  --muted: 42 30% 92%;
-  --muted-foreground: 220 10% 42%;
-  --destructive: 0 72% 46%;
+  --background: var(--color-bg);
+  --foreground: var(--color-text-primary);
+  --card: var(--color-card);
+  --card-foreground: var(--color-text-primary);
+  --primary: var(--color-primary);
+  --primary-foreground: var(--color-primary-fg);
+  --secondary: 220 22% 94%;
+  --secondary-foreground: var(--color-text-primary);
+  --muted: 220 22% 94%;
+  --muted-foreground: var(--color-text-muted);
+  --destructive: 0 72% 48%;
   --destructive-foreground: 0 0% 100%;
-  --border: 40 22% 86%;
-  --input: 40 22% 82%;
-  --sidebar: 160 38% 13%;
-  --sidebar-foreground: 44 100% 94%;
-  --sidebar-accent: 160 34% 18%;
-  --sidebar-accent-foreground: 44 100% 96%;
-  --sidebar-border: 160 26% 22%;
+  --border: var(--color-border);
+  --input: var(--color-border);
+  --sidebar: var(--color-sidebar-bg);
+  --sidebar-foreground: var(--color-sidebar-text);
+  --sidebar-accent: var(--color-sidebar-hover-bg);
+  --sidebar-accent-foreground: var(--color-sidebar-active-text);
+  --sidebar-border: 222 20% 22%;
+  --accent: var(--color-accent);
 }
 
 [data-theme='dark'] {
-  --background: 222 31% 8%;
-  --foreground: 42 38% 94%;
-  --card: 222 28% 11%;
-  --card-foreground: 42 38% 94%;
-  --primary: 158 54% 42%;
-  --primary-foreground: 160 44% 10%;
+  --background: var(--color-bg);
+  --foreground: var(--color-text-primary);
+  --card: var(--color-card);
+  --card-foreground: var(--color-text-primary);
+  --primary: var(--color-primary);
+  --primary-foreground: var(--color-primary-fg);
   --secondary: 222 24% 16%;
-  --secondary-foreground: 42 38% 94%;
+  --secondary-foreground: var(--color-text-primary);
   --muted: 222 24% 16%;
-  --muted-foreground: 42 14% 68%;
+  --muted-foreground: var(--color-text-muted);
   --destructive: 0 68% 51%;
   --destructive-foreground: 0 0% 100%;
-  --border: 222 20% 20%;
-  --input: 222 20% 22%;
-  --sidebar: 222 35% 7%;
-  --sidebar-foreground: 42 38% 94%;
-  --sidebar-accent: 222 24% 14%;
-  --sidebar-accent-foreground: 42 38% 94%;
+  --border: var(--color-border);
+  --input: var(--color-border);
+  --sidebar: var(--color-sidebar-bg);
+  --sidebar-foreground: var(--color-sidebar-text);
+  --sidebar-accent: var(--color-sidebar-hover-bg);
+  --sidebar-accent-foreground: var(--color-sidebar-active-text);
   --sidebar-border: 222 20% 18%;
+  --accent: var(--color-accent);
 }
+
+@keyframes route-in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes row-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes shimmer { 100% { transform: translateX(-100%); } }
 
 @layer base {
   * { border-color: hsl(var(--border)); }
   html { direction: rtl; font-family: var(--font-sans); }
   body { margin: 0; min-width: 1024px; background: hsl(var(--background)); color: hsl(var(--foreground)); }
   button, input, textarea, select { font: inherit; }
+  main { animation: route-in 0.2s ease-out both; }
 }
 
 @layer utilities {
@@ -78,4 +85,14 @@
   .border-sidebar-border { border-color: hsl(var(--sidebar-border)); }
   .bg-sidebar-accent { background-color: hsl(var(--sidebar-accent)); }
   .text-sidebar-accent-foreground { color: hsl(var(--sidebar-accent-foreground)); }
+  .text-accent { color: hsl(var(--accent)); }
+  .bg-accent { background-color: hsl(var(--accent)); }
+  .animate-route-in { animation: route-in 0.2s ease-out both; }
+  .animate-row-in { animation: row-in 0.22s ease-out both; }
+  .hover-card { transition: transform 0.18s ease, box-shadow 0.18s ease; }
+  .hover-card:hover { transform: scale(1.01); box-shadow: var(--shadow-card-hover); }
+  .pressable { transition: transform 0.1s ease, background-color 0.2s ease, border-color 0.2s ease, color 0.15s ease; }
+  .pressable:active { transform: scale(0.97); }
+  .skeleton-shimmer { position: relative; overflow: hidden; }
+  .skeleton-shimmer::after { content: ''; position: absolute; inset: 0; transform: translateX(100%); background: linear-gradient(90deg, transparent, hsl(var(--foreground) / 0.08), transparent); animation: shimmer 1.35s infinite; }
 }
