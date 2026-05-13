@@ -1,0 +1,85 @@
+import { supabase } from '@/integrations/supabase/client';
+import type { Database } from '@/types/database';
+import type { Person } from '@/types/domain';
+import type { PersonPayload } from './person-schema';
+
+export type PersonTypeFilter = Person['type'] | 'all';
+
+export type PeopleListParams = {
+  search: string;
+  type: PersonTypeFilter;
+  page: number;
+  pageSize: number;
+};
+
+export type PaginatedPeople = {
+  rows: Person[];
+  count: number;
+};
+
+type PersonInsert = Database['public']['Tables']['people']['Insert'];
+type PersonUpdate = Database['public']['Tables']['people']['Update'];
+
+export async function listPeople(params: PeopleListParams): Promise<PaginatedPeople> {
+  const from = (params.page - 1) * params.pageSize;
+  const to = from + params.pageSize - 1;
+  let query = supabase
+    .from('people')
+    .select('*', { count: 'exact' })
+    .is('deleted_at', null)
+    .order('created_at', { ascending: false })
+    .range(from, to);
+
+  const trimmedSearch = params.search.trim();
+  if (trimmedSearch) {
+    const escaped = trimmedSearch.replaceAll('%', '\\%').replaceAll('_', '\\_');
+    query = query.or(`full_name.ilike.%${escaped}%,phone.ilike.%${escaped}%,email.ilike.%${escaped}%,national_id.ilike.%${escaped}%`);
+  }
+
+  if (params.type !== 'all') {
+    query = query.eq('type', params.type);
+  }
+
+  const { data, count, error } = await query.returns<Person[]>();
+  if (error) throw error;
+  return { rows: data ?? [], count: count ?? 0 };
+}
+
+export async function getPerson(personId: string): Promise<Person> {
+  const { data, error } = await supabase
+    .from('people')
+    .select('*')
+    .eq('id', personId)
+    .is('deleted_at', null)
+    .single()
+    .returns<Person>();
+  if (error) throw error;
+  return data;
+}
+
+export async function createPerson(payload: PersonPayload): Promise<Person> {
+  const insertPayload: PersonInsert = payload;
+  const { data, error } = await supabase.from('people').insert(insertPayload).select('*').single().returns<Person>();
+  if (error) throw error;
+  return data;
+}
+
+export async function updatePerson(personId: string, payload: PersonPayload): Promise<Person> {
+  const updatePayload: PersonUpdate = payload;
+  const { data, error } = await supabase
+    .from('people')
+    .update(updatePayload)
+    .eq('id', personId)
+    .is('deleted_at', null)
+    .select('*')
+    .single()
+    .returns<Person>();
+  if (error) throw error;
+  return data;
+}
+
+export async function softDeletePerson(personId: string): Promise<void> {
+  const updatePayload: PersonUpdate = { deleted_at: new Date().toISOString() };
+  const { error } = await supabase.from('people').update(updatePayload).eq('id', personId).is('deleted_at', null);
+  if (error) throw error;
+}
