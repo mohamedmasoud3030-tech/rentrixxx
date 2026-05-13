@@ -10,7 +10,7 @@ export const propertyStatusValues = ['active', 'inactive', 'maintenance', 'sold'
 export const propertyStatusLabels: Record<(typeof propertyStatusValues)[number], string> = {
   active: 'نشط',
   inactive: 'غير نشط',
-  maintenance: 'تحت الصيانة',
+  maintenance: 'صيانة',
   sold: 'مباع',
 };
 

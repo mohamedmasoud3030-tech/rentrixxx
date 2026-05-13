@@ -7,14 +7,12 @@ import { EmptyState } from '@/components/empty-state';
 import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
-import { StatusBadge } from '@/components/ui/status-badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { propertyStatusLabels, propertyStatusValues } from './property-schema';
 import { useProperties, useSoftDeleteProperty } from './use-properties';
 import type { PropertyStatusFilter } from './property-service';
 
 const pageSize = 10;
-const propertyStatusTone = { active: 'blue', inactive: 'gray', maintenance: 'red', sold: 'gray' } as const;
 
 function currency(value: number | null) {
   if (value === null) return '—';
@@ -77,7 +75,7 @@ export function PropertiesListPage() {
                     </TableCell>
                     <TableCell>{property.type}</TableCell>
                     <TableCell>{property.owner_name ?? '—'}</TableCell>
-                    <TableCell><StatusBadge tone={propertyStatusTone[property.status]}>{propertyStatusLabels[property.status]}</StatusBadge></TableCell>
+                    <TableCell>{propertyStatusLabels[property.status]}</TableCell>
                     <TableCell>{currency(property.current_value)}</TableCell>
                     <TableCell>
                       <div className="flex flex-wrap gap-2">

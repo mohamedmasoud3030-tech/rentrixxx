@@ -8,9 +8,9 @@ const optionalRent = z.preprocess(
 export const unitStatusValues = ['available', 'occupied', 'maintenance', 'reserved'] as const;
 
 export const unitStatusLabels: Record<(typeof unitStatusValues)[number], string> = {
-  available: 'شاغرة',
-  occupied: 'مؤجرة',
-  maintenance: 'تحت الصيانة',
+  available: 'متاحة',
+  occupied: 'مشغولة',
+  maintenance: 'صيانة',
   reserved: 'محجوزة',
 };
 

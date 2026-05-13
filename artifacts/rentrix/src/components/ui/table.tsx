@@ -14,7 +14,7 @@ export function TableBody({ className, ...props }: HTMLAttributes<HTMLTableSecti
 }
 
 export function TableRow({ className, ...props }: HTMLAttributes<HTMLTableRowElement>) {
-  return <tr className={cn('animate-row-in border-b border-border transition-colors hover:bg-blue-50/80 dark:hover:bg-blue-400/10', className)} {...props} />;
+  return <tr className={cn('border-b border-border transition-colors hover:bg-muted/60', className)} {...props} />;
 }
 
 export function TableHead({ className, ...props }: ThHTMLAttributes<HTMLTableCellElement>) {
