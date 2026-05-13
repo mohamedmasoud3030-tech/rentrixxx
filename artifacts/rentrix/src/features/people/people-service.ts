@@ -33,7 +33,8 @@ export async function listPeople(params: PeopleListParams): Promise<PaginatedPeo
   const trimmedSearch = params.search.trim();
   if (trimmedSearch) {
     const escaped = trimmedSearch.replaceAll('%', '\\%').replaceAll('_', '\\_');
-    query = query.or(`full_name.ilike.%${escaped}%,phone.ilike.%${escaped}%,email.ilike.%${escaped}%,national_id.ilike.%${escaped}%`);
+    const term = `"%${escaped}%"`;
+    query = query.or(`full_name.ilike.${term},phone.ilike.${term},email.ilike.${term},national_id.ilike.${term}`);
   }
 
   if (params.type !== 'all') {
