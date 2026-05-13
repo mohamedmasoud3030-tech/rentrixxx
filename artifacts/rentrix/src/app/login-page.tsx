@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react';
+import { useEffect, useState, type FormEvent } from 'react';
 import { useRouter } from '@tanstack/react-router';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
@@ -14,15 +14,26 @@ export function LoginPage() {
   const [password, setPassword] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  useEffect(() => {
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_IN' && session) {
+        void router.navigate({ to: '/', replace: true });
+      }
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, [router]);
+
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setIsSubmitting(true);
     try {
       await login(email, password);
-      const { data } = await supabase.auth.getSession();
-      if (!data.session) throw new Error('لم يتم تأكيد الجلسة بعد');
       toast.success('تم تسجيل الدخول');
-      await router.navigate({ to: '/' });
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'فشل تسجيل الدخول');
     } finally {
