@@ -10,18 +10,20 @@ export async function listMaintenance(status: MaintenanceStatus, propertyId: str
     if (status !== 'all') q = q.eq('status', status);
     if (propertyId) q = q.eq('property_id', propertyId);
     const { data, error } = await q.returns<Maintenance[]>();
-    if (error) handleSupabaseError(error, 'تعذر تحميل طلبات الصيانة');
+    if (error) handleSupabaseError(error);
     return data ?? [];
   } catch (error) {
     handleSupabaseError(error, 'تعذر تحميل طلبات الصيانة');
+    return [];
   }
 }
 export async function createMaintenance(payload: MaintenancePayload) {
   try {
     const { data, error } = await supabase.from('maintenance_requests').insert(payload).select('*').single().returns<Maintenance>();
-    if (error) handleSupabaseError(error, 'تعذر إنشاء طلب الصيانة');
+    if (error) handleSupabaseError(error);
     return data;
   } catch (error) {
     handleSupabaseError(error, 'تعذر إنشاء طلب الصيانة');
+    return null as never;
   }
 }
