@@ -113,6 +113,28 @@ export type Database = {
         Update: Partial<Database['public']['Tables']['payments']['Row']>;
         Relationships: [];
       };
+
+      maintenance_requests: {
+        Row: {
+          id: string;
+          property_id: string;
+          unit_id: string | null;
+          title: string;
+          description: string | null;
+          priority: 'low' | 'medium' | 'high' | 'urgent';
+          status: 'open' | 'in_progress' | 'resolved' | 'closed';
+          assigned_to: string | null;
+          cost: number;
+          resolved_at: string | null;
+          created_at: string;
+          updated_at: string;
+          deleted_at: string | null;
+        };
+        Insert: Partial<Database['public']['Tables']['maintenance_requests']['Row']> & Pick<Database['public']['Tables']['maintenance_requests']['Row'], 'property_id' | 'title' | 'priority' | 'status' | 'cost'>;
+        Update: Partial<Database['public']['Tables']['maintenance_requests']['Row']>;
+        Relationships: [];
+      };
+
       expenses: {
         Row: {
           id: string;
