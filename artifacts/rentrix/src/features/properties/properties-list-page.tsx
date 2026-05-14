@@ -7,16 +7,20 @@ import { EmptyState } from '@/components/empty-state';
 import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
+import { StatusBadge } from '@/components/ui/status-badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { defaultCompanyLocalSettings } from '@/lib/companySettings';
+import { formatCompanyMoney } from '@/lib/companyFormatters';
 import { propertyStatusLabels, propertyStatusValues } from './property-schema';
 import { useProperties, useSoftDeleteProperty } from './use-properties';
 import type { PropertyStatusFilter } from './property-service';
 
 const pageSize = 10;
+const propertyStatusTone = { active: 'green', inactive: 'gray', maintenance: 'gold', sold: 'blue' } as const;
 
-function currency(value: number | null) {
+function money(value: number | null) {
   if (value === null) return '—';
-  return new Intl.NumberFormat('ar', { maximumFractionDigits: 2 }).format(value);
+  return formatCompanyMoney(defaultCompanyLocalSettings, value);
 }
 
 export function PropertiesListPage() {
@@ -75,8 +79,8 @@ export function PropertiesListPage() {
                     </TableCell>
                     <TableCell>{property.type}</TableCell>
                     <TableCell>{property.owner_name ?? '—'}</TableCell>
-                    <TableCell>{propertyStatusLabels[property.status]}</TableCell>
-                    <TableCell>{currency(property.current_value)}</TableCell>
+                    <TableCell><StatusBadge tone={propertyStatusTone[property.status]}>{propertyStatusLabels[property.status]}</StatusBadge></TableCell>
+                    <TableCell dir="ltr" className="font-bold">{money(property.current_value)}</TableCell>
                     <TableCell>
                       <div className="flex flex-wrap gap-2">
                         <Button variant="secondary" className="min-h-9 px-3" asChild><Link to="/properties/$propertyId" params={{ propertyId: property.id }}><Eye className="size-4" /></Link></Button>
