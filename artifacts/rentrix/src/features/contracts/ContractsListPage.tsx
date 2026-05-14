@@ -1,5 +1,6 @@
 import { Link } from '@tanstack/react-router';
-import { Edit, Eye, FileText, Plus, Trash2 } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
+import { AlertTriangle, CheckCircle, Clock, Edit, Eye, FileText, Plus, Trash2, Users } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { EmptyState } from '@/components/empty-state';
 import { Button } from '@/components/ui/button';
@@ -7,6 +8,7 @@ import { Card } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { supabase } from '@/integrations/supabase/client';
 import { contractStatusLabels, contractStatusValues } from './contractSchema';
 import { useContracts, useSoftDeleteContract } from './useContracts';
 import type { ContractStatusFilter } from './services/contractService';
@@ -23,6 +25,42 @@ export function ContractsListPage() {
   const deleteMutation = useSoftDeleteContract();
   const filters: ContractStatusFilter[] = ['all', ...contractStatusValues];
 
+  const statsQuery = useQuery({
+    queryKey: ['contract-stats'],
+    queryFn: async () => {
+      const now = new Date();
+      const futureDate = new Date(now.getTime() + 30 * 86400000);
+
+      const { data: activeContracts, error: activeError } = await supabase
+        .from('contracts')
+        .select('id,end_date,rent_amount')
+        .eq('status', 'active')
+        .is('deleted_at', null);
+      if (activeError) throw activeError;
+
+      const activeRows = activeContracts ?? [];
+      const totalMonthlyRent = activeRows.reduce((sum, contract) => sum + Number(contract.rent_amount ?? 0), 0);
+      const expiring = activeRows.filter((contract) => {
+        const endDate = new Date(contract.end_date);
+        return endDate >= now && endDate <= futureDate;
+      }).length;
+
+      const { data: summary, error: summaryError } = await supabase.rpc('rpt_financial_summary', {
+        month: now.getMonth() + 1,
+        year: now.getFullYear(),
+      });
+      if (summaryError) throw summaryError;
+
+      return {
+        active: activeRows.length,
+        expiring,
+        totalMonthlyRent,
+        totalOverdue: Number(summary?.total_overdue_invoices ?? 0),
+      };
+    },
+  });
+  const stats = statsQuery.data;
+
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -37,6 +75,31 @@ export function ContractsListPage() {
       <div className="flex flex-wrap gap-2">
         {filters.map((item) => <Button key={item} variant={status === item ? 'primary' : 'secondary'} onClick={() => setStatus(item)}>{filterLabels[item]}</Button>)}
       </div>
+
+      {stats ? (
+        <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+          <div className="rounded-xl border border-border bg-card p-3 text-center">
+            <CheckCircle size={18} className="mx-auto mb-1 text-emerald-500" />
+            <p className="text-lg font-black">{stats.active}</p>
+            <p className="text-[10px] text-muted-foreground">عقود نشطة</p>
+          </div>
+          <div className="rounded-xl border border-border bg-card p-3 text-center">
+            <AlertTriangle size={18} className="mx-auto mb-1 text-amber-500" />
+            <p className="text-lg font-black text-amber-600">{stats.expiring}</p>
+            <p className="text-[10px] text-muted-foreground">تنتهي قريبًا</p>
+          </div>
+          <div className="rounded-xl border border-border bg-card p-3 text-center">
+            <Clock size={18} className="mx-auto mb-1 text-red-500" />
+            <p className="text-lg font-black text-red-600" dir="ltr">{money(stats.totalOverdue)}</p>
+            <p className="text-[10px] text-muted-foreground">إجمالي المتأخرات</p>
+          </div>
+          <div className="rounded-xl border border-border bg-card p-3 text-center">
+            <Users size={18} className="mx-auto mb-1 text-blue-500" />
+            <p className="text-lg font-black text-blue-700" dir="ltr">{money(stats.totalMonthlyRent)}</p>
+            <p className="text-[10px] text-muted-foreground">إجمالي الإيجار الشهري</p>
+          </div>
+        </div>
+      ) : null}
 
       <Card className="overflow-hidden">
         {contractsQuery.isLoading ? (
