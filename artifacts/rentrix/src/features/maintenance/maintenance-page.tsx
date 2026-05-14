@@ -9,7 +9,7 @@ import { useProperties } from '@/features/properties/use-properties';
 import { useUnits } from '@/features/units/use-units';
 import { useMaintenance, useCreateMaintenance } from './use-maintenance';
 
-const maintenanceSchema = z.object({
+const schema = z.object({
   property_id: z.string().uuid('اختر العقار'),
   unit_id: z.string().nullable().optional().transform((val) => (val === '' ? null : val)),
   title: z.string().min(1, 'أدخل عنوان الطلب'),
@@ -17,7 +17,7 @@ const maintenanceSchema = z.object({
   priority: z.enum(['low', 'medium', 'high', 'urgent']),
 });
 
-type MaintenanceFormValues = z.infer<typeof maintenanceSchema>;
+type FormValues = z.infer<typeof schema>;
 
 void zodResolver;
 void maintenanceSchema;
@@ -126,3 +126,6 @@ export function MaintenancePage() {
     </div>
   );
 }
+
+
+export default MaintenancePage;
