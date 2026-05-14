@@ -1,10 +1,24 @@
-import type { DailyCollectionReportRow, ExpenseBreakdownReport, OverdueInvoicesReport } from '@/features/financials/reports/financialReportsService';
+import type { DailyCollectionReportRow, OverdueInvoicesReport } from '@/features/financials/reports/financialReportsService';
+import type { Unit } from '@/types/domain';
 
+export type OccupancyChartRow = { property: string; occupied: number; vacant: number };
 export type PaymentsTrendRow = { month: string; collections: number; overdue: number };
-export type ExpenseBreakdownChartRow = { name: string; value: number; count: number };
 
 function monthKey(date: string) {
   return date.slice(0, 7);
+}
+
+export function buildOccupancyRows(units: Pick<Unit, 'property_id' | 'status'>[] = []): OccupancyChartRow[] {
+  const rowsByProperty = new Map<string, OccupancyChartRow>();
+
+  for (const unit of units) {
+    const row = rowsByProperty.get(unit.property_id) ?? { property: unit.property_id.slice(0, 8), occupied: 0, vacant: 0 };
+    if (unit.status === 'occupied') row.occupied += 1;
+    else row.vacant += 1;
+    rowsByProperty.set(unit.property_id, row);
+  }
+
+  return Array.from(rowsByProperty.values());
 }
 
 export function buildPaymentsTrendRows(params: {
@@ -28,8 +42,4 @@ export function buildPaymentsTrendRows(params: {
   }
 
   return Array.from(rowsByMonth.values()).sort((a, b) => a.month.localeCompare(b.month));
-}
-
-export function buildExpenseBreakdownRows(report?: ExpenseBreakdownReport): ExpenseBreakdownChartRow[] {
-  return (report?.byCategory ?? []).map((row) => ({ name: row.category, value: row.total, count: row.count }));
 }

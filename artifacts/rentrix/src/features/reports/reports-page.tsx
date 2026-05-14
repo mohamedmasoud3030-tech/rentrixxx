@@ -3,13 +3,13 @@ import { Bar, BarChart, CartesianGrid, Legend, Line, LineChart, ResponsiveContai
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useContracts } from '@/features/contracts/useContracts';
+import { useAllUnits } from '@/features/units/use-units';
 import {
   useDailyCollectionReport,
-  useExpenseBreakdownReport,
   useFinancialCashflowReport,
   useOverdueInvoicesReport,
 } from '@/features/financials/reports/useFinancialReports';
-import { buildExpenseBreakdownRows, buildPaymentsTrendRows } from './reports-page.helpers';
+import { buildOccupancyRows, buildPaymentsTrendRows } from './reports-page.helpers';
 
 function downloadCsv(filename: string, rows: Record<string, unknown>[]) {
   const keys = Object.keys(rows[0] ?? {});
@@ -31,12 +31,12 @@ export function ReportsPage() {
 
   const financialCashflowQuery = useFinancialCashflowReport(financialFilters);
   const dailyCollectionQuery = useDailyCollectionReport(financialFilters);
-  const expenseBreakdownQuery = useExpenseBreakdownReport(financialFilters);
   const overdueInvoicesQuery = useOverdueInvoicesReport(arrearsFilters);
   const contractsQuery = useContracts({ status: 'all' });
+  const unitsQuery = useAllUnits();
 
   const financial = financialCashflowQuery.data?.rows ?? [];
-  const expenseBreakdown = buildExpenseBreakdownRows(expenseBreakdownQuery.data);
+  const occupancy = useMemo(() => buildOccupancyRows(unitsQuery.data), [unitsQuery.data]);
   const contracts = useMemo(() => {
     const today = new Date();
     const in30 = new Date();
@@ -65,12 +65,12 @@ export function ReportsPage() {
 
   const isLoading = financialCashflowQuery.isLoading
     || dailyCollectionQuery.isLoading
-    || expenseBreakdownQuery.isLoading
+    || unitsQuery.isLoading
     || overdueInvoicesQuery.isLoading
     || contractsQuery.isLoading;
   const isError = financialCashflowQuery.isError
     || dailyCollectionQuery.isError
-    || expenseBreakdownQuery.isError
+    || unitsQuery.isError
     || overdueInvoicesQuery.isError
     || contractsQuery.isError;
 
@@ -80,7 +80,7 @@ export function ReportsPage() {
     {isError ? <Card><CardContent className='p-4 text-sm text-red-600'>تعذر تحميل التقارير</CardContent></Card> : null}
     {isLoading ? <Card><CardContent className='p-4 text-sm text-muted-foreground'>جاري تحميل التقارير...</CardContent></Card> : null}
     <Card><CardHeader className='flex flex-row items-center justify-between'><CardTitle>التقرير المالي</CardTitle><Button onClick={() => downloadCsv('financial-report.csv', financial)}>تصدير CSV</Button></CardHeader><CardContent className='h-80'><ResponsiveContainer><BarChart data={financial}><CartesianGrid strokeDasharray='3 3'/><XAxis dataKey='month'/><YAxis/><Tooltip/><Legend/><Bar dataKey='revenue' name='الإيرادات' fill='#10b981'/><Bar dataKey='expenses' name='المصاريف' fill='#ef4444'/></BarChart></ResponsiveContainer></CardContent></Card>
-    <Card><CardHeader className='flex flex-row items-center justify-between'><CardTitle>تقرير المصاريف</CardTitle><Button onClick={() => downloadCsv('expense-report.csv', expenseBreakdown)}>تصدير CSV</Button></CardHeader><CardContent className='h-80'><ResponsiveContainer><BarChart data={expenseBreakdown}><CartesianGrid strokeDasharray='3 3'/><XAxis dataKey='name'/><YAxis/><Tooltip/><Legend/><Bar dataKey='value' name='المصاريف' fill='#f59e0b'/></BarChart></ResponsiveContainer></CardContent></Card>
+    <Card><CardHeader className='flex flex-row items-center justify-between'><CardTitle>تقرير الإشغال</CardTitle><Button onClick={() => downloadCsv('occupancy-report.csv', occupancy)}>تصدير CSV</Button></CardHeader><CardContent className='h-80'><ResponsiveContainer><BarChart data={occupancy}><CartesianGrid strokeDasharray='3 3'/><XAxis dataKey='property'/><YAxis/><Tooltip/><Legend/><Bar dataKey='occupied' name='مشغول' fill='#3b82f6'/><Bar dataKey='vacant' name='شاغر' fill='#f59e0b'/></BarChart></ResponsiveContainer></CardContent></Card>
     <Card><CardHeader className='flex flex-row items-center justify-between'><CardTitle>تقرير العقود</CardTitle><Button onClick={() => downloadCsv('contracts-report.csv', contracts)}>تصدير CSV</Button></CardHeader><CardContent className='h-80'><ResponsiveContainer><BarChart data={contracts}><CartesianGrid strokeDasharray='3 3'/><XAxis dataKey='name'/><YAxis/><Tooltip/><Bar dataKey='value' fill='#8b5cf6'/></BarChart></ResponsiveContainer></CardContent></Card>
     <Card><CardHeader className='flex flex-row items-center justify-between'><CardTitle>تقرير المدفوعات والذمم المتأخرة</CardTitle><Button onClick={() => downloadCsv('payments-report.csv', paymentsTrend)}>تصدير CSV</Button></CardHeader><CardContent className='h-80'><ResponsiveContainer><LineChart data={paymentsTrend}><CartesianGrid strokeDasharray='3 3'/><XAxis dataKey='month'/><YAxis/><Tooltip/><Legend/><Line dataKey='collections' name='التحصيل' stroke='#16a34a'/><Line dataKey='overdue' name='المتأخرات' stroke='#dc2626'/></LineChart></ResponsiveContainer></CardContent></Card>
   </div>;

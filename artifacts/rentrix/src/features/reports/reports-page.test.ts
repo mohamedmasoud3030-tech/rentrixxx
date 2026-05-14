@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildExpenseBreakdownRows, buildPaymentsTrendRows } from './reports-page.helpers';
+import { buildOccupancyRows, buildPaymentsTrendRows } from './reports-page.helpers';
 
 describe('ReportsPage chart shaping helpers', () => {
   it('combines canonical daily collection and overdue invoice rows by month', () => {
@@ -20,18 +20,15 @@ describe('ReportsPage chart shaping helpers', () => {
     ]);
   });
 
-  it('maps canonical expense breakdown rows to chart rows without recalculating totals', () => {
-    expect(buildExpenseBreakdownRows({
-      totalExpenses: 125,
-      expensesCount: 2,
-      byCategory: [
-        { category: 'صيانة', total: 100, count: 1 },
-        { category: 'مرافق', total: 25, count: 1 },
-      ],
-      byProperty: [],
-    })).toEqual([
-      { name: 'صيانة', value: 100, count: 1 },
-      { name: 'مرافق', value: 25, count: 1 },
+  it('preserves the occupancy chart shape from current unit service rows', () => {
+    expect(buildOccupancyRows([
+      { property_id: 'alpha_property', status: 'occupied' },
+      { property_id: 'alpha_property', status: 'available' },
+      { property_id: 'alpha_property', status: 'maintenance' },
+      { property_id: 'beta_property', status: 'occupied' },
+    ])).toEqual([
+      { property: 'alpha_pr', occupied: 1, vacant: 2 },
+      { property: 'beta_pro', occupied: 1, vacant: 0 },
     ]);
   });
 });
