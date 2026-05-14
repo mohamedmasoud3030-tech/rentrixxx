@@ -27,7 +27,7 @@ export function ContractFormPage() {
   const updateMutation = useUpdateContract(contractId ?? '');
   const form = useForm<ContractFormValues>({
     resolver: zodResolver(contractSchema),
-    defaultValues: { property_id: '', unit_id: null, tenant_id: '', start_date: '', end_date: '', rent_amount: 0, payment_cycle: 'monthly', status: 'draft', cancellation_reason: '', notes: '' },
+    defaultValues: { property_id: '', unit_id: '', tenant_id: '', start_date: '', end_date: '', rent_amount: 0, payment_cycle: 'monthly', status: 'draft', cancellation_reason: '', notes: '' },
   });
   const propertyId = useWatch({ control: form.control, name: 'property_id' });
   const propertiesQuery = useQuery({ queryKey: ['contracts', 'properties-options'], queryFn: () => listProperties({ search: '', status: 'all', page: 1, pageSize: 200 }) });
@@ -38,7 +38,7 @@ export function ContractFormPage() {
     if (!contractQuery.data) return;
     form.reset({
       property_id: contractQuery.data.property_id,
-      unit_id: contractQuery.data.unit_id,
+      unit_id: contractQuery.data.unit_id ?? '',
       tenant_id: contractQuery.data.tenant_id,
       start_date: contractQuery.data.start_date,
       end_date: contractQuery.data.end_date,
@@ -62,12 +62,12 @@ export function ContractFormPage() {
       <CardContent>
         <form className="grid gap-5 md:grid-cols-2" onSubmit={form.handleSubmit(async (values) => { const payload = contractSchema.parse(values); if (isEdit && contractId) await updateMutation.mutateAsync(payload); else await createMutation.mutateAsync(payload); await navigate({ to: '/contracts' }); })}>
           <label className="grid gap-2 text-sm font-bold">العقار<Select {...form.register('property_id')}><option value="">اختر العقار</option>{propertiesQuery.data?.rows.map((property) => <option key={property.id} value={property.id}>{property.title}</option>)}</Select>{fieldError(form.formState.errors.property_id?.message)}</label>
-          <label className="grid gap-2 text-sm font-bold">الوحدة<Select {...form.register('unit_id', { setValueAs: (value: string) => value || null })}><option value="">بدون وحدة</option>{unitsQuery.data?.map((unit) => <option key={unit.id} value={unit.id}>{unit.unit_number}</option>)}</Select>{fieldError(form.formState.errors.unit_id?.message)}</label>
+          <label className="grid gap-2 text-sm font-bold">الوحدة<Select {...form.register('unit_id')} disabled={!propertyId}><option value="">اختر الوحدة</option>{unitsQuery.data?.map((unit) => <option key={unit.id} value={unit.id}>{unit.unit_number}</option>)}</Select>{fieldError(form.formState.errors.unit_id?.message)}</label>
           <label className="grid gap-2 text-sm font-bold">المستأجر<Select {...form.register('tenant_id')}><option value="">اختر المستأجر</option>{peopleQuery.data?.rows.map((person) => <option key={person.id} value={person.id}>{person.full_name}</option>)}</Select>{fieldError(form.formState.errors.tenant_id?.message)}</label>
           <label className="grid gap-2 text-sm font-bold">الحالة<Select {...form.register('status')}>{contractStatusValues.map((status) => <option key={status} value={status}>{contractStatusLabels[status]}</option>)}</Select>{fieldError(form.formState.errors.status?.message)}</label>
           <label className="grid gap-2 text-sm font-bold">تاريخ البداية<Input type="date" {...form.register('start_date')} />{fieldError(form.formState.errors.start_date?.message)}</label>
           <label className="grid gap-2 text-sm font-bold">تاريخ النهاية<Input type="date" {...form.register('end_date')} />{fieldError(form.formState.errors.end_date?.message)}</label>
-          <label className="grid gap-2 text-sm font-bold">قيمة الإيجار<Input type="number" step="0.01" min="0" {...form.register('rent_amount')} />{fieldError(form.formState.errors.rent_amount?.message)}</label>
+          <label className="grid gap-2 text-sm font-bold">قيمة الإيجار<Input type="number" step="0.01" min="0.01" {...form.register('rent_amount')} />{fieldError(form.formState.errors.rent_amount?.message)}</label>
           <label className="grid gap-2 text-sm font-bold">دورة السداد<Select {...form.register('payment_cycle')}>{paymentCycleValues.map((cycle) => <option key={cycle} value={cycle}>{paymentCycleLabels[cycle]}</option>)}</Select>{fieldError(form.formState.errors.payment_cycle?.message)}</label>
           <label className="grid gap-2 text-sm font-bold md:col-span-2">سبب الإلغاء<Textarea {...form.register('cancellation_reason')} placeholder="يظهر عند إلغاء العقد" /></label>
           <label className="grid gap-2 text-sm font-bold md:col-span-2">ملاحظات<Textarea {...form.register('notes')} placeholder="ملاحظات العقد" /></label>
