@@ -33,7 +33,7 @@ function uniqueStrings(values: Array<string | null | undefined>) {
   return Array.from(new Set(values.filter((value): value is string => Boolean(value))));
 }
 
-function shortReceiptNumber(paymentId: string) {
+export function formatReceiptNumber(paymentId: string) {
   return `REC-${paymentId.slice(0, 8)}`;
 }
 
@@ -53,7 +53,7 @@ function toReceiptRecord(
 
   return {
     id: payment.id,
-    receipt_number: shortReceiptNumber(payment.id),
+    receipt_number: formatReceiptNumber(payment.id),
     payment_id: payment.id,
     invoice_id: payment.invoice_id,
     invoice_status: invoice?.status ?? null,
