@@ -19,7 +19,7 @@ export function LoginPage() {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === 'SIGNED_IN' && session) {
-        void router.navigate({ to: '/', replace: true });
+        router.navigate({ to: '/', replace: true });
       }
     });
 
