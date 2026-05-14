@@ -2,7 +2,7 @@ import { z } from 'zod';
 
 const money = z.preprocess(
   (value) => (value === '' || value === null || value === undefined ? NaN : Number(value)),
-  z.number({ invalid_type_error: 'قيمة الإيجار مطلوبة' }).min(0, 'قيمة الإيجار لا يمكن أن تكون سالبة'),
+  z.number({ invalid_type_error: 'قيمة الإيجار مطلوبة' }).positive('قيمة الإيجار يجب أن تكون أكبر من صفر'),
 );
 
 export const contractStatusValues = ['draft', 'active', 'expired', 'terminated'] as const;
@@ -24,7 +24,7 @@ export const paymentCycleLabels: Record<(typeof paymentCycleValues)[number], str
 
 export const contractSchema = z.object({
   property_id: z.string().uuid('اختر العقار'),
-  unit_id: z.string().uuid('اختر الوحدة').nullable().optional(),
+  unit_id: z.string().uuid('اختر الوحدة'),
   tenant_id: z.string().uuid('اختر المستأجر'),
   start_date: z.string().min(1, 'تاريخ البداية مطلوب'),
   end_date: z.string().min(1, 'تاريخ النهاية مطلوب'),
