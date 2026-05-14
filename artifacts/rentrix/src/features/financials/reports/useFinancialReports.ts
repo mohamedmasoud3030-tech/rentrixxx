@@ -1,13 +1,17 @@
 import { useQuery } from '@tanstack/react-query';
 import {
+  getAgedReceivablesReport,
+  getArrearsSummaryReport,
   getCollectionSummaryReport,
   getDailyCollectionReport,
   getExpenseBreakdownReport,
   getExpenseTotalsReport,
   getFinancialPeriodSummaryReport,
   getInvoiceTotalsReport,
+  getOverdueInvoicesReport,
   getOutstandingBalanceReport,
   getPaymentTotalsReport,
+  type ArrearsReportFilters,
   type ExpenseBreakdownReportFilters,
   type FinancialReportFilters,
 } from './financialReportsService';
@@ -15,6 +19,9 @@ import {
 export const financialReportKeys = {
   all: ['financialReports'] as const,
   collectionSummary: (filters: FinancialReportFilters) => [...financialReportKeys.all, 'collectionSummary', filters] as const,
+  overdueInvoices: (filters: ArrearsReportFilters) => [...financialReportKeys.all, 'overdueInvoices', filters] as const,
+  agedReceivables: (filters: ArrearsReportFilters) => [...financialReportKeys.all, 'agedReceivables', filters] as const,
+  arrearsSummary: (filters: ArrearsReportFilters) => [...financialReportKeys.all, 'arrearsSummary', filters] as const,
   dailyCollection: (filters: FinancialReportFilters) => [...financialReportKeys.all, 'dailyCollection', filters] as const,
   financialPeriodSummary: (filters: FinancialReportFilters) => [...financialReportKeys.all, 'financialPeriodSummary', filters] as const,
   invoiceTotals: (filters: FinancialReportFilters) => [...financialReportKeys.all, 'invoiceTotals', filters] as const,
@@ -26,6 +33,10 @@ export const financialReportKeys = {
 
 function hasRequiredDateRange(filters: Pick<FinancialReportFilters, 'dateFrom' | 'dateTo'>) {
   return Boolean(filters.dateFrom && filters.dateTo);
+}
+
+function hasRequiredAsOf(filters: Pick<ArrearsReportFilters, 'asOf'>) {
+  return Boolean(filters.asOf);
 }
 
 export function useCollectionSummaryReport(filters: FinancialReportFilters) {
@@ -89,5 +100,29 @@ export function useOutstandingBalanceReport(filters: FinancialReportFilters) {
     queryKey: financialReportKeys.outstandingBalance(filters),
     queryFn: () => getOutstandingBalanceReport(filters),
     enabled: hasRequiredDateRange(filters),
+  });
+}
+
+export function useOverdueInvoicesReport(filters: ArrearsReportFilters) {
+  return useQuery({
+    queryKey: financialReportKeys.overdueInvoices(filters),
+    queryFn: () => getOverdueInvoicesReport(filters),
+    enabled: hasRequiredAsOf(filters),
+  });
+}
+
+export function useAgedReceivablesReport(filters: ArrearsReportFilters) {
+  return useQuery({
+    queryKey: financialReportKeys.agedReceivables(filters),
+    queryFn: () => getAgedReceivablesReport(filters),
+    enabled: hasRequiredAsOf(filters),
+  });
+}
+
+export function useArrearsSummaryReport(filters: ArrearsReportFilters) {
+  return useQuery({
+    queryKey: financialReportKeys.arrearsSummary(filters),
+    queryFn: () => getArrearsSummaryReport(filters),
+    enabled: hasRequiredAsOf(filters),
   });
 }

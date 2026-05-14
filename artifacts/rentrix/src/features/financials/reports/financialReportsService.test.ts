@@ -9,7 +9,7 @@ vi.mock('@/integrations/supabase/client', () => ({
 }));
 
 type QueryLogEntry = { table: string; method: string; args: unknown[] };
-type TableResponses = Partial<Record<'invoices' | 'payments' | 'contracts' | 'expenses' | 'properties', unknown[]>>;
+type TableResponses = Partial<Record<'invoices' | 'payments' | 'contracts' | 'expenses' | 'properties' | 'people' | 'units', unknown[]>>;
 
 function createQueryBuilder(table: string, responses: TableResponses, log: QueryLogEntry[]) {
   const builder = {
@@ -235,6 +235,161 @@ describe('financialReportsService aggregation helpers', () => {
     });
   });
 
+
+  it('summarizes arrears using due_date/as-of semantics and safe positive balances only', async () => {
+    const {
+      getAgingBucketKey,
+      summarizeAgedReceivablesReport,
+      summarizeArrearsSummaryReport,
+      summarizeOverdueInvoicesReport,
+    } = await import('./financialReportsService');
+    const filters = { asOf: '2026-05-14', propertyId: 'property_1', tenantId: 'tenant_1' };
+    const invoices = [
+      {
+        id: 'inv_current',
+        contract_id: 'contract_1',
+        issue_date: '2026-01-01',
+        due_date: '2026-05-20',
+        amount: '100' as unknown as number,
+        paid_amount: 25,
+        status: 'issued' as const,
+        deleted_at: null,
+        contracts: { id: 'contract_1', property_id: 'property_1', tenant_id: 'tenant_1', unit_id: 'unit_1' },
+      },
+      {
+        id: 'inv_30',
+        contract_id: 'contract_1',
+        issue_date: '2025-01-01',
+        due_date: '2026-04-15',
+        amount: 200,
+        paid_amount: 50,
+        status: 'partial' as const,
+        deleted_at: null,
+        contracts: { id: 'contract_1', property_id: 'property_1', tenant_id: 'tenant_1', unit_id: 'unit_1' },
+      },
+      {
+        id: 'inv_60',
+        contract_id: 'contract_1',
+        issue_date: '2026-05-14',
+        due_date: '2026-03-15',
+        amount: Number.NaN,
+        paid_amount: 0,
+        status: 'overdue' as const,
+        deleted_at: null,
+        contracts: { id: 'contract_1', property_id: 'property_1', tenant_id: 'tenant_1', unit_id: 'unit_1' },
+      },
+      {
+        id: 'inv_90',
+        contract_id: 'contract_2',
+        issue_date: '2026-05-14',
+        due_date: '2026-02-13',
+        amount: 300,
+        paid_amount: 0,
+        status: 'issued' as const,
+        deleted_at: null,
+        contracts: { id: 'contract_2', property_id: 'property_1', tenant_id: 'tenant_1', unit_id: null },
+      },
+      {
+        id: 'inv_over90',
+        contract_id: 'contract_2',
+        issue_date: '2026-05-14',
+        due_date: '2026-02-12',
+        amount: 400,
+        paid_amount: 100,
+        status: 'overdue' as const,
+        deleted_at: null,
+        contracts: { id: 'contract_2', property_id: 'property_1', tenant_id: 'tenant_1', unit_id: null },
+      },
+      {
+        id: 'inv_overpaid',
+        contract_id: 'contract_1',
+        issue_date: '2026-05-14',
+        due_date: '2026-04-01',
+        amount: 100,
+        paid_amount: 150,
+        status: 'partial' as const,
+        deleted_at: null,
+        contracts: { id: 'contract_1', property_id: 'property_1', tenant_id: 'tenant_1', unit_id: 'unit_1' },
+      },
+      {
+        id: 'inv_deleted',
+        contract_id: 'contract_1',
+        issue_date: '2026-05-14',
+        due_date: '2026-04-01',
+        amount: 100,
+        paid_amount: 0,
+        status: 'issued' as const,
+        deleted_at: '2026-05-01',
+        contracts: { id: 'contract_1', property_id: 'property_1', tenant_id: 'tenant_1', unit_id: 'unit_1' },
+      },
+      {
+        id: 'inv_wrong_tenant',
+        contract_id: 'contract_3',
+        issue_date: '2026-05-14',
+        due_date: '2026-04-01',
+        amount: 100,
+        paid_amount: 0,
+        status: 'issued' as const,
+        deleted_at: null,
+        contracts: { id: 'contract_3', property_id: 'property_1', tenant_id: 'tenant_2', unit_id: null },
+      },
+      {
+        id: 'inv_void',
+        contract_id: 'contract_1',
+        issue_date: '2026-05-14',
+        due_date: '2026-04-01',
+        amount: 100,
+        paid_amount: 0,
+        status: 'void' as const,
+        deleted_at: null,
+        contracts: { id: 'contract_1', property_id: 'property_1', tenant_id: 'tenant_1', unit_id: 'unit_1' },
+      },
+    ];
+    const contexts = {
+      tenantsById: new Map([['tenant_1', { id: 'tenant_1', full_name: 'Tenant One' }]]),
+      propertiesById: new Map([['property_1', { id: 'property_1', title: 'Building A' }]]),
+      unitsById: new Map([['unit_1', { id: 'unit_1', unit_number: '101' }]]),
+    };
+
+    expect(getAgingBucketKey('2026-05-20', filters.asOf)).toBe('current');
+    expect(getAgingBucketKey('2026-04-15', filters.asOf)).toBe('days_1_30');
+    expect(getAgingBucketKey('2026-03-15', filters.asOf)).toBe('days_31_60');
+    expect(getAgingBucketKey('2026-02-13', filters.asOf)).toBe('days_61_90');
+    expect(getAgingBucketKey('2026-02-12', filters.asOf)).toBe('days_90_plus');
+
+    expect(summarizeOverdueInvoicesReport(invoices, filters, contexts)).toMatchObject({
+      asOf: '2026-05-14',
+      totalOverdue: 750,
+      invoiceCount: 3,
+      rows: [
+        expect.objectContaining({ invoiceId: 'inv_over90', tenantName: 'Tenant One', propertyTitle: 'Building A', remainingAmount: 300, daysOverdue: 91 }),
+        expect.objectContaining({ invoiceId: 'inv_90', remainingAmount: 300, daysOverdue: 90 }),
+        expect.objectContaining({ invoiceId: 'inv_30', unitNumber: '101', remainingAmount: 150, daysOverdue: 29 }),
+      ],
+    });
+
+    expect(summarizeAgedReceivablesReport(invoices, filters, contexts)).toMatchObject({
+      totalOutstanding: 825,
+      totalOverdue: 750,
+      buckets: {
+        current: expect.objectContaining({ total: 75, invoiceCount: 1 }),
+        days_1_30: expect.objectContaining({ total: 150, invoiceCount: 1 }),
+        days_31_60: expect.objectContaining({ total: 0, invoiceCount: 0 }),
+        days_61_90: expect.objectContaining({ total: 300, invoiceCount: 1 }),
+        days_90_plus: expect.objectContaining({ total: 300, invoiceCount: 1 }),
+      },
+    });
+
+    expect(summarizeArrearsSummaryReport(invoices, filters)).toEqual({
+      asOf: '2026-05-14',
+      totalOverdue: 750,
+      overdueInvoiceCount: 3,
+      over90Amount: 300,
+      over90InvoiceCount: 1,
+      averageDaysOverdue: 70,
+    });
+  });
+
 });
 
 describe('financialReportsService Supabase queries', () => {
@@ -406,6 +561,90 @@ describe('financialReportsService Supabase queries', () => {
       { table: 'expenses', method: 'eq', args: ['property_id', 'property_1'] },
     ]));
     expect(log.some((entry) => entry.table === 'properties')).toBe(false);
+  });
+
+
+
+  it('loads overdue invoices by due_date/as-of with batched tenant property and unit context', async () => {
+    const log = mockSupabaseTables({
+      invoices: [
+        {
+          id: 'invoice_due',
+          contract_id: 'contract_1',
+          issue_date: '2026-01-01',
+          due_date: '2026-05-01',
+          amount: 250,
+          paid_amount: 50,
+          status: 'partial',
+          deleted_at: null,
+          contracts: { id: 'contract_1', property_id: 'property_1', tenant_id: 'tenant_1', unit_id: 'unit_1' },
+        },
+        {
+          id: 'invoice_future',
+          contract_id: 'contract_1',
+          issue_date: '2026-01-01',
+          due_date: '2026-06-01',
+          amount: 100,
+          paid_amount: 0,
+          status: 'issued',
+          deleted_at: null,
+          contracts: { id: 'contract_1', property_id: 'property_1', tenant_id: 'tenant_1', unit_id: 'unit_1' },
+        },
+        {
+          id: 'invoice_deleted',
+          contract_id: 'contract_1',
+          issue_date: '2026-01-01',
+          due_date: '2026-05-01',
+          amount: 999,
+          paid_amount: 0,
+          status: 'issued',
+          deleted_at: '2026-05-02',
+          contracts: { id: 'contract_1', property_id: 'property_1', tenant_id: 'tenant_1', unit_id: 'unit_1' },
+        },
+      ],
+      people: [{ id: 'tenant_1', full_name: 'Tenant One' }],
+      properties: [{ id: 'property_1', title: 'Building A' }],
+      units: [{ id: 'unit_1', unit_number: '101' }],
+    });
+    const { getOverdueInvoicesReport } = await import('./financialReportsService');
+
+    await expect(getOverdueInvoicesReport({
+      asOf: '2026-05-14',
+      propertyId: 'property_1',
+      tenantId: 'tenant_1',
+      contractId: 'contract_1',
+    })).resolves.toEqual({
+      asOf: '2026-05-14',
+      totalOverdue: 200,
+      invoiceCount: 1,
+      rows: [{
+        invoiceId: 'invoice_due',
+        shortInvoiceId: 'invoice_',
+        contractId: 'contract_1',
+        tenantId: 'tenant_1',
+        tenantName: 'Tenant One',
+        propertyId: 'property_1',
+        propertyTitle: 'Building A',
+        unitId: 'unit_1',
+        unitNumber: '101',
+        dueDate: '2026-05-01',
+        daysOverdue: 13,
+        amount: 250,
+        paidAmount: 50,
+        remainingAmount: 200,
+        status: 'partial',
+      }],
+    });
+
+    expect(log).toEqual(expect.arrayContaining([
+      { table: 'invoices', method: 'is', args: ['deleted_at', null] },
+      { table: 'invoices', method: 'in', args: ['status', ['issued', 'partial', 'overdue']] },
+      { table: 'invoices', method: 'eq', args: ['contract_id', 'contract_1'] },
+      { table: 'people', method: 'in', args: ['id', ['tenant_1']] },
+      { table: 'properties', method: 'in', args: ['id', ['property_1']] },
+      { table: 'units', method: 'in', args: ['id', ['unit_1']] },
+    ]));
+    expect(log.some((entry) => ['insert', 'update', 'delete', 'rpc'].includes(entry.method))).toBe(false);
   });
 
 

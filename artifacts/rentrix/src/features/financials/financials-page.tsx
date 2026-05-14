@@ -64,7 +64,6 @@ function formatDate(value: string | number | Date) {
   return formatCompanyDate(defaultCompanyLocalSettings, value);
 }
 
-
 function getErrorMessage(error: unknown, fallback: string) {
   return error instanceof Error ? error.message : fallback;
 }
