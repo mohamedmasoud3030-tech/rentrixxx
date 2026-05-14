@@ -8,6 +8,8 @@ import { useProperties } from '@/features/properties/use-properties';
 import { useInvoices, useGenerateInvoices, useInvoice } from './invoices/useInvoices';
 import { usePostPayment } from './payments/usePayments';
 import { useExpenses, useCreateExpense } from './expenses/useExpenses';
+import { defaultCompanyLocalSettings } from '@/lib/companySettings';
+import { formatCompanyDate, formatCompanyMoney } from '@/lib/companyFormatters';
 import type { InvoiceStatusFilter } from './invoices/invoiceService';
 
 const expenseSchema = z.object({
@@ -78,7 +80,7 @@ export function FinancialsPage() {
     {invoiceDetail && <Card><CardHeader><CardTitle>تفاصيل الفاتورة وسجل المدفوعات</CardTitle></CardHeader><CardContent className="space-y-3"><p>الإجمالي: {invoiceDetail.amount} | المدفوع: {invoiceDetail.paid_amount} | المتبقي: {remaining}</p>{invoiceDetail.payments.map((p) => <p key={p.id}>{p.payment_date} — {p.amount} ({p.payment_method})</p>)}<div className="flex gap-2"><input className="rounded border px-2" placeholder="المبلغ" value={amount} onChange={(e) => setAmount(e.target.value)} /><Button onClick={() => { const value = Number(amount); if (value <= 0 || value > remaining) return; postPayment.mutate({ invoice_id: invoiceDetail.id, amount: value, method: 'cash', date: new Date().toISOString().slice(0,10), reference: null }); }}>تسجيل دفعة</Button></div></CardContent></Card>}
 
     <Card><CardHeader><CardTitle>المصاريف</CardTitle></CardHeader><CardContent className="space-y-4">
-      {expenses.map((e) => <p key={e.id}>{e.expense_date} — {e.category} — {e.amount}</p>)}
+      {expenses.map((e) => <p key={e.id}>{formatCompanyDate(defaultCompanyLocalSettings, e.expense_date)} — {e.category} — {formatCompanyMoney(defaultCompanyLocalSettings, e.amount)}</p>)}
 
       <form className="grid gap-3 rounded border p-4" onSubmit={expenseForm.handleSubmit(onCreateExpense)}>
         <select className="rounded border px-2 py-2" {...expenseForm.register('property_id')}>
