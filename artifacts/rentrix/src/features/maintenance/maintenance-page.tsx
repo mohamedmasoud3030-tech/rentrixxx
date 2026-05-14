@@ -6,10 +6,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useCreateMaintenance, useMaintenance } from './use-maintenance';
 
 const maintenanceSchema = z.object({
-  property_id: z.string().uuid('اختر العقار'),
-  unit_id: z.string().uuid('اختر الوحدة').nullable().optional(),
-  title: z.string().min(1, 'العنوان مطلوب'),
-  description: z.string().min(1, 'الوصف مطلوب'),
+  property_id: z.string().min(1, 'اختر العقار'),
+  unit_id: z.string().nullable().optional().transform((val) => (val === '' ? null : val)),
+  title: z.string().min(1, 'أدخل عنوان الطلب'),
+  description: z.string().nullable().optional(),
   priority: z.enum(['low', 'medium', 'high', 'urgent']),
 });
 
@@ -20,9 +20,12 @@ void maintenanceSchema;
 void ({} as MaintenanceFormValues);
 
 export function MaintenancePage() {
-  const [status, setStatus] = useState<'all' | 'open' | 'in_progress' | 'resolved' | 'closed'>('all');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'open' | 'in_progress' | 'resolved' | 'closed'>('all');
   const [propertyFilterId, setPropertyFilterId] = useState('');
-  const { data = [] } = useMaintenance(status, propertyFilterId);
+
+  const maintenanceQuery = useMaintenance(statusFilter, propertyFilterId);
+  const propertiesQuery = useProperties({ search: '', status: 'all', page: 1, pageSize: 200 });
+  const unitsQuery = useUnits(propertyFilterId);
   const createMutation = useCreateMaintenance();
   const [error, setError] = useState('');
 
