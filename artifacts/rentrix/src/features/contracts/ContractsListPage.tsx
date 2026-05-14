@@ -1,6 +1,6 @@
 import { Link } from '@tanstack/react-router';
 import { ChevronDown, ChevronUp, Download, Edit, Eye, FileText, Plus, Search, Trash2 } from 'lucide-react';
-import { Fragment, useMemo, useState } from 'react';
+import { Fragment, useMemo, useState, type ReactNode } from 'react';
 import { EmptyState } from '@/components/empty-state';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -13,7 +13,7 @@ import { contractStatusLabels, contractStatusValues, paymentCycleLabels } from '
 import { useContracts, useSoftDeleteContract } from './useContracts';
 import type { ContractListItem, ContractStatusFilter } from './services/contractService';
 
-const statusTone = { draft: 'gray', active: 'blue', expired: 'green', terminated: 'red' } as const;
+const statusTone = { draft: 'gray', active: 'green', expired: 'gold', terminated: 'red' } as const;
 const filterLabels: Record<ContractStatusFilter, string> = { all: 'الكل', draft: 'مسودة', active: 'نشط', expired: 'منتهي', terminated: 'ملغي' };
 
 function money(value: number) {
@@ -28,8 +28,18 @@ function getContractNumber(contract: ContractListItem) {
   return `#${contract.id.slice(0, 8)}`;
 }
 
+function normalizeSearchText(value: string) {
+  return value
+    .toLowerCase()
+    .replace(/[\u064B-\u065F\u0670\u06D6-\u06ED]/g, '')
+    .replace(/[أإآ]/g, 'ا')
+    .replace(/ى/g, 'ي')
+    .replace(/[٠-٩]/g, (digit) => String(digit.charCodeAt(0) - 0x0660))
+    .replace(/[۰-۹]/g, (digit) => String(digit.charCodeAt(0) - 0x06f0));
+}
+
 function getSearchText(contract: ContractListItem) {
-  return [contract.id, getContractNumber(contract), contract.people?.full_name, contract.units?.unit_number, contract.properties?.title].filter(Boolean).join(' ').toLowerCase();
+  return normalizeSearchText([contract.id, getContractNumber(contract), contract.people?.full_name, contract.units?.unit_number, contract.properties?.title].filter(Boolean).join(' '));
 }
 
 function escapeCsvCell(value: string | number | null | undefined) {
@@ -64,7 +74,7 @@ function exportContractsCsv(contracts: ContractListItem[]) {
   URL.revokeObjectURL(url);
 }
 
-function DetailBox({ label, children }: { label: string; children: React.ReactNode }) {
+function DetailBox({ label, children }: { label: string; children: ReactNode }) {
   return (
     <div className="rounded-2xl border border-border bg-background p-4">
       <p className="mb-2 text-xs font-black text-muted-foreground">{label}</p>
@@ -81,7 +91,7 @@ export function ContractsListPage() {
   const contractsQuery = useContracts(params);
   const deleteMutation = useSoftDeleteContract();
   const filters: ContractStatusFilter[] = ['all', ...contractStatusValues];
-  const normalizedSearch = searchTerm.trim().toLowerCase();
+  const normalizedSearch = normalizeSearchText(searchTerm.trim());
   const filteredContracts = useMemo(() => {
     const contracts = contractsQuery.data ?? [];
     if (!normalizedSearch) return contracts;
@@ -154,9 +164,14 @@ export function ContractsListPage() {
                   const isExpanded = expandedId === contract.id;
                   return (
                     <Fragment key={contract.id}>
-                      <TableRow className="cursor-pointer" onClick={() => setExpandedId((current) => (current === contract.id ? null : contract.id))}>
+                      <TableRow>
                         <TableCell>
-                          <Button variant="ghost" className="min-h-9 px-3" aria-label={isExpanded ? 'إخفاء تفاصيل العقد' : 'عرض تفاصيل العقد'}>
+                          <Button
+                            variant="ghost"
+                            className="min-h-9 px-3"
+                            aria-label={isExpanded ? 'إخفاء تفاصيل العقد' : 'عرض تفاصيل العقد'}
+                            onClick={() => setExpandedId((current) => (current === contract.id ? null : contract.id))}
+                          >
                             {isExpanded ? <ChevronUp className="size-4" /> : <ChevronDown className="size-4" />}
                           </Button>
                         </TableCell>
