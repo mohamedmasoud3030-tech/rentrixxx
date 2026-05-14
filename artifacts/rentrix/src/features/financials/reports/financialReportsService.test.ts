@@ -9,7 +9,7 @@ vi.mock('@/integrations/supabase/client', () => ({
 }));
 
 type QueryLogEntry = { table: string; method: string; args: unknown[] };
-type TableResponses = Partial<Record<'invoices' | 'payments' | 'contracts' | 'expenses', unknown[]>>;
+type TableResponses = Partial<Record<'invoices' | 'payments' | 'contracts' | 'expenses' | 'properties', unknown[]>>;
 
 function createQueryBuilder(table: string, responses: TableResponses, log: QueryLogEntry[]) {
   const builder = {
@@ -138,6 +138,85 @@ describe('financialReportsService aggregation helpers', () => {
     ])).toEqual({ totalOutstanding: 60, invoicesCount: 1 });
   });
 
+
+  it('groups daily collections by payment date and payment method with safe numeric totals', async () => {
+    const { summarizeDailyCollectionReport } = await import('./financialReportsService');
+
+    expect(summarizeDailyCollectionReport([
+      { amount: '100' as unknown as number, payment_date: '2026-05-02', payment_method: 'cash' },
+      { amount: 50, payment_date: '2026-05-01', payment_method: 'bank_transfer' },
+      { amount: 'bad' as unknown as number, payment_date: '2026-05-01', payment_method: 'card' },
+      { amount: 25.5, payment_date: '2026-05-02', payment_method: 'check' },
+      { amount: 10, payment_date: '2026-05-02', payment_method: 'other' },
+    ])).toEqual({
+      rows: [
+        {
+          paymentDate: '2026-05-01',
+          totalPaid: 50,
+          paymentsCount: 2,
+          methodTotals: { cash: 0, bank_transfer: 50, card: 0, check: 0, other: 0 },
+        },
+        {
+          paymentDate: '2026-05-02',
+          totalPaid: 135.5,
+          paymentsCount: 3,
+          methodTotals: { cash: 100, bank_transfer: 0, card: 0, check: 25.5, other: 10 },
+        },
+      ],
+      grandTotal: 185.5,
+      paymentsCount: 5,
+      methodTotals: { cash: 100, bank_transfer: 50, card: 0, check: 25.5, other: 10 },
+    });
+  });
+
+  it('builds a financial period summary without dashboard-only metrics or accounting net profit', async () => {
+    const { summarizeFinancialPeriodSummaryReport } = await import('./financialReportsService');
+
+    expect(summarizeFinancialPeriodSummaryReport({
+      invoiceTotals: { totalAmount: 700, totalPaid: 0, totalOutstanding: 225, invoicesCount: 4 },
+      paymentTotals: { totalPaid: '300.75' as unknown as number, paymentsCount: 3 },
+      outstandingBalance: { totalOutstanding: 225, invoicesCount: 2 },
+      expenseTotals: { totalExpenses: '125.25' as unknown as number, expensesCount: 5 },
+    })).toEqual({
+      invoiced: 700,
+      paid: 300.75,
+      outstanding: 225,
+      expenses: 125.25,
+      netCash: 175.5,
+      invoicesCount: 4,
+      paymentsCount: 3,
+      expensesCount: 5,
+    });
+  });
+
+  it('groups expenses by category and property using safe numeric totals', async () => {
+    const { summarizeExpenseBreakdownReport } = await import('./financialReportsService');
+    const properties = new Map([
+      ['property_1', { id: 'property_1', title: 'Building A' }],
+      ['property_2', { id: 'property_2', title: 'Building B' }],
+    ]);
+
+    expect(summarizeExpenseBreakdownReport([
+      { amount: '80' as unknown as number, category: 'صيانة', property_id: 'property_1' },
+      { amount: 20, category: 'صيانة', property_id: 'property_1' },
+      { amount: 15.5, category: 'مرافق', property_id: 'property_2' },
+      { amount: Number.NaN, category: 'أخرى', property_id: 'property_3' },
+    ], properties)).toEqual({
+      totalExpenses: 115.5,
+      expensesCount: 4,
+      byCategory: [
+        { category: 'أخرى', total: 0, count: 1 },
+        { category: 'صيانة', total: 100, count: 2 },
+        { category: 'مرافق', total: 15.5, count: 1 },
+      ],
+      byProperty: [
+        { propertyId: 'property_1', propertyTitle: 'Building A', total: 100, count: 2 },
+        { propertyId: 'property_2', propertyTitle: 'Building B', total: 15.5, count: 1 },
+        { propertyId: 'property_3', propertyTitle: null, total: 0, count: 1 },
+      ],
+    });
+  });
+
   it('builds a stable collection summary from independent report totals', async () => {
     const { summarizeCollectionReport } = await import('./financialReportsService');
 
@@ -155,12 +234,180 @@ describe('financialReportsService aggregation helpers', () => {
       expensesTotal: 0,
     });
   });
+
 });
 
 describe('financialReportsService Supabase queries', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
+  it('loads daily collection with date, deleted_at, and context filters while preserving payment method totals', async () => {
+    const log = mockSupabaseTables({
+      payments: [
+        { id: 'payment_1', invoice_id: 'invoice_1', amount: 100, payment_date: '2026-05-14', payment_method: 'cash', deleted_at: null },
+        { id: 'payment_2', invoice_id: 'invoice_2', amount: 75, payment_date: '2026-05-14', payment_method: 'card', deleted_at: null },
+        { id: 'payment_deleted', invoice_id: 'invoice_1', amount: 200, payment_date: '2026-05-14', payment_method: 'cash', deleted_at: '2026-05-15' },
+        { id: 'payment_outside_range', invoice_id: 'invoice_1', amount: 300, payment_date: '2026-06-01', payment_method: 'check', deleted_at: null },
+      ],
+      invoices: [
+        { id: 'invoice_1', contract_id: 'contract_1', deleted_at: null },
+        { id: 'invoice_2', contract_id: 'contract_2', deleted_at: null },
+      ],
+      contracts: [
+        { id: 'contract_1', property_id: 'property_1', tenant_id: 'tenant_1' },
+        { id: 'contract_2', property_id: 'property_2', tenant_id: 'tenant_2' },
+      ],
+    });
+    const { getDailyCollectionReport } = await import('./financialReportsService');
+
+    await expect(getDailyCollectionReport({
+      dateFrom: '2026-05-01',
+      dateTo: '2026-05-31',
+      propertyId: 'property_1',
+      tenantId: 'tenant_1',
+    })).resolves.toEqual({
+      rows: [{
+        paymentDate: '2026-05-14',
+        totalPaid: 100,
+        paymentsCount: 1,
+        methodTotals: { cash: 100, bank_transfer: 0, card: 0, check: 0, other: 0 },
+      }],
+      grandTotal: 100,
+      paymentsCount: 1,
+      methodTotals: { cash: 100, bank_transfer: 0, card: 0, check: 0, other: 0 },
+    });
+
+    expect(log).toEqual(expect.arrayContaining([
+      { table: 'payments', method: 'is', args: ['deleted_at', null] },
+      { table: 'payments', method: 'gte', args: ['payment_date', '2026-05-01'] },
+      { table: 'payments', method: 'lte', args: ['payment_date', '2026-05-31'] },
+      { table: 'invoices', method: 'is', args: ['deleted_at', null] },
+      { table: 'contracts', method: 'is', args: ['deleted_at', null] },
+    ]));
+  });
+
+  it('loads a formal financial period summary from current invoices, payments, and expenses', async () => {
+    const log = mockSupabaseTables({
+      invoices: [
+        {
+          id: 'inv_1',
+          contract_id: 'contract_1',
+          issue_date: '2026-05-05',
+          due_date: '2026-05-31',
+          amount: 400,
+          paid_amount: 150,
+          status: 'partial',
+          deleted_at: null,
+          contracts: { id: 'contract_1', property_id: 'property_1', tenant_id: 'tenant_1' },
+        },
+        {
+          id: 'inv_deleted',
+          contract_id: 'contract_1',
+          issue_date: '2026-05-10',
+          due_date: '2026-05-31',
+          amount: 900,
+          paid_amount: 0,
+          status: 'issued',
+          deleted_at: '2026-05-11',
+          contracts: { id: 'contract_1', property_id: 'property_1', tenant_id: 'tenant_1' },
+        },
+      ],
+      payments: [{ id: 'payment_1', invoice_id: 'inv_1', amount: 150, payment_date: '2026-05-06', payment_method: 'bank_transfer', deleted_at: null }],
+      contracts: [{ id: 'contract_1', property_id: 'property_1', tenant_id: 'tenant_1' }],
+      expenses: [
+        { id: 'expense_1', property_id: 'property_1', category: 'صيانة', amount: 35, expense_date: '2026-05-07', deleted_at: null },
+        { id: 'expense_deleted', property_id: 'property_1', category: 'صيانة', amount: 100, expense_date: '2026-05-07', deleted_at: '2026-05-08' },
+      ],
+    });
+    const { getFinancialPeriodSummaryReport } = await import('./financialReportsService');
+
+    await expect(getFinancialPeriodSummaryReport({
+      dateFrom: '2026-05-01',
+      dateTo: '2026-05-31',
+      propertyId: 'property_1',
+      tenantId: 'tenant_1',
+    })).resolves.toEqual({
+      invoiced: 400,
+      paid: 150,
+      outstanding: 250,
+      expenses: 35,
+      netCash: 115,
+      invoicesCount: 1,
+      paymentsCount: 1,
+      expensesCount: 1,
+    });
+
+    expect(log).toEqual(expect.arrayContaining([
+      { table: 'expenses', method: 'is', args: ['deleted_at', null] },
+      { table: 'expenses', method: 'gte', args: ['expense_date', '2026-05-01'] },
+      { table: 'expenses', method: 'lte', args: ['expense_date', '2026-05-31'] },
+      { table: 'expenses', method: 'eq', args: ['property_id', 'property_1'] },
+    ]));
+  });
+
+  it('loads expense breakdowns by category and property with optional category filtering', async () => {
+    const log = mockSupabaseTables({
+      expenses: [
+        { id: 'expense_1', property_id: 'property_1', category: 'صيانة', amount: 25, expense_date: '2026-05-02', deleted_at: null },
+        { id: 'expense_2', property_id: 'property_2', category: 'صيانة', amount: '40' as unknown as number, expense_date: '2026-05-03', deleted_at: null },
+        { id: 'expense_other_category', property_id: 'property_2', category: 'مرافق', amount: 100, expense_date: '2026-05-04', deleted_at: null },
+        { id: 'expense_outside_range', property_id: 'property_1', category: 'صيانة', amount: 100, expense_date: '2026-06-01', deleted_at: null },
+        { id: 'expense_deleted', property_id: 'property_1', category: 'صيانة', amount: 100, expense_date: '2026-05-05', deleted_at: '2026-05-06' },
+      ],
+      properties: [
+        { id: 'property_1', title: 'Building A' },
+        { id: 'property_2', title: 'Building B' },
+      ],
+    });
+    const { getExpenseBreakdownReport } = await import('./financialReportsService');
+
+    await expect(getExpenseBreakdownReport({
+      dateFrom: '2026-05-01',
+      dateTo: '2026-05-31',
+      category: 'صيانة',
+    })).resolves.toEqual({
+      totalExpenses: 65,
+      expensesCount: 2,
+      byCategory: [{ category: 'صيانة', total: 65, count: 2 }],
+      byProperty: [
+        { propertyId: 'property_1', propertyTitle: 'Building A', total: 25, count: 1 },
+        { propertyId: 'property_2', propertyTitle: 'Building B', total: 40, count: 1 },
+      ],
+    });
+
+    expect(log).toEqual(expect.arrayContaining([
+      { table: 'expenses', method: 'is', args: ['deleted_at', null] },
+      { table: 'expenses', method: 'gte', args: ['expense_date', '2026-05-01'] },
+      { table: 'expenses', method: 'lte', args: ['expense_date', '2026-05-31'] },
+      { table: 'expenses', method: 'eq', args: ['category', 'صيانة'] },
+      { table: 'properties', method: 'in', args: ['id', ['property_1', 'property_2']] },
+      { table: 'properties', method: 'is', args: ['deleted_at', null] },
+    ]));
+  });
+
+  it('omits property breakdown when expense breakdown is scoped to one property', async () => {
+    const log = mockSupabaseTables({
+      expenses: [{ id: 'expense_1', property_id: 'property_1', category: 'صيانة', amount: 25, expense_date: '2026-05-02', deleted_at: null }],
+    });
+    const { getExpenseBreakdownReport } = await import('./financialReportsService');
+
+    await expect(getExpenseBreakdownReport({
+      dateFrom: '2026-05-01',
+      dateTo: '2026-05-31',
+      propertyId: 'property_1',
+    })).resolves.toEqual({
+      totalExpenses: 25,
+      expensesCount: 1,
+      byCategory: [{ category: 'صيانة', total: 25, count: 1 }],
+      byProperty: [],
+    });
+
+    expect(log).toEqual(expect.arrayContaining([
+      { table: 'expenses', method: 'eq', args: ['property_id', 'property_1'] },
+    ]));
+    expect(log.some((entry) => entry.table === 'properties')).toBe(false);
+  });
+
 
   it('queries invoice totals with deleted_at, date range, status, and contract filters', async () => {
     const log = mockSupabaseTables({

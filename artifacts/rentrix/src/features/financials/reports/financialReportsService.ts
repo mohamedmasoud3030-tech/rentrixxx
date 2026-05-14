@@ -1,5 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
-import type { Contract, Expense, Invoice, Payment } from '@/types/domain';
+import type { Contract, Expense, Invoice, Payment, Property } from '@/types/domain';
 import { getSafeRemainingAmount, sumFinancialValues, toFinancialNumber } from '../financialMath';
 
 export type FinancialReportStatus = Invoice['status'] | 'all';
@@ -44,12 +44,64 @@ export type CollectionSummaryReport = {
   expensesTotal: number;
 };
 
+export type PaymentMethodTotals = Record<Payment['payment_method'], number>;
+
+export type DailyCollectionReportRow = {
+  paymentDate: string;
+  totalPaid: number;
+  paymentsCount: number;
+  methodTotals: PaymentMethodTotals;
+};
+
+export type DailyCollectionReport = {
+  rows: DailyCollectionReportRow[];
+  grandTotal: number;
+  paymentsCount: number;
+  methodTotals: PaymentMethodTotals;
+};
+
+export type FinancialPeriodSummaryReport = {
+  invoiced: number;
+  paid: number;
+  outstanding: number;
+  expenses: number;
+  netCash: number;
+  invoicesCount: number;
+  paymentsCount: number;
+  expensesCount: number;
+};
+
+export type ExpenseBreakdownReportFilters = FinancialReportFilters & {
+  category?: string;
+};
+
+export type ExpenseBreakdownCategoryRow = {
+  category: string;
+  total: number;
+  count: number;
+};
+
+export type ExpenseBreakdownPropertyRow = {
+  propertyId: string;
+  propertyTitle: string | null;
+  total: number;
+  count: number;
+};
+
+export type ExpenseBreakdownReport = {
+  totalExpenses: number;
+  expensesCount: number;
+  byCategory: ExpenseBreakdownCategoryRow[];
+  byProperty: ExpenseBreakdownPropertyRow[];
+};
+
 type ContractContext = Pick<Contract, 'id' | 'property_id' | 'tenant_id'>;
 type InvoiceReportRow = Pick<Invoice, 'id' | 'contract_id' | 'issue_date' | 'due_date' | 'amount' | 'paid_amount' | 'status' | 'deleted_at'> & {
   contracts?: ContractContext | null;
 };
-type PaymentReportRow = Pick<Payment, 'id' | 'invoice_id' | 'amount' | 'payment_date' | 'deleted_at'>;
-type ExpenseReportRow = Pick<Expense, 'id' | 'property_id' | 'amount' | 'expense_date' | 'deleted_at'>;
+type PaymentReportRow = Pick<Payment, 'id' | 'invoice_id' | 'amount' | 'payment_date' | 'payment_method' | 'deleted_at'>;
+type ExpenseReportRow = Pick<Expense, 'id' | 'property_id' | 'category' | 'amount' | 'expense_date' | 'deleted_at'>;
+type PropertyContext = Pick<Property, 'id' | 'title'>;
 
 type PaymentWithInvoiceContext = PaymentReportRow & {
   invoice: Pick<InvoiceReportRow, 'id' | 'contract_id'> | null;
@@ -64,8 +116,8 @@ type PaymentWithInvoiceContext = PaymentReportRow & {
 // views/RPCs or typed nested relational selects once those relationships are
 // confirmed.
 const invoiceReportSelect = 'id, contract_id, issue_date, due_date, amount, paid_amount, status, deleted_at, contracts:contract_id(id, property_id, tenant_id)';
-const paymentReportSelect = 'id, invoice_id, amount, payment_date, deleted_at';
-const expenseReportSelect = 'id, property_id, amount, expense_date, deleted_at';
+const paymentReportSelect = 'id, invoice_id, amount, payment_date, payment_method, deleted_at';
+const expenseReportSelect = 'id, property_id, category, amount, expense_date, deleted_at';
 
 function hasStatusFilter(status: FinancialReportFilters['status']): status is Invoice['status'] {
   return Boolean(status && status !== 'all');
@@ -90,6 +142,14 @@ function matchesPaymentContext(payment: PaymentWithInvoiceContext, filters: Fina
   return true;
 }
 
+function matchesExpenseFilters(expense: ExpenseReportRow, filters: ExpenseBreakdownReportFilters) {
+  if (expense.deleted_at) return false;
+  if (!isWithinDateRange(expense.expense_date, filters)) return false;
+  if (filters.propertyId && expense.property_id !== filters.propertyId) return false;
+  if (filters.category && expense.category !== filters.category) return false;
+  return true;
+}
+
 export function filterInvoicesForReport(invoices: InvoiceReportRow[], filters: FinancialReportFilters) {
   return invoices.filter((invoice) => {
     // These guards duplicate the Supabase filters on purpose for direct helper
@@ -99,6 +159,18 @@ export function filterInvoicesForReport(invoices: InvoiceReportRow[], filters: F
     if (hasStatusFilter(filters.status) && invoice.status !== filters.status) return false;
     return matchesInvoiceContext(invoice, filters);
   });
+}
+
+export function filterPaymentsForReport(payments: PaymentWithInvoiceContext[], filters: FinancialReportFilters) {
+  return payments.filter((payment) => {
+    if (payment.deleted_at) return false;
+    if (!isWithinDateRange(payment.payment_date, filters)) return false;
+    return matchesPaymentContext(payment, filters);
+  });
+}
+
+export function filterExpensesForReport(expenses: ExpenseReportRow[], filters: ExpenseBreakdownReportFilters) {
+  return expenses.filter((expense) => matchesExpenseFilters(expense, filters));
 }
 
 export function summarizeInvoiceTotals(invoices: Pick<InvoiceReportRow, 'amount' | 'paid_amount'>[]): InvoiceTotalsReport {
@@ -145,6 +217,116 @@ export function summarizeCollectionReport(params: {
     receiptsCount: params.paymentTotals.paymentsCount,
     invoicesCount: params.invoiceTotals.invoicesCount,
     expensesTotal: toFinancialNumber(params.expenseTotals.totalExpenses),
+  };
+}
+
+
+function createEmptyPaymentMethodTotals(): PaymentMethodTotals {
+  return {
+    cash: 0,
+    bank_transfer: 0,
+    card: 0,
+    check: 0,
+    other: 0,
+  };
+}
+
+function addPaymentAmountByMethod(totals: PaymentMethodTotals, method: Payment['payment_method'], amount: unknown) {
+  totals[method] = toFinancialNumber(totals[method]) + toFinancialNumber(amount);
+}
+
+export function summarizeDailyCollectionReport(payments: Pick<PaymentReportRow, 'amount' | 'payment_date' | 'payment_method'>[]): DailyCollectionReport {
+  const grandMethodTotals = createEmptyPaymentMethodTotals();
+  const rowsByDate = new Map<string, DailyCollectionReportRow>();
+
+  for (const payment of payments) {
+    const paymentDate = payment.payment_date;
+    if (!paymentDate) continue;
+
+    const amount = toFinancialNumber(payment.amount);
+    const row = rowsByDate.get(paymentDate) ?? {
+      paymentDate,
+      totalPaid: 0,
+      paymentsCount: 0,
+      methodTotals: createEmptyPaymentMethodTotals(),
+    };
+
+    row.totalPaid = toFinancialNumber(row.totalPaid) + amount;
+    row.paymentsCount += 1;
+    addPaymentAmountByMethod(row.methodTotals, payment.payment_method, amount);
+    rowsByDate.set(paymentDate, row);
+
+    addPaymentAmountByMethod(grandMethodTotals, payment.payment_method, amount);
+  }
+
+  const rows = Array.from(rowsByDate.values()).sort((a, b) => a.paymentDate.localeCompare(b.paymentDate));
+  return {
+    rows,
+    grandTotal: sumFinancialValues(rows.map((row) => row.totalPaid)),
+    paymentsCount: rows.reduce((count, row) => count + row.paymentsCount, 0),
+    methodTotals: grandMethodTotals,
+  };
+}
+
+export function summarizeFinancialPeriodSummaryReport(params: {
+  invoiceTotals: InvoiceTotalsReport;
+  paymentTotals: PaymentTotalsReport;
+  outstandingBalance: OutstandingBalanceReport;
+  expenseTotals: ExpenseTotalsReport;
+}): FinancialPeriodSummaryReport {
+  const paid = toFinancialNumber(params.paymentTotals.totalPaid);
+  const expenses = toFinancialNumber(params.expenseTotals.totalExpenses);
+
+  return {
+    invoiced: toFinancialNumber(params.invoiceTotals.totalAmount),
+    paid,
+    outstanding: toFinancialNumber(params.outstandingBalance.totalOutstanding),
+    expenses,
+    netCash: paid - expenses,
+    invoicesCount: params.invoiceTotals.invoicesCount,
+    paymentsCount: params.paymentTotals.paymentsCount,
+    expensesCount: params.expenseTotals.expensesCount,
+  };
+}
+
+export function summarizeExpenseBreakdownReport(
+  expenses: Pick<ExpenseReportRow, 'amount' | 'category' | 'property_id'>[],
+  propertiesById: Map<string, PropertyContext> = new Map(),
+  includePropertyBreakdown = true,
+): ExpenseBreakdownReport {
+  const categoryRowsByKey = new Map<string, ExpenseBreakdownCategoryRow>();
+  const propertyRowsById = new Map<string, ExpenseBreakdownPropertyRow>();
+
+  for (const expense of expenses) {
+    const amount = toFinancialNumber(expense.amount);
+    const category = expense.category?.trim() || 'غير مصنف';
+    const categoryRow = categoryRowsByKey.get(category) ?? { category, total: 0, count: 0 };
+    categoryRow.total = toFinancialNumber(categoryRow.total) + amount;
+    categoryRow.count += 1;
+    categoryRowsByKey.set(category, categoryRow);
+
+    if (includePropertyBreakdown) {
+      const property = propertiesById.get(expense.property_id);
+      const propertyRow = propertyRowsById.get(expense.property_id) ?? {
+        propertyId: expense.property_id,
+        propertyTitle: property?.title ?? null,
+        total: 0,
+        count: 0,
+      };
+      propertyRow.total = toFinancialNumber(propertyRow.total) + amount;
+      propertyRow.count += 1;
+      propertyRowsById.set(expense.property_id, propertyRow);
+    }
+  }
+
+  const byCategory = Array.from(categoryRowsByKey.values()).sort((a, b) => a.category.localeCompare(b.category, 'ar'));
+  const byProperty = Array.from(propertyRowsById.values()).sort((a, b) => (a.propertyTitle ?? a.propertyId).localeCompare(b.propertyTitle ?? b.propertyId, 'ar'));
+
+  return {
+    totalExpenses: sumFinancialValues(expenses.map((expense) => expense.amount)),
+    expensesCount: expenses.length,
+    byCategory,
+    byProperty,
   };
 }
 
@@ -219,10 +401,10 @@ async function loadPayments(filters: FinancialReportFilters): Promise<PaymentWit
   if (error) throw error;
 
   const contexts = await loadPaymentContexts(data ?? []);
-  return contexts.filter((payment) => matchesPaymentContext(payment, filters));
+  return filterPaymentsForReport(contexts, filters);
 }
 
-async function loadExpenses(filters: FinancialReportFilters): Promise<ExpenseReportRow[]> {
+async function loadExpenses(filters: ExpenseBreakdownReportFilters): Promise<ExpenseReportRow[]> {
   let query = supabase
     .from('expenses')
     .select(expenseReportSelect)
@@ -231,11 +413,12 @@ async function loadExpenses(filters: FinancialReportFilters): Promise<ExpenseRep
     .lte('expense_date', filters.dateTo);
 
   if (filters.propertyId) query = query.eq('property_id', filters.propertyId);
+  if (filters.category) query = query.eq('category', filters.category);
 
   const { data, error } = await query.returns<ExpenseReportRow[]>();
   if (error) throw error;
 
-  return data ?? [];
+  return filterExpensesForReport(data ?? [], filters);
 }
 
 export async function getInvoiceTotalsReport(filters: FinancialReportFilters): Promise<InvoiceTotalsReport> {
@@ -273,4 +456,48 @@ export async function getCollectionSummaryReport(filters: FinancialReportFilters
     outstandingBalance: summarizeOutstandingBalance(invoices),
     expenseTotals: summarizeExpenseTotals(expenses),
   });
+}
+
+async function loadPropertiesById(propertyIds: string[]): Promise<Map<string, PropertyContext>> {
+  if (propertyIds.length === 0) return new Map();
+
+  const { data, error } = await supabase
+    .from('properties')
+    .select('id, title')
+    .in('id', propertyIds)
+    .is('deleted_at', null)
+    .returns<PropertyContext[]>();
+  if (error) throw error;
+
+  return new Map((data ?? []).map((property) => [property.id, property]));
+}
+
+export async function getDailyCollectionReport(filters: FinancialReportFilters): Promise<DailyCollectionReport> {
+  const payments = await loadPayments(filters);
+  return summarizeDailyCollectionReport(payments);
+}
+
+export async function getFinancialPeriodSummaryReport(filters: FinancialReportFilters): Promise<FinancialPeriodSummaryReport> {
+  const [invoices, payments, expenses] = await Promise.all([
+    loadInvoices(filters),
+    loadPayments(filters),
+    loadExpenses(filters),
+  ]);
+
+  return summarizeFinancialPeriodSummaryReport({
+    invoiceTotals: summarizeInvoiceTotals(invoices),
+    paymentTotals: summarizePaymentTotals(payments),
+    outstandingBalance: summarizeOutstandingBalance(invoices),
+    expenseTotals: summarizeExpenseTotals(expenses),
+  });
+}
+
+export async function getExpenseBreakdownReport(filters: ExpenseBreakdownReportFilters): Promise<ExpenseBreakdownReport> {
+  const expenses = await loadExpenses(filters);
+  const includePropertyBreakdown = !filters.propertyId;
+  const propertiesById = includePropertyBreakdown
+    ? await loadPropertiesById(uniqueStrings(expenses.map((expense) => expense.property_id)))
+    : new Map<string, PropertyContext>();
+
+  return summarizeExpenseBreakdownReport(expenses, propertiesById, includePropertyBreakdown);
 }
