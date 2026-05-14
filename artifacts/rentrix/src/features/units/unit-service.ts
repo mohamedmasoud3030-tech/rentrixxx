@@ -6,6 +6,19 @@ import type { UnitPayload } from './unit-schema';
 type UnitInsert = Database['public']['Tables']['units']['Insert'];
 type UnitUpdate = Database['public']['Tables']['units']['Update'];
 
+
+export async function listUnits(): Promise<Unit[]> {
+  const { data, error } = await supabase
+    .from('units')
+    .select('*')
+    .is('deleted_at', null)
+    .order('property_id', { ascending: true })
+    .order('unit_number', { ascending: true })
+    .returns<Unit[]>();
+  if (error) throw error;
+  return data ?? [];
+}
+
 export async function listUnitsByProperty(propertyId: string): Promise<Unit[]> {
   const { data, error } = await supabase
     .from('units')

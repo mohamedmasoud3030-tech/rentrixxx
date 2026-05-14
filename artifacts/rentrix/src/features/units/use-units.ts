@@ -2,12 +2,20 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import type { Unit } from '@/types/domain';
 import type { UnitPayload } from './unit-schema';
-import { createUnit, listUnitsByProperty, softDeleteUnit, updateUnit } from './unit-service';
+import { createUnit, listUnits, listUnitsByProperty, softDeleteUnit, updateUnit } from './unit-service';
 
 export const unitKeys = {
   all: ['units'] as const,
+  list: () => [...unitKeys.all, 'list'] as const,
   property: (propertyId: string) => [...unitKeys.all, 'property', propertyId] as const,
 };
+
+export function useAllUnits() {
+  return useQuery({
+    queryKey: unitKeys.list(),
+    queryFn: listUnits,
+  });
+}
 
 export function useUnits(propertyId: string) {
   return useQuery({
@@ -22,7 +30,7 @@ export function useCreateUnit(propertyId: string) {
   return useMutation({
     mutationFn: (payload: UnitPayload) => createUnit(propertyId, payload),
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: unitKeys.property(propertyId) });
+      await queryClient.invalidateQueries({ queryKey: unitKeys.all });
       toast.success('تم إنشاء الوحدة بنجاح');
     },
     onError: (error) => toast.error(error instanceof Error ? error.message : 'تعذر إنشاء الوحدة'),
@@ -34,7 +42,7 @@ export function useUpdateUnit(propertyId: string) {
   return useMutation({
     mutationFn: ({ unitId, payload }: { unitId: string; payload: UnitPayload }) => updateUnit(unitId, payload),
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: unitKeys.property(propertyId) });
+      await queryClient.invalidateQueries({ queryKey: unitKeys.all });
       toast.success('تم تحديث الوحدة بنجاح');
     },
     onError: (error) => toast.error(error instanceof Error ? error.message : 'تعذر تحديث الوحدة'),
@@ -57,7 +65,7 @@ export function useSoftDeleteUnit(propertyId: string) {
     },
     onSuccess: () => toast.success('تم حذف الوحدة أرشيفياً'),
     onSettled: async () => {
-      await queryClient.invalidateQueries({ queryKey: unitKeys.property(propertyId) });
+      await queryClient.invalidateQueries({ queryKey: unitKeys.all });
     },
   });
 }
