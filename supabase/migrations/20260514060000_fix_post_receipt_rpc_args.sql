@@ -1,4 +1,6 @@
-create or replace function public.post_receipt_atomic(
+drop function if exists public.post_receipt_atomic(uuid, numeric, public.payment_method, date, text);
+
+create function public.post_receipt_atomic(
   invoice_id uuid,
   amount numeric,
   method public.payment_method,
