@@ -104,13 +104,12 @@ export function FinancialsPage() {
     isError: isReceiptsError,
     error: receiptsError,
   } = useReceipts({ limit: 10 });
-  const selectedReceiptIsCurrent = Boolean(selectedReceiptId) && receipts.some((receipt) => receipt.id === selectedReceiptId);
   const {
     data: receiptDetail,
     isLoading: isReceiptDetailLoading,
     isError: isReceiptDetailError,
     error: receiptDetailError,
-  } = useReceipt(selectedReceiptIsCurrent ? selectedReceiptId : '');
+  } = useReceipt(selectedReceiptId);
   const { data: properties } = useProperties({ page: 1, pageSize: 100, search: '', status: 'all' });
   const [filters] = useState({ propertyId: '', category: '', from: '', to: '' });
   const { data: expenses = [] } = useExpenses(filters);
@@ -418,10 +417,9 @@ export function FinancialsPage() {
         <div className="rounded-2xl border p-4">
           <h4 className="font-black">تفاصيل الإيصال</h4>
           {!selectedReceiptId ? <p className="mt-3 rounded-xl border border-dashed p-4 text-center text-sm text-muted-foreground">اختر إيصالاً لعرض تفاصيله</p> : null}
-          {selectedReceiptId && !isReceiptsLoading && !isReceiptsError && !selectedReceiptIsCurrent ? <p className="mt-3 rounded-xl border border-dashed p-4 text-center text-sm text-muted-foreground">لم يعد هذا الإيصال ضمن أحدث الإيصالات. اختر إيصالاً آخر من القائمة.</p> : null}
-          {selectedReceiptIsCurrent && isReceiptDetailLoading ? <p className="mt-3 rounded-xl border border-dashed p-4 text-center text-sm text-muted-foreground">جارٍ تحميل تفاصيل الإيصال...</p> : null}
-          {selectedReceiptIsCurrent && isReceiptDetailError ? <p className="mt-3 rounded-xl border border-destructive/40 bg-destructive/10 p-4 text-center text-sm text-destructive">{getErrorMessage(receiptDetailError, 'تعذر تحميل تفاصيل الإيصال')}</p> : null}
-          {selectedReceiptIsCurrent && receiptDetail ? (
+          {selectedReceiptId && isReceiptDetailLoading ? <p className="mt-3 rounded-xl border border-dashed p-4 text-center text-sm text-muted-foreground">جارٍ تحميل تفاصيل الإيصال...</p> : null}
+          {selectedReceiptId && isReceiptDetailError ? <p className="mt-3 rounded-xl border border-destructive/40 bg-destructive/10 p-4 text-center text-sm text-destructive">{getErrorMessage(receiptDetailError, 'تعذر تحميل تفاصيل الإيصال')}</p> : null}
+          {receiptDetail ? (
             <div className="mt-3 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
               <div className="rounded-xl bg-muted/30 p-3">
                 <p className="text-xs text-muted-foreground">رقم الإيصال</p>

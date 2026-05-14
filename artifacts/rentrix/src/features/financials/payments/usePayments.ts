@@ -8,11 +8,10 @@ export function usePostPayment() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (payload: PaymentPayload) => postReceiptAtomic(payload),
-    onSuccess: async (_result, variables) => {
+    onSuccess: async () => {
       await Promise.all([
-        queryClient.invalidateQueries({ queryKey: invoiceKeys.lists() }),
-        queryClient.invalidateQueries({ queryKey: invoiceKeys.detail(variables.invoice_id) }),
-        queryClient.invalidateQueries({ queryKey: receiptKeys.lists() }),
+        queryClient.invalidateQueries({ queryKey: invoiceKeys.all }),
+        queryClient.invalidateQueries({ queryKey: receiptKeys.all }),
       ]);
       toast.success('تم تسجيل الدفعة بنجاح');
     },
