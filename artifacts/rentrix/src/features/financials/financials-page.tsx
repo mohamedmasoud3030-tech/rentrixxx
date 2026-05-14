@@ -14,8 +14,7 @@ import { summarizeInvoices, type InvoiceStatusFilter } from './invoices/invoiceS
 import { useGenerateInvoices, useInvoice, useInvoices } from './invoices/useInvoices';
 import { usePostPayment } from './payments/usePayments';
 import { useReceipt, useReceipts } from './receipts/useReceipts';
-import type { ArrearsSummaryReport } from './reports/financialReportsService';
-import { useArrearsSummaryReport, useCollectionSummaryReport } from './reports/useFinancialReports';
+import { useCollectionSummaryReport } from './reports/useFinancialReports';
 
 const expenseSchema = z.object({
   property_id: z.string().uuid('اختر العقار'),
@@ -89,53 +88,6 @@ function getCurrentMonthReportRange() {
   };
 }
 
-type ArrearsSummaryVerificationCardProps = {
-  asOf: string;
-  summary: ArrearsSummaryReport | undefined;
-  isLoading: boolean;
-  isError: boolean;
-  error: unknown;
-};
-
-function ArrearsSummaryVerificationCard({ asOf, summary, isLoading, isError, error }: ArrearsSummaryVerificationCardProps) {
-  return (
-    <div className="rounded-2xl border bg-muted/20 p-4">
-      <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h3 className="font-black">المتأخرات</h3>
-          <p className="text-xs text-muted-foreground">تحقق حسب تاريخ الاستحقاق حتى {formatDate(asOf)}.</p>
-        </div>
-      </div>
-      {isLoading ? <div className="mt-3 rounded-xl border border-dashed p-3 text-center text-sm text-muted-foreground">جارٍ تحميل ملخص المتأخرات...</div> : null}
-      {isError ? (
-        <div className="mt-3 rounded-xl border border-destructive/40 bg-destructive/10 p-3 text-center text-sm text-destructive">
-          {getErrorMessage(error, 'تعذر تحميل ملخص المتأخرات')}
-        </div>
-      ) : null}
-      {summary ? (
-        <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          <div className="rounded-xl border bg-background p-3">
-            <p className="text-xs text-muted-foreground">إجمالي المتأخر</p>
-            <p className="mt-1 font-black">{formatMoney(summary.totalOverdue)}</p>
-          </div>
-          <div className="rounded-xl border bg-background p-3">
-            <p className="text-xs text-muted-foreground">عدد الفواتير المتأخرة</p>
-            <p className="mt-1 font-black">{summary.overdueInvoiceCount}</p>
-          </div>
-          <div className="rounded-xl border bg-background p-3">
-            <p className="text-xs text-muted-foreground">أكثر من 90 يوم</p>
-            <p className="mt-1 font-black">{formatMoney(summary.over90Amount)}</p>
-          </div>
-          <div className="rounded-xl border bg-background p-3">
-            <p className="text-xs text-muted-foreground">عدد أكثر من 90 يوم</p>
-            <p className="mt-1 font-black">{summary.over90InvoiceCount}</p>
-          </div>
-        </div>
-      ) : null}
-    </div>
-  );
-}
-
 export function FinancialsPage() {
   const [status, setStatus] = useState<InvoiceStatusFilter>('unpaid');
   const [invoiceSearch, setInvoiceSearch] = useState('');
@@ -173,19 +125,12 @@ export function FinancialsPage() {
   const [filters] = useState({ propertyId: '', category: '', from: '', to: '' });
   const { data: expenses = [] } = useExpenses(filters);
   const reportFilters = useMemo(() => getCurrentMonthReportRange(), []);
-  const arrearsReportFilters = useMemo(() => ({ asOf: new Date().toISOString().slice(0, 10) }), []);
   const {
     data: collectionSummary,
     isLoading: isCollectionSummaryLoading,
     isError: isCollectionSummaryError,
     error: collectionSummaryError,
   } = useCollectionSummaryReport(reportFilters);
-  const {
-    data: arrearsSummary,
-    isLoading: isArrearsSummaryLoading,
-    isError: isArrearsSummaryError,
-    error: arrearsSummaryError,
-  } = useArrearsSummaryReport(arrearsReportFilters);
   const createExpense = useCreateExpense();
   const summary = useMemo(() => summarizeInvoices(invoices), [invoices]);
   const remaining = useMemo(
@@ -309,13 +254,6 @@ export function FinancialsPage() {
             </div>
           </div>
         ) : null}
-        <ArrearsSummaryVerificationCard
-          asOf={arrearsReportFilters.asOf}
-          summary={arrearsSummary}
-          isLoading={isArrearsSummaryLoading}
-          isError={isArrearsSummaryError}
-          error={arrearsSummaryError}
-        />
       </CardContent>
     </Card>
     <Card>

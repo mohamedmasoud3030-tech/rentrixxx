@@ -202,7 +202,10 @@ function isWithinDateRange(value: string | null | undefined, filters: Pick<Finan
   return value >= filters.dateFrom && value <= filters.dateTo;
 }
 
-function matchesInvoiceContext(invoice: Pick<InvoiceReportRow, 'contract_id' | 'contracts'>, filters: FinancialReportFilters) {
+function matchesInvoiceContext(
+  invoice: Pick<InvoiceReportRow, 'contract_id' | 'contracts'>,
+  filters: Pick<FinancialReportFilters, 'propertyId' | 'tenantId' | 'contractId'>,
+) {
   if (filters.contractId && invoice.contract_id !== filters.contractId) return false;
   if (filters.propertyId && invoice.contracts?.property_id !== filters.propertyId) return false;
   if (filters.tenantId && invoice.contracts?.tenant_id !== filters.tenantId) return false;
@@ -265,13 +268,6 @@ export function getAgingBucketKey(dueDate: string | null | undefined, asOf: stri
   return 'days_90_plus';
 }
 
-function matchesArrearsContext(invoice: Pick<InvoiceReportRow, 'contract_id' | 'contracts'>, filters: ArrearsReportFilters) {
-  if (filters.contractId && invoice.contract_id !== filters.contractId) return false;
-  if (filters.propertyId && invoice.contracts?.property_id !== filters.propertyId) return false;
-  if (filters.tenantId && invoice.contracts?.tenant_id !== filters.tenantId) return false;
-  return true;
-}
-
 function isReceivableInvoiceStatus(status: Invoice['status']) {
   return receivableInvoiceStatuses.includes(status);
 }
@@ -281,7 +277,7 @@ export function filterInvoicesForArrearsReport(invoices: InvoiceReportRow[], fil
     if (invoice.deleted_at) return false;
     if (!isReceivableInvoiceStatus(invoice.status)) return false;
     if (getSafeRemainingAmount(invoice.amount, invoice.paid_amount) <= 0) return false;
-    return matchesArrearsContext(invoice, filters);
+    return matchesInvoiceContext(invoice, filters);
   });
 }
 
