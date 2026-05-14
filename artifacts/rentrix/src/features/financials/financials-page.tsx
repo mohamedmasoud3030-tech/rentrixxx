@@ -32,9 +32,42 @@ export function FinancialsPage() {
   const [filters] = useState({ propertyId: '', category: '', from: '', to: '' });
   const { data: expenses = [] } = useExpenses(filters);
   const createExpense = useCreateExpense();
-  const [expensePropertyId, setExpensePropertyId] = useState('');
-  const [expenseError, setExpenseError] = useState('');
   const remaining = useMemo(() => (invoiceDetail ? invoiceDetail.amount - invoiceDetail.paid_amount : 0), [invoiceDetail]);
+  const propertyRows = properties?.rows ?? [];
+
+  const expenseForm = useForm<ExpenseFormValues>({
+    resolver: zodResolver(expenseSchema),
+    defaultValues: {
+      property_id: '',
+      category: 'صيانة',
+      amount: 0,
+      expense_date: new Date().toISOString().slice(0, 10),
+      description: '',
+    },
+  });
+
+  const onCreateExpense = (values: ExpenseFormValues) => {
+    createExpense.mutate(
+      {
+        property_id: values.property_id,
+        category: values.category,
+        amount: values.amount,
+        expense_date: values.expense_date,
+        description: values.description?.trim() ? values.description.trim() : null,
+      },
+      {
+        onSuccess: () => {
+          expenseForm.reset({
+            property_id: '',
+            category: 'صيانة',
+            amount: 0,
+            expense_date: new Date().toISOString().slice(0, 10),
+            description: '',
+          });
+        },
+      },
+    );
+  };
 
   return <div className="space-y-6" dir="rtl">
     <Card><CardHeader><CardTitle>الفواتير</CardTitle></CardHeader><CardContent className="space-y-3">
@@ -44,19 +77,35 @@ export function FinancialsPage() {
 
     {invoiceDetail && <Card><CardHeader><CardTitle>تفاصيل الفاتورة وسجل المدفوعات</CardTitle></CardHeader><CardContent className="space-y-3"><p>الإجمالي: {invoiceDetail.amount} | المدفوع: {invoiceDetail.paid_amount} | المتبقي: {remaining}</p>{invoiceDetail.payments.map((p) => <p key={p.id}>{p.payment_date} — {p.amount} ({p.payment_method})</p>)}<div className="flex gap-2"><input className="rounded border px-2" placeholder="المبلغ" value={amount} onChange={(e) => setAmount(e.target.value)} /><Button onClick={() => { const value = Number(amount); if (value <= 0 || value > remaining) return; postPayment.mutate({ invoice_id: invoiceDetail.id, amount: value, method: 'cash', date: new Date().toISOString().slice(0,10), reference: null }); }}>تسجيل دفعة</Button></div></CardContent></Card>}
 
-    <Card><CardHeader><CardTitle>المصاريف</CardTitle></CardHeader><CardContent className="space-y-2">
+    <Card><CardHeader><CardTitle>المصاريف</CardTitle></CardHeader><CardContent className="space-y-4">
       {expenses.map((e) => <p key={e.id}>{e.expense_date} — {e.category} — {e.amount}</p>)}
-      <div className="flex gap-2">
-        <input className="rounded border px-2" placeholder="property_id" value={expensePropertyId} onChange={(e) => { setExpensePropertyId(e.target.value); setExpenseError(''); }} />
-        <Button onClick={() => {
-          if (!expensePropertyId) {
-            setExpenseError('يرجى اختيار العقار أولاً');
-            return;
-          }
-          createExpense.mutate({ property_id: expensePropertyId, category: 'تشغيل', amount: 0.01, expense_date: new Date().toISOString().slice(0,10), description: 'تجريبي' });
-        }}>إضافة مصروف تجريبي</Button>
-      </div>
-      {expenseError ? <p className="text-sm text-red-600">{expenseError}</p> : null}
+
+      <form className="grid gap-3 rounded border p-4" onSubmit={expenseForm.handleSubmit(onCreateExpense)}>
+        <select className="rounded border px-2 py-2" {...expenseForm.register('property_id')}>
+          <option value="">اختر العقار</option>
+          {propertyRows.map((property) => <option key={property.id} value={property.id}>{property.title}</option>)}
+        </select>
+        {expenseForm.formState.errors.property_id ? <p className="text-sm text-red-600">{expenseForm.formState.errors.property_id.message}</p> : null}
+
+        <select className="rounded border px-2 py-2" {...expenseForm.register('category')}>
+          <option value="صيانة">صيانة</option>
+          <option value="مرافق">مرافق</option>
+          <option value="إدارية">إدارية</option>
+          <option value="تأمين">تأمين</option>
+          <option value="أخرى">أخرى</option>
+        </select>
+        {expenseForm.formState.errors.category ? <p className="text-sm text-red-600">{expenseForm.formState.errors.category.message}</p> : null}
+
+        <input className="rounded border px-2 py-2" type="number" min="0.01" step="0.01" placeholder="المبلغ" {...expenseForm.register('amount')} />
+        {expenseForm.formState.errors.amount ? <p className="text-sm text-red-600">{expenseForm.formState.errors.amount.message}</p> : null}
+
+        <input className="rounded border px-2 py-2" type="date" {...expenseForm.register('expense_date')} />
+        {expenseForm.formState.errors.expense_date ? <p className="text-sm text-red-600">{expenseForm.formState.errors.expense_date.message}</p> : null}
+
+        <textarea className="rounded border px-2 py-2" placeholder="الوصف (اختياري)" {...expenseForm.register('description')} />
+
+        <Button type="submit" disabled={createExpense.isPending}>{createExpense.isPending ? 'جارٍ الحفظ...' : 'إضافة مصروف'}</Button>
+      </form>
     </CardContent></Card>
   </div>;
 }
