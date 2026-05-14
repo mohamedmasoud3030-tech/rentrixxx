@@ -9,6 +9,7 @@
     "serve": "vite preview --config vite.config.ts --host 0.0.0.0",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "typecheck:test": "tsc -p tsconfig.test.json --noEmit",
+    "test": "vitest run --config vite.config.ts --dir src/features/financials",
     "lint": "tsc -p tsconfig.json --noEmit"
   },
   "devDependencies": {
