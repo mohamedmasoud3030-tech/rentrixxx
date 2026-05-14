@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { formatMoney, DEFAULT_CURRENCY, DEFAULT_LOCALE } from '@/lib/formatters';
 import { cn } from '@/lib/utils';
 import { contractStatusLabels, contractStatusValues, paymentCycleLabels } from './contractSchema';
 import { useContracts, useSoftDeleteContract } from './useContracts';
@@ -15,13 +16,15 @@ import type { ContractListItem, ContractStatusFilter } from './services/contract
 
 const statusTone = { draft: 'gray', active: 'green', expired: 'gold', terminated: 'red' } as const;
 const filterLabels: Record<ContractStatusFilter, string> = { all: 'الكل', draft: 'مسودة', active: 'نشط', expired: 'منتهي', terminated: 'ملغي' };
+const activeCurrency = DEFAULT_CURRENCY;
+const activeLocale = DEFAULT_LOCALE;
 
-function money(value: number) {
-  return new Intl.NumberFormat('ar', { maximumFractionDigits: 2 }).format(value);
+function displayMoney(value: number) {
+  return formatMoney({ amount: value, currency: activeCurrency, locale: activeLocale });
 }
 
 function formatDate(value: string) {
-  return new Date(value).toLocaleDateString('ar');
+  return new Date(value).toLocaleDateString(activeLocale);
 }
 
 function getContractNumber(contract: ContractListItem) {
@@ -48,7 +51,20 @@ function escapeCsvCell(value: string | number | null | undefined) {
 }
 
 function exportContractsCsv(contracts: ContractListItem[]) {
-  const headers = ['رقم العقد', 'المستأجر', 'هاتف المستأجر', 'الوحدة', 'العقار', 'عنوان العقار', 'الإيجار', 'دورة السداد', 'تاريخ البداية', 'تاريخ النهاية', 'الحالة'];
+  const headers = [
+    'رقم العقد',
+    'المستأجر',
+    'هاتف المستأجر',
+    'الوحدة',
+    'العقار',
+    'عنوان العقار',
+    'الإيجار',
+    'العملة',
+    'دورة السداد',
+    'تاريخ البداية',
+    'تاريخ النهاية',
+    'الحالة',
+  ];
   const rows = contracts.map((contract) => [
     getContractNumber(contract),
     contract.people?.full_name ?? '',
@@ -56,7 +72,8 @@ function exportContractsCsv(contracts: ContractListItem[]) {
     contract.units?.unit_number ?? '',
     contract.properties?.title ?? '',
     contract.properties?.address ?? '',
-    contract.rent_amount,
+    displayMoney(contract.rent_amount),
+    activeCurrency,
     paymentCycleLabels[contract.payment_cycle],
     contract.start_date,
     contract.end_date,
@@ -180,7 +197,7 @@ export function ContractsListPage() {
                         <TableCell>{contract.units?.unit_number ?? contract.properties?.title ?? '—'}</TableCell>
                         <TableCell>{formatDate(contract.start_date)}</TableCell>
                         <TableCell>{formatDate(contract.end_date)}</TableCell>
-                        <TableCell>{money(contract.rent_amount)}</TableCell>
+                        <TableCell>{displayMoney(contract.rent_amount)}</TableCell>
                         <TableCell>
                           <StatusBadge tone={statusTone[contract.status]}>{contractStatusLabels[contract.status]}</StatusBadge>
                         </TableCell>
@@ -218,7 +235,7 @@ export function ContractsListPage() {
                                 <p className="text-muted-foreground">العنوان: {contract.properties?.address ?? '—'}</p>
                               </DetailBox>
                               <DetailBox label="قيمة الإيجار">
-                                <p className="text-lg font-black" dir="ltr">{money(contract.rent_amount)}</p>
+                                <p className="text-lg font-black" dir="ltr">{displayMoney(contract.rent_amount)}</p>
                                 <p className="text-muted-foreground">دورة السداد: {paymentCycleLabels[contract.payment_cycle]}</p>
                               </DetailBox>
                               <DetailBox label="فترة العقد">
