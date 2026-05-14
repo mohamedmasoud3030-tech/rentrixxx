@@ -1,11 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { invoiceKeys } from '../invoices/useInvoices';
-import { receiptKeys } from '../receipts/useReceipts';
 import { financialReportKeys } from '../reports/useFinancialReports';
+import { invoiceKeys } from './useInvoices';
 
 const mutationMock = vi.hoisted(() => ({
   invalidateQueries: vi.fn(),
   useMutation: vi.fn((options) => options),
+  useQuery: vi.fn((options) => options),
   useQueryClient: vi.fn(),
   toastSuccess: vi.fn(),
   toastError: vi.fn(),
@@ -13,6 +13,7 @@ const mutationMock = vi.hoisted(() => ({
 
 vi.mock('@tanstack/react-query', () => ({
   useMutation: mutationMock.useMutation,
+  useQuery: mutationMock.useQuery,
   useQueryClient: mutationMock.useQueryClient,
 }));
 
@@ -23,27 +24,28 @@ vi.mock('sonner', () => ({
   },
 }));
 
-vi.mock('./paymentService', () => ({
-  postReceiptAtomic: vi.fn(),
+vi.mock('./invoiceService', () => ({
+  generateInvoicesFromActiveContracts: vi.fn(),
+  getInvoiceDetail: vi.fn(),
+  listInvoices: vi.fn(),
 }));
 
-describe('usePostPayment', () => {
+describe('useGenerateInvoices', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mutationMock.useQueryClient.mockReturnValue({ invalidateQueries: mutationMock.invalidateQueries });
     mutationMock.invalidateQueries.mockResolvedValue(undefined);
   });
 
-  it('invalidates invoice and receipt queries after a successful payment post', async () => {
-    const { usePostPayment } = await import('./usePayments');
+  it('invalidates invoice and financial report queries after successful invoice generation', async () => {
+    const { useGenerateInvoices } = await import('./useInvoices');
 
-    const mutationOptions = usePostPayment() as unknown as { onSuccess: () => Promise<void> };
-    await mutationOptions.onSuccess();
+    const mutationOptions = useGenerateInvoices() as unknown as { onSuccess: (count: number) => Promise<void> };
+    await mutationOptions.onSuccess(2);
 
     expect(mutationMock.invalidateQueries).toHaveBeenCalledWith({ queryKey: invoiceKeys.all });
-    expect(mutationMock.invalidateQueries).toHaveBeenCalledWith({ queryKey: receiptKeys.all });
     expect(mutationMock.invalidateQueries).toHaveBeenCalledWith({ queryKey: financialReportKeys.all });
-    expect(mutationMock.invalidateQueries).toHaveBeenCalledTimes(3);
-    expect(mutationMock.toastSuccess).toHaveBeenCalledWith('تم تسجيل الدفعة بنجاح');
+    expect(mutationMock.invalidateQueries).toHaveBeenCalledTimes(2);
+    expect(mutationMock.toastSuccess).toHaveBeenCalledWith('تم إنشاء 2 فاتورة');
   });
 });

@@ -14,6 +14,7 @@ import { summarizeInvoices, type InvoiceStatusFilter } from './invoices/invoiceS
 import { useGenerateInvoices, useInvoice, useInvoices } from './invoices/useInvoices';
 import { usePostPayment } from './payments/usePayments';
 import { useReceipt, useReceipts } from './receipts/useReceipts';
+import { useCollectionSummaryReport } from './reports/useFinancialReports';
 
 const expenseSchema = z.object({
   property_id: z.string().uuid('اختر العقار'),
@@ -77,6 +78,17 @@ function formatReceiptContext(receipt: { tenant_name: string | null; unit_number
   return parts.length > 0 ? parts.join(' · ') : '—';
 }
 
+function getCurrentMonthReportRange() {
+  const now = new Date();
+  const firstDay = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
+  const lastDay = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 0));
+  return {
+    dateFrom: firstDay.toISOString().slice(0, 10),
+    dateTo: lastDay.toISOString().slice(0, 10),
+    status: 'all' as const,
+  };
+}
+
 export function FinancialsPage() {
   const [status, setStatus] = useState<InvoiceStatusFilter>('unpaid');
   const [invoiceSearch, setInvoiceSearch] = useState('');
@@ -113,6 +125,13 @@ export function FinancialsPage() {
   const { data: properties } = useProperties({ page: 1, pageSize: 100, search: '', status: 'all' });
   const [filters] = useState({ propertyId: '', category: '', from: '', to: '' });
   const { data: expenses = [] } = useExpenses(filters);
+  const reportFilters = useMemo(() => getCurrentMonthReportRange(), []);
+  const {
+    data: collectionSummary,
+    isLoading: isCollectionSummaryLoading,
+    isError: isCollectionSummaryError,
+    error: collectionSummaryError,
+  } = useCollectionSummaryReport(reportFilters);
   const createExpense = useCreateExpense();
   const summary = useMemo(() => summarizeInvoices(invoices), [invoices]);
   const remaining = useMemo(
@@ -194,6 +213,50 @@ export function FinancialsPage() {
   };
 
   return <div className="space-y-6" dir="rtl">
+    <Card>
+      <CardHeader>
+        <CardTitle>التقارير المالية</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        <p className="text-sm text-muted-foreground">
+          ملخص تحقق للشهر الحالي من {formatDate(reportFilters.dateFrom)} إلى {formatDate(reportFilters.dateTo)}.
+        </p>
+        {isCollectionSummaryLoading ? <div className="rounded-2xl border border-dashed p-4 text-center text-sm text-muted-foreground">جارٍ تحميل ملخص التقارير...</div> : null}
+        {isCollectionSummaryError ? (
+          <div className="rounded-2xl border border-destructive/40 bg-destructive/10 p-4 text-center text-sm text-destructive">
+            {getErrorMessage(collectionSummaryError, 'تعذر تحميل ملخص التقارير')}
+          </div>
+        ) : null}
+        {collectionSummary ? (
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-6">
+            <div className="rounded-2xl border bg-muted/30 p-3">
+              <p className="text-xs text-muted-foreground">الفواتير</p>
+              <p className="mt-1 font-black">{formatMoney(collectionSummary.invoiced)}</p>
+            </div>
+            <div className="rounded-2xl border bg-muted/30 p-3">
+              <p className="text-xs text-muted-foreground">المدفوع</p>
+              <p className="mt-1 font-black">{formatMoney(collectionSummary.paid)}</p>
+            </div>
+            <div className="rounded-2xl border bg-muted/30 p-3">
+              <p className="text-xs text-muted-foreground">المتبقي</p>
+              <p className="mt-1 font-black">{formatMoney(collectionSummary.outstanding)}</p>
+            </div>
+            <div className="rounded-2xl border bg-muted/30 p-3">
+              <p className="text-xs text-muted-foreground">الإيصالات</p>
+              <p className="mt-1 font-black">{collectionSummary.receiptsCount}</p>
+            </div>
+            <div className="rounded-2xl border bg-muted/30 p-3">
+              <p className="text-xs text-muted-foreground">عدد الفواتير</p>
+              <p className="mt-1 font-black">{collectionSummary.invoicesCount}</p>
+            </div>
+            <div className="rounded-2xl border bg-muted/30 p-3">
+              <p className="text-xs text-muted-foreground">المصاريف</p>
+              <p className="mt-1 font-black">{formatMoney(collectionSummary.expensesTotal)}</p>
+            </div>
+          </div>
+        ) : null}
+      </CardContent>
+    </Card>
     <Card>
       <CardHeader>
         <CardTitle>الفواتير</CardTitle>

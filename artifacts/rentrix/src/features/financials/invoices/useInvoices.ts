@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
+import { financialReportKeys } from '../reports/useFinancialReports';
 import { generateInvoicesFromActiveContracts, getInvoiceDetail, listInvoices, type InvoiceListParams, type InvoiceStatusFilter } from './invoiceService';
 
 export const invoiceKeys = {
@@ -21,7 +22,13 @@ export function useGenerateInvoices() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: generateInvoicesFromActiveContracts,
-    onSuccess: async (count) => { await queryClient.invalidateQueries({ queryKey: invoiceKeys.all }); toast.success(`تم إنشاء ${count} فاتورة`); },
+    onSuccess: async (count) => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: invoiceKeys.all }),
+        queryClient.invalidateQueries({ queryKey: financialReportKeys.all }),
+      ]);
+      toast.success(`تم إنشاء ${count} فاتورة`);
+    },
     onError: (error) => toast.error(error instanceof Error ? error.message : 'تعذر إنشاء الفواتير'),
   });
 }
