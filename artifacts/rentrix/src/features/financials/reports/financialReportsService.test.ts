@@ -189,6 +189,30 @@ describe('financialReportsService aggregation helpers', () => {
     });
   });
 
+  it('groups financial cashflow rows by month from canonical payment and expense rows', async () => {
+    const { summarizeFinancialCashflowReport } = await import('./financialReportsService');
+
+    expect(summarizeFinancialCashflowReport({
+      payments: [
+        { amount: '100' as unknown as number, payment_date: '2026-05-02' },
+        { amount: 50, payment_date: '2026-05-20' },
+        { amount: 25, payment_date: '2026-06-01' },
+      ],
+      expenses: [
+        { amount: 20, expense_date: '2026-05-03' },
+        { amount: 'bad' as unknown as number, expense_date: '2026-05-04' },
+        { amount: '30.5' as unknown as number, expense_date: '2026-06-15' },
+      ],
+    })).toEqual({
+      rows: [
+        { month: '2026-05', revenue: 150, expenses: 20 },
+        { month: '2026-06', revenue: 25, expenses: 30.5 },
+      ],
+      totalRevenue: 175,
+      totalExpenses: 50.5,
+    });
+  });
+
   it('groups expenses by category and property using safe numeric totals', async () => {
     const { summarizeExpenseBreakdownReport } = await import('./financialReportsService');
     const properties = new Map([

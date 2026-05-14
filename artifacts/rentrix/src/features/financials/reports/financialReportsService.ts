@@ -71,6 +71,18 @@ export type FinancialPeriodSummaryReport = {
   expensesCount: number;
 };
 
+export type FinancialCashflowReportRow = {
+  month: string;
+  revenue: number;
+  expenses: number;
+};
+
+export type FinancialCashflowReport = {
+  rows: FinancialCashflowReportRow[];
+  totalRevenue: number;
+  totalExpenses: number;
+};
+
 export type ExpenseBreakdownReportFilters = FinancialReportFilters & {
   category?: string;
 };
@@ -552,6 +564,37 @@ export function summarizeFinancialPeriodSummaryReport(params: {
   };
 }
 
+
+export function summarizeFinancialCashflowReport(params: {
+  payments: Pick<PaymentReportRow, 'amount' | 'payment_date'>[];
+  expenses: Pick<ExpenseReportRow, 'amount' | 'expense_date'>[];
+}): FinancialCashflowReport {
+  const rowsByMonth = new Map<string, FinancialCashflowReportRow>();
+
+  for (const payment of params.payments) {
+    if (!payment.payment_date) continue;
+    const month = payment.payment_date.slice(0, 7);
+    const row = rowsByMonth.get(month) ?? { month, revenue: 0, expenses: 0 };
+    row.revenue = toFinancialNumber(row.revenue) + toFinancialNumber(payment.amount);
+    rowsByMonth.set(month, row);
+  }
+
+  for (const expense of params.expenses) {
+    if (!expense.expense_date) continue;
+    const month = expense.expense_date.slice(0, 7);
+    const row = rowsByMonth.get(month) ?? { month, revenue: 0, expenses: 0 };
+    row.expenses = toFinancialNumber(row.expenses) + toFinancialNumber(expense.amount);
+    rowsByMonth.set(month, row);
+  }
+
+  const rows = Array.from(rowsByMonth.values()).sort((a, b) => a.month.localeCompare(b.month));
+  return {
+    rows,
+    totalRevenue: sumFinancialValues(rows.map((row) => row.revenue)),
+    totalExpenses: sumFinancialValues(rows.map((row) => row.expenses)),
+  };
+}
+
 export function summarizeExpenseBreakdownReport(
   expenses: Pick<ExpenseReportRow, 'amount' | 'category' | 'property_id'>[],
   propertiesById: Map<string, PropertyContext> = new Map(),
@@ -832,6 +875,16 @@ export async function getFinancialPeriodSummaryReport(filters: FinancialReportFi
     outstandingBalance: summarizeOutstandingBalance(invoices),
     expenseTotals: summarizeExpenseTotals(expenses),
   });
+}
+
+
+export async function getFinancialCashflowReport(filters: FinancialReportFilters): Promise<FinancialCashflowReport> {
+  const [payments, expenses] = await Promise.all([
+    loadPayments(filters),
+    loadExpenses(filters),
+  ]);
+
+  return summarizeFinancialCashflowReport({ payments, expenses });
 }
 
 export async function getExpenseBreakdownReport(filters: ExpenseBreakdownReportFilters): Promise<ExpenseBreakdownReport> {

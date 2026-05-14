@@ -6,6 +6,7 @@ import {
   getDailyCollectionReport,
   getExpenseBreakdownReport,
   getExpenseTotalsReport,
+  getFinancialCashflowReport,
   getFinancialPeriodSummaryReport,
   getInvoiceTotalsReport,
   getOverdueInvoicesReport,
@@ -24,6 +25,7 @@ export const financialReportKeys = {
   arrearsSummary: (filters: ArrearsReportFilters) => [...financialReportKeys.all, 'arrearsSummary', filters] as const,
   dailyCollection: (filters: FinancialReportFilters) => [...financialReportKeys.all, 'dailyCollection', filters] as const,
   financialPeriodSummary: (filters: FinancialReportFilters) => [...financialReportKeys.all, 'financialPeriodSummary', filters] as const,
+  financialCashflow: (filters: FinancialReportFilters) => [...financialReportKeys.all, 'financialCashflow', filters] as const,
   invoiceTotals: (filters: FinancialReportFilters) => [...financialReportKeys.all, 'invoiceTotals', filters] as const,
   paymentTotals: (filters: FinancialReportFilters) => [...financialReportKeys.all, 'paymentTotals', filters] as const,
   expenseTotals: (filters: FinancialReportFilters) => [...financialReportKeys.all, 'expenseTotals', filters] as const,
@@ -59,6 +61,14 @@ export function useFinancialPeriodSummaryReport(filters: FinancialReportFilters)
   return useQuery({
     queryKey: financialReportKeys.financialPeriodSummary(filters),
     queryFn: () => getFinancialPeriodSummaryReport(filters),
+    enabled: hasRequiredDateRange(filters),
+  });
+}
+
+export function useFinancialCashflowReport(filters: FinancialReportFilters) {
+  return useQuery({
+    queryKey: financialReportKeys.financialCashflow(filters),
+    queryFn: () => getFinancialCashflowReport(filters),
     enabled: hasRequiredDateRange(filters),
   });
 }
