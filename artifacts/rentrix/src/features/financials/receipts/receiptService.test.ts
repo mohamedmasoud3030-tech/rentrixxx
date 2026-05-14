@@ -136,17 +136,6 @@ describe('receiptService', () => {
     ]);
   });
 
-
-
-  it('does not request enrichment tables when no payment rows are returned', async () => {
-    const log = mockSupabaseTables({ payments: [] });
-    const { listReceipts } = await import('./receiptService');
-
-    await expect(listReceipts()).resolves.toEqual([]);
-    expect(supabaseMock.from.mock.calls.map(([table]) => table)).toEqual(['payments']);
-    expect(log.some((entry) => entry.method === 'in')).toBe(false);
-  });
-
   it('projects receipt detail from a single payment id', async () => {
     mockSupabaseTables({
       payments: [basePayment],

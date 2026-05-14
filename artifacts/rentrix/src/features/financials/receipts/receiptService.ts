@@ -1,15 +1,7 @@
 import { supabase } from '@/integrations/supabase/client';
 import type { Contract, Invoice, Payment, Person, Property, Unit } from '@/types/domain';
-import { toFinancialNumber } from '../financialMath';
 
 export type ReceiptListParams = { limit?: number };
-
-/**
- * Receipts in the current Supabase app are read-only projections from payment rows.
- * The current payments schema has no status/type/reversal columns, so every
- * non-deleted payment returned here is treated as an already-posted receipt source.
- */
-export type PostedPaymentReceiptSource = Payment;
 
 export type ReceiptRecord = {
   id: string;
@@ -36,23 +28,17 @@ type ReceiptPropertyContext = Pick<Property, 'id' | 'title'>;
 type ReceiptTenantContext = Pick<Person, 'id' | 'full_name'>;
 
 const DEFAULT_RECEIPT_LIMIT = 25;
-const MAX_RECEIPT_LIMIT = 100;
-
-function normalizeReceiptLimit(limit: number | undefined) {
-  const safeLimit = toFinancialNumber(limit ?? DEFAULT_RECEIPT_LIMIT);
-  return Math.min(MAX_RECEIPT_LIMIT, Math.max(1, Math.trunc(safeLimit || DEFAULT_RECEIPT_LIMIT)));
-}
 
 function uniqueStrings(values: Array<string | null | undefined>) {
   return Array.from(new Set(values.filter((value): value is string => Boolean(value))));
 }
 
-export function formatReceiptNumber(paymentId: string) {
+function shortReceiptNumber(paymentId: string) {
   return `REC-${paymentId.slice(0, 8)}`;
 }
 
 function toReceiptRecord(
-  payment: PostedPaymentReceiptSource,
+  payment: Payment,
   invoiceById: Map<string, ReceiptInvoiceContext>,
   contractById: Map<string, ReceiptContractContext>,
   unitById: Map<string, ReceiptUnitContext>,
@@ -67,13 +53,13 @@ function toReceiptRecord(
 
   return {
     id: payment.id,
-    receipt_number: formatReceiptNumber(payment.id),
+    receipt_number: shortReceiptNumber(payment.id),
     payment_id: payment.id,
     invoice_id: payment.invoice_id,
     invoice_status: invoice?.status ?? null,
     contract_id: invoice?.contract_id ?? null,
     payment_date: payment.payment_date,
-    amount: toFinancialNumber(payment.amount),
+    amount: payment.amount,
     payment_method: payment.payment_method,
     reference_number: payment.reference_number,
     created_at: payment.created_at,
@@ -84,21 +70,16 @@ function toReceiptRecord(
   };
 }
 
-async function loadPostedPaymentReceiptProjections(payments: PostedPaymentReceiptSource[]): Promise<ReceiptRecord[]> {
+async function loadReceiptRecords(payments: Payment[]): Promise<ReceiptRecord[]> {
   if (payments.length === 0) return [];
 
-  // Keep enrichment batched for the small recent-receipts list. A future schema-backed
-  // view or nested relational select can replace this after relationships are confirmed.
-
   const invoiceIds = uniqueStrings(payments.map((payment) => payment.invoice_id));
-  const { data: invoices, error: invoicesError } = invoiceIds.length > 0
-    ? await supabase
-      .from('invoices')
-      .select('id, contract_id, status')
-      .in('id', invoiceIds)
-      .is('deleted_at', null)
-      .returns<ReceiptInvoiceContext[]>()
-    : { data: [], error: null };
+  const { data: invoices, error: invoicesError } = await supabase
+    .from('invoices')
+    .select('id, contract_id, status')
+    .in('id', invoiceIds)
+    .is('deleted_at', null)
+    .returns<ReceiptInvoiceContext[]>();
   if (invoicesError) throw invoicesError;
 
   const invoiceRows = invoices ?? [];
@@ -150,10 +131,10 @@ export async function listReceipts(params: ReceiptListParams = {}): Promise<Rece
     .is('deleted_at', null)
     .order('payment_date', { ascending: false })
     .order('created_at', { ascending: false })
-    .limit(normalizeReceiptLimit(params.limit))
+    .limit(params.limit ?? DEFAULT_RECEIPT_LIMIT)
     .returns<Payment[]>();
   if (error) throw error;
-  return loadPostedPaymentReceiptProjections(payments ?? []);
+  return loadReceiptRecords(payments ?? []);
 }
 
 export async function getReceiptDetail(receiptOrPaymentId: string): Promise<ReceiptRecord> {
@@ -165,7 +146,7 @@ export async function getReceiptDetail(receiptOrPaymentId: string): Promise<Rece
     .single()
     .returns<Payment>();
   if (error || !payment) throw error ?? new Error('Receipt not found');
-  const [receipt] = await loadPostedPaymentReceiptProjections([payment]);
+  const [receipt] = await loadReceiptRecords([payment]);
   if (!receipt) throw new Error('Receipt not found');
   return receipt;
 }

@@ -110,7 +110,6 @@ export function FinancialsPage() {
     isError: isReceiptDetailError,
     error: receiptDetailError,
   } = useReceipt(selectedReceiptId);
-  const selectedReceiptDetailMatches = Boolean(selectedReceiptId) && receiptDetail?.id === selectedReceiptId;
   const { data: properties } = useProperties({ page: 1, pageSize: 100, search: '', status: 'all' });
   const [filters] = useState({ propertyId: '', category: '', from: '', to: '' });
   const { data: expenses = [] } = useExpenses(filters);
@@ -420,8 +419,7 @@ export function FinancialsPage() {
           {!selectedReceiptId ? <p className="mt-3 rounded-xl border border-dashed p-4 text-center text-sm text-muted-foreground">اختر إيصالاً لعرض تفاصيله</p> : null}
           {selectedReceiptId && isReceiptDetailLoading ? <p className="mt-3 rounded-xl border border-dashed p-4 text-center text-sm text-muted-foreground">جارٍ تحميل تفاصيل الإيصال...</p> : null}
           {selectedReceiptId && isReceiptDetailError ? <p className="mt-3 rounded-xl border border-destructive/40 bg-destructive/10 p-4 text-center text-sm text-destructive">{getErrorMessage(receiptDetailError, 'تعذر تحميل تفاصيل الإيصال')}</p> : null}
-          {selectedReceiptId && !isReceiptDetailLoading && !isReceiptDetailError && !selectedReceiptDetailMatches ? <p className="mt-3 rounded-xl border border-dashed p-4 text-center text-sm text-muted-foreground">تعذر العثور على تفاصيل هذا الإيصال أو لم تعد متاحة.</p> : null}
-          {selectedReceiptDetailMatches && receiptDetail ? (
+          {receiptDetail ? (
             <div className="mt-3 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
               <div className="rounded-xl bg-muted/30 p-3">
                 <p className="text-xs text-muted-foreground">رقم الإيصال</p>

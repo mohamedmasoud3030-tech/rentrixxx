@@ -3,8 +3,7 @@ import { getReceiptDetail, listReceipts, type ReceiptListParams } from './receip
 
 export const receiptKeys = {
   all: ['receipts'] as const,
-  lists: () => [...receiptKeys.all, 'list'] as const,
-  list: (params: ReceiptListParams = {}) => [...receiptKeys.lists(), params] as const,
+  list: (params: ReceiptListParams = {}) => [...receiptKeys.all, 'list', params] as const,
   detail: (receiptOrPaymentId: string) => [...receiptKeys.all, 'detail', receiptOrPaymentId] as const,
 };
 

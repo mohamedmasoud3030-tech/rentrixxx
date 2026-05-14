@@ -36,15 +36,12 @@ describe('usePostPayment', () => {
   it('invalidates invoice and receipt queries after a successful payment post', async () => {
     const { usePostPayment } = await import('./usePayments');
 
-    const mutationOptions = usePostPayment() as unknown as {
-      onSuccess: (result: string, variables: { invoice_id: string }) => Promise<void>;
-    };
-    await mutationOptions.onSuccess('ok', { invoice_id: 'inv_1' });
+    const mutationOptions = usePostPayment() as unknown as { onSuccess: () => Promise<void> };
+    await mutationOptions.onSuccess();
 
-    expect(mutationMock.invalidateQueries).toHaveBeenCalledWith({ queryKey: invoiceKeys.lists() });
-    expect(mutationMock.invalidateQueries).toHaveBeenCalledWith({ queryKey: invoiceKeys.detail('inv_1') });
-    expect(mutationMock.invalidateQueries).toHaveBeenCalledWith({ queryKey: receiptKeys.lists() });
-    expect(mutationMock.invalidateQueries).toHaveBeenCalledTimes(3);
+    expect(mutationMock.invalidateQueries).toHaveBeenCalledWith({ queryKey: invoiceKeys.all });
+    expect(mutationMock.invalidateQueries).toHaveBeenCalledWith({ queryKey: receiptKeys.all });
+    expect(mutationMock.invalidateQueries).toHaveBeenCalledTimes(2);
     expect(mutationMock.toastSuccess).toHaveBeenCalledWith('تم تسجيل الدفعة بنجاح');
   });
 });
