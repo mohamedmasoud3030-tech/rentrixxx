@@ -4,18 +4,54 @@ import type { Invoice, Payment } from '@/types/domain';
 export type InvoiceStatusFilter = 'unpaid' | 'partial' | 'paid' | 'overdue' | 'all';
 export type InvoiceListItem = Invoice & { contracts: { id: string; property_id: string; tenant_id: string } | null };
 export type InvoiceDetail = InvoiceListItem & { payments: Payment[] };
+export type InvoiceListParams = { status: InvoiceStatusFilter; search?: string };
+export type InvoiceSummary = { totalAmount: number; totalPaid: number; totalRemaining: number; count: number };
+
 const invoiceSelect = '*, contracts:contract_id(id,property_id,tenant_id)';
 
-export async function listInvoices(status: InvoiceStatusFilter): Promise<InvoiceListItem[]> {
+function applyStatusFilter(query: ReturnType<typeof supabase.from>, status: InvoiceStatusFilter) {
+  if (status === 'unpaid') return query.eq('status', 'issued').eq('paid_amount', 0);
+  if (status === 'partial') return query.eq('status', 'partial');
+  if (status === 'paid') return query.eq('status', 'paid');
+  if (status === 'overdue') return query.eq('status', 'overdue');
+  return query;
+}
+
+function remainingAmount(invoice: Pick<Invoice, 'amount' | 'paid_amount'>) {
+  return Math.max(0, Number(invoice.amount ?? 0) - Number(invoice.paid_amount ?? 0));
+}
+
+export function summarizeInvoices(invoices: Pick<Invoice, 'amount' | 'paid_amount'>[]): InvoiceSummary {
+  return invoices.reduce(
+    (summary, invoice) => {
+      summary.totalAmount += Number(invoice.amount ?? 0);
+      summary.totalPaid += Number(invoice.paid_amount ?? 0);
+      summary.totalRemaining += remainingAmount(invoice);
+      summary.count += 1;
+      return summary;
+    },
+    { totalAmount: 0, totalPaid: 0, totalRemaining: 0, count: 0 },
+  );
+}
+
+export async function listInvoices(params: InvoiceStatusFilter | InvoiceListParams): Promise<InvoiceListItem[]> {
+  const status = typeof params === 'string' ? params : params.status;
+  const search = typeof params === 'string' ? '' : params.search?.trim() ?? '';
   let query = supabase.from('invoices').select(invoiceSelect).is('deleted_at', null).order('due_date', { ascending: false });
-  if (status === 'unpaid') query = query.eq('status', 'issued').eq('paid_amount', 0);
-  if (status === 'partial') query = query.eq('status', 'partial');
-  if (status === 'paid') query = query.eq('status', 'paid');
-  if (status === 'overdue') query = query.eq('status', 'overdue');
+
+  query = applyStatusFilter(query, status);
+
+  if (search) {
+    const escaped = search.replaceAll('%', '\\%').replaceAll('_', '\\_');
+    const term = `"%${escaped}%"`;
+    query = query.or(`id.ilike.${term},status.ilike.${term}`);
+  }
+
   const { data, error } = await query.returns<InvoiceListItem[]>();
   if (error) throw error;
   return data ?? [];
 }
+
 export async function getInvoiceDetail(invoiceId: string): Promise<InvoiceDetail> {
   const { data: invoice, error: invoiceError } = await supabase.from('invoices').select(invoiceSelect).eq('id', invoiceId).is('deleted_at', null).single().returns<InvoiceListItem>();
   if (invoiceError || !invoice) throw invoiceError ?? new Error('Invoice not found');
@@ -23,6 +59,7 @@ export async function getInvoiceDetail(invoiceId: string): Promise<InvoiceDetail
   if (paymentsError) throw paymentsError;
   return Object.assign(invoice as InvoiceListItem, { payments: payments ?? [] });
 }
+
 export async function generateInvoicesFromActiveContracts(): Promise<number> {
   const { data, error } = await supabase.rpc('generate_invoices_from_active_contracts').returns<number>();
   if (error) throw error;
