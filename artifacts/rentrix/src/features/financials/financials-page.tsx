@@ -12,6 +12,7 @@ import { useExpenses, useCreateExpense } from './expenses/useExpenses';
 import { summarizeInvoices, type InvoiceStatusFilter } from './invoices/invoiceService';
 import { useGenerateInvoices, useInvoice, useInvoices } from './invoices/useInvoices';
 import { usePostPayment } from './payments/usePayments';
+import { useReceipt, useReceipts } from './receipts/useReceipts';
 
 const expenseSchema = z.object({
   property_id: z.string().uuid('اختر العقار'),
@@ -41,6 +42,18 @@ const invoiceStatusLabels: Record<string, string> = {
   void: 'ملغاة',
 };
 
+const paymentMethodLabels: Record<string, string> = {
+  cash: 'نقداً',
+  bank_transfer: 'تحويل بنكي',
+  card: 'بطاقة',
+  check: 'شيك',
+  other: 'أخرى',
+};
+
+const receiptStatusLabels: Record<string, string> = {
+  posted: 'مرحّل',
+};
+
 function formatMoney(value: number | null | undefined) {
   return formatCompanyMoney(defaultCompanyLocalSettings, value);
 }
@@ -57,10 +70,20 @@ function getErrorMessage(error: unknown, fallback: string) {
   return error instanceof Error ? error.message : fallback;
 }
 
+function formatShortId(value: string | null | undefined) {
+  return value ? `#${value.slice(0, 8)}` : '—';
+}
+
+function formatReceiptContext(receipt: { tenant_name: string | null; unit_number: string | null; property_title: string | null }) {
+  const parts = [receipt.tenant_name, receipt.unit_number ? `وحدة ${receipt.unit_number}` : null, receipt.property_title].filter(Boolean);
+  return parts.length > 0 ? parts.join(' · ') : '—';
+}
+
 export function FinancialsPage() {
   const [status, setStatus] = useState<InvoiceStatusFilter>('unpaid');
   const [invoiceSearch, setInvoiceSearch] = useState('');
   const [selectedInvoiceId, setSelectedInvoiceId] = useState('');
+  const [selectedReceiptId, setSelectedReceiptId] = useState('');
   const [amount, setAmount] = useState('');
   const {
     data: invoices = [],
@@ -76,6 +99,18 @@ export function FinancialsPage() {
   } = useInvoice(selectedInvoiceId);
   const generate = useGenerateInvoices();
   const postPayment = usePostPayment();
+  const {
+    data: receipts = [],
+    isLoading: isReceiptsLoading,
+    isError: isReceiptsError,
+    error: receiptsError,
+  } = useReceipts({ limit: 10 });
+  const {
+    data: receiptDetail,
+    isLoading: isReceiptDetailLoading,
+    isError: isReceiptDetailError,
+    error: receiptDetailError,
+  } = useReceipt(selectedReceiptId);
   const { data: properties } = useProperties({ page: 1, pageSize: 100, search: '', status: 'all' });
   const [filters] = useState({ propertyId: '', category: '', from: '', to: '' });
   const { data: expenses = [] } = useExpenses(filters);
@@ -310,6 +345,114 @@ export function FinancialsPage() {
             </div>
           </div>
         </> : null}
+      </CardContent>
+    </Card>
+
+
+    <Card>
+      <CardHeader>
+        <CardTitle>الإيصالات</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="space-y-2">
+          {isReceiptsLoading ? <div className="rounded-2xl border border-dashed p-6 text-center text-muted-foreground">جارٍ تحميل الإيصالات...</div> : null}
+          {isReceiptsError ? <div className="rounded-2xl border border-destructive/40 bg-destructive/10 p-6 text-center text-destructive">{getErrorMessage(receiptsError, 'تعذر تحميل الإيصالات')}</div> : null}
+          {!isReceiptsLoading && !isReceiptsError && receipts.length === 0 ? (
+            <div className="rounded-2xl border border-dashed p-6 text-center text-muted-foreground">لا توجد إيصالات من مدفوعات مرحلة حتى الآن</div>
+          ) : null}
+          {!isReceiptsLoading && !isReceiptsError && receipts.map((receipt) => {
+            const isSelected = selectedReceiptId === receipt.id;
+            return (
+              <button
+                key={receipt.id}
+                className={cn(
+                  'grid w-full gap-3 rounded-2xl border p-4 text-right transition hover:border-primary/60 hover:bg-muted/40 lg:grid-cols-[1.1fr_1fr_1fr_1fr_1fr_1.3fr_auto]',
+                  isSelected ? 'border-primary bg-primary/5 ring-2 ring-primary/20' : 'bg-background',
+                )}
+                onClick={() => setSelectedReceiptId(receipt.id)}
+              >
+                <span>
+                  <span className="block text-xs text-muted-foreground">رقم الإيصال</span>
+                  <span className="font-black">{receipt.receipt_number}</span>
+                </span>
+                <span>
+                  <span className="block text-xs text-muted-foreground">تاريخ الدفع</span>
+                  <span>{formatDate(receipt.payment_date)}</span>
+                </span>
+                <span>
+                  <span className="block text-xs text-muted-foreground">المبلغ</span>
+                  <span>{formatMoney(receipt.amount)}</span>
+                </span>
+                <span>
+                  <span className="block text-xs text-muted-foreground">طريقة الدفع</span>
+                  <span>{paymentMethodLabels[receipt.payment_method] ?? receipt.payment_method}</span>
+                </span>
+                <span>
+                  <span className="block text-xs text-muted-foreground">الفاتورة</span>
+                  <span>{formatShortId(receipt.invoice_id)}</span>
+                </span>
+                <span>
+                  <span className="block text-xs text-muted-foreground">السياق</span>
+                  <span>{formatReceiptContext(receipt)}</span>
+                </span>
+                <span className="inline-flex h-fit rounded-full bg-secondary px-3 py-1 text-xs font-bold text-secondary-foreground">
+                  {receiptStatusLabels[receipt.status] ?? receipt.status}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+
+        <div className="rounded-2xl border p-4">
+          <h4 className="font-black">تفاصيل الإيصال</h4>
+          {!selectedReceiptId ? <p className="mt-3 rounded-xl border border-dashed p-4 text-center text-sm text-muted-foreground">اختر إيصالاً لعرض تفاصيله</p> : null}
+          {selectedReceiptId && isReceiptDetailLoading ? <p className="mt-3 rounded-xl border border-dashed p-4 text-center text-sm text-muted-foreground">جارٍ تحميل تفاصيل الإيصال...</p> : null}
+          {selectedReceiptId && isReceiptDetailError ? <p className="mt-3 rounded-xl border border-destructive/40 bg-destructive/10 p-4 text-center text-sm text-destructive">{getErrorMessage(receiptDetailError, 'تعذر تحميل تفاصيل الإيصال')}</p> : null}
+          {receiptDetail ? (
+            <div className="mt-3 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+              <div className="rounded-xl bg-muted/30 p-3">
+                <p className="text-xs text-muted-foreground">رقم الإيصال</p>
+                <p className="mt-1 font-bold">{receiptDetail.receipt_number}</p>
+              </div>
+              <div className="rounded-xl bg-muted/30 p-3">
+                <p className="text-xs text-muted-foreground">رقم الدفع</p>
+                <p className="mt-1 font-bold">{formatShortId(receiptDetail.payment_id)}</p>
+              </div>
+              <div className="rounded-xl bg-muted/30 p-3">
+                <p className="text-xs text-muted-foreground">رقم الفاتورة</p>
+                <p className="mt-1 font-bold">{formatShortId(receiptDetail.invoice_id)}</p>
+              </div>
+              <div className="rounded-xl bg-muted/30 p-3">
+                <p className="text-xs text-muted-foreground">رقم العقد</p>
+                <p className="mt-1 font-bold">{formatShortId(receiptDetail.contract_id)}</p>
+              </div>
+              <div className="rounded-xl bg-muted/30 p-3">
+                <p className="text-xs text-muted-foreground">تاريخ الدفع</p>
+                <p className="mt-1 font-bold">{formatDate(receiptDetail.payment_date)}</p>
+              </div>
+              <div className="rounded-xl bg-muted/30 p-3">
+                <p className="text-xs text-muted-foreground">المبلغ</p>
+                <p className="mt-1 font-bold">{formatMoney(receiptDetail.amount)}</p>
+              </div>
+              <div className="rounded-xl bg-muted/30 p-3">
+                <p className="text-xs text-muted-foreground">طريقة الدفع</p>
+                <p className="mt-1 font-bold">{paymentMethodLabels[receiptDetail.payment_method] ?? receiptDetail.payment_method}</p>
+              </div>
+              <div className="rounded-xl bg-muted/30 p-3">
+                <p className="text-xs text-muted-foreground">المرجع</p>
+                <p className="mt-1 font-bold">{receiptDetail.reference_number || '—'}</p>
+              </div>
+              <div className="rounded-xl bg-muted/30 p-3">
+                <p className="text-xs text-muted-foreground">تاريخ الإنشاء</p>
+                <p className="mt-1 font-bold">{formatDate(receiptDetail.created_at)}</p>
+              </div>
+              <div className="rounded-xl bg-muted/30 p-3 md:col-span-2 xl:col-span-3">
+                <p className="text-xs text-muted-foreground">السياق المرتبط</p>
+                <p className="mt-1 font-bold">{formatReceiptContext(receiptDetail)}</p>
+              </div>
+            </div>
+          ) : null}
+        </div>
       </CardContent>
     </Card>
 
