@@ -14,7 +14,7 @@ import { summarizeInvoices, type InvoiceStatusFilter } from './invoices/invoiceS
 import { useGenerateInvoices, useInvoice, useInvoices } from './invoices/useInvoices';
 import { usePostPayment } from './payments/usePayments';
 import { useReceipt, useReceipts } from './receipts/useReceipts';
-import { useCollectionSummaryReport } from './reports/useFinancialReports';
+import { useArrearsSummaryReport, useCollectionSummaryReport } from './reports/useFinancialReports';
 
 const expenseSchema = z.object({
   property_id: z.string().uuid('اختر العقار'),
@@ -126,12 +126,19 @@ export function FinancialsPage() {
   const [filters] = useState({ propertyId: '', category: '', from: '', to: '' });
   const { data: expenses = [] } = useExpenses(filters);
   const reportFilters = useMemo(() => getCurrentMonthReportRange(), []);
+  const arrearsReportFilters = useMemo(() => ({ asOf: new Date().toISOString().slice(0, 10) }), []);
   const {
     data: collectionSummary,
     isLoading: isCollectionSummaryLoading,
     isError: isCollectionSummaryError,
     error: collectionSummaryError,
   } = useCollectionSummaryReport(reportFilters);
+  const {
+    data: arrearsSummary,
+    isLoading: isArrearsSummaryLoading,
+    isError: isArrearsSummaryError,
+    error: arrearsSummaryError,
+  } = useArrearsSummaryReport(arrearsReportFilters);
   const createExpense = useCreateExpense();
   const summary = useMemo(() => summarizeInvoices(invoices), [invoices]);
   const remaining = useMemo(
@@ -255,6 +262,40 @@ export function FinancialsPage() {
             </div>
           </div>
         ) : null}
+        <div className="rounded-2xl border bg-muted/20 p-4">
+          <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h3 className="font-black">المتأخرات</h3>
+              <p className="text-xs text-muted-foreground">تحقق حسب تاريخ الاستحقاق حتى {formatDate(arrearsReportFilters.asOf)}.</p>
+            </div>
+          </div>
+          {isArrearsSummaryLoading ? <div className="mt-3 rounded-xl border border-dashed p-3 text-center text-sm text-muted-foreground">جارٍ تحميل ملخص المتأخرات...</div> : null}
+          {isArrearsSummaryError ? (
+            <div className="mt-3 rounded-xl border border-destructive/40 bg-destructive/10 p-3 text-center text-sm text-destructive">
+              {getErrorMessage(arrearsSummaryError, 'تعذر تحميل ملخص المتأخرات')}
+            </div>
+          ) : null}
+          {arrearsSummary ? (
+            <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              <div className="rounded-xl border bg-background p-3">
+                <p className="text-xs text-muted-foreground">إجمالي المتأخر</p>
+                <p className="mt-1 font-black">{formatMoney(arrearsSummary.totalOverdue)}</p>
+              </div>
+              <div className="rounded-xl border bg-background p-3">
+                <p className="text-xs text-muted-foreground">عدد الفواتير المتأخرة</p>
+                <p className="mt-1 font-black">{arrearsSummary.overdueInvoiceCount}</p>
+              </div>
+              <div className="rounded-xl border bg-background p-3">
+                <p className="text-xs text-muted-foreground">أكثر من 90 يوم</p>
+                <p className="mt-1 font-black">{formatMoney(arrearsSummary.over90Amount)}</p>
+              </div>
+              <div className="rounded-xl border bg-background p-3">
+                <p className="text-xs text-muted-foreground">عدد أكثر من 90 يوم</p>
+                <p className="mt-1 font-black">{arrearsSummary.over90InvoiceCount}</p>
+              </div>
+            </div>
+          ) : null}
+        </div>
       </CardContent>
     </Card>
     <Card>

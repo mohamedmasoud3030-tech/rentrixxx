@@ -1,5 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
-import type { Contract, Expense, Invoice, Payment, Property } from '@/types/domain';
+import type { Contract, Expense, Invoice, Payment, Person, Property, Unit } from '@/types/domain';
 import { getSafeRemainingAmount, sumFinancialValues, toFinancialNumber } from '../financialMath';
 
 export type FinancialReportStatus = Invoice['status'] | 'all';
@@ -95,13 +95,87 @@ export type ExpenseBreakdownReport = {
   byProperty: ExpenseBreakdownPropertyRow[];
 };
 
-type ContractContext = Pick<Contract, 'id' | 'property_id' | 'tenant_id'>;
+export type ArrearsReportFilters = {
+  asOf: string;
+  propertyId?: string;
+  tenantId?: string;
+  contractId?: string;
+};
+
+export type AgingBucketKey = 'current' | 'days_1_30' | 'days_31_60' | 'days_61_90' | 'days_90_plus';
+
+export type AgedReceivablesBucket = {
+  key: AgingBucketKey;
+  label: string;
+  total: number;
+  invoiceCount: number;
+};
+
+export type OverdueInvoiceReportRow = {
+  invoiceId: string;
+  shortInvoiceId: string;
+  contractId: string;
+  tenantId: string | null;
+  tenantName: string | null;
+  propertyId: string | null;
+  propertyTitle: string | null;
+  unitId: string | null;
+  unitNumber: string | null;
+  dueDate: string;
+  daysOverdue: number;
+  amount: number;
+  paidAmount: number;
+  remainingAmount: number;
+  status: Invoice['status'];
+};
+
+export type AgedReceivablesGroupRow = {
+  contractId: string;
+  tenantId: string | null;
+  tenantName: string | null;
+  propertyId: string | null;
+  propertyTitle: string | null;
+  unitId: string | null;
+  unitNumber: string | null;
+  buckets: Record<AgingBucketKey, AgedReceivablesBucket>;
+  totalOutstanding: number;
+  totalOverdue: number;
+  invoiceCount: number;
+};
+
+export type AgedReceivablesReport = {
+  asOf: string;
+  buckets: Record<AgingBucketKey, AgedReceivablesBucket>;
+  totalOutstanding: number;
+  totalOverdue: number;
+  rows: AgedReceivablesGroupRow[];
+};
+
+export type OverdueInvoicesReport = {
+  asOf: string;
+  totalOverdue: number;
+  invoiceCount: number;
+  rows: OverdueInvoiceReportRow[];
+};
+
+export type ArrearsSummaryReport = {
+  asOf: string;
+  totalOverdue: number;
+  overdueInvoiceCount: number;
+  over90Amount: number;
+  over90InvoiceCount: number;
+  averageDaysOverdue: number;
+};
+
+type ContractContext = Pick<Contract, 'id' | 'property_id' | 'tenant_id'> & { unit_id?: Contract['unit_id'] };
 type InvoiceReportRow = Pick<Invoice, 'id' | 'contract_id' | 'issue_date' | 'due_date' | 'amount' | 'paid_amount' | 'status' | 'deleted_at'> & {
   contracts?: ContractContext | null;
 };
 type PaymentReportRow = Pick<Payment, 'id' | 'invoice_id' | 'amount' | 'payment_date' | 'payment_method' | 'deleted_at'>;
 type ExpenseReportRow = Pick<Expense, 'id' | 'property_id' | 'category' | 'amount' | 'expense_date' | 'deleted_at'>;
 type PropertyContext = Pick<Property, 'id' | 'title'>;
+type PersonContext = Pick<Person, 'id' | 'full_name'>;
+type UnitContext = Pick<Unit, 'id' | 'unit_number'>;
 
 type PaymentWithInvoiceContext = PaymentReportRow & {
   invoice: Pick<InvoiceReportRow, 'id' | 'contract_id'> | null;
@@ -115,7 +189,7 @@ type PaymentWithInvoiceContext = PaymentReportRow & {
 // schema relationships settle; these loaders can later move behind Supabase
 // views/RPCs or typed nested relational selects once those relationships are
 // confirmed.
-const invoiceReportSelect = 'id, contract_id, issue_date, due_date, amount, paid_amount, status, deleted_at, contracts:contract_id(id, property_id, tenant_id)';
+const invoiceReportSelect = 'id, contract_id, issue_date, due_date, amount, paid_amount, status, deleted_at, contracts:contract_id(id, property_id, tenant_id, unit_id)';
 const paymentReportSelect = 'id, invoice_id, amount, payment_date, payment_method, deleted_at';
 const expenseReportSelect = 'id, property_id, category, amount, expense_date, deleted_at';
 
@@ -150,6 +224,67 @@ function matchesExpenseFilters(expense: ExpenseReportRow, filters: ExpenseBreakd
   return true;
 }
 
+const agingBucketLabels: Record<AgingBucketKey, string> = {
+  current: 'Current / not overdue',
+  days_1_30: '1-30 days',
+  days_31_60: '31-60 days',
+  days_61_90: '61-90 days',
+  days_90_plus: '90+ days',
+};
+
+const agingBucketOrder: AgingBucketKey[] = ['current', 'days_1_30', 'days_31_60', 'days_61_90', 'days_90_plus'];
+const receivableInvoiceStatuses: Invoice['status'][] = ['issued', 'partial', 'overdue'];
+const millisecondsPerDay = 24 * 60 * 60 * 1000;
+
+function createEmptyAgingBuckets(): Record<AgingBucketKey, AgedReceivablesBucket> {
+  return agingBucketOrder.reduce((buckets, key) => {
+    buckets[key] = { key, label: agingBucketLabels[key], total: 0, invoiceCount: 0 };
+    return buckets;
+  }, {} as Record<AgingBucketKey, AgedReceivablesBucket>);
+}
+
+function parseDateOnly(value: string): number {
+  const timestamp = Date.parse(`${value}T00:00:00.000Z`);
+  return Number.isFinite(timestamp) ? timestamp : Number.NaN;
+}
+
+export function calculateDaysOverdue(dueDate: string | null | undefined, asOf: string): number {
+  if (!dueDate) return 0;
+  const dueTimestamp = parseDateOnly(dueDate);
+  const asOfTimestamp = parseDateOnly(asOf);
+  if (!Number.isFinite(dueTimestamp) || !Number.isFinite(asOfTimestamp)) return 0;
+  return Math.max(0, Math.floor((asOfTimestamp - dueTimestamp) / millisecondsPerDay));
+}
+
+export function getAgingBucketKey(dueDate: string | null | undefined, asOf: string): AgingBucketKey {
+  if (!dueDate || dueDate > asOf) return 'current';
+  const daysOverdue = calculateDaysOverdue(dueDate, asOf);
+  if (daysOverdue <= 30) return 'days_1_30';
+  if (daysOverdue <= 60) return 'days_31_60';
+  if (daysOverdue <= 90) return 'days_61_90';
+  return 'days_90_plus';
+}
+
+function matchesArrearsContext(invoice: Pick<InvoiceReportRow, 'contract_id' | 'contracts'>, filters: ArrearsReportFilters) {
+  if (filters.contractId && invoice.contract_id !== filters.contractId) return false;
+  if (filters.propertyId && invoice.contracts?.property_id !== filters.propertyId) return false;
+  if (filters.tenantId && invoice.contracts?.tenant_id !== filters.tenantId) return false;
+  return true;
+}
+
+function isReceivableInvoiceStatus(status: Invoice['status']) {
+  return receivableInvoiceStatuses.includes(status);
+}
+
+export function filterInvoicesForArrearsReport(invoices: InvoiceReportRow[], filters: ArrearsReportFilters) {
+  return invoices.filter((invoice) => {
+    if (invoice.deleted_at) return false;
+    if (!isReceivableInvoiceStatus(invoice.status)) return false;
+    if (getSafeRemainingAmount(invoice.amount, invoice.paid_amount) <= 0) return false;
+    return matchesArrearsContext(invoice, filters);
+  });
+}
+
 export function filterInvoicesForReport(invoices: InvoiceReportRow[], filters: FinancialReportFilters) {
   return invoices.filter((invoice) => {
     // These guards duplicate the Supabase filters on purpose for direct helper
@@ -171,6 +306,140 @@ export function filterPaymentsForReport(payments: PaymentWithInvoiceContext[], f
 
 export function filterExpensesForReport(expenses: ExpenseReportRow[], filters: ExpenseBreakdownReportFilters) {
   return expenses.filter((expense) => matchesExpenseFilters(expense, filters));
+}
+
+type ArrearsContextMaps = {
+  tenantsById?: Map<string, PersonContext>;
+  propertiesById?: Map<string, PropertyContext>;
+  unitsById?: Map<string, UnitContext>;
+};
+
+type ArrearsInvoiceRow = InvoiceReportRow & { contracts?: ContractContext | null };
+
+function buildOverdueInvoiceRow(invoice: ArrearsInvoiceRow, asOf: string, contexts: ArrearsContextMaps = {}): OverdueInvoiceReportRow {
+  const contract = invoice.contracts ?? null;
+  const tenant = contract?.tenant_id ? contexts.tenantsById?.get(contract.tenant_id) : undefined;
+  const property = contract?.property_id ? contexts.propertiesById?.get(contract.property_id) : undefined;
+  const unit = contract?.unit_id ? contexts.unitsById?.get(contract.unit_id) : undefined;
+
+  return {
+    invoiceId: invoice.id,
+    shortInvoiceId: invoice.id.slice(0, 8),
+    contractId: invoice.contract_id,
+    tenantId: contract?.tenant_id ?? null,
+    tenantName: tenant?.full_name ?? null,
+    propertyId: contract?.property_id ?? null,
+    propertyTitle: property?.title ?? null,
+    unitId: contract?.unit_id ?? null,
+    unitNumber: unit?.unit_number ?? null,
+    dueDate: invoice.due_date,
+    daysOverdue: calculateDaysOverdue(invoice.due_date, asOf),
+    amount: toFinancialNumber(invoice.amount),
+    paidAmount: toFinancialNumber(invoice.paid_amount),
+    remainingAmount: getSafeRemainingAmount(invoice.amount, invoice.paid_amount),
+    status: invoice.status,
+  };
+}
+
+export function summarizeOverdueInvoicesReport(
+  invoices: ArrearsInvoiceRow[],
+  filters: ArrearsReportFilters,
+  contexts: ArrearsContextMaps = {},
+): OverdueInvoicesReport {
+  const rows = filterInvoicesForArrearsReport(invoices, filters)
+    .filter((invoice) => invoice.due_date <= filters.asOf)
+    .map((invoice) => buildOverdueInvoiceRow(invoice, filters.asOf, contexts))
+    .sort((a, b) => a.dueDate.localeCompare(b.dueDate) || b.remainingAmount - a.remainingAmount || a.invoiceId.localeCompare(b.invoiceId));
+
+  return {
+    asOf: filters.asOf,
+    totalOverdue: sumFinancialValues(rows.map((row) => row.remainingAmount)),
+    invoiceCount: rows.length,
+    rows,
+  };
+}
+
+function addToAgingBucket(buckets: Record<AgingBucketKey, AgedReceivablesBucket>, key: AgingBucketKey, amount: number) {
+  buckets[key] = {
+    ...buckets[key],
+    total: toFinancialNumber(buckets[key].total) + toFinancialNumber(amount),
+    invoiceCount: buckets[key].invoiceCount + 1,
+  };
+}
+
+function createAgedReceivablesGroup(invoice: ArrearsInvoiceRow, contexts: ArrearsContextMaps = {}): AgedReceivablesGroupRow {
+  const contract = invoice.contracts ?? null;
+  const tenant = contract?.tenant_id ? contexts.tenantsById?.get(contract.tenant_id) : undefined;
+  const property = contract?.property_id ? contexts.propertiesById?.get(contract.property_id) : undefined;
+  const unit = contract?.unit_id ? contexts.unitsById?.get(contract.unit_id) : undefined;
+
+  return {
+    contractId: invoice.contract_id,
+    tenantId: contract?.tenant_id ?? null,
+    tenantName: tenant?.full_name ?? null,
+    propertyId: contract?.property_id ?? null,
+    propertyTitle: property?.title ?? null,
+    unitId: contract?.unit_id ?? null,
+    unitNumber: unit?.unit_number ?? null,
+    buckets: createEmptyAgingBuckets(),
+    totalOutstanding: 0,
+    totalOverdue: 0,
+    invoiceCount: 0,
+  };
+}
+
+export function summarizeAgedReceivablesReport(
+  invoices: ArrearsInvoiceRow[],
+  filters: ArrearsReportFilters,
+  contexts: ArrearsContextMaps = {},
+): AgedReceivablesReport {
+  const buckets = createEmptyAgingBuckets();
+  const groupsByContract = new Map<string, AgedReceivablesGroupRow>();
+  const receivableInvoices = filterInvoicesForArrearsReport(invoices, filters);
+
+  for (const invoice of receivableInvoices) {
+    const remainingAmount = getSafeRemainingAmount(invoice.amount, invoice.paid_amount);
+    const bucketKey = getAgingBucketKey(invoice.due_date, filters.asOf);
+    addToAgingBucket(buckets, bucketKey, remainingAmount);
+
+    const group = groupsByContract.get(invoice.contract_id) ?? createAgedReceivablesGroup(invoice, contexts);
+    addToAgingBucket(group.buckets, bucketKey, remainingAmount);
+    group.totalOutstanding = toFinancialNumber(group.totalOutstanding) + remainingAmount;
+    if (bucketKey !== 'current') group.totalOverdue = toFinancialNumber(group.totalOverdue) + remainingAmount;
+    group.invoiceCount += 1;
+    groupsByContract.set(invoice.contract_id, group);
+  }
+
+  const rows = Array.from(groupsByContract.values()).sort((a, b) => {
+    const aLabel = a.tenantName ?? a.propertyTitle ?? a.contractId;
+    const bLabel = b.tenantName ?? b.propertyTitle ?? b.contractId;
+    return aLabel.localeCompare(bLabel, 'ar');
+  });
+
+  return {
+    asOf: filters.asOf,
+    buckets,
+    totalOutstanding: sumFinancialValues(agingBucketOrder.map((key) => buckets[key].total)),
+    totalOverdue: sumFinancialValues(agingBucketOrder.filter((key) => key !== 'current').map((key) => buckets[key].total)),
+    rows,
+  };
+}
+
+export function summarizeArrearsSummaryReport(invoices: ArrearsInvoiceRow[], filters: ArrearsReportFilters): ArrearsSummaryReport {
+  const overdueInvoices = filterInvoicesForArrearsReport(invoices, filters).filter((invoice) => invoice.due_date <= filters.asOf);
+  const daysOverdueValues = overdueInvoices.map((invoice) => calculateDaysOverdue(invoice.due_date, filters.asOf));
+  const over90Invoices = overdueInvoices.filter((invoice) => calculateDaysOverdue(invoice.due_date, filters.asOf) > 90);
+
+  return {
+    asOf: filters.asOf,
+    totalOverdue: sumFinancialValues(overdueInvoices.map((invoice) => getSafeRemainingAmount(invoice.amount, invoice.paid_amount))),
+    overdueInvoiceCount: overdueInvoices.length,
+    over90Amount: sumFinancialValues(over90Invoices.map((invoice) => getSafeRemainingAmount(invoice.amount, invoice.paid_amount))),
+    over90InvoiceCount: over90Invoices.length,
+    averageDaysOverdue: daysOverdueValues.length > 0
+      ? toFinancialNumber(sumFinancialValues(daysOverdueValues) / daysOverdueValues.length)
+      : 0,
+  };
 }
 
 export function summarizeInvoiceTotals(invoices: Pick<InvoiceReportRow, 'amount' | 'paid_amount'>[]): InvoiceTotalsReport {
@@ -219,7 +488,6 @@ export function summarizeCollectionReport(params: {
     expensesTotal: toFinancialNumber(params.expenseTotals.totalExpenses),
   };
 }
-
 
 function createEmptyPaymentMethodTotals(): PaymentMethodTotals {
   return {
@@ -350,6 +618,20 @@ async function loadInvoices(filters: FinancialReportFilters): Promise<InvoiceRep
   return filterInvoicesForReport(data ?? [], filters);
 }
 
+async function loadArrearsInvoices(filters: ArrearsReportFilters): Promise<InvoiceReportRow[]> {
+  let query = supabase
+    .from('invoices')
+    .select(invoiceReportSelect)
+    .is('deleted_at', null)
+    .in('status', receivableInvoiceStatuses);
+
+  if (filters.contractId) query = query.eq('contract_id', filters.contractId);
+
+  const { data, error } = await query.returns<InvoiceReportRow[]>();
+  if (error) throw error;
+  return filterInvoicesForArrearsReport(data ?? [], filters);
+}
+
 async function loadPaymentContexts(payments: PaymentReportRow[]): Promise<PaymentWithInvoiceContext[]> {
   if (payments.length === 0) return [];
 
@@ -470,6 +752,63 @@ async function loadPropertiesById(propertyIds: string[]): Promise<Map<string, Pr
   if (error) throw error;
 
   return new Map((data ?? []).map((property) => [property.id, property]));
+}
+
+async function loadPeopleById(tenantIds: string[]): Promise<Map<string, PersonContext>> {
+  if (tenantIds.length === 0) return new Map();
+
+  const { data, error } = await supabase
+    .from('people')
+    .select('id, full_name')
+    .in('id', tenantIds)
+    .is('deleted_at', null)
+    .returns<PersonContext[]>();
+  if (error) throw error;
+
+  return new Map((data ?? []).map((person) => [person.id, person]));
+}
+
+async function loadUnitsById(unitIds: string[]): Promise<Map<string, UnitContext>> {
+  if (unitIds.length === 0) return new Map();
+
+  const { data, error } = await supabase
+    .from('units')
+    .select('id, unit_number')
+    .in('id', unitIds)
+    .is('deleted_at', null)
+    .returns<UnitContext[]>();
+  if (error) throw error;
+
+  return new Map((data ?? []).map((unit) => [unit.id, unit]));
+}
+
+async function loadArrearsContextMaps(invoices: ArrearsInvoiceRow[]): Promise<ArrearsContextMaps> {
+  const contracts = invoices.map((invoice) => invoice.contracts).filter((contract): contract is ContractContext => Boolean(contract));
+  const [tenantsById, propertiesById, unitsById] = await Promise.all([
+    loadPeopleById(uniqueStrings(contracts.map((contract) => contract.tenant_id))).catch(() => new Map<string, PersonContext>()),
+    loadPropertiesById(uniqueStrings(contracts.map((contract) => contract.property_id))).catch(() => new Map<string, PropertyContext>()),
+    loadUnitsById(uniqueStrings(contracts.map((contract) => contract.unit_id))).catch(() => new Map<string, UnitContext>()),
+  ]);
+
+  return { tenantsById, propertiesById, unitsById };
+}
+
+export async function getOverdueInvoicesReport(filters: ArrearsReportFilters): Promise<OverdueInvoicesReport> {
+  const invoices = await loadArrearsInvoices(filters);
+  const overdueInvoices = invoices.filter((invoice) => invoice.due_date <= filters.asOf);
+  const contexts = await loadArrearsContextMaps(overdueInvoices);
+  return summarizeOverdueInvoicesReport(overdueInvoices, filters, contexts);
+}
+
+export async function getAgedReceivablesReport(filters: ArrearsReportFilters): Promise<AgedReceivablesReport> {
+  const invoices = await loadArrearsInvoices(filters);
+  const contexts = await loadArrearsContextMaps(invoices);
+  return summarizeAgedReceivablesReport(invoices, filters, contexts);
+}
+
+export async function getArrearsSummaryReport(filters: ArrearsReportFilters): Promise<ArrearsSummaryReport> {
+  const invoices = await loadArrearsInvoices(filters);
+  return summarizeArrearsSummaryReport(invoices, filters);
 }
 
 export async function getDailyCollectionReport(filters: FinancialReportFilters): Promise<DailyCollectionReport> {
