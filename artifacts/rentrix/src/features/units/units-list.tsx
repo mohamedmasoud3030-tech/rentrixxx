@@ -4,15 +4,20 @@ import { EmptyState } from '@/components/empty-state';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
+import { StatusBadge } from '@/components/ui/status-badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { defaultCompanyLocalSettings } from '@/lib/companySettings';
+import { formatCompanyMoney } from '@/lib/companyFormatters';
 import type { Unit } from '@/types/domain';
 import { unitStatusLabels } from './unit-schema';
 import { UnitFormModal } from './unit-form-modal';
 import { useSoftDeleteUnit, useUnits } from './use-units';
 
+const unitStatusTone = { available: 'green', occupied: 'blue', maintenance: 'gold', reserved: 'gray' } as const;
+
 function money(value: number | null) {
   if (value === null) return '—';
-  return new Intl.NumberFormat('ar', { maximumFractionDigits: 2 }).format(value);
+  return formatCompanyMoney(defaultCompanyLocalSettings, value);
 }
 
 export function UnitsList({ propertyId }: { propertyId: string }) {
@@ -63,8 +68,8 @@ export function UnitsList({ propertyId }: { propertyId: string }) {
                   <TableRow key={unit.id}>
                     <TableCell className="font-black">{unit.unit_number}</TableCell>
                     <TableCell>{unit.floor ?? '—'}</TableCell>
-                    <TableCell>{unitStatusLabels[unit.status]}</TableCell>
-                    <TableCell>{money(unit.rent_amount)}</TableCell>
+                    <TableCell><StatusBadge tone={unitStatusTone[unit.status]}>{unitStatusLabels[unit.status]}</StatusBadge></TableCell>
+                    <TableCell dir="ltr" className="font-bold">{money(unit.rent_amount)}</TableCell>
                     <TableCell>{unit.notes ?? '—'}</TableCell>
                     <TableCell>
                       <div className="flex gap-2">
