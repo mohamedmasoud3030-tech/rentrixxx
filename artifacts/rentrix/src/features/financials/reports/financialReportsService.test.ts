@@ -200,9 +200,9 @@ describe('financialReportsService Supabase queries', () => {
       invoices: [{ id: 'invoice_1', contract_id: 'contract_1', deleted_at: null }],
       contracts: [{ id: 'contract_1', property_id: 'property_1', tenant_id: 'tenant_1' }],
     });
-    const { getReceiptTotalsReport } = await import('./financialReportsService');
+    const { getPaymentTotalsReport } = await import('./financialReportsService');
 
-    await expect(getReceiptTotalsReport({
+    await expect(getPaymentTotalsReport({
       dateFrom: '2026-05-01',
       dateTo: '2026-05-31',
       propertyId: 'property_1',

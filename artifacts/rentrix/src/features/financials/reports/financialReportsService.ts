@@ -56,6 +56,13 @@ type PaymentWithInvoiceContext = PaymentReportRow & {
   contract: ContractContext | null;
 };
 
+// Foundation note: report loaders below intentionally use bounded, batched
+// current-app hydration. Base invoice/payment/expense queries are constrained by
+// required date filters first, then related invoices/contracts are fetched by
+// grouped id lists to avoid N+1 requests. This keeps PR #453 merge-safe while
+// schema relationships settle; these loaders can later move behind Supabase
+// views/RPCs or typed nested relational selects once those relationships are
+// confirmed.
 const invoiceReportSelect = 'id, contract_id, issue_date, due_date, amount, paid_amount, status, deleted_at, contracts:contract_id(id, property_id, tenant_id)';
 const paymentReportSelect = 'id, invoice_id, amount, payment_date, deleted_at';
 const expenseReportSelect = 'id, property_id, amount, expense_date, deleted_at';
@@ -85,6 +92,8 @@ function matchesPaymentContext(payment: PaymentWithInvoiceContext, filters: Fina
 
 export function filterInvoicesForReport(invoices: InvoiceReportRow[], filters: FinancialReportFilters) {
   return invoices.filter((invoice) => {
+    // These guards duplicate the Supabase filters on purpose for direct helper
+    // callers/tests and as a defensive boundary around manually hydrated rows.
     if (invoice.deleted_at) return false;
     if (!isWithinDateRange(invoice.issue_date, filters)) return false;
     if (hasStatusFilter(filters.status) && invoice.status !== filters.status) return false;
@@ -162,6 +171,9 @@ async function loadInvoices(filters: FinancialReportFilters): Promise<InvoiceRep
 async function loadPaymentContexts(payments: PaymentReportRow[]): Promise<PaymentWithInvoiceContext[]> {
   if (payments.length === 0) return [];
 
+  // Batched hydration only: one invoice lookup for all payment invoice ids, then
+  // one contract lookup for all related contract ids. Do not add per-payment
+  // queries here.
   const invoiceIds = uniqueStrings(payments.map((payment) => payment.invoice_id));
   const { data: invoices, error: invoicesError } = await supabase
     .from('invoices')
@@ -207,11 +219,7 @@ async function loadPayments(filters: FinancialReportFilters): Promise<PaymentWit
   if (error) throw error;
 
   const contexts = await loadPaymentContexts(data ?? []);
-  return contexts.filter((payment) => {
-    if (payment.deleted_at) return false;
-    if (!isWithinDateRange(payment.payment_date, filters)) return false;
-    return matchesPaymentContext(payment, filters);
-  });
+  return contexts.filter((payment) => matchesPaymentContext(payment, filters));
 }
 
 async function loadExpenses(filters: FinancialReportFilters): Promise<ExpenseReportRow[]> {
@@ -227,12 +235,7 @@ async function loadExpenses(filters: FinancialReportFilters): Promise<ExpenseRep
   const { data, error } = await query.returns<ExpenseReportRow[]>();
   if (error) throw error;
 
-  return (data ?? []).filter((expense) => {
-    if (expense.deleted_at) return false;
-    if (!isWithinDateRange(expense.expense_date, filters)) return false;
-    if (filters.propertyId && expense.property_id !== filters.propertyId) return false;
-    return true;
-  });
+  return data ?? [];
 }
 
 export async function getInvoiceTotalsReport(filters: FinancialReportFilters): Promise<InvoiceTotalsReport> {
@@ -255,11 +258,6 @@ export async function getOutstandingBalanceReport(filters: FinancialReportFilter
   return summarizeOutstandingBalance(invoices);
 }
 
-export async function getReceiptTotalsReport(filters: FinancialReportFilters): Promise<PaymentTotalsReport> {
-  const payments = await loadPayments(filters);
-  return summarizePaymentTotals(payments);
-}
-
 export async function getCollectionSummaryReport(filters: FinancialReportFilters): Promise<CollectionSummaryReport> {
   const [invoices, payments, expenses] = await Promise.all([
     loadInvoices(filters),
@@ -269,6 +267,8 @@ export async function getCollectionSummaryReport(filters: FinancialReportFilters
 
   return summarizeCollectionReport({
     invoiceTotals: summarizeInvoiceTotals(invoices),
+    // Receipts are currently read-only projections of posted payments, so the
+    // collection summary uses payment totals as the canonical receipt total.
     paymentTotals: summarizePaymentTotals(payments),
     outstandingBalance: summarizeOutstandingBalance(invoices),
     expenseTotals: summarizeExpenseTotals(expenses),
