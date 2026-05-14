@@ -4,13 +4,18 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { EmptyState } from '@/components/empty-state';
 import { RouteLoadingState } from '@/components/loading-state';
+import { StatusBadge } from '@/components/ui/status-badge';
 import { UnitsList } from '@/features/units/units-list';
+import { defaultCompanyLocalSettings } from '@/lib/companySettings';
+import { formatCompanyDate, formatCompanyMoney } from '@/lib/companyFormatters';
 import { propertyStatusLabels } from './property-schema';
 import { useProperty } from './use-properties';
 
+const propertyStatusTone = { active: 'green', inactive: 'gray', maintenance: 'gold', sold: 'blue' } as const;
+
 function money(value: number | null) {
   if (value === null) return '—';
-  return new Intl.NumberFormat('ar', { maximumFractionDigits: 2 }).format(value);
+  return formatCompanyMoney(defaultCompanyLocalSettings, value);
 }
 
 function InfoItem({ label, value }: { label: string; value: string }) {
@@ -53,11 +58,14 @@ export function PropertyDetailPage() {
         </CardHeader>
         <CardContent className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
           <InfoItem label="النوع" value={property.type} />
-          <InfoItem label="الحالة" value={propertyStatusLabels[property.status]} />
+          <div className="rounded-2xl border border-border bg-background p-4">
+            <p className="text-xs font-bold text-muted-foreground">الحالة</p>
+            <div className="mt-2"><StatusBadge tone={propertyStatusTone[property.status]}>{propertyStatusLabels[property.status]}</StatusBadge></div>
+          </div>
           <InfoItem label="المالك" value={property.owner_name ?? '—'} />
           <InfoItem label="قيمة الشراء" value={money(property.purchase_value)} />
           <InfoItem label="القيمة الحالية" value={money(property.current_value)} />
-          <InfoItem label="تاريخ الإنشاء" value={new Date(property.created_at).toLocaleDateString('ar')} />
+          <InfoItem label="تاريخ الإنشاء" value={formatCompanyDate(defaultCompanyLocalSettings, property.created_at)} />
           <div className="rounded-2xl border border-border bg-background p-4 md:col-span-2">
             <p className="text-xs font-bold text-muted-foreground">ملاحظات</p>
             <p className="mt-1 leading-7">{property.notes ?? '—'}</p>
