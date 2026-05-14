@@ -4,7 +4,8 @@ import { generateInvoicesFromActiveContracts, getInvoiceDetail, listInvoices, ty
 
 export const invoiceKeys = {
   all: ['invoices'] as const,
-  list: (params: InvoiceStatusFilter | InvoiceListParams) => [...invoiceKeys.all, 'list', params] as const,
+  lists: () => [...invoiceKeys.all, 'list'] as const,
+  list: (params: InvoiceStatusFilter | InvoiceListParams) => [...invoiceKeys.lists(), params] as const,
   detail: (invoiceId: string) => [...invoiceKeys.all, 'detail', invoiceId] as const,
 };
 

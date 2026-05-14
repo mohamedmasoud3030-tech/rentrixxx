@@ -1,5 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { Button } from '@/components/ui/button';
@@ -9,6 +9,7 @@ import { formatCompanyDate, formatCompanyMoney } from '@/lib/companyFormatters';
 import { defaultCompanyLocalSettings } from '@/lib/companySettings';
 import { cn } from '@/lib/utils';
 import { useExpenses, useCreateExpense } from './expenses/useExpenses';
+import { getSafeRemainingAmount, toFinancialNumber } from './financialMath';
 import { summarizeInvoices, type InvoiceStatusFilter } from './invoices/invoiceService';
 import { useGenerateInvoices, useInvoice, useInvoices } from './invoices/useInvoices';
 import { usePostPayment } from './payments/usePayments';
@@ -55,16 +56,13 @@ const receiptStatusLabels: Record<string, string> = {
 };
 
 function formatMoney(value: number | null | undefined) {
-  return formatCompanyMoney(defaultCompanyLocalSettings, value);
+  return formatCompanyMoney(defaultCompanyLocalSettings, toFinancialNumber(value));
 }
 
 function formatDate(value: string | number | Date) {
   return formatCompanyDate(defaultCompanyLocalSettings, value);
 }
 
-function getRemainingAmount(amount: number | null | undefined, paidAmount: number | null | undefined) {
-  return Math.max(0, Number(amount ?? 0) - Number(paidAmount ?? 0));
-}
 
 function getErrorMessage(error: unknown, fallback: string) {
   return error instanceof Error ? error.message : fallback;
@@ -85,6 +83,7 @@ export function FinancialsPage() {
   const [selectedInvoiceId, setSelectedInvoiceId] = useState('');
   const [selectedReceiptId, setSelectedReceiptId] = useState('');
   const [amount, setAmount] = useState('');
+  const quickPaySubmitRef = useRef(false);
   const {
     data: invoices = [],
     isLoading: isInvoicesLoading,
@@ -117,18 +116,20 @@ export function FinancialsPage() {
   const createExpense = useCreateExpense();
   const summary = useMemo(() => summarizeInvoices(invoices), [invoices]);
   const remaining = useMemo(
-    () => (invoiceDetail ? getRemainingAmount(invoiceDetail.amount, invoiceDetail.paid_amount) : 0),
+    () => (invoiceDetail ? getSafeRemainingAmount(invoiceDetail.amount, invoiceDetail.paid_amount) : 0),
     [invoiceDetail],
   );
-  const amountValue = Number(amount);
+  const rawAmountValue = Number(amount);
+  const amountValue = toFinancialNumber(amount);
   const amountValidationMessage = useMemo(() => {
+    if (!selectedInvoiceId || !invoiceDetail || invoiceDetail.id !== selectedInvoiceId) return 'اختر فاتورة صالحة أولاً';
     if (!amount.trim()) return 'المبلغ مطلوب';
-    if (!Number.isFinite(amountValue)) return 'المبلغ يجب أن يكون رقماً صالحاً';
+    if (!Number.isFinite(rawAmountValue)) return 'المبلغ يجب أن يكون رقماً صالحاً';
     if (amountValue <= 0) return 'المبلغ يجب أن يكون أكبر من صفر';
-    if (amountValue > remaining) return 'المبلغ يجب ألا يتجاوز الرصيد المتبقي';
+    if (amountValue > getSafeRemainingAmount(invoiceDetail.amount, invoiceDetail.paid_amount)) return 'المبلغ يجب ألا يتجاوز الرصيد المتبقي';
     return '';
-  }, [amount, amountValue, remaining]);
-  const isPaymentDisabled = postPayment.isPending || remaining <= 0 || Boolean(amountValidationMessage);
+  }, [amount, amountValue, invoiceDetail, rawAmountValue, selectedInvoiceId]);
+  const isPaymentDisabled = quickPaySubmitRef.current || postPayment.isPending || remaining <= 0 || Boolean(amountValidationMessage);
   const hasInvoiceFilter = status !== 'all' || invoiceSearch.trim().length > 0;
   const propertyRows = properties?.rows ?? [];
 
@@ -167,17 +168,27 @@ export function FinancialsPage() {
   };
 
   const onPostPayment = () => {
-    if (!invoiceDetail || isPaymentDisabled) return;
+    if (quickPaySubmitRef.current || postPayment.isPending) return;
+    if (!selectedInvoiceId || !invoiceDetail || invoiceDetail.id !== selectedInvoiceId) return;
+    const currentRemaining = getSafeRemainingAmount(invoiceDetail.amount, invoiceDetail.paid_amount);
+    const currentRawAmount = Number(amount);
+    const currentAmount = toFinancialNumber(amount);
+    if (!amount.trim() || !Number.isFinite(currentRawAmount) || currentAmount <= 0 || currentAmount > currentRemaining) return;
+
+    quickPaySubmitRef.current = true;
     postPayment.mutate(
       {
         invoice_id: invoiceDetail.id,
-        amount: amountValue,
+        amount: currentAmount,
         method: 'cash',
         date: new Date().toISOString().slice(0, 10),
         reference: null,
       },
       {
         onSuccess: () => setAmount(''),
+        onSettled: () => {
+          quickPaySubmitRef.current = false;
+        },
       },
     );
   };
@@ -237,7 +248,7 @@ export function FinancialsPage() {
             </div>
           ) : null}
           {!isInvoicesLoading && !isInvoicesError && invoices.map((invoice) => {
-            const rowRemaining = getRemainingAmount(invoice.amount, invoice.paid_amount);
+            const rowRemaining = getSafeRemainingAmount(invoice.amount, invoice.paid_amount);
             const isSelected = selectedInvoiceId === invoice.id;
             return (
               <button

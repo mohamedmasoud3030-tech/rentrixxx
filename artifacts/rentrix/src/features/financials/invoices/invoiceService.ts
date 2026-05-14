@@ -1,5 +1,6 @@
 import { supabase } from '@/integrations/supabase/client';
 import type { Invoice, Payment } from '@/types/domain';
+import { getSafeRemainingAmount, toFinancialNumber } from '../financialMath';
 
 export type InvoiceStatusFilter = 'unpaid' | 'partial' | 'paid' | 'overdue' | 'all';
 export type InvoiceListItem = Invoice & { contracts: { id: string; property_id: string; tenant_id: string } | null };
@@ -17,16 +18,12 @@ function applyStatusFilter(query: ReturnType<typeof supabase.from>, status: Invo
   return query;
 }
 
-function remainingAmount(invoice: Pick<Invoice, 'amount' | 'paid_amount'>) {
-  return Math.max(0, Number(invoice.amount ?? 0) - Number(invoice.paid_amount ?? 0));
-}
-
 export function summarizeInvoices(invoices: Pick<Invoice, 'amount' | 'paid_amount'>[]): InvoiceSummary {
   return invoices.reduce(
     (summary, invoice) => {
-      summary.totalAmount += Number(invoice.amount ?? 0);
-      summary.totalPaid += Number(invoice.paid_amount ?? 0);
-      summary.totalRemaining += remainingAmount(invoice);
+      summary.totalAmount += toFinancialNumber(invoice.amount);
+      summary.totalPaid += toFinancialNumber(invoice.paid_amount);
+      summary.totalRemaining += getSafeRemainingAmount(invoice.amount, invoice.paid_amount);
       summary.count += 1;
       return summary;
     },
