@@ -315,16 +315,18 @@ type ArrearsContextMaps = {
 };
 
 type ArrearsInvoiceRow = InvoiceReportRow & { contracts?: ContractContext | null };
+type ArrearsEntityContextFields = Pick<
+  OverdueInvoiceReportRow,
+  'contractId' | 'tenantId' | 'tenantName' | 'propertyId' | 'propertyTitle' | 'unitId' | 'unitNumber'
+>;
 
-function buildOverdueInvoiceRow(invoice: ArrearsInvoiceRow, asOf: string, contexts: ArrearsContextMaps = {}): OverdueInvoiceReportRow {
+function getArrearsEntityContextFields(invoice: ArrearsInvoiceRow, contexts: ArrearsContextMaps = {}): ArrearsEntityContextFields {
   const contract = invoice.contracts ?? null;
   const tenant = contract?.tenant_id ? contexts.tenantsById?.get(contract.tenant_id) : undefined;
   const property = contract?.property_id ? contexts.propertiesById?.get(contract.property_id) : undefined;
   const unit = contract?.unit_id ? contexts.unitsById?.get(contract.unit_id) : undefined;
 
   return {
-    invoiceId: invoice.id,
-    shortInvoiceId: invoice.id.slice(0, 8),
     contractId: invoice.contract_id,
     tenantId: contract?.tenant_id ?? null,
     tenantName: tenant?.full_name ?? null,
@@ -332,6 +334,14 @@ function buildOverdueInvoiceRow(invoice: ArrearsInvoiceRow, asOf: string, contex
     propertyTitle: property?.title ?? null,
     unitId: contract?.unit_id ?? null,
     unitNumber: unit?.unit_number ?? null,
+  };
+}
+
+function buildOverdueInvoiceRow(invoice: ArrearsInvoiceRow, asOf: string, contexts: ArrearsContextMaps = {}): OverdueInvoiceReportRow {
+  return {
+    invoiceId: invoice.id,
+    shortInvoiceId: invoice.id.slice(0, 8),
+    ...getArrearsEntityContextFields(invoice, contexts),
     dueDate: invoice.due_date,
     daysOverdue: calculateDaysOverdue(invoice.due_date, asOf),
     amount: toFinancialNumber(invoice.amount),
@@ -368,19 +378,8 @@ function addToAgingBucket(buckets: Record<AgingBucketKey, AgedReceivablesBucket>
 }
 
 function createAgedReceivablesGroup(invoice: ArrearsInvoiceRow, contexts: ArrearsContextMaps = {}): AgedReceivablesGroupRow {
-  const contract = invoice.contracts ?? null;
-  const tenant = contract?.tenant_id ? contexts.tenantsById?.get(contract.tenant_id) : undefined;
-  const property = contract?.property_id ? contexts.propertiesById?.get(contract.property_id) : undefined;
-  const unit = contract?.unit_id ? contexts.unitsById?.get(contract.unit_id) : undefined;
-
   return {
-    contractId: invoice.contract_id,
-    tenantId: contract?.tenant_id ?? null,
-    tenantName: tenant?.full_name ?? null,
-    propertyId: contract?.property_id ?? null,
-    propertyTitle: property?.title ?? null,
-    unitId: contract?.unit_id ?? null,
-    unitNumber: unit?.unit_number ?? null,
+    ...getArrearsEntityContextFields(invoice, contexts),
     buckets: createEmptyAgingBuckets(),
     totalOutstanding: 0,
     totalOverdue: 0,
@@ -782,15 +781,23 @@ async function loadUnitsById(unitIds: string[]): Promise<Map<string, UnitContext
   return new Map((data ?? []).map((unit) => [unit.id, unit]));
 }
 
+function mapFromSettledContext<T>(result: PromiseSettledResult<Map<string, T>>): Map<string, T> {
+  return result.status === 'fulfilled' ? result.value : new Map<string, T>();
+}
+
 async function loadArrearsContextMaps(invoices: ArrearsInvoiceRow[]): Promise<ArrearsContextMaps> {
   const contracts = invoices.map((invoice) => invoice.contracts).filter((contract): contract is ContractContext => Boolean(contract));
-  const [tenantsById, propertiesById, unitsById] = await Promise.all([
-    loadPeopleById(uniqueStrings(contracts.map((contract) => contract.tenant_id))).catch(() => new Map<string, PersonContext>()),
-    loadPropertiesById(uniqueStrings(contracts.map((contract) => contract.property_id))).catch(() => new Map<string, PropertyContext>()),
-    loadUnitsById(uniqueStrings(contracts.map((contract) => contract.unit_id))).catch(() => new Map<string, UnitContext>()),
+  const [tenantsResult, propertiesResult, unitsResult] = await Promise.allSettled([
+    loadPeopleById(uniqueStrings(contracts.map((contract) => contract.tenant_id))),
+    loadPropertiesById(uniqueStrings(contracts.map((contract) => contract.property_id))),
+    loadUnitsById(uniqueStrings(contracts.map((contract) => contract.unit_id))),
   ]);
 
-  return { tenantsById, propertiesById, unitsById };
+  return {
+    tenantsById: mapFromSettledContext(tenantsResult),
+    propertiesById: mapFromSettledContext(propertiesResult),
+    unitsById: mapFromSettledContext(unitsResult),
+  };
 }
 
 export async function getOverdueInvoicesReport(filters: ArrearsReportFilters): Promise<OverdueInvoicesReport> {
