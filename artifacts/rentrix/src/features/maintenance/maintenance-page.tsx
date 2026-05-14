@@ -19,10 +19,6 @@ const schema = z.object({
 
 type FormValues = z.infer<typeof schema>;
 
-void zodResolver;
-void maintenanceSchema;
-void ({} as MaintenanceFormValues);
-
 export function MaintenancePage() {
   const [statusFilter, setStatusFilter] = useState<'all' | 'open' | 'in_progress' | 'resolved' | 'closed'>('all');
   const [propertyFilterId, setPropertyFilterId] = useState('');
@@ -31,8 +27,8 @@ export function MaintenancePage() {
   const propertiesQuery = useProperties({ search: '', status: 'all', page: 1, pageSize: 200 });
   const createMutation = useCreateMaintenance();
 
-  const form = useForm<MaintenanceFormValues>({
-    resolver: zodResolver(maintenanceSchema),
+  const form = useForm<FormValues>({
+    resolver: zodResolver(schema),
     defaultValues: { property_id: '', unit_id: null, title: '', description: '', priority: 'medium' },
   });
 
@@ -47,7 +43,7 @@ export function MaintenancePage() {
     <option key={p.id} value={p.id}>{p.title}</option>
   ));
 
-  const onSubmit = (values: MaintenanceFormValues) => {
+  const onSubmit = (values: FormValues) => {
     createMutation.mutate(
       {
         property_id: values.property_id,
@@ -126,6 +122,5 @@ export function MaintenancePage() {
     </div>
   );
 }
-
 
 export default MaintenancePage;
