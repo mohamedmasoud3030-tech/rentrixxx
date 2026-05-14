@@ -4,11 +4,13 @@ import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { defaultCompanyLocalSettings } from '@/lib/companySettings';
+import { formatCompanyDate, formatCompanyMoney } from '@/lib/companyFormatters';
 import { useProperties } from '@/features/properties/use-properties';
 import { useInvoices, useGenerateInvoices, useInvoice } from './invoices/useInvoices';
 import { usePostPayment } from './payments/usePayments';
 import { useExpenses, useCreateExpense } from './expenses/useExpenses';
-import type { InvoiceStatusFilter } from './invoices/invoiceService';
+import { summarizeInvoices, type InvoiceStatusFilter } from './invoices/invoiceService';
 
 const expenseSchema = z.object({
   property_id: z.string().uuid('اختر العقار'),
@@ -20,11 +22,14 @@ const expenseSchema = z.object({
 
 type ExpenseFormValues = z.infer<typeof expenseSchema>;
 
+const invoiceStatusFilters = ['all', 'unpaid', 'partial', 'overdue', 'paid'] as const;
+
 export function FinancialsPage() {
   const [status, setStatus] = useState<InvoiceStatusFilter>('unpaid');
+  const [search, setSearch] = useState('');
   const [selectedInvoiceId, setSelectedInvoiceId] = useState('');
   const [amount, setAmount] = useState('');
-  const { data: invoices = [] } = useInvoices(status);
+  const { data: invoices = [] } = useInvoices({ status, search });
   const { data: invoiceDetail } = useInvoice(selectedInvoiceId);
   const generate = useGenerateInvoices();
   const postPayment = usePostPayment();
@@ -33,6 +38,7 @@ export function FinancialsPage() {
   const { data: expenses = [] } = useExpenses(filters);
   const createExpense = useCreateExpense();
   const remaining = useMemo(() => (invoiceDetail ? invoiceDetail.amount - invoiceDetail.paid_amount : 0), [invoiceDetail]);
+  const summary = useMemo(() => summarizeInvoices(invoices), [invoices]);
   const propertyRows = properties?.rows ?? [];
 
   const expenseForm = useForm<ExpenseFormValues>({
@@ -70,12 +76,33 @@ export function FinancialsPage() {
   };
 
   return <div className="space-y-6" dir="rtl">
-    <Card><CardHeader><CardTitle>الفواتير</CardTitle></CardHeader><CardContent className="space-y-3">
-      <div className="flex gap-2">{(['unpaid', 'partial', 'paid', 'overdue'] as const).map((s) => <Button key={s} variant={status === s ? 'primary' : 'secondary'} onClick={() => setStatus(s)}>{s}</Button>)}<Button onClick={() => generate.mutate()} disabled={generate.isPending}>توليد الفواتير من العقود النشطة</Button></div>
-      {invoices.map((i) => <button key={i.id} className="block w-full rounded border p-2 text-right" onClick={() => setSelectedInvoiceId(i.id)}>#{i.id.slice(0, 8)} — {i.amount} / {i.status}</button>)}
+    <Card><CardHeader><CardTitle>الفواتير</CardTitle></CardHeader><CardContent className="space-y-4">
+      <div className="flex flex-wrap gap-2">
+        {invoiceStatusFilters.map((s) => <Button key={s} variant={status === s ? 'primary' : 'secondary'} onClick={() => setStatus(s)}>{s}</Button>)}
+        <Button onClick={() => generate.mutate()} disabled={generate.isPending}>توليد الفواتير من العقود النشطة</Button>
+      </div>
+
+      <label className="grid gap-1 text-sm font-medium">
+        البحث في رقم الفاتورة/الحالة
+        <input
+          className="rounded border px-3 py-2 font-normal"
+          placeholder="ابحث برقم الفاتورة أو الحالة"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+        />
+      </label>
+
+      <div className="grid gap-3 md:grid-cols-4">
+        <div className="rounded border p-3"><p className="text-sm text-gray-500">عدد الفواتير</p><p className="text-xl font-semibold">{summary.count}</p></div>
+        <div className="rounded border p-3"><p className="text-sm text-gray-500">إجمالي المبلغ</p><p className="text-xl font-semibold">{formatCompanyMoney(defaultCompanyLocalSettings, summary.totalAmount)}</p></div>
+        <div className="rounded border p-3"><p className="text-sm text-gray-500">إجمالي المدفوع</p><p className="text-xl font-semibold">{formatCompanyMoney(defaultCompanyLocalSettings, summary.totalPaid)}</p></div>
+        <div className="rounded border p-3"><p className="text-sm text-gray-500">إجمالي المتبقي</p><p className="text-xl font-semibold">{formatCompanyMoney(defaultCompanyLocalSettings, summary.totalRemaining)}</p></div>
+      </div>
+
+      {invoices.map((i) => <button key={i.id} className="block w-full rounded border p-2 text-right" onClick={() => setSelectedInvoiceId(i.id)}>#{i.id.slice(0, 8)} — {formatCompanyMoney(defaultCompanyLocalSettings, i.amount)} — {formatCompanyDate(defaultCompanyLocalSettings, i.due_date)} — {i.status}</button>)}
     </CardContent></Card>
 
-    {invoiceDetail && <Card><CardHeader><CardTitle>تفاصيل الفاتورة وسجل المدفوعات</CardTitle></CardHeader><CardContent className="space-y-3"><p>الإجمالي: {invoiceDetail.amount} | المدفوع: {invoiceDetail.paid_amount} | المتبقي: {remaining}</p>{invoiceDetail.payments.map((p) => <p key={p.id}>{p.payment_date} — {p.amount} ({p.payment_method})</p>)}<div className="flex gap-2"><input className="rounded border px-2" placeholder="المبلغ" value={amount} onChange={(e) => setAmount(e.target.value)} /><Button onClick={() => { const value = Number(amount); if (value <= 0 || value > remaining) return; postPayment.mutate({ invoice_id: invoiceDetail.id, amount: value, method: 'cash', date: new Date().toISOString().slice(0,10), reference: null }); }}>تسجيل دفعة</Button></div></CardContent></Card>}
+    {invoiceDetail && <Card><CardHeader><CardTitle>تفاصيل الفاتورة وسجل المدفوعات</CardTitle></CardHeader><CardContent className="space-y-3"><p>الإجمالي: {formatCompanyMoney(defaultCompanyLocalSettings, invoiceDetail.amount)} | المدفوع: {formatCompanyMoney(defaultCompanyLocalSettings, invoiceDetail.paid_amount)} | المتبقي: {formatCompanyMoney(defaultCompanyLocalSettings, remaining)} | تاريخ الاستحقاق: {formatCompanyDate(defaultCompanyLocalSettings, invoiceDetail.due_date)}</p>{invoiceDetail.payments.map((p) => <p key={p.id}>{p.payment_date} — {formatCompanyMoney(defaultCompanyLocalSettings, p.amount)} ({p.payment_method})</p>)}<div className="flex gap-2"><input className="rounded border px-2" placeholder="المبلغ" value={amount} onChange={(e) => setAmount(e.target.value)} /><Button onClick={() => { const value = Number(amount); if (value <= 0 || value > remaining) return; postPayment.mutate({ invoice_id: invoiceDetail.id, amount: value, method: 'cash', date: new Date().toISOString().slice(0, 10), reference: null }); }}>تسجيل دفعة</Button></div></CardContent></Card>}
 
     <Card><CardHeader><CardTitle>المصاريف</CardTitle></CardHeader><CardContent className="space-y-4">
       {expenses.map((e) => <p key={e.id}>{e.expense_date} — {e.category} — {e.amount}</p>)}
