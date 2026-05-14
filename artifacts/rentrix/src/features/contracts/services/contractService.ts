@@ -5,9 +5,9 @@ import type { ContractPayload, RenewalPayload } from '../contractSchema';
 
 export type ContractStatusFilter = Contract['status'] | 'all';
 export type ContractListItem = Contract & {
-  properties: Pick<Property, 'id' | 'title'> | null;
-  units: Pick<Unit, 'id' | 'unit_number'> | null;
-  people: Pick<Person, 'id' | 'full_name'> | null;
+  properties: Pick<Property, 'id' | 'title' | 'address'> | null;
+  units: Pick<Unit, 'id' | 'unit_number' | 'floor' | 'status' | 'rent_amount'> | null;
+  people: Pick<Person, 'id' | 'full_name' | 'phone' | 'email' | 'national_id'> | null;
 };
 export type ContractDetail = ContractListItem & {
   renewed_from: Pick<Contract, 'id' | 'start_date' | 'end_date' | 'rent_amount' | 'status'> | null;
@@ -17,8 +17,10 @@ export type ContractListParams = { status: ContractStatusFilter };
 type ContractInsert = Database['public']['Tables']['contracts']['Insert'];
 type ContractUpdate = Database['public']['Tables']['contracts']['Update'];
 
-const contractSelect = '*, properties:property_id(id,title), units:unit_id(id,unit_number), people:tenant_id(id,full_name)';
-const contractDetailSelect = '*, properties:property_id(id,title), units:unit_id(id,unit_number), people:tenant_id(id,full_name), renewed_from:renewed_from_id(id,start_date,end_date,rent_amount,status)';
+const contractSelect =
+  '*, properties:property_id(id,title,address), units:unit_id(id,unit_number,floor,status,rent_amount), people:tenant_id(id,full_name,phone,email,national_id)';
+const contractDetailSelect =
+  '*, properties:property_id(id,title,address), units:unit_id(id,unit_number,floor,status,rent_amount), people:tenant_id(id,full_name,phone,email,national_id), renewed_from:renewed_from_id(id,start_date,end_date,rent_amount,status)';
 
 export async function listContracts(params: ContractListParams): Promise<ContractListItem[]> {
   let query = supabase.from('contracts').select(contractSelect).is('deleted_at', null).order('created_at', { ascending: false });
