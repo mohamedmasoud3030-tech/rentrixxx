@@ -8,16 +8,28 @@ import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { formatMoney, DEFAULT_CURRENCY, DEFAULT_LOCALE } from '@/lib/formatters';
+import { formatMoney, DEFAULT_CURRENCY } from '@/lib/formatters';
+import { DEFAULT_LANGUAGE, getLanguageLocale, translate, type TranslationKey } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
-import { contractStatusLabels, contractStatusValues, paymentCycleLabels } from './contractSchema';
+import { contractStatusValues, paymentCycleLabels } from './contractSchema';
 import { useContracts, useSoftDeleteContract } from './useContracts';
 import type { ContractListItem, ContractStatusFilter } from './services/contractService';
 
 const statusTone = { draft: 'gray', active: 'green', expired: 'gold', terminated: 'red' } as const;
-const filterLabels: Record<ContractStatusFilter, string> = { all: 'الكل', draft: 'مسودة', active: 'نشط', expired: 'منتهي', terminated: 'ملغي' };
+const contractStatusTranslationKeys: Record<Exclude<ContractStatusFilter, 'all'>, TranslationKey> = {
+  draft: 'contractStatus.draft',
+  active: 'contractStatus.active',
+  expired: 'contractStatus.expired',
+  terminated: 'contractStatus.terminated',
+};
 const activeCurrency = DEFAULT_CURRENCY;
-const activeLocale = DEFAULT_LOCALE;
+const activeLanguage = DEFAULT_LANGUAGE;
+const activeLocale = getLanguageLocale(activeLanguage);
+const t = (key: TranslationKey) => translate(key, activeLanguage);
+
+function getFilterLabel(filter: ContractStatusFilter) {
+  return filter === 'all' ? t('common.all') : t(contractStatusTranslationKeys[filter]);
+}
 
 function displayMoney(value: number) {
   return formatMoney({ amount: value, currency: activeCurrency, locale: activeLocale });
@@ -52,18 +64,18 @@ function escapeCsvCell(value: string | number | null | undefined) {
 
 function exportContractsCsv(contracts: ContractListItem[]) {
   const headers = [
-    'رقم العقد',
-    'المستأجر',
-    'هاتف المستأجر',
-    'الوحدة',
-    'العقار',
-    'عنوان العقار',
-    'الإيجار',
-    'العملة',
-    'دورة السداد',
-    'تاريخ البداية',
-    'تاريخ النهاية',
-    'الحالة',
+    t('contracts.csv.contractNumber'),
+    t('contracts.tenant'),
+    t('contracts.csv.tenantPhone'),
+    t('contracts.unit'),
+    t('contracts.csv.property'),
+    t('contracts.csv.propertyAddress'),
+    t('contracts.rentAmount'),
+    t('common.currency'),
+    t('contracts.paymentCycle'),
+    t('contracts.startDate'),
+    t('contracts.endDate'),
+    t('common.status'),
   ];
   const rows = contracts.map((contract) => [
     getContractNumber(contract),
@@ -77,7 +89,7 @@ function exportContractsCsv(contracts: ContractListItem[]) {
     paymentCycleLabels[contract.payment_cycle],
     contract.start_date,
     contract.end_date,
-    contractStatusLabels[contract.status],
+    t(contractStatusTranslationKeys[contract.status]),
   ]);
   const csv = [headers, ...rows].map((row) => row.map(escapeCsvCell).join(',')).join('\n');
   const blob = new Blob([`\uFEFF${csv}`], { type: 'text/csv;charset=utf-8' });
@@ -120,18 +132,18 @@ export function ContractsListPage() {
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <p className="text-sm font-black text-primary">مرحلة 2B</p>
-          <h2 className="text-3xl font-black">العقود</h2>
-          <p className="text-sm text-muted-foreground">إدارة دورة العقد من مسودة إلى نشط ثم منتهي أو ملغي.</p>
+          <p className="text-sm font-black text-primary">{t('contracts.phaseLabel')}</p>
+          <h2 className="text-3xl font-black">{t('contracts.title')}</h2>
+          <p className="text-sm text-muted-foreground">{t('contracts.description')}</p>
         </div>
         <div className="flex flex-wrap gap-2">
           <Button variant="secondary" onClick={() => exportContractsCsv(filteredContracts)} disabled={!filteredContracts.length}>
             <Download className="ml-2 size-4" />
-            تصدير CSV
+            {t('contracts.exportCsv')}
           </Button>
           <Button asChild>
             <Link to="/contracts/new">
-              <Plus className="ml-2 size-4" />إنشاء عقد
+              <Plus className="ml-2 size-4" />{t('contracts.create')}
             </Link>
           </Button>
         </div>
@@ -141,7 +153,7 @@ export function ContractsListPage() {
         <div className="flex flex-wrap gap-2">
           {filters.map((item) => (
             <Button key={item} variant={status === item ? 'primary' : 'secondary'} onClick={() => setStatus(item)}>
-              {filterLabels[item]}
+              {getFilterLabel(item)}
             </Button>
           ))}
         </div>
@@ -150,9 +162,9 @@ export function ContractsListPage() {
           <Input
             value={searchTerm}
             onChange={(event) => setSearchTerm(event.target.value)}
-            placeholder="بحث باسم المستأجر، الوحدة، العقار، أو رقم العقد"
+            placeholder={t('contracts.searchPlaceholder')}
             className="pr-10"
-            aria-label="بحث العقود"
+            aria-label={t('contracts.searchAriaLabel')}
           />
         </div>
       </div>
@@ -165,15 +177,15 @@ export function ContractsListPage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="w-12">تفاصيل</TableHead>
-                  <TableHead>العقد رقم</TableHead>
-                  <TableHead>المستأجر</TableHead>
-                  <TableHead>الوحدة</TableHead>
-                  <TableHead>تاريخ البداية</TableHead>
-                  <TableHead>تاريخ النهاية</TableHead>
-                  <TableHead>قيمة الإيجار</TableHead>
-                  <TableHead>الحالة</TableHead>
-                  <TableHead className="w-52">إجراءات</TableHead>
+                  <TableHead className="w-12">{t('common.details')}</TableHead>
+                  <TableHead>{t('contracts.contractNumber')}</TableHead>
+                  <TableHead>{t('contracts.tenant')}</TableHead>
+                  <TableHead>{t('contracts.unit')}</TableHead>
+                  <TableHead>{t('contracts.startDate')}</TableHead>
+                  <TableHead>{t('contracts.endDate')}</TableHead>
+                  <TableHead>{t('contracts.rentAmount')}</TableHead>
+                  <TableHead>{t('common.status')}</TableHead>
+                  <TableHead className="w-52">{t('common.actions')}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -186,7 +198,7 @@ export function ContractsListPage() {
                           <Button
                             variant="ghost"
                             className="min-h-9 px-3"
-                            aria-label={isExpanded ? 'إخفاء تفاصيل العقد' : 'عرض تفاصيل العقد'}
+                            aria-label={isExpanded ? t('contracts.hideDetails') : t('contracts.showDetails')}
                             onClick={() => setExpandedId((current) => (current === contract.id ? null : contract.id))}
                           >
                             {isExpanded ? <ChevronUp className="size-4" /> : <ChevronDown className="size-4" />}
@@ -199,7 +211,7 @@ export function ContractsListPage() {
                         <TableCell>{formatDate(contract.end_date)}</TableCell>
                         <TableCell>{displayMoney(contract.rent_amount)}</TableCell>
                         <TableCell>
-                          <StatusBadge tone={statusTone[contract.status]}>{contractStatusLabels[contract.status]}</StatusBadge>
+                          <StatusBadge tone={statusTone[contract.status]}>{t(contractStatusTranslationKeys[contract.status])}</StatusBadge>
                         </TableCell>
                         <TableCell onClick={(event) => event.stopPropagation()}>
                           <div className="flex flex-wrap gap-2">
@@ -223,28 +235,28 @@ export function ContractsListPage() {
                         <TableRow>
                           <TableCell colSpan={9} className="bg-muted/30 p-4">
                             <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
-                              <DetailBox label="بيانات المستأجر">
+                              <DetailBox label={t('contracts.tenantDetails')}>
                                 <p className="font-bold">{contract.people?.full_name ?? '—'}</p>
-                                <p className="text-muted-foreground">هاتف: {contract.people?.phone ?? '—'}</p>
-                                <p className="text-muted-foreground">بريد: {contract.people?.email ?? '—'}</p>
-                                <p className="text-muted-foreground">هوية: {contract.people?.national_id ?? '—'}</p>
+                                <p className="text-muted-foreground">{t('common.phone')}: {contract.people?.phone ?? '—'}</p>
+                                <p className="text-muted-foreground">{t('common.email')}: {contract.people?.email ?? '—'}</p>
+                                <p className="text-muted-foreground">{t('common.identity')}: {contract.people?.national_id ?? '—'}</p>
                               </DetailBox>
-                              <DetailBox label="بيانات الوحدة والعقار">
+                              <DetailBox label={t('contracts.unitPropertyDetails')}>
                                 <p className="font-bold">{contract.units?.unit_number ?? '—'} / {contract.properties?.title ?? '—'}</p>
-                                <p className="text-muted-foreground">الدور: {contract.units?.floor ?? '—'}</p>
-                                <p className="text-muted-foreground">العنوان: {contract.properties?.address ?? '—'}</p>
+                                <p className="text-muted-foreground">{t('common.floor')}: {contract.units?.floor ?? '—'}</p>
+                                <p className="text-muted-foreground">{t('common.address')}: {contract.properties?.address ?? '—'}</p>
                               </DetailBox>
-                              <DetailBox label="قيمة الإيجار">
+                              <DetailBox label={t('contracts.rentAmount')}>
                                 <p className="text-lg font-black" dir="ltr">{displayMoney(contract.rent_amount)}</p>
-                                <p className="text-muted-foreground">دورة السداد: {paymentCycleLabels[contract.payment_cycle]}</p>
+                                <p className="text-muted-foreground">{t('contracts.paymentCycle')}: {paymentCycleLabels[contract.payment_cycle]}</p>
                               </DetailBox>
-                              <DetailBox label="فترة العقد">
+                              <DetailBox label={t('contracts.contractPeriod')}>
                                 <p>{formatDate(contract.start_date)} ← {formatDate(contract.end_date)}</p>
-                                <p className="text-muted-foreground">رقم العقد: {getContractNumber(contract)}</p>
+                                <p className="text-muted-foreground">{t('contracts.contractNumber')}: {getContractNumber(contract)}</p>
                               </DetailBox>
-                              <DetailBox label="الحالة">
-                                <StatusBadge tone={statusTone[contract.status]}>{contractStatusLabels[contract.status]}</StatusBadge>
-                                <p className={cn('mt-2 text-muted-foreground', contract.units?.status === 'occupied' && 'text-primary')}>حالة الوحدة: {contract.units?.status ?? '—'}</p>
+                              <DetailBox label={t('common.status')}>
+                                <StatusBadge tone={statusTone[contract.status]}>{t(contractStatusTranslationKeys[contract.status])}</StatusBadge>
+                                <p className={cn('mt-2 text-muted-foreground', contract.units?.status === 'occupied' && 'text-primary')}>{t('common.unitStatus')}: {contract.units?.status ?? '—'}</p>
                               </DetailBox>
                             </div>
                           </TableCell>
@@ -259,15 +271,15 @@ export function ContractsListPage() {
         ) : (
           <div className="p-6">
             {hasContracts ? (
-              <EmptyState title="لا توجد عقود مطابقة" description="جرّب تغيير عبارة البحث أو فلتر الحالة لعرض عقود أخرى." />
+              <EmptyState title={t('contracts.noMatchesTitle')} description={t('contracts.noMatchesDescription')} />
             ) : (
               <EmptyState
-                title="لا توجد عقود"
-                description="ابدأ بإنشاء أول عقد وربطه بالعقار والوحدة والمستأجر."
+                title={t('contracts.emptyTitle')}
+                description={t('contracts.emptyDescription')}
                 action={
                   <Button asChild>
                     <Link to="/contracts/new">
-                      <FileText className="ml-2 size-4" />إنشاء عقد
+                      <FileText className="ml-2 size-4" />{t('contracts.create')}
                     </Link>
                   </Button>
                 }
