@@ -32,7 +32,20 @@ export function FinancialsPage() {
   const [filters] = useState({ propertyId: '', category: '', from: '', to: '' });
   const { data: expenses = [] } = useExpenses(filters);
   const createExpense = useCreateExpense();
-  const remaining = useMemo(() => (invoiceDetail ? invoiceDetail.amount - invoiceDetail.paid_amount : 0), [invoiceDetail]);
+  const remaining = useMemo(
+    () => (invoiceDetail ? Math.max(0, Number(invoiceDetail.amount ?? 0) - Number(invoiceDetail.paid_amount ?? 0)) : 0),
+    [invoiceDetail],
+  );
+  const parsedPaymentAmount = Number(amount);
+  const paymentValidationError = useMemo(() => {
+    if (!amount.trim()) return 'أدخل مبلغ الدفعة';
+    if (!Number.isFinite(parsedPaymentAmount)) return 'المبلغ يجب أن يكون رقمًا صالحًا';
+    if (parsedPaymentAmount <= 0) return 'المبلغ يجب أن يكون أكبر من صفر';
+    if (parsedPaymentAmount > remaining) return 'المبلغ لا يمكن أن يتجاوز الرصيد المتبقي';
+    return '';
+  }, [amount, parsedPaymentAmount, remaining]);
+  const isPaymentAmountInvalid = paymentValidationError !== '';
+  const paymentDisabled = postPayment.isPending || remaining <= 0 || isPaymentAmountInvalid;
   const propertyRows = properties?.rows ?? [];
 
   const expenseForm = useForm<ExpenseFormValues>({
@@ -75,7 +88,33 @@ export function FinancialsPage() {
       {invoices.map((i) => <button key={i.id} className="block w-full rounded border p-2 text-right" onClick={() => setSelectedInvoiceId(i.id)}>#{i.id.slice(0, 8)} — {i.amount} / {i.status}</button>)}
     </CardContent></Card>
 
-    {invoiceDetail && <Card><CardHeader><CardTitle>تفاصيل الفاتورة وسجل المدفوعات</CardTitle></CardHeader><CardContent className="space-y-3"><p>الإجمالي: {invoiceDetail.amount} | المدفوع: {invoiceDetail.paid_amount} | المتبقي: {remaining}</p>{invoiceDetail.payments.map((p) => <p key={p.id}>{p.payment_date} — {p.amount} ({p.payment_method})</p>)}<div className="flex gap-2"><input className="rounded border px-2" placeholder="المبلغ" value={amount} onChange={(e) => setAmount(e.target.value)} /><Button onClick={() => { const value = Number(amount); if (value <= 0 || value > remaining) return; postPayment.mutate({ invoice_id: invoiceDetail.id, amount: value, method: 'cash', date: new Date().toISOString().slice(0,10), reference: null }); }}>تسجيل دفعة</Button></div></CardContent></Card>}
+    {invoiceDetail && <Card><CardHeader><CardTitle>تفاصيل الفاتورة وسجل المدفوعات</CardTitle></CardHeader><CardContent className="space-y-3">
+      <p>الإجمالي: {invoiceDetail.amount} | المدفوع: {invoiceDetail.paid_amount} | المتبقي: {remaining}</p>
+      {invoiceDetail.payments.map((p) => <p key={p.id}>{p.payment_date} — {p.amount} ({p.payment_method})</p>)}
+      <div className="space-y-2">
+        <div className="flex gap-2">
+          <input className="rounded border px-2" placeholder="المبلغ" value={amount} onChange={(e) => setAmount(e.target.value)} />
+          <Button
+            disabled={paymentDisabled}
+            onClick={() => {
+              if (paymentValidationError) return;
+              postPayment.mutate(
+                {
+                  invoice_id: invoiceDetail.id,
+                  amount: parsedPaymentAmount,
+                  method: 'cash',
+                  date: new Date().toISOString().slice(0, 10),
+                  reference: null,
+                },
+                { onSuccess: () => setAmount('') },
+              );
+            }}
+          >{postPayment.isPending ? 'جارٍ التسجيل...' : 'تسجيل دفعة'}</Button>
+        </div>
+        {remaining <= 0 ? <p className="text-sm text-red-600">لا يوجد رصيد متبقٍ لهذه الفاتورة</p> : null}
+        {paymentValidationError ? <p className="text-sm text-red-600">{paymentValidationError}</p> : null}
+      </div>
+    </CardContent></Card>}
 
     <Card><CardHeader><CardTitle>المصاريف</CardTitle></CardHeader><CardContent className="space-y-4">
       {expenses.map((e) => <p key={e.id}>{e.expense_date} — {e.category} — {e.amount}</p>)}
