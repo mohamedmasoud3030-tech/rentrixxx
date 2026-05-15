@@ -3,6 +3,8 @@ import { useMemo, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { useProperties } from '@/features/properties/use-properties';
+import { ArrearsWorkflowSection } from './components/arrears-workflow-section';
+import type { ArrearsBucketFilter } from './components/arrears-workflow-helpers';
 import { ExpensesSection, type ExpenseFormValues } from './components/expenses-section';
 import { FinancialReportsPreviewSection } from './components/financial-reports-preview-section';
 import { InvoiceDetailSection } from './components/invoice-detail-section';
@@ -14,7 +16,12 @@ import { summarizeInvoices, type InvoiceStatusFilter } from './invoices/invoiceS
 import { useGenerateInvoices, useInvoice, useInvoices } from './invoices/useInvoices';
 import { usePostPayment } from './payments/usePayments';
 import { useReceipt, useReceipts } from './receipts/useReceipts';
-import { useCollectionSummaryReport } from './reports/useFinancialReports';
+import {
+  useAgedReceivablesReport,
+  useArrearsSummaryReport,
+  useCollectionSummaryReport,
+  useOverdueInvoicesReport,
+} from './reports/useFinancialReports';
 
 const expenseSchema = z.object({
   property_id: z.string().uuid('اختر العقار'),
@@ -23,6 +30,13 @@ const expenseSchema = z.object({
   expense_date: z.string().min(1, 'اختر التاريخ'),
   description: z.string().optional(),
 });
+
+function getTodayLocalDateString(date = new Date()) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
 
 function getCurrentMonthReportRange() {
   const now = new Date();
@@ -41,6 +55,9 @@ export function FinancialsPage() {
   const [selectedInvoiceId, setSelectedInvoiceId] = useState('');
   const [selectedReceiptId, setSelectedReceiptId] = useState('');
   const [amount, setAmount] = useState('');
+  const [arrearsAsOf, setArrearsAsOf] = useState(() => getTodayLocalDateString());
+  const [arrearsSearch, setArrearsSearch] = useState('');
+  const [arrearsBucketFilter, setArrearsBucketFilter] = useState<ArrearsBucketFilter>('all');
   const quickPaySubmitRef = useRef(false);
   const {
     data: invoices = [],
@@ -78,6 +95,25 @@ export function FinancialsPage() {
     isError: isCollectionSummaryError,
     error: collectionSummaryError,
   } = useCollectionSummaryReport(reportFilters);
+  const arrearsReportFilters = useMemo(() => ({ asOf: arrearsAsOf }), [arrearsAsOf]);
+  const {
+    data: overdueInvoicesReport,
+    isLoading: isOverdueInvoicesReportLoading,
+    isError: isOverdueInvoicesReportError,
+    error: overdueInvoicesReportError,
+  } = useOverdueInvoicesReport(arrearsReportFilters);
+  const {
+    data: agedReceivablesReport,
+    isLoading: isAgedReceivablesReportLoading,
+    isError: isAgedReceivablesReportError,
+    error: agedReceivablesReportError,
+  } = useAgedReceivablesReport(arrearsReportFilters);
+  const {
+    data: arrearsSummaryReport,
+    isLoading: isArrearsSummaryReportLoading,
+    isError: isArrearsSummaryReportError,
+    error: arrearsSummaryReportError,
+  } = useArrearsSummaryReport(arrearsReportFilters);
   const createExpense = useCreateExpense();
   const summary = useMemo(() => summarizeInvoices(invoices), [invoices]);
   const remaining = useMemo(
@@ -97,6 +133,9 @@ export function FinancialsPage() {
   const isPaymentDisabled = quickPaySubmitRef.current || postPayment.isPending || remaining <= 0 || Boolean(amountValidationMessage);
   const hasInvoiceFilter = status !== 'all' || invoiceSearch.trim().length > 0;
   const propertyRows = properties?.rows ?? [];
+  const isArrearsWorkflowLoading = isOverdueInvoicesReportLoading || isAgedReceivablesReportLoading || isArrearsSummaryReportLoading;
+  const isArrearsWorkflowError = isOverdueInvoicesReportError || isAgedReceivablesReportError || isArrearsSummaryReportError;
+  const arrearsWorkflowError = overdueInvoicesReportError ?? agedReceivablesReportError ?? arrearsSummaryReportError;
 
   const expenseForm = useForm<ExpenseFormValues>({
     resolver: zodResolver(expenseSchema),
@@ -165,6 +204,23 @@ export function FinancialsPage() {
       isLoading={isCollectionSummaryLoading}
       isError={isCollectionSummaryError}
       error={collectionSummaryError}
+    />
+
+    <ArrearsWorkflowSection
+      asOf={arrearsAsOf}
+      search={arrearsSearch}
+      bucketFilter={arrearsBucketFilter}
+      overdueReport={overdueInvoicesReport}
+      agedReceivablesReport={agedReceivablesReport}
+      arrearsSummaryReport={arrearsSummaryReport}
+      selectedInvoiceId={selectedInvoiceId}
+      isLoading={isArrearsWorkflowLoading}
+      isError={isArrearsWorkflowError}
+      error={arrearsWorkflowError}
+      onAsOfChange={setArrearsAsOf}
+      onSearchChange={setArrearsSearch}
+      onBucketFilterChange={setArrearsBucketFilter}
+      onSelectInvoice={setSelectedInvoiceId}
     />
 
     <InvoiceListSection
