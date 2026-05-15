@@ -1,6 +1,6 @@
 import { Link, Outlet, useMatches, useRouter } from '@tanstack/react-router';
 import { useEffect } from 'react';
-import { Building2, ChevronLeft, FileText, Home, LayoutDashboard, LogOut, Menu, Moon, ReceiptText, Settings, Sun, Users, WalletCards, Wrench } from 'lucide-react';
+import { Building2, ChevronLeft, FileText, Home, LayoutDashboard, LogOut, Menu, Moon, ReceiptText, Settings, Sun, UserRoundCog, Users, WalletCards, Wrench } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/use-auth';
@@ -11,6 +11,7 @@ const navigation = [
   { to: '/', label: 'لوحة التحكم', icon: LayoutDashboard },
   { to: '/properties', label: 'العقارات', icon: Building2 },
   { to: '/people', label: 'الأشخاص', icon: Users },
+  { to: '/owners', label: 'الملاك', icon: UserRoundCog },
   { to: '/contracts', label: 'العقود', icon: FileText },
   { to: '/financials', label: 'المالية', icon: WalletCards },
   { to: '/accounting', label: 'المحاسبة', icon: ReceiptText },

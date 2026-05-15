@@ -31,6 +31,54 @@ export type Database = {
         Update: Partial<Database['public']['Tables']['company_settings']['Row']>;
         Relationships: [];
       };
+      owners: {
+        Row: {
+          id: string;
+          full_name: string;
+          display_name: string | null;
+          phone: string | null;
+          email: string | null;
+          national_id: string | null;
+          tax_number: string | null;
+          address: string | null;
+          notes: string | null;
+          is_active: boolean;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: Partial<Database['public']['Tables']['owners']['Row']> & Pick<Database['public']['Tables']['owners']['Row'], 'full_name'>;
+        Update: Partial<Database['public']['Tables']['owners']['Row']>;
+        Relationships: [];
+      };
+      property_owners: {
+        Row: {
+          id: string;
+          property_id: string;
+          owner_id: string;
+          ownership_percentage: number;
+          is_primary: boolean;
+          starts_on: string | null;
+          ends_on: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: Partial<Database['public']['Tables']['property_owners']['Row']> & Pick<Database['public']['Tables']['property_owners']['Row'], 'property_id' | 'owner_id'>;
+        Update: Partial<Database['public']['Tables']['property_owners']['Row']>;
+        Relationships: [
+          {
+            foreignKeyName: 'property_owners_property_id_fkey';
+            columns: ['property_id'];
+            referencedRelation: 'properties';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'property_owners_owner_id_fkey';
+            columns: ['owner_id'];
+            referencedRelation: 'owners';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       properties: {
         Row: {
           id: string;

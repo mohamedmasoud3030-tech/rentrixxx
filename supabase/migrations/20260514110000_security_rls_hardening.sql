@@ -34,7 +34,9 @@ alter table public.expenses force row level security;
 alter table public.maintenance_requests force row level security;
 
 -- 3) SECURITY DEFINER hardening: lock down search_path and grants.
-create or replace function public.post_receipt_atomic(p_invoice_id uuid, p_amount numeric, p_method public.payment_method, p_date date, p_reference text)
+drop function if exists public.post_receipt_atomic(uuid, numeric, public.payment_method, date, text);
+
+create function public.post_receipt_atomic(p_invoice_id uuid, p_amount numeric, p_method public.payment_method, p_date date, p_reference text)
 returns text
 language plpgsql
 security definer

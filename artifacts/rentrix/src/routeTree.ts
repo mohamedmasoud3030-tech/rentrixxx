@@ -11,6 +11,7 @@ import { PropertyNewRouteComponent } from '@/routes/_protected.properties.new';
 import { PropertyDetailRouteComponent } from '@/routes/_protected.properties.$propertyId';
 import { PropertyEditRouteComponent } from '@/routes/_protected.properties.$propertyId.edit';
 import { PeopleRouteComponent } from '@/routes/_protected.people';
+import { OwnersRouteComponent } from '@/routes/_protected.owners';
 import { PersonNewRouteComponent } from '@/routes/_protected.people.new';
 import { PersonEditRouteComponent } from '@/routes/_protected.people.$personId.edit';
 import { ContractsRouteComponent } from '@/routes/_protected.contracts';
@@ -59,6 +60,7 @@ const propertyNewRoute = createRoute({ getParentRoute: () => protectedRoute, pat
 const propertyDetailRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/properties/$propertyId', component: PropertyDetailRouteComponent, staticData: { title: 'تفاصيل العقار' } });
 const propertyEditRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/properties/$propertyId/edit', component: PropertyEditRouteComponent, staticData: { title: 'تعديل عقار' } });
 const peopleRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/people', component: PeopleRouteComponent, staticData: { title: 'الأشخاص' } });
+const ownersRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/owners', component: OwnersRouteComponent, staticData: { title: 'الملاك' } });
 const personNewRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/people/new', component: PersonNewRouteComponent, staticData: { title: 'إضافة شخص' } });
 const personEditRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/people/$personId/edit', component: PersonEditRouteComponent, staticData: { title: 'تعديل شخص' } });
 const contractsRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/contracts', component: ContractsRouteComponent, staticData: { title: 'العقود' } });
@@ -80,6 +82,7 @@ export const routeTree = rootRoute.addChildren([
     propertyDetailRoute,
     propertyEditRoute,
     peopleRoute,
+    ownersRoute,
     personNewRoute,
     personEditRoute,
     contractsRoute,
