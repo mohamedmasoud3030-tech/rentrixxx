@@ -34,13 +34,20 @@ describe('ownerService normalization helpers', () => {
     expect(normalizeOwnershipPercentage(null)).toBe(100);
     expect(normalizeOwnershipPercentage('')).toBe(100);
     expect(normalizeOwnershipPercentage('33.333')).toBe(33.33);
-    expect(normalizeOwnershipPercentage(0.005)).toBe(0.01);
-    expect(normalizeOwnershipPercentage(100.004)).toBe(100);
     expect(() => normalizeOwnershipPercentage(0)).toThrow('نسبة الملكية');
-    expect(() => normalizeOwnershipPercentage(0.004)).toThrow('نسبة الملكية');
-    expect(() => normalizeOwnershipPercentage(100.005)).toThrow('نسبة الملكية');
     expect(() => normalizeOwnershipPercentage(101)).toThrow('نسبة الملكية');
     expect(() => normalizeOwnershipPercentage('not-a-number')).toThrow('نسبة الملكية');
+  });
+
+  it('rounds ownership percentages before enforcing database constraint boundaries', () => {
+    expect(normalizeOwnershipPercentage(0.005)).toBe(0.01);
+    expect(normalizeOwnershipPercentage('0.005')).toBe(0.01);
+    expect(normalizeOwnershipPercentage(100.004)).toBe(100);
+    expect(normalizeOwnershipPercentage('100.004')).toBe(100);
+    expect(() => normalizeOwnershipPercentage(0.004)).toThrow('نسبة الملكية');
+    expect(() => normalizeOwnershipPercentage('0.004')).toThrow('نسبة الملكية');
+    expect(() => normalizeOwnershipPercentage(100.005)).toThrow('نسبة الملكية');
+    expect(() => normalizeOwnershipPercentage('100.005')).toThrow('نسبة الملكية');
   });
 
   it('normalizes property owner links with primary flags and optional dates', () => {
