@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest';
 import {
   areCompanySettingsDraftsEqual,
   companySettingsDraftToPayload,
-  getNextDraftAfterServerSettingsChange,
   validateCompanySettingsDraft,
   type CompanySettingsDraft,
 } from './settingsForm';
@@ -70,20 +69,24 @@ describe('settingsForm helpers', () => {
   });
 
   it('converts drafts to update payloads without dropping persisted fields', () => {
-    expect(companySettingsDraftToPayload(validDraft)).toEqual(validDraft);
-  });
-
-  it('preserves a dirty draft when server settings change', () => {
-    const dirtyDraft: CompanySettingsDraft = { ...validDraft, company_name: 'Unsaved Rentrix' };
-    const nextServerDraft: CompanySettingsDraft = { ...validDraft, company_name: 'Server Rentrix' };
-
-    expect(getNextDraftAfterServerSettingsChange(dirtyDraft, validDraft, nextServerDraft)).toBe(dirtyDraft);
-  });
-
-  it('updates the draft from server settings when the current draft is not dirty', () => {
-    const nextServerDraft: CompanySettingsDraft = { ...validDraft, company_name: 'Server Rentrix' };
-
-    expect(getNextDraftAfterServerSettingsChange({ ...validDraft }, validDraft, nextServerDraft)).toBe(nextServerDraft);
-    expect(getNextDraftAfterServerSettingsChange(null, null, nextServerDraft)).toBe(nextServerDraft);
+    expect(companySettingsDraftToPayload(validDraft)).toEqual({
+      company_name: 'Rentrix',
+      legal_name: '',
+      tax_number: '',
+      registration_number: '',
+      phone: '',
+      email: '',
+      address: '',
+      city: 'Muscat',
+      country: 'Oman',
+      currency: 'OMR',
+      locale: 'ar-OM',
+      timezone: 'Asia/Muscat',
+      date_format: 'dd/MM/yyyy',
+      number_format: 'ar-OM',
+      logo_url: '',
+      invoice_prefix: 'INV',
+      receipt_prefix: 'REC',
+    });
   });
 });

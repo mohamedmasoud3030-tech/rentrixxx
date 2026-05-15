@@ -134,18 +134,6 @@ export function areCompanySettingsDraftsEqual(left: CompanySettingsDraft | null,
   return draftFields.every((field) => left[field] === right[field]);
 }
 
-export function getNextDraftAfterServerSettingsChange(
-  currentDraft: CompanySettingsDraft | null,
-  currentBaseDraft: CompanySettingsDraft | null,
-  nextServerDraft: CompanySettingsDraft,
-): CompanySettingsDraft {
-  if (currentDraft && currentBaseDraft && !areCompanySettingsDraftsEqual(currentDraft, currentBaseDraft)) {
-    return currentDraft;
-  }
-
-  return nextServerDraft;
-}
-
 export function validateCompanySettingsDraft(draft: CompanySettingsDraft): CompanySettingsValidationErrors {
   const errors: CompanySettingsValidationErrors = {};
 

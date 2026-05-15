@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type ChangeEvent, type FormEvent } from 'react';
+import { useEffect, useMemo, useState, type ChangeEvent, type FormEvent } from 'react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -13,7 +13,6 @@ import {
   companySettingsDraftToLocalSettings,
   companySettingsDraftToPayload,
   companySettingsRecordToDraft,
-  getNextDraftAfterServerSettingsChange,
   hasCompanySettingsValidationErrors,
   validateCompanySettingsDraft,
   type CompanySettingsDraft,
@@ -26,44 +25,6 @@ const localeOptions = ['ar-OM', 'en-OM', 'ar', 'en'];
 const numberFormatOptions = ['ar-OM', 'en-OM', 'ar', 'en-US'];
 const dateFormatOptions = ['dd/MM/yyyy', 'yyyy-MM-dd', 'MM/dd/yyyy'];
 const timezoneOptions = ['Asia/Muscat', 'Asia/Dubai', 'Asia/Riyadh', 'UTC'];
-
-type TextFieldConfig = Readonly<{
-  label: string;
-  field: CompanySettingsDraftField;
-  placeholder?: string;
-  type?: string;
-}>;
-
-type SelectFieldConfig = Readonly<{
-  label: string;
-  field: CompanySettingsDraftField;
-  options: readonly string[];
-}>;
-
-const companyTextFieldConfigs: readonly TextFieldConfig[] = [
-  { label: 'اسم الشركة', field: 'company_name', placeholder: 'Rentrix' },
-  { label: 'الاسم القانوني', field: 'legal_name', placeholder: 'الاسم القانوني للشركة' },
-  { label: 'الرقم الضريبي', field: 'tax_number' },
-  { label: 'رقم السجل التجاري', field: 'registration_number' },
-  { label: 'الهاتف', field: 'phone' },
-  { label: 'البريد الإلكتروني', field: 'email', type: 'email', placeholder: 'email@example.com' },
-  { label: 'المدينة', field: 'city' },
-  { label: 'الدولة', field: 'country' },
-];
-
-const companySelectFieldConfigs: readonly SelectFieldConfig[] = [
-  { label: 'العملة', field: 'currency', options: currencyOptions },
-  { label: 'المحلية', field: 'locale', options: localeOptions },
-  { label: 'المنطقة الزمنية', field: 'timezone', options: timezoneOptions },
-  { label: 'صيغة التاريخ', field: 'date_format', options: dateFormatOptions },
-  { label: 'صيغة الأرقام', field: 'number_format', options: numberFormatOptions },
-];
-
-const documentPrefixFieldConfigs: readonly TextFieldConfig[] = [
-  { label: 'رابط الشعار', field: 'logo_url', type: 'url', placeholder: 'https://example.com/logo.png' },
-  { label: 'بادئة الفواتير', field: 'invoice_prefix' },
-  { label: 'بادئة الإيصالات', field: 'receipt_prefix' },
-];
 
 type BaseFieldProps = Readonly<{
   label: string;
@@ -187,7 +148,6 @@ export function SettingsPage() {
   const { theme, setTheme } = useUiStore();
   const companySettingsQuery = useCompanySettings();
   const updateCompanySettingsMutation = useUpdateCompanySettings();
-  const baseDraftRef = useRef<CompanySettingsDraft | null>(null);
   const [baseDraft, setBaseDraft] = useState<CompanySettingsDraft | null>(null);
   const [draft, setDraft] = useState<CompanySettingsDraft | null>(null);
   const [errors, setErrors] = useState<CompanySettingsValidationErrors>({});
@@ -202,11 +162,15 @@ export function SettingsPage() {
     if (!companySettingsQuery.data) return;
 
     const nextDraft = companySettingsRecordToDraft(companySettingsQuery.data);
-    const currentBaseDraft = baseDraftRef.current;
-
-    setDraft((currentDraft) => getNextDraftAfterServerSettingsChange(currentDraft, currentBaseDraft, nextDraft));
-    setBaseDraft(nextDraft);
-    baseDraftRef.current = nextDraft;
+    setBaseDraft((currentBaseDraft) => {
+      setDraft((currentDraft) => {
+        if (currentDraft && currentBaseDraft && !areCompanySettingsDraftsEqual(currentDraft, currentBaseDraft)) {
+          return currentDraft;
+        }
+        return nextDraft;
+      });
+      return nextDraft;
+    });
   }, [companySettingsQuery.data]);
 
   const previewSettings = useMemo(() => draft ? companySettingsDraftToLocalSettings(draft) : null, [draft]);
@@ -259,7 +223,6 @@ export function SettingsPage() {
       const savedSettings = await updateCompanySettingsMutation.mutateAsync(companySettingsDraftToPayload(draft));
       const savedDraft = companySettingsRecordToDraft(savedSettings);
       setBaseDraft(savedDraft);
-      baseDraftRef.current = savedDraft;
       setDraft(savedDraft);
       toast.success('تم حفظ إعدادات الشركة بنجاح');
     } catch (error) {
@@ -307,47 +270,25 @@ export function SettingsPage() {
       </CardHeader>
       <CardContent>
         <form className="space-y-5" onSubmit={handleSubmit}>
-          <div className="rounded-xl border border-primary/20 bg-primary/5 p-3 text-sm text-primary">يتم حفظ إعدادات الشركة واستخدامها في تنسيق بيانات النظام.</div>
+          <div className="rounded-xl border border-primary/20 bg-primary/5 p-3 text-sm text-primary">الإعدادات هنا مرتبطة الآن بسجل إعدادات الشركة المحفوظ وليست حالة محلية مؤقتة فقط.</div>
 
           <div className="grid gap-3 md:grid-cols-2">
-            {companyTextFieldConfigs.map((fieldConfig) => (
-              <FormField
-                key={fieldConfig.field}
-                label={fieldConfig.label}
-                field={fieldConfig.field}
-                draft={draft}
-                errors={errors}
-                disabled={isSaving}
-                type={fieldConfig.type}
-                placeholder={fieldConfig.placeholder}
-                onChange={handleDraftChange}
-              />
-            ))}
-            {companySelectFieldConfigs.map((fieldConfig) => (
-              <SelectField
-                key={fieldConfig.field}
-                label={fieldConfig.label}
-                field={fieldConfig.field}
-                draft={draft}
-                errors={errors}
-                disabled={isSaving}
-                options={fieldConfig.options}
-                onChange={handleDraftChange}
-              />
-            ))}
-            {documentPrefixFieldConfigs.map((fieldConfig) => (
-              <FormField
-                key={fieldConfig.field}
-                label={fieldConfig.label}
-                field={fieldConfig.field}
-                draft={draft}
-                errors={errors}
-                disabled={isSaving}
-                type={fieldConfig.type}
-                placeholder={fieldConfig.placeholder}
-                onChange={handleDraftChange}
-              />
-            ))}
+            <FormField label="اسم الشركة" field="company_name" draft={draft} errors={errors} disabled={isSaving} placeholder="Rentrix" onChange={handleDraftChange} />
+            <FormField label="الاسم القانوني" field="legal_name" draft={draft} errors={errors} disabled={isSaving} placeholder="الاسم القانوني للشركة" onChange={handleDraftChange} />
+            <FormField label="الرقم الضريبي" field="tax_number" draft={draft} errors={errors} disabled={isSaving} onChange={handleDraftChange} />
+            <FormField label="رقم السجل التجاري" field="registration_number" draft={draft} errors={errors} disabled={isSaving} onChange={handleDraftChange} />
+            <FormField label="الهاتف" field="phone" draft={draft} errors={errors} disabled={isSaving} onChange={handleDraftChange} />
+            <FormField label="البريد الإلكتروني" field="email" draft={draft} errors={errors} disabled={isSaving} type="email" placeholder="email@example.com" onChange={handleDraftChange} />
+            <FormField label="المدينة" field="city" draft={draft} errors={errors} disabled={isSaving} onChange={handleDraftChange} />
+            <FormField label="الدولة" field="country" draft={draft} errors={errors} disabled={isSaving} onChange={handleDraftChange} />
+            <SelectField label="العملة" field="currency" draft={draft} errors={errors} disabled={isSaving} options={currencyOptions} onChange={handleDraftChange} />
+            <SelectField label="المحلية" field="locale" draft={draft} errors={errors} disabled={isSaving} options={localeOptions} onChange={handleDraftChange} />
+            <SelectField label="المنطقة الزمنية" field="timezone" draft={draft} errors={errors} disabled={isSaving} options={timezoneOptions} onChange={handleDraftChange} />
+            <SelectField label="صيغة التاريخ" field="date_format" draft={draft} errors={errors} disabled={isSaving} options={dateFormatOptions} onChange={handleDraftChange} />
+            <SelectField label="صيغة الأرقام" field="number_format" draft={draft} errors={errors} disabled={isSaving} options={numberFormatOptions} onChange={handleDraftChange} />
+            <FormField label="رابط الشعار" field="logo_url" draft={draft} errors={errors} disabled={isSaving} type="url" placeholder="https://example.com/logo.png" onChange={handleDraftChange} />
+            <FormField label="بادئة الفواتير" field="invoice_prefix" draft={draft} errors={errors} disabled={isSaving} onChange={handleDraftChange} />
+            <FormField label="بادئة الإيصالات" field="receipt_prefix" draft={draft} errors={errors} disabled={isSaving} onChange={handleDraftChange} />
           </div>
 
           <label className="space-y-1 text-sm font-medium text-foreground">
