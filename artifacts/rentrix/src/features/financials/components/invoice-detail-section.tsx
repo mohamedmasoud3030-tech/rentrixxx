@@ -1,4 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import type { Payment } from '@/types/domain';
 import type { InvoiceDetail } from '../invoices/invoiceService';
 import { formatDate, formatMoney, getErrorMessage } from './financials-formatters';
 import { QuickPaymentForm } from './quick-payment-form';
@@ -11,10 +12,16 @@ type InvoiceDetailSectionProps = {
   isError: boolean;
   error: unknown;
   amount: string;
+  method: Payment['payment_method'];
+  paymentDate: string;
+  reference: string;
   amountValidationMessage: string;
   isPaymentPending: boolean;
   isPaymentDisabled: boolean;
   onAmountChange: (amount: string) => void;
+  onMethodChange: (method: Payment['payment_method']) => void;
+  onPaymentDateChange: (paymentDate: string) => void;
+  onReferenceChange: (reference: string) => void;
   onPostPayment: () => void;
 };
 
@@ -26,10 +33,16 @@ export function InvoiceDetailSection({
   isError,
   error,
   amount,
+  method,
+  paymentDate,
+  reference,
   amountValidationMessage,
   isPaymentPending,
   isPaymentDisabled,
   onAmountChange,
+  onMethodChange,
+  onPaymentDateChange,
+  onReferenceChange,
   onPostPayment,
 }: InvoiceDetailSectionProps) {
   return (
@@ -81,10 +94,16 @@ export function InvoiceDetailSection({
 
           <QuickPaymentForm
             amount={amount}
+            method={method}
+            paymentDate={paymentDate}
+            reference={reference}
             amountValidationMessage={amountValidationMessage}
             isPending={isPaymentPending}
             isPaymentDisabled={isPaymentDisabled}
             onAmountChange={onAmountChange}
+            onMethodChange={onMethodChange}
+            onPaymentDateChange={onPaymentDateChange}
+            onReferenceChange={onReferenceChange}
             onPostPayment={onPostPayment}
           />
         </> : null}
