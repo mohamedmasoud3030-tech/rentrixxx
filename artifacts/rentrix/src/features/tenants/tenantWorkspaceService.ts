@@ -1,4 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
+import { getTodayLocalDateString } from '@/features/financials/financials-date-utils';
 import type { Contract, Invoice, Person, Property, Unit } from '@/types/domain';
 
 export type TenantWorkspaceParams = {
@@ -29,8 +30,16 @@ type TenantContract = Contract & {
 
 type TenantInvoice = Pick<Invoice, 'contract_id' | 'status' | 'amount' | 'paid_amount' | 'due_date'>;
 
+type TenantPerson = TenantWorkspaceRow['person'];
+
+type TenantInvoiceSummary = {
+  hasInvoices: boolean;
+  hasArrears: boolean;
+};
+
 const tenantContractSelect = '*, properties:property_id(id,title), units:unit_id(id,unit_number)';
 const tenantInvoiceSelect = 'contract_id,status,amount,paid_amount,due_date';
+const receivableInvoiceStatuses = new Set<TenantInvoice['status']>(['issued', 'partial', 'overdue']);
 
 function escapeSearchTerm(value: string) {
   return value.replaceAll('%', '\\%').replaceAll('_', '\\_');
@@ -43,16 +52,12 @@ function applyTenantSearch(query: ReturnType<typeof supabase.from>, search: stri
   return query.or(`full_name.ilike.${term},phone.ilike.${term},email.ilike.${term},national_id.ilike.${term}`);
 }
 
-function getTenantIds(people: TenantWorkspaceRow['person'][]) {
-  return people.map((person) => person.id);
-}
-
-function groupContractsByTenant(contracts: TenantContract[]) {
-  return contracts.reduce<Record<string, TenantContract[]>>((grouped, contract) => {
-    const current = grouped[contract.tenant_id] ?? [];
-    grouped[contract.tenant_id] = [...current, contract];
+function groupBy<TItem, TKey extends string>(items: TItem[], getKey: (item: TItem) => TKey) {
+  return items.reduce<Record<TKey, TItem[]>>((grouped, item) => {
+    const key = getKey(item);
+    grouped[key] = [...(grouped[key] ?? []), item];
     return grouped;
-  }, {});
+  }, {} as Record<TKey, TItem[]>);
 }
 
 function getPrimaryContract(contracts: TenantContract[]) {
@@ -61,32 +66,27 @@ function getPrimaryContract(contracts: TenantContract[]) {
 
 function isInvoiceInArrears(invoice: TenantInvoice, today: string) {
   const remainingAmount = invoice.amount - invoice.paid_amount;
-  if (remainingAmount <= 0) return false;
-  if (invoice.status === 'overdue') return true;
-  return invoice.due_date < today && invoice.status !== 'paid' && invoice.status !== 'void';
+  if (remainingAmount <= 0 || !receivableInvoiceStatuses.has(invoice.status)) return false;
+  return invoice.status === 'overdue' || invoice.due_date < today;
 }
 
-function summarizeInvoices(invoices: TenantInvoice[], today: string) {
-  return invoices.reduce(
-    (summary, invoice) => ({
-      hasInvoices: true,
-      hasArrears: summary.hasArrears || isInvoiceInArrears(invoice, today),
-    }),
-    { hasInvoices: false, hasArrears: false },
-  );
+function summarizeTenantInvoices(invoices: TenantInvoice[], today: string): TenantInvoiceSummary {
+  return {
+    hasInvoices: invoices.length > 0,
+    hasArrears: invoices.some((invoice) => isInvoiceInArrears(invoice, today)),
+  };
 }
 
-function buildTenantRow(person: TenantWorkspaceRow['person'], contracts: TenantContract[], invoices: TenantInvoice[], today: string): TenantWorkspaceRow {
+function buildTenantRow(person: TenantPerson, contracts: TenantContract[], invoices: TenantInvoice[], today: string): TenantWorkspaceRow {
   const primaryContract = getPrimaryContract(contracts);
-  const invoiceSummary = summarizeInvoices(invoices, today);
+  const invoiceSummary = summarizeTenantInvoices(invoices, today);
   return {
     person,
     activeContractCount: contracts.filter((contract) => contract.status === 'active').length,
     propertyTitle: primaryContract?.properties?.title ?? null,
     unitNumber: primaryContract?.units?.unit_number ?? null,
     primaryContractId: primaryContract?.id ?? null,
-    hasInvoices: invoiceSummary.hasInvoices,
-    hasArrears: invoiceSummary.hasArrears,
+    ...invoiceSummary,
   };
 }
 
@@ -115,6 +115,15 @@ async function listTenantInvoices(contractIds: string[]) {
   return data ?? [];
 }
 
+function getInvoicesByTenant(contractsByTenant: Record<string, TenantContract[]>, invoicesByContract: Record<string, TenantInvoice[]>) {
+  return Object.fromEntries(
+    Object.entries(contractsByTenant).map(([tenantId, contracts]) => [
+      tenantId,
+      contracts.flatMap((contract) => invoicesByContract[contract.id] ?? []),
+    ]),
+  );
+}
+
 export async function listTenantWorkspace(params: TenantWorkspaceParams): Promise<TenantWorkspaceResult> {
   const from = (params.page - 1) * params.pageSize;
   const to = from + params.pageSize - 1;
@@ -128,18 +137,19 @@ export async function listTenantWorkspace(params: TenantWorkspaceParams): Promis
 
   query = applyTenantSearch(query, params.search);
 
-  const { data: people, count, error } = await query.returns<TenantWorkspaceRow['person'][]>();
+  const { data: people, count, error } = await query.returns<TenantPerson[]>();
   if (error) throw error;
 
   const tenantPeople = people ?? [];
-  const tenantIds = getTenantIds(tenantPeople);
-  const contracts = await listTenantContracts(tenantIds);
-  const contractsByTenant = groupContractsByTenant(contracts);
+  const contracts = await listTenantContracts(tenantPeople.map((person) => person.id));
   const invoices = await listTenantInvoices(contracts.map((contract) => contract.id));
-  const today = new Date().toISOString().slice(0, 10);
+  const contractsByTenant = groupBy(contracts, (contract) => contract.tenant_id);
+  const invoicesByContract = groupBy(invoices, (invoice) => invoice.contract_id);
+  const invoicesByTenant = getInvoicesByTenant(contractsByTenant, invoicesByContract);
+  const today = getTodayLocalDateString();
 
   return {
-    rows: tenantPeople.map((person) => buildTenantRow(person, contractsByTenant[person.id] ?? [], invoices.filter((invoice) => contractsByTenant[person.id]?.some((contract) => contract.id === invoice.contract_id) ?? false), today)),
+    rows: tenantPeople.map((person) => buildTenantRow(person, contractsByTenant[person.id] ?? [], invoicesByTenant[person.id] ?? [], today)),
     count: count ?? 0,
   };
 }
