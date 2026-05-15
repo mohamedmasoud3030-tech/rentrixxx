@@ -7,7 +7,7 @@ import { filterOverdueInvoiceRows, type ArrearsBucketFilter } from './arrears-wo
 import { formatDate, getErrorMessage } from './financials-formatters';
 import { OverdueInvoicesTable, SelectedOverdueInvoiceCard } from './overdue-invoices-table';
 
-type ArrearsWorkflowSectionProps = {
+type ArrearsWorkflowSectionProps = Readonly<{
   asOf: string;
   search: string;
   bucketFilter: ArrearsBucketFilter;
@@ -22,7 +22,7 @@ type ArrearsWorkflowSectionProps = {
   onSearchChange: (value: string) => void;
   onBucketFilterChange: (value: ArrearsBucketFilter) => void;
   onSelectInvoice: (invoiceId: string) => void;
-};
+}>;
 
 export function ArrearsWorkflowSection({
   asOf,

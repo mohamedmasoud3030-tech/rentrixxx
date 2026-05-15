@@ -2,14 +2,14 @@ import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
 import { arrearsBucketOptions, type ArrearsBucketFilter } from './arrears-workflow-helpers';
 
-type ArrearsFiltersProps = {
+type ArrearsFiltersProps = Readonly<{
   asOf: string;
   search: string;
   bucketFilter: ArrearsBucketFilter;
   onAsOfChange: (value: string) => void;
   onSearchChange: (value: string) => void;
   onBucketFilterChange: (value: ArrearsBucketFilter) => void;
-};
+}>;
 
 export function ArrearsFilters({
   asOf,

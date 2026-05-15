@@ -17,11 +17,11 @@ const invoiceStatusLabels: Record<string, string> = {
   void: 'ملغاة',
 };
 
-type OverdueInvoicesTableProps = {
+type OverdueInvoicesTableProps = Readonly<{
   rows: OverdueInvoiceReportRow[];
   selectedInvoiceId: string;
   onSelectInvoice: (invoiceId: string) => void;
-};
+}>;
 
 function getContextLabel(row: OverdueInvoiceReportRow) {
   const parts: string[] = [];
@@ -85,10 +85,10 @@ export function OverdueInvoicesTable({ rows, selectedInvoiceId, onSelectInvoice 
   );
 }
 
-type SelectedOverdueInvoiceCardProps = {
+type SelectedOverdueInvoiceCardProps = Readonly<{
   row: OverdueInvoiceReportRow | undefined;
   onShowInvoice: (invoiceId: string) => void;
-};
+}>;
 
 export function SelectedOverdueInvoiceCard({ row, onShowInvoice }: SelectedOverdueInvoiceCardProps) {
   if (!row) {

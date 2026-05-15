@@ -2,9 +2,9 @@ import type { AgedReceivablesReport } from '../reports/financialReportsService';
 import { ARABIC_LOCALE, EMPTY_FIELD_VALUE, arrearsBucketKeys, getArrearsBucketLabel, safePercentage } from './arrears-workflow-helpers';
 import { formatMoney } from './financials-formatters';
 
-type ArrearsAgingBucketsProps = {
+type ArrearsAgingBucketsProps = Readonly<{
   agedReceivablesReport: AgedReceivablesReport | undefined;
-};
+}>;
 
 function formatPercentage(value: number | null) {
   if (value === null) return EMPTY_FIELD_VALUE;

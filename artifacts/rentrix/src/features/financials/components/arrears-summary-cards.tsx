@@ -5,11 +5,11 @@ import { formatMoney } from './financials-formatters';
 
 const neutralCardTone = 'bg-muted/40 text-foreground';
 
-type ArrearsSummaryCardsProps = {
+type ArrearsSummaryCardsProps = Readonly<{
   overdueReport: OverdueInvoicesReport | undefined;
   agedReceivablesReport: AgedReceivablesReport | undefined;
   arrearsSummaryReport: ArrearsSummaryReport | undefined;
-};
+}>;
 
 export function ArrearsSummaryCards({ overdueReport, agedReceivablesReport, arrearsSummaryReport }: ArrearsSummaryCardsProps) {
   const totalOverdue = arrearsSummaryReport?.totalOverdue ?? overdueReport?.totalOverdue ?? 0;
