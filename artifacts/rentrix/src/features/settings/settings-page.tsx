@@ -26,18 +26,21 @@ const numberFormatOptions = ['ar-OM', 'en-OM', 'ar', 'en-US'];
 const dateFormatOptions = ['dd/MM/yyyy', 'yyyy-MM-dd', 'MM/dd/yyyy'];
 const timezoneOptions = ['Asia/Muscat', 'Asia/Dubai', 'Asia/Riyadh', 'UTC'];
 
-type FieldProps = {
+type BaseFieldProps = Readonly<{
   label: string;
   field: CompanySettingsDraftField;
   draft: CompanySettingsDraft;
   errors: CompanySettingsValidationErrors;
   disabled: boolean;
+  onChange: (field: CompanySettingsDraftField, value: string) => void;
+}>;
+
+type FormFieldProps = BaseFieldProps & Readonly<{
   placeholder?: string;
   type?: string;
-  onChange: (field: CompanySettingsDraftField, value: string) => void;
-};
+}>;
 
-function FormField({ label, field, draft, errors, disabled, placeholder, type = 'text', onChange }: FieldProps) {
+function FormField({ label, field, draft, errors, disabled, placeholder, type = 'text', onChange }: FormFieldProps) {
   return (
     <label className="space-y-1 text-sm font-medium text-foreground">
       <span>{label}</span>
@@ -54,9 +57,9 @@ function FormField({ label, field, draft, errors, disabled, placeholder, type = 
   );
 }
 
-type SelectFieldProps = FieldProps & {
+type SelectFieldProps = BaseFieldProps & Readonly<{
   options: readonly string[];
-};
+}>;
 
 function SelectField({ label, field, draft, errors, disabled, options, onChange }: SelectFieldProps) {
   return (
@@ -75,6 +78,72 @@ function SelectField({ label, field, draft, errors, disabled, options, onChange 
   );
 }
 
+type UserAccount = { email: string; active: boolean };
+
+type UserManagementCardProps = Readonly<{
+  users: UserAccount[];
+  inviteEmail: string;
+  onInviteEmailChange: (value: string) => void;
+  onInviteUser: () => void;
+  onToggleUser: (email: string) => void;
+}>;
+
+function UserManagementCard({ users, inviteEmail, onInviteEmailChange, onInviteUser, onToggleUser }: UserManagementCardProps) {
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>إدارة المستخدمين</CardTitle>
+        <CardDescription>دعوة عبر البريد أو تعطيل مستخدم.</CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-2">
+        <div className="flex gap-2">
+          <Input
+            className="flex-1"
+            placeholder="email@example.com"
+            value={inviteEmail}
+            onChange={(event) => onInviteEmailChange(event.target.value)}
+          />
+          <Button onClick={onInviteUser}>دعوة</Button>
+        </div>
+        {users.map((user) => (
+          <div key={user.email} className="flex items-center justify-between rounded border p-2">
+            <span>{user.email}</span>
+            <Button variant="secondary" onClick={() => onToggleUser(user.email)}>
+              {user.active ? 'تعطيل' : 'تفعيل'}
+            </Button>
+          </div>
+        ))}
+      </CardContent>
+    </Card>
+  );
+}
+
+type AppPreferencesCardProps = Readonly<{
+  lang: 'ar' | 'en';
+  theme: string;
+  onLanguageChange: (language: 'ar' | 'en') => void;
+  onToggleTheme: () => void;
+}>;
+
+function AppPreferencesCard({ lang, theme, onLanguageChange, onToggleTheme }: AppPreferencesCardProps) {
+  return (
+    <Card>
+      <CardHeader><CardTitle>تفضيلات التطبيق</CardTitle></CardHeader>
+      <CardContent className="space-y-3">
+        <div className="flex gap-2">
+          <Button variant={lang === 'ar' ? 'primary' : 'secondary'} onClick={() => onLanguageChange('ar')}>AR</Button>
+          <Button variant={lang === 'en' ? 'primary' : 'secondary'} onClick={() => onLanguageChange('en')}>EN</Button>
+        </div>
+        <Button variant="secondary" onClick={onToggleTheme}>تبديل السمة ({theme})</Button>
+      </CardContent>
+    </Card>
+  );
+}
+
+function toggleUserStatus(users: UserAccount[], email: string): UserAccount[] {
+  return users.map((user) => user.email === email ? { ...user, active: !user.active } : user);
+}
+
 export function SettingsPage() {
   const { theme, setTheme } = useUiStore();
   const companySettingsQuery = useCompanySettings();
@@ -82,7 +151,7 @@ export function SettingsPage() {
   const [baseDraft, setBaseDraft] = useState<CompanySettingsDraft | null>(null);
   const [draft, setDraft] = useState<CompanySettingsDraft | null>(null);
   const [errors, setErrors] = useState<CompanySettingsValidationErrors>({});
-  const [users, setUsers] = useState<{ email: string; active: boolean }[]>([{ email: 'admin@rentrix.app', active: true }]);
+  const [users, setUsers] = useState<UserAccount[]>([{ email: 'admin@rentrix.app', active: true }]);
   const [inviteEmail, setInviteEmail] = useState('');
   const [lang, setLang] = useState<'ar' | 'en'>('ar');
 
@@ -118,6 +187,27 @@ export function SettingsPage() {
     });
   };
 
+  const handleRetryLoad = async () => {
+    await companySettingsQuery.refetch();
+  };
+
+  const handleInviteUser = () => {
+    if (!inviteEmail) {
+      return;
+    }
+
+    setUsers((currentUsers) => [{ email: inviteEmail, active: true }, ...currentUsers]);
+    setInviteEmail('');
+  };
+
+  const handleToggleUser = (email: string) => {
+    setUsers((currentUsers) => toggleUserStatus(currentUsers, email));
+  };
+
+  const handleToggleTheme = () => {
+    setTheme(theme === 'dark' ? 'light' : 'dark');
+  };
+
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!draft) return;
@@ -149,7 +239,7 @@ export function SettingsPage() {
             <CardDescription>{companySettingsQuery.error instanceof Error ? companySettingsQuery.error.message : 'حدث خطأ غير متوقع أثناء تحميل الإعدادات.'}</CardDescription>
           </CardHeader>
           <CardContent>
-            <Button onClick={() => void companySettingsQuery.refetch()}>إعادة المحاولة</Button>
+            <Button onClick={handleRetryLoad}>إعادة المحاولة</Button>
           </CardContent>
         </Card>
       </div>
@@ -231,13 +321,13 @@ export function SettingsPage() {
       </CardContent>
     </Card>
 
-    <Card><CardHeader><CardTitle>إدارة المستخدمين</CardTitle><CardDescription>دعوة عبر البريد أو تعطيل مستخدم.</CardDescription></CardHeader><CardContent className="space-y-2">
-      <div className="flex gap-2"><Input className="flex-1" placeholder="email@example.com" value={inviteEmail} onChange={(e) => setInviteEmail(e.target.value)} /><Button onClick={() => { if (!inviteEmail) return; setUsers((value) => [{ email: inviteEmail, active: true }, ...value]); setInviteEmail(''); }}>دعوة</Button></div>
-      {users.map((user) => <div key={user.email} className="flex items-center justify-between rounded border p-2"><span>{user.email}</span><Button variant="secondary" onClick={() => setUsers((value) => value.map((item) => item.email === user.email ? { ...item, active: !item.active } : item))}>{user.active ? 'تعطيل' : 'تفعيل'}</Button></div>)}
-    </CardContent></Card>
-    <Card><CardHeader><CardTitle>تفضيلات التطبيق</CardTitle></CardHeader><CardContent className="space-y-3">
-      <div className="flex gap-2"><Button variant={lang === 'ar' ? 'primary' : 'secondary'} onClick={() => setLang('ar')}>AR</Button><Button variant={lang === 'en' ? 'primary' : 'secondary'} onClick={() => setLang('en')}>EN</Button></div>
-      <Button variant="secondary" onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}>تبديل السمة ({theme})</Button>
-    </CardContent></Card>
+    <UserManagementCard
+      users={users}
+      inviteEmail={inviteEmail}
+      onInviteEmailChange={setInviteEmail}
+      onInviteUser={handleInviteUser}
+      onToggleUser={handleToggleUser}
+    />
+    <AppPreferencesCard lang={lang} theme={theme} onLanguageChange={setLang} onToggleTheme={handleToggleTheme} />
   </div>;
 }
