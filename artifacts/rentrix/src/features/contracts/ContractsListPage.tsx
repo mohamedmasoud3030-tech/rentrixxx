@@ -1,5 +1,5 @@
 import { Link } from '@tanstack/react-router';
-import { ChevronDown, ChevronUp, Download, Edit, Eye, FileText, Plus, Search, Trash2 } from 'lucide-react';
+import { AlertTriangle, CalendarClock, ChevronDown, ChevronUp, Download, Edit, Eye, FileText, Plus, Search, Trash2, WalletCards } from 'lucide-react';
 import { Fragment, useMemo, useState, type ReactNode } from 'react';
 import { EmptyState } from '@/components/empty-state';
 import { Button } from '@/components/ui/button';
@@ -23,8 +23,40 @@ function displayMoney(value: number) {
   return formatMoney({ amount: value, currency: activeCurrency, locale: activeLocale });
 }
 
+function parseContractDate(value: string) {
+  const parsed = new Date(`${value}T00:00:00`);
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
+}
+
 function formatDate(value: string) {
-  return new Date(value).toLocaleDateString(activeLocale);
+  const parsed = parseContractDate(value);
+  return parsed ? parsed.toLocaleDateString(activeLocale) : '—';
+}
+
+function getDaysUntilEnd(contract: ContractListItem) {
+  const endDate = parseContractDate(contract.end_date);
+  if (!endDate) return null;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const diff = endDate.getTime() - today.getTime();
+  return Math.ceil(diff / (1000 * 60 * 60 * 24));
+}
+
+function isExpiringSoon(contract: ContractListItem) {
+  const days = getDaysUntilEnd(contract);
+  return contract.status === 'active' && days !== null && days >= 0 && days <= 30;
+}
+
+function summarizeContracts(contracts: ContractListItem[]) {
+  return contracts.reduce(
+    (summary, contract) => ({
+      total: summary.total + 1,
+      active: summary.active + (contract.status === 'active' ? 1 : 0),
+      expiringSoon: summary.expiringSoon + (isExpiringSoon(contract) ? 1 : 0),
+      rentTotal: summary.rentTotal + (Number.isFinite(contract.rent_amount) ? contract.rent_amount : 0),
+    }),
+    { total: 0, active: 0, expiringSoon: 0, rentTotal: 0 },
+  );
 }
 
 function getContractNumber(contract: ContractListItem) {
@@ -100,9 +132,27 @@ function DetailBox({ label, children }: { label: string; children: ReactNode }) 
   );
 }
 
+function SummaryCard({ label, value, description, icon: Icon }: { label: string; value: string; description: string; icon: typeof FileText }) {
+  return (
+    <Card className="p-4">
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <p className="text-xs font-black text-muted-foreground">{label}</p>
+          <p className="mt-2 text-2xl font-black">{value}</p>
+          <p className="mt-1 text-xs leading-5 text-muted-foreground">{description}</p>
+        </div>
+        <div className="grid size-10 place-items-center rounded-2xl bg-primary/10 text-primary">
+          <Icon className="size-5" />
+        </div>
+      </div>
+    </Card>
+  );
+}
+
 export function ContractsListPage() {
   const [status, setStatus] = useState<ContractStatusFilter>('all');
   const [searchTerm, setSearchTerm] = useState('');
+  const [expiringOnly, setExpiringOnly] = useState(false);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const params = useMemo(() => ({ status }), [status]);
   const contractsQuery = useContracts(params);
@@ -111,10 +161,21 @@ export function ContractsListPage() {
   const normalizedSearch = normalizeSearchText(searchTerm.trim());
   const filteredContracts = useMemo(() => {
     const contracts = contractsQuery.data ?? [];
-    if (!normalizedSearch) return contracts;
-    return contracts.filter((contract) => getSearchText(contract).includes(normalizedSearch));
-  }, [contractsQuery.data, normalizedSearch]);
+    return contracts.filter((contract) => {
+      const matchesSearch = !normalizedSearch || getSearchText(contract).includes(normalizedSearch);
+      const matchesExpiry = !expiringOnly || isExpiringSoon(contract);
+      return matchesSearch && matchesExpiry;
+    });
+  }, [contractsQuery.data, expiringOnly, normalizedSearch]);
+  const listSummary = useMemo(() => summarizeContracts(contractsQuery.data ?? []), [contractsQuery.data]);
+  const visibleSummary = useMemo(() => summarizeContracts(filteredContracts), [filteredContracts]);
   const hasContracts = Boolean(contractsQuery.data?.length);
+  const hasActiveFilters = status !== 'all' || Boolean(searchTerm.trim()) || expiringOnly;
+  const resetFilters = () => {
+    setStatus('all');
+    setSearchTerm('');
+    setExpiringOnly(false);
+  };
 
   return (
     <div className="space-y-6">
@@ -137,6 +198,13 @@ export function ContractsListPage() {
         </div>
       </div>
 
+      <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+        <SummaryCard label="إجمالي العقود" value={String(listSummary.total)} description="كل العقود المحملة حسب فلتر الحالة الحالي." icon={FileText} />
+        <SummaryCard label="العقود النشطة" value={String(listSummary.active)} description="العقود التي حالتها نشطة ضمن النتيجة الحالية." icon={WalletCards} />
+        <SummaryCard label="تنتهي قريبًا" value={String(listSummary.expiringSoon)} description="عقود نشطة تنتهي خلال 30 يومًا." icon={CalendarClock} />
+        <SummaryCard label="إيجار النتائج الظاهرة" value={displayMoney(visibleSummary.rentTotal)} description="إجمالي قيمة الإيجار للعقود الظاهرة بعد البحث والفلاتر." icon={WalletCards} />
+      </div>
+
       <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
         <div className="flex flex-wrap gap-2">
           {filters.map((item) => (
@@ -144,6 +212,11 @@ export function ContractsListPage() {
               {filterLabels[item]}
             </Button>
           ))}
+          <Button variant={expiringOnly ? 'primary' : 'secondary'} onClick={() => setExpiringOnly((current) => !current)}>
+            <AlertTriangle className="ml-2 size-4" />
+            تنتهي خلال 30 يوم
+          </Button>
+          {hasActiveFilters ? <Button variant="ghost" onClick={resetFilters}>مسح الفلاتر</Button> : null}
         </div>
         <div className="relative w-full lg:max-w-md">
           <Search className="absolute right-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
@@ -179,9 +252,11 @@ export function ContractsListPage() {
               <TableBody>
                 {filteredContracts.map((contract) => {
                   const isExpanded = expandedId === contract.id;
+                  const expiringSoon = isExpiringSoon(contract);
+                  const daysUntilEnd = getDaysUntilEnd(contract);
                   return (
                     <Fragment key={contract.id}>
-                      <TableRow>
+                      <TableRow className={cn(expiringSoon && 'bg-amber-50/60 dark:bg-amber-950/20')}>
                         <TableCell>
                           <Button
                             variant="ghost"
@@ -192,7 +267,10 @@ export function ContractsListPage() {
                             {isExpanded ? <ChevronUp className="size-4" /> : <ChevronDown className="size-4" />}
                           </Button>
                         </TableCell>
-                        <TableCell className="font-black">{getContractNumber(contract)}</TableCell>
+                        <TableCell>
+                          <p className="font-black">{getContractNumber(contract)}</p>
+                          {expiringSoon ? <p className="mt-1 text-xs font-bold text-amber-700">ينتهي خلال {daysUntilEnd} يوم</p> : null}
+                        </TableCell>
                         <TableCell>{contract.people?.full_name ?? '—'}</TableCell>
                         <TableCell>{contract.units?.unit_number ?? contract.properties?.title ?? '—'}</TableCell>
                         <TableCell>{formatDate(contract.start_date)}</TableCell>
@@ -241,6 +319,7 @@ export function ContractsListPage() {
                               <DetailBox label="فترة العقد">
                                 <p>{formatDate(contract.start_date)} ← {formatDate(contract.end_date)}</p>
                                 <p className="text-muted-foreground">رقم العقد: {getContractNumber(contract)}</p>
+                                {expiringSoon ? <p className="font-bold text-amber-700">تنبيه: العقد ينتهي خلال {daysUntilEnd} يوم.</p> : null}
                               </DetailBox>
                               <DetailBox label="الحالة">
                                 <StatusBadge tone={statusTone[contract.status]}>{contractStatusLabels[contract.status]}</StatusBadge>
