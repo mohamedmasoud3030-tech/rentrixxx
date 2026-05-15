@@ -11,14 +11,24 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { OwnerCheckbox } from './OwnerCheckbox';
 import { OwnerPropertySelect } from './OwnerPropertySelect';
-import type { Owner } from './ownerService';
-import { useCreateOwner, useLinkOwnerToProperty, useOwners, usePropertiesWithOwners, useUpdateOwner } from './useOwners';
+import type { Owner, PropertyOwner } from './ownerService';
+import {
+  useCreateOwner,
+  useLinkOwnerToProperty,
+  useOwners,
+  usePropertiesWithOwners,
+  useUnlinkOwnerFromProperty,
+  useUpdateOwner,
+  useUpdatePropertyOwnerLink,
+} from './useOwners';
 import {
   countLinkedPropertiesForOwner,
   emptyOwnerFormValues,
   emptyPropertyOwnershipLinkFormValues,
   getOwnerDisplayLabel,
   ownerToFormValues,
+  propertyOwnerLinkToFormValues,
+  propertyOwnershipLinkFormToPayload,
   summarizeOwners,
   validateOwnerForm,
   validatePropertyOwnershipLinkForm,
@@ -44,6 +54,12 @@ type SummaryCardProps = Readonly<{
   label: string;
   value: number;
   icon: typeof Users;
+}>;
+
+type EditingPropertyOwnerLink = Readonly<{
+  id: string;
+  propertyId: string;
+  ownerId: string;
 }>;
 
 function SummaryCard({ label, value, icon: Icon }: SummaryCardProps) {
@@ -111,8 +127,11 @@ function OwnerFormDialog({
       is_active: values.is_active,
     };
 
-    if (owner) await updateOwner.mutateAsync(payload);
-    else await createOwner.mutateAsync(payload);
+    if (owner) {
+      await updateOwner.mutateAsync(payload);
+    } else {
+      await createOwner.mutateAsync(payload);
+    }
 
     onOpenChange(false);
   };
@@ -151,18 +170,24 @@ export function OwnersPage() {
   const ownersQuery = useOwners();
   const propertiesQuery = usePropertiesWithOwners();
   const linkMutation = useLinkOwnerToProperty();
+  const updateLinkMutation = useUpdatePropertyOwnerLink();
+  const unlinkMutation = useUnlinkOwnerFromProperty();
   const [selectedOwnerId, setSelectedOwnerId] = useState<string>('');
   const [editingOwner, setEditingOwner] = useState<Owner | null>(null);
   const [formOpen, setFormOpen] = useState(false);
   const [linkFormValues, setLinkFormValues] = useState<PropertyOwnershipLinkFormValues>(emptyPropertyOwnershipLinkFormValues);
   const [linkFormError, setLinkFormError] = useState<string | null>(null);
+  const [editingLink, setEditingLink] = useState<EditingPropertyOwnerLink | null>(null);
 
   const owners = ownersQuery.data ?? [];
   const properties = propertiesQuery.data ?? [];
+  const isSavingLink = linkMutation.isPending || updateLinkMutation.isPending;
   const selectedOwner = owners.find((owner) => owner.id === selectedOwnerId) ?? owners[0] ?? null;
   const summary = useMemo(() => summarizeOwners(owners, properties), [owners, properties]);
   const linkedProperties = useMemo(() => {
-    if (!selectedOwner) return [];
+    if (!selectedOwner) {
+      return [];
+    }
     return properties
       .map((property) => ({
         property,
@@ -171,12 +196,21 @@ export function OwnersPage() {
       .filter((item) => item.links.length > 0);
   }, [properties, selectedOwner]);
   const availableProperties = useMemo(() => {
-    if (!selectedOwner) return [];
+    if (!selectedOwner) {
+      return [];
+    }
+
+    if (editingLink) {
+      return properties.filter((property) => property.id === editingLink.propertyId);
+    }
+
     return properties.filter((property) => !property.property_owners.some((link) => link.owner_id === selectedOwner.id && !link.ends_on));
-  }, [properties, selectedOwner]);
+  }, [editingLink, properties, selectedOwner]);
 
   useEffect(() => {
-    if (!selectedOwnerId && owners[0]) setSelectedOwnerId(owners[0].id);
+    if (!selectedOwnerId && owners[0]) {
+      setSelectedOwnerId(owners[0].id);
+    }
   }, [owners, selectedOwnerId]);
 
   const openCreateForm = () => {
@@ -194,6 +228,25 @@ export function OwnersPage() {
     setLinkFormError(null);
   };
 
+  const beginEditLink = (link: PropertyOwner) => {
+    setEditingLink({ id: link.id, propertyId: link.property_id, ownerId: link.owner_id });
+    setLinkFormValues(propertyOwnerLinkToFormValues(link));
+    setLinkFormError(null);
+  };
+
+  const resetLinkForm = () => {
+    setEditingLink(null);
+    setLinkFormValues(emptyPropertyOwnershipLinkFormValues);
+    setLinkFormError(null);
+  };
+
+  const handleUnlinkProperty = async (link: PropertyOwner) => {
+    await unlinkMutation.mutateAsync({ linkId: link.id, propertyId: link.property_id, ownerId: link.owner_id });
+    if (editingLink?.id === link.id) {
+      resetLinkForm();
+    }
+  };
+
   const handleLinkProperty = async (event: FormEvent) => {
     event.preventDefault();
     if (!selectedOwner) {
@@ -206,16 +259,20 @@ export function OwnersPage() {
       return;
     }
 
-    await linkMutation.mutateAsync({
-      owner_id: selectedOwner.id,
-      property_id: linkFormValues.property_id,
-      ownership_percentage: Number(linkFormValues.ownership_percentage),
-      is_primary: linkFormValues.is_primary,
-      starts_on: linkFormValues.starts_on,
-      ends_on: linkFormValues.ends_on,
-    });
-    setLinkFormValues(emptyPropertyOwnershipLinkFormValues);
-    setLinkFormError(null);
+    if (editingLink) {
+      await updateLinkMutation.mutateAsync({
+        linkId: editingLink.id,
+        payload: propertyOwnershipLinkFormToPayload(linkFormValues),
+      });
+    } else {
+      await linkMutation.mutateAsync({
+        owner_id: selectedOwner.id,
+        property_id: linkFormValues.property_id,
+        ...propertyOwnershipLinkFormToPayload(linkFormValues),
+      });
+    }
+
+    resetLinkForm();
   };
 
   if (ownersQuery.isLoading || propertiesQuery.isLoading) {
@@ -307,19 +364,23 @@ export function OwnersPage() {
                         <span>من: <b className="text-foreground">{link.starts_on ?? '—'}</b></span>
                         <span>إلى: <b className="text-foreground">{link.ends_on ?? '—'}</b></span>
                       </div>
+                      <div className="mt-4 flex flex-wrap gap-2">
+                        <Button type="button" variant="secondary" className="min-h-9 px-3" onClick={() => beginEditLink(link)}>تعديل العلاقة</Button>
+                        <Button type="button" variant="danger" className="min-h-9 px-3" disabled={unlinkMutation.isPending} onClick={() => handleUnlinkProperty(link)}>إلغاء الربط</Button>
+                      </div>
                     </div>
                   ))) : <p className="rounded-2xl border border-dashed border-border p-4 text-sm text-muted-foreground">لا توجد عقارات مرتبطة بهذا المالك بعد.</p>}
                 </div>
 
                 <form className="rounded-2xl border border-border bg-card p-4" onSubmit={handleLinkProperty}>
-                  <h3 className="font-black">ربط عقار</h3>
-                  <p className="mt-1 text-sm text-muted-foreground">إضافة علاقة ملكية بسيطة بدون إنشاء سجل مالي.</p>
+                  <h3 className="font-black">{editingLink ? 'تعديل علاقة الملكية' : 'ربط عقار'}</h3>
+                  <p className="mt-1 text-sm text-muted-foreground">{editingLink ? 'تحديث نسبة الملكية والحالة والتواريخ بدون إنشاء سجل مالي.' : 'إضافة علاقة ملكية بسيطة بدون إنشاء سجل مالي.'}</p>
                   {linkFormError ? <div className="mt-3 rounded-2xl border border-destructive/20 bg-destructive/10 p-3 text-sm font-bold text-destructive">{linkFormError}</div> : null}
                   <div className="mt-4 grid gap-3 sm:grid-cols-[1fr_8rem]">
                     <OwnerPropertySelect
                       value={linkFormValues.property_id}
                       onValueChange={(propertyId) => setLinkField('property_id', propertyId)}
-                      disabled={!availableProperties.length}
+                      disabled={Boolean(editingLink) || !availableProperties.length}
                       properties={availableProperties}
                     />
                     <Input type="number" min="0.01" max="100" step="0.01" value={linkFormValues.ownership_percentage} onChange={(event) => setLinkField('ownership_percentage', event.target.value)} aria-label="نسبة الملكية" />
@@ -334,7 +395,8 @@ export function OwnersPage() {
                     onCheckedChange={(checked) => setLinkField('is_primary', checked)}
                     className="mt-3 flex items-center gap-3 rounded-2xl border border-border bg-muted/30 p-3 text-sm font-bold"
                   />
-                  <Button className="mt-3 w-full" type="submit" disabled={!linkFormValues.property_id || linkMutation.isPending}>ربط المالك بالعقار</Button>
+                  <Button className="mt-3 w-full" type="submit" disabled={!linkFormValues.property_id || isSavingLink}>{editingLink ? 'حفظ علاقة الملكية' : 'ربط المالك بالعقار'}</Button>
+                  {editingLink ? <Button className="mt-2 w-full" type="button" variant="secondary" onClick={resetLinkForm}>إلغاء التعديل</Button> : null}
                 </form>
               </>
             ) : null}

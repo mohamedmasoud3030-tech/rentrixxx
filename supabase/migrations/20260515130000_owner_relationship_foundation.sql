@@ -44,6 +44,83 @@ create unique index if not exists property_owners_active_unique_idx
 on public.property_owners (property_id, owner_id)
 where ends_on is null;
 
+create index if not exists property_owners_active_property_idx
+on public.property_owners (property_id, ends_on)
+where ends_on is null;
+
+do $$
+begin
+  if not exists (
+    select 1
+    from public.property_owners
+    where ends_on is null
+      and is_primary
+    group by property_id
+    having count(*) > 1
+  ) then
+    create unique index if not exists property_owners_active_primary_unique_idx
+    on public.property_owners (property_id)
+    where ends_on is null and is_primary;
+  else
+    raise notice 'Skipping property_owners_active_primary_unique_idx because duplicate active primary owner rows already exist.';
+  end if;
+end $$;
+
+create or replace function public.validate_property_owner_active_totals()
+returns trigger
+language plpgsql
+security definer
+set search_path = public, pg_temp
+as $$
+declare
+  v_other_active_primary_count integer;
+  v_other_active_percentage_total numeric;
+begin
+  if new.ends_on is not null then
+    return new;
+  end if;
+
+  perform pg_advisory_xact_lock(hashtextextended(new.property_id::text, 0));
+
+  if new.is_primary then
+    select count(*)
+      into v_other_active_primary_count
+      from public.property_owners
+     where property_id = new.property_id
+       and ends_on is null
+       and is_primary
+       and id <> new.id;
+
+    if v_other_active_primary_count > 0 then
+      raise exception 'Only one active primary owner is allowed per property.';
+    end if;
+  end if;
+
+  select coalesce(sum(ownership_percentage), 0)
+    into v_other_active_percentage_total
+    from public.property_owners
+   where property_id = new.property_id
+     and ends_on is null
+     and id <> new.id;
+
+  if v_other_active_percentage_total + new.ownership_percentage > 100 then
+    raise exception 'Active ownership percentages for a property cannot exceed 100.';
+  end if;
+
+  return new;
+end;
+$$;
+
+revoke execute on function public.validate_property_owner_active_totals() from public, anon;
+grant execute on function public.validate_property_owner_active_totals() to authenticated;
+
+drop trigger if exists property_owners_validate_active_totals on public.property_owners;
+create trigger property_owners_validate_active_totals
+before insert or update of property_id, ownership_percentage, is_primary, ends_on
+on public.property_owners
+for each row
+execute function public.validate_property_owner_active_totals();
+
 drop trigger if exists owners_set_updated_at on public.owners;
 create trigger owners_set_updated_at
 before update on public.owners

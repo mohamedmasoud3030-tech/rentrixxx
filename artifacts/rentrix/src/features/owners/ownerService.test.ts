@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import {
   getPropertyOwnerDisplayName,
@@ -94,5 +95,25 @@ describe('ownerService normalization helpers', () => {
     } as Parameters<typeof getPropertyOwnerDisplayName>[0])).toBe('مالك مرتبط');
 
     expect(getPropertyOwnerDisplayName({ owner_name: ' مالك نصي ' })).toBe('مالك نصي');
+  });
+});
+
+
+describe('owner relationship migration protections', () => {
+  const ownerMigrationSql = readFileSync(
+    new URL('../../../../../supabase/migrations/20260515130000_owner_relationship_foundation.sql', import.meta.url),
+    'utf8',
+  );
+
+  it('protects against multiple active primary owners per property', () => {
+    expect(ownerMigrationSql).toContain('property_owners_active_primary_unique_idx');
+    expect(ownerMigrationSql).toContain('Only one active primary owner is allowed per property.');
+    expect(ownerMigrationSql).toContain('where ends_on is null and is_primary');
+  });
+
+  it('protects active ownership percentage totals from exceeding 100 percent', () => {
+    expect(ownerMigrationSql).toContain('validate_property_owner_active_totals');
+    expect(ownerMigrationSql).toContain('v_other_active_percentage_total + new.ownership_percentage > 100');
+    expect(ownerMigrationSql).toContain('Active ownership percentages for a property cannot exceed 100.');
   });
 });

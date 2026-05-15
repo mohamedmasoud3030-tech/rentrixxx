@@ -1,4 +1,4 @@
-import type { Owner, PropertyWithOwners } from './ownerService';
+import type { Owner, PropertyOwner, PropertyOwnerUpdatePayload, PropertyWithOwners } from './ownerService';
 
 export type OwnerFormValues = {
   full_name: string;
@@ -29,9 +29,36 @@ export const emptyPropertyOwnershipLinkFormValues: PropertyOwnershipLinkFormValu
 };
 
 export function validatePropertyOwnershipLinkForm(values: PropertyOwnershipLinkFormValues): string | null {
-  if (!values.property_id) return 'اختر العقار أولاً';
-  if (values.starts_on && values.ends_on && values.ends_on < values.starts_on) return 'تاريخ نهاية الملكية يجب ألا يسبق تاريخ البداية';
+  if (!values.property_id) {
+    return 'اختر العقار أولاً';
+  }
+
+  if (values.starts_on && values.ends_on && values.ends_on < values.starts_on) {
+    return 'تاريخ نهاية الملكية يجب ألا يسبق تاريخ البداية';
+  }
+
   return null;
+}
+
+type PropertyOwnerFormFields = Pick<PropertyOwner, 'property_id' | 'ownership_percentage' | 'is_primary' | 'starts_on' | 'ends_on'>;
+
+export function propertyOwnerLinkToFormValues(link: PropertyOwnerFormFields): PropertyOwnershipLinkFormValues {
+  return {
+    property_id: link.property_id,
+    ownership_percentage: String(link.ownership_percentage),
+    is_primary: link.is_primary,
+    starts_on: link.starts_on ?? '',
+    ends_on: link.ends_on ?? '',
+  };
+}
+
+export function propertyOwnershipLinkFormToPayload(values: PropertyOwnershipLinkFormValues): PropertyOwnerUpdatePayload {
+  return {
+    ownership_percentage: Number(values.ownership_percentage),
+    is_primary: values.is_primary,
+    starts_on: values.starts_on,
+    ends_on: values.ends_on,
+  };
 }
 
 export type OwnerSummary = {
@@ -54,7 +81,9 @@ export const emptyOwnerFormValues: OwnerFormValues = {
 };
 
 export function ownerToFormValues(owner: Owner | null): OwnerFormValues {
-  if (!owner) return emptyOwnerFormValues;
+  if (!owner) {
+    return emptyOwnerFormValues;
+  }
 
   return {
     full_name: owner.full_name,
@@ -70,8 +99,14 @@ export function ownerToFormValues(owner: Owner | null): OwnerFormValues {
 }
 
 export function validateOwnerForm(values: OwnerFormValues): string | null {
-  if (!values.full_name.trim()) return 'اسم المالك مطلوب';
-  if (values.email.trim() && !values.email.includes('@')) return 'البريد الإلكتروني غير صالح';
+  if (!values.full_name.trim()) {
+    return 'اسم المالك مطلوب';
+  }
+
+  if (values.email.trim() && !values.email.includes('@')) {
+    return 'البريد الإلكتروني غير صالح';
+  }
+
   return null;
 }
 
@@ -83,7 +118,9 @@ export function summarizeOwners(owners: Owner[], properties: PropertyWithOwners[
   const linkedPropertyIds = new Set<string>();
 
   for (const property of properties) {
-    if (property.property_owners.length > 0) linkedPropertyIds.add(property.id);
+    if (property.property_owners.length > 0) {
+      linkedPropertyIds.add(property.id);
+    }
   }
 
   return {

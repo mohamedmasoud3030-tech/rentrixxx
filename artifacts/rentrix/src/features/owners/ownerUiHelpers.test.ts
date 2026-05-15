@@ -1,5 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import { emptyOwnerFormValues, emptyPropertyOwnershipLinkFormValues, summarizeOwners, validateOwnerForm, validatePropertyOwnershipLinkForm } from './ownerUiHelpers';
+import {
+  emptyOwnerFormValues,
+  emptyPropertyOwnershipLinkFormValues,
+  propertyOwnerLinkToFormValues,
+  propertyOwnershipLinkFormToPayload,
+  summarizeOwners,
+  validateOwnerForm,
+  validatePropertyOwnershipLinkForm,
+} from './ownerUiHelpers';
 import type { Owner, PropertyWithOwners } from './ownerService';
 
 const baseOwner: Owner = {
@@ -70,19 +78,43 @@ describe('owner UI helpers', () => {
   });
 
   it('keeps property ownership link metadata fields available for submit payloads', () => {
+    const values = {
+      ...emptyPropertyOwnershipLinkFormValues,
+      property_id: 'property-1',
+      ownership_percentage: '55.5',
+      is_primary: false,
+      starts_on: '2026-05-01',
+      ends_on: '2026-06-01',
+    };
+
     expect(emptyPropertyOwnershipLinkFormValues).toMatchObject({
       is_primary: true,
       starts_on: '',
       ends_on: '',
     });
-
-    expect(validatePropertyOwnershipLinkForm({
-      ...emptyPropertyOwnershipLinkFormValues,
-      property_id: 'property-1',
+    expect(validatePropertyOwnershipLinkForm(values)).toBeNull();
+    expect(propertyOwnershipLinkFormToPayload(values)).toEqual({
+      ownership_percentage: 55.5,
       is_primary: false,
       starts_on: '2026-05-01',
       ends_on: '2026-06-01',
-    })).toBeNull();
+    });
+  });
+
+  it('maps existing property owner links back into editable form values', () => {
+    expect(propertyOwnerLinkToFormValues({
+      property_id: 'property-1',
+      ownership_percentage: 45.25,
+      is_primary: false,
+      starts_on: null,
+      ends_on: '2026-06-01',
+    })).toEqual({
+      property_id: 'property-1',
+      ownership_percentage: '45.25',
+      is_primary: false,
+      starts_on: '',
+      ends_on: '2026-06-01',
+    });
   });
 
   it('summarizes owners and property relationships without financial balances', () => {
