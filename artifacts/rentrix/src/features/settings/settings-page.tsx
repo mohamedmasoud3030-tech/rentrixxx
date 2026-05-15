@@ -1,28 +1,392 @@
-import { useState } from 'react';
+import { useEffect, useMemo, useRef, useState, type ChangeEvent, type FormEvent } from 'react';
+import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Select } from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
+import { formatCompanyDate, formatCompanyMoney } from '@/lib/companyFormatters';
 import { useUiStore } from '@/store/ui-store';
+import { useCompanySettings, useUpdateCompanySettings } from './useCompanySettings';
+import {
+  areCompanySettingsDraftsEqual,
+  companySettingsDraftToLocalSettings,
+  companySettingsDraftToPayload,
+  companySettingsRecordToDraft,
+  getNextDraftAfterServerSettingsChange,
+  hasCompanySettingsValidationErrors,
+  validateCompanySettingsDraft,
+  type CompanySettingsDraft,
+  type CompanySettingsDraftField,
+  type CompanySettingsValidationErrors,
+} from './settingsForm';
+
+const currencyOptions = ['OMR', 'AED', 'SAR', 'QAR', 'KWD', 'BHD', 'USD', 'EGP'];
+const localeOptions = ['ar-OM', 'en-OM', 'ar', 'en'];
+const numberFormatOptions = ['ar-OM', 'en-OM', 'ar', 'en-US'];
+const dateFormatOptions = ['dd/MM/yyyy', 'yyyy-MM-dd', 'MM/dd/yyyy'];
+const timezoneOptions = ['Asia/Muscat', 'Asia/Dubai', 'Asia/Riyadh', 'UTC'];
+
+type TextFieldConfig = Readonly<{
+  label: string;
+  field: CompanySettingsDraftField;
+  placeholder?: string;
+  type?: string;
+}>;
+
+type SelectFieldConfig = Readonly<{
+  label: string;
+  field: CompanySettingsDraftField;
+  options: readonly string[];
+}>;
+
+const companyTextFieldConfigs: readonly TextFieldConfig[] = [
+  { label: 'اسم الشركة', field: 'company_name', placeholder: 'Rentrix' },
+  { label: 'الاسم القانوني', field: 'legal_name', placeholder: 'الاسم القانوني للشركة' },
+  { label: 'الرقم الضريبي', field: 'tax_number' },
+  { label: 'رقم السجل التجاري', field: 'registration_number' },
+  { label: 'الهاتف', field: 'phone' },
+  { label: 'البريد الإلكتروني', field: 'email', type: 'email', placeholder: 'email@example.com' },
+  { label: 'المدينة', field: 'city' },
+  { label: 'الدولة', field: 'country' },
+];
+
+const companySelectFieldConfigs: readonly SelectFieldConfig[] = [
+  { label: 'العملة', field: 'currency', options: currencyOptions },
+  { label: 'المحلية', field: 'locale', options: localeOptions },
+  { label: 'المنطقة الزمنية', field: 'timezone', options: timezoneOptions },
+  { label: 'صيغة التاريخ', field: 'date_format', options: dateFormatOptions },
+  { label: 'صيغة الأرقام', field: 'number_format', options: numberFormatOptions },
+];
+
+const documentPrefixFieldConfigs: readonly TextFieldConfig[] = [
+  { label: 'رابط الشعار', field: 'logo_url', type: 'url', placeholder: 'https://example.com/logo.png' },
+  { label: 'بادئة الفواتير', field: 'invoice_prefix' },
+  { label: 'بادئة الإيصالات', field: 'receipt_prefix' },
+];
+
+type BaseFieldProps = Readonly<{
+  label: string;
+  field: CompanySettingsDraftField;
+  draft: CompanySettingsDraft;
+  errors: CompanySettingsValidationErrors;
+  disabled: boolean;
+  onChange: (field: CompanySettingsDraftField, value: string) => void;
+}>;
+
+type FormFieldProps = BaseFieldProps & Readonly<{
+  placeholder?: string;
+  type?: string;
+}>;
+
+function FormField({ label, field, draft, errors, disabled, placeholder, type = 'text', onChange }: FormFieldProps) {
+  return (
+    <label className="space-y-1 text-sm font-medium text-foreground">
+      <span>{label}</span>
+      <Input
+        type={type}
+        value={draft[field]}
+        placeholder={placeholder}
+        disabled={disabled}
+        aria-invalid={Boolean(errors[field])}
+        onChange={(event: ChangeEvent<HTMLInputElement>) => onChange(field, event.target.value)}
+      />
+      {errors[field] ? <span className="block text-xs text-destructive">{errors[field]}</span> : null}
+    </label>
+  );
+}
+
+type SelectFieldProps = BaseFieldProps & Readonly<{
+  options: readonly string[];
+}>;
+
+function SelectField({ label, field, draft, errors, disabled, options, onChange }: SelectFieldProps) {
+  return (
+    <label className="space-y-1 text-sm font-medium text-foreground">
+      <span>{label}</span>
+      <Select
+        value={draft[field]}
+        disabled={disabled}
+        aria-invalid={Boolean(errors[field])}
+        onChange={(event: ChangeEvent<HTMLSelectElement>) => onChange(field, event.target.value)}
+      >
+        {options.map((option) => <option key={option} value={option}>{option}</option>)}
+      </Select>
+      {errors[field] ? <span className="block text-xs text-destructive">{errors[field]}</span> : null}
+    </label>
+  );
+}
+
+type UserAccount = { email: string; active: boolean };
+
+type UserManagementCardProps = Readonly<{
+  users: UserAccount[];
+  inviteEmail: string;
+  onInviteEmailChange: (value: string) => void;
+  onInviteUser: () => void;
+  onToggleUser: (email: string) => void;
+}>;
+
+function UserManagementCard({ users, inviteEmail, onInviteEmailChange, onInviteUser, onToggleUser }: UserManagementCardProps) {
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>إدارة المستخدمين</CardTitle>
+        <CardDescription>دعوة عبر البريد أو تعطيل مستخدم.</CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-2">
+        <div className="flex gap-2">
+          <Input
+            className="flex-1"
+            placeholder="email@example.com"
+            value={inviteEmail}
+            onChange={(event) => onInviteEmailChange(event.target.value)}
+          />
+          <Button onClick={onInviteUser}>دعوة</Button>
+        </div>
+        {users.map((user) => (
+          <div key={user.email} className="flex items-center justify-between rounded border p-2">
+            <span>{user.email}</span>
+            <Button variant="secondary" onClick={() => onToggleUser(user.email)}>
+              {user.active ? 'تعطيل' : 'تفعيل'}
+            </Button>
+          </div>
+        ))}
+      </CardContent>
+    </Card>
+  );
+}
+
+type AppPreferencesCardProps = Readonly<{
+  lang: 'ar' | 'en';
+  theme: string;
+  onLanguageChange: (language: 'ar' | 'en') => void;
+  onToggleTheme: () => void;
+}>;
+
+function AppPreferencesCard({ lang, theme, onLanguageChange, onToggleTheme }: AppPreferencesCardProps) {
+  return (
+    <Card>
+      <CardHeader><CardTitle>تفضيلات التطبيق</CardTitle></CardHeader>
+      <CardContent className="space-y-3">
+        <div className="flex gap-2">
+          <Button variant={lang === 'ar' ? 'primary' : 'secondary'} onClick={() => onLanguageChange('ar')}>AR</Button>
+          <Button variant={lang === 'en' ? 'primary' : 'secondary'} onClick={() => onLanguageChange('en')}>EN</Button>
+        </div>
+        <Button variant="secondary" onClick={onToggleTheme}>تبديل السمة ({theme})</Button>
+      </CardContent>
+    </Card>
+  );
+}
+
+function toggleUserStatus(users: UserAccount[], email: string): UserAccount[] {
+  return users.map((user) => user.email === email ? { ...user, active: !user.active } : user);
+}
 
 export function SettingsPage() {
   const { theme, setTheme } = useUiStore();
-  const [company, setCompany] = useState({ name: 'Rentrix', logo: '', address: '', phone: '' });
-  const [users, setUsers] = useState<{ email: string; active: boolean }[]>([{ email: 'admin@rentrix.app', active: true }]);
+  const companySettingsQuery = useCompanySettings();
+  const updateCompanySettingsMutation = useUpdateCompanySettings();
+  const baseDraftRef = useRef<CompanySettingsDraft | null>(null);
+  const [baseDraft, setBaseDraft] = useState<CompanySettingsDraft | null>(null);
+  const [draft, setDraft] = useState<CompanySettingsDraft | null>(null);
+  const [errors, setErrors] = useState<CompanySettingsValidationErrors>({});
+  const [users, setUsers] = useState<UserAccount[]>([{ email: 'admin@rentrix.app', active: true }]);
   const [inviteEmail, setInviteEmail] = useState('');
   const [lang, setLang] = useState<'ar' | 'en'>('ar');
-  return <div className='grid gap-4 lg:grid-cols-2' dir='rtl'>
-    <Card><CardHeader><CardTitle>ملف الشركة</CardTitle></CardHeader><CardContent className='space-y-2'>
-      <input className='w-full rounded border px-2 py-2' placeholder='الاسم' value={company.name} onChange={(e)=>setCompany({...company,name:e.target.value})}/>
-      <input className='w-full rounded border px-2 py-2' placeholder='رابط الشعار' value={company.logo} onChange={(e)=>setCompany({...company,logo:e.target.value})}/>
-      <input className='w-full rounded border px-2 py-2' placeholder='العنوان' value={company.address} onChange={(e)=>setCompany({...company,address:e.target.value})}/>
-      <input className='w-full rounded border px-2 py-2' placeholder='الهاتف' value={company.phone} onChange={(e)=>setCompany({...company,phone:e.target.value})}/>
-    </CardContent></Card>
-    <Card><CardHeader><CardTitle>إدارة المستخدمين</CardTitle><CardDescription>دعوة عبر البريد أو تعطيل مستخدم.</CardDescription></CardHeader><CardContent className='space-y-2'>
-      <div className='flex gap-2'><input className='flex-1 rounded border px-2 py-2' placeholder='email@example.com' value={inviteEmail} onChange={(e)=>setInviteEmail(e.target.value)}/><Button onClick={() => { if (!inviteEmail) return; setUsers((v)=>[{email:inviteEmail,active:true},...v]); setInviteEmail(''); }}>دعوة</Button></div>
-      {users.map((u) => <div key={u.email} className='flex items-center justify-between rounded border p-2'><span>{u.email}</span><Button variant='secondary' onClick={() => setUsers((v)=>v.map((x)=>x.email===u.email?{...x,active:!x.active}:x))}>{u.active ? 'تعطيل' : 'تفعيل'}</Button></div>)}
-    </CardContent></Card>
-    <Card><CardHeader><CardTitle>تفضيلات التطبيق</CardTitle></CardHeader><CardContent className='space-y-3'>
-      <div className='flex gap-2'><Button variant={lang==='ar'?'primary':'secondary'} onClick={()=>setLang('ar')}>AR</Button><Button variant={lang==='en'?'primary':'secondary'} onClick={()=>setLang('en')}>EN</Button></div>
-      <Button variant='secondary' onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}>تبديل السمة ({theme})</Button>
-    </CardContent></Card>
+
+  const isDirty = !areCompanySettingsDraftsEqual(draft, baseDraft);
+  const isSaving = updateCompanySettingsMutation.isPending;
+
+  useEffect(() => {
+    if (!companySettingsQuery.data) return;
+
+    const nextDraft = companySettingsRecordToDraft(companySettingsQuery.data);
+    const currentBaseDraft = baseDraftRef.current;
+
+    setDraft((currentDraft) => getNextDraftAfterServerSettingsChange(currentDraft, currentBaseDraft, nextDraft));
+    setBaseDraft(nextDraft);
+    baseDraftRef.current = nextDraft;
+  }, [companySettingsQuery.data]);
+
+  const previewSettings = useMemo(() => draft ? companySettingsDraftToLocalSettings(draft) : null, [draft]);
+  const formattedPreviewDate = previewSettings ? formatCompanyDate(previewSettings, new Date()) : '—';
+  const formattedPreviewMoney = previewSettings ? formatCompanyMoney(previewSettings, 1234.56) : '—';
+
+  const handleDraftChange = (field: CompanySettingsDraftField, value: string) => {
+    setDraft((currentDraft) => currentDraft ? { ...currentDraft, [field]: value } : currentDraft);
+    setErrors((currentErrors) => {
+      if (!currentErrors[field]) return currentErrors;
+      const nextErrors = { ...currentErrors };
+      delete nextErrors[field];
+      return nextErrors;
+    });
+  };
+
+  const handleRetryLoad = async () => {
+    await companySettingsQuery.refetch();
+  };
+
+  const handleInviteUser = () => {
+    if (!inviteEmail) {
+      return;
+    }
+
+    setUsers((currentUsers) => [{ email: inviteEmail, active: true }, ...currentUsers]);
+    setInviteEmail('');
+  };
+
+  const handleToggleUser = (email: string) => {
+    setUsers((currentUsers) => toggleUserStatus(currentUsers, email));
+  };
+
+  const handleToggleTheme = () => {
+    setTheme(theme === 'dark' ? 'light' : 'dark');
+  };
+
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!draft) return;
+
+    const validationErrors = validateCompanySettingsDraft(draft);
+    setErrors(validationErrors);
+    if (hasCompanySettingsValidationErrors(validationErrors)) {
+      toast.error('يرجى تصحيح أخطاء إعدادات الشركة قبل الحفظ');
+      return;
+    }
+
+    try {
+      const savedSettings = await updateCompanySettingsMutation.mutateAsync(companySettingsDraftToPayload(draft));
+      const savedDraft = companySettingsRecordToDraft(savedSettings);
+      setBaseDraft(savedDraft);
+      baseDraftRef.current = savedDraft;
+      setDraft(savedDraft);
+      toast.success('تم حفظ إعدادات الشركة بنجاح');
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'تعذر حفظ إعدادات الشركة');
+    }
+  };
+
+  if (companySettingsQuery.isError) {
+    return (
+      <div className="grid gap-4" dir="rtl">
+        <Card>
+          <CardHeader>
+            <CardTitle>تعذر تحميل إعدادات الشركة</CardTitle>
+            <CardDescription>{companySettingsQuery.error instanceof Error ? companySettingsQuery.error.message : 'حدث خطأ غير متوقع أثناء تحميل الإعدادات.'}</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button onClick={handleRetryLoad}>إعادة المحاولة</Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  if (companySettingsQuery.isLoading || !draft) {
+    return (
+      <div className="grid gap-4" dir="rtl">
+        <Card>
+          <CardHeader>
+            <CardTitle>إعدادات الشركة</CardTitle>
+            <CardDescription>جارٍ تحميل الإعدادات المحفوظة...</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="rounded-xl border border-dashed p-6 text-sm text-muted-foreground">يرجى الانتظار بينما يتم تحميل إعدادات الشركة من قاعدة البيانات.</div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  return <div className="grid gap-4 lg:grid-cols-2" dir="rtl">
+    <Card className="lg:col-span-2">
+      <CardHeader>
+        <CardTitle>ملف الشركة</CardTitle>
+        <CardDescription>هذه الإعدادات محفوظة ومستمرة في قاعدة البيانات وتُستخدم كمرجع لتنسيق بيانات الشركة.</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <form className="space-y-5" onSubmit={handleSubmit}>
+          <div className="rounded-xl border border-primary/20 bg-primary/5 p-3 text-sm text-primary">يتم حفظ إعدادات الشركة واستخدامها في تنسيق بيانات النظام.</div>
+
+          <div className="grid gap-3 md:grid-cols-2">
+            {companyTextFieldConfigs.map((fieldConfig) => (
+              <FormField
+                key={fieldConfig.field}
+                label={fieldConfig.label}
+                field={fieldConfig.field}
+                draft={draft}
+                errors={errors}
+                disabled={isSaving}
+                type={fieldConfig.type}
+                placeholder={fieldConfig.placeholder}
+                onChange={handleDraftChange}
+              />
+            ))}
+            {companySelectFieldConfigs.map((fieldConfig) => (
+              <SelectField
+                key={fieldConfig.field}
+                label={fieldConfig.label}
+                field={fieldConfig.field}
+                draft={draft}
+                errors={errors}
+                disabled={isSaving}
+                options={fieldConfig.options}
+                onChange={handleDraftChange}
+              />
+            ))}
+            {documentPrefixFieldConfigs.map((fieldConfig) => (
+              <FormField
+                key={fieldConfig.field}
+                label={fieldConfig.label}
+                field={fieldConfig.field}
+                draft={draft}
+                errors={errors}
+                disabled={isSaving}
+                type={fieldConfig.type}
+                placeholder={fieldConfig.placeholder}
+                onChange={handleDraftChange}
+              />
+            ))}
+          </div>
+
+          <label className="space-y-1 text-sm font-medium text-foreground">
+            <span>العنوان</span>
+            <Textarea
+              value={draft.address}
+              disabled={isSaving}
+              aria-invalid={Boolean(errors.address)}
+              onChange={(event: ChangeEvent<HTMLTextAreaElement>) => handleDraftChange('address', event.target.value)}
+            />
+            {errors.address ? <span className="block text-xs text-destructive">{errors.address}</span> : null}
+          </label>
+
+          <div className="grid gap-3 rounded-xl border bg-muted/20 p-4 text-sm md:grid-cols-2">
+            <div>
+              <div className="font-semibold">معاينة التاريخ</div>
+              <div className="text-muted-foreground">{formattedPreviewDate}</div>
+            </div>
+            <div>
+              <div className="font-semibold">معاينة المبلغ</div>
+              <div className="text-muted-foreground">{formattedPreviewMoney}</div>
+            </div>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-3">
+            <Button type="submit" disabled={!isDirty || isSaving}>{isSaving ? 'جارٍ الحفظ...' : 'حفظ إعدادات الشركة'}</Button>
+            <span className="text-sm text-muted-foreground">{isDirty ? 'توجد تغييرات غير محفوظة' : 'لا توجد تغييرات للحفظ'}</span>
+          </div>
+        </form>
+      </CardContent>
+    </Card>
+
+    <UserManagementCard
+      users={users}
+      inviteEmail={inviteEmail}
+      onInviteEmailChange={setInviteEmail}
+      onInviteUser={handleInviteUser}
+      onToggleUser={handleToggleUser}
+    />
+    <AppPreferencesCard lang={lang} theme={theme} onLanguageChange={setLang} onToggleTheme={handleToggleTheme} />
   </div>;
 }
