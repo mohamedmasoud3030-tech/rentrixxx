@@ -56,6 +56,13 @@ describe('settingsForm helpers', () => {
     });
   });
 
+  it('keeps optional email blank, accepts simple valid email, and rejects malformed email without regex backtracking risk', () => {
+    expect(validateCompanySettingsDraft({ ...validDraft, email: '' }).email).toBeUndefined();
+    expect(validateCompanySettingsDraft({ ...validDraft, email: 'admin@rentrix.app' }).email).toBeUndefined();
+    expect(validateCompanySettingsDraft({ ...validDraft, email: 'admin@@rentrix.app' }).email).toBe('صيغة البريد الإلكتروني غير صحيحة');
+    expect(validateCompanySettingsDraft({ ...validDraft, email: `admin@${'a'.repeat(5000)}` }).email).toBe('صيغة البريد الإلكتروني غير صحيحة');
+  });
+
   it('detects dirty state by comparing every persisted draft field', () => {
     expect(areCompanySettingsDraftsEqual(validDraft, { ...validDraft })).toBe(true);
     expect(areCompanySettingsDraftsEqual(validDraft, { ...validDraft, invoice_prefix: 'BILL' })).toBe(false);

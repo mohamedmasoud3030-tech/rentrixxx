@@ -67,6 +67,29 @@ const requiredLabels: Record<(typeof requiredFields)[number], string> = {
   receipt_prefix: 'بادئة الإيصالات مطلوبة',
 };
 
+function hasWhitespace(value: string): boolean {
+  return Array.from(value).some((character) => character.trim() === '');
+}
+
+function isValidEmailAddress(value: string): boolean {
+  const email = value.trim();
+  const atIndex = email.indexOf('@');
+
+  if (atIndex <= 0 || atIndex !== email.lastIndexOf('@') || hasWhitespace(email)) return false;
+
+  const localPart = email.slice(0, atIndex);
+  const domainPart = email.slice(atIndex + 1);
+  const dotIndex = domainPart.indexOf('.');
+
+  return Boolean(
+    localPart
+      && domainPart
+      && dotIndex > 0
+      && dotIndex < domainPart.length - 1
+      && !domainPart.includes('..'),
+  );
+}
+
 export function companySettingsRecordToDraft(settings: CompanySettingsRecord): CompanySettingsDraft {
   return {
     company_name: settings.company_name,
@@ -118,7 +141,7 @@ export function validateCompanySettingsDraft(draft: CompanySettingsDraft): Compa
     if (!draft[field].trim()) errors[field] = requiredLabels[field];
   }
 
-  if (draft.email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(draft.email.trim())) {
+  if (draft.email.trim() && !isValidEmailAddress(draft.email)) {
     errors.email = 'صيغة البريد الإلكتروني غير صحيحة';
   }
 
