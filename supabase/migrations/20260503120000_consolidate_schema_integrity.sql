@@ -34,544 +34,124 @@
 -- self-contained regardless of whether 20260418101500 was ever applied.
 -- =============================================================================
 
--- properties → owners
-DO $$ BEGIN
-  IF NOT EXISTS (
-    SELECT 1 FROM pg_constraint WHERE conname = 'properties_owner_fk'
-  ) THEN
-    ALTER TABLE public.properties
-      ADD CONSTRAINT properties_owner_fk
-      FOREIGN KEY (owner_id) REFERENCES public.owners(id)
-      NOT VALID;
-  END IF;
-END $$;
-DO $$ BEGIN
-  IF EXISTS (
-    SELECT 1 FROM pg_constraint
-    WHERE conname = 'properties_owner_fk' AND NOT convalidated
-  ) THEN
-    ALTER TABLE public.properties VALIDATE CONSTRAINT properties_owner_fk;
-  END IF;
-END $$;
-
--- units → properties
-DO $$ BEGIN
-  IF NOT EXISTS (
-    SELECT 1 FROM pg_constraint WHERE conname = 'units_property_fk'
-  ) THEN
-    ALTER TABLE public.units
-      ADD CONSTRAINT units_property_fk
-      FOREIGN KEY (property_id) REFERENCES public.properties(id)
-      NOT VALID;
-  END IF;
-END $$;
-DO $$ BEGIN
-  IF EXISTS (
-    SELECT 1 FROM pg_constraint
-    WHERE conname = 'units_property_fk' AND NOT convalidated
-  ) THEN
-    ALTER TABLE public.units VALIDATE CONSTRAINT units_property_fk;
-  END IF;
-END $$;
-
--- contracts → units
-DO $$ BEGIN
-  IF NOT EXISTS (
-    SELECT 1 FROM pg_constraint WHERE conname = 'contracts_unit_fk'
-  ) THEN
-    ALTER TABLE public.contracts
-      ADD CONSTRAINT contracts_unit_fk
-      FOREIGN KEY (unit_id) REFERENCES public.units(id)
-      NOT VALID;
-  END IF;
-END $$;
-DO $$ BEGIN
-  IF EXISTS (
-    SELECT 1 FROM pg_constraint
-    WHERE conname = 'contracts_unit_fk' AND NOT convalidated
-  ) THEN
-    ALTER TABLE public.contracts VALIDATE CONSTRAINT contracts_unit_fk;
-  END IF;
-END $$;
-
--- contracts → tenants
-DO $$ BEGIN
-  IF NOT EXISTS (
-    SELECT 1 FROM pg_constraint WHERE conname = 'contracts_tenant_fk'
-  ) THEN
-    ALTER TABLE public.contracts
-      ADD CONSTRAINT contracts_tenant_fk
-      FOREIGN KEY (tenant_id) REFERENCES public.tenants(id)
-      NOT VALID;
-  END IF;
-END $$;
-DO $$ BEGIN
-  IF EXISTS (
-    SELECT 1 FROM pg_constraint
-    WHERE conname = 'contracts_tenant_fk' AND NOT convalidated
-  ) THEN
-    ALTER TABLE public.contracts VALIDATE CONSTRAINT contracts_tenant_fk;
-  END IF;
-END $$;
-
--- invoices → contracts
-DO $$ BEGIN
-  IF NOT EXISTS (
-    SELECT 1 FROM pg_constraint WHERE conname = 'invoices_contract_fk'
-  ) THEN
-    ALTER TABLE public.invoices
-      ADD CONSTRAINT invoices_contract_fk
-      FOREIGN KEY (contract_id) REFERENCES public.contracts(id)
-      NOT VALID;
-  END IF;
-END $$;
-DO $$ BEGIN
-  IF EXISTS (
-    SELECT 1 FROM pg_constraint
-    WHERE conname = 'invoices_contract_fk' AND NOT convalidated
-  ) THEN
-    ALTER TABLE public.invoices VALIDATE CONSTRAINT invoices_contract_fk;
-  END IF;
-END $$;
-
--- receipts → contracts
-DO $$ BEGIN
-  IF NOT EXISTS (
-    SELECT 1 FROM pg_constraint WHERE conname = 'receipts_contract_fk'
-  ) THEN
-    ALTER TABLE public.receipts
-      ADD CONSTRAINT receipts_contract_fk
-      FOREIGN KEY (contract_id) REFERENCES public.contracts(id)
-      NOT VALID;
-  END IF;
-END $$;
-DO $$ BEGIN
-  IF EXISTS (
-    SELECT 1 FROM pg_constraint
-    WHERE conname = 'receipts_contract_fk' AND NOT convalidated
-  ) THEN
-    ALTER TABLE public.receipts VALIDATE CONSTRAINT receipts_contract_fk;
-  END IF;
-END $$;
-
--- receipt_allocations → receipts
-DO $$ BEGIN
-  IF NOT EXISTS (
-    SELECT 1 FROM pg_constraint WHERE conname = 'receipt_allocations_receipt_fk'
-  ) THEN
-    ALTER TABLE public.receipt_allocations
-      ADD CONSTRAINT receipt_allocations_receipt_fk
-      FOREIGN KEY (receipt_id) REFERENCES public.receipts(id)
-      NOT VALID;
-  END IF;
-END $$;
-DO $$ BEGIN
-  IF EXISTS (
-    SELECT 1 FROM pg_constraint
-    WHERE conname = 'receipt_allocations_receipt_fk' AND NOT convalidated
-  ) THEN
-    ALTER TABLE public.receipt_allocations VALIDATE CONSTRAINT receipt_allocations_receipt_fk;
-  END IF;
-END $$;
-
--- receipt_allocations → invoices
-DO $$ BEGIN
-  IF NOT EXISTS (
-    SELECT 1 FROM pg_constraint WHERE conname = 'receipt_allocations_invoice_fk'
-  ) THEN
-    ALTER TABLE public.receipt_allocations
-      ADD CONSTRAINT receipt_allocations_invoice_fk
-      FOREIGN KEY (invoice_id) REFERENCES public.invoices(id)
-      NOT VALID;
-  END IF;
-END $$;
-DO $$ BEGIN
-  IF EXISTS (
-    SELECT 1 FROM pg_constraint
-    WHERE conname = 'receipt_allocations_invoice_fk' AND NOT convalidated
-  ) THEN
-    ALTER TABLE public.receipt_allocations VALIDATE CONSTRAINT receipt_allocations_invoice_fk;
-  END IF;
-END $$;
-
+-- Fresh preview branches apply this migration before the current core schema
+-- migration creates public.properties/public.owners. Keep every hardening step
+-- guarded so legacy/live databases are hardened while empty fresh databases can
+-- continue to later migrations that create the canonical schema.
 
 -- =============================================================================
--- SECTION 2: ADDITIONAL FK CONSTRAINTS (balance tables, billing, memberships)
+-- SECTION 1–2: FK CONSTRAINTS — guarded by child/parent tables and columns
 -- =============================================================================
 
--- journal_entries → accounts
-DO $$ BEGIN
-  IF NOT EXISTS (
-    SELECT 1 FROM pg_constraint WHERE conname = 'journal_entries_account_fk'
-  ) THEN
-    ALTER TABLE public.journal_entries
-      ADD CONSTRAINT journal_entries_account_fk
-      FOREIGN KEY (account_id) REFERENCES public.accounts(id)
-      NOT VALID;
-  END IF;
-END $$;
-DO $$ BEGIN
-  IF EXISTS (
-    SELECT 1 FROM pg_constraint
-    WHERE conname = 'journal_entries_account_fk' AND NOT convalidated
-  ) THEN
-    ALTER TABLE public.journal_entries VALIDATE CONSTRAINT journal_entries_account_fk;
-  END IF;
-END $$;
+DO $$
+DECLARE
+  fk record;
+BEGIN
+  FOR fk IN
+    SELECT * FROM (VALUES
+      ('properties_owner_fk', 'properties', 'owner_id', 'owners', 'id'),
+      ('units_property_fk', 'units', 'property_id', 'properties', 'id'),
+      ('contracts_unit_fk', 'contracts', 'unit_id', 'units', 'id'),
+      ('contracts_tenant_fk', 'contracts', 'tenant_id', 'tenants', 'id'),
+      ('invoices_contract_fk', 'invoices', 'contract_id', 'contracts', 'id'),
+      ('receipts_contract_fk', 'receipts', 'contract_id', 'contracts', 'id'),
+      ('receipt_allocations_receipt_fk', 'receipt_allocations', 'receipt_id', 'receipts', 'id'),
+      ('receipt_allocations_invoice_fk', 'receipt_allocations', 'invoice_id', 'invoices', 'id'),
+      ('journal_entries_account_fk', 'journal_entries', 'account_id', 'accounts', 'id'),
+      ('owner_balances_owner_fk', 'owner_balances', 'owner_id', 'owners', 'id'),
+      ('contract_balances_contract_fk', 'contract_balances', 'contract_id', 'contracts', 'id'),
+      ('tenant_balances_tenant_fk', 'tenant_balances', 'tenant_id', 'tenants', 'id'),
+      ('account_balances_account_fk', 'account_balances', 'account_id', 'accounts', 'id'),
+      ('memberships_organization_fk', 'memberships', 'organization_id', 'organizations', 'id'),
+      ('subscriptions_organization_fk', 'subscriptions', 'organization_id', 'organizations', 'id'),
+      ('subscriptions_plan_fk', 'subscriptions', 'plan_id', 'plans', 'id'),
+      ('invoices_billing_subscription_fk', 'invoices_billing', 'subscription_id', 'subscriptions', 'id')
+    ) AS f(conname, child_table, child_column, parent_table, parent_column)
+  LOOP
+    IF to_regclass(format('public.%I', fk.child_table)) IS NOT NULL
+       AND to_regclass(format('public.%I', fk.parent_table)) IS NOT NULL
+       AND EXISTS (
+         SELECT 1 FROM information_schema.columns
+         WHERE table_schema = 'public'
+           AND table_name = fk.child_table
+           AND column_name = fk.child_column
+       )
+       AND EXISTS (
+         SELECT 1 FROM information_schema.columns
+         WHERE table_schema = 'public'
+           AND table_name = fk.parent_table
+           AND column_name = fk.parent_column
+       )
+    THEN
+      IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = fk.conname) THEN
+        EXECUTE format(
+          'ALTER TABLE public.%I ADD CONSTRAINT %I FOREIGN KEY (%I) REFERENCES public.%I(%I) NOT VALID',
+          fk.child_table,
+          fk.conname,
+          fk.child_column,
+          fk.parent_table,
+          fk.parent_column
+        );
+      END IF;
 
--- owner_balances → owners
-DO $$ BEGIN
-  IF NOT EXISTS (
-    SELECT 1 FROM pg_constraint WHERE conname = 'owner_balances_owner_fk'
-  ) THEN
-    ALTER TABLE public.owner_balances
-      ADD CONSTRAINT owner_balances_owner_fk
-      FOREIGN KEY (owner_id) REFERENCES public.owners(id)
-      NOT VALID;
-  END IF;
+      IF EXISTS (SELECT 1 FROM pg_constraint WHERE conname = fk.conname AND NOT convalidated) THEN
+        EXECUTE format('ALTER TABLE public.%I VALIDATE CONSTRAINT %I', fk.child_table, fk.conname);
+      END IF;
+    ELSE
+      RAISE NOTICE 'Skipping FK %. Required table/column is missing.', fk.conname;
+    END IF;
+  END LOOP;
 END $$;
-DO $$ BEGIN
-  IF EXISTS (
-    SELECT 1 FROM pg_constraint
-    WHERE conname = 'owner_balances_owner_fk' AND NOT convalidated
-  ) THEN
-    ALTER TABLE public.owner_balances VALIDATE CONSTRAINT owner_balances_owner_fk;
-  END IF;
-END $$;
-
--- contract_balances → contracts
-DO $$ BEGIN
-  IF NOT EXISTS (
-    SELECT 1 FROM pg_constraint WHERE conname = 'contract_balances_contract_fk'
-  ) THEN
-    ALTER TABLE public.contract_balances
-      ADD CONSTRAINT contract_balances_contract_fk
-      FOREIGN KEY (contract_id) REFERENCES public.contracts(id)
-      NOT VALID;
-  END IF;
-END $$;
-DO $$ BEGIN
-  IF EXISTS (
-    SELECT 1 FROM pg_constraint
-    WHERE conname = 'contract_balances_contract_fk' AND NOT convalidated
-  ) THEN
-    ALTER TABLE public.contract_balances VALIDATE CONSTRAINT contract_balances_contract_fk;
-  END IF;
-END $$;
-
--- tenant_balances → tenants
-DO $$ BEGIN
-  IF NOT EXISTS (
-    SELECT 1 FROM pg_constraint WHERE conname = 'tenant_balances_tenant_fk'
-  ) THEN
-    ALTER TABLE public.tenant_balances
-      ADD CONSTRAINT tenant_balances_tenant_fk
-      FOREIGN KEY (tenant_id) REFERENCES public.tenants(id)
-      NOT VALID;
-  END IF;
-END $$;
-DO $$ BEGIN
-  IF EXISTS (
-    SELECT 1 FROM pg_constraint
-    WHERE conname = 'tenant_balances_tenant_fk' AND NOT convalidated
-  ) THEN
-    ALTER TABLE public.tenant_balances VALIDATE CONSTRAINT tenant_balances_tenant_fk;
-  END IF;
-END $$;
-
--- account_balances → accounts
-DO $$ BEGIN
-  IF NOT EXISTS (
-    SELECT 1 FROM pg_constraint WHERE conname = 'account_balances_account_fk'
-  ) THEN
-    ALTER TABLE public.account_balances
-      ADD CONSTRAINT account_balances_account_fk
-      FOREIGN KEY (account_id) REFERENCES public.accounts(id)
-      NOT VALID;
-  END IF;
-END $$;
-DO $$ BEGIN
-  IF EXISTS (
-    SELECT 1 FROM pg_constraint
-    WHERE conname = 'account_balances_account_fk' AND NOT convalidated
-  ) THEN
-    ALTER TABLE public.account_balances VALIDATE CONSTRAINT account_balances_account_fk;
-  END IF;
-END $$;
-
--- memberships → organizations
-DO $$ BEGIN
-  IF NOT EXISTS (
-    SELECT 1 FROM pg_constraint WHERE conname = 'memberships_organization_fk'
-  ) THEN
-    ALTER TABLE public.memberships
-      ADD CONSTRAINT memberships_organization_fk
-      FOREIGN KEY (organization_id) REFERENCES public.organizations(id)
-      NOT VALID;
-  END IF;
-END $$;
-DO $$ BEGIN
-  IF EXISTS (
-    SELECT 1 FROM pg_constraint
-    WHERE conname = 'memberships_organization_fk' AND NOT convalidated
-  ) THEN
-    ALTER TABLE public.memberships VALIDATE CONSTRAINT memberships_organization_fk;
-  END IF;
-END $$;
-
--- subscriptions → organizations
-DO $$ BEGIN
-  IF NOT EXISTS (
-    SELECT 1 FROM pg_constraint WHERE conname = 'subscriptions_organization_fk'
-  ) THEN
-    ALTER TABLE public.subscriptions
-      ADD CONSTRAINT subscriptions_organization_fk
-      FOREIGN KEY (organization_id) REFERENCES public.organizations(id)
-      NOT VALID;
-  END IF;
-END $$;
-DO $$ BEGIN
-  IF EXISTS (
-    SELECT 1 FROM pg_constraint
-    WHERE conname = 'subscriptions_organization_fk' AND NOT convalidated
-  ) THEN
-    ALTER TABLE public.subscriptions VALIDATE CONSTRAINT subscriptions_organization_fk;
-  END IF;
-END $$;
-
--- subscriptions → plans
-DO $$ BEGIN
-  IF NOT EXISTS (
-    SELECT 1 FROM pg_constraint WHERE conname = 'subscriptions_plan_fk'
-  ) THEN
-    ALTER TABLE public.subscriptions
-      ADD CONSTRAINT subscriptions_plan_fk
-      FOREIGN KEY (plan_id) REFERENCES public.plans(id)
-      NOT VALID;
-  END IF;
-END $$;
-DO $$ BEGIN
-  IF EXISTS (
-    SELECT 1 FROM pg_constraint
-    WHERE conname = 'subscriptions_plan_fk' AND NOT convalidated
-  ) THEN
-    ALTER TABLE public.subscriptions VALIDATE CONSTRAINT subscriptions_plan_fk;
-  END IF;
-END $$;
-
--- invoices_billing → subscriptions
-DO $$ BEGIN
-  IF NOT EXISTS (
-    SELECT 1 FROM pg_constraint WHERE conname = 'invoices_billing_subscription_fk'
-  ) THEN
-    ALTER TABLE public.invoices_billing
-      ADD CONSTRAINT invoices_billing_subscription_fk
-      FOREIGN KEY (subscription_id) REFERENCES public.subscriptions(id)
-      NOT VALID;
-  END IF;
-END $$;
-DO $$ BEGIN
-  IF EXISTS (
-    SELECT 1 FROM pg_constraint
-    WHERE conname = 'invoices_billing_subscription_fk' AND NOT convalidated
-  ) THEN
-    ALTER TABLE public.invoices_billing VALIDATE CONSTRAINT invoices_billing_subscription_fk;
-  END IF;
-END $$;
-
 
 -- =============================================================================
--- SECTION 3: CHECK CONSTRAINTS — amount >= 0 on all financial tables
---
--- Two sub-passes per constraint:
---   (a) ADD ... NOT VALID if the constraint does not exist yet.
---   (b) VALIDATE if the constraint exists but convalidated = false
---       (handles the case where a previous migration added it NOT VALID
---        and never validated it).
+-- SECTION 3: CHECK CONSTRAINTS — guarded by table and column existence
 -- =============================================================================
 
--- invoices.amount
-DO $$ BEGIN
-  IF NOT EXISTS (
-    SELECT 1 FROM pg_constraint WHERE conname = 'invoices_amount_non_negative_chk'
-  ) THEN
-    ALTER TABLE public.invoices
-      ADD CONSTRAINT invoices_amount_non_negative_chk
-      CHECK (amount >= 0) NOT VALID;
-  END IF;
-END $$;
-DO $$ BEGIN
-  IF EXISTS (
-    SELECT 1 FROM pg_constraint
-    WHERE conname = 'invoices_amount_non_negative_chk' AND NOT convalidated
-  ) THEN
-    ALTER TABLE public.invoices VALIDATE CONSTRAINT invoices_amount_non_negative_chk;
-  END IF;
-END $$;
+DO $$
+DECLARE
+  chk record;
+BEGIN
+  FOR chk IN
+    SELECT * FROM (VALUES
+      ('invoices_amount_non_negative_chk', 'invoices', 'amount', 'amount >= 0'),
+      ('invoices_paid_amount_non_negative_chk', 'invoices', 'paid_amount', 'paid_amount >= 0'),
+      ('invoices_tax_amount_non_negative_chk', 'invoices', 'tax_amount', 'tax_amount IS NULL OR tax_amount >= 0'),
+      ('receipts_amount_non_negative_chk', 'receipts', 'amount', 'amount >= 0'),
+      ('expenses_amount_non_negative_chk', 'expenses', 'amount', 'amount IS NULL OR amount >= 0'),
+      ('journal_entries_amount_non_negative_chk', 'journal_entries', 'amount', 'amount >= 0'),
+      ('receipt_allocations_amount_non_negative_chk', 'receipt_allocations', 'amount', 'amount >= 0'),
+      ('deposit_txs_amount_non_negative_chk', 'deposit_txs', 'amount', 'amount IS NULL OR amount >= 0'),
+      ('commissions_amount_non_negative_chk', 'commissions', 'amount', 'amount IS NULL OR amount >= 0')
+    ) AS c(conname, table_name, column_name, expression_sql)
+  LOOP
+    IF to_regclass(format('public.%I', chk.table_name)) IS NOT NULL
+       AND EXISTS (
+         SELECT 1 FROM information_schema.columns
+         WHERE table_schema = 'public'
+           AND table_name = chk.table_name
+           AND column_name = chk.column_name
+       )
+    THEN
+      IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = chk.conname) THEN
+        EXECUTE format(
+          'ALTER TABLE public.%I ADD CONSTRAINT %I CHECK (%s) NOT VALID',
+          chk.table_name,
+          chk.conname,
+          chk.expression_sql
+        );
+      END IF;
 
--- invoices.paid_amount
-DO $$ BEGIN
-  IF NOT EXISTS (
-    SELECT 1 FROM pg_constraint WHERE conname = 'invoices_paid_amount_non_negative_chk'
-  ) THEN
-    ALTER TABLE public.invoices
-      ADD CONSTRAINT invoices_paid_amount_non_negative_chk
-      CHECK (paid_amount >= 0) NOT VALID;
-  END IF;
+      IF EXISTS (SELECT 1 FROM pg_constraint WHERE conname = chk.conname AND NOT convalidated) THEN
+        EXECUTE format('ALTER TABLE public.%I VALIDATE CONSTRAINT %I', chk.table_name, chk.conname);
+      END IF;
+    ELSE
+      RAISE NOTICE 'Skipping CHECK %. Required table/column is missing.', chk.conname;
+    END IF;
+  END LOOP;
 END $$;
-DO $$ BEGIN
-  IF EXISTS (
-    SELECT 1 FROM pg_constraint
-    WHERE conname = 'invoices_paid_amount_non_negative_chk' AND NOT convalidated
-  ) THEN
-    ALTER TABLE public.invoices VALIDATE CONSTRAINT invoices_paid_amount_non_negative_chk;
-  END IF;
-END $$;
-
--- invoices.tax_amount (nullable — NULL allowed, negative not)
-DO $$ BEGIN
-  IF NOT EXISTS (
-    SELECT 1 FROM pg_constraint WHERE conname = 'invoices_tax_amount_non_negative_chk'
-  ) THEN
-    ALTER TABLE public.invoices
-      ADD CONSTRAINT invoices_tax_amount_non_negative_chk
-      CHECK (tax_amount IS NULL OR tax_amount >= 0) NOT VALID;
-  END IF;
-END $$;
-DO $$ BEGIN
-  IF EXISTS (
-    SELECT 1 FROM pg_constraint
-    WHERE conname = 'invoices_tax_amount_non_negative_chk' AND NOT convalidated
-  ) THEN
-    ALTER TABLE public.invoices VALIDATE CONSTRAINT invoices_tax_amount_non_negative_chk;
-  END IF;
-END $$;
-
--- receipts.amount
-DO $$ BEGIN
-  IF NOT EXISTS (
-    SELECT 1 FROM pg_constraint WHERE conname = 'receipts_amount_non_negative_chk'
-  ) THEN
-    ALTER TABLE public.receipts
-      ADD CONSTRAINT receipts_amount_non_negative_chk
-      CHECK (amount >= 0) NOT VALID;
-  END IF;
-END $$;
-DO $$ BEGIN
-  IF EXISTS (
-    SELECT 1 FROM pg_constraint
-    WHERE conname = 'receipts_amount_non_negative_chk' AND NOT convalidated
-  ) THEN
-    ALTER TABLE public.receipts VALIDATE CONSTRAINT receipts_amount_non_negative_chk;
-  END IF;
-END $$;
-
--- expenses.amount (nullable in baseline)
-DO $$ BEGIN
-  IF NOT EXISTS (
-    SELECT 1 FROM pg_constraint WHERE conname = 'expenses_amount_non_negative_chk'
-  ) THEN
-    ALTER TABLE public.expenses
-      ADD CONSTRAINT expenses_amount_non_negative_chk
-      CHECK (amount IS NULL OR amount >= 0) NOT VALID;
-  END IF;
-END $$;
-DO $$ BEGIN
-  IF EXISTS (
-    SELECT 1 FROM pg_constraint
-    WHERE conname = 'expenses_amount_non_negative_chk' AND NOT convalidated
-  ) THEN
-    ALTER TABLE public.expenses VALIDATE CONSTRAINT expenses_amount_non_negative_chk;
-  END IF;
-END $$;
-
--- journal_entries.amount
-DO $$ BEGIN
-  IF NOT EXISTS (
-    SELECT 1 FROM pg_constraint WHERE conname = 'journal_entries_amount_non_negative_chk'
-  ) THEN
-    ALTER TABLE public.journal_entries
-      ADD CONSTRAINT journal_entries_amount_non_negative_chk
-      CHECK (amount >= 0) NOT VALID;
-  END IF;
-END $$;
-DO $$ BEGIN
-  IF EXISTS (
-    SELECT 1 FROM pg_constraint
-    WHERE conname = 'journal_entries_amount_non_negative_chk' AND NOT convalidated
-  ) THEN
-    ALTER TABLE public.journal_entries VALIDATE CONSTRAINT journal_entries_amount_non_negative_chk;
-  END IF;
-END $$;
-
--- receipt_allocations.amount
-DO $$ BEGIN
-  IF NOT EXISTS (
-    SELECT 1 FROM pg_constraint WHERE conname = 'receipt_allocations_amount_non_negative_chk'
-  ) THEN
-    ALTER TABLE public.receipt_allocations
-      ADD CONSTRAINT receipt_allocations_amount_non_negative_chk
-      CHECK (amount >= 0) NOT VALID;
-  END IF;
-END $$;
-DO $$ BEGIN
-  IF EXISTS (
-    SELECT 1 FROM pg_constraint
-    WHERE conname = 'receipt_allocations_amount_non_negative_chk' AND NOT convalidated
-  ) THEN
-    ALTER TABLE public.receipt_allocations VALIDATE CONSTRAINT receipt_allocations_amount_non_negative_chk;
-  END IF;
-END $$;
-
--- deposit_txs.amount (nullable)
-DO $$ BEGIN
-  IF NOT EXISTS (
-    SELECT 1 FROM pg_constraint WHERE conname = 'deposit_txs_amount_non_negative_chk'
-  ) THEN
-    ALTER TABLE public.deposit_txs
-      ADD CONSTRAINT deposit_txs_amount_non_negative_chk
-      CHECK (amount IS NULL OR amount >= 0) NOT VALID;
-  END IF;
-END $$;
-DO $$ BEGIN
-  IF EXISTS (
-    SELECT 1 FROM pg_constraint
-    WHERE conname = 'deposit_txs_amount_non_negative_chk' AND NOT convalidated
-  ) THEN
-    ALTER TABLE public.deposit_txs VALIDATE CONSTRAINT deposit_txs_amount_non_negative_chk;
-  END IF;
-END $$;
-
--- commissions.amount (nullable)
-DO $$ BEGIN
-  IF NOT EXISTS (
-    SELECT 1 FROM pg_constraint WHERE conname = 'commissions_amount_non_negative_chk'
-  ) THEN
-    ALTER TABLE public.commissions
-      ADD CONSTRAINT commissions_amount_non_negative_chk
-      CHECK (amount IS NULL OR amount >= 0) NOT VALID;
-  END IF;
-END $$;
-DO $$ BEGIN
-  IF EXISTS (
-    SELECT 1 FROM pg_constraint
-    WHERE conname = 'commissions_amount_non_negative_chk' AND NOT convalidated
-  ) THEN
-    ALTER TABLE public.commissions VALIDATE CONSTRAINT commissions_amount_non_negative_chk;
-  END IF;
-END $$;
-
 
 -- =============================================================================
 -- SECTION 4: RLS ENABLEMENT
---
--- Enables Row Level Security on every ordinary base table in the public schema.
--- Skips views (relkind = 'v') and sequences (relkind = 'S').
--- ALTER TABLE ... ENABLE ROW LEVEL SECURITY is idempotent.
---
--- RLS policies were established in earlier migrations (20260412134924,
--- 20260427102343).  This section is the hardening guard to ensure no table
--- is left unprotected if those migrations were absent.
 -- =============================================================================
 
 DO $$
@@ -591,18 +171,8 @@ BEGIN
   RAISE NOTICE 'RLS enablement pass complete.';
 END $$;
 
-
 -- =============================================================================
 -- SECTION 5: TIMESTAMP NORMALISATION
---
--- Converts both `created_at` and `updated_at` from bigint (epoch-milliseconds)
--- to timestamptz on all named core tables.  This provides consistent timestamp
--- types across the schema.
---
--- Guard: inspects information_schema.columns data_type before altering.
---   - Skips tables that do not exist.
---   - Skips columns already typed timestamptz (re-runnable).
---   - Uses USING to_timestamp(col / 1000.0) for correct ms→s conversion.
 -- =============================================================================
 
 DO $$
@@ -623,10 +193,7 @@ DECLARE
   v_dtype text;
 BEGIN
   FOREACH v_tbl IN ARRAY v_tables LOOP
-    IF NOT EXISTS (
-      SELECT 1 FROM pg_tables
-      WHERE schemaname = 'public' AND tablename = v_tbl
-    ) THEN
+    IF to_regclass(format('public.%I', v_tbl)) IS NULL THEN
       CONTINUE;
     END IF;
 
@@ -651,139 +218,78 @@ BEGIN
   END LOOP;
 END $$;
 
-
 -- =============================================================================
--- SECTION 6: MISSING INDEXES
+-- SECTION 6: MISSING INDEXES — guarded by table/column existence
 -- =============================================================================
 
--- profiles.email — auth lookups (column-existence guarded)
-DO $$ BEGIN
-  IF EXISTS (
-    SELECT 1 FROM information_schema.columns
-    WHERE table_schema='public' AND table_name='profiles' AND column_name='email'
-  ) THEN
-    EXECUTE $i$
-      CREATE INDEX IF NOT EXISTS idx_profiles_email
-        ON public.profiles (email) WHERE email IS NOT NULL
-    $i$;
-  END IF;
+DO $$
+DECLARE
+  idx record;
+BEGIN
+  FOR idx IN
+    SELECT * FROM (VALUES
+      ('idx_profiles_email', 'profiles', 'email', 'email', 'email IS NOT NULL', true),
+      ('idx_profiles_org_id', 'profiles', 'org_id', 'org_id', 'org_id IS NOT NULL', false),
+      ('idx_profiles_organization_id', 'profiles', 'organization_id', 'organization_id', 'organization_id IS NOT NULL', false),
+      ('idx_accounts_org_id_type', 'accounts', 'org_id', 'org_id, type', 'org_id IS NOT NULL', false),
+      ('idx_accounts_organization_id_type', 'accounts', 'organization_id', 'organization_id, type', 'organization_id IS NOT NULL', false),
+      ('idx_memberships_user_id', 'memberships', 'user_id', 'user_id', 'user_id IS NOT NULL', false),
+      ('idx_memberships_organization_id', 'memberships', 'organization_id', 'organization_id', 'organization_id IS NOT NULL', false),
+      ('idx_attachments_entity', 'attachments', 'entity_id', 'entity_id, entity_type', 'entity_id IS NOT NULL', false),
+      ('idx_journal_entries_date', 'journal_entries', 'date', 'date', NULL, false),
+      ('idx_invoices_due_date', 'invoices', 'due_date', 'due_date', NULL, false),
+      ('idx_owners_portal_token', 'owners', 'portal_token', 'portal_token', 'portal_token IS NOT NULL', true)
+    ) AS i(index_name, table_name, required_column, index_columns, predicate_sql, is_unique)
+  LOOP
+    IF to_regclass(format('public.%I', idx.table_name)) IS NOT NULL
+       AND EXISTS (
+         SELECT 1 FROM information_schema.columns
+         WHERE table_schema = 'public'
+           AND table_name = idx.table_name
+           AND column_name = idx.required_column
+       )
+    THEN
+      IF idx.predicate_sql IS NULL THEN
+        EXECUTE format(
+          'CREATE %s INDEX IF NOT EXISTS %I ON public.%I (%s)',
+          CASE WHEN idx.is_unique THEN 'UNIQUE' ELSE '' END,
+          idx.index_name,
+          idx.table_name,
+          idx.index_columns
+        );
+      ELSE
+        EXECUTE format(
+          'CREATE %s INDEX IF NOT EXISTS %I ON public.%I (%s) WHERE %s',
+          CASE WHEN idx.is_unique THEN 'UNIQUE' ELSE '' END,
+          idx.index_name,
+          idx.table_name,
+          idx.index_columns,
+          idx.predicate_sql
+        );
+      END IF;
+    ELSE
+      RAISE NOTICE 'Skipping index %. Required table/column is missing.', idx.index_name;
+    END IF;
+  END LOOP;
 END $$;
-
--- profiles.org_id — multi-tenant row filtering
-DO $$ BEGIN
-  IF EXISTS (
-    SELECT 1 FROM information_schema.columns
-    WHERE table_schema='public' AND table_name='profiles' AND column_name='org_id'
-  ) THEN
-    EXECUTE $i$
-      CREATE INDEX IF NOT EXISTS idx_profiles_org_id
-        ON public.profiles (org_id) WHERE org_id IS NOT NULL
-    $i$;
-  END IF;
-END $$;
-
--- profiles.organization_id — alternate column name
-DO $$ BEGIN
-  IF EXISTS (
-    SELECT 1 FROM information_schema.columns
-    WHERE table_schema='public' AND table_name='profiles' AND column_name='organization_id'
-  ) THEN
-    EXECUTE $i$
-      CREATE INDEX IF NOT EXISTS idx_profiles_organization_id
-        ON public.profiles (organization_id) WHERE organization_id IS NOT NULL
-    $i$;
-  END IF;
-END $$;
-
--- accounts.org_id + type
-DO $$ BEGIN
-  IF EXISTS (
-    SELECT 1 FROM information_schema.columns
-    WHERE table_schema='public' AND table_name='accounts' AND column_name='org_id'
-  ) THEN
-    EXECUTE $i$
-      CREATE INDEX IF NOT EXISTS idx_accounts_org_id_type
-        ON public.accounts (org_id, type) WHERE org_id IS NOT NULL
-    $i$;
-  END IF;
-END $$;
-
--- accounts.organization_id + type — alternate column name
-DO $$ BEGIN
-  IF EXISTS (
-    SELECT 1 FROM information_schema.columns
-    WHERE table_schema='public' AND table_name='accounts' AND column_name='organization_id'
-  ) THEN
-    EXECUTE $i$
-      CREATE INDEX IF NOT EXISTS idx_accounts_organization_id_type
-        ON public.accounts (organization_id, type) WHERE organization_id IS NOT NULL
-    $i$;
-  END IF;
-END $$;
-
-CREATE INDEX IF NOT EXISTS idx_memberships_user_id
-  ON public.memberships (user_id) WHERE user_id IS NOT NULL;
-
-CREATE INDEX IF NOT EXISTS idx_memberships_organization_id
-  ON public.memberships (organization_id) WHERE organization_id IS NOT NULL;
-
-CREATE INDEX IF NOT EXISTS idx_attachments_entity
-  ON public.attachments (entity_id, entity_type) WHERE entity_id IS NOT NULL;
-
-CREATE INDEX IF NOT EXISTS idx_journal_entries_date
-  ON public.journal_entries (date);
-
-CREATE INDEX IF NOT EXISTS idx_invoices_due_date
-  ON public.invoices (due_date);
-
--- owners.portal_token — unique partial index for owner-portal auth
-DO $$ BEGIN
-  IF NOT EXISTS (
-    SELECT 1 FROM pg_indexes
-    WHERE schemaname='public' AND tablename='owners' AND indexname='idx_owners_portal_token'
-  ) THEN
-    CREATE UNIQUE INDEX idx_owners_portal_token
-      ON public.owners (portal_token) WHERE portal_token IS NOT NULL;
-  END IF;
-END $$;
-
 
 -- =============================================================================
 -- SECTION 7: BALANCE RECONCILIATION VIEWS
---
--- v_balance_reconciliation — unified view covering all four balance tables.
--- ALL four parts derive their ledger_value solely from journal_entries.
---
--- Mapping assumptions (document per entity type):
---
---   PART A: account_balances vs journal_entries.account_id
---     ledger_value = SUM(DEBIT) - SUM(CREDIT) per account_id
---     cached_value = SUM(debit_total) - SUM(credit_total) from account_balances
---
---   PART B: owner_balances vs journal_entries where entity_type ILIKE 'owner'
---             and entity_id = owner_id::text
---     ledger_value = SUM(CREDIT) - SUM(DEBIT) per owner entity
---                   (credits are income; debits are expenses for owner perspective)
---     cached_value = net_balance from owner_balances
---                   (= total_income - total_expenses - commission)
---
---   PART C: contract_balances vs journal_entries where entity_type ILIKE 'contract'
---             and entity_id = contract_id::text
---     ledger_value = SUM(DEBIT) - SUM(CREDIT) per contract entity
---                   (debits increase balance_due; credits reduce it)
---     cached_value = balance_due from contract_balances
---
---   PART D: tenant_balances vs journal_entries where entity_type ILIKE 'tenant'
---             and entity_id = tenant_id::text
---     ledger_value = SUM(DEBIT) - SUM(CREDIT) per tenant entity
---     cached_value = balance_due from tenant_balances
---
--- v_balance_reconciliation_drift — filtered companion: |drift| > 0.01 only.
---
--- Security: GRANT SELECT only to `authenticated`. Never to `anon`.
---   Reconciliation data contains financial account codes and totals.
 -- =============================================================================
 
+DO $$
+BEGIN
+  IF to_regclass('public.account_balances') IS NOT NULL
+     AND to_regclass('public.owner_balances') IS NOT NULL
+     AND to_regclass('public.contract_balances') IS NOT NULL
+     AND to_regclass('public.tenant_balances') IS NOT NULL
+     AND to_regclass('public.journal_entries') IS NOT NULL
+     AND to_regclass('public.accounts') IS NOT NULL
+     AND to_regclass('public.owners') IS NOT NULL
+     AND to_regclass('public.contracts') IS NOT NULL
+     AND to_regclass('public.tenants') IS NOT NULL
+  THEN
+    EXECUTE $view$
 CREATE OR REPLACE VIEW public.v_balance_reconciliation AS
 
 -- Pre-aggregate all journal_entries once, split by key:
@@ -964,17 +470,19 @@ FROM (
   SELECT * FROM tenant_recon
 ) all_recon
 ORDER BY ABS(ledger_value - cached_value) DESC NULLS LAST;
+$view$;
 
-
--- Filtered companion: only rows where |drift| exceeds the rounding tolerance.
--- Use this view for monitoring queries, scheduled alerts, and health checks.
+    EXECUTE $view$
 CREATE OR REPLACE VIEW public.v_balance_reconciliation_drift AS
 SELECT *
 FROM   public.v_balance_reconciliation
 WHERE  ABS(drift) > 0.01
-ORDER  BY ABS(drift) DESC NULLS LAST;
+ORDER  BY ABS(drift) DESC NULLS LAST
+$view$;
 
-
--- Grant to authenticated only — financial data must never be anon-accessible
-GRANT SELECT ON public.v_balance_reconciliation       TO authenticated;
-GRANT SELECT ON public.v_balance_reconciliation_drift TO authenticated;
+    GRANT SELECT ON public.v_balance_reconciliation       TO authenticated;
+    GRANT SELECT ON public.v_balance_reconciliation_drift TO authenticated;
+  ELSE
+    RAISE NOTICE 'Skipping balance reconciliation views because one or more required tables are missing.';
+  END IF;
+END $$;
