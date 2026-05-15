@@ -9,6 +9,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Textarea } from '@/components/ui/textarea';
+import { OwnerCheckbox } from './OwnerCheckbox';
 import { OwnerPropertySelect } from './OwnerPropertySelect';
 import type { Owner } from './ownerService';
 import { useCreateOwner, useLinkOwnerToProperty, useOwners, usePropertiesWithOwners, useUpdateOwner } from './useOwners';
@@ -135,10 +136,7 @@ function OwnerFormDialog({
           </div>
           <Field label="العنوان"><Textarea value={values.address} onChange={(event) => setField('address', event.target.value)} /></Field>
           <Field label="ملاحظات"><Textarea value={values.notes} onChange={(event) => setField('notes', event.target.value)} /></Field>
-          <label className="flex items-center gap-3 rounded-2xl border border-border bg-muted/30 p-3 text-sm font-bold">
-            <input type="checkbox" checked={values.is_active} onChange={(event) => setField('is_active', event.target.checked)} />
-            <span>مالك نشط</span>
-          </label>
+          <OwnerCheckbox checked={values.is_active} label="مالك نشط" onCheckedChange={(checked) => setField('is_active', checked)} />
           <div className="flex justify-end gap-2">
             <Button type="button" variant="secondary" onClick={() => onOpenChange(false)}>إلغاء</Button>
             <Button type="submit" disabled={isPending}>{isEditing ? 'حفظ التعديلات' : 'إنشاء المالك'}</Button>
@@ -330,10 +328,12 @@ export function OwnersPage() {
                     <Field label="تاريخ البداية"><Input type="date" value={linkFormValues.starts_on} onChange={(event) => setLinkField('starts_on', event.target.value)} /></Field>
                     <Field label="تاريخ النهاية"><Input type="date" value={linkFormValues.ends_on} onChange={(event) => setLinkField('ends_on', event.target.value)} /></Field>
                   </div>
-                  <label className="mt-3 flex items-center gap-3 rounded-2xl border border-border bg-muted/30 p-3 text-sm font-bold">
-                    <input type="checkbox" checked={linkFormValues.is_primary} onChange={(event) => setLinkField('is_primary', event.target.checked)} />
-                    <span>مالك أساسي</span>
-                  </label>
+                  <OwnerCheckbox
+                    checked={linkFormValues.is_primary}
+                    label="مالك أساسي"
+                    onCheckedChange={(checked) => setLinkField('is_primary', checked)}
+                    className="mt-3 flex items-center gap-3 rounded-2xl border border-border bg-muted/30 p-3 text-sm font-bold"
+                  />
                   <Button className="mt-3 w-full" type="submit" disabled={!linkFormValues.property_id || linkMutation.isPending}>ربط المالك بالعقار</Button>
                 </form>
               </>
