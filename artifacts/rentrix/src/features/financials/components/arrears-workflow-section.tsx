@@ -44,6 +44,10 @@ export function ArrearsWorkflowSection({
   const filteredRows = filterOverdueInvoiceRows(overdueRows, search, bucketFilter);
   const selectedOverdueRow = overdueRows.find((row) => row.invoiceId === selectedInvoiceId);
   const hasFilters = search.trim().length > 0 || bucketFilter !== 'all';
+  const canShowReportContent = !isError;
+  const canShowRows = !isLoading && !isError;
+  const hasOverdueRows = overdueRows.length > 0;
+  const hasFilteredRows = filteredRows.length > 0;
 
   return (
     <Card className="border-primary/20 bg-gradient-to-br from-background via-background to-primary/5">
@@ -70,26 +74,26 @@ export function ArrearsWorkflowSection({
           </div>
         ) : null}
 
-        {!isError ? (
+        {canShowReportContent ? (
           <>
             <ArrearsSummaryCards overdueReport={overdueReport} agedReceivablesReport={agedReceivablesReport} arrearsSummaryReport={arrearsSummaryReport} />
             <ArrearsAgingBuckets agedReceivablesReport={agedReceivablesReport} />
           </>
         ) : null}
 
-        {!isLoading && !isError && overdueRows.length === 0 ? (
+        {canShowRows && !hasOverdueRows ? (
           <div className="rounded-2xl border border-dashed p-6 text-center text-muted-foreground">لا توجد فواتير متأخرة حتى تاريخ التقرير الحالي.</div>
         ) : null}
 
-        {!isLoading && !isError && overdueRows.length > 0 && filteredRows.length === 0 ? (
+        {canShowRows && hasOverdueRows && !hasFilteredRows ? (
           <div className="rounded-2xl border border-dashed p-6 text-center text-muted-foreground">لا توجد صفوف مطابقة لفلاتر التحصيل الحالية.</div>
         ) : null}
 
-        {!isLoading && !isError && filteredRows.length > 0 ? (
+        {canShowRows && hasFilteredRows ? (
           <OverdueInvoicesTable rows={filteredRows} selectedInvoiceId={selectedInvoiceId} onSelectInvoice={onSelectInvoice} />
         ) : null}
 
-        {!isLoading && !isError && (overdueRows.length > 0 || hasFilters) ? (
+        {canShowRows && (hasOverdueRows || hasFilters) ? (
           <SelectedOverdueInvoiceCard row={selectedOverdueRow} onShowInvoice={onSelectInvoice} />
         ) : null}
       </CardContent>

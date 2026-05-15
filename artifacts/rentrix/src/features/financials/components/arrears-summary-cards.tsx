@@ -1,6 +1,9 @@
 import { toFinancialNumber } from '../financialMath';
 import type { AgedReceivablesReport, ArrearsSummaryReport, OverdueInvoicesReport } from '../reports/financialReportsService';
+import { ARABIC_LOCALE, OVER_90_BUCKET_KEY } from './arrears-workflow-helpers';
 import { formatMoney } from './financials-formatters';
+
+const neutralCardTone = 'bg-muted/40 text-foreground';
 
 type ArrearsSummaryCardsProps = {
   overdueReport: OverdueInvoicesReport | undefined;
@@ -12,15 +15,16 @@ export function ArrearsSummaryCards({ overdueReport, agedReceivablesReport, arre
   const totalOverdue = arrearsSummaryReport?.totalOverdue ?? overdueReport?.totalOverdue ?? 0;
   const overdueInvoiceCount = arrearsSummaryReport?.overdueInvoiceCount ?? overdueReport?.invoiceCount ?? 0;
   const averageDaysOverdue = toFinancialNumber(arrearsSummaryReport?.averageDaysOverdue);
-  const over90Amount = arrearsSummaryReport?.over90Amount ?? agedReceivablesReport?.buckets.days_90_plus.total ?? 0;
-  const over90InvoiceCount = arrearsSummaryReport?.over90InvoiceCount ?? agedReceivablesReport?.buckets.days_90_plus.invoiceCount ?? 0;
+  const over90Bucket = agedReceivablesReport?.buckets[OVER_90_BUCKET_KEY];
+  const over90Amount = arrearsSummaryReport?.over90Amount ?? over90Bucket?.total ?? 0;
+  const over90InvoiceCount = arrearsSummaryReport?.over90InvoiceCount ?? over90Bucket?.invoiceCount ?? 0;
   const totalOutstanding = agedReceivablesReport?.totalOutstanding ?? 0;
 
   const cards = [
     { label: 'إجمالي المتأخرات', value: formatMoney(totalOverdue), tone: 'bg-destructive/10 text-destructive' },
-    { label: 'عدد الفواتير المتأخرة', value: overdueInvoiceCount.toLocaleString('ar'), tone: 'bg-muted/40 text-foreground' },
-    { label: 'متوسط أيام التأخير', value: `${averageDaysOverdue.toLocaleString('ar', { maximumFractionDigits: 1 })} يوم`, tone: 'bg-muted/40 text-foreground' },
-    { label: 'متأخرات 90+ يوم', value: formatMoney(over90Amount), meta: `${over90InvoiceCount.toLocaleString('ar')} فاتورة`, tone: 'bg-amber-500/10 text-amber-700' },
+    { label: 'عدد الفواتير المتأخرة', value: overdueInvoiceCount.toLocaleString(ARABIC_LOCALE), tone: neutralCardTone },
+    { label: 'متوسط أيام التأخير', value: `${averageDaysOverdue.toLocaleString(ARABIC_LOCALE, { maximumFractionDigits: 1 })} يوم`, tone: neutralCardTone },
+    { label: 'متأخرات 90+ يوم', value: formatMoney(over90Amount), meta: `${over90InvoiceCount.toLocaleString(ARABIC_LOCALE)} فاتورة`, tone: 'bg-amber-500/10 text-amber-700' },
     { label: 'إجمالي المتبقي الموجب', value: formatMoney(totalOutstanding), tone: 'bg-primary/10 text-primary' },
   ];
 

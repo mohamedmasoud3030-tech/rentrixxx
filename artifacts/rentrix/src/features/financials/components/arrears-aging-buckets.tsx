@@ -1,16 +1,14 @@
-import type { AgedReceivablesReport, AgingBucketKey } from '../reports/financialReportsService';
-import { getArrearsBucketLabel, safePercentage } from './arrears-workflow-helpers';
+import type { AgedReceivablesReport } from '../reports/financialReportsService';
+import { ARABIC_LOCALE, EMPTY_FIELD_VALUE, arrearsBucketKeys, getArrearsBucketLabel, safePercentage } from './arrears-workflow-helpers';
 import { formatMoney } from './financials-formatters';
-
-const bucketOrder: AgingBucketKey[] = ['current', 'days_1_30', 'days_31_60', 'days_61_90', 'days_90_plus'];
 
 type ArrearsAgingBucketsProps = {
   agedReceivablesReport: AgedReceivablesReport | undefined;
 };
 
 function formatPercentage(value: number | null) {
-  if (value === null) return '—';
-  return `${value.toLocaleString('ar', { maximumFractionDigits: 1 })}%`;
+  if (value === null) return EMPTY_FIELD_VALUE;
+  return `${value.toLocaleString(ARABIC_LOCALE, { maximumFractionDigits: 1 })}%`;
 }
 
 export function ArrearsAgingBuckets({ agedReceivablesReport }: ArrearsAgingBucketsProps) {
@@ -26,7 +24,7 @@ export function ArrearsAgingBuckets({ agedReceivablesReport }: ArrearsAgingBucke
         <span className="rounded-full bg-background px-3 py-1 text-xs font-bold text-muted-foreground">الإجمالي {formatMoney(totalOutstanding)}</span>
       </div>
       <div className="grid gap-3 md:grid-cols-5">
-        {bucketOrder.map((bucketKey) => {
+        {arrearsBucketKeys.map((bucketKey) => {
           const bucket = agedReceivablesReport?.buckets[bucketKey];
           const amount = bucket?.total ?? 0;
           const count = bucket?.invoiceCount ?? 0;
@@ -38,7 +36,7 @@ export function ArrearsAgingBuckets({ agedReceivablesReport }: ArrearsAgingBucke
                 <span className="rounded-full bg-secondary px-2 py-0.5 text-xs font-bold text-secondary-foreground">{formatPercentage(percentage)}</span>
               </div>
               <p className="mt-3 text-lg font-black">{formatMoney(amount)}</p>
-              <p className="mt-1 text-xs text-muted-foreground">{count.toLocaleString('ar')} فاتورة</p>
+              <p className="mt-1 text-xs text-muted-foreground">{count.toLocaleString(ARABIC_LOCALE)} فاتورة</p>
             </div>
           );
         })}

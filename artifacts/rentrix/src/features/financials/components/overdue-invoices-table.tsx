@@ -2,13 +2,15 @@ import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { cn } from '@/lib/utils';
 import type { OverdueInvoiceReportRow } from '../reports/financialReportsService';
-import { getArrearsBucketLabel, getOverdueRowBucketKey } from './arrears-workflow-helpers';
+import { ARABIC_LOCALE, EMPTY_FIELD_VALUE, getArrearsBucketLabel, getOverdueRowBucketKey } from './arrears-workflow-helpers';
 import { formatDate, formatMoney, formatShortId } from './financials-formatters';
+
+const unpaidStatusLabel = 'غير مدفوعة';
 
 const invoiceStatusLabels: Record<string, string> = {
   draft: 'مسودة',
-  issued: 'غير مدفوعة',
-  unpaid: 'غير مدفوعة',
+  issued: unpaidStatusLabel,
+  unpaid: unpaidStatusLabel,
   partial: 'مدفوعة جزئياً',
   overdue: 'متأخرة',
   paid: 'مدفوعة',
@@ -22,8 +24,10 @@ type OverdueInvoicesTableProps = {
 };
 
 function getContextLabel(row: OverdueInvoiceReportRow) {
-  const parts = [row.propertyTitle, row.unitNumber ? `وحدة ${row.unitNumber}` : null].filter(Boolean);
-  return parts.length > 0 ? parts.join(' · ') : '—';
+  const parts: string[] = [];
+  if (row.propertyTitle) parts.push(row.propertyTitle);
+  if (row.unitNumber) parts.push(`وحدة ${row.unitNumber}`);
+  return parts.length > 0 ? parts.join(' · ') : EMPTY_FIELD_VALUE;
 }
 
 export function OverdueInvoicesTable({ rows, selectedInvoiceId, onSelectInvoice }: OverdueInvoicesTableProps) {
@@ -53,15 +57,15 @@ export function OverdueInvoicesTable({ rows, selectedInvoiceId, onSelectInvoice 
               return (
                 <TableRow key={row.invoiceId} className={cn(isSelected ? 'bg-primary/5 ring-1 ring-inset ring-primary/20' : undefined)}>
                   <TableCell>
-                    <button className="font-black text-primary underline-offset-4 hover:underline" onClick={() => onSelectInvoice(row.invoiceId)}>
+                    <button type="button" className="font-black text-primary underline-offset-4 hover:underline" onClick={() => onSelectInvoice(row.invoiceId)}>
                       #{row.shortInvoiceId || row.invoiceId.slice(0, 8)}
                     </button>
                   </TableCell>
-                  <TableCell>{row.tenantName ?? '—'}</TableCell>
+                  <TableCell>{row.tenantName ?? EMPTY_FIELD_VALUE}</TableCell>
                   <TableCell>{getContextLabel(row)}</TableCell>
                   <TableCell>{formatShortId(row.contractId)}</TableCell>
                   <TableCell>{formatDate(row.dueDate)}</TableCell>
-                  <TableCell>{row.daysOverdue.toLocaleString('ar')}</TableCell>
+                  <TableCell>{row.daysOverdue.toLocaleString(ARABIC_LOCALE)}</TableCell>
                   <TableCell>{formatMoney(row.amount)}</TableCell>
                   <TableCell>{formatMoney(row.paidAmount)}</TableCell>
                   <TableCell className="font-black text-destructive">{formatMoney(row.remainingAmount)}</TableCell>
@@ -108,7 +112,7 @@ export function SelectedOverdueInvoiceCard({ row, onShowInvoice }: SelectedOverd
       <dl className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <div>
           <dt className="text-xs text-muted-foreground">المستأجر</dt>
-          <dd className="font-bold">{row.tenantName ?? '—'}</dd>
+          <dd className="font-bold">{row.tenantName ?? EMPTY_FIELD_VALUE}</dd>
         </div>
         <div>
           <dt className="text-xs text-muted-foreground">السياق</dt>

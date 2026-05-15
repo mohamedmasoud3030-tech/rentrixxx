@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { OverdueInvoiceReportRow } from '../reports/financialReportsService';
 import {
+  OVER_90_BUCKET_KEY,
   filterOverdueInvoiceRows,
   getArrearsBucketLabel,
   getBucketKeyFromDaysOverdue,
@@ -31,18 +32,18 @@ function createRow(overrides: Partial<OverdueInvoiceReportRow>): OverdueInvoiceR
 describe('arrears workflow helpers', () => {
   it('maps bucket labels and days overdue into stable Arabic workflow buckets', () => {
     expect(getArrearsBucketLabel('current')).toBe('حالي');
-    expect(getArrearsBucketLabel('days_90_plus')).toBe('90+ يوم');
+    expect(getArrearsBucketLabel(OVER_90_BUCKET_KEY)).toBe('90+ يوم');
     expect(getBucketKeyFromDaysOverdue(-5)).toBe('current');
     expect(getBucketKeyFromDaysOverdue(Number.NaN)).toBe('current');
     expect(getBucketKeyFromDaysOverdue(30)).toBe('days_1_30');
     expect(getBucketKeyFromDaysOverdue(31)).toBe('days_31_60');
     expect(getBucketKeyFromDaysOverdue(61)).toBe('days_61_90');
-    expect(getBucketKeyFromDaysOverdue(91)).toBe('days_90_plus');
+    expect(getBucketKeyFromDaysOverdue(91)).toBe(OVER_90_BUCKET_KEY);
   });
 
   it('calculates safe percentages without NaN or Infinity output', () => {
     expect(safePercentage(25, 100)).toBe(25);
-    expect(safePercentage('bad' as unknown as number, 100)).toBe(0);
+    expect(safePercentage(Number.NaN, 100)).toBe(0);
     expect(safePercentage(25, 0)).toBeNull();
     expect(safePercentage(25, Number.POSITIVE_INFINITY)).toBeNull();
   });
@@ -55,7 +56,7 @@ describe('arrears workflow helpers', () => {
     ];
 
     expect(filterOverdueInvoiceRows(rows, 'سارة', 'all').map((row) => row.invoiceId)).toEqual(['invoice_beta_123456']);
-    expect(filterOverdueInvoiceRows(rows, 'B-22', 'days_90_plus').map((row) => row.invoiceId)).toEqual(['invoice_gamma_123456']);
+    expect(filterOverdueInvoiceRows(rows, 'B-22', OVER_90_BUCKET_KEY).map((row) => row.invoiceId)).toEqual(['invoice_gamma_123456']);
     expect(filterOverdueInvoiceRows(rows, 'contract_gamma', 'days_1_30')).toEqual([]);
   });
 });

@@ -1,27 +1,31 @@
 import { toFinancialNumber } from '../financialMath';
 import type { AgingBucketKey, OverdueInvoiceReportRow } from '../reports/financialReportsService';
 
+export const ARABIC_LOCALE = 'ar';
+export const EMPTY_FIELD_VALUE = '—';
+export const OVER_90_BUCKET_KEY = 'days_90_plus' satisfies AgingBucketKey;
+
+export const arrearsBucketKeys = ['current', 'days_1_30', 'days_31_60', 'days_61_90', OVER_90_BUCKET_KEY] as const satisfies AgingBucketKey[];
+
 export type ArrearsBucketFilter = AgingBucketKey | 'all';
 
-export const arrearsBucketOptions: { value: ArrearsBucketFilter; label: string }[] = [
-  { value: 'all', label: 'كل الأعمار' },
-  { value: 'current', label: 'حالي' },
-  { value: 'days_1_30', label: '1–30 يوم' },
-  { value: 'days_31_60', label: '31–60 يوم' },
-  { value: 'days_61_90', label: '61–90 يوم' },
-  { value: 'days_90_plus', label: '90+ يوم' },
-];
+const allBucketsOption = { value: 'all', label: 'كل الأعمار' } as const;
 
-const bucketLabels: Record<AgingBucketKey, string> = {
+export const arrearsBucketLabels: Record<AgingBucketKey, string> = {
   current: 'حالي',
   days_1_30: '1–30 يوم',
   days_31_60: '31–60 يوم',
   days_61_90: '61–90 يوم',
-  days_90_plus: '90+ يوم',
+  [OVER_90_BUCKET_KEY]: '90+ يوم',
 };
 
+export const arrearsBucketOptions: { value: ArrearsBucketFilter; label: string }[] = [
+  allBucketsOption,
+  ...arrearsBucketKeys.map((bucketKey) => ({ value: bucketKey, label: arrearsBucketLabels[bucketKey] })),
+];
+
 export function getArrearsBucketLabel(bucket: AgingBucketKey) {
-  return bucketLabels[bucket];
+  return arrearsBucketLabels[bucket];
 }
 
 export function getBucketKeyFromDaysOverdue(daysOverdue: number | null | undefined): AgingBucketKey {
@@ -30,7 +34,7 @@ export function getBucketKeyFromDaysOverdue(daysOverdue: number | null | undefin
   if (safeDays <= 30) return 'days_1_30';
   if (safeDays <= 60) return 'days_31_60';
   if (safeDays <= 90) return 'days_61_90';
-  return 'days_90_plus';
+  return OVER_90_BUCKET_KEY;
 }
 
 export function getOverdueRowBucketKey(row: Pick<OverdueInvoiceReportRow, 'daysOverdue'> & { bucket?: AgingBucketKey | null }): AgingBucketKey {
@@ -46,7 +50,7 @@ export function safePercentage(value: number | null | undefined, total: number |
 }
 
 export function filterOverdueInvoiceRows(rows: OverdueInvoiceReportRow[], search: string, bucketFilter: ArrearsBucketFilter) {
-  const normalizedSearch = search.trim().toLocaleLowerCase('ar');
+  const normalizedSearch = search.trim().toLocaleLowerCase(ARABIC_LOCALE);
 
   return rows.filter((row) => {
     const rowBucket = getOverdueRowBucketKey(row);
@@ -62,6 +66,6 @@ export function filterOverdueInvoiceRows(rows: OverdueInvoiceReportRow[], search
       row.contractId,
     ];
 
-    return searchableValues.some((value) => value?.toLocaleLowerCase('ar').includes(normalizedSearch));
+    return searchableValues.some((value) => value?.toLocaleLowerCase(ARABIC_LOCALE).includes(normalizedSearch));
   });
 }
