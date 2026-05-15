@@ -84,20 +84,30 @@ const updateableFields = new Set<keyof CompanySettingsUpdatePayload>([
   ...requiredStringFields,
 ]);
 
+function stringifyPrimitive(value: unknown): string | null {
+  switch (typeof value) {
+    case 'string':
+      return value.trim();
+    case 'number':
+    case 'boolean':
+    case 'bigint':
+      return String(value).trim();
+    default:
+      return null;
+  }
+}
+
 function cleanNullableString(value: unknown): string | null {
-  if (value === null || value === undefined) return null;
-  if (typeof value !== 'string') return String(value).trim() || null;
-  return value.trim() || null;
+  return stringifyPrimitive(value) || null;
 }
 
 function cleanRequiredString(value: unknown, fallback: string): string {
-  if (value === null || value === undefined) return fallback;
-  if (typeof value !== 'string') return String(value).trim() || fallback;
-  return value.trim() || fallback;
+  return stringifyPrimitive(value) || fallback;
 }
 
 export function normalizeCompanySettingsRecord(value: Partial<CompanySettingsRecord> | null | undefined): CompanySettingsRecord {
-  const normalized = { ...defaultCompanySettings, ...(value ?? {}) };
+  const source = value ?? defaultCompanySettings;
+  const normalized = { ...defaultCompanySettings, ...source };
 
   for (const field of nullableStringFields) {
     normalized[field] = cleanNullableString(normalized[field]);

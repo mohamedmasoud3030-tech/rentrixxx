@@ -58,6 +58,38 @@ describe('companySettingsService', () => {
     });
   });
 
+  it('does not stringify objects for nullable or required settings fields', async () => {
+    const { normalizeCompanySettingsRecord, normalizeCompanySettingsUpdatePayload } = await import('./companySettingsService');
+    const objectValue = { toString: () => 'should-not-stringify' };
+
+    expect(normalizeCompanySettingsRecord({
+      company_name: objectValue,
+      legal_name: objectValue,
+    } as Parameters<typeof normalizeCompanySettingsRecord>[0])).toMatchObject({
+      company_name: 'Rentrix',
+      legal_name: null,
+    });
+    expect(normalizeCompanySettingsUpdatePayload({
+      company_name: objectValue,
+      legal_name: objectValue,
+    } as Parameters<typeof normalizeCompanySettingsUpdatePayload>[0])).toEqual({
+      company_name: 'Rentrix',
+      legal_name: null,
+    });
+  });
+
+  it('still intentionally normalizes primitive numbers and booleans', async () => {
+    const { normalizeCompanySettingsUpdatePayload } = await import('./companySettingsService');
+
+    expect(normalizeCompanySettingsUpdatePayload({
+      company_name: 123,
+      legal_name: true,
+    } as Parameters<typeof normalizeCompanySettingsUpdatePayload>[0])).toEqual({
+      company_name: '123',
+      legal_name: 'true',
+    });
+  });
+
   it('returns safe default settings when no row exists', async () => {
     mockReadCompanySettings({ data: null, error: null });
 

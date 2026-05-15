@@ -15,7 +15,7 @@ create table if not exists public.company_settings (
   city text,
   country text default 'Oman',
   currency text not null default 'OMR',
-  locale text not null default 'ar-OM',
+  locale text not null default 'ar-OM', -- NOSONAR: SQL migrations keep duplicated default/seed literals explicit for auditability.
   timezone text not null default 'Asia/Muscat',
   date_format text not null default 'dd/MM/yyyy',
   number_format text not null default 'ar-OM',
