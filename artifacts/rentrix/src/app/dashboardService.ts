@@ -1,4 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
+import { getTodayLocalDateString } from '@/features/financials/financials-date-utils';
 
 export type DashboardFinancialSummary = {
   total_collected: number;
@@ -26,18 +27,13 @@ type CountResponse = {
   error: { message: string } | null;
 };
 
+type CountTable = 'properties' | 'units' | 'contracts' | 'invoices';
+
 const dashboardWindowDays = 30;
 
 function readCount({ count, error }: CountResponse) {
   if (error) throw error;
   return count ?? 0;
-}
-
-function toDateInputValue(date: Date) {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
 }
 
 function addDays(date: Date, days: number) {
@@ -46,64 +42,39 @@ function addDays(date: Date, days: number) {
   return nextDate;
 }
 
-async function countProperties() {
-  return readCount(
-    await supabase
-      .from('properties')
-      .select('id', { count: 'exact', head: true })
-      .is('deleted_at', null),
-  );
+async function countRows(table: CountTable, buildQuery?: (query: ReturnType<typeof supabase.from>) => ReturnType<typeof supabase.from>) {
+  const baseQuery = supabase.from(table).select('id', { count: 'exact', head: true }).is('deleted_at', null);
+  const response = buildQuery ? await buildQuery(baseQuery) : await baseQuery;
+  return readCount(response as CountResponse);
 }
 
-async function countUnits() {
-  return readCount(
-    await supabase
-      .from('units')
-      .select('id', { count: 'exact', head: true })
-      .is('deleted_at', null),
-  );
+function countProperties() {
+  return countRows('properties');
 }
 
-async function countActiveContracts() {
-  return readCount(
-    await supabase
-      .from('contracts')
-      .select('id', { count: 'exact', head: true })
+function countUnits() {
+  return countRows('units');
+}
+
+function countActiveContracts() {
+  return countRows('contracts', (query) => query.eq('status', 'active'));
+}
+
+function countExpiringContracts30Days(date: Date) {
+  return countRows('contracts', (query) =>
+    query
       .eq('status', 'active')
-      .is('deleted_at', null),
+      .gte('end_date', getTodayLocalDateString(date))
+      .lte('end_date', getTodayLocalDateString(addDays(date, dashboardWindowDays))),
   );
 }
 
-async function countExpiringContracts30Days(date: Date) {
-  return readCount(
-    await supabase
-      .from('contracts')
-      .select('id', { count: 'exact', head: true })
-      .eq('status', 'active')
-      .gte('end_date', toDateInputValue(date))
-      .lte('end_date', toDateInputValue(addDays(date, dashboardWindowDays)))
-      .is('deleted_at', null),
-  );
+function countVacantUnits() {
+  return countRows('units', (query) => query.eq('status', 'available'));
 }
 
-async function countVacantUnits() {
-  return readCount(
-    await supabase
-      .from('units')
-      .select('id', { count: 'exact', head: true })
-      .eq('status', 'available')
-      .is('deleted_at', null),
-  );
-}
-
-async function countOverdueInvoices() {
-  return readCount(
-    await supabase
-      .from('invoices')
-      .select('id', { count: 'exact', head: true })
-      .eq('status', 'overdue')
-      .is('deleted_at', null),
-  );
+function countOverdueInvoices() {
+  return countRows('invoices', (query) => query.eq('status', 'overdue'));
 }
 
 export async function getDashboardOverview(date = new Date()): Promise<DashboardOverview> {
