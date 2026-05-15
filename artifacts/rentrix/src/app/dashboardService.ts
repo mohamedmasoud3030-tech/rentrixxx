@@ -38,7 +38,7 @@ export async function getDashboardOverview(date = new Date()): Promise<Dashboard
     countRows('properties'),
     countRows('units'),
     countRows('contracts', (query) => query.eq('status', 'active').is('deleted_at', null)),
-    countRows('units', (query) => query.eq('status', 'vacant')),
+    countRows('units', (query) => query.eq('status', 'available')),
     countRows('invoices', (query) => query.eq('status', 'overdue')),
   ]);
 
