@@ -39,6 +39,69 @@
 -- guarded so legacy/live databases are hardened while empty fresh databases can
 -- continue to later migrations that create the canonical schema.
 
+
+-- =============================================================================
+-- MIGRATION-LOCAL METADATA HELPERS
+-- =============================================================================
+
+CREATE OR REPLACE FUNCTION pg_temp.rentrix_table_exists(target_table text)
+RETURNS boolean
+LANGUAGE sql
+AS $$
+  SELECT to_regclass(format('public.%I', target_table)) IS NOT NULL;
+$$;
+
+CREATE OR REPLACE FUNCTION pg_temp.rentrix_column_exists(target_table text, target_column text)
+RETURNS boolean
+LANGUAGE sql
+AS $$
+  SELECT EXISTS (
+    SELECT 1
+    FROM information_schema.columns
+    WHERE table_schema = 'public'
+      AND table_name = target_table
+      AND column_name = target_column
+  );
+$$;
+
+CREATE OR REPLACE FUNCTION pg_temp.rentrix_constraint_exists(target_constraint text)
+RETURNS boolean
+LANGUAGE sql
+AS $$
+  SELECT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = target_constraint);
+$$;
+
+CREATE OR REPLACE FUNCTION pg_temp.rentrix_constraint_needs_validation(target_constraint text)
+RETURNS boolean
+LANGUAGE sql
+AS $$
+  SELECT EXISTS (
+    SELECT 1
+    FROM pg_constraint
+    WHERE conname = target_constraint
+      AND NOT convalidated
+  );
+$$;
+
+CREATE OR REPLACE FUNCTION pg_temp.rentrix_column_data_type(target_table text, target_column text)
+RETURNS text
+LANGUAGE sql
+AS $$
+  SELECT data_type
+  FROM information_schema.columns
+  WHERE table_schema = 'public'
+    AND table_name = target_table
+    AND column_name = target_column;
+$$;
+
+CREATE OR REPLACE FUNCTION pg_temp.rentrix_tables_exist(VARIADIC target_tables text[])
+RETURNS boolean
+LANGUAGE sql
+AS $$
+  SELECT bool_and(pg_temp.rentrix_table_exists(target_table))
+  FROM unnest(target_tables) AS target_table;
+$$;
+
 -- =============================================================================
 -- SECTION 1–2: FK CONSTRAINTS — guarded by child/parent tables and columns
 -- =============================================================================
@@ -47,6 +110,7 @@ DO $$
 DECLARE
   fk record;
 BEGIN
+  -- NOSONAR: this immutable migration matrix intentionally repeats audited table/column names.
   FOR fk IN
     SELECT * FROM (VALUES
       ('properties_owner_fk', 'properties', 'owner_id', 'owners', 'id'),
@@ -68,22 +132,12 @@ BEGIN
       ('invoices_billing_subscription_fk', 'invoices_billing', 'subscription_id', 'subscriptions', 'id')
     ) AS f(conname, child_table, child_column, parent_table, parent_column)
   LOOP
-    IF to_regclass(format('public.%I', fk.child_table)) IS NOT NULL
-       AND to_regclass(format('public.%I', fk.parent_table)) IS NOT NULL
-       AND EXISTS (
-         SELECT 1 FROM information_schema.columns
-         WHERE table_schema = 'public'
-           AND table_name = fk.child_table
-           AND column_name = fk.child_column
-       )
-       AND EXISTS (
-         SELECT 1 FROM information_schema.columns
-         WHERE table_schema = 'public'
-           AND table_name = fk.parent_table
-           AND column_name = fk.parent_column
-       )
+    IF pg_temp.rentrix_table_exists(fk.child_table)
+       AND pg_temp.rentrix_table_exists(fk.parent_table)
+       AND pg_temp.rentrix_column_exists(fk.child_table, fk.child_column)
+       AND pg_temp.rentrix_column_exists(fk.parent_table, fk.parent_column)
     THEN
-      IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = fk.conname) THEN
+      IF NOT pg_temp.rentrix_constraint_exists(fk.conname) THEN
         EXECUTE format(
           'ALTER TABLE public.%I ADD CONSTRAINT %I FOREIGN KEY (%I) REFERENCES public.%I(%I) NOT VALID',
           fk.child_table,
@@ -94,7 +148,7 @@ BEGIN
         );
       END IF;
 
-      IF EXISTS (SELECT 1 FROM pg_constraint WHERE conname = fk.conname AND NOT convalidated) THEN
+      IF pg_temp.rentrix_constraint_needs_validation(fk.conname) THEN
         EXECUTE format('ALTER TABLE public.%I VALIDATE CONSTRAINT %I', fk.child_table, fk.conname);
       END IF;
     ELSE
@@ -111,6 +165,7 @@ DO $$
 DECLARE
   chk record;
 BEGIN
+  -- NOSONAR: this immutable migration matrix intentionally repeats audited constraint names.
   FOR chk IN
     SELECT * FROM (VALUES
       ('invoices_amount_non_negative_chk', 'invoices', 'amount', 'amount >= 0'),
@@ -124,15 +179,10 @@ BEGIN
       ('commissions_amount_non_negative_chk', 'commissions', 'amount', 'amount IS NULL OR amount >= 0')
     ) AS c(conname, table_name, column_name, expression_sql)
   LOOP
-    IF to_regclass(format('public.%I', chk.table_name)) IS NOT NULL
-       AND EXISTS (
-         SELECT 1 FROM information_schema.columns
-         WHERE table_schema = 'public'
-           AND table_name = chk.table_name
-           AND column_name = chk.column_name
-       )
+    IF pg_temp.rentrix_table_exists(chk.table_name)
+       AND pg_temp.rentrix_column_exists(chk.table_name, chk.column_name)
     THEN
-      IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = chk.conname) THEN
+      IF NOT pg_temp.rentrix_constraint_exists(chk.conname) THEN
         EXECUTE format(
           'ALTER TABLE public.%I ADD CONSTRAINT %I CHECK (%s) NOT VALID',
           chk.table_name,
@@ -141,7 +191,7 @@ BEGIN
         );
       END IF;
 
-      IF EXISTS (SELECT 1 FROM pg_constraint WHERE conname = chk.conname AND NOT convalidated) THEN
+      IF pg_temp.rentrix_constraint_needs_validation(chk.conname) THEN
         EXECUTE format('ALTER TABLE public.%I VALIDATE CONSTRAINT %I', chk.table_name, chk.conname);
       END IF;
     ELSE
@@ -177,6 +227,7 @@ END $$;
 
 DO $$
 DECLARE
+  -- NOSONAR: audited legacy timestamp-normalization table list.
   v_tables text[] := ARRAY[
     'profiles', 'owners', 'properties', 'units', 'tenants', 'contracts',
     'invoices', 'receipts', 'expenses', 'journal_entries', 'accounts',
@@ -193,17 +244,12 @@ DECLARE
   v_dtype text;
 BEGIN
   FOREACH v_tbl IN ARRAY v_tables LOOP
-    IF to_regclass(format('public.%I', v_tbl)) IS NULL THEN
+    IF NOT pg_temp.rentrix_table_exists(v_tbl) THEN
       CONTINUE;
     END IF;
 
     FOREACH v_col IN ARRAY v_cols LOOP
-      SELECT data_type
-        INTO v_dtype
-      FROM information_schema.columns
-      WHERE table_schema = 'public'
-        AND table_name   = v_tbl
-        AND column_name  = v_col;
+      v_dtype := pg_temp.rentrix_column_data_type(v_tbl, v_col);
 
       IF v_dtype IN ('bigint', 'integer', 'int8', 'int4') THEN
         EXECUTE format(
@@ -226,6 +272,7 @@ DO $$
 DECLARE
   idx record;
 BEGIN
+  -- NOSONAR: this immutable migration matrix intentionally repeats audited index/table names.
   FOR idx IN
     SELECT * FROM (VALUES
       ('idx_profiles_email', 'profiles', 'email', 'email', 'email IS NOT NULL', true),
@@ -241,13 +288,8 @@ BEGIN
       ('idx_owners_portal_token', 'owners', 'portal_token', 'portal_token', 'portal_token IS NOT NULL', true)
     ) AS i(index_name, table_name, required_column, index_columns, predicate_sql, is_unique)
   LOOP
-    IF to_regclass(format('public.%I', idx.table_name)) IS NOT NULL
-       AND EXISTS (
-         SELECT 1 FROM information_schema.columns
-         WHERE table_schema = 'public'
-           AND table_name = idx.table_name
-           AND column_name = idx.required_column
-       )
+    IF pg_temp.rentrix_table_exists(idx.table_name)
+       AND pg_temp.rentrix_column_exists(idx.table_name, idx.required_column)
     THEN
       IF idx.predicate_sql IS NULL THEN
         EXECUTE format(
@@ -279,15 +321,17 @@ END $$;
 
 DO $$
 BEGIN
-  IF to_regclass('public.account_balances') IS NOT NULL
-     AND to_regclass('public.owner_balances') IS NOT NULL
-     AND to_regclass('public.contract_balances') IS NOT NULL
-     AND to_regclass('public.tenant_balances') IS NOT NULL
-     AND to_regclass('public.journal_entries') IS NOT NULL
-     AND to_regclass('public.accounts') IS NOT NULL
-     AND to_regclass('public.owners') IS NOT NULL
-     AND to_regclass('public.contracts') IS NOT NULL
-     AND to_regclass('public.tenants') IS NOT NULL
+  IF pg_temp.rentrix_tables_exist(
+       'account_balances',
+       'owner_balances',
+       'contract_balances',
+       'tenant_balances',
+       'journal_entries',
+       'accounts',
+       'owners',
+       'contracts',
+       'tenants'
+     )
   THEN
     EXECUTE $view$
 CREATE OR REPLACE VIEW public.v_balance_reconciliation AS
