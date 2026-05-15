@@ -3,19 +3,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { cn } from '@/lib/utils';
 import type { OverdueInvoiceReportRow } from '../reports/financialReportsService';
 import { ARABIC_LOCALE, EMPTY_FIELD_VALUE, getArrearsBucketLabel, getOverdueRowBucketKey } from './arrears-workflow-helpers';
-import { formatDate, formatMoney, formatShortId } from './financials-formatters';
-
-const unpaidStatusLabel = 'غير مدفوعة';
-
-const invoiceStatusLabels: Record<string, string> = {
-  draft: 'مسودة',
-  issued: unpaidStatusLabel,
-  unpaid: unpaidStatusLabel,
-  partial: 'مدفوعة جزئياً',
-  overdue: 'متأخرة',
-  paid: 'مدفوعة',
-  void: 'ملغاة',
-};
+import { formatDate, formatInvoiceStatusLabel, formatMoney, formatShortId } from './financials-formatters';
 
 type OverdueInvoicesTableProps = Readonly<{
   rows: OverdueInvoiceReportRow[];
@@ -71,7 +59,7 @@ export function OverdueInvoicesTable({ rows, selectedInvoiceId, onSelectInvoice 
                   <TableCell className="font-black text-destructive">{formatMoney(row.remainingAmount)}</TableCell>
                   <TableCell>
                     <span className="inline-flex rounded-full bg-secondary px-2.5 py-1 text-xs font-bold text-secondary-foreground">
-                      {invoiceStatusLabels[row.status] ?? row.status}
+                      {formatInvoiceStatusLabel(row.status)}
                     </span>
                   </TableCell>
                   <TableCell>{getArrearsBucketLabel(bucket)}</TableCell>

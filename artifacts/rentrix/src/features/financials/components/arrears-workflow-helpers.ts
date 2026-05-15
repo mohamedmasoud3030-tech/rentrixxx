@@ -49,23 +49,27 @@ export function safePercentage(value: number | null | undefined, total: number |
   return Number.isFinite(percentage) ? percentage : null;
 }
 
+function getOverdueInvoiceSearchValues(row: OverdueInvoiceReportRow) {
+  return [
+    row.invoiceId,
+    row.shortInvoiceId,
+    row.tenantName,
+    row.propertyTitle,
+    row.unitNumber,
+    row.contractId,
+  ];
+}
+
+function rowMatchesSearch(row: OverdueInvoiceReportRow, normalizedSearch: string) {
+  if (!normalizedSearch) return true;
+  return getOverdueInvoiceSearchValues(row).some((value) => value?.toLocaleLowerCase(ARABIC_LOCALE).includes(normalizedSearch));
+}
+
+function rowMatchesBucket(row: OverdueInvoiceReportRow, bucketFilter: ArrearsBucketFilter) {
+  return bucketFilter === 'all' || getOverdueRowBucketKey(row) === bucketFilter;
+}
+
 export function filterOverdueInvoiceRows(rows: OverdueInvoiceReportRow[], search: string, bucketFilter: ArrearsBucketFilter) {
   const normalizedSearch = search.trim().toLocaleLowerCase(ARABIC_LOCALE);
-
-  return rows.filter((row) => {
-    const rowBucket = getOverdueRowBucketKey(row);
-    if (bucketFilter !== 'all' && rowBucket !== bucketFilter) return false;
-    if (!normalizedSearch) return true;
-
-    const searchableValues = [
-      row.invoiceId,
-      row.shortInvoiceId,
-      row.tenantName,
-      row.propertyTitle,
-      row.unitNumber,
-      row.contractId,
-    ];
-
-    return searchableValues.some((value) => value?.toLocaleLowerCase(ARABIC_LOCALE).includes(normalizedSearch));
-  });
+  return rows.filter((row) => rowMatchesBucket(row, bucketFilter) && rowMatchesSearch(row, normalizedSearch));
 }

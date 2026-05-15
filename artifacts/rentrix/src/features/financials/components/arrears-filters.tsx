@@ -35,7 +35,7 @@ export function ArrearsFilters({
       </label>
       <label className="space-y-2 text-sm font-bold">
         <span>فئة العمر</span>
-        <Select value={bucketFilter} onChange={(event) => onBucketFilterChange(event.target.value as ArrearsBucketFilter)}>
+        <Select value={bucketFilter} onChange={(event) => onBucketFilterChange(event.currentTarget.value as ArrearsBucketFilter)}>
           {arrearsBucketOptions.map((option) => (
             <option key={option.value} value={option.value}>{option.label}</option>
           ))}

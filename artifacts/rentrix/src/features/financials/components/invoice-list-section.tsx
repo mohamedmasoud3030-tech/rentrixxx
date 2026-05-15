@@ -2,19 +2,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import { getSafeRemainingAmount } from '../financialMath';
 import type { InvoiceListItem, InvoiceStatusFilter, InvoiceSummary } from '../invoices/invoiceService';
-import { formatDate, formatMoney, getErrorMessage } from './financials-formatters';
+import { formatDate, formatInvoiceStatusLabel, formatMoney, getErrorMessage } from './financials-formatters';
 import { InvoiceFilters } from './invoice-filters';
 import { InvoiceSummaryCards } from './invoice-summary-cards';
-
-const invoiceStatusLabels: Record<string, string> = {
-  draft: 'مسودة',
-  issued: 'غير مدفوعة',
-  unpaid: 'غير مدفوعة',
-  partial: 'مدفوعة جزئياً',
-  overdue: 'متأخرة',
-  paid: 'مدفوعة',
-  void: 'ملغاة',
-};
 
 type InvoiceListSectionProps = {
   summary: InvoiceSummary;
@@ -107,7 +97,7 @@ export function InvoiceListSection({
                   <span>{formatMoney(rowRemaining)}</span>
                 </span>
                 <span className="inline-flex h-fit rounded-full bg-secondary px-3 py-1 text-xs font-bold text-secondary-foreground">
-                  {invoiceStatusLabels[invoice.status] ?? invoice.status}
+                  {formatInvoiceStatusLabel(invoice.status)}
                 </span>
               </button>
             );

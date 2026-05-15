@@ -17,3 +17,5 @@ export function getErrorMessage(error: unknown, fallback: string) {
 export function formatShortId(value: string | null | undefined) {
   return value ? `#${value.slice(0, 8)}` : '—';
 }
+
+export { formatInvoiceStatusLabel, invoiceStatusLabels } from './invoice-status-labels';

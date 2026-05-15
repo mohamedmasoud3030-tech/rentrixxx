@@ -1,9 +1,13 @@
 import { toFinancialNumber } from '../financialMath';
-import type { AgedReceivablesReport, ArrearsSummaryReport, OverdueInvoicesReport } from '../reports/financialReportsService';
+import type { AgedReceivablesBucket, AgedReceivablesReport, AgingBucketKey, ArrearsSummaryReport, OverdueInvoicesReport } from '../reports/financialReportsService';
 import { ARABIC_LOCALE, OVER_90_BUCKET_KEY } from './arrears-workflow-helpers';
 import { formatMoney } from './financials-formatters';
 
 const neutralCardTone = 'bg-muted/40 text-foreground';
+
+function getAgingBucket(report: AgedReceivablesReport | undefined, key: AgingBucketKey): AgedReceivablesBucket | undefined {
+  return report?.buckets?.[key];
+}
 
 type ArrearsSummaryCardsProps = Readonly<{
   overdueReport: OverdueInvoicesReport | undefined;
@@ -15,7 +19,7 @@ export function ArrearsSummaryCards({ overdueReport, agedReceivablesReport, arre
   const totalOverdue = arrearsSummaryReport?.totalOverdue ?? overdueReport?.totalOverdue ?? 0;
   const overdueInvoiceCount = arrearsSummaryReport?.overdueInvoiceCount ?? overdueReport?.invoiceCount ?? 0;
   const averageDaysOverdue = toFinancialNumber(arrearsSummaryReport?.averageDaysOverdue);
-  const over90Bucket = agedReceivablesReport?.buckets[OVER_90_BUCKET_KEY];
+  const over90Bucket = getAgingBucket(agedReceivablesReport, OVER_90_BUCKET_KEY);
   const over90Amount = arrearsSummaryReport?.over90Amount ?? over90Bucket?.total ?? 0;
   const over90InvoiceCount = arrearsSummaryReport?.over90InvoiceCount ?? over90Bucket?.invoiceCount ?? 0;
   const totalOutstanding = agedReceivablesReport?.totalOutstanding ?? 0;
