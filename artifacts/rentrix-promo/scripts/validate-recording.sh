@@ -28,7 +28,7 @@ if ! grep -Fq 'window.stopRecording?.()' "$SRC_DIR/lib/video/hooks.ts" 2>/dev/nu
   errors=$((errors + 1))
 fi
 
-if [ $errors -gt 0 ]; then
+if [[ "$errors" -gt 0 ]]; then
   echo ""
   echo "Found $errors recording lifecycle error(s). Video export will fail without these fixes."
   exit 1
