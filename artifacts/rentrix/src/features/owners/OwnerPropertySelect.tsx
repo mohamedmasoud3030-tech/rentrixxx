@@ -9,7 +9,8 @@ type OwnerPropertySelectProps = Readonly<{
   onValueChange: (propertyId: string) => void;
 }>;
 
-// The project Select primitive is a native <select> wrapper; no Radix/shadcn SelectTrigger API is exported yet.
+// components/ui/select.tsx exports Select only: no SelectTrigger, SelectValue, SelectContent, or SelectItem API exists yet.
+// Therefore this wrapper intentionally adapts the current native select primitive to an owner-scoped onValueChange API.
 export function OwnerPropertySelect({ value, disabled, properties, onValueChange }: OwnerPropertySelectProps) {
   return (
     <Select value={value} onChange={(event) => onValueChange(event.currentTarget.value)} disabled={disabled}>
