@@ -19,6 +19,8 @@ import { ContractNewRouteComponent } from '@/routes/_protected.contracts.new';
 import { ContractDetailRouteComponent } from '@/routes/_protected.contracts.$contractId';
 import { ContractEditRouteComponent } from '@/routes/_protected.contracts.$contractId.edit';
 import { FinancialsRouteComponent } from '@/routes/_protected.financials';
+import { InvoicesRouteComponent } from '@/routes/_protected.invoices';
+import { ArrearsRouteComponent } from '@/routes/_protected.arrears';
 import { AccountingRouteComponent } from '@/routes/_protected.accounting';
 import { ReportsRouteComponent } from '@/routes/_protected.reports';
 import { SettingsRouteComponent } from '@/routes/_protected.settings';
@@ -68,7 +70,8 @@ const contractNewRoute = createRoute({ getParentRoute: () => protectedRoute, pat
 const contractDetailRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/contracts/$contractId', component: ContractDetailRouteComponent, staticData: { title: 'تفاصيل العقد' } });
 const contractEditRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/contracts/$contractId/edit', component: ContractEditRouteComponent, staticData: { title: 'تعديل عقد' } });
 const financialsRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/financials', component: FinancialsRouteComponent, staticData: { title: 'المالية' } });
-const invoicesRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/invoices', component: FinancialsRouteComponent, staticData: { title: 'الفواتير' } });
+const invoicesRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/invoices', component: InvoicesRouteComponent, staticData: { title: 'الفواتير' } });
+const arrearsRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/arrears', component: ArrearsRouteComponent, staticData: { title: 'المتأخرات' } });
 const accountingRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/accounting', component: AccountingRouteComponent, staticData: { title: 'المحاسبة' } });
 const reportsRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/reports', component: ReportsRouteComponent, staticData: { title: 'التقارير' } });
 const settingsRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/settings', component: SettingsRouteComponent, staticData: { title: 'الإعدادات' } });
@@ -92,6 +95,7 @@ export const routeTree = rootRoute.addChildren([
     contractEditRoute,
     financialsRoute,
     invoicesRoute,
+    arrearsRoute,
     accountingRoute,
     reportsRoute,
     maintenanceRoute,

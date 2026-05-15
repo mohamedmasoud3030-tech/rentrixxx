@@ -12,6 +12,7 @@ import { InvoiceDetailSection } from './components/invoice-detail-section';
 import { InvoiceListSection } from './components/invoice-list-section';
 import { ReceiptsSection } from './components/receipts-section';
 import { useExpenses, useCreateExpense } from './expenses/useExpenses';
+import { getTodayLocalDateString } from './financials-date-utils';
 import { getSafeRemainingAmount, toFinancialNumber } from './financialMath';
 import { summarizeInvoices, type InvoiceStatusFilter } from './invoices/invoiceService';
 import { useGenerateInvoices, useInvoice, useInvoices } from './invoices/useInvoices';
@@ -31,13 +32,6 @@ const expenseSchema = z.object({
   expense_date: z.string().min(1, 'اختر التاريخ'),
   description: z.string().optional(),
 });
-
-function getTodayLocalDateString(date = new Date()) {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
-}
 
 function getCurrentMonthReportRange() {
   const now = new Date();
