@@ -1,4 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
+import { getTodayLocalDateString } from '@/features/financials/financials-date-utils';
 
 export type DashboardFinancialSummary = {
   total_collected: number;
@@ -11,6 +12,7 @@ export type DashboardOperationalKpis = {
   properties: number;
   units: number;
   activeContracts: number;
+  expiringContracts30Days: number;
   vacantUnits: number;
   overdueInvoices: number;
 };
@@ -20,31 +22,78 @@ export type DashboardOverview = {
   operational: DashboardOperationalKpis;
 };
 
-async function countRows(table: 'properties' | 'units' | 'contracts' | 'invoices', filters?: (query: any) => any) {
-  let query = supabase.from(table).select('id', { count: 'exact', head: true });
-  if (filters) query = filters(query);
+type CountResponse = {
+  count: number | null;
+  error: { message: string } | null;
+};
 
-  const { count, error } = await query;
+type CountTable = 'properties' | 'units' | 'contracts' | 'invoices';
+
+const dashboardWindowDays = 30;
+
+function readCount({ count, error }: CountResponse) {
   if (error) throw error;
   return count ?? 0;
 }
 
+function addDays(date: Date, days: number) {
+  const nextDate = new Date(date);
+  nextDate.setDate(nextDate.getDate() + days);
+  return nextDate;
+}
+
+async function countRows(table: CountTable, buildQuery?: (query: ReturnType<typeof supabase.from>) => ReturnType<typeof supabase.from>) {
+  const baseQuery = supabase.from(table).select('id', { count: 'exact', head: true }).is('deleted_at', null);
+  const response = buildQuery ? await buildQuery(baseQuery) : await baseQuery;
+  return readCount(response as CountResponse);
+}
+
+function countProperties() {
+  return countRows('properties');
+}
+
+function countUnits() {
+  return countRows('units');
+}
+
+function countActiveContracts() {
+  return countRows('contracts', (query) => query.eq('status', 'active'));
+}
+
+function countExpiringContracts30Days(date: Date) {
+  return countRows('contracts', (query) =>
+    query
+      .eq('status', 'active')
+      .gte('end_date', getTodayLocalDateString(date))
+      .lte('end_date', getTodayLocalDateString(addDays(date, dashboardWindowDays))),
+  );
+}
+
+function countVacantUnits() {
+  return countRows('units', (query) => query.eq('status', 'available'));
+}
+
+function countOverdueInvoices() {
+  return countRows('invoices', (query) => query.eq('status', 'overdue'));
+}
+
 export async function getDashboardOverview(date = new Date()): Promise<DashboardOverview> {
-  const [financialResp, properties, units, activeContracts, vacantUnits, overdueInvoices] = await Promise.all([
+  const [financialResp, properties, units, activeContracts, expiringContracts30Days, vacantUnits, overdueInvoices] = await Promise.all([
     supabase.rpc('rpt_financial_summary', {
       month: date.getMonth() + 1,
       year: date.getFullYear(),
     }),
-    countRows('properties'),
-    countRows('units'),
-    countRows('contracts', (query) => query.eq('status', 'active').is('deleted_at', null)),
-    countRows('units', (query) => query.eq('status', 'available')),
-    countRows('invoices', (query) => query.eq('status', 'overdue')),
+    countProperties(),
+    countUnits(),
+    countActiveContracts(),
+    countExpiringContracts30Days(date),
+    countVacantUnits(),
+    countOverdueInvoices(),
   ]);
 
   if (financialResp.error) throw financialResp.error;
 
-  const financial = financialResp.data as DashboardFinancialSummary | null;
+  const financial = financialResp.data;
 
   return {
     financial: {
@@ -57,6 +106,7 @@ export async function getDashboardOverview(date = new Date()): Promise<Dashboard
       properties,
       units,
       activeContracts,
+      expiringContracts30Days,
       vacantUnits,
       overdueInvoices,
     },
