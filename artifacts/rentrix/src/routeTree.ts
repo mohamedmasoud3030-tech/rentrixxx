@@ -68,6 +68,7 @@ const contractNewRoute = createRoute({ getParentRoute: () => protectedRoute, pat
 const contractDetailRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/contracts/$contractId', component: ContractDetailRouteComponent, staticData: { title: 'تفاصيل العقد' } });
 const contractEditRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/contracts/$contractId/edit', component: ContractEditRouteComponent, staticData: { title: 'تعديل عقد' } });
 const financialsRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/financials', component: FinancialsRouteComponent, staticData: { title: 'المالية' } });
+const invoicesRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/invoices', component: FinancialsRouteComponent, staticData: { title: 'الفواتير' } });
 const accountingRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/accounting', component: AccountingRouteComponent, staticData: { title: 'المحاسبة' } });
 const reportsRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/reports', component: ReportsRouteComponent, staticData: { title: 'التقارير' } });
 const settingsRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/settings', component: SettingsRouteComponent, staticData: { title: 'الإعدادات' } });
@@ -90,6 +91,7 @@ export const routeTree = rootRoute.addChildren([
     contractDetailRoute,
     contractEditRoute,
     financialsRoute,
+    invoicesRoute,
     accountingRoute,
     reportsRoute,
     maintenanceRoute,

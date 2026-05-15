@@ -14,6 +14,7 @@ const navigation = [
   { to: '/owners', label: 'الملاك', icon: UserRoundCog },
   { to: '/contracts', label: 'العقود', icon: FileText },
   { to: '/financials', label: 'المالية', icon: WalletCards },
+  { to: '/invoices', label: 'الفواتير', icon: ReceiptText },
   { to: '/accounting', label: 'المحاسبة', icon: ReceiptText },
   { to: '/reports', label: 'التقارير', icon: Home },
   { to: '/maintenance', label: 'الصيانة', icon: Wrench },
@@ -22,7 +23,6 @@ const navigation = [
 
 const recoveryModules = [
   { label: 'المستأجرين', icon: Users },
-  { label: 'الفواتير', icon: ReceiptText },
   { label: 'المتأخرات', icon: ClipboardList },
   { label: 'التواصل', icon: MessageCircle },
   { label: 'خريطة العقارات', icon: Map },
