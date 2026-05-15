@@ -3,6 +3,7 @@ import { useMemo, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { useProperties } from '@/features/properties/use-properties';
+import type { Payment } from '@/types/domain';
 import { ArrearsWorkflowSection } from './components/arrears-workflow-section';
 import type { ArrearsBucketFilter } from './components/arrears-workflow-helpers';
 import { ExpensesSection, type ExpenseFormValues } from './components/expenses-section';
@@ -55,6 +56,9 @@ export function FinancialsPage() {
   const [selectedInvoiceId, setSelectedInvoiceId] = useState('');
   const [selectedReceiptId, setSelectedReceiptId] = useState('');
   const [amount, setAmount] = useState('');
+  const [paymentMethod, setPaymentMethod] = useState<Payment['payment_method']>('cash');
+  const [paymentDate, setPaymentDate] = useState(() => getTodayLocalDateString());
+  const [paymentReference, setPaymentReference] = useState('');
   const [arrearsAsOf, setArrearsAsOf] = useState(() => getTodayLocalDateString());
   const [arrearsSearch, setArrearsSearch] = useState('');
   const [arrearsBucketFilter, setArrearsBucketFilter] = useState<ArrearsBucketFilter>('all');
@@ -128,8 +132,9 @@ export function FinancialsPage() {
     if (!Number.isFinite(rawAmountValue)) return 'المبلغ يجب أن يكون رقماً صالحاً';
     if (amountValue <= 0) return 'المبلغ يجب أن يكون أكبر من صفر';
     if (amountValue > getSafeRemainingAmount(invoiceDetail.amount, invoiceDetail.paid_amount)) return 'المبلغ يجب ألا يتجاوز الرصيد المتبقي';
+    if (!paymentDate) return 'تاريخ الدفع مطلوب';
     return '';
-  }, [amount, amountValue, invoiceDetail, rawAmountValue, selectedInvoiceId]);
+  }, [amount, amountValue, invoiceDetail, paymentDate, rawAmountValue, selectedInvoiceId]);
   const isPaymentDisabled = quickPaySubmitRef.current || postPayment.isPending || remaining <= 0 || Boolean(amountValidationMessage);
   const hasInvoiceFilter = status !== 'all' || invoiceSearch.trim().length > 0;
   const propertyRows = properties?.rows ?? [];
@@ -177,19 +182,22 @@ export function FinancialsPage() {
     const currentRemaining = getSafeRemainingAmount(invoiceDetail.amount, invoiceDetail.paid_amount);
     const currentRawAmount = Number(amount);
     const currentAmount = toFinancialNumber(amount);
-    if (!amount.trim() || !Number.isFinite(currentRawAmount) || currentAmount <= 0 || currentAmount > currentRemaining) return;
+    if (!amount.trim() || !Number.isFinite(currentRawAmount) || currentAmount <= 0 || currentAmount > currentRemaining || !paymentDate) return;
 
     quickPaySubmitRef.current = true;
     postPayment.mutate(
       {
         invoice_id: invoiceDetail.id,
         amount: currentAmount,
-        method: 'cash',
-        date: new Date().toISOString().slice(0, 10),
-        reference: null,
+        method: paymentMethod,
+        date: paymentDate,
+        reference: paymentReference.trim() ? paymentReference.trim() : null,
       },
       {
-        onSuccess: () => setAmount(''),
+        onSuccess: () => {
+          setAmount('');
+          setPaymentReference('');
+        },
         onSettled: () => {
           quickPaySubmitRef.current = false;
         },
@@ -248,10 +256,16 @@ export function FinancialsPage() {
       isError={isInvoiceDetailError}
       error={invoiceDetailError}
       amount={amount}
+      method={paymentMethod}
+      paymentDate={paymentDate}
+      reference={paymentReference}
       amountValidationMessage={amountValidationMessage}
       isPaymentPending={postPayment.isPending}
       isPaymentDisabled={isPaymentDisabled}
       onAmountChange={setAmount}
+      onMethodChange={setPaymentMethod}
+      onPaymentDateChange={setPaymentDate}
+      onReferenceChange={setPaymentReference}
       onPostPayment={onPostPayment}
     />
 
