@@ -43,22 +43,41 @@ describe('ownerService normalization helpers', () => {
     expect(() => normalizeOwnershipPercentage('not-a-number')).toThrow('نسبة الملكية');
   });
 
-  it('normalizes property owner links with required ids and optional dates', () => {
+  it('normalizes property owner links with primary flags and optional dates', () => {
     expect(normalizePropertyOwnerPayload({
       property_id: ' property-1 ',
       owner_id: ' owner-1 ',
       ownership_percentage: '25.5',
       is_primary: false,
       starts_on: ' 2026-05-01 ',
-      ends_on: ' ',
+      ends_on: ' 2026-06-01 ',
     })).toEqual({
       property_id: 'property-1',
       owner_id: 'owner-1',
       ownership_percentage: 25.5,
       is_primary: false,
       starts_on: '2026-05-01',
+      ends_on: '2026-06-01',
+    });
+
+    expect(normalizePropertyOwnerPayload({
+      property_id: 'property-1',
+      owner_id: 'owner-1',
+      ends_on: ' ',
+    })).toMatchObject({
+      ownership_percentage: 100,
+      is_primary: true,
+      starts_on: null,
       ends_on: null,
     });
+  });
+
+  it('rejects rounded-zero ownership percentages before database writes', () => {
+    expect(() => normalizePropertyOwnerPayload({
+      property_id: 'property-1',
+      owner_id: 'owner-1',
+      ownership_percentage: 0.004,
+    })).toThrow('نسبة الملكية');
   });
 
   it('uses relationship owner names before falling back to legacy owner_name', () => {
