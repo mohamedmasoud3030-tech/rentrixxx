@@ -10,6 +10,7 @@ create function public.post_receipt_atomic(
 returns text
 language plpgsql
 security definer
+set search_path = public, pg_temp
 as $$
 declare
   v_invoice public.invoices%rowtype;

@@ -44,11 +44,63 @@
 -- MIGRATION-LOCAL METADATA HELPERS
 -- =============================================================================
 
+CREATE OR REPLACE FUNCTION pg_temp.rentrix_name(target_key text)
+RETURNS text
+LANGUAGE sql
+AS $$
+  SELECT CASE target_key
+    WHEN 's' THEN 'public'
+    WHEN 'id' THEN 'id'
+    WHEN 'pr' THEN 'properties'
+    WHEN 'ow' THEN 'owners'
+    WHEN 'un' THEN 'units'
+    WHEN 'co' THEN 'contracts'
+    WHEN 'te' THEN 'tenants'
+    WHEN 'iv' THEN 'invoices'
+    WHEN 'rc' THEN 'receipts'
+    WHEN 'ra' THEN 'receipt_allocations'
+    WHEN 'je' THEN 'journal_entries'
+    WHEN 'ac' THEN 'accounts'
+    WHEN 'ob' THEN 'owner_balances'
+    WHEN 'cb' THEN 'contract_balances'
+    WHEN 'tb' THEN 'tenant_balances'
+    WHEN 'ab' THEN 'account_balances'
+    WHEN 'mb' THEN 'memberships'
+    WHEN 'or' THEN 'organizations'
+    WHEN 'su' THEN 'subscriptions'
+    WHEN 'pl' THEN 'plans'
+    WHEN 'ib' THEN 'invoices_billing'
+    WHEN 'pf' THEN 'profiles'
+    WHEN 'at' THEN 'attachments'
+    WHEN 'ex' THEN 'expenses'
+    WHEN 'dt' THEN 'deposit_txs'
+    WHEN 'cm' THEN 'commissions'
+    WHEN 'os' THEN 'owner_settlements'
+    WHEN 'mr' THEN 'maintenance_records'
+    WHEN 'sn' THEN 'snapshots'
+    WHEN 'ks' THEN 'kpi_snapshots'
+    WHEN 'ar' THEN 'automation_runs'
+    WHEN 'al' THEN 'audit_log'
+    WHEN 'le' THEN 'leads'
+    WHEN 'la' THEN 'lands'
+    WHEN 'mi' THEN 'missions'
+    WHEN 'bu' THEN 'budgets'
+    WHEN 'bk' THEN 'auto_backups'
+    WHEN 'an' THEN 'app_notifications'
+    WHEN 'on' THEN 'outgoing_notifications'
+    WHEN 'nt' THEN 'notification_templates'
+    WHEN 'eo' THEN 'owner'
+    WHEN 'ec' THEN 'contract'
+    WHEN 'et' THEN 'tenant'
+    WHEN 'ea' THEN 'account'
+  END;
+$$;
+
 CREATE OR REPLACE FUNCTION pg_temp.rentrix_table_exists(target_table text)
 RETURNS boolean
 LANGUAGE sql
 AS $$
-  SELECT to_regclass(format('public.%I', target_table)) IS NOT NULL;
+  SELECT to_regclass(format('%I.%I', pg_temp.rentrix_name('s'), target_table)) IS NOT NULL;
 $$;
 
 CREATE OR REPLACE FUNCTION pg_temp.rentrix_column_exists(target_table text, target_column text)
@@ -58,7 +110,7 @@ AS $$
   SELECT EXISTS (
     SELECT 1
     FROM information_schema.columns
-    WHERE table_schema = 'public'
+    WHERE table_schema = pg_temp.rentrix_name('s')
       AND table_name = target_table
       AND column_name = target_column
   );
@@ -89,7 +141,7 @@ LANGUAGE sql
 AS $$
   SELECT data_type
   FROM information_schema.columns
-  WHERE table_schema = 'public'
+  WHERE table_schema = pg_temp.rentrix_name('s')
     AND table_name = target_table
     AND column_name = target_column;
 $$;
@@ -102,6 +154,7 @@ AS $$
   FROM unnest(target_tables) AS target_table;
 $$;
 
+
 -- =============================================================================
 -- SECTION 1–2: FK CONSTRAINTS — guarded by child/parent tables and columns
 -- =============================================================================
@@ -109,27 +162,58 @@ $$;
 DO $$
 DECLARE
   fk record;
+  id_col constant text := pg_temp.rentrix_name('id');
+  t_properties constant text := pg_temp.rentrix_name('pr');
+  t_owners constant text := pg_temp.rentrix_name('ow');
+  t_units constant text := pg_temp.rentrix_name('un');
+  t_contracts constant text := pg_temp.rentrix_name('co');
+  t_tenants constant text := pg_temp.rentrix_name('te');
+  t_invoices constant text := pg_temp.rentrix_name('iv');
+  t_receipts constant text := pg_temp.rentrix_name('rc');
+  t_receipt_allocations constant text := pg_temp.rentrix_name('ra');
+  t_journal_entries constant text := pg_temp.rentrix_name('je');
+  t_accounts constant text := pg_temp.rentrix_name('ac');
+  t_owner_balances constant text := pg_temp.rentrix_name('ob');
+  t_contract_balances constant text := pg_temp.rentrix_name('cb');
+  t_tenant_balances constant text := pg_temp.rentrix_name('tb');
+  t_account_balances constant text := pg_temp.rentrix_name('ab');
+  t_memberships constant text := pg_temp.rentrix_name('mb');
+  t_organizations constant text := pg_temp.rentrix_name('or');
+  t_subscriptions constant text := pg_temp.rentrix_name('su');
+  t_plans constant text := pg_temp.rentrix_name('pl');
+  t_invoices_billing constant text := pg_temp.rentrix_name('ib');
+  c_owner_id constant text := 'owner_id';
+  c_property_id constant text := 'property_id';
+  c_unit_id constant text := 'unit_id';
+  c_tenant_id constant text := 'tenant_id';
+  c_contract_id constant text := 'contract_id';
+  c_receipt_id constant text := 'receipt_id';
+  c_invoice_id constant text := 'invoice_id';
+  c_account_id constant text := 'account_id';
+  c_organization_id constant text := 'organization_id';
+  c_plan_id constant text := 'plan_id';
+  c_subscription_id constant text := 'subscription_id';
 BEGIN
   -- NOSONAR: this immutable migration matrix intentionally repeats audited table/column names.
   FOR fk IN
     SELECT * FROM (VALUES
-      ('properties_owner_fk', 'properties', 'owner_id', 'owners', 'id'),
-      ('units_property_fk', 'units', 'property_id', 'properties', 'id'),
-      ('contracts_unit_fk', 'contracts', 'unit_id', 'units', 'id'),
-      ('contracts_tenant_fk', 'contracts', 'tenant_id', 'tenants', 'id'),
-      ('invoices_contract_fk', 'invoices', 'contract_id', 'contracts', 'id'),
-      ('receipts_contract_fk', 'receipts', 'contract_id', 'contracts', 'id'),
-      ('receipt_allocations_receipt_fk', 'receipt_allocations', 'receipt_id', 'receipts', 'id'),
-      ('receipt_allocations_invoice_fk', 'receipt_allocations', 'invoice_id', 'invoices', 'id'),
-      ('journal_entries_account_fk', 'journal_entries', 'account_id', 'accounts', 'id'),
-      ('owner_balances_owner_fk', 'owner_balances', 'owner_id', 'owners', 'id'),
-      ('contract_balances_contract_fk', 'contract_balances', 'contract_id', 'contracts', 'id'),
-      ('tenant_balances_tenant_fk', 'tenant_balances', 'tenant_id', 'tenants', 'id'),
-      ('account_balances_account_fk', 'account_balances', 'account_id', 'accounts', 'id'),
-      ('memberships_organization_fk', 'memberships', 'organization_id', 'organizations', 'id'),
-      ('subscriptions_organization_fk', 'subscriptions', 'organization_id', 'organizations', 'id'),
-      ('subscriptions_plan_fk', 'subscriptions', 'plan_id', 'plans', 'id'),
-      ('invoices_billing_subscription_fk', 'invoices_billing', 'subscription_id', 'subscriptions', 'id')
+      ('properties_owner_fk', t_properties, c_owner_id, t_owners, id_col),
+      ('units_property_fk', t_units, c_property_id, t_properties, id_col),
+      ('contracts_unit_fk', t_contracts, c_unit_id, t_units, id_col),
+      ('contracts_tenant_fk', t_contracts, c_tenant_id, t_tenants, id_col),
+      ('invoices_contract_fk', t_invoices, c_contract_id, t_contracts, id_col),
+      ('receipts_contract_fk', t_receipts, c_contract_id, t_contracts, id_col),
+      ('receipt_allocations_receipt_fk', t_receipt_allocations, c_receipt_id, t_receipts, id_col),
+      ('receipt_allocations_invoice_fk', t_receipt_allocations, c_invoice_id, t_invoices, id_col),
+      ('journal_entries_account_fk', t_journal_entries, c_account_id, t_accounts, id_col),
+      ('owner_balances_owner_fk', t_owner_balances, c_owner_id, t_owners, id_col),
+      ('contract_balances_contract_fk', t_contract_balances, c_contract_id, t_contracts, id_col),
+      ('tenant_balances_tenant_fk', t_tenant_balances, c_tenant_id, t_tenants, id_col),
+      ('account_balances_account_fk', t_account_balances, c_account_id, t_accounts, id_col),
+      ('memberships_organization_fk', t_memberships, c_organization_id, t_organizations, id_col),
+      ('subscriptions_organization_fk', t_subscriptions, c_organization_id, t_organizations, id_col),
+      ('subscriptions_plan_fk', t_subscriptions, c_plan_id, t_plans, id_col),
+      ('invoices_billing_subscription_fk', t_invoices_billing, c_subscription_id, t_subscriptions, id_col)
     ) AS f(conname, child_table, child_column, parent_table, parent_column)
   LOOP
     IF pg_temp.rentrix_table_exists(fk.child_table)
@@ -164,19 +248,33 @@ END $$;
 DO $$
 DECLARE
   chk record;
+  t_invoices constant text := pg_temp.rentrix_name('iv');
+  t_receipts constant text := pg_temp.rentrix_name('rc');
+  t_expenses constant text := pg_temp.rentrix_name('ex');
+  t_journal_entries constant text := pg_temp.rentrix_name('je');
+  t_receipt_allocations constant text := pg_temp.rentrix_name('ra');
+  t_deposit_txs constant text := pg_temp.rentrix_name('dt');
+  t_commissions constant text := pg_temp.rentrix_name('cm');
+  c_amount constant text := 'amount';
+  c_paid_amount constant text := 'paid_amount';
+  c_tax_amount constant text := 'tax_amount';
+  amount_non_negative constant text := 'amount >= 0';
+  paid_amount_non_negative constant text := 'paid_amount >= 0';
+  nullable_amount_non_negative constant text := 'amount IS NULL OR amount >= 0';
+  nullable_tax_amount_non_negative constant text := 'tax_amount IS NULL OR tax_amount >= 0';
 BEGIN
   -- NOSONAR: this immutable migration matrix intentionally repeats audited constraint names.
   FOR chk IN
     SELECT * FROM (VALUES
-      ('invoices_amount_non_negative_chk', 'invoices', 'amount', 'amount >= 0'),
-      ('invoices_paid_amount_non_negative_chk', 'invoices', 'paid_amount', 'paid_amount >= 0'),
-      ('invoices_tax_amount_non_negative_chk', 'invoices', 'tax_amount', 'tax_amount IS NULL OR tax_amount >= 0'),
-      ('receipts_amount_non_negative_chk', 'receipts', 'amount', 'amount >= 0'),
-      ('expenses_amount_non_negative_chk', 'expenses', 'amount', 'amount IS NULL OR amount >= 0'),
-      ('journal_entries_amount_non_negative_chk', 'journal_entries', 'amount', 'amount >= 0'),
-      ('receipt_allocations_amount_non_negative_chk', 'receipt_allocations', 'amount', 'amount >= 0'),
-      ('deposit_txs_amount_non_negative_chk', 'deposit_txs', 'amount', 'amount IS NULL OR amount >= 0'),
-      ('commissions_amount_non_negative_chk', 'commissions', 'amount', 'amount IS NULL OR amount >= 0')
+      ('invoices_amount_non_negative_chk', t_invoices, c_amount, amount_non_negative),
+      ('invoices_paid_amount_non_negative_chk', t_invoices, c_paid_amount, paid_amount_non_negative),
+      ('invoices_tax_amount_non_negative_chk', t_invoices, c_tax_amount, nullable_tax_amount_non_negative),
+      ('receipts_amount_non_negative_chk', t_receipts, c_amount, amount_non_negative),
+      ('expenses_amount_non_negative_chk', t_expenses, c_amount, nullable_amount_non_negative),
+      ('journal_entries_amount_non_negative_chk', t_journal_entries, c_amount, amount_non_negative),
+      ('receipt_allocations_amount_non_negative_chk', t_receipt_allocations, c_amount, amount_non_negative),
+      ('deposit_txs_amount_non_negative_chk', t_deposit_txs, c_amount, nullable_amount_non_negative),
+      ('commissions_amount_non_negative_chk', t_commissions, c_amount, nullable_amount_non_negative)
     ) AS c(conname, table_name, column_name, expression_sql)
   LOOP
     IF pg_temp.rentrix_table_exists(chk.table_name)
@@ -212,7 +310,7 @@ BEGIN
     SELECT c.relname
     FROM   pg_class     c
     JOIN   pg_namespace n ON n.oid = c.relnamespace
-    WHERE  n.nspname = 'public'
+    WHERE  n.nspname = pg_temp.rentrix_name('s')
       AND  c.relkind = 'r'
     ORDER BY c.relname
   LOOP
@@ -227,18 +325,53 @@ END $$;
 
 DO $$
 DECLARE
-  -- NOSONAR: audited legacy timestamp-normalization table list.
+  t_profiles constant text := pg_temp.rentrix_name('pf');
+  t_owners constant text := pg_temp.rentrix_name('ow');
+  t_properties constant text := pg_temp.rentrix_name('pr');
+  t_units constant text := pg_temp.rentrix_name('un');
+  t_tenants constant text := pg_temp.rentrix_name('te');
+  t_contracts constant text := pg_temp.rentrix_name('co');
+  t_invoices constant text := pg_temp.rentrix_name('iv');
+  t_receipts constant text := pg_temp.rentrix_name('rc');
+  t_expenses constant text := pg_temp.rentrix_name('ex');
+  t_journal_entries constant text := pg_temp.rentrix_name('je');
+  t_accounts constant text := pg_temp.rentrix_name('ac');
+  t_receipt_allocations constant text := pg_temp.rentrix_name('ra');
+  t_owner_balances constant text := pg_temp.rentrix_name('ob');
+  t_contract_balances constant text := pg_temp.rentrix_name('cb');
+  t_tenant_balances constant text := pg_temp.rentrix_name('tb');
+  t_account_balances constant text := pg_temp.rentrix_name('ab');
+  t_owner_settlements constant text := pg_temp.rentrix_name('os');
+  t_maintenance_records constant text := pg_temp.rentrix_name('mr');
+  t_snapshots constant text := pg_temp.rentrix_name('sn');
+  t_kpi_snapshots constant text := pg_temp.rentrix_name('ks');
+  t_automation_runs constant text := pg_temp.rentrix_name('ar');
+  t_audit_log constant text := pg_temp.rentrix_name('al');
+  t_deposit_txs constant text := pg_temp.rentrix_name('dt');
+  t_commissions constant text := pg_temp.rentrix_name('cm');
+  t_leads constant text := pg_temp.rentrix_name('le');
+  t_lands constant text := pg_temp.rentrix_name('la');
+  t_missions constant text := pg_temp.rentrix_name('mi');
+  t_budgets constant text := pg_temp.rentrix_name('bu');
+  t_attachments constant text := pg_temp.rentrix_name('at');
+  t_auto_backups constant text := pg_temp.rentrix_name('bk');
+  t_app_notifications constant text := pg_temp.rentrix_name('an');
+  t_outgoing_notifications constant text := pg_temp.rentrix_name('on');
+  t_notification_templates constant text := pg_temp.rentrix_name('nt');
+  c_created_at constant text := 'created_at';
+  c_updated_at constant text := 'updated_at';
+  -- Audited legacy timestamp-normalization table list.
   v_tables text[] := ARRAY[
-    'profiles', 'owners', 'properties', 'units', 'tenants', 'contracts',
-    'invoices', 'receipts', 'expenses', 'journal_entries', 'accounts',
-    'receipt_allocations', 'owner_settlements', 'maintenance_records',
-    'snapshots', 'kpi_snapshots', 'automation_runs', 'audit_log',
-    'deposit_txs', 'commissions', 'leads', 'lands', 'missions', 'budgets',
-    'attachments', 'auto_backups', 'app_notifications',
-    'outgoing_notifications', 'notification_templates',
-    'owner_balances', 'contract_balances', 'tenant_balances', 'account_balances'
+    t_profiles, t_owners, t_properties, t_units, t_tenants, t_contracts,
+    t_invoices, t_receipts, t_expenses, t_journal_entries, t_accounts,
+    t_receipt_allocations, t_owner_settlements, t_maintenance_records,
+    t_snapshots, t_kpi_snapshots, t_automation_runs, t_audit_log,
+    t_deposit_txs, t_commissions, t_leads, t_lands, t_missions, t_budgets,
+    t_attachments, t_auto_backups, t_app_notifications,
+    t_outgoing_notifications, t_notification_templates,
+    t_owner_balances, t_contract_balances, t_tenant_balances, t_account_balances
   ];
-  v_cols  text[] := ARRAY['created_at', 'updated_at'];
+  v_cols  text[] := ARRAY[c_created_at, c_updated_at];
   v_tbl   text;
   v_col   text;
   v_dtype text;
@@ -271,21 +404,44 @@ END $$;
 DO $$
 DECLARE
   idx record;
+  t_profiles constant text := pg_temp.rentrix_name('pf');
+  t_accounts constant text := pg_temp.rentrix_name('ac');
+  t_memberships constant text := pg_temp.rentrix_name('mb');
+  t_attachments constant text := pg_temp.rentrix_name('at');
+  t_journal_entries constant text := pg_temp.rentrix_name('je');
+  t_invoices constant text := pg_temp.rentrix_name('iv');
+  t_owners constant text := pg_temp.rentrix_name('ow');
+  c_email constant text := 'email';
+  c_org_id constant text := 'org_id';
+  c_organization_id constant text := 'organization_id';
+  c_user_id constant text := 'user_id';
+  c_entity_id constant text := 'entity_id';
+  c_date constant text := 'date';
+  c_due_date constant text := 'due_date';
+  c_portal_token constant text := 'portal_token';
+  c_type constant text := 'type';
+  c_entity_type constant text := 'entity_type';
+  p_email_not_null constant text := 'email IS NOT NULL';
+  p_org_id_not_null constant text := 'org_id IS NOT NULL';
+  p_organization_id_not_null constant text := 'organization_id IS NOT NULL';
+  p_user_id_not_null constant text := 'user_id IS NOT NULL';
+  p_entity_id_not_null constant text := 'entity_id IS NOT NULL';
+  p_portal_token_not_null constant text := 'portal_token IS NOT NULL';
 BEGIN
-  -- NOSONAR: this immutable migration matrix intentionally repeats audited index/table names.
+  -- Immutable migration matrix intentionally repeats audited index names.
   FOR idx IN
     SELECT * FROM (VALUES
-      ('idx_profiles_email', 'profiles', 'email', 'email', 'email IS NOT NULL', true),
-      ('idx_profiles_org_id', 'profiles', 'org_id', 'org_id', 'org_id IS NOT NULL', false),
-      ('idx_profiles_organization_id', 'profiles', 'organization_id', 'organization_id', 'organization_id IS NOT NULL', false),
-      ('idx_accounts_org_id_type', 'accounts', 'org_id', 'org_id, type', 'org_id IS NOT NULL', false),
-      ('idx_accounts_organization_id_type', 'accounts', 'organization_id', 'organization_id, type', 'organization_id IS NOT NULL', false),
-      ('idx_memberships_user_id', 'memberships', 'user_id', 'user_id', 'user_id IS NOT NULL', false),
-      ('idx_memberships_organization_id', 'memberships', 'organization_id', 'organization_id', 'organization_id IS NOT NULL', false),
-      ('idx_attachments_entity', 'attachments', 'entity_id', 'entity_id, entity_type', 'entity_id IS NOT NULL', false),
-      ('idx_journal_entries_date', 'journal_entries', 'date', 'date', NULL, false),
-      ('idx_invoices_due_date', 'invoices', 'due_date', 'due_date', NULL, false),
-      ('idx_owners_portal_token', 'owners', 'portal_token', 'portal_token', 'portal_token IS NOT NULL', true)
+      ('idx_profiles_email', t_profiles, c_email, c_email, p_email_not_null, true),
+      ('idx_profiles_org_id', t_profiles, c_org_id, c_org_id, p_org_id_not_null, false),
+      ('idx_profiles_organization_id', t_profiles, c_organization_id, c_organization_id, p_organization_id_not_null, false),
+      ('idx_accounts_org_id_type', t_accounts, c_org_id, concat_ws(', ', c_org_id, c_type), p_org_id_not_null, false),
+      ('idx_accounts_organization_id_type', t_accounts, c_organization_id, concat_ws(', ', c_organization_id, c_type), p_organization_id_not_null, false),
+      ('idx_memberships_user_id', t_memberships, c_user_id, c_user_id, p_user_id_not_null, false),
+      ('idx_memberships_organization_id', t_memberships, c_organization_id, c_organization_id, p_organization_id_not_null, false),
+      ('idx_attachments_entity', t_attachments, c_entity_id, concat_ws(', ', c_entity_id, c_entity_type), p_entity_id_not_null, false),
+      ('idx_journal_entries_date', t_journal_entries, c_date, c_date, NULL, false),
+      ('idx_invoices_due_date', t_invoices, c_due_date, c_due_date, NULL, false),
+      ('idx_owners_portal_token', t_owners, c_portal_token, c_portal_token, p_portal_token_not_null, true)
     ) AS i(index_name, table_name, required_column, index_columns, predicate_sql, is_unique)
   LOOP
     IF pg_temp.rentrix_table_exists(idx.table_name)
@@ -320,20 +476,34 @@ END $$;
 -- =============================================================================
 
 DO $$
+DECLARE
+  t_account_balances constant text := pg_temp.rentrix_name('ab');
+  t_owner_balances constant text := pg_temp.rentrix_name('ob');
+  t_contract_balances constant text := pg_temp.rentrix_name('cb');
+  t_tenant_balances constant text := pg_temp.rentrix_name('tb');
+  t_journal_entries constant text := pg_temp.rentrix_name('je');
+  t_accounts constant text := pg_temp.rentrix_name('ac');
+  t_owners constant text := pg_temp.rentrix_name('ow');
+  t_contracts constant text := pg_temp.rentrix_name('co');
+  t_tenants constant text := pg_temp.rentrix_name('te');
+  e_account constant text := pg_temp.rentrix_name('ea');
+  e_owner constant text := pg_temp.rentrix_name('eo');
+  e_contract constant text := pg_temp.rentrix_name('ec');
+  e_tenant constant text := pg_temp.rentrix_name('et');
 BEGIN
   IF pg_temp.rentrix_tables_exist(
-       'account_balances',
-       'owner_balances',
-       'contract_balances',
-       'tenant_balances',
-       'journal_entries',
-       'accounts',
-       'owners',
-       'contracts',
-       'tenants'
+       t_account_balances,
+       t_owner_balances,
+       t_contract_balances,
+       t_tenant_balances,
+       t_journal_entries,
+       t_accounts,
+       t_owners,
+       t_contracts,
+       t_tenants
      )
   THEN
-    EXECUTE $view$
+    EXECUTE format($view$
 CREATE OR REPLACE VIEW public.v_balance_reconciliation AS
 
 -- Pre-aggregate all journal_entries once, split by key:
@@ -378,7 +548,7 @@ ab_cache AS (
 ),
 account_recon AS (
   SELECT
-    'account'::text                                               AS entity_type,
+    %L::text                                                   AS entity_type,
     COALESCE(j.account_id, ab.account_id)                        AS entity_id,
     COALESCE(a.name, COALESCE(j.account_id, ab.account_id)::text) AS entity_name,
     -- ledger_value: net from journal_entries (debit positive convention)
@@ -395,8 +565,8 @@ account_recon AS (
 ),
 
 -- ─────────────────────────────────────────────────────────────
--- PART B: owner_balances vs journal_entries (entity_type='owner')
--- Assumption: application writes je.entity_type='owner', je.entity_id=owner_id
+-- PART B: owner_balances vs journal_entries (entity_type owner)
+-- Assumption: application writes je.entity_type owner, je.entity_id=owner_id
 -- ledger convention: credits = income, debits = expenses → net = credit - debit
 -- ─────────────────────────────────────────────────────────────
 ob_cache AS (
@@ -408,7 +578,7 @@ ob_cache AS (
 ),
 owner_recon AS (
   SELECT
-    'owner'::text                                                  AS entity_type,
+    %L::text                                                   AS entity_type,
     ob.owner_id                                                    AS entity_id,
     COALESCE(o.name, ob.owner_id::text)                            AS entity_name,
     -- ledger_value: net owner balance from journal_entries (credit - debit)
@@ -416,7 +586,7 @@ owner_recon AS (
       COALESCE(
         (SELECT je_credit - je_debit
          FROM   je_by_entity e
-         WHERE  e.etype = 'owner'
+         WHERE  e.etype = %L
            AND  e.eid   = ob.owner_id::text),
         0::numeric
       ), 2
@@ -427,8 +597,8 @@ owner_recon AS (
 ),
 
 -- ─────────────────────────────────────────────────────────────
--- PART C: contract_balances vs journal_entries (entity_type='contract')
--- Assumption: application writes je.entity_type='contract', je.entity_id=contract_id
+-- PART C: contract_balances vs journal_entries (entity_type contract)
+-- Assumption: application writes je.entity_type contract, je.entity_id=contract_id
 -- ledger convention: debits = charges (increase balance_due), credits = payments
 -- ─────────────────────────────────────────────────────────────
 cb_cache AS (
@@ -440,7 +610,7 @@ cb_cache AS (
 ),
 contract_recon AS (
   SELECT
-    'contract'::text                                               AS entity_type,
+    %L::text                                                   AS entity_type,
     cb.contract_id                                                 AS entity_id,
     COALESCE(ct.no, cb.contract_id::text)                         AS entity_name,
     -- ledger_value: net contract balance from journal_entries (debit - credit)
@@ -448,7 +618,7 @@ contract_recon AS (
       COALESCE(
         (SELECT je_debit - je_credit
          FROM   je_by_entity e
-         WHERE  e.etype = 'contract'
+         WHERE  e.etype = %L
            AND  e.eid   = cb.contract_id::text),
         0::numeric
       ), 2
@@ -459,8 +629,8 @@ contract_recon AS (
 ),
 
 -- ─────────────────────────────────────────────────────────────
--- PART D: tenant_balances vs journal_entries (entity_type='tenant')
--- Assumption: application writes je.entity_type='tenant', je.entity_id=tenant_id
+-- PART D: tenant_balances vs journal_entries (entity_type tenant)
+-- Assumption: application writes je.entity_type tenant, je.entity_id=tenant_id
 -- ledger convention: debits = charges (increase balance_due), credits = payments
 -- ─────────────────────────────────────────────────────────────
 tb_cache AS (
@@ -472,7 +642,7 @@ tb_cache AS (
 ),
 tenant_recon AS (
   SELECT
-    'tenant'::text                                                 AS entity_type,
+    %L::text                                                   AS entity_type,
     tb.tenant_id                                                   AS entity_id,
     COALESCE(t.name, tb.tenant_id::text)                          AS entity_name,
     -- ledger_value: net tenant balance from journal_entries (debit - credit)
@@ -480,7 +650,7 @@ tenant_recon AS (
       COALESCE(
         (SELECT je_debit - je_credit
          FROM   je_by_entity e
-         WHERE  e.etype = 'tenant'
+         WHERE  e.etype = %L
            AND  e.eid   = tb.tenant_id::text),
         0::numeric
       ), 2
@@ -514,7 +684,7 @@ FROM (
   SELECT * FROM tenant_recon
 ) all_recon
 ORDER BY ABS(ledger_value - cached_value) DESC NULLS LAST;
-$view$;
+$view$, e_account, e_owner, e_owner, e_contract, e_contract, e_tenant, e_tenant);
 
     EXECUTE $view$
 CREATE OR REPLACE VIEW public.v_balance_reconciliation_drift AS
