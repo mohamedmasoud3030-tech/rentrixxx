@@ -1,5 +1,5 @@
 import { Building2, LinkIcon, Pencil, Plus, Users } from 'lucide-react';
-import { useEffect, useMemo, useState, type FormEvent } from 'react';
+import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -22,7 +22,12 @@ import {
   type OwnerFormValues,
 } from './ownerUiHelpers';
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
+type FieldProps = Readonly<{
+  label: string;
+  children: ReactNode;
+}>;
+
+function Field({ label, children }: FieldProps) {
   return (
     <label className="space-y-2 text-sm font-bold">
       <span>{label}</span>
@@ -31,7 +36,13 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
   );
 }
 
-function SummaryCard({ label, value, icon: Icon }: { label: string; value: number; icon: typeof Users }) {
+type SummaryCardProps = Readonly<{
+  label: string;
+  value: number;
+  icon: typeof Users;
+}>;
+
+function SummaryCard({ label, value, icon: Icon }: SummaryCardProps) {
   return (
     <Card className="overflow-hidden">
       <CardContent className="flex items-center justify-between gap-4 pt-6">
@@ -47,15 +58,17 @@ function SummaryCard({ label, value, icon: Icon }: { label: string; value: numbe
   );
 }
 
+type OwnerFormDialogProps = Readonly<{
+  owner: Owner | null;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}>;
+
 function OwnerFormDialog({
   owner,
   open,
   onOpenChange,
-}: {
-  owner: Owner | null;
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-}) {
+}: OwnerFormDialogProps) {
   const [values, setValues] = useState<OwnerFormValues>(emptyOwnerFormValues);
   const [error, setError] = useState<string | null>(null);
   const createOwner = useCreateOwner();
@@ -121,7 +134,7 @@ function OwnerFormDialog({
           <Field label="ملاحظات"><Textarea value={values.notes} onChange={(event) => setField('notes', event.target.value)} /></Field>
           <label className="flex items-center gap-3 rounded-2xl border border-border bg-muted/30 p-3 text-sm font-bold">
             <input type="checkbox" checked={values.is_active} onChange={(event) => setField('is_active', event.target.checked)} />
-            مالك نشط
+            <span>مالك نشط</span>
           </label>
           <div className="flex justify-end gap-2">
             <Button type="button" variant="secondary" onClick={() => onOpenChange(false)}>إلغاء</Button>
