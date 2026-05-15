@@ -69,6 +69,22 @@ describe('owner UI helpers', () => {
     })).toBeNull();
   });
 
+  it('keeps property ownership link metadata fields available for submit payloads', () => {
+    expect(emptyPropertyOwnershipLinkFormValues).toMatchObject({
+      is_primary: true,
+      starts_on: '',
+      ends_on: '',
+    });
+
+    expect(validatePropertyOwnershipLinkForm({
+      ...emptyPropertyOwnershipLinkFormValues,
+      property_id: 'property-1',
+      is_primary: false,
+      starts_on: '2026-05-01',
+      ends_on: '2026-06-01',
+    })).toBeNull();
+  });
+
   it('summarizes owners and property relationships without financial balances', () => {
     expect(summarizeOwners([
       baseOwner,
