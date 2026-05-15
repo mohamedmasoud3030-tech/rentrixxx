@@ -12,6 +12,28 @@ export type OwnerFormValues = {
   is_active: boolean;
 };
 
+export type PropertyOwnershipLinkFormValues = {
+  property_id: string;
+  ownership_percentage: string;
+  is_primary: boolean;
+  starts_on: string;
+  ends_on: string;
+};
+
+export const emptyPropertyOwnershipLinkFormValues: PropertyOwnershipLinkFormValues = {
+  property_id: '',
+  ownership_percentage: '100',
+  is_primary: true,
+  starts_on: '',
+  ends_on: '',
+};
+
+export function validatePropertyOwnershipLinkForm(values: PropertyOwnershipLinkFormValues): string | null {
+  if (!values.property_id) return 'اختر العقار أولاً';
+  if (values.starts_on && values.ends_on && values.ends_on < values.starts_on) return 'تاريخ نهاية الملكية يجب ألا يسبق تاريخ البداية';
+  return null;
+}
+
 export type OwnerSummary = {
   totalOwners: number;
   activeOwners: number;

@@ -5,21 +5,24 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { EmptyState } from '@/components/empty-state';
 import { Input } from '@/components/ui/input';
-import { Select } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Textarea } from '@/components/ui/textarea';
+import { OwnerPropertySelect } from './OwnerPropertySelect';
 import type { Owner } from './ownerService';
 import { useCreateOwner, useLinkOwnerToProperty, useOwners, usePropertiesWithOwners, useUpdateOwner } from './useOwners';
 import {
   countLinkedPropertiesForOwner,
   emptyOwnerFormValues,
+  emptyPropertyOwnershipLinkFormValues,
   getOwnerDisplayLabel,
   ownerToFormValues,
   summarizeOwners,
   validateOwnerForm,
+  validatePropertyOwnershipLinkForm,
   type OwnerFormValues,
+  type PropertyOwnershipLinkFormValues,
 } from './ownerUiHelpers';
 
 type FieldProps = Readonly<{
@@ -153,8 +156,8 @@ export function OwnersPage() {
   const [selectedOwnerId, setSelectedOwnerId] = useState<string>('');
   const [editingOwner, setEditingOwner] = useState<Owner | null>(null);
   const [formOpen, setFormOpen] = useState(false);
-  const [propertyIdToLink, setPropertyIdToLink] = useState('');
-  const [ownershipPercentage, setOwnershipPercentage] = useState('100');
+  const [linkFormValues, setLinkFormValues] = useState<PropertyOwnershipLinkFormValues>(emptyPropertyOwnershipLinkFormValues);
+  const [linkFormError, setLinkFormError] = useState<string | null>(null);
 
   const owners = ownersQuery.data ?? [];
   const properties = propertiesQuery.data ?? [];
@@ -188,18 +191,33 @@ export function OwnersPage() {
     setFormOpen(true);
   };
 
+  const setLinkField = <FieldName extends keyof PropertyOwnershipLinkFormValues>(field: FieldName, value: PropertyOwnershipLinkFormValues[FieldName]) => {
+    setLinkFormValues((current) => ({ ...current, [field]: value }));
+    setLinkFormError(null);
+  };
+
   const handleLinkProperty = async (event: FormEvent) => {
     event.preventDefault();
-    if (!selectedOwner || !propertyIdToLink) return;
+    if (!selectedOwner) {
+      return;
+    }
+
+    const validationError = validatePropertyOwnershipLinkForm(linkFormValues);
+    if (validationError) {
+      setLinkFormError(validationError);
+      return;
+    }
 
     await linkMutation.mutateAsync({
       owner_id: selectedOwner.id,
-      property_id: propertyIdToLink,
-      ownership_percentage: Number(ownershipPercentage),
-      is_primary: true,
+      property_id: linkFormValues.property_id,
+      ownership_percentage: Number(linkFormValues.ownership_percentage),
+      is_primary: linkFormValues.is_primary,
+      starts_on: linkFormValues.starts_on,
+      ends_on: linkFormValues.ends_on,
     });
-    setPropertyIdToLink('');
-    setOwnershipPercentage('100');
+    setLinkFormValues(emptyPropertyOwnershipLinkFormValues);
+    setLinkFormError(null);
   };
 
   if (ownersQuery.isLoading || propertiesQuery.isLoading) {
@@ -298,14 +316,25 @@ export function OwnersPage() {
                 <form className="rounded-2xl border border-border bg-card p-4" onSubmit={handleLinkProperty}>
                   <h3 className="font-black">ربط عقار</h3>
                   <p className="mt-1 text-sm text-muted-foreground">إضافة علاقة ملكية بسيطة بدون إنشاء سجل مالي.</p>
+                  {linkFormError ? <div className="mt-3 rounded-2xl border border-destructive/20 bg-destructive/10 p-3 text-sm font-bold text-destructive">{linkFormError}</div> : null}
                   <div className="mt-4 grid gap-3 sm:grid-cols-[1fr_8rem]">
-                    <Select value={propertyIdToLink} onChange={(event) => setPropertyIdToLink(event.target.value)} disabled={!availableProperties.length}>
-                      <option value="">اختر العقار</option>
-                      {availableProperties.map((property) => <option key={property.id} value={property.id}>{property.title}</option>)}
-                    </Select>
-                    <Input type="number" min="0.01" max="100" step="0.01" value={ownershipPercentage} onChange={(event) => setOwnershipPercentage(event.target.value)} aria-label="نسبة الملكية" />
+                    <OwnerPropertySelect
+                      value={linkFormValues.property_id}
+                      onValueChange={(propertyId) => setLinkField('property_id', propertyId)}
+                      disabled={!availableProperties.length}
+                      properties={availableProperties}
+                    />
+                    <Input type="number" min="0.01" max="100" step="0.01" value={linkFormValues.ownership_percentage} onChange={(event) => setLinkField('ownership_percentage', event.target.value)} aria-label="نسبة الملكية" />
                   </div>
-                  <Button className="mt-3 w-full" type="submit" disabled={!propertyIdToLink || linkMutation.isPending}>ربط المالك بالعقار</Button>
+                  <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                    <Field label="تاريخ البداية"><Input type="date" value={linkFormValues.starts_on} onChange={(event) => setLinkField('starts_on', event.target.value)} /></Field>
+                    <Field label="تاريخ النهاية"><Input type="date" value={linkFormValues.ends_on} onChange={(event) => setLinkField('ends_on', event.target.value)} /></Field>
+                  </div>
+                  <label className="mt-3 flex items-center gap-3 rounded-2xl border border-border bg-muted/30 p-3 text-sm font-bold">
+                    <input type="checkbox" checked={linkFormValues.is_primary} onChange={(event) => setLinkField('is_primary', event.target.checked)} />
+                    <span>مالك أساسي</span>
+                  </label>
+                  <Button className="mt-3 w-full" type="submit" disabled={!linkFormValues.property_id || linkMutation.isPending}>ربط المالك بالعقار</Button>
                 </form>
               </>
             ) : null}

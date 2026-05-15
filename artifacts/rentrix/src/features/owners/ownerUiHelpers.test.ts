@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { emptyOwnerFormValues, summarizeOwners, validateOwnerForm } from './ownerUiHelpers';
+import { emptyOwnerFormValues, emptyPropertyOwnershipLinkFormValues, summarizeOwners, validateOwnerForm, validatePropertyOwnershipLinkForm } from './ownerUiHelpers';
 import type { Owner, PropertyWithOwners } from './ownerService';
 
 const baseOwner: Owner = {
@@ -51,6 +51,22 @@ describe('owner UI helpers', () => {
     expect(validateOwnerForm(emptyOwnerFormValues)).toBe('اسم المالك مطلوب');
     expect(validateOwnerForm({ ...emptyOwnerFormValues, full_name: 'مالك', email: 'bad-email' })).toBe('البريد الإلكتروني غير صالح');
     expect(validateOwnerForm({ ...emptyOwnerFormValues, full_name: 'مالك', email: 'owner@example.com' })).toBeNull();
+  });
+
+  it('validates property ownership link date ranges', () => {
+    expect(validatePropertyOwnershipLinkForm(emptyPropertyOwnershipLinkFormValues)).toBe('اختر العقار أولاً');
+    expect(validatePropertyOwnershipLinkForm({
+      ...emptyPropertyOwnershipLinkFormValues,
+      property_id: 'property-1',
+      starts_on: '2026-05-10',
+      ends_on: '2026-05-09',
+    })).toBe('تاريخ نهاية الملكية يجب ألا يسبق تاريخ البداية');
+    expect(validatePropertyOwnershipLinkForm({
+      ...emptyPropertyOwnershipLinkFormValues,
+      property_id: 'property-1',
+      starts_on: '2026-05-10',
+      ends_on: '2026-05-10',
+    })).toBeNull();
   });
 
   it('summarizes owners and property relationships without financial balances', () => {

@@ -104,10 +104,13 @@ export function normalizeOwnerUpdatePayload(payload: OwnerUpdatePayload): OwnerU
 export function normalizeOwnershipPercentage(value: unknown): number {
   if (value === null || value === undefined || value === '') return 100;
   const percentage = typeof value === 'number' ? value : Number(value);
-  if (!Number.isFinite(percentage) || percentage <= 0 || percentage > 100) {
+  const roundedPercentage = Math.round(percentage * 100) / 100;
+
+  if (!Number.isFinite(roundedPercentage) || roundedPercentage <= 0 || roundedPercentage > 100) {
     throw new Error('نسبة الملكية يجب أن تكون أكبر من 0 وأقل من أو تساوي 100');
   }
-  return Math.round(percentage * 100) / 100;
+
+  return roundedPercentage;
 }
 
 function normalizeNullableDate(value: unknown): string | null {
