@@ -11,22 +11,31 @@ import type { TenantWorkspaceRow } from './tenantWorkspaceService';
 import { useTenantWorkspace } from './useTenantWorkspace';
 
 const pageSize = 10;
+const tenantHeaders = ['الاسم', 'الهاتف', 'الإيميل', 'رقم الهوية', 'العقود النشطة', 'الوحدة/العقار', 'روابط آمنة'];
+
+function valueOrDash(value: string | number | null | undefined) {
+  return value || value === 0 ? String(value) : '—';
+}
 
 function ContactValue({ value, dir }: Readonly<{ value: string | null; dir?: 'ltr' | 'rtl' }>) {
-  return <span dir={dir} className={dir === 'ltr' ? 'inline-block text-right' : undefined}>{value ?? '—'}</span>;
+  return <span dir={dir} className={dir === 'ltr' ? 'inline-block text-right' : undefined}>{valueOrDash(value)}</span>;
 }
 
 function TenantLocation({ tenant }: Readonly<{ tenant: TenantWorkspaceRow }>) {
-  if (!tenant.propertyTitle && !tenant.unitNumber) return <span>—</span>;
-  return (
+  const title = tenant.propertyTitle ?? 'عقار غير محدد';
+  const unit = tenant.unitNumber ? `وحدة ${tenant.unitNumber}` : 'وحدة غير محددة';
+  return tenant.propertyTitle || tenant.unitNumber ? (
     <div className="space-y-1">
-      <div className="font-bold">{tenant.propertyTitle ?? 'عقار غير محدد'}</div>
-      <div className="text-xs text-muted-foreground">{tenant.unitNumber ? `وحدة ${tenant.unitNumber}` : 'وحدة غير محددة'}</div>
+      <div className="font-bold">{title}</div>
+      <div className="text-xs text-muted-foreground">{unit}</div>
     </div>
-  );
+  ) : <span>—</span>;
 }
 
 function TenantSafeLinks({ tenant }: Readonly<{ tenant: TenantWorkspaceRow }>) {
+  const hasLinks = tenant.primaryContractId || tenant.hasInvoices || tenant.hasArrears;
+  if (!hasLinks) return <span className="text-sm text-muted-foreground">لا توجد روابط متاحة</span>;
+
   return (
     <div className="flex flex-wrap gap-2">
       {tenant.primaryContractId ? (
@@ -44,43 +53,31 @@ function TenantSafeLinks({ tenant }: Readonly<{ tenant: TenantWorkspaceRow }>) {
           <Link to="/arrears"><TriangleAlert className="ml-1 size-4" />المتأخرات</Link>
         </Button>
       ) : null}
-      {!tenant.primaryContractId && !tenant.hasInvoices && !tenant.hasArrears ? <span className="text-sm text-muted-foreground">لا توجد روابط متاحة</span> : null}
     </div>
   );
 }
 
 function TenantRows({ rows }: Readonly<{ rows: TenantWorkspaceRow[] }>) {
-  return rows.map((tenant) => (
-    <TableRow key={tenant.person.id}>
-      <TableCell>
-        <div className="font-black">{tenant.person.full_name}</div>
-        <div className="text-xs text-muted-foreground">مستأجر</div>
-      </TableCell>
-      <TableCell><ContactValue value={tenant.person.phone} dir="ltr" /></TableCell>
-      <TableCell><ContactValue value={tenant.person.email} dir="ltr" /></TableCell>
-      <TableCell><ContactValue value={tenant.person.national_id} /></TableCell>
-      <TableCell>{tenant.activeContractCount > 0 ? tenant.activeContractCount : '—'}</TableCell>
-      <TableCell><TenantLocation tenant={tenant} /></TableCell>
-      <TableCell><TenantSafeLinks tenant={tenant} /></TableCell>
-    </TableRow>
-  ));
+  return rows.map((tenant) => {
+    const cells = [
+      <div key="name"><div className="font-black">{tenant.person.full_name}</div><div className="text-xs text-muted-foreground">مستأجر</div></div>,
+      <ContactValue key="phone" value={tenant.person.phone} dir="ltr" />,
+      <ContactValue key="email" value={tenant.person.email} dir="ltr" />,
+      <ContactValue key="national-id" value={tenant.person.national_id} />,
+      valueOrDash(tenant.activeContractCount || null),
+      <TenantLocation key="location" tenant={tenant} />,
+      <TenantSafeLinks key="links" tenant={tenant} />,
+    ];
+
+    return <TableRow key={tenant.person.id}>{cells.map((cell, index) => <TableCell key={`${tenant.person.id}-${tenantHeaders[index]}`}>{cell}</TableCell>)}</TableRow>;
+  });
 }
 
 function TenantTable({ rows }: Readonly<{ rows: TenantWorkspaceRow[] }>) {
   return (
     <div className="overflow-x-auto">
       <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>الاسم</TableHead>
-            <TableHead>الهاتف</TableHead>
-            <TableHead>الإيميل</TableHead>
-            <TableHead>رقم الهوية</TableHead>
-            <TableHead>العقود النشطة</TableHead>
-            <TableHead>الوحدة/العقار</TableHead>
-            <TableHead className="min-w-64">روابط آمنة</TableHead>
-          </TableRow>
-        </TableHeader>
+        <TableHeader><TableRow>{tenantHeaders.map((header) => <TableHead key={header} className={header === 'روابط آمنة' ? 'min-w-64' : undefined}>{header}</TableHead>)}</TableRow></TableHeader>
         <TableBody><TenantRows rows={rows} /></TableBody>
       </Table>
     </div>
