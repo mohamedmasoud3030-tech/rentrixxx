@@ -51,6 +51,23 @@ function mockSupabaseTables(responses: TableResponses) {
   return log;
 }
 
+
+type ReportInvoiceFixture = Readonly<{ amount: number; paid_amount: number }>;
+type ReportPaymentFixture = Readonly<{ amount: number; payment_date: string; payment_method: 'cash' | 'bank_transfer' | 'card' }>;
+type ReportExpenseFixture = Readonly<{ amount: number }>;
+
+function createReportInvoiceFixture(overrides: Partial<ReportInvoiceFixture> = {}): ReportInvoiceFixture {
+  return { amount: 1000, paid_amount: 0, ...overrides };
+}
+
+function createReportPaymentFixture(overrides: Partial<ReportPaymentFixture> = {}): ReportPaymentFixture {
+  return { amount: 300, payment_date: '2026-05-01', payment_method: 'cash', ...overrides };
+}
+
+function createReportExpenseFixture(amount: number): ReportExpenseFixture {
+  return { amount };
+}
+
 describe('financialReportsService aggregation helpers', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -414,6 +431,50 @@ describe('financialReportsService aggregation helpers', () => {
     });
   });
 
+
+  it('reconciles collection, period, and daily receipt totals from the same payment evidence', async () => {
+    const {
+      summarizeCollectionReport,
+      summarizeDailyCollectionReport,
+      summarizeFinancialPeriodSummaryReport,
+      summarizeInvoiceTotals,
+      summarizeOutstandingBalance,
+      summarizePaymentTotals,
+      summarizeExpenseTotals,
+    } = await import('./financialReportsService');
+    const invoices = [
+      createReportInvoiceFixture({ paid_amount: 600 }),
+      createReportInvoiceFixture({ amount: 500, paid_amount: 500 }),
+      createReportInvoiceFixture({ amount: 250 }),
+    ];
+    const payments = [
+      createReportPaymentFixture(),
+      createReportPaymentFixture({ amount: 500, payment_date: '2026-05-02', payment_method: 'bank_transfer' }),
+      createReportPaymentFixture({ payment_date: '2026-05-02', payment_method: 'card' }),
+    ];
+    const expenses = [createReportExpenseFixture(125), createReportExpenseFixture(75)];
+    const invoiceTotals = summarizeInvoiceTotals(invoices);
+    const paymentTotals = summarizePaymentTotals(payments);
+    const outstandingBalance = summarizeOutstandingBalance(invoices);
+    const expenseTotals = summarizeExpenseTotals(expenses);
+
+    const collection = summarizeCollectionReport({ invoiceTotals, paymentTotals, outstandingBalance, expenseTotals });
+    const period = summarizeFinancialPeriodSummaryReport({ invoiceTotals, paymentTotals, outstandingBalance, expenseTotals });
+    const daily = summarizeDailyCollectionReport(payments);
+
+    expect(collection).toEqual({
+      invoiced: 1750,
+      paid: 1100,
+      outstanding: 650,
+      receiptsCount: 3,
+      invoicesCount: 3,
+      expensesTotal: 200,
+    });
+    expect(period).toMatchObject({ invoiced: collection.invoiced, paid: collection.paid, outstanding: collection.outstanding, netCash: 900 });
+    expect(daily.grandTotal).toBe(collection.paid);
+    expect(daily.paymentsCount).toBe(collection.receiptsCount);
+    expect(invoiceTotals.totalAmount - paymentTotals.totalPaid).toBe(outstandingBalance.totalOutstanding);
+  });
 });
 
 describe('financialReportsService Supabase queries', () => {
@@ -728,4 +789,5 @@ describe('financialReportsService Supabase queries', () => {
     ]));
     expect(log.some((entry) => ['insert', 'update', 'delete', 'rpc'].includes(entry.method))).toBe(false);
   });
+
 });

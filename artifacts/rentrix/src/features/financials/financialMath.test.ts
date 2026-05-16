@@ -20,4 +20,14 @@ describe('financialMath', () => {
   it('sums only safe finite money values', () => {
     expect(sumFinancialValues([10, '5.5', null, Number.NaN, Number.POSITIVE_INFINITY])).toBe(15.5);
   });
+
+  it('keeps invoice, payment, and receipt arithmetic on the same finite-money boundary', () => {
+    const invoiceAmount = toFinancialNumber('1500.25');
+    const postedPayments = [toFinancialNumber('500.10'), toFinancialNumber(250.15), toFinancialNumber(Number.NaN)];
+    const paidTotal = sumFinancialValues(postedPayments);
+
+    expect(paidTotal).toBe(750.25);
+    expect(getSafeRemainingAmount(invoiceAmount, paidTotal)).toBe(750);
+    expect(getSafeRemainingAmount(invoiceAmount, sumFinancialValues([...postedPayments, 1000]))).toBe(0);
+  });
 });
