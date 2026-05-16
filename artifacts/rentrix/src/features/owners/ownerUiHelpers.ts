@@ -156,14 +156,18 @@ type ActivePropertyContract = Readonly<{
   property_id: string;
 }>;
 
+function getCodePointOffset(value: string, baseCodePoint: number): number {
+  return (value.codePointAt(0) ?? baseCodePoint) - baseCodePoint;
+}
+
 function normalizeOwnerSearchText(value: string): string {
   return value
     .toLowerCase()
-    .replace(/[\u064B-\u065F\u0670\u06D6-\u06ED]/g, '')
-    .replace(/[أإآ]/g, 'ا')
-    .replace(/ى/g, 'ي')
-    .replace(/[٠-٩]/g, (digit) => String(digit.charCodeAt(0) - 0x0660))
-    .replace(/[۰-۹]/g, (digit) => String(digit.charCodeAt(0) - 0x06f0));
+    .replaceAll(/[\u064B-\u065F\u0670\u06D6-\u06ED]/g, '')
+    .replaceAll(/[أإآ]/g, 'ا')
+    .replaceAll('ى', 'ي')
+    .replaceAll(/[٠-٩]/g, (digit) => String(getCodePointOffset(digit, 0x0660)))
+    .replaceAll(/[۰-۹]/g, (digit) => String(getCodePointOffset(digit, 0x06f0)));
 }
 
 function formatOwnershipRole(isPrimary: boolean): string {
