@@ -11,10 +11,14 @@ describe('financialMath', () => {
     expect(toFinancialNumber('12.5')).toBe(12.5);
   });
 
-  it('never returns a negative remaining amount', () => {
-    expect(getSafeRemainingAmount(100, 40)).toBe(60);
-    expect(getSafeRemainingAmount(100, 150)).toBe(0);
-    expect(getSafeRemainingAmount('bad', 10)).toBe(0);
+  it('calculates remaining balances from the shared safe financial math contract', () => {
+    expect(getSafeRemainingAmount(1000, 0)).toBe(1000);
+    expect(getSafeRemainingAmount(1000, 300)).toBe(700);
+    expect(getSafeRemainingAmount(1000, 1000)).toBe(0);
+    expect(getSafeRemainingAmount(1000, 1200)).toBe(0);
+    expect(getSafeRemainingAmount(null, 10)).toBe(0);
+    expect(getSafeRemainingAmount('not-a-number', 10)).toBe(0);
+    expect(getSafeRemainingAmount(1000, Number.POSITIVE_INFINITY)).toBe(1000);
   });
 
   it('sums only safe finite money values', () => {

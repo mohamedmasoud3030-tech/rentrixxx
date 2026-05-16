@@ -169,6 +169,35 @@ describe('financialReportsService aggregation helpers', () => {
     });
   });
 
+  it('summarizes daily collection from payment rows only and keeps grand totals aligned', async () => {
+    const { summarizeDailyCollectionReport } = await import('./financialReportsService');
+
+    const report = summarizeDailyCollectionReport([
+      { amount: 1000, payment_date: '2026-05-01', payment_method: 'cash' },
+      { amount: 300, payment_date: '2026-05-01', payment_method: 'bank_transfer' },
+      { amount: 250, payment_date: '2026-05-02', payment_method: 'card' },
+      { amount: 50, payment_date: '2026-05-02', payment_method: 'cash' },
+    ]);
+    const sumDailyTotals = report.rows.reduce((total, row) => total + row.totalPaid, 0);
+
+    expect(report.rows).toEqual([
+      {
+        paymentDate: '2026-05-01',
+        totalPaid: 1300,
+        paymentsCount: 2,
+        methodTotals: { cash: 1000, bank_transfer: 300, card: 0, check: 0, other: 0 },
+      },
+      {
+        paymentDate: '2026-05-02',
+        totalPaid: 300,
+        paymentsCount: 2,
+        methodTotals: { cash: 50, bank_transfer: 0, card: 250, check: 0, other: 0 },
+      },
+    ]);
+    expect(report.grandTotal).toBe(sumDailyTotals);
+    expect(report.methodTotals).toEqual({ cash: 1050, bank_transfer: 300, card: 250, check: 0, other: 0 });
+  });
+
   it('builds a financial period summary without dashboard-only metrics or accounting net profit', async () => {
     const { summarizeFinancialPeriodSummaryReport } = await import('./financialReportsService');
 
@@ -259,6 +288,80 @@ describe('financialReportsService aggregation helpers', () => {
     });
   });
 
+  it('excludes paid, overpaid, deleted, void, and non-receivable rows from arrears truth', async () => {
+    const {
+      filterInvoicesForArrearsReport,
+      summarizeAgedReceivablesReport,
+      summarizeOverdueInvoicesReport,
+    } = await import('./financialReportsService');
+    const filters = { asOf: '2026-05-16' };
+    const invoices = [
+      {
+        id: 'inv_receivable_overdue',
+        contract_id: 'contract_1',
+        issue_date: '2026-04-01',
+        due_date: '2026-04-16',
+        amount: 1000,
+        paid_amount: 300,
+        status: 'partial' as const,
+        deleted_at: null,
+        contracts: { id: 'contract_1', property_id: 'property_1', tenant_id: 'tenant_1' },
+      },
+      {
+        id: 'inv_fully_paid',
+        contract_id: 'contract_1',
+        issue_date: '2026-04-01',
+        due_date: '2026-04-16',
+        amount: 1000,
+        paid_amount: 1000,
+        status: 'paid' as const,
+        deleted_at: null,
+        contracts: { id: 'contract_1', property_id: 'property_1', tenant_id: 'tenant_1' },
+      },
+      {
+        id: 'inv_overpaid',
+        contract_id: 'contract_1',
+        issue_date: '2026-04-01',
+        due_date: '2026-04-16',
+        amount: 1000,
+        paid_amount: 1200,
+        status: 'partial' as const,
+        deleted_at: null,
+        contracts: { id: 'contract_1', property_id: 'property_1', tenant_id: 'tenant_1' },
+      },
+      {
+        id: 'inv_void',
+        contract_id: 'contract_1',
+        issue_date: '2026-04-01',
+        due_date: '2026-04-16',
+        amount: 1000,
+        paid_amount: 0,
+        status: 'void' as const,
+        deleted_at: null,
+        contracts: { id: 'contract_1', property_id: 'property_1', tenant_id: 'tenant_1' },
+      },
+      {
+        id: 'inv_deleted',
+        contract_id: 'contract_1',
+        issue_date: '2026-04-01',
+        due_date: '2026-04-16',
+        amount: 1000,
+        paid_amount: 0,
+        status: 'issued' as const,
+        deleted_at: '2026-05-01',
+        contracts: { id: 'contract_1', property_id: 'property_1', tenant_id: 'tenant_1' },
+      },
+    ];
+
+    expect(filterInvoicesForArrearsReport(invoices, filters).map((invoice) => invoice.id)).toEqual(['inv_receivable_overdue']);
+    expect(summarizeOverdueInvoicesReport(invoices, filters)).toMatchObject({ totalOverdue: 700, invoiceCount: 1 });
+
+    const aged = summarizeAgedReceivablesReport(invoices, filters);
+    const bucketTotal = Object.values(aged.buckets).reduce((total, bucket) => total + bucket.total, 0);
+    expect(aged.totalOutstanding).toBe(700);
+    expect(aged.totalOverdue).toBe(700);
+    expect(bucketTotal).toBe(aged.totalOutstanding);
+  });
 
   it('summarizes arrears using due_date/as-of semantics and safe positive balances only', async () => {
     const {

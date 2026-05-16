@@ -86,7 +86,7 @@ describe('receiptService', () => {
     expect(formatReceiptNumber('1234567890abcdef')).toBe('REC-12345678');
   });
 
-  it('lists receipt projections with batched invoice, contract, tenant, unit, and property enrichment', async () => {
+  it('lists payment-backed receipt projections with batched invoice, contract, tenant, unit, and property enrichment', async () => {
     const log = mockSupabaseTables({
       payments: [basePayment],
       invoices: [{ id: 'inv_1', contract_id: 'contract_1', status: 'paid' }],
@@ -95,7 +95,7 @@ describe('receiptService', () => {
       properties: [{ id: 'property_1', title: 'Tower A' }],
       people: [{ id: 'tenant_1', full_name: 'Test Tenant' }],
     });
-    const { listReceipts } = await import('./receiptService');
+    const { formatReceiptNumber, listReceipts } = await import('./receiptService');
 
     const receipts = await listReceipts({ limit: 10 });
 
@@ -134,6 +134,8 @@ describe('receiptService', () => {
       { table: 'properties', method: 'in', args: ['id', ['property_1']] },
       { table: 'people', method: 'in', args: ['id', ['tenant_1']] },
     ]);
+    expect(receipts[0]?.id).toBe(receipts[0]?.payment_id);
+    expect(receipts[0]?.receipt_number).toBe(formatReceiptNumber(receipts[0]?.payment_id ?? ''));
   });
 
   it('projects receipt detail from a single payment id', async () => {

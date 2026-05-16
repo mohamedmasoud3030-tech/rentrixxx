@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { ContractListItem } from '@/features/contracts/services/contractService';
-import { buildOccupancyRows, buildPaymentsTrendRows, buildRentRollRows, createReceiptPrintHref } from './reports-page.helpers';
+import { buildOccupancyRows, buildPaymentsTrendRows, buildRentRollRows, createReceiptPrintHref, deferredReports } from './reports-page.helpers';
 
 function createContract(overrides: Partial<ContractListItem>): ContractListItem {
   return {
@@ -88,6 +88,27 @@ describe('ReportsPage shaping helpers', () => {
   });
 
   it('creates receipt print links with the merged query-string route only', () => {
-    expect(createReceiptPrintHref('receipt id/42')).toBe('/receipts?receiptId=receipt%20id%2F42');
+    const href = createReceiptPrintHref('receipt id/42');
+
+    expect(href).toBe('/receipts?receiptId=receipt%20id%2F42');
+    expect(href).not.toContain('/receipts/');
   });
+
+  it('keeps unsupported accounting and statement reports deferred without fake balances', () => {
+    expect(deferredReports.map((report) => report.title)).toEqual([
+      'Owner Statement',
+      'Tenant Statement',
+      'Trial Balance',
+      'Income Statement',
+      'Balance Sheet',
+    ]);
+    expect(deferredReports).toHaveLength(5);
+
+    for (const report of deferredReports) {
+      expect(report.reason).toContain('مؤجل');
+      expect(report.reason).not.toMatch(/\b\d+(?:\.\d+)?\b/);
+      expect(report.reason).not.toMatch(/balance:\s*|debit:\s*|credit:\s*/i);
+    }
+  });
+
 });

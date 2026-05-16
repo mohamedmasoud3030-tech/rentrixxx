@@ -23,7 +23,7 @@ import {
   useFinancialPeriodSummaryReport,
   useOverdueInvoicesReport,
 } from '@/features/financials/reports/useFinancialReports';
-import { buildRentRollRows, createReceiptPrintHref } from './reports-page.helpers';
+import { buildRentRollRows, createReceiptPrintHref, deferredReports } from './reports-page.helpers';
 
 type CsvValue = string | number | boolean | null | undefined;
 type CsvRow = Record<string, CsvValue>;
@@ -46,13 +46,6 @@ const supportedReportNames = [
   'Overdue Invoices',
   'Aged Receivables',
   'Daily Collection',
-];
-const deferredReports = [
-  { title: 'Owner Statement', reason: 'مؤجل حتى تتوفر خدمة owner settlements/statement آمنة في الطبقة الحالية بدون تصنيع أرصدة.' },
-  { title: 'Tenant Statement', reason: 'مؤجل حتى تتوفر خدمة tenant ledger/statement آمنة في الطبقة الحالية بدون تصنيع كشوف حساب.' },
-  { title: 'Trial Balance', reason: 'مؤجل لأن ميزان المراجعة يحتاج Ledger/Chart of Accounts مدعومين بخدمة حالية آمنة.' },
-  { title: 'Income Statement', reason: 'مؤجل لأن قائمة الدخل المحاسبية غير مدعومة حاليًا بخدمة reports آمنة مكتملة.' },
-  { title: 'Balance Sheet', reason: 'مؤجل لأن الميزانية العمومية تحتاج أرصدة دفتر أستاذ مؤكدة وليست متاحة بأمان الآن.' },
 ];
 const agingBucketKeys: Array<AgedReceivablesBucket['key']> = ['current', 'days_1_30', 'days_31_60', 'days_61_90', 'days_90_plus'];
 const contractStatusLabels: Record<ContractListItem['status'], string> = {

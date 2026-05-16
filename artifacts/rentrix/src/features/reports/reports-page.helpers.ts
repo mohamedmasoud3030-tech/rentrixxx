@@ -16,6 +16,16 @@ export type RentRollReportRow = {
   endDate: string;
 };
 
+export type DeferredReportInfo = { title: string; reason: string };
+
+export const deferredReports: DeferredReportInfo[] = [
+  { title: 'Owner Statement', reason: 'مؤجل حتى تتوفر خدمة owner settlements/statement آمنة في الطبقة الحالية بدون تصنيع أرصدة.' },
+  { title: 'Tenant Statement', reason: 'مؤجل حتى تتوفر خدمة tenant ledger/statement آمنة في الطبقة الحالية بدون تصنيع كشوف حساب.' },
+  { title: 'Trial Balance', reason: 'مؤجل لأن ميزان المراجعة يحتاج Ledger/Chart of Accounts مدعومين بخدمة حالية آمنة.' },
+  { title: 'Income Statement', reason: 'مؤجل لأن قائمة الدخل المحاسبية غير مدعومة حاليًا بخدمة reports آمنة مكتملة.' },
+  { title: 'Balance Sheet', reason: 'مؤجل لأن الميزانية العمومية تحتاج أرصدة دفتر أستاذ مؤكدة وليست متاحة بأمان الآن.' },
+];
+
 const paymentCycleLabels: Record<ContractListItem['payment_cycle'], string> = {
   monthly: 'شهري',
   quarterly: 'ربع سنوي',
