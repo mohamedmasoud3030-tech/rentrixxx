@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { propertyKeys } from '@/features/properties/use-properties';
@@ -5,6 +6,7 @@ import {
   createOwner,
   getOwner,
   linkOwnerToProperty,
+  listActiveContractsForProperties,
   listOwners,
   listPropertiesWithOwners,
   listPropertyOwners,
@@ -23,6 +25,7 @@ export const ownerKeys = {
   detail: (ownerId: string) => [...ownerKeys.all, 'detail', ownerId] as const,
   propertyOwners: (propertyId: string) => [...ownerKeys.all, 'property-owners', propertyId] as const,
   propertiesWithOwners: () => [...ownerKeys.all, 'properties-with-owners'] as const,
+  activeContracts: (propertyIdsKey: string) => [...ownerKeys.all, 'active-contracts', propertyIdsKey] as const,
 };
 
 async function invalidateOwnerAndPropertyQueries(queryClient: ReturnType<typeof useQueryClient>, propertyId?: string, ownerId?: string) {
@@ -56,6 +59,16 @@ export function usePropertyOwners(propertyId: string) {
 
 export function usePropertiesWithOwners() {
   return useQuery({ queryKey: ownerKeys.propertiesWithOwners(), queryFn: listPropertiesWithOwners });
+}
+
+export function useOwnerActiveContracts(propertyIds: string[]) {
+  const sortedPropertyIds = useMemo(() => [...new Set(propertyIds)].sort((left, right) => left.localeCompare(right)), [propertyIds]);
+  const propertyIdsKey = sortedPropertyIds.join('|');
+  return useQuery({
+    queryKey: ownerKeys.activeContracts(propertyIdsKey),
+    queryFn: () => listActiveContractsForProperties(sortedPropertyIds),
+    enabled: sortedPropertyIds.length > 0,
+  });
 }
 
 export function useCreateOwner() {

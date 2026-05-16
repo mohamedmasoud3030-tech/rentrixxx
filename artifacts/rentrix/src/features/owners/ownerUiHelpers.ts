@@ -134,3 +134,99 @@ export function summarizeOwners(owners: Owner[], properties: PropertyWithOwners[
 export function countLinkedPropertiesForOwner(ownerId: string, properties: PropertyWithOwners[]): number {
   return properties.filter((property) => property.property_owners.some((link) => link.owner_id === ownerId)).length;
 }
+
+export type OwnerWorkspaceProperty = {
+  id: string;
+  title: string;
+  ownershipPercentage: number;
+  isPrimary: boolean;
+};
+
+export type OwnerWorkspaceRow = {
+  owner: Owner;
+  properties: OwnerWorkspaceProperty[];
+  propertyCount: number;
+  activeContractCount: number;
+  propertyNames: string;
+  ownershipSummary: string;
+};
+
+type ActivePropertyContract = Readonly<{
+  id: string;
+  property_id: string;
+}>;
+
+function getCodePointOffset(value: string, baseCodePoint: number): number {
+  return (value.codePointAt(0) ?? baseCodePoint) - baseCodePoint;
+}
+
+function normalizeOwnerSearchText(value: string): string {
+  return value
+    .toLowerCase()
+    .replaceAll(/[\u064B-\u065F\u0670\u06D6-\u06ED]/g, '')
+    .replaceAll(/[أإآ]/g, 'ا')
+    .replaceAll('ى', 'ي')
+    .replaceAll(/[٠-٩]/g, (digit) => String(getCodePointOffset(digit, 0x0660)))
+    .replaceAll(/[۰-۹]/g, (digit) => String(getCodePointOffset(digit, 0x06f0)));
+}
+
+function formatOwnershipRole(isPrimary: boolean): string {
+  return isPrimary ? 'أساسي' : 'شريك';
+}
+
+function formatOwnershipLink(link: Pick<PropertyOwner, 'ownership_percentage' | 'is_primary'>): string {
+  return `${link.ownership_percentage}% ${formatOwnershipRole(link.is_primary)}`;
+}
+
+function getOwnerWorkspaceSearchText(row: OwnerWorkspaceRow): string {
+  return normalizeOwnerSearchText([
+    row.owner.full_name,
+    row.owner.display_name,
+    row.owner.phone,
+    row.owner.email,
+    row.propertyNames,
+  ].filter((value): value is string => Boolean(value)).join(' '));
+}
+
+function getActiveContractCount(propertyIds: Set<string>, activeContracts: ActivePropertyContract[]): number {
+  return activeContracts.filter((contract) => propertyIds.has(contract.property_id)).length;
+}
+
+function buildWorkspaceProperties(ownerId: string, properties: PropertyWithOwners[]): OwnerWorkspaceProperty[] {
+  return properties.flatMap((property) => property.property_owners
+    .filter((link) => link.owner_id === ownerId)
+    .map((link) => ({
+      id: property.id,
+      title: property.title,
+      ownershipPercentage: link.ownership_percentage,
+      isPrimary: link.is_primary,
+    })));
+}
+
+export function buildOwnerWorkspaceRows(owners: Owner[], properties: PropertyWithOwners[], activeContracts: ActivePropertyContract[]): OwnerWorkspaceRow[] {
+  return owners.map((owner) => {
+    const ownerProperties = buildWorkspaceProperties(owner.id, properties);
+    const propertyIds = new Set(ownerProperties.map((property) => property.id));
+    return {
+      owner,
+      properties: ownerProperties,
+      propertyCount: propertyIds.size,
+      activeContractCount: getActiveContractCount(propertyIds, activeContracts),
+      propertyNames: ownerProperties.map((property) => property.title).join('، '),
+      ownershipSummary: ownerProperties.map((property) => `${property.title}: ${property.ownershipPercentage}% ${formatOwnershipRole(property.isPrimary)}`).join('، '),
+    };
+  });
+}
+
+export function filterOwnerWorkspaceRows(rows: OwnerWorkspaceRow[], search: string): OwnerWorkspaceRow[] {
+  const normalizedSearch = normalizeOwnerSearchText(search.trim());
+  if (!normalizedSearch) {
+    return rows;
+  }
+
+  return rows.filter((row) => getOwnerWorkspaceSearchText(row).includes(normalizedSearch));
+}
+
+export function getOwnerPropertyOwnershipLabel(property: OwnerWorkspaceProperty): string {
+  return `${property.title} · ${formatOwnershipLink({ ownership_percentage: property.ownershipPercentage, is_primary: property.isPrimary })}`;
+}

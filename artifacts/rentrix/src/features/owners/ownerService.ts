@@ -1,7 +1,7 @@
 import { supabase } from '@/integrations/supabase/client';
 import { handleSupabaseError } from '@/lib/supabase-error';
 import type { Database } from '@/types/database';
-import type { Property } from '@/types/domain';
+import type { Contract, Property } from '@/types/domain';
 
 export type Owner = Database['public']['Tables']['owners']['Row'];
 export type OwnerInsert = Database['public']['Tables']['owners']['Insert'];
@@ -9,6 +9,7 @@ export type OwnerUpdate = Database['public']['Tables']['owners']['Update'];
 export type PropertyOwner = Database['public']['Tables']['property_owners']['Row'];
 export type PropertyOwnerInsert = Database['public']['Tables']['property_owners']['Insert'];
 export type PropertyOwnerUpdate = Database['public']['Tables']['property_owners']['Update'];
+export type OwnerActiveContract = Pick<Contract, 'id' | 'property_id'>;
 
 export type OwnerPayload = Pick<OwnerInsert, 'full_name'> & Partial<Pick<OwnerInsert,
   | 'display_name'
@@ -273,4 +274,21 @@ export async function unlinkOwnerFromProperty(linkId: string): Promise<void> {
     .eq('id', linkId);
 
   if (error) handleSupabaseError(error, 'تعذر إلغاء ربط المالك بالعقار');
+}
+
+export async function listActiveContractsForProperties(propertyIds: string[]): Promise<OwnerActiveContract[]> {
+  if (propertyIds.length === 0) {
+    return [];
+  }
+
+  const { data, error } = await supabase
+    .from('contracts')
+    .select('id,property_id')
+    .in('property_id', propertyIds)
+    .eq('status', 'active')
+    .is('deleted_at', null)
+    .returns<OwnerActiveContract[]>();
+
+  if (error) handleSupabaseError(error, 'تعذر تحميل العقود النشطة لعقارات الملاك');
+  return data ?? [];
 }

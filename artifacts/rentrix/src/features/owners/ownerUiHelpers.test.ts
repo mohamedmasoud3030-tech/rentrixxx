@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest';
 import {
   emptyOwnerFormValues,
   emptyPropertyOwnershipLinkFormValues,
+  buildOwnerWorkspaceRows,
+  filterOwnerWorkspaceRows,
   propertyOwnerLinkToFormValues,
   propertyOwnershipLinkFormToPayload,
   summarizeOwners,
@@ -115,6 +117,20 @@ describe('owner UI helpers', () => {
       starts_on: '',
       ends_on: '2026-06-01',
     });
+  });
+
+  it('builds searchable owner workspace rows without financial balances', () => {
+    const rows = buildOwnerWorkspaceRows([baseOwner], [property('property-1', ['owner-1'])], [{ id: 'contract-1', property_id: 'property-1' }]);
+
+    expect(rows[0]).toMatchObject({
+      propertyCount: 1,
+      activeContractCount: 1,
+      propertyNames: 'عقار property-1',
+      ownershipSummary: 'عقار property-1: 100% أساسي',
+    });
+    expect(filterOwnerWorkspaceRows(rows, 'مالك')).toHaveLength(1);
+    expect(filterOwnerWorkspaceRows(rows, 'property-1')).toHaveLength(1);
+    expect(filterOwnerWorkspaceRows(rows, 'غير موجود')).toHaveLength(0);
   });
 
   it('summarizes owners and property relationships without financial balances', () => {
