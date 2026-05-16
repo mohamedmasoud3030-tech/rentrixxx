@@ -1,4 +1,4 @@
-import { Link, useParams } from '@tanstack/react-router';
+import { Link, useSearch } from '@tanstack/react-router';
 import { ArrowRight, Printer, ReceiptText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -97,14 +97,20 @@ function ReceiptDetailContent({ receiptId }: Readonly<{ receiptId: string }>) {
   return <ReceiptPrintDocument receipt={receiptQuery.data} />;
 }
 
+function getReceiptIdFromSearch(search: Record<string, unknown>) {
+  const receiptId = search.receiptId;
+  return typeof receiptId === 'string' ? receiptId : '';
+}
+
 export function ReceiptDetailPage() {
-  const { receiptId } = useParams({ strict: false }) as { receiptId: string };
+  const search = useSearch({ strict: false }) as Record<string, unknown>;
+  const receiptId = getReceiptIdFromSearch(search);
 
   return (
     <div className="space-y-6 print:bg-white" dir="rtl">
       <div className="flex flex-wrap items-start justify-between gap-3 print:hidden">
         <div>
-          <p className="text-sm font-black text-primary">Receipt #{receiptId.slice(0, 8)}</p>
+          <p className="text-sm font-black text-primary">Receipt #{receiptId ? receiptId.slice(0, 8) : '—'}</p>
           <h2 className="text-3xl font-black">عرض إيصال الدفع</h2>
           <p className="text-sm text-muted-foreground">عرض جاهز للطباعة بدون إضافة اعتماد PDF جديد.</p>
         </div>

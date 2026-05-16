@@ -1,7 +1,32 @@
 import { describe, expect, it } from 'vitest';
-import { buildOccupancyRows, buildPaymentsTrendRows } from './reports-page.helpers';
+import type { ContractListItem } from '@/features/contracts/services/contractService';
+import { buildOccupancyRows, buildPaymentsTrendRows, buildRentRollRows, createReceiptPrintHref } from './reports-page.helpers';
 
-describe('ReportsPage chart shaping helpers', () => {
+function createContract(overrides: Partial<ContractListItem>): ContractListItem {
+  return {
+    id: 'contract_a',
+    property_id: 'property_a',
+    unit_id: 'unit_a',
+    tenant_id: 'tenant_a',
+    start_date: '2026-01-01',
+    end_date: '2026-12-31',
+    rent_amount: 1200,
+    payment_cycle: 'monthly',
+    status: 'active',
+    cancellation_reason: null,
+    renewed_from_id: null,
+    notes: null,
+    created_at: '2026-01-01T00:00:00.000Z',
+    updated_at: '2026-01-01T00:00:00.000Z',
+    deleted_at: null,
+    properties: { id: 'property_a', title: 'برج النخيل', address: 'Dubai' },
+    units: { id: 'unit_a', unit_number: '101', floor: '1', status: 'occupied', rent_amount: 1200 },
+    people: { id: 'tenant_a', full_name: 'أحمد علي', phone: null, email: null, national_id: null },
+    ...overrides,
+  };
+}
+
+describe('ReportsPage shaping helpers', () => {
   it('combines canonical daily collection and overdue invoice rows by month', () => {
     expect(buildPaymentsTrendRows({
       dailyCollections: [
@@ -30,5 +55,39 @@ describe('ReportsPage chart shaping helpers', () => {
       { property: 'alpha_pr', occupied: 1, vacant: 2 },
       { property: 'beta_pro', occupied: 1, vacant: 0 },
     ]);
+  });
+
+  it('builds rent roll rows from current contract list items without creating balances', () => {
+    expect(buildRentRollRows([
+      createContract({ id: 'contract_b', people: { id: 'tenant_b', full_name: 'منى سالم', phone: null, email: null, national_id: null } }),
+      createContract({ id: 'contract_a' }),
+    ], { active: 'نشط', draft: 'مسودة', expired: 'منتهي', terminated: 'منهى' })).toEqual([
+      {
+        contractId: 'contract_a',
+        tenantName: 'أحمد علي',
+        propertyTitle: 'برج النخيل',
+        unitNumber: '101',
+        rentAmount: 1200,
+        paymentCycle: 'شهري',
+        statusLabel: 'نشط',
+        startDate: '2026-01-01',
+        endDate: '2026-12-31',
+      },
+      {
+        contractId: 'contract_b',
+        tenantName: 'منى سالم',
+        propertyTitle: 'برج النخيل',
+        unitNumber: '101',
+        rentAmount: 1200,
+        paymentCycle: 'شهري',
+        statusLabel: 'نشط',
+        startDate: '2026-01-01',
+        endDate: '2026-12-31',
+      },
+    ]);
+  });
+
+  it('creates receipt print links with the merged query-string route only', () => {
+    expect(createReceiptPrintHref('receipt id/42')).toBe('/receipts?receiptId=receipt%20id%2F42');
   });
 });
