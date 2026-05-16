@@ -62,7 +62,7 @@ export function usePropertiesWithOwners() {
 }
 
 export function useOwnerActiveContracts(propertyIds: string[]) {
-  const sortedPropertyIds = useMemo(() => [...new Set(propertyIds)].sort(), [propertyIds]);
+  const sortedPropertyIds = useMemo(() => [...new Set(propertyIds)].sort((left, right) => left.localeCompare(right)), [propertyIds]);
   const propertyIdsKey = sortedPropertyIds.join('|');
   return useQuery({
     queryKey: ownerKeys.activeContracts(propertyIdsKey),
