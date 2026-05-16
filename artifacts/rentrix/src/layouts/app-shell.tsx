@@ -11,6 +11,7 @@ const navigation = [
   { to: '/', label: 'لوحة التحكم', icon: LayoutDashboard },
   { to: '/properties', label: 'العقارات', icon: Building2 },
   { to: '/people', label: 'الأشخاص', icon: Users },
+  { to: '/tenants', label: 'المستأجرين', icon: Users },
   { to: '/owners', label: 'الملاك', icon: UserRoundCog },
   { to: '/contracts', label: 'العقود', icon: FileText },
   { to: '/financials', label: 'المالية', icon: WalletCards },
@@ -23,7 +24,6 @@ const navigation = [
 ] as const;
 
 const recoveryModules = [
-  { label: 'المستأجرين', icon: Users },
   { label: 'التواصل', icon: MessageCircle },
   { label: 'خريطة العقارات', icon: Map },
   { label: 'الأراضي', icon: Landmark },
