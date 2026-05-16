@@ -51,6 +51,23 @@ function mockSupabaseTables(responses: TableResponses) {
   return log;
 }
 
+
+type ReportInvoiceFixture = Readonly<{ amount: number; paid_amount: number }>;
+type ReportPaymentFixture = Readonly<{ amount: number; payment_date: string; payment_method: 'cash' | 'bank_transfer' | 'card' }>;
+type ReportExpenseFixture = Readonly<{ amount: number }>;
+
+function createReportInvoiceFixture(overrides: Partial<ReportInvoiceFixture> = {}): ReportInvoiceFixture {
+  return { amount: 1000, paid_amount: 0, ...overrides };
+}
+
+function createReportPaymentFixture(overrides: Partial<ReportPaymentFixture> = {}): ReportPaymentFixture {
+  return { amount: 300, payment_date: '2026-05-01', payment_method: 'cash', ...overrides };
+}
+
+function createReportExpenseFixture(amount: number): ReportExpenseFixture {
+  return { amount };
+}
+
 describe('financialReportsService aggregation helpers', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -426,16 +443,16 @@ describe('financialReportsService aggregation helpers', () => {
       summarizeExpenseTotals,
     } = await import('./financialReportsService');
     const invoices = [
-      { amount: 1000, paid_amount: 600 },
-      { amount: 500, paid_amount: 500 },
-      { amount: 250, paid_amount: 0 },
+      createReportInvoiceFixture({ paid_amount: 600 }),
+      createReportInvoiceFixture({ amount: 500, paid_amount: 500 }),
+      createReportInvoiceFixture({ amount: 250 }),
     ];
     const payments = [
-      { amount: 300, payment_date: '2026-05-01', payment_method: 'cash' as const },
-      { amount: 500, payment_date: '2026-05-02', payment_method: 'bank_transfer' as const },
-      { amount: 300, payment_date: '2026-05-02', payment_method: 'card' as const },
+      createReportPaymentFixture(),
+      createReportPaymentFixture({ amount: 500, payment_date: '2026-05-02', payment_method: 'bank_transfer' }),
+      createReportPaymentFixture({ payment_date: '2026-05-02', payment_method: 'card' }),
     ];
-    const expenses = [{ amount: 125 }, { amount: 75 }];
+    const expenses = [createReportExpenseFixture(125), createReportExpenseFixture(75)];
     const invoiceTotals = summarizeInvoiceTotals(invoices);
     const paymentTotals = summarizePaymentTotals(payments);
     const outstandingBalance = summarizeOutstandingBalance(invoices);

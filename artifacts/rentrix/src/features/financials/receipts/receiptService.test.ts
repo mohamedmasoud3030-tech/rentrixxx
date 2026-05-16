@@ -22,6 +22,11 @@ const basePayment: Payment = {
   deleted_at: null,
 };
 
+
+function createPaymentFixture(overrides: Partial<Payment> = {}): Payment {
+  return { ...basePayment, ...overrides };
+}
+
 type TableName = 'payments' | 'invoices' | 'contracts' | 'units' | 'properties' | 'people';
 type TableResponses = Partial<Record<TableName, unknown[]>>;
 
@@ -162,8 +167,8 @@ describe('receiptService', () => {
   it('uses posted payment amounts as receipt truth without deriving balances', async () => {
     mockSupabaseTables({
       payments: [
-        { ...basePayment, id: 'payment_cash', amount: 300, payment_method: 'cash' },
-        { ...basePayment, id: 'payment_bank', amount: 450.75, payment_method: 'bank_transfer', reference_number: null },
+        createPaymentFixture({ id: 'payment_cash', amount: 300, payment_method: 'cash' }),
+        createPaymentFixture({ id: 'payment_bank', amount: 450.75, payment_method: 'bank_transfer', reference_number: null }),
       ],
       invoices: [{ id: 'inv_1', contract_id: 'contract_1', status: 'partial' }],
       contracts: [{ id: 'contract_1', property_id: 'property_1', unit_id: 'unit_1', tenant_id: 'tenant_1' }],

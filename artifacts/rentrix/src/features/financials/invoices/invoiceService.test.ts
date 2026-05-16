@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { Invoice } from '@/types/domain';
+import type { Invoice, Payment } from '@/types/domain';
 
 const supabaseMock = vi.hoisted(() => ({
   from: vi.fn(),
@@ -13,42 +13,67 @@ vi.mock('@/integrations/supabase/client', () => ({
 type TableName = 'invoices' | 'payments';
 type TableResponses = Partial<Record<TableName, unknown[]>>;
 type QueryLogEntry = { table: string; method: string; args: unknown[] };
+type InvoiceSummaryFixture = Pick<Invoice, 'amount' | 'paid_amount'>;
+type InvoiceFixture = InvoiceSummaryFixture & Pick<Invoice, 'id' | 'status'> & { contracts: null };
+type PaymentFixture = Pick<Payment, 'id' | 'invoice_id' | 'amount' | 'payment_date' | 'deleted_at'>;
+type ChainMethod = 'select' | 'is' | 'eq' | 'or' | 'order';
+type QueryBuilder = Record<ChainMethod | 'single' | 'returns', ReturnType<typeof vi.fn>>;
+
+const chainMethods: ChainMethod[] = ['select', 'is', 'eq', 'or', 'order'];
+
+function createInvoiceFixture(overrides: Partial<InvoiceFixture> = {}): InvoiceFixture {
+  return {
+    id: 'invoice_1',
+    amount: 750,
+    paid_amount: 250,
+    status: 'partial',
+    contracts: null,
+    ...overrides,
+  };
+}
+
+function createInvoiceSummaryFixture(overrides: Partial<InvoiceSummaryFixture> = {}): InvoiceSummaryFixture {
+  return { amount: 1000, paid_amount: 0, ...overrides };
+}
+
+function createPaymentFixture(overrides: Partial<PaymentFixture> = {}): PaymentFixture {
+  return {
+    id: 'payment_1',
+    invoice_id: 'invoice_1',
+    amount: 400,
+    payment_date: '2026-05-01',
+    deleted_at: null,
+    ...overrides,
+  };
+}
+
+function createChainMethod(table: string, method: ChainMethod, log: QueryLogEntry[], builder: Partial<QueryBuilder>) {
+  return vi.fn((...args: unknown[]) => {
+    log.push({ table, method, args });
+    return builder;
+  });
+}
 
 function createQueryBuilder(table: string, responses: TableResponses, log: QueryLogEntry[]) {
-  const builder = {
-    select: vi.fn((...args: unknown[]) => {
-      log.push({ table, method: 'select', args });
-      return builder;
-    }),
-    is: vi.fn((...args: unknown[]) => {
-      log.push({ table, method: 'is', args });
-      return builder;
-    }),
-    eq: vi.fn((...args: unknown[]) => {
-      log.push({ table, method: 'eq', args });
-      return builder;
-    }),
-    or: vi.fn((...args: unknown[]) => {
-      log.push({ table, method: 'or', args });
-      return builder;
-    }),
-    order: vi.fn((...args: unknown[]) => {
-      log.push({ table, method: 'order', args });
-      return builder;
-    }),
-    single: vi.fn(() => {
-      log.push({ table, method: 'single', args: [] });
-      return builder;
-    }),
-    returns: vi.fn(async () => {
-      log.push({ table, method: 'returns', args: [] });
-      const rows = responses[table as TableName] ?? [];
-      return {
-        data: table === 'invoices' && builder.single.mock.calls.length > 0 ? rows[0] ?? null : rows,
-        error: null,
-      };
-    }),
-  };
+  const builder: Partial<QueryBuilder> = {};
+
+  for (const method of chainMethods) {
+    builder[method] = createChainMethod(table, method, log, builder);
+  }
+
+  builder.single = vi.fn(() => {
+    log.push({ table, method: 'single', args: [] });
+    return builder;
+  });
+  builder.returns = vi.fn(async () => {
+    log.push({ table, method: 'returns', args: [] });
+    const rows = responses[table as TableName] ?? [];
+    return {
+      data: table === 'invoices' && builder.single?.mock.calls.length ? rows[0] ?? null : rows,
+      error: null,
+    };
+  });
+
   return builder;
 }
 
@@ -58,11 +83,11 @@ function mockSupabaseTables(responses: TableResponses) {
   return log;
 }
 
-const invoiceRows: Array<Pick<Invoice, 'amount' | 'paid_amount'>> = [
-  { amount: 1000, paid_amount: 1000 },
-  { amount: 750, paid_amount: 250 },
-  { amount: '900.5' as unknown as number, paid_amount: '100.5' as unknown as number },
-  { amount: 400, paid_amount: 450 },
+const invoiceRows = [
+  createInvoiceSummaryFixture({ amount: 1000, paid_amount: 1000 }),
+  createInvoiceSummaryFixture({ amount: 750, paid_amount: 250 }),
+  createInvoiceSummaryFixture({ amount: '900.5' as unknown as number, paid_amount: '100.5' as unknown as number }),
+  createInvoiceSummaryFixture({ amount: 400, paid_amount: 450 }),
 ];
 
 describe('invoiceService financial reconciliation', () => {
@@ -82,14 +107,11 @@ describe('invoiceService financial reconciliation', () => {
   });
 
   it('lists invoices through read-only filters without issuing payment writes or RPC calls', async () => {
-    const log = mockSupabaseTables({
-      invoices: [{ id: 'invoice_1', amount: 750, paid_amount: 250, status: 'partial' }],
-    });
+    const invoice = createInvoiceFixture();
+    const log = mockSupabaseTables({ invoices: [invoice] });
     const { listInvoices } = await import('./invoiceService');
 
-    await expect(listInvoices({ status: 'partial', search: 'invoice_%' })).resolves.toEqual([
-      { id: 'invoice_1', amount: 750, paid_amount: 250, status: 'partial' },
-    ]);
+    await expect(listInvoices({ status: 'partial', search: 'invoice_%' })).resolves.toEqual([invoice]);
 
     expect(log).toEqual(expect.arrayContaining([
       { table: 'invoices', method: 'is', args: ['deleted_at', null] },
@@ -102,10 +124,10 @@ describe('invoiceService financial reconciliation', () => {
 
   it('reconciles invoice detail payments as read-only evidence for the selected invoice', async () => {
     const log = mockSupabaseTables({
-      invoices: [{ id: 'invoice_1', amount: 1200, paid_amount: 700, status: 'partial', contracts: null }],
+      invoices: [createInvoiceFixture({ amount: 1200, paid_amount: 700 })],
       payments: [
-        { id: 'payment_2', invoice_id: 'invoice_1', amount: 300, payment_date: '2026-05-10', deleted_at: null },
-        { id: 'payment_1', invoice_id: 'invoice_1', amount: 400, payment_date: '2026-05-01', deleted_at: null },
+        createPaymentFixture({ id: 'payment_2', amount: 300, payment_date: '2026-05-10' }),
+        createPaymentFixture(),
       ],
     });
     const { getInvoiceDetail, summarizeInvoices } = await import('./invoiceService');
