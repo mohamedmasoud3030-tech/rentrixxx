@@ -42,7 +42,7 @@ const tenantInvoiceSelect = 'contract_id,status,amount,paid_amount,due_date';
 const receivableInvoiceStatuses = new Set<TenantInvoice['status']>(['issued', 'partial', 'overdue']);
 
 function escapeSearchTerm(value: string) {
-  return value.replaceAll('%', '\\%').replaceAll('_', '\\_');
+  return value.replaceAll('%', String.raw`\%`).replaceAll('_', String.raw`\_`);
 }
 
 function applyTenantSearch(query: ReturnType<typeof supabase.from>, search: string) {

@@ -11,9 +11,32 @@ import type { TenantWorkspaceRow } from './tenantWorkspaceService';
 import { useTenantWorkspace } from './useTenantWorkspace';
 
 const pageSize = 10;
+const tenantSkeletonKeys = ['tenant-skeleton-1', 'tenant-skeleton-2', 'tenant-skeleton-3', 'tenant-skeleton-4'] as const;
+
+type TenantLocationText = {
+  hasLocation: boolean;
+  propertyLabel: string;
+  unitLabel: string;
+};
 
 function valueOrDash(value: string | number | null | undefined) {
-  return value || value === 0 ? String(value) : '—';
+  if (value === null || value === undefined || value === '') {
+    return '—';
+  }
+
+  return String(value);
+}
+
+function getTenantLocationText(tenant: TenantWorkspaceRow): TenantLocationText {
+  const hasLocation = tenant.propertyTitle !== null || tenant.unitNumber !== null;
+  const propertyLabel = tenant.propertyTitle ?? 'عقار غير محدد';
+  const unitLabel = tenant.unitNumber ? `وحدة ${tenant.unitNumber}` : 'وحدة غير محددة';
+
+  return {
+    hasLocation,
+    propertyLabel,
+    unitLabel,
+  };
 }
 
 function InfoPill({ icon: Icon, label, value, dir }: Readonly<{ icon: typeof Phone; label: string; value: string | number | null | undefined; dir?: 'ltr' | 'rtl' }>) {
@@ -29,33 +52,33 @@ function InfoPill({ icon: Icon, label, value, dir }: Readonly<{ icon: typeof Pho
 }
 
 function TenantLocation({ tenant }: Readonly<{ tenant: TenantWorkspaceRow }>) {
-  const hasLocation = tenant.propertyTitle !== null || tenant.unitNumber !== null;
+  const location = getTenantLocationText(tenant);
   return (
     <div className="rounded-2xl border bg-muted/30 p-3">
       <p className="text-xs font-bold text-muted-foreground">الوحدة/العقار</p>
-      <p className="mt-1 font-black">{hasLocation ? tenant.propertyTitle ?? 'عقار غير محدد' : '—'}</p>
-      {hasLocation ? <p className="text-xs text-muted-foreground">{tenant.unitNumber ? `وحدة ${tenant.unitNumber}` : 'وحدة غير محددة'}</p> : null}
+      <p className="mt-1 font-black">{location.hasLocation ? location.propertyLabel : '—'}</p>
+      {location.hasLocation ? <p className="text-xs text-muted-foreground">{location.unitLabel}</p> : null}
     </div>
   );
 }
 
 function TenantSafeLinks({ tenant }: Readonly<{ tenant: TenantWorkspaceRow }>) {
   const hasLinks = tenant.primaryContractId !== null || tenant.hasInvoices || tenant.hasArrears;
-  if (hasLinks) {
-    return (
-      <div className="flex flex-wrap gap-2">
-        {tenant.primaryContractId !== null ? (
-          <Button variant="secondary" className="min-h-9 px-3" asChild>
-            <Link to="/contracts/$contractId" params={{ contractId: tenant.primaryContractId }}><FileText className="ml-1 size-4" />العقد</Link>
-          </Button>
-        ) : null}
-        {tenant.hasInvoices ? <Button variant="secondary" className="min-h-9 px-3" asChild><Link to="/invoices"><ReceiptText className="ml-1 size-4" />الفواتير</Link></Button> : null}
-        {tenant.hasArrears ? <Button variant="secondary" className="min-h-9 px-3 text-amber-700" asChild><Link to="/arrears"><TriangleAlert className="ml-1 size-4" />المتأخرات</Link></Button> : null}
-      </div>
-    );
+  if (hasLinks === false) {
+    return <p className="text-sm text-muted-foreground">لا توجد روابط متاحة حتى الآن</p>;
   }
 
-  return <p className="text-sm text-muted-foreground">لا توجد روابط متاحة حتى الآن</p>;
+  return (
+    <div className="flex flex-wrap gap-2">
+      {tenant.primaryContractId !== null ? (
+        <Button variant="secondary" className="min-h-9 px-3" asChild>
+          <Link to="/contracts/$contractId" params={{ contractId: tenant.primaryContractId }}><FileText className="ml-1 size-4" />العقد</Link>
+        </Button>
+      ) : null}
+      {tenant.hasInvoices ? <Button variant="secondary" className="min-h-9 px-3" asChild><Link to="/invoices"><ReceiptText className="ml-1 size-4" />الفواتير</Link></Button> : null}
+      {tenant.hasArrears ? <Button variant="secondary" className="min-h-9 px-3 text-amber-700" asChild><Link to="/arrears"><TriangleAlert className="ml-1 size-4" />المتأخرات</Link></Button> : null}
+    </div>
+  );
 }
 
 function TenantCard({ tenant }: Readonly<{ tenant: TenantWorkspaceRow }>) {
@@ -91,6 +114,18 @@ function TenantCard({ tenant }: Readonly<{ tenant: TenantWorkspaceRow }>) {
 
 function TenantsList({ rows }: Readonly<{ rows: TenantWorkspaceRow[] }>) {
   return <div className="grid gap-4">{rows.map((tenant) => <TenantCard key={tenant.person.id} tenant={tenant} />)}</div>;
+}
+
+function TenantWorkspaceContent({ isLoading, rows }: Readonly<{ isLoading: boolean; rows: TenantWorkspaceRow[] }>) {
+  if (isLoading) {
+    return <div className="space-y-3">{tenantSkeletonKeys.map((key) => <Skeleton key={key} className="h-48" />)}</div>;
+  }
+
+  if (rows.length > 0) {
+    return <TenantsList rows={rows} />;
+  }
+
+  return <Card><CardContent className="p-6"><EmptyState title="لا توجد سجلات مستأجرين" description="سيظهر هنا أي شخص مصنف كمستأجر من نموذج الأشخاص الحالي." /></CardContent></Card>;
 }
 
 export function TenantsPage() {
@@ -131,13 +166,7 @@ export function TenantsPage() {
         </CardContent>
       </Card>
 
-      {tenantsQuery.isLoading ? (
-        <div className="space-y-3">{Array.from({ length: 4 }, (_, index) => <Skeleton key={index} className="h-48" />)}</div>
-      ) : rows.length > 0 ? (
-        <TenantsList rows={rows} />
-      ) : (
-        <Card><CardContent className="p-6"><EmptyState title="لا توجد سجلات مستأجرين" description="سيظهر هنا أي شخص مصنف كمستأجر من نموذج الأشخاص الحالي." /></CardContent></Card>
-      )}
+      <TenantWorkspaceContent isLoading={tenantsQuery.isLoading} rows={rows} />
 
       <div className="flex items-center justify-between text-sm text-muted-foreground">
         <span>الصفحة {page} من {totalPages}</span>
