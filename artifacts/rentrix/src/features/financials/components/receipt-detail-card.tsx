@@ -1,4 +1,3 @@
-import { Link } from '@tanstack/react-router';
 import { Printer } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import type { ReceiptRecord } from '../receipts/receiptService';
@@ -13,6 +12,10 @@ type ReceiptDetailCardProps = {
   error: unknown;
 };
 
+function getReceiptPrintHref(receiptId: string) {
+  return `/receipts?receiptId=${encodeURIComponent(receiptId)}`;
+}
+
 export function ReceiptDetailCard({ selectedReceiptId, receiptDetail, isLoading, isError, error }: ReceiptDetailCardProps) {
   return (
     <div className="rounded-2xl border p-4">
@@ -24,7 +27,7 @@ export function ReceiptDetailCard({ selectedReceiptId, receiptDetail, isLoading,
         <div className="mt-3 space-y-3">
           <div className="flex justify-end">
             <Button variant="secondary" asChild>
-              <Link to="/receipts/$receiptId" params={{ receiptId: receiptDetail.id }}><Printer className="ml-2 size-4" />عرض/طباعة الإيصال</Link>
+              <a href={getReceiptPrintHref(receiptDetail.id)}><Printer className="ml-2 size-4" />عرض/طباعة الإيصال</a>
             </Button>
           </div>
           <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
