@@ -2,6 +2,13 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it, vi } from 'vitest';
 import { OwnersPage } from './OwnersPage';
 
+vi.mock('@tanstack/react-router', () => ({
+  Link: ({ children, params, to }: { children: React.ReactNode; params?: { propertyId?: string }; to: string }) => {
+    const href = params?.propertyId ? `/properties/${params.propertyId}` : to;
+    return <a href={href}>{children}</a>;
+  },
+}));
+
 const ownerPageMocks = vi.hoisted(() => ({
   createOwner: { isPending: false, mutateAsync: vi.fn() },
   linkOwner: { isPending: false, mutateAsync: vi.fn() },
@@ -9,6 +16,8 @@ const ownerPageMocks = vi.hoisted(() => ({
   updateOwner: { isPending: false, mutateAsync: vi.fn() },
   updateLink: { isPending: false, mutateAsync: vi.fn() },
 }));
+
+const activeContract = { id: 'contract-1', property_id: 'property-1' };
 
 const owner = {
   id: 'owner-1',
@@ -74,6 +83,7 @@ const properties = [
 vi.mock('./useOwners', () => ({
   useCreateOwner: () => ownerPageMocks.createOwner,
   useLinkOwnerToProperty: () => ownerPageMocks.linkOwner,
+  useOwnerActiveContracts: () => ({ data: [activeContract], isLoading: false }),
   useOwners: () => ({ data: [owner], isLoading: false }),
   usePropertiesWithOwners: () => ({ data: properties, isLoading: false }),
   useUnlinkOwnerFromProperty: () => ownerPageMocks.unlinkOwner,
@@ -89,6 +99,10 @@ describe('OwnersPage relationship flow surface', () => {
     expect(html).toContain('value=""');
     expect(html).toContain('اختر العقار');
     expect(html).toContain('<option value="property-2">عقار متاح</option>');
+    expect(html).toContain('بحث باسم المالك أو الهاتف أو الإيميل أو العقار');
+    expect(html).toContain('عقار مرتبط');
+    expect(html).toContain('/properties/property-1');
+    expect(html).toContain('العقود النشطة');
     expect(html).toContain('ربط المالك بالعقار');
     expect(html).toContain('تعديل العلاقة');
     expect(html).toContain('إلغاء الربط');

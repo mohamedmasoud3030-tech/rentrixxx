@@ -5,6 +5,7 @@ import {
   createOwner,
   getOwner,
   linkOwnerToProperty,
+  listActiveContractsForProperties,
   listOwners,
   listPropertiesWithOwners,
   listPropertyOwners,
@@ -23,6 +24,7 @@ export const ownerKeys = {
   detail: (ownerId: string) => [...ownerKeys.all, 'detail', ownerId] as const,
   propertyOwners: (propertyId: string) => [...ownerKeys.all, 'property-owners', propertyId] as const,
   propertiesWithOwners: () => [...ownerKeys.all, 'properties-with-owners'] as const,
+  activeContracts: (propertyIds: string[]) => [...ownerKeys.all, 'active-contracts', propertyIds] as const,
 };
 
 async function invalidateOwnerAndPropertyQueries(queryClient: ReturnType<typeof useQueryClient>, propertyId?: string, ownerId?: string) {
@@ -56,6 +58,15 @@ export function usePropertyOwners(propertyId: string) {
 
 export function usePropertiesWithOwners() {
   return useQuery({ queryKey: ownerKeys.propertiesWithOwners(), queryFn: listPropertiesWithOwners });
+}
+
+export function useOwnerActiveContracts(propertyIds: string[]) {
+  const sortedPropertyIds = [...propertyIds].sort();
+  return useQuery({
+    queryKey: ownerKeys.activeContracts(sortedPropertyIds),
+    queryFn: () => listActiveContractsForProperties(sortedPropertyIds),
+    enabled: sortedPropertyIds.length > 0,
+  });
 }
 
 export function useCreateOwner() {
