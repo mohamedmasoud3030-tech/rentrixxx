@@ -1,87 +1,89 @@
 import { Link } from '@tanstack/react-router';
-import { FileText, ReceiptText, Search, TriangleAlert, Users } from 'lucide-react';
+import { FileText, Mail, Phone, ReceiptText, Search, ShieldCheck, TriangleAlert, Users } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { EmptyState } from '@/components/empty-state';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import type { TenantWorkspaceRow } from './tenantWorkspaceService';
 import { useTenantWorkspace } from './useTenantWorkspace';
 
 const pageSize = 10;
-const tenantHeaders = ['الاسم', 'الهاتف', 'الإيميل', 'رقم الهوية', 'العقود النشطة', 'الوحدة/العقار', 'روابط آمنة'];
 
 function valueOrDash(value: string | number | null | undefined) {
   return value || value === 0 ? String(value) : '—';
 }
 
-function ContactValue({ value, dir }: Readonly<{ value: string | null; dir?: 'ltr' | 'rtl' }>) {
-  return <span dir={dir} className={dir === 'ltr' ? 'inline-block text-right' : undefined}>{valueOrDash(value)}</span>;
+function InfoPill({ icon: Icon, label, value, dir }: Readonly<{ icon: typeof Phone; label: string; value: string | number | null | undefined; dir?: 'ltr' | 'rtl' }>) {
+  return (
+    <div className="rounded-2xl border bg-background px-3 py-2">
+      <div className="flex items-center gap-2 text-xs font-bold text-muted-foreground">
+        <Icon className="size-3.5" />
+        <span>{label}</span>
+      </div>
+      <p className="mt-1 text-sm font-black" dir={dir}>{valueOrDash(value)}</p>
+    </div>
+  );
 }
 
 function TenantLocation({ tenant }: Readonly<{ tenant: TenantWorkspaceRow }>) {
-  const title = tenant.propertyTitle ?? 'عقار غير محدد';
-  const unit = tenant.unitNumber ? `وحدة ${tenant.unitNumber}` : 'وحدة غير محددة';
-  return tenant.propertyTitle || tenant.unitNumber ? (
-    <div className="space-y-1">
-      <div className="font-bold">{title}</div>
-      <div className="text-xs text-muted-foreground">{unit}</div>
+  const hasLocation = tenant.propertyTitle || tenant.unitNumber;
+  return (
+    <div className="rounded-2xl border bg-muted/30 p-3">
+      <p className="text-xs font-bold text-muted-foreground">الوحدة/العقار</p>
+      <p className="mt-1 font-black">{hasLocation ? tenant.propertyTitle ?? 'عقار غير محدد' : '—'}</p>
+      {hasLocation ? <p className="text-xs text-muted-foreground">{tenant.unitNumber ? `وحدة ${tenant.unitNumber}` : 'وحدة غير محددة'}</p> : null}
     </div>
-  ) : <span>—</span>;
+  );
 }
 
 function TenantSafeLinks({ tenant }: Readonly<{ tenant: TenantWorkspaceRow }>) {
   const hasLinks = tenant.primaryContractId || tenant.hasInvoices || tenant.hasArrears;
-  if (!hasLinks) return <span className="text-sm text-muted-foreground">لا توجد روابط متاحة</span>;
+  if (!hasLinks) return <p className="text-sm text-muted-foreground">لا توجد روابط متاحة حتى الآن</p>;
 
   return (
     <div className="flex flex-wrap gap-2">
-      {tenant.primaryContractId ? (
-        <Button variant="secondary" className="min-h-9 px-3" asChild>
-          <Link to="/contracts/$contractId" params={{ contractId: tenant.primaryContractId }}><FileText className="ml-1 size-4" />العقد</Link>
-        </Button>
-      ) : null}
-      {tenant.hasInvoices ? (
-        <Button variant="secondary" className="min-h-9 px-3" asChild>
-          <Link to="/invoices"><ReceiptText className="ml-1 size-4" />الفواتير</Link>
-        </Button>
-      ) : null}
-      {tenant.hasArrears ? (
-        <Button variant="secondary" className="min-h-9 px-3 text-amber-700" asChild>
-          <Link to="/arrears"><TriangleAlert className="ml-1 size-4" />المتأخرات</Link>
-        </Button>
-      ) : null}
+      {tenant.primaryContractId ? <Button variant="secondary" className="min-h-9 px-3" asChild><Link to="/contracts/$contractId" params={{ contractId: tenant.primaryContractId }}><FileText className="ml-1 size-4" />العقد</Link></Button> : null}
+      {tenant.hasInvoices ? <Button variant="secondary" className="min-h-9 px-3" asChild><Link to="/invoices"><ReceiptText className="ml-1 size-4" />الفواتير</Link></Button> : null}
+      {tenant.hasArrears ? <Button variant="secondary" className="min-h-9 px-3 text-amber-700" asChild><Link to="/arrears"><TriangleAlert className="ml-1 size-4" />المتأخرات</Link></Button> : null}
     </div>
   );
 }
 
-function TenantRows({ rows }: Readonly<{ rows: TenantWorkspaceRow[] }>) {
-  return rows.map((tenant) => {
-    const cells = [
-      <div key="name"><div className="font-black">{tenant.person.full_name}</div><div className="text-xs text-muted-foreground">مستأجر</div></div>,
-      <ContactValue key="phone" value={tenant.person.phone} dir="ltr" />,
-      <ContactValue key="email" value={tenant.person.email} dir="ltr" />,
-      <ContactValue key="national-id" value={tenant.person.national_id} />,
-      valueOrDash(tenant.activeContractCount || null),
-      <TenantLocation key="location" tenant={tenant} />,
-      <TenantSafeLinks key="links" tenant={tenant} />,
-    ];
-
-    return <TableRow key={tenant.person.id}>{cells.map((cell, index) => <TableCell key={`${tenant.person.id}-${tenantHeaders[index]}`}>{cell}</TableCell>)}</TableRow>;
-  });
-}
-
-function TenantTable({ rows }: Readonly<{ rows: TenantWorkspaceRow[] }>) {
+function TenantCard({ tenant }: Readonly<{ tenant: TenantWorkspaceRow }>) {
   return (
-    <div className="overflow-x-auto">
-      <Table>
-        <TableHeader><TableRow>{tenantHeaders.map((header) => <TableHead key={header} className={header === 'روابط آمنة' ? 'min-w-64' : undefined}>{header}</TableHead>)}</TableRow></TableHeader>
-        <TableBody><TenantRows rows={rows} /></TableBody>
-      </Table>
-    </div>
+    <Card className="overflow-hidden">
+      <CardContent className="space-y-4 p-5">
+        <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+          <div>
+            <p className="text-xs font-black text-primary">مستأجر</p>
+            <h3 className="mt-1 text-xl font-black">{tenant.person.full_name}</h3>
+          </div>
+          <div className="rounded-full border bg-card px-3 py-1 text-xs font-black text-muted-foreground">
+            عقود نشطة: <span className="text-foreground">{tenant.activeContractCount || '—'}</span>
+          </div>
+        </div>
+
+        <div className="grid gap-3 md:grid-cols-3">
+          <InfoPill icon={Phone} label="الهاتف" value={tenant.person.phone} dir="ltr" />
+          <InfoPill icon={Mail} label="الإيميل" value={tenant.person.email} dir="ltr" />
+          <InfoPill icon={ShieldCheck} label="رقم الهوية" value={tenant.person.national_id} />
+        </div>
+
+        <TenantLocation tenant={tenant} />
+
+        <div className="rounded-2xl border border-dashed p-3">
+          <p className="mb-2 text-xs font-bold text-muted-foreground">روابط آمنة</p>
+          <TenantSafeLinks tenant={tenant} />
+        </div>
+      </CardContent>
+    </Card>
   );
+}
+
+function TenantsList({ rows }: Readonly<{ rows: TenantWorkspaceRow[] }>) {
+  return <div className="grid gap-4">{rows.map((tenant) => <TenantCard key={tenant.person.id} tenant={tenant} />)}</div>;
 }
 
 export function TenantsPage() {
@@ -118,15 +120,13 @@ export function TenantsPage() {
         </CardContent>
       </Card>
 
-      <Card className="overflow-hidden">
-        {tenantsQuery.isLoading ? (
-          <div className="space-y-3 p-6">{Array.from({ length: 6 }, (_, index) => <Skeleton key={index} className="h-14" />)}</div>
-        ) : rows.length ? (
-          <TenantTable rows={rows} />
-        ) : (
-          <div className="p-6"><EmptyState title="لا توجد سجلات مستأجرين" description="سيظهر هنا أي شخص مصنف كمستأجر من نموذج الأشخاص الحالي." /></div>
-        )}
-      </Card>
+      {tenantsQuery.isLoading ? (
+        <div className="space-y-3">{Array.from({ length: 4 }, (_, index) => <Skeleton key={index} className="h-48" />)}</div>
+      ) : rows.length ? (
+        <TenantsList rows={rows} />
+      ) : (
+        <Card><CardContent className="p-6"><EmptyState title="لا توجد سجلات مستأجرين" description="سيظهر هنا أي شخص مصنف كمستأجر من نموذج الأشخاص الحالي." /></CardContent></Card>
+      )}
 
       <div className="flex items-center justify-between text-sm text-muted-foreground">
         <span>الصفحة {page} من {totalPages}</span>
