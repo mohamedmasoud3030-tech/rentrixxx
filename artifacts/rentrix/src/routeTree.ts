@@ -20,6 +20,7 @@ import { ContractNewRouteComponent } from '@/routes/_protected.contracts.new';
 import { ContractDetailRouteComponent } from '@/routes/_protected.contracts.$contractId';
 import { ContractEditRouteComponent } from '@/routes/_protected.contracts.$contractId.edit';
 import { FinancialsRouteComponent } from '@/routes/_protected.financials';
+import { ReceiptDetailPage as ReceiptsRouteComponent } from '@/features/financials/receipts/receipt-detail-page';
 import { InvoicesRouteComponent } from '@/routes/_protected.invoices';
 import { ArrearsRouteComponent } from '@/routes/_protected.arrears';
 import { AccountingRouteComponent } from '@/routes/_protected.accounting';
@@ -72,6 +73,7 @@ const contractNewRoute = createRoute({ getParentRoute: () => protectedRoute, pat
 const contractDetailRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/contracts/$contractId', component: ContractDetailRouteComponent, staticData: { title: 'تفاصيل العقد' } });
 const contractEditRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/contracts/$contractId/edit', component: ContractEditRouteComponent, staticData: { title: 'تعديل عقد' } });
 const financialsRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/financials', component: FinancialsRouteComponent, staticData: { title: 'المالية' } });
+const receiptsRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/receipts', component: ReceiptsRouteComponent, staticData: { title: 'إيصال الدفع' } });
 const invoicesRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/invoices', component: InvoicesRouteComponent, staticData: { title: 'الفواتير' } });
 const arrearsRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/arrears', component: ArrearsRouteComponent, staticData: { title: 'المتأخرات' } });
 const accountingRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/accounting', component: AccountingRouteComponent, staticData: { title: 'المحاسبة' } });
@@ -97,6 +99,7 @@ export const routeTree = rootRoute.addChildren([
     contractDetailRoute,
     contractEditRoute,
     financialsRoute,
+    receiptsRoute,
     invoicesRoute,
     arrearsRoute,
     accountingRoute,
