@@ -158,4 +158,28 @@ describe('receiptService', () => {
       status: 'posted',
     });
   });
+
+  it('uses posted payment amounts as receipt truth without deriving balances', async () => {
+    mockSupabaseTables({
+      payments: [
+        { ...basePayment, id: 'payment_cash', amount: 300, payment_method: 'cash' },
+        { ...basePayment, id: 'payment_bank', amount: 450.75, payment_method: 'bank_transfer', reference_number: null },
+      ],
+      invoices: [{ id: 'inv_1', contract_id: 'contract_1', status: 'partial' }],
+      contracts: [{ id: 'contract_1', property_id: 'property_1', unit_id: 'unit_1', tenant_id: 'tenant_1' }],
+      units: [{ id: 'unit_1', unit_number: 'A-101' }],
+      properties: [{ id: 'property_1', title: 'Tower A' }],
+      people: [{ id: 'tenant_1', full_name: 'Test Tenant' }],
+    });
+    const { listReceipts } = await import('./receiptService');
+
+    const receipts = await listReceipts({ limit: 25 });
+
+    expect(receipts.map((receipt) => ({ id: receipt.id, amount: receipt.amount, status: receipt.status }))).toEqual([
+      { id: 'payment_cash', amount: 300, status: 'posted' },
+      { id: 'payment_bank', amount: 450.75, status: 'posted' },
+    ]);
+    expect(receipts.reduce((total, receipt) => total + receipt.amount, 0)).toBe(750.75);
+    expect(receipts.every((receipt) => !('remaining_amount' in receipt))).toBe(true);
+  });
 });
