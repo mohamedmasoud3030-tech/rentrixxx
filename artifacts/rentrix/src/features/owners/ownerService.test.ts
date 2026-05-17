@@ -55,7 +55,7 @@ describe('ownerService normalization helpers', () => {
     expect(normalizePropertyOwnerPayload({
       property_id: ' property-1 ',
       owner_id: ' owner-1 ',
-      ownership_percentage: '25.5',
+      ownership_percentage: 25.5,
       is_primary: false,
       starts_on: ' 2026-05-01 ',
       ends_on: ' 2026-06-01 ',
