@@ -15,6 +15,15 @@ export const contractStatusLabels: Record<(typeof contractStatusValues)[number],
   terminated: 'ملغي',
 };
 
+type ContractStatusTone = 'blue' | 'green' | 'red' | 'gray' | 'gold';
+
+export const contractStatusTone: Record<(typeof contractStatusValues)[number], ContractStatusTone> = {
+  draft: 'gray',
+  active: 'green',
+  expired: 'gold',
+  terminated: 'red',
+};
+
 export const paymentCycleLabels: Record<(typeof paymentCycleValues)[number], string> = {
   monthly: 'شهري',
   quarterly: 'ربع سنوي',

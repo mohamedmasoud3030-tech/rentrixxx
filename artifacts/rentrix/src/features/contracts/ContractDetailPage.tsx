@@ -1,6 +1,6 @@
 import { Link, useNavigate, useParams } from '@tanstack/react-router';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { ArrowRight, CalendarDays, Edit, RefreshCw, WalletCards } from 'lucide-react';
+import { ArrowRight, CalendarDays, Edit, RefreshCw, ShieldAlert, WalletCards } from 'lucide-react';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { EmptyState } from '@/components/empty-state';
@@ -11,13 +11,12 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Input } from '@/components/ui/input';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { DEFAULT_CURRENCY, DEFAULT_LOCALE, formatMoney } from '@/lib/formatters';
-import { contractStatusLabels, paymentCycleLabels, renewalSchema, type RenewalPayload } from './contractSchema';
+import { contractStatusLabels, contractStatusTone, paymentCycleLabels, renewalSchema, type RenewalPayload } from './contractSchema';
 import { ContractDocumentsShell } from './contractDocumentsShell';
 import { ContractPaymentsTab } from './contractPaymentsTab';
 import type { ContractDetail } from './services/contractService';
 import { useContract, useRenewContract } from './useContracts';
 
-const statusTone = { draft: 'gray', active: 'blue', expired: 'green', terminated: 'red' } as const;
 const DAY_IN_MS = 86_400_000;
 const arabicDateFormatter = new Intl.DateTimeFormat('ar', { dateStyle: 'medium' });
 const arabicDateTimeFormatter = new Intl.DateTimeFormat('ar', { dateStyle: 'medium', timeStyle: 'short' });
@@ -48,6 +47,39 @@ function formatDate(value: string): string {
 
 function formatDateTime(value: string): string {
   return arabicDateTimeFormatter.format(new Date(value));
+}
+
+function toDateInputValue(date: Date): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+function addDays(value: string, days: number): Date {
+  const date = new Date(`${value}T00:00:00`);
+  date.setDate(date.getDate() + days);
+  return date;
+}
+
+function addYear(date: Date): Date {
+  const nextDate = new Date(date);
+  nextDate.setFullYear(nextDate.getFullYear() + 1);
+  nextDate.setDate(nextDate.getDate() - 1);
+  return nextDate;
+}
+
+function getRenewalDefaults(contract: ContractDetail): RenewalPayload {
+  const nextStart = addDays(contract.end_date, 1);
+  return {
+    new_start: toDateInputValue(nextStart),
+    new_end: toDateInputValue(addYear(nextStart)),
+    new_amount: contract.rent_amount,
+  };
+}
+
+function canRenewContract(contract: ContractDetail): boolean {
+  return contract.status === 'active' || contract.status === 'expired';
 }
 
 function getInclusiveDays(startDate: string, endDate: string): number {
@@ -140,7 +172,7 @@ function getFinancialTimeline(contract: ContractDetail): TimelineItem[] {
       title: 'حالة العقد',
       value: contractStatusLabels[contract.status],
       description: getExpiryDescription(contract),
-      tone: statusTone[contract.status],
+      tone: contractStatusTone[contract.status],
     },
   ];
 }
@@ -161,6 +193,11 @@ export function ContractDetailPage() {
     const newId = await renewMutation.mutateAsync(values);
     setOpen(false);
     await navigate({ to: '/contracts/$contractId', params: { contractId: newId } });
+  };
+
+  const openRenewalDialog = (contract: ContractDetail) => {
+    form.reset(getRenewalDefaults(contract));
+    setOpen(true);
   };
 
   if (contractQuery.isLoading) {
@@ -184,6 +221,8 @@ export function ContractDetailPage() {
   const contract = contractQuery.data;
   const lifecycleTimeline = getLifecycleTimeline(contract);
   const financialTimeline = getFinancialTimeline(contract);
+  const renewalAllowed = canRenewContract(contract);
+  const cancellationReason = contract.cancellation_reason?.trim() || '—';
 
   return (
     <div className="space-y-6">
@@ -195,7 +234,7 @@ export function ContractDetailPage() {
         </div>
         <div className="flex gap-2">
           <Button variant="secondary" asChild><Link to="/contracts"><ArrowRight className="ml-2 size-4" />العودة</Link></Button>
-          <Button variant="secondary" onClick={() => setOpen(true)}><RefreshCw className="ml-2 size-4" />تجديد</Button>
+          <Button variant="secondary" onClick={() => openRenewalDialog(contract)} disabled={!renewalAllowed}><RefreshCw className="ml-2 size-4" />تجديد</Button>
           <Button asChild><Link to="/contracts/$contractId/edit" params={{ contractId }}><Edit className="ml-2 size-4" />تعديل</Link></Button>
         </div>
       </div>
@@ -216,14 +255,17 @@ export function ContractDetailPage() {
           <Info label="دورة السداد" value={paymentCycleLabels[contract.payment_cycle]} />
           <div className="rounded-2xl border border-border bg-background p-4">
             <p className="text-xs font-bold text-muted-foreground">الحالة</p>
-            <div className="mt-2"><StatusBadge tone={statusTone[contract.status]}>{contractStatusLabels[contract.status]}</StatusBadge></div>
+            <div className="mt-2"><StatusBadge tone={contractStatusTone[contract.status]}>{contractStatusLabels[contract.status]}</StatusBadge></div>
           </div>
+          <Info label="سبب الإلغاء" value={contract.status === 'terminated' ? cancellationReason : 'غير مطبق'} />
           <div className="rounded-2xl border border-border bg-background p-4 md:col-span-2">
             <p className="text-xs font-bold text-muted-foreground">ملاحظات</p>
             <p className="mt-1 leading-7">{contract.notes ?? '—'}</p>
           </div>
         </CardContent>
       </Card>
+
+      <LifecycleActionsCard contract={contract} renewalAllowed={renewalAllowed} onRenew={() => openRenewalDialog(contract)} />
 
       <ContractDocumentsShell contractId={contract.id} />
 
@@ -236,7 +278,7 @@ export function ContractDetailPage() {
               <CardTitle className="flex items-center gap-2"><WalletCards className="size-5 text-primary" />الخط الزمني المالي</CardTitle>
               <CardDescription>ملخص تجاري مشتق من بيانات العقد الحالية فقط دون إنشاء قيود أو إيصالات.</CardDescription>
             </div>
-            <StatusBadge tone={statusTone[contract.status]}>{contractStatusLabels[contract.status]}</StatusBadge>
+            <StatusBadge tone={contractStatusTone[contract.status]}>{contractStatusLabels[contract.status]}</StatusBadge>
           </div>
         </CardHeader>
         <CardContent className="grid gap-4 pt-6 md:grid-cols-3">
@@ -277,13 +319,65 @@ export function ContractDetailPage() {
               {fieldError(form.formState.errors.new_amount?.message)}
             </label>
             <div className="flex justify-end gap-2">
-              <Button variant="secondary" onClick={() => setOpen(false)}>إلغاء</Button>
+              <Button type="button" variant="secondary" onClick={() => setOpen(false)}>إلغاء</Button>
               <Button type="submit" disabled={renewMutation.isPending}>تجديد العقد</Button>
             </div>
           </form>
         </DialogContent>
       </Dialog>
     </div>
+  );
+}
+
+function LifecycleActionsCard({ contract, renewalAllowed, onRenew }: Readonly<{ contract: ContractDetail; renewalAllowed: boolean; onRenew: () => void }>) {
+  const previousContract = contract.renewed_from;
+  const cancellationReason = contract.cancellation_reason?.trim();
+
+  return (
+    <Card className="overflow-hidden border-primary/20 bg-primary/5">
+      <CardHeader className="bg-background/80">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <CardTitle className="flex items-center gap-2"><RefreshCw className="size-5 text-primary" />إجراءات التجديد والإنهاء</CardTitle>
+            <CardDescription>توضيح دورة حياة العقد اعتمادًا على خدمات وحقول Phase 2 الموجودة فقط.</CardDescription>
+          </div>
+          <StatusBadge tone={contractStatusTone[contract.status]}>{contractStatusLabels[contract.status]}</StatusBadge>
+        </div>
+      </CardHeader>
+      <CardContent className="grid gap-4 pt-6 lg:grid-cols-3">
+        <div className="rounded-2xl border border-border bg-background p-4">
+          <p className="font-black">تجديد العقد</p>
+          <p className="mt-2 text-sm leading-6 text-muted-foreground">
+            {renewalAllowed ? 'سيتم اقتراح بداية اليوم التالي لتاريخ نهاية العقد مع نفس قيمة الإيجار قبل إنشاء العقد الجديد.' : 'التجديد متاح للعقود النشطة أو المنتهية فقط حفاظًا على وضوح الحالة.'}
+          </p>
+          <Button className="mt-4" variant="secondary" onClick={onRenew} disabled={!renewalAllowed}>
+            <RefreshCw className="ml-2 size-4" />فتح نموذج التجديد
+          </Button>
+        </div>
+        <div className="rounded-2xl border border-border bg-background p-4">
+          <p className="flex items-center gap-2 font-black"><ShieldAlert className="size-4 text-amber-600" />إنهاء العقد</p>
+          <p className="mt-2 text-sm leading-6 text-muted-foreground">
+            يدعم النموذج الحالي تغيير الحالة إلى ملغي وتسجيل سبب الإلغاء فقط. لم تتم إضافة إجراء إنهاء مستقل لأنه يحتاج خدمة ذرية واضحة لتحديث العقد والوحدة معًا دون مخطط أو RPC جديد.
+          </p>
+          <Button className="mt-4" variant="secondary" asChild>
+            <Link to="/contracts/$contractId/edit" params={{ contractId: contract.id }}>تعديل الحالة وسبب الإلغاء</Link>
+          </Button>
+        </div>
+        <div className="rounded-2xl border border-border bg-background p-4">
+          <p className="font-black">سلسلة التجديد</p>
+          {previousContract ? (
+            <div className="mt-2 space-y-2 text-sm leading-6 text-muted-foreground">
+              <p>هذا العقد مجدد من عقد سابق.</p>
+              <p>الفترة السابقة: {formatDate(previousContract.start_date)} ← {formatDate(previousContract.end_date)}</p>
+              <StatusBadge tone={contractStatusTone[previousContract.status]}>{contractStatusLabels[previousContract.status]}</StatusBadge>
+            </div>
+          ) : (
+            <p className="mt-2 text-sm leading-6 text-muted-foreground">لا يوجد عقد سابق مرتبط بهذا العقد عبر حقل التجديد الحالي.</p>
+          )}
+          {cancellationReason ? <p className="mt-3 rounded-xl bg-muted p-3 text-sm leading-6">سبب الإلغاء: {cancellationReason}</p> : null}
+        </div>
+      </CardContent>
+    </Card>
   );
 }
 
