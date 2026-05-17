@@ -12,6 +12,7 @@ import { Input } from '@/components/ui/input';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { DEFAULT_CURRENCY, DEFAULT_LOCALE, formatMoney } from '@/lib/formatters';
 import { contractStatusLabels, paymentCycleLabels, renewalSchema, type RenewalPayload } from './contractSchema';
+import { ContractDocumentsShell } from './contractDocumentsShell';
 import type { ContractDetail } from './services/contractService';
 import { useContract, useRenewContract } from './useContracts';
 
@@ -222,6 +223,8 @@ export function ContractDetailPage() {
           </div>
         </CardContent>
       </Card>
+
+      <ContractDocumentsShell contractId={contract.id} />
 
       <Card className="overflow-hidden">
         <CardHeader className="bg-muted/35">
