@@ -1,7 +1,7 @@
 import React, { type ReactNode } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it, vi } from 'vitest';
-import type { OverdueInvoiceReport } from '../reports/financialReportsService';
+import type { OverdueInvoicesReport } from '../reports/financialReportsService';
 import { ArrearsSummaryCards } from './arrears-summary-cards';
 import { ArrearsWorkflowSection } from './arrears-workflow-section';
 
@@ -22,7 +22,7 @@ const baseProps = {
   onSelectInvoice: vi.fn(),
 };
 
-const overdueReport: OverdueInvoiceReport = {
+const overdueReport: OverdueInvoicesReport = {
   asOf: '2026-05-15',
   totalOverdue: 800,
   invoiceCount: 1,

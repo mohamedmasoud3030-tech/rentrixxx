@@ -84,7 +84,7 @@ describe('companySettingsService', () => {
     expect(normalizeCompanySettingsUpdatePayload({
       company_name: 123,
       legal_name: true,
-    } as Parameters<typeof normalizeCompanySettingsUpdatePayload>[0])).toEqual({
+    } as unknown as Parameters<typeof normalizeCompanySettingsUpdatePayload>[0])).toEqual({
       company_name: '123',
       legal_name: 'true',
     });
