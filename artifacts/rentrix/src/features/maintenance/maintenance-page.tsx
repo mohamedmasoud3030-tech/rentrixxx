@@ -153,13 +153,15 @@ export function MaintenancePage() {
 
       {maintenanceQuery.isLoading || propertiesQuery.isLoading ? (
         <div className="space-y-3">{Array.from({ length: 4 }, (_, index) => <Skeleton key={index} className="h-12" />)}</div>
-      ) : hasLoadError ? (
+      ) : null}
+      {!maintenanceQuery.isLoading && !propertiesQuery.isLoading && hasLoadError ? (
         <EmptyState
           title="تعذر تحميل طلبات الصيانة"
           description={getLoadErrorMessage(loadError, 'حدث خطأ غير متوقع أثناء تحميل طلبات الصيانة.')}
           action={<Button type="button" onClick={retryMaintenanceWorkspace}>إعادة المحاولة</Button>}
         />
-      ) : (
+      ) : null}
+      {!maintenanceQuery.isLoading && !propertiesQuery.isLoading && !hasLoadError ? (
         <DataTable
           rows={maintenanceRows}
           keyOf={(row) => row.id}
@@ -196,7 +198,7 @@ export function MaintenancePage() {
           ]}
           empty={<EmptyState title="لا توجد طلبات صيانة" description="أضف طلب صيانة جديد للبدء." />}
         />
-      )}
+      ) : null}
     </div>
   );
 }

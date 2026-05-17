@@ -240,7 +240,8 @@ export function ContractsListPage() {
       <Card className="overflow-hidden">
         {contractsQuery.isLoading ? (
           <div className="space-y-3 p-6">{Array.from({ length: 6 }, (_, index) => <Skeleton key={index} className="h-14" />)}</div>
-        ) : contractsQuery.isError ? (
+        ) : null}
+        {!contractsQuery.isLoading && contractsQuery.isError ? (
           <div className="p-6">
             <EmptyState
               title="تعذر تحميل العقود"
@@ -248,7 +249,8 @@ export function ContractsListPage() {
               action={<Button type="button" onClick={retryContracts}>إعادة المحاولة</Button>}
             />
           </div>
-        ) : filteredContracts.length ? (
+        ) : null}
+        {!contractsQuery.isLoading && !contractsQuery.isError && filteredContracts.length ? (
           <div className="overflow-x-auto">
             <Table>
               <TableHeader>
@@ -350,7 +352,8 @@ export function ContractsListPage() {
               </TableBody>
             </Table>
           </div>
-        ) : (
+        ) : null}
+        {!contractsQuery.isLoading && !contractsQuery.isError && !filteredContracts.length ? (
           <div className="p-6">
             {hasContracts ? (
               <EmptyState title="لا توجد عقود مطابقة" description="جرّب تغيير عبارة البحث أو فلتر الحالة لعرض عقود أخرى." />
@@ -368,7 +371,7 @@ export function ContractsListPage() {
               />
             )}
           </div>
-        )}
+        ) : null}
       </Card>
     </div>
   );

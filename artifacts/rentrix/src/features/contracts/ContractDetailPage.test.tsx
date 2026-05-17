@@ -1,4 +1,3 @@
-import { Link } from '@tanstack/react-router';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ContractDetailPage } from './ContractDetailPage';
