@@ -10,6 +10,7 @@ import { StatusBadge } from '@/components/ui/status-badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { formatMoney, DEFAULT_CURRENCY, DEFAULT_LOCALE } from '@/lib/formatters';
 import { cn } from '@/lib/utils';
+import { buildContractsCsvBlob, buildContractsCsvFilename, getContractNumber } from './contractListExport';
 import { contractStatusLabels, contractStatusValues, paymentCycleLabels } from './contractSchema';
 import { useContracts, useSoftDeleteContract } from './useContracts';
 import type { ContractListItem, ContractStatusFilter } from './services/contractService';
@@ -59,10 +60,6 @@ function summarizeContracts(contracts: ContractListItem[]) {
   );
 }
 
-function getContractNumber(contract: ContractListItem) {
-  return `#${contract.id.slice(0, 8)}`;
-}
-
 function normalizeSearchText(value: string) {
   return value
     .toLowerCase()
@@ -77,46 +74,11 @@ function getSearchText(contract: ContractListItem) {
   return normalizeSearchText([contract.id, getContractNumber(contract), contract.people?.full_name, contract.units?.unit_number, contract.properties?.title].filter(Boolean).join(' '));
 }
 
-function escapeCsvCell(value: string | number | null | undefined) {
-  const text = String(value ?? '');
-  return /[",\n\r]/.test(text) ? `"${text.replaceAll('"', '""')}"` : text;
-}
-
 function exportContractsCsv(contracts: ContractListItem[]) {
-  const headers = [
-    'رقم العقد',
-    'المستأجر',
-    'هاتف المستأجر',
-    'الوحدة',
-    'العقار',
-    'عنوان العقار',
-    'الإيجار',
-    'العملة',
-    'دورة السداد',
-    'تاريخ البداية',
-    'تاريخ النهاية',
-    'الحالة',
-  ];
-  const rows = contracts.map((contract) => [
-    getContractNumber(contract),
-    contract.people?.full_name ?? '',
-    contract.people?.phone ?? '',
-    contract.units?.unit_number ?? '',
-    contract.properties?.title ?? '',
-    contract.properties?.address ?? '',
-    displayMoney(contract.rent_amount),
-    activeCurrency,
-    paymentCycleLabels[contract.payment_cycle],
-    contract.start_date,
-    contract.end_date,
-    contractStatusLabels[contract.status],
-  ]);
-  const csv = [headers, ...rows].map((row) => row.map(escapeCsvCell).join(',')).join('\n');
-  const blob = new Blob([`\uFEFF${csv}`], { type: 'text/csv;charset=utf-8' });
-  const url = URL.createObjectURL(blob);
+  const url = URL.createObjectURL(buildContractsCsvBlob(contracts));
   const link = document.createElement('a');
   link.href = url;
-  link.download = `rentrix-contracts-${new Date().toISOString().slice(0, 10)}.csv`;
+  link.download = buildContractsCsvFilename(new Date());
   document.body.append(link);
   link.click();
   link.remove();
