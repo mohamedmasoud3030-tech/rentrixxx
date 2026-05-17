@@ -1,4 +1,5 @@
-import { DEFAULT_CURRENCY, DEFAULT_LOCALE, formatMoney } from '@/lib/formatters';
+import { DEFAULT_CURRENCY } from '@/lib/formatters';
+import { formatDefaultCompanyMoney } from '@/lib/companyFormatters';
 import { contractStatusLabels, paymentCycleLabels } from './contractSchema';
 import type { ContractListItem } from './services/contractService';
 
@@ -21,10 +22,6 @@ export function getContractNumber(contract: Pick<ContractListItem, 'id'>) {
   return `#${contract.id.slice(0, 8)}`;
 }
 
-function formatContractExportMoney(value: number) {
-  return formatMoney({ amount: value, currency: DEFAULT_CURRENCY, locale: DEFAULT_LOCALE });
-}
-
 export function escapeContractCsvCell(value: string | number | null | undefined) {
   const text = value === null || value === undefined ? '' : String(value);
   return /[",\n\r]/.test(text) ? `"${text.replaceAll('"', '""')}"` : text;
@@ -38,7 +35,7 @@ export function buildContractsCsv(contracts: ContractListItem[]) {
     contract.units?.unit_number ?? '',
     contract.properties?.title ?? '',
     contract.properties?.address ?? '',
-    formatContractExportMoney(contract.rent_amount),
+    formatDefaultCompanyMoney(contract.rent_amount),
     DEFAULT_CURRENCY,
     paymentCycleLabels[contract.payment_cycle],
     contract.start_date,
