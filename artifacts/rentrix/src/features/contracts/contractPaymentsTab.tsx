@@ -17,11 +17,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import {
-  DEFAULT_CURRENCY,
-  DEFAULT_LOCALE,
-  formatMoney,
-} from '@/lib/formatters';
+import { formatDefaultCompanyMoney } from '@/lib/companyFormatters';
 import { invoiceStatusLabels } from '@/features/financials/components/invoice-status-labels';
 import { paymentMethodLabels } from '@/features/financials/components/receipt-formatters';
 import type { ContractPaymentsSnapshot } from './services/contractPaymentService';
@@ -38,14 +34,6 @@ const invoiceStatusTone = {
   overdue: 'red',
   void: 'gray',
 } as const;
-
-function money(value: number) {
-  return formatMoney({
-    amount: value,
-    currency: DEFAULT_CURRENCY,
-    locale: DEFAULT_LOCALE,
-  });
-}
 
 function formatDate(value: string): string {
   return arabicDateFormatter.format(new Date(value));
@@ -84,15 +72,15 @@ function ContractPaymentsSummary({
       />
       <SnapshotMetric
         label="إجمالي الفواتير"
-        value={money(snapshot.summary.totalInvoiced)}
+        value={formatDefaultCompanyMoney(snapshot.summary.totalInvoiced)}
       />
       <SnapshotMetric
         label="إجمالي المدفوع"
-        value={money(snapshot.summary.totalPaid)}
+        value={formatDefaultCompanyMoney(snapshot.summary.totalPaid)}
       />
       <SnapshotMetric
         label="المتبقي"
-        value={money(snapshot.summary.totalRemaining)}
+        value={formatDefaultCompanyMoney(snapshot.summary.totalRemaining)}
       />
     </div>
   );
@@ -136,13 +124,13 @@ function ContractInvoicesTable({
                 </StatusBadge>
               </TableCell>
               <TableCell className="font-bold">
-                {money(invoice.amount)}
+                {formatDefaultCompanyMoney(invoice.amount)}
               </TableCell>
               <TableCell className="font-bold text-emerald-700 dark:text-emerald-200">
-                {money(invoice.paid_amount)}
+                {formatDefaultCompanyMoney(invoice.paid_amount)}
               </TableCell>
               <TableCell className="font-bold">
-                {money(invoice.remaining_amount)}
+                {formatDefaultCompanyMoney(invoice.remaining_amount)}
               </TableCell>
             </TableRow>
           ))}
@@ -182,7 +170,7 @@ function ContractPaymentsTable({
             <TableRow key={payment.id}>
               <TableCell>{formatDate(payment.payment_date)}</TableCell>
               <TableCell className="font-bold">
-                {money(payment.amount)}
+                {formatDefaultCompanyMoney(payment.amount)}
               </TableCell>
               <TableCell>
                 {paymentMethodLabels[payment.payment_method]}
