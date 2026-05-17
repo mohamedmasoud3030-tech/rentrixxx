@@ -44,6 +44,7 @@ const contractDetail = {
   payment_cycle: 'monthly',
   status: 'active',
   notes: null,
+  cancellation_reason: null,
   created_at: '2026-05-01T00:00:00.000Z',
   updated_at: '2026-05-02T00:00:00.000Z',
   deleted_at: null,
@@ -112,6 +113,11 @@ describe('ContractDetailPage load and money states', () => {
     const html = renderToStaticMarkup(<ContractDetailPage />);
 
     expectMarkupToContain(html, [
+      'إجراءات التجديد والإنهاء',
+      'سيتم اقتراح بداية اليوم التالي لتاريخ نهاية العقد',
+      'لم تتم إضافة إجراء إنهاء مستقل',
+      'لا يوجد عقد سابق مرتبط بهذا العقد',
+      'سبب الإلغاء',
       'الخط الزمني المالي',
       'دورة السداد: شهري',
       'حالة العقد',

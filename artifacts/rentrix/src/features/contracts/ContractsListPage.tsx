@@ -11,11 +11,10 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { formatMoney, DEFAULT_CURRENCY, DEFAULT_LOCALE } from '@/lib/formatters';
 import { cn } from '@/lib/utils';
 import { buildContractsCsvBlob, buildContractsCsvFilename, getContractNumber } from './contractListExport';
-import { contractStatusLabels, contractStatusValues, paymentCycleLabels } from './contractSchema';
+import { contractStatusLabels, contractStatusTone, contractStatusValues, paymentCycleLabels } from './contractSchema';
 import { useContracts, useSoftDeleteContract } from './useContracts';
 import type { ContractListItem, ContractStatusFilter } from './services/contractService';
 
-const statusTone = { draft: 'gray', active: 'green', expired: 'gold', terminated: 'red' } as const;
 const filterLabels: Record<ContractStatusFilter, string> = { all: 'الكل', draft: 'مسودة', active: 'نشط', expired: 'منتهي', terminated: 'ملغي' };
 const activeCurrency = DEFAULT_CURRENCY;
 const activeLocale = DEFAULT_LOCALE;
@@ -256,7 +255,7 @@ export function ContractsListPage() {
                         <TableCell>{formatDate(contract.end_date)}</TableCell>
                         <TableCell>{displayMoney(contract.rent_amount)}</TableCell>
                         <TableCell>
-                          <StatusBadge tone={statusTone[contract.status]}>{contractStatusLabels[contract.status]}</StatusBadge>
+                          <StatusBadge tone={contractStatusTone[contract.status]}>{contractStatusLabels[contract.status]}</StatusBadge>
                         </TableCell>
                         <TableCell onClick={(event) => event.stopPropagation()}>
                           <div className="flex flex-wrap gap-2">
@@ -301,7 +300,7 @@ export function ContractsListPage() {
                                 {expiringSoon ? <p className="font-bold text-amber-700">تنبيه: العقد ينتهي خلال {daysUntilEnd} يوم.</p> : null}
                               </DetailBox>
                               <DetailBox label="الحالة">
-                                <StatusBadge tone={statusTone[contract.status]}>{contractStatusLabels[contract.status]}</StatusBadge>
+                                <StatusBadge tone={contractStatusTone[contract.status]}>{contractStatusLabels[contract.status]}</StatusBadge>
                                 <p className={cn('mt-2 text-muted-foreground', contract.units?.status === 'occupied' && 'text-primary')}>حالة الوحدة: {contract.units?.status ?? '—'}</p>
                               </DetailBox>
                             </div>
