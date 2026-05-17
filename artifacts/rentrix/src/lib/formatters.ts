@@ -1,3 +1,5 @@
+import { normalizeMoneyNumber } from './moneyNormalization';
+
 export const supportedCurrencies = ['OMR', 'AED', 'SAR', 'QAR', 'KWD', 'BHD', 'USD', 'EGP'] as const;
 
 export type SupportedCurrency = (typeof supportedCurrencies)[number];
@@ -46,8 +48,8 @@ export function getCurrencyMinorUnit(value: unknown): number {
 }
 
 export function formatMoney({ amount, currency = DEFAULT_CURRENCY, locale = DEFAULT_LOCALE, currencyDisplay = 'code' }: MoneyFormatOptions) {
-  const safeAmount = Number(amount ?? 0);
   const metadata = getCurrencyMetadata(currency);
+  const safeAmount = normalizeMoneyNumber(amount);
 
   return new Intl.NumberFormat(locale, {
     style: 'currency',
@@ -55,5 +57,5 @@ export function formatMoney({ amount, currency = DEFAULT_CURRENCY, locale = DEFA
     currencyDisplay,
     minimumFractionDigits: metadata.minorUnit,
     maximumFractionDigits: metadata.minorUnit,
-  }).format(Number.isFinite(safeAmount) ? safeAmount : 0);
+  }).format(safeAmount);
 }
