@@ -58,6 +58,15 @@ describe('ContractDetailPage load and money states', () => {
     expect(html).toContain('A-1');
   });
 
+  it('renders contract-scoped financial and lifecycle timeline context', () => {
+    const html = renderToStaticMarkup(<ContractDetailPage />);
+
+    expect(html).toContain('الخط الزمني المالي');
+    expect(html).toContain('دورة السداد: شهري');
+    expect(html).toContain('حالة العقد');
+    expect(html).toContain('آخر تعديل محفوظ على بيانات العقد');
+  });
+
   it('renders a retryable error state when contract detail loading fails', () => {
     contractsMocks.contractQuery.data = null;
     contractsMocks.contractQuery.error = new Error('تعذر تحميل عقد الاختبار');
