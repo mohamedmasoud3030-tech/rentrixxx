@@ -8,8 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Skeleton } from '@/components/ui/skeleton';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { defaultCompanyLocalSettings } from '@/lib/companySettings';
-import { formatCompanyMoney } from '@/lib/companyFormatters';
+import { formatDefaultCompanyMoney } from '@/lib/companyFormatters';
 import { cn } from '@/lib/utils';
 import { useContracts } from '@/features/contracts/useContracts';
 import type { ContractListItem } from '@/features/contracts/services/contractService';
@@ -23,7 +22,6 @@ import { getDashboardOverview } from './dashboardService';
 
 const dashboardWindowDays = 30;
 const maxExpiringContracts = 5;
-const moneySettings = defaultCompanyLocalSettings;
 
 const quickActions = [
   { label: 'إنشاء عقد', to: '/contracts/new', icon: FileText },
@@ -84,7 +82,7 @@ function formatDate(value: string) {
 }
 
 function formatMoney(value: number) {
-  return formatCompanyMoney(moneySettings, value);
+  return formatDefaultCompanyMoney(value);
 }
 
 function getContractLocation(contract: ContractListItem) {
