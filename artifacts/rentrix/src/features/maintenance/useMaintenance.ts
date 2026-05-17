@@ -1,1 +1,1 @@
-export { useCreateMaintenance, useMaintenance } from './use-maintenance';
+export { useCreateMaintenance, useMaintenance, useUpdateMaintenanceStatus } from './use-maintenance';

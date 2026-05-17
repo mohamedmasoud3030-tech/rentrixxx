@@ -72,15 +72,15 @@ describe('owner hooks', () => {
     const { ownerKeys, useUnlinkOwnerFromProperty } = await import('./useOwners');
 
     const mutationOptions = useUnlinkOwnerFromProperty() as unknown as {
-      onSuccess: (_result: unknown, variables: { propertyId?: string; ownerId?: string }) => Promise<void>;
+      onSuccess: (link: { property_id: string; owner_id: string }, variables: { propertyId?: string; ownerId?: string }) => Promise<void>;
     };
-    await mutationOptions.onSuccess(undefined, { propertyId: 'property-1', ownerId: 'owner-1' });
+    await mutationOptions.onSuccess({ property_id: 'property-1', owner_id: 'owner-1' }, { propertyId: 'property-fallback', ownerId: 'owner-fallback' });
 
     expect(mutationMock.invalidateQueries).toHaveBeenCalledWith({ queryKey: ownerKeys.all });
     expect(mutationMock.invalidateQueries).toHaveBeenCalledWith({ queryKey: propertyKeys.all });
     expect(mutationMock.invalidateQueries).toHaveBeenCalledWith({ queryKey: ownerKeys.propertyOwners('property-1') });
     expect(mutationMock.invalidateQueries).toHaveBeenCalledWith({ queryKey: ownerKeys.detail('owner-1') });
-    expect(mutationMock.toastSuccess).toHaveBeenCalledWith('تم إلغاء ربط المالك بالعقار');
+    expect(mutationMock.toastSuccess).toHaveBeenCalledWith('تم إنهاء علاقة الملكية بنجاح');
   });
 
 });

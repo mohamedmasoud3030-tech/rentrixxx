@@ -30,6 +30,7 @@ import {
   filterOwnerWorkspaceRows,
   getOwnerDisplayLabel,
   getOwnerPropertyOwnershipLabel,
+  isActivePropertyOwnerLink,
   ownerToFormValues,
   propertyOwnerLinkToFormValues,
   propertyOwnershipLinkFormToPayload,
@@ -50,6 +51,10 @@ function Field({ label, children }: FieldProps) {
 type SummaryCardProps = Readonly<{ label: string; value: number; icon: typeof Users }>;
 type EditingPropertyOwnerLink = Readonly<{ id: string; propertyId: string; ownerId: string }>;
 type LinkedPropertyItem = Readonly<{ property: PropertyWithOwners; links: PropertyOwner[] }>;
+
+function getOwnerPageErrorMessage(error: unknown, fallback: string): string {
+  return error instanceof Error ? error.message : fallback;
+}
 
 function SummaryCard({ label, value, icon: Icon }: SummaryCardProps) {
   return (
@@ -191,11 +196,11 @@ function OwnerWorkspaceTable({ rows, search, selectedOwner, onCreateOwner, onEdi
   return <div className="space-y-4"><div className="relative"><Search className="pointer-events-none absolute right-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" /><Input className="pr-10" value={search} onChange={(event) => onSearchChange(event.target.value)} placeholder="بحث باسم المالك أو الهاتف أو الإيميل أو العقار" /></div>{rows.length > 0 ? <OwnerTableContent rows={rows} selectedOwner={selectedOwner} onEditOwner={onEditOwner} onSelectOwner={onSelectOwner} /> : emptyState}</div>;
 }
 
-type OwnerRelationshipsListProps = Readonly<{ linkedProperties: LinkedPropertyItem[]; unlinkPending: boolean; onEditLink: (link: PropertyOwner) => void; onUnlink: (link: PropertyOwner) => void }>;
+type OwnerRelationshipsListProps = Readonly<{ linkedProperties: LinkedPropertyItem[]; endLinkPending: boolean; onEditLink: (link: PropertyOwner) => void; onEndLink: (link: PropertyOwner) => void }>;
 
-function OwnerRelationshipsList({ linkedProperties, unlinkPending, onEditLink, onUnlink }: OwnerRelationshipsListProps) {
+function OwnerRelationshipsList({ linkedProperties, endLinkPending, onEditLink, onEndLink }: OwnerRelationshipsListProps) {
   if (!linkedProperties.length) return <p className="rounded-2xl border border-dashed border-border p-4 text-sm text-muted-foreground">لا توجد عقارات مرتبطة بهذا المالك بعد.</p>;
-  return linkedProperties.map(({ property, links }) => links.map((link) => <div key={link.id} className="rounded-2xl border border-border bg-muted/25 p-4"><div className="flex items-start justify-between gap-3"><div><p className="font-black">{property.title}</p><p className="text-xs text-muted-foreground">{property.address}</p></div><StatusBadge tone={link.is_primary ? 'blue' : 'gray'}>{link.is_primary ? 'أساسي' : 'ثانوي'}</StatusBadge></div><div className="mt-3 grid gap-2 text-sm text-muted-foreground sm:grid-cols-3"><span>نسبة الملكية: <b className="text-foreground">{link.ownership_percentage}%</b></span><span>من: <b className="text-foreground">{link.starts_on ?? '—'}</b></span><span>إلى: <b className="text-foreground">{link.ends_on ?? '—'}</b></span></div><div className="mt-4 flex flex-wrap gap-2"><Button type="button" variant="secondary" className="min-h-9 px-3" onClick={() => onEditLink(link)}>تعديل العلاقة</Button><Button type="button" variant="danger" className="min-h-9 px-3" disabled={unlinkPending} onClick={() => onUnlink(link)}>إلغاء الربط</Button></div></div>));
+  return linkedProperties.map(({ property, links }) => links.map((link) => <div key={link.id} className="rounded-2xl border border-border bg-muted/25 p-4"><div className="flex items-start justify-between gap-3"><div><p className="font-black">{property.title}</p><p className="text-xs text-muted-foreground">{property.address}</p></div><StatusBadge tone={link.is_primary ? 'blue' : 'gray'}>{link.is_primary ? 'أساسي' : 'ثانوي'}</StatusBadge></div><div className="mt-3 grid gap-2 text-sm text-muted-foreground sm:grid-cols-3"><span>نسبة الملكية: <b className="text-foreground">{link.ownership_percentage}%</b></span><span>من: <b className="text-foreground">{link.starts_on ?? '—'}</b></span><span>إلى: <b className="text-foreground">{link.ends_on ?? '—'}</b></span></div><div className="mt-4 flex flex-wrap gap-2"><Button type="button" variant="secondary" className="min-h-9 px-3" onClick={() => onEditLink(link)}>تعديل العلاقة</Button><Button type="button" variant="danger" className="min-h-9 px-3" disabled={endLinkPending} onClick={() => onEndLink(link)}>إنهاء العلاقة</Button></div></div>));
 }
 
 type OwnershipLinkFormProps = Readonly<{
@@ -227,13 +232,15 @@ function OwnershipLinkForm({ values, availableProperties, editingLink, error, is
 
 function getLinkedPropertiesForOwner(owner: Owner | null, properties: PropertyWithOwners[]): LinkedPropertyItem[] {
   if (!owner) return [];
-  return properties.map((property) => ({ property, links: property.property_owners.filter((link) => link.owner_id === owner.id) })).filter((item) => item.links.length > 0);
+  return properties
+    .map((property) => ({ property, links: property.property_owners.filter((link) => link.owner_id === owner.id && isActivePropertyOwnerLink(link)) }))
+    .filter((item) => item.links.length > 0);
 }
 
 function getAvailablePropertiesForLink(owner: Owner | null, properties: PropertyWithOwners[], editingLink: EditingPropertyOwnerLink | null): PropertyWithOwners[] {
   if (!owner) return [];
   if (editingLink) return properties.filter((property) => property.id === editingLink.propertyId);
-  return properties.filter((property) => !property.property_owners.some((link) => link.owner_id === owner.id && !link.ends_on));
+  return properties.filter((property) => !property.property_owners.some((link) => link.owner_id === owner.id && isActivePropertyOwnerLink(link)));
 }
 
 export function OwnersPage() {
@@ -272,7 +279,7 @@ export function OwnersPage() {
   const setLinkField = <FieldName extends keyof PropertyOwnershipLinkFormValues>(field: FieldName, value: PropertyOwnershipLinkFormValues[FieldName]) => { setLinkFormValues((current) => ({ ...current, [field]: value })); setLinkFormError(null); };
   const beginEditLink = (link: PropertyOwner) => { setEditingLink({ id: link.id, propertyId: link.property_id, ownerId: link.owner_id }); setLinkFormValues(propertyOwnerLinkToFormValues(link)); setLinkFormError(null); };
   const resetLinkForm = () => { setEditingLink(null); setLinkFormValues(emptyPropertyOwnershipLinkFormValues); setLinkFormError(null); };
-  const handleUnlinkProperty = async (link: PropertyOwner) => { await unlinkMutation.mutateAsync({ linkId: link.id, propertyId: link.property_id, ownerId: link.owner_id }); if (editingLink?.id === link.id) resetLinkForm(); };
+  const handleEndPropertyOwnership = async (link: PropertyOwner) => { await unlinkMutation.mutateAsync({ linkId: link.id, propertyId: link.property_id, ownerId: link.owner_id }); if (editingLink?.id === link.id) resetLinkForm(); };
   const handleLinkProperty = async (event: FormEvent) => {
     event.preventDefault();
     if (!selectedOwner) return;
@@ -283,7 +290,23 @@ export function OwnersPage() {
     resetLinkForm();
   };
 
+  const firstLoadError = ownersQuery.error ?? propertiesQuery.error ?? activeContractsQuery.error;
+  const hasLoadError = ownersQuery.isError || propertiesQuery.isError || activeContractsQuery.isError;
+  const retryOwnerWorkspace = async () => {
+    await Promise.all([ownersQuery.refetch(), propertiesQuery.refetch(), activeContractsQuery.refetch()]);
+  };
+
   if (ownersQuery.isLoading || propertiesQuery.isLoading || activeContractsQuery.isLoading) return <div className="space-y-4">{Array.from({ length: 5 }, (_, index) => <Skeleton key={index} className="h-24" />)}</div>;
+
+  if (hasLoadError) {
+    return (
+      <EmptyState
+        title="تعذر تحميل مساحة عمل الملاك"
+        description={getOwnerPageErrorMessage(firstLoadError, 'حدث خطأ غير متوقع أثناء تحميل الملاك والعقارات المرتبطة.')}
+        action={<Button type="button" onClick={retryOwnerWorkspace}>إعادة المحاولة</Button>}
+      />
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -291,7 +314,7 @@ export function OwnersPage() {
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4"><SummaryCard label="إجمالي الملاك" value={summary.totalOwners} icon={Users} /><SummaryCard label="الملاك النشطون" value={summary.activeOwners} icon={Users} /><SummaryCard label="عقارات مرتبطة" value={summary.linkedPropertiesCount} icon={Building2} /><SummaryCard label="عقارات بلا علاقة مالك" value={summary.propertiesWithoutLinkedOwner} icon={LinkIcon} /></div>
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1.1fr)_minmax(24rem,0.9fr)]">
         <Card className="overflow-hidden"><CardHeader><CardTitle>مساحة عمل الملاك</CardTitle><CardDescription>ملخص آمن من بيانات الملاك والعقارات والعقود الحالية بدون أرصدة أو تسويات افتراضية.</CardDescription></CardHeader><CardContent><OwnerWorkspaceTable rows={filteredOwnerRows} search={ownerSearch} selectedOwner={selectedOwner} onCreateOwner={openCreateForm} onEditOwner={openEditForm} onSearchChange={setOwnerSearch} onSelectOwner={setSelectedOwnerId} /></CardContent></Card>
-        <Card><CardHeader><CardTitle>علاقات الملكية</CardTitle><CardDescription>{selectedOwner ? `العقارات المرتبطة بـ ${getOwnerDisplayLabel(selectedOwner)}` : 'اختر مالكاً لعرض علاقات الملكية.'}</CardDescription></CardHeader><CardContent className="space-y-5">{selectedOwner ? <><div className="space-y-3"><OwnerRelationshipsList linkedProperties={linkedProperties} unlinkPending={unlinkMutation.isPending} onEditLink={beginEditLink} onUnlink={handleUnlinkProperty} /></div><OwnershipLinkForm values={linkFormValues} availableProperties={availableProperties} editingLink={editingLink} error={linkFormError} isSaving={isSavingLink} onCancelEdit={resetLinkForm} onSubmit={handleLinkProperty} onValueChange={setLinkField} /></> : null}</CardContent></Card>
+        <Card><CardHeader><CardTitle>علاقات الملكية</CardTitle><CardDescription>{selectedOwner ? `العقارات المرتبطة بـ ${getOwnerDisplayLabel(selectedOwner)}` : 'اختر مالكاً لعرض علاقات الملكية.'}</CardDescription></CardHeader><CardContent className="space-y-5">{selectedOwner ? <><div className="space-y-3"><OwnerRelationshipsList linkedProperties={linkedProperties} endLinkPending={unlinkMutation.isPending} onEditLink={beginEditLink} onEndLink={handleEndPropertyOwnership} /></div><OwnershipLinkForm values={linkFormValues} availableProperties={availableProperties} editingLink={editingLink} error={linkFormError} isSaving={isSavingLink} onCancelEdit={resetLinkForm} onSubmit={handleLinkProperty} onValueChange={setLinkField} /></> : null}</CardContent></Card>
       </div>
       <OwnerFormDialog owner={editingOwner} open={formOpen} onOpenChange={setFormOpen} />
     </div>

@@ -88,13 +88,24 @@ describe('ownerService normalization helpers', () => {
     })).toThrow('نسبة الملكية');
   });
 
-  it('uses relationship owner names before falling back to legacy owner_name', () => {
+  it('uses active relationship owner names before falling back to legacy owner_name', () => {
     expect(getPropertyOwnerDisplayName({
       owner_name: 'مالك نصي',
-      property_owners: [{ owner: { full_name: 'مالك مرتبط', display_name: null } }],
+      property_owners: [{ ends_on: null, owner: { full_name: 'مالك مرتبط', display_name: null } }],
     } as Parameters<typeof getPropertyOwnerDisplayName>[0])).toBe('مالك مرتبط');
 
+    expect(getPropertyOwnerDisplayName({
+      owner_name: ' مالك نصي ',
+      property_owners: [{ ends_on: '2026-05-16', owner: { full_name: 'مالك سابق', display_name: null } }],
+    } as Parameters<typeof getPropertyOwnerDisplayName>[0])).toBe('مالك نصي');
     expect(getPropertyOwnerDisplayName({ owner_name: ' مالك نصي ' })).toBe('مالك نصي');
+  });
+
+  it('soft-ends owner-property relationships instead of hard deleting them', () => {
+    const ownerServiceSource = readFileSync(new URL('./ownerService.ts', import.meta.url), 'utf8');
+
+    expect(ownerServiceSource).toContain('.update({ ends_on:');
+    expect(ownerServiceSource).not.toContain('.delete()');
   });
 });
 

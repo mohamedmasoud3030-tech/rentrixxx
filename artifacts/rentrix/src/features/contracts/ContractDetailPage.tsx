@@ -9,13 +9,22 @@ import { Input } from '@/components/ui/input';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { EmptyState } from '@/components/empty-state';
 import { RouteLoadingState } from '@/components/loading-state';
+import { DEFAULT_CURRENCY, DEFAULT_LOCALE, formatMoney } from '@/lib/formatters';
 import { contractStatusLabels, paymentCycleLabels, renewalSchema, type RenewalPayload } from './contractSchema';
 import { useContract, useRenewContract } from './useContracts';
 import { useState } from 'react';
 
 const statusTone = { draft: 'gray', active: 'blue', expired: 'green', terminated: 'red' } as const;
-function money(value: number) { return new Intl.NumberFormat('ar', { maximumFractionDigits: 2 }).format(value); }
+
+function money(value: number) {
+  return formatMoney({ amount: value, currency: DEFAULT_CURRENCY, locale: DEFAULT_LOCALE });
+}
+
 function fieldError(message?: string) { return message ? <span className="text-xs font-bold text-destructive">{message}</span> : null; }
+
+function getContractDetailErrorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : 'حدث خطأ غير متوقع أثناء تحميل العقد.';
+}
 
 export function ContractDetailPage() {
   const { contractId } = useParams({ strict: false }) as { contractId: string };
@@ -25,7 +34,20 @@ export function ContractDetailPage() {
   const [open, setOpen] = useState(false);
   const form = useForm<RenewalPayload>({ resolver: zodResolver(renewalSchema), defaultValues: { new_start: '', new_end: '', new_amount: 0 } });
 
+  const retryContractDetail = async () => {
+    await contractQuery.refetch();
+  };
+
   if (contractQuery.isLoading) return <RouteLoadingState />;
+  if (contractQuery.isError) {
+    return (
+      <EmptyState
+        title="تعذر تحميل العقد"
+        description={getContractDetailErrorMessage(contractQuery.error)}
+        action={<Button type="button" onClick={retryContractDetail}>إعادة المحاولة</Button>}
+      />
+    );
+  }
   if (!contractQuery.data) return <EmptyState title="العقد غير موجود" description="ربما تم حذف العقد أو لا تملك صلاحية الوصول إليه." />;
   const contract = contractQuery.data;
   const timeline = [
@@ -48,4 +70,4 @@ export function ContractDetailPage() {
   );
 }
 
-function Info({ label, value }: { label: string; value: string }) { return <div className="rounded-2xl border border-border bg-background p-4"><p className="text-xs font-bold text-muted-foreground">{label}</p><p className="mt-1 font-black">{value}</p></div>; }
+function Info({ label, value }: Readonly<{ label: string; value: string }>) { return <div className="rounded-2xl border border-border bg-background p-4"><p className="text-xs font-bold text-muted-foreground">{label}</p><p className="mt-1 font-black">{value}</p></div>; }

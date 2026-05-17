@@ -132,6 +132,10 @@ function DetailBox({ label, children }: { label: string; children: ReactNode }) 
   );
 }
 
+function getContractsLoadErrorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : 'حدث خطأ غير متوقع أثناء تحميل العقود.';
+}
+
 function SummaryCard({ label, value, description, icon: Icon }: { label: string; value: string; description: string; icon: typeof FileText }) {
   return (
     <Card className="p-4">
@@ -171,6 +175,9 @@ export function ContractsListPage() {
   const visibleSummary = useMemo(() => summarizeContracts(filteredContracts), [filteredContracts]);
   const hasContracts = Boolean(contractsQuery.data?.length);
   const hasActiveFilters = status !== 'all' || Boolean(searchTerm.trim()) || expiringOnly;
+  const retryContracts = async () => {
+    await contractsQuery.refetch();
+  };
   const resetFilters = () => {
     setStatus('all');
     setSearchTerm('');
@@ -233,6 +240,14 @@ export function ContractsListPage() {
       <Card className="overflow-hidden">
         {contractsQuery.isLoading ? (
           <div className="space-y-3 p-6">{Array.from({ length: 6 }, (_, index) => <Skeleton key={index} className="h-14" />)}</div>
+        ) : contractsQuery.isError ? (
+          <div className="p-6">
+            <EmptyState
+              title="تعذر تحميل العقود"
+              description={getContractsLoadErrorMessage(contractsQuery.error)}
+              action={<Button type="button" onClick={retryContracts}>إعادة المحاولة</Button>}
+            />
+          </div>
         ) : filteredContracts.length ? (
           <div className="overflow-x-auto">
             <Table>
@@ -291,7 +306,7 @@ export function ContractsListPage() {
                                 <Edit className="size-4" />
                               </Link>
                             </Button>
-                            <Button variant="danger" className="min-h-9 px-3" onClick={() => void deleteMutation.mutate(contract.id)} disabled={deleteMutation.isPending}>
+                            <Button variant="danger" className="min-h-9 px-3" onClick={() => deleteMutation.mutate(contract.id)} disabled={deleteMutation.isPending}>
                               <Trash2 className="size-4" />
                             </Button>
                           </div>

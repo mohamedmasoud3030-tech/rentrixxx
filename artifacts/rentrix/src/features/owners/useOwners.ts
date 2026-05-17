@@ -123,10 +123,10 @@ export function useUnlinkOwnerFromProperty() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ linkId }: { linkId: string; propertyId?: string; ownerId?: string }) => unlinkOwnerFromProperty(linkId),
-    onSuccess: async (_result, variables) => {
-      await invalidateOwnerAndPropertyQueries(queryClient, variables.propertyId, variables.ownerId);
-      toast.success('تم إلغاء ربط المالك بالعقار');
+    onSuccess: async (link, variables) => {
+      await invalidateOwnerAndPropertyQueries(queryClient, link.property_id || variables.propertyId, link.owner_id || variables.ownerId);
+      toast.success('تم إنهاء علاقة الملكية بنجاح');
     },
-    onError: (error) => toast.error(error instanceof Error ? error.message : 'تعذر إلغاء ربط المالك بالعقار'),
+    onError: (error) => toast.error(error instanceof Error ? error.message : 'تعذر إنهاء علاقة الملكية'),
   });
 }

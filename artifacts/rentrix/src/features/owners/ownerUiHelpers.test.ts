@@ -6,11 +6,12 @@ import {
   filterOwnerWorkspaceRows,
   propertyOwnerLinkToFormValues,
   propertyOwnershipLinkFormToPayload,
+  isActivePropertyOwnerLink,
   summarizeOwners,
   validateOwnerForm,
   validatePropertyOwnershipLinkForm,
 } from './ownerUiHelpers';
-import type { Owner, PropertyWithOwners } from './ownerService';
+import type { Owner, PropertyOwnerWithOwner, PropertyWithOwners } from './ownerService';
 
 const baseOwner: Owner = {
   id: 'owner-1',
@@ -27,6 +28,21 @@ const baseOwner: Owner = {
   updated_at: '2026-05-15T00:00:00.000Z',
 };
 
+function propertyOwnerLink(propertyId: string, ownerId: string, endsOn: string | null = null): PropertyOwnerWithOwner {
+  return {
+    id: `${propertyId}-${ownerId}-${endsOn ?? 'active'}`,
+    property_id: propertyId,
+    owner_id: ownerId,
+    ownership_percentage: 100,
+    is_primary: true,
+    starts_on: null,
+    ends_on: endsOn,
+    created_at: '2026-05-15T00:00:00.000Z',
+    updated_at: '2026-05-15T00:00:00.000Z',
+    owner: null,
+  };
+}
+
 function property(id: string, ownerIds: string[]): PropertyWithOwners {
   return {
     id,
@@ -41,18 +57,7 @@ function property(id: string, ownerIds: string[]): PropertyWithOwners {
     created_at: '2026-05-15T00:00:00.000Z',
     updated_at: '2026-05-15T00:00:00.000Z',
     deleted_at: null,
-    property_owners: ownerIds.map((ownerId) => ({
-      id: `${id}-${ownerId}`,
-      property_id: id,
-      owner_id: ownerId,
-      ownership_percentage: 100,
-      is_primary: true,
-      starts_on: null,
-      ends_on: null,
-      created_at: '2026-05-15T00:00:00.000Z',
-      updated_at: '2026-05-15T00:00:00.000Z',
-      owner: null,
-    })),
+    property_owners: ownerIds.map((ownerId) => propertyOwnerLink(id, ownerId)),
   };
 }
 
@@ -131,6 +136,29 @@ describe('owner UI helpers', () => {
     expect(filterOwnerWorkspaceRows(rows, 'مالك')).toHaveLength(1);
     expect(filterOwnerWorkspaceRows(rows, 'property-1')).toHaveLength(1);
     expect(filterOwnerWorkspaceRows(rows, 'غير موجود')).toHaveLength(0);
+  });
+
+  it('ignores ended owner-property links in active owner summaries and workspace rows', () => {
+    const activeProperty = property('property-1', ['owner-1']);
+    const endedProperty = {
+      ...property('property-2', []),
+      property_owners: [propertyOwnerLink('property-2', 'owner-1', '2026-05-16')],
+    };
+    const rows = buildOwnerWorkspaceRows([baseOwner], [activeProperty, endedProperty], [
+      { id: 'contract-1', property_id: 'property-1' },
+      { id: 'contract-2', property_id: 'property-2' },
+    ]);
+
+    expect(isActivePropertyOwnerLink(endedProperty.property_owners[0])).toBe(false);
+    expect(rows[0]).toMatchObject({
+      propertyCount: 1,
+      activeContractCount: 1,
+      propertyNames: 'عقار property-1',
+    });
+    expect(summarizeOwners([baseOwner], [activeProperty, endedProperty])).toMatchObject({
+      linkedPropertiesCount: 1,
+      propertiesWithoutLinkedOwner: 1,
+    });
   });
 
   it('summarizes owners and property relationships without financial balances', () => {
