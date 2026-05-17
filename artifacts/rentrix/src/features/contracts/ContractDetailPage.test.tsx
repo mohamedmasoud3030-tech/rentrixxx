@@ -74,7 +74,8 @@ describe('ContractDetailPage load and money states', () => {
     expect(html).toContain('قراءة فقط');
     expect(html).toContain('نسخة العقد الموقعة');
     expect(html).toContain('مرجع العقد: #contract');
-    expect(html).toContain('دون رفع ملفات أو توليد PDF أو إضافة جداول جديدة');
+    expect(html).toContain('دون PDF أو جداول جديدة');
+    expect(html).toContain('لا توجد إجراءات رفع');
   });
 
   it('renders a retryable error state when contract detail loading fails', () => {

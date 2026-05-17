@@ -1,6 +1,6 @@
 import { Link, useNavigate, useParams } from '@tanstack/react-router';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { ArrowRight, CalendarDays, Edit, FileText, LockKeyhole, RefreshCw, WalletCards } from 'lucide-react';
+import { ArrowRight, CalendarDays, Edit, RefreshCw, WalletCards } from 'lucide-react';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { EmptyState } from '@/components/empty-state';
@@ -12,6 +12,7 @@ import { Input } from '@/components/ui/input';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { DEFAULT_CURRENCY, DEFAULT_LOCALE, formatMoney } from '@/lib/formatters';
 import { contractStatusLabels, paymentCycleLabels, renewalSchema, type RenewalPayload } from './contractSchema';
+import { ContractDocumentsShell } from './contractDocumentsShell';
 import type { ContractDetail } from './services/contractService';
 import { useContract, useRenewContract } from './useContracts';
 
@@ -19,21 +20,6 @@ const statusTone = { draft: 'gray', active: 'blue', expired: 'green', terminated
 const DAY_IN_MS = 86_400_000;
 const arabicDateFormatter = new Intl.DateTimeFormat('ar', { dateStyle: 'medium' });
 const arabicDateTimeFormatter = new Intl.DateTimeFormat('ar', { dateStyle: 'medium', timeStyle: 'short' });
-
-const contractDocumentSlots = [
-  {
-    title: 'نسخة العقد الموقعة',
-    description: 'مساحة قراءة مخصصة لعرض مرجع النسخة الموقعة عند توفر خدمة مستندات عقدية لاحقًا.',
-  },
-  {
-    title: 'هوية المستأجر',
-    description: 'موضع تعريفي فقط لملف إثبات هوية المستأجر دون رفع أو تخزين جديد.',
-  },
-  {
-    title: 'ملاحق العقد',
-    description: 'غلاف جاهز لإظهار ملاحق العقد المرتبطة به مستقبلًا بدون توليد PDF أو ترحيل بيانات.',
-  },
-] as const;
 
 type TimelineTone = 'blue' | 'green' | 'red' | 'gray' | 'gold';
 type TimelineItem = Readonly<{
@@ -238,7 +224,7 @@ export function ContractDetailPage() {
         </CardContent>
       </Card>
 
-      <ContractDocumentsShell contract={contract} />
+      <ContractDocumentsShell contractId={contract.id} />
 
       <Card className="overflow-hidden">
         <CardHeader className="bg-muted/35">
@@ -294,50 +280,6 @@ export function ContractDetailPage() {
           </form>
         </DialogContent>
       </Dialog>
-    </div>
-  );
-}
-
-function ContractDocumentsShell({ contract }: Readonly<{ contract: ContractDetail }>) {
-  const documentReference = `#${contract.id.slice(0, 8)}`;
-
-  return (
-    <Card className="overflow-hidden border-dashed border-primary/30 bg-primary/5">
-      <CardHeader className="bg-background/80">
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <div>
-            <CardTitle className="flex items-center gap-2"><FileText className="size-5 text-primary" />تبويب مستندات العقد</CardTitle>
-            <CardDescription>
-              غلاف عقدي للقراءة فقط يوضح مكان ملفات العقد دون رفع ملفات أو توليد PDF أو إضافة جداول جديدة.
-            </CardDescription>
-          </div>
-          <StatusBadge tone="gray"><LockKeyhole className="ml-1 size-3" />قراءة فقط</StatusBadge>
-        </div>
-      </CardHeader>
-      <CardContent className="space-y-4 pt-6">
-        <div className="grid gap-4 md:grid-cols-3">
-          {contractDocumentSlots.map((slot) => (
-            <DocumentSlotCard description={slot.description} key={slot.title} reference={documentReference} title={slot.title} />
-          ))}
-        </div>
-        <div className="rounded-2xl border border-border bg-background p-4 text-sm leading-7 text-muted-foreground">
-          هذا التبويب مرتبط بالعقد الحالي فقط: {documentReference}. لا توجد إجراءات رفع، حذف، طباعة، أو إنشاء إيصالات ضمن هذا النطاق.
-        </div>
-      </CardContent>
-    </Card>
-  );
-}
-
-function DocumentSlotCard({ description, reference, title }: Readonly<{ description: string; reference: string; title: string }>) {
-  return (
-    <div className="rounded-3xl border border-border bg-background p-5 shadow-sm">
-      <div className="flex items-start justify-between gap-3">
-        <div className="rounded-2xl bg-primary/10 p-3 text-primary"><FileText className="size-5" /></div>
-        <StatusBadge tone="gray">غير متصل</StatusBadge>
-      </div>
-      <p className="mt-4 font-black">{title}</p>
-      <p className="mt-2 text-sm leading-6 text-muted-foreground">{description}</p>
-      <p className="mt-4 rounded-xl bg-muted/60 px-3 py-2 text-xs font-bold text-muted-foreground">مرجع العقد: {reference}</p>
     </div>
   );
 }
