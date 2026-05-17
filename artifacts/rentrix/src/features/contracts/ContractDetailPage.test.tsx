@@ -13,12 +13,17 @@ vi.mock('@tanstack/react-router', () => ({
 
 const contractsMocks = vi.hoisted(() => ({
   contractQuery: { data: null as unknown, error: null as Error | null, isError: false, isLoading: false, refetch: vi.fn() },
+  paymentsQuery: { data: null as unknown, error: null as Error | null, isError: false, isLoading: false, refetch: vi.fn() },
   renewMutation: { isPending: false, mutateAsync: vi.fn() },
 }));
 
 vi.mock('./useContracts', () => ({
   useContract: () => contractsMocks.contractQuery,
   useRenewContract: () => contractsMocks.renewMutation,
+}));
+
+vi.mock('./useContractPayments', () => ({
+  useContractPayments: () => contractsMocks.paymentsQuery,
 }));
 
 function expectMarkupToContain(html: string, snippets: readonly string[]) {
@@ -48,12 +53,53 @@ const contractDetail = {
   units: { id: 'unit-1', unit_number: 'A-1', floor: '1', status: 'occupied', rent_amount: 1234.5 },
 };
 
+
+const contractPaymentsSnapshot = {
+  invoices: [{
+    id: 'invoice-1',
+    issue_date: '2026-05-01',
+    due_date: '2026-05-31',
+    amount: 1234.5,
+    paid_amount: 500,
+    remaining_amount: 734.5,
+    status: 'partial',
+    notes: null,
+    payments: [{
+      id: 'payment-1',
+      invoice_id: 'invoice-1',
+      invoice_status: 'partial',
+      invoice_due_date: '2026-05-31',
+      payment_date: '2026-05-10',
+      amount: 500,
+      payment_method: 'bank_transfer',
+      reference_number: 'BANK-REF-1',
+      receipt_reference: 'REC-payment-',
+    }],
+  }],
+  payments: [{
+    id: 'payment-1',
+    invoice_id: 'invoice-1',
+    invoice_status: 'partial',
+    invoice_due_date: '2026-05-31',
+    payment_date: '2026-05-10',
+    amount: 500,
+    payment_method: 'bank_transfer',
+    reference_number: 'BANK-REF-1',
+    receipt_reference: 'REC-payment-',
+  }],
+  summary: { invoiceCount: 1, paymentCount: 1, totalInvoiced: 1234.5, totalPaid: 500, totalRemaining: 734.5 },
+};
+
 describe('ContractDetailPage load and money states', () => {
   beforeEach(() => {
     contractsMocks.contractQuery.data = contractDetail;
     contractsMocks.contractQuery.error = null;
     contractsMocks.contractQuery.isError = false;
     contractsMocks.contractQuery.isLoading = false;
+    contractsMocks.paymentsQuery.data = contractPaymentsSnapshot;
+    contractsMocks.paymentsQuery.error = null;
+    contractsMocks.paymentsQuery.isError = false;
+    contractsMocks.paymentsQuery.isLoading = false;
   });
 
   it('renders rent with centralized currency context', () => {
@@ -76,6 +122,12 @@ describe('ContractDetailPage load and money states', () => {
       'مرجع العقد: #contract',
       'دون PDF أو جداول جديدة',
       'لا توجد إجراءات رفع',
+      'تبويب مدفوعات العقد',
+      'عرض قراءة فقط للفواتير والدفعات ومراجع الإيصالات المرتبطة بهذا العقد فقط',
+      'إجمالي المدفوع',
+      'REC-payment-',
+      'BANK-REF-1',
+      'تحويل بنكي',
     ]);
   });
 
