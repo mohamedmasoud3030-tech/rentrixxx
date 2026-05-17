@@ -5,6 +5,7 @@ import type { Database } from '@/types/database';
 export type Maintenance = Database['public']['Tables']['maintenance_requests']['Row'];
 export type MaintenanceStatus = Maintenance['status'] | 'all';
 export type MaintenancePayload = Database['public']['Tables']['maintenance_requests']['Insert'];
+export type MaintenanceUpdate = Database['public']['Tables']['maintenance_requests']['Update'];
 export async function listMaintenance(status: MaintenanceStatus, propertyId: string) {
   try {
     let q = supabase.from('maintenance_requests').select('*').is('deleted_at', null).order('created_at', { ascending: false });
@@ -25,6 +26,28 @@ export async function createMaintenance(payload: MaintenancePayload) {
     return data;
   } catch (error) {
     handleSupabaseError(error, 'تعذر إنشاء طلب الصيانة');
+    return null as never;
+  }
+}
+
+export async function updateMaintenanceStatus(requestId: string, status: Exclude<MaintenanceStatus, 'all'>) {
+  try {
+    const updatePayload: MaintenanceUpdate = {
+      status,
+      resolved_at: status === 'resolved' || status === 'closed' ? new Date().toISOString() : null,
+    };
+    const { data, error } = await supabase
+      .from('maintenance_requests')
+      .update(updatePayload)
+      .eq('id', requestId)
+      .is('deleted_at', null)
+      .select('*')
+      .single()
+      .returns<Maintenance>();
+    if (error) handleSupabaseError(error);
+    return data;
+  } catch (error) {
+    handleSupabaseError(error, 'تعذر تحديث حالة طلب الصيانة');
     return null as never;
   }
 }

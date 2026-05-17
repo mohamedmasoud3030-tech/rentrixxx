@@ -114,11 +114,19 @@ export function getOwnerDisplayLabel(owner: Pick<Owner, 'full_name' | 'display_n
   return owner.display_name?.trim() || owner.full_name;
 }
 
+export function isActivePropertyOwnerLink(link: Pick<PropertyOwner, 'ends_on'>): boolean {
+  return !link.ends_on;
+}
+
+function getActivePropertyOwnerLinks(property: Pick<PropertyWithOwners, 'property_owners'>): PropertyOwner[] {
+  return property.property_owners.filter(isActivePropertyOwnerLink);
+}
+
 export function summarizeOwners(owners: Owner[], properties: PropertyWithOwners[]): OwnerSummary {
   const linkedPropertyIds = new Set<string>();
 
   for (const property of properties) {
-    if (property.property_owners.length > 0) {
+    if (getActivePropertyOwnerLinks(property).length > 0) {
       linkedPropertyIds.add(property.id);
     }
   }
@@ -127,12 +135,12 @@ export function summarizeOwners(owners: Owner[], properties: PropertyWithOwners[
     totalOwners: owners.length,
     activeOwners: owners.filter((owner) => owner.is_active).length,
     linkedPropertiesCount: linkedPropertyIds.size,
-    propertiesWithoutLinkedOwner: properties.filter((property) => property.property_owners.length === 0).length,
+    propertiesWithoutLinkedOwner: properties.filter((property) => getActivePropertyOwnerLinks(property).length === 0).length,
   };
 }
 
 export function countLinkedPropertiesForOwner(ownerId: string, properties: PropertyWithOwners[]): number {
-  return properties.filter((property) => property.property_owners.some((link) => link.owner_id === ownerId)).length;
+  return properties.filter((property) => getActivePropertyOwnerLinks(property).some((link) => link.owner_id === ownerId)).length;
 }
 
 export type OwnerWorkspaceProperty = {
@@ -193,7 +201,7 @@ function getActiveContractCount(propertyIds: Set<string>, activeContracts: Activ
 }
 
 function buildWorkspaceProperties(ownerId: string, properties: PropertyWithOwners[]): OwnerWorkspaceProperty[] {
-  return properties.flatMap((property) => property.property_owners
+  return properties.flatMap((property) => getActivePropertyOwnerLinks(property)
     .filter((link) => link.owner_id === ownerId)
     .map((link) => ({
       id: property.id,

@@ -4,10 +4,11 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/empty-state';
+import { Skeleton } from '@/components/ui/skeleton';
 import { DataTable } from '@/components/shared/DataTable';
 import { useProperties } from '@/features/properties/use-properties';
 import { useUnits } from '@/features/units/use-units';
-import { useMaintenance, useCreateMaintenance } from './use-maintenance';
+import { useMaintenance, useCreateMaintenance, useUpdateMaintenanceStatus } from './use-maintenance';
 
 const schema = z.object({
   property_id: z.string().uuid('اختر العقار'),
@@ -19,13 +20,49 @@ const schema = z.object({
 
 type FormValues = z.infer<typeof schema>;
 
+const maintenanceStatusLabels = {
+  open: 'مفتوح',
+  in_progress: 'قيد التنفيذ',
+  resolved: 'تم الحل',
+  closed: 'مغلق',
+} as const;
+
+const maintenancePriorityLabels = {
+  low: 'منخفضة',
+  medium: 'متوسطة',
+  high: 'عالية',
+  urgent: 'عاجلة',
+} as const;
+
+function getLoadErrorMessage(error: unknown, fallback: string): string {
+  return error instanceof Error ? error.message : fallback;
+}
+
+const statusFilterValues = ['all', 'open', 'in_progress', 'resolved', 'closed'] as const;
+type MaintenanceStatusFilter = typeof statusFilterValues[number];
+type MaintenanceAction = Readonly<{ label: string; status: Exclude<MaintenanceStatusFilter, 'all'> }>;
+
+function getMaintenanceStatusActions(status: keyof typeof maintenanceStatusLabels): MaintenanceAction[] {
+  if (status === 'open') {
+    return [{ label: 'بدء التنفيذ', status: 'in_progress' }];
+  }
+  if (status === 'in_progress') {
+    return [{ label: 'تم الحل', status: 'resolved' }];
+  }
+  if (status === 'resolved') {
+    return [{ label: 'إغلاق', status: 'closed' }];
+  }
+  return [];
+}
+
 export function MaintenancePage() {
-  const [statusFilter, setStatusFilter] = useState<'all' | 'open' | 'in_progress' | 'resolved' | 'closed'>('all');
+  const [statusFilter, setStatusFilter] = useState<MaintenanceStatusFilter>('all');
   const [propertyFilterId, setPropertyFilterId] = useState('');
 
   const maintenanceQuery = useMaintenance(statusFilter, propertyFilterId);
   const propertiesQuery = useProperties({ search: '', status: 'all', page: 1, pageSize: 200 });
   const createMutation = useCreateMaintenance();
+  const updateStatusMutation = useUpdateMaintenanceStatus();
 
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
@@ -38,6 +75,11 @@ export function MaintenancePage() {
   const properties = propertiesQuery.data?.rows ?? [];
   const units = unitsQuery.data ?? [];
   const maintenanceRows = maintenanceQuery.data ?? [];
+  const loadError = maintenanceQuery.error ?? propertiesQuery.error;
+  const hasLoadError = maintenanceQuery.isError || propertiesQuery.isError;
+  const retryMaintenanceWorkspace = async () => {
+    await Promise.all([maintenanceQuery.refetch(), propertiesQuery.refetch()]);
+  };
 
   const propertyOptions = properties.map((p) => (
     <option key={p.id} value={p.id}>{p.title}</option>
@@ -109,16 +151,54 @@ export function MaintenancePage() {
         <Button type="submit" disabled={createMutation.isPending}>{createMutation.isPending ? 'جارٍ الحفظ...' : 'إضافة طلب صيانة'}</Button>
       </form>
 
-      <DataTable
-        rows={maintenanceRows}
-        keyOf={(row) => row.id}
-        columns={[
-          { key: 'title', header: 'العنوان', render: (row) => row.title },
-          { key: 'status', header: 'الحالة', render: (row) => row.status },
-          { key: 'priority', header: 'الأولوية', render: (row) => row.priority },
-        ]}
-        empty={<EmptyState title="لا توجد طلبات صيانة" description="أضف طلب صيانة جديد للبدء." />}
-      />
+      {maintenanceQuery.isLoading || propertiesQuery.isLoading ? (
+        <div className="space-y-3">{Array.from({ length: 4 }, (_, index) => <Skeleton key={index} className="h-12" />)}</div>
+      ) : null}
+      {!maintenanceQuery.isLoading && !propertiesQuery.isLoading && hasLoadError ? (
+        <EmptyState
+          title="تعذر تحميل طلبات الصيانة"
+          description={getLoadErrorMessage(loadError, 'حدث خطأ غير متوقع أثناء تحميل طلبات الصيانة.')}
+          action={<Button type="button" onClick={retryMaintenanceWorkspace}>إعادة المحاولة</Button>}
+        />
+      ) : null}
+      {!maintenanceQuery.isLoading && !propertiesQuery.isLoading && !hasLoadError ? (
+        <DataTable
+          rows={maintenanceRows}
+          keyOf={(row) => row.id}
+          columns={[
+            { key: 'title', header: 'العنوان', render: (row) => row.title },
+            { key: 'status', header: 'الحالة', render: (row) => maintenanceStatusLabels[row.status] },
+            { key: 'priority', header: 'الأولوية', render: (row) => maintenancePriorityLabels[row.priority] },
+            {
+              key: 'actions',
+              header: 'الإجراء التالي',
+              render: (row) => {
+                const actions = getMaintenanceStatusActions(row.status);
+                if (!actions.length) {
+                  return '—';
+                }
+                return (
+                  <div className="flex flex-wrap gap-2">
+                    {actions.map((action) => (
+                      <Button
+                        key={`${row.id}-${action.status}`}
+                        type="button"
+                        variant="secondary"
+                        className="min-h-8 px-3 text-xs"
+                        disabled={updateStatusMutation.isPending}
+                        onClick={() => updateStatusMutation.mutate({ requestId: row.id, status: action.status })}
+                      >
+                        {action.label}
+                      </Button>
+                    ))}
+                  </div>
+                );
+              },
+            },
+          ]}
+          empty={<EmptyState title="لا توجد طلبات صيانة" description="أضف طلب صيانة جديد للبدء." />}
+        />
+      ) : null}
     </div>
   );
 }

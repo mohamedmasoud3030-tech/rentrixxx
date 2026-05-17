@@ -162,11 +162,16 @@ export function normalizePropertyOwnerUpdatePayload(payload: PropertyOwnerUpdate
 
 export function getPropertyOwnerDisplayName(property: Pick<Property, 'owner_name'> & { property_owners?: PropertyOwnerWithOwner[] | null }): string | null {
   const relationshipNames = (property.property_owners ?? [])
+    .filter((link) => !link.ends_on)
     .map((link) => link.owner?.display_name || link.owner?.full_name || null)
     .filter((name): name is string => Boolean(name));
 
   if (relationshipNames.length > 0) return relationshipNames.join('، ');
   return normalizeNullableString(property.owner_name);
+}
+
+function getTodayIsoDate(): string {
+  return new Date().toISOString().slice(0, 10);
 }
 
 export async function listOwners(): Promise<Owner[]> {
@@ -267,13 +272,17 @@ export async function updatePropertyOwnerLink(linkId: string, payload: PropertyO
   return requireSupabaseData(data, 'تعذر تحديث علاقة ملكية العقار');
 }
 
-export async function unlinkOwnerFromProperty(linkId: string): Promise<void> {
-  const { error } = await supabase
+export async function unlinkOwnerFromProperty(linkId: string, endsOn = getTodayIsoDate()): Promise<PropertyOwner> {
+  const { data, error } = await supabase
     .from('property_owners')
-    .delete()
-    .eq('id', linkId);
+    .update({ ends_on: normalizeNullableDate(endsOn) ?? getTodayIsoDate() })
+    .eq('id', linkId)
+    .select('*')
+    .single()
+    .returns<PropertyOwner>();
 
-  if (error) handleSupabaseError(error, 'تعذر إلغاء ربط المالك بالعقار');
+  if (error) handleSupabaseError(error, 'تعذر إنهاء علاقة ملكية العقار');
+  return requireSupabaseData(data, 'تعذر إنهاء علاقة ملكية العقار');
 }
 
 export async function listActiveContractsForProperties(propertyIds: string[]): Promise<OwnerActiveContract[]> {

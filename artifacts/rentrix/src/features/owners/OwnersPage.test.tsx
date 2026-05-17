@@ -1,5 +1,5 @@
 import { renderToStaticMarkup } from 'react-dom/server';
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { OwnersPage } from './OwnersPage';
 
 vi.mock('@tanstack/react-router', () => ({
@@ -10,8 +10,11 @@ vi.mock('@tanstack/react-router', () => ({
 }));
 
 const ownerPageMocks = vi.hoisted(() => ({
+  activeContractsQuery: { data: [] as Array<{ id: string; property_id: string }>, error: null as Error | null, isError: false, isLoading: false, refetch: vi.fn() },
   createOwner: { isPending: false, mutateAsync: vi.fn() },
   linkOwner: { isPending: false, mutateAsync: vi.fn() },
+  ownersQuery: { data: [] as unknown[], error: null as Error | null, isError: false, isLoading: false, refetch: vi.fn() },
+  propertiesQuery: { data: [] as unknown[], error: null as Error | null, isError: false, isLoading: false, refetch: vi.fn() },
   unlinkOwner: { isPending: false, mutateAsync: vi.fn() },
   updateOwner: { isPending: false, mutateAsync: vi.fn() },
   updateLink: { isPending: false, mutateAsync: vi.fn() },
@@ -83,15 +86,30 @@ const properties = [
 vi.mock('./useOwners', () => ({
   useCreateOwner: () => ownerPageMocks.createOwner,
   useLinkOwnerToProperty: () => ownerPageMocks.linkOwner,
-  useOwnerActiveContracts: () => ({ data: [activeContract], isLoading: false }),
-  useOwners: () => ({ data: [owner], isLoading: false }),
-  usePropertiesWithOwners: () => ({ data: properties, isLoading: false }),
+  useOwnerActiveContracts: () => ownerPageMocks.activeContractsQuery,
+  useOwners: () => ownerPageMocks.ownersQuery,
+  usePropertiesWithOwners: () => ownerPageMocks.propertiesQuery,
   useUnlinkOwnerFromProperty: () => ownerPageMocks.unlinkOwner,
   useUpdateOwner: () => ownerPageMocks.updateOwner,
   useUpdatePropertyOwnerLink: () => ownerPageMocks.updateLink,
 }));
 
 describe('OwnersPage relationship flow surface', () => {
+  beforeEach(() => {
+    ownerPageMocks.activeContractsQuery.data = [activeContract];
+    ownerPageMocks.activeContractsQuery.error = null;
+    ownerPageMocks.activeContractsQuery.isError = false;
+    ownerPageMocks.activeContractsQuery.isLoading = false;
+    ownerPageMocks.ownersQuery.data = [owner];
+    ownerPageMocks.ownersQuery.error = null;
+    ownerPageMocks.ownersQuery.isError = false;
+    ownerPageMocks.ownersQuery.isLoading = false;
+    ownerPageMocks.propertiesQuery.data = properties;
+    ownerPageMocks.propertiesQuery.error = null;
+    ownerPageMocks.propertiesQuery.isError = false;
+    ownerPageMocks.propertiesQuery.isLoading = false;
+  });
+
   it('renders native select link controls and edit/unlink actions for owner-property relationships', () => {
     const html = renderToStaticMarkup(<OwnersPage />);
 
@@ -105,9 +123,20 @@ describe('OwnersPage relationship flow surface', () => {
     expect(html).toContain('العقود النشطة');
     expect(html).toContain('ربط المالك بالعقار');
     expect(html).toContain('تعديل العلاقة');
-    expect(html).toContain('إلغاء الربط');
+    expect(html).toContain('إنهاء العلاقة');
     expect(html).toContain('نسبة الملكية:');
     expect(html).toContain('60%');
     expect(html).toContain('2026-05-01');
+  });
+
+  it('renders an owner workspace error state when relationship data fails to load', () => {
+    ownerPageMocks.propertiesQuery.error = new Error('تعذر تحميل علاقات الاختبار');
+    ownerPageMocks.propertiesQuery.isError = true;
+
+    const html = renderToStaticMarkup(<OwnersPage />);
+
+    expect(html).toContain('تعذر تحميل مساحة عمل الملاك');
+    expect(html).toContain('تعذر تحميل علاقات الاختبار');
+    expect(html).toContain('إعادة المحاولة');
   });
 });
