@@ -21,6 +21,12 @@ vi.mock('./useContracts', () => ({
   useRenewContract: () => contractsMocks.renewMutation,
 }));
 
+function expectMarkupToContain(html: string, snippets: readonly string[]) {
+  snippets.forEach((snippet) => {
+    expect(html).toContain(snippet);
+  });
+}
+
 const contractDetail = {
   id: 'contract-1',
   property_id: 'property-1',
@@ -53,29 +59,24 @@ describe('ContractDetailPage load and money states', () => {
   it('renders rent with centralized currency context', () => {
     const html = renderToStaticMarkup(<ContractDetailPage />);
 
-    expect(html).toContain('OMR');
-    expect(html).toContain('مستأجر الاختبار');
-    expect(html).toContain('A-1');
+    expectMarkupToContain(html, ['OMR', 'مستأجر الاختبار', 'A-1']);
   });
 
   it('renders contract-scoped financial and lifecycle timeline context', () => {
     const html = renderToStaticMarkup(<ContractDetailPage />);
 
-    expect(html).toContain('الخط الزمني المالي');
-    expect(html).toContain('دورة السداد: شهري');
-    expect(html).toContain('حالة العقد');
-    expect(html).toContain('آخر تعديل محفوظ على بيانات العقد');
-  });
-
-  it('renders a contract-scoped read-only documents shell without workflow actions', () => {
-    const html = renderToStaticMarkup(<ContractDetailPage />);
-
-    expect(html).toContain('تبويب مستندات العقد');
-    expect(html).toContain('قراءة فقط');
-    expect(html).toContain('نسخة العقد الموقعة');
-    expect(html).toContain('مرجع العقد: #contract');
-    expect(html).toContain('دون PDF أو جداول جديدة');
-    expect(html).toContain('لا توجد إجراءات رفع');
+    expectMarkupToContain(html, [
+      'الخط الزمني المالي',
+      'دورة السداد: شهري',
+      'حالة العقد',
+      'آخر تعديل محفوظ على بيانات العقد',
+      'تبويب مستندات العقد',
+      'قراءة فقط',
+      'نسخة العقد الموقعة',
+      'مرجع العقد: #contract',
+      'دون PDF أو جداول جديدة',
+      'لا توجد إجراءات رفع',
+    ]);
   });
 
   it('renders a retryable error state when contract detail loading fails', () => {
@@ -85,8 +86,6 @@ describe('ContractDetailPage load and money states', () => {
 
     const html = renderToStaticMarkup(<ContractDetailPage />);
 
-    expect(html).toContain('تعذر تحميل العقد');
-    expect(html).toContain('تعذر تحميل عقد الاختبار');
-    expect(html).toContain('إعادة المحاولة');
+    expectMarkupToContain(html, ['تعذر تحميل العقد', 'تعذر تحميل عقد الاختبار', 'إعادة المحاولة']);
   });
 });
