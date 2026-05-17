@@ -6,14 +6,18 @@ export type MoneyNormalizationOptions = Readonly<{
 
 const DEFAULT_FALLBACK = 0;
 
+function getFiniteFallback(value: number | undefined): number {
+  return Number.isFinite(value) ? Number(value) : DEFAULT_FALLBACK;
+}
+
 function clampMoneyValue(value: number, options: MoneyNormalizationOptions): number {
-  const minimum = options.min ?? Number.NEGATIVE_INFINITY;
-  const maximum = options.max ?? Number.POSITIVE_INFINITY;
+  const minimum = Number.isFinite(options.min) ? Number(options.min) : Number.NEGATIVE_INFINITY;
+  const maximum = Number.isFinite(options.max) ? Number(options.max) : Number.POSITIVE_INFINITY;
   return Math.min(Math.max(value, minimum), maximum);
 }
 
 export function normalizeMoneyNumber(value: unknown, options: MoneyNormalizationOptions = {}): number {
-  const fallback = options.fallback ?? DEFAULT_FALLBACK;
+  const fallback = getFiniteFallback(options.fallback);
   const numericValue = typeof value === 'number' ? value : Number(value);
   const safeValue = Number.isFinite(numericValue) ? numericValue : fallback;
   return clampMoneyValue(safeValue, options);
