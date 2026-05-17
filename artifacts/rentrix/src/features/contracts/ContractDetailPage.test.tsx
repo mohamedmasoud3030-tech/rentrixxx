@@ -67,6 +67,16 @@ describe('ContractDetailPage load and money states', () => {
     expect(html).toContain('آخر تعديل محفوظ على بيانات العقد');
   });
 
+  it('renders a contract-scoped read-only documents shell without workflow actions', () => {
+    const html = renderToStaticMarkup(<ContractDetailPage />);
+
+    expect(html).toContain('تبويب مستندات العقد');
+    expect(html).toContain('قراءة فقط');
+    expect(html).toContain('نسخة العقد الموقعة');
+    expect(html).toContain('مرجع العقد: #contract');
+    expect(html).toContain('دون رفع ملفات أو توليد PDF أو إضافة جداول جديدة');
+  });
+
   it('renders a retryable error state when contract detail loading fails', () => {
     contractsMocks.contractQuery.data = null;
     contractsMocks.contractQuery.error = new Error('تعذر تحميل عقد الاختبار');
