@@ -1,9 +1,9 @@
-import { formatCompanyDate, formatCompanyMoney } from '@/lib/companyFormatters';
+import { formatCompanyDate, formatDefaultCompanyMoney } from '@/lib/companyFormatters';
 import { defaultCompanyLocalSettings } from '@/lib/companySettings';
 import { toFinancialNumber } from '../financialMath';
 
 export function formatMoney(value: number | null | undefined) {
-  return formatCompanyMoney(defaultCompanyLocalSettings, toFinancialNumber(value));
+  return formatDefaultCompanyMoney(toFinancialNumber(value));
 }
 
 export function formatDate(value: string | number | Date) {
