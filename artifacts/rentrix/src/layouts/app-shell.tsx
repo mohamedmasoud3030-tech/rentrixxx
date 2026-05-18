@@ -67,7 +67,7 @@ export function AppShell() {
   };
 
   return (
-    <div className="min-h-screen bg-background text-foreground" dir={appLanguage.direction}>
+    <div className="min-h-screen overflow-x-hidden bg-background text-foreground" dir={appLanguage.direction}>
       <aside className={cn('fixed inset-y-0 right-0 z-30 hidden overflow-hidden border-l border-sidebar-border bg-sidebar text-sidebar-foreground shadow-sidebar transition-all lg:flex lg:flex-col', sidebarCollapsed ? 'w-20' : 'w-72')}>
         <div className="h-[3px] w-full bg-accent" />
         <div className="flex h-24 items-center gap-3 border-b border-white/10 px-5">
@@ -114,22 +114,22 @@ export function AppShell() {
       </aside>
       <div className={cn('transition-all lg:pr-72', sidebarCollapsed && 'lg:pr-20')}>
         <header className="sticky top-0 z-20 border-b border-border bg-background/88 backdrop-blur-xl">
-          <div className="flex h-20 items-center justify-between px-6">
-            <div className="flex items-center gap-4">
-              <Button variant="ghost" className="size-10 px-0" onClick={toggleSidebar} aria-label={sharedLabel('collapseMenu')}>
+          <div className="flex min-h-20 flex-col items-stretch justify-center gap-3 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+            <div className="flex min-w-0 items-center gap-3 sm:gap-4">
+              <Button variant="ghost" className="size-10 shrink-0 px-0" onClick={toggleSidebar} aria-label={sharedLabel('collapseMenu')}>
                 <Menu className="size-5" />
               </Button>
-              <div>
-                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <div className="min-w-0">
+                <div className="flex min-w-0 items-center gap-2 truncate text-xs text-muted-foreground">
                   <span>{sharedLabel('home')}</span>
                   <ChevronLeft className="size-3" />
                   <span>{pageTitle}</span>
                 </div>
-                <h1 className="mt-1 text-3xl font-black tracking-tight">{pageTitle}</h1>
+                <h1 className="mt-1 truncate text-2xl font-black tracking-tight sm:text-3xl">{pageTitle}</h1>
               </div>
             </div>
-            <div className="flex items-center gap-3">
-              <div className="rounded-2xl border border-border bg-card px-4 py-2 text-xs text-muted-foreground">
+            <div className="flex min-w-0 items-center justify-end gap-2 sm:gap-3">
+              <div className="min-w-0 truncate rounded-2xl border border-border bg-card px-3 py-2 text-xs text-muted-foreground sm:px-4">
                 <span className="font-bold text-foreground">{syncStatus}</span>
                 {lastSyncedAt ? ` · ${new Date(lastSyncedAt).toLocaleTimeString(appLanguage.locale)}` : ''}
               </div>
@@ -140,7 +140,7 @@ export function AppShell() {
             </div>
           </div>
         </header>
-        <main className="animate-route-in p-6"><Outlet /></main>
+        <main className="animate-route-in overflow-x-hidden p-4 sm:p-6"><Outlet /></main>
       </div>
     </div>
   );
