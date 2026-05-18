@@ -19,6 +19,11 @@ const HOME_KEY = 'home';
 const UNKNOWN_TRANSLATION_KEY = 'missing.key';
 const ARABIC_HOME_LABEL = 'الرئيسية';
 const ENGLISH_HOME_LABEL = 'Home';
+const sharedCoreLabelCases = [
+  { key: 'retry', arabicLabel: 'إعادة المحاولة', englishLabel: 'Retry' },
+  { key: 'dashboard', arabicLabel: 'لوحة التحكم', englishLabel: 'Dashboard' },
+  { key: 'routeLoadingAria', arabicLabel: 'جار التحميل', englishLabel: 'Loading' },
+] as const;
 
 const ARABIC_LANGUAGE_STATE = { language: ARABIC_LANGUAGE, locale: ARABIC_LANGUAGE, direction: RTL_DIRECTION };
 const ENGLISH_LANGUAGE_STATE = { language: ENGLISH_LANGUAGE, locale: ENGLISH_LANGUAGE, direction: LTR_DIRECTION };
@@ -59,6 +64,13 @@ describe('lightweight i18n and direction foundation', () => {
     expect(translateSharedLabel(HOME_KEY, ENGLISH_LANGUAGE)).toBe(ENGLISH_HOME_LABEL);
     expect(translateSharedLabel(HOME_KEY, UNKNOWN_LANGUAGE)).toBe(ARABIC_HOME_LABEL);
     expect(translateSharedLabel(UNKNOWN_TRANSLATION_KEY, ENGLISH_LANGUAGE)).toBe(UNKNOWN_TRANSLATION_KEY);
+  });
+
+  it('provides shared core labels in Arabic and English', () => {
+    for (const { key, arabicLabel, englishLabel } of sharedCoreLabelCases) {
+      expect(translateSharedLabel(key)).toBe(arabicLabel);
+      expect(translateSharedLabel(key, ENGLISH_LANGUAGE)).toBe(englishLabel);
+    }
   });
 
   it('can apply the default language and direction to a document root', () => {

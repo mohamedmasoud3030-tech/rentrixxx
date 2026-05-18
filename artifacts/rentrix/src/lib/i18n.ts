@@ -10,28 +10,67 @@ import {
 const I18N_NAMESPACE = 'common';
 
 type SharedTranslationResources = Readonly<Record<string, string>>;
+type SharedTranslationEntry = readonly [key: string, arabicLabel: string, englishLabel: string];
+
+const sharedTranslationEntries = [
+  ['appName', 'Rentrix', 'Rentrix'],
+  ['realEstateManagement', 'إدارة العقارات', 'Real estate management'],
+  ['home', 'الرئيسية', 'Home'],
+  ['loading', 'جارٍ التحميل...', 'Loading...'],
+  ['error', 'حدث خطأ غير متوقع', 'An unexpected error occurred'],
+  ['logout', 'تسجيل الخروج', 'Log out'],
+  ['logoutSuccess', 'تم تسجيل الخروج بنجاح', 'Logged out successfully'],
+  ['pageLoadErrorTitle', 'تعذر تحميل هذه الصفحة', 'This page could not be loaded'],
+  [
+    'pageLoadErrorDescription',
+    'حدث خطأ غير متوقع. راجع الإعدادات أو اتصال Supabase ثم حاول مرة أخرى.',
+    'An unexpected error occurred. Check settings or the Supabase connection, then try again.',
+  ],
+  ['retry', 'إعادة المحاولة', 'Retry'],
+  ['routeLoadingAria', 'جار التحميل', 'Loading'],
+  ['dashboard', 'لوحة التحكم', 'Dashboard'],
+  ['properties', 'العقارات', 'Properties'],
+  ['people', 'الأشخاص', 'People'],
+  ['tenants', 'المستأجرين', 'Tenants'],
+  ['owners', 'الملاك', 'Owners'],
+  ['contracts', 'العقود', 'Contracts'],
+  ['financials', 'المالية', 'Financials'],
+  ['invoices', 'الفواتير', 'Invoices'],
+  ['arrears', 'المتأخرات', 'Arrears'],
+  ['accounting', 'المحاسبة', 'Accounting'],
+  ['reports', 'التقارير', 'Reports'],
+  ['maintenance', 'الصيانة', 'Maintenance'],
+  ['settings', 'الإعدادات', 'Settings'],
+  ['collapseMenu', 'طي القائمة', 'Collapse menu'],
+  ['toggleTheme', 'تبديل الوضع', 'Toggle theme'],
+  ['recoverySection', 'قيد الاسترجاع', 'Under recovery'],
+  [
+    'recoveryTooltip',
+    'سيتم استرجاع هذه الوحدة تدريجيًا من الكود القديم',
+    'This module will be restored gradually from the legacy code',
+  ],
+  ['communications', 'التواصل', 'Communications'],
+  ['propertyMap', 'خريطة العقارات', 'Property map'],
+  ['lands', 'الأراضي', 'Lands'],
+  ['prospects', 'العملاء المحتملون', 'Prospects'],
+  ['commissions', 'العمولات', 'Commissions'],
+  ['auditLog', 'سجل التدقيق', 'Audit log'],
+  ['aiAssistant', 'المساعد الذكي', 'AI assistant'],
+] as const satisfies ReadonlyArray<SharedTranslationEntry>;
+
+function getEntryLabel(entry: SharedTranslationEntry, language: SupportedLanguage): string {
+  const [, arabicLabel, englishLabel] = entry;
+
+  return language === 'en' ? englishLabel : arabicLabel;
+}
+
+function buildSharedTranslationResources(language: SupportedLanguage): SharedTranslationResources {
+  return Object.fromEntries(sharedTranslationEntries.map((entry) => [entry[0], getEntryLabel(entry, language)]));
+}
 
 export const i18nResources = {
-  ar: {
-    common: {
-      appName: 'Rentrix',
-      realEstateManagement: 'إدارة العقارات',
-      home: 'الرئيسية',
-      loading: 'جارٍ التحميل...',
-      error: 'حدث خطأ غير متوقع',
-      logout: 'تسجيل الخروج',
-    },
-  },
-  en: {
-    common: {
-      appName: 'Rentrix',
-      realEstateManagement: 'Real estate management',
-      home: 'Home',
-      loading: 'Loading...',
-      error: 'An unexpected error occurred',
-      logout: 'Log out',
-    },
-  },
+  ar: { common: buildSharedTranslationResources('ar') },
+  en: { common: buildSharedTranslationResources('en') },
 } as const satisfies Record<SupportedLanguage, Readonly<Record<typeof I18N_NAMESPACE, SharedTranslationResources>>>;
 
 
