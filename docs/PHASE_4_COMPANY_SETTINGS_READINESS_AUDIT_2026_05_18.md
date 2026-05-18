@@ -379,6 +379,47 @@ Only when explicitly scoped in later phases:
 
 These should not be part of Phase 4's initial Settings readiness implementation because they touch financial/document/reporting domains.
 
+
+## PR 4 downstream consumption audit update — 2026-05-18
+
+Phase 4 PR 4 inspected the normalized company settings contract against existing low-risk downstream consumers. The safe runtime consumption path is now:
+
+1. `useCompanySettings()` continues to own persisted settings loading.
+2. `companySettingsRecordToContract()` adapts the persisted singleton record into `CompanySettingsContract` using the existing normalization helpers.
+3. `useCompanySettingsContract()` exposes the normalized contract with default fallback while settings are loading or unavailable.
+4. Safe display consumers pass that contract into `formatCompanyMoney()` and `formatCompanyDate()`.
+
+### Consumers inspected
+
+| Area | Outcome |
+| --- | --- |
+| `artifacts/rentrix/src/lib/companySettings.ts` | Existing normalized contract remains the source of truth for locale, direction, currency, timezone, country, and prefixes. |
+| `artifacts/rentrix/src/lib/companyFormatters.ts` | Existing company-aware money/date helpers remain the supported formatter boundary. |
+| `artifacts/rentrix/src/features/settings/*` | Settings hooks now expose a normalized read-only downstream contract; SettingsPage preview already consumed company-aware formatters. |
+| `artifacts/rentrix/src/features/contracts/ContractsListPage.tsx` | Safely wired display-only rent and contract dates to the normalized company settings contract. |
+| `artifacts/rentrix/src/features/contracts/ContractDetailPage.tsx` | Safely wired display-only rent, lifecycle dates, timestamps, and day-count numeral locale to the normalized company settings contract. |
+| `artifacts/rentrix/src/features/contracts/contractListExport.ts` | Deferred; CSV export is an output/reporting boundary and should wait for an explicitly scoped export/report phase. |
+| `artifacts/rentrix/src/features/financials/components/*` | Deferred; many components sit next to payment/receipt mutation and generated receipt views, so wiring should be a focused financial display PR. |
+| `artifacts/rentrix/src/app/dashboard-page.tsx` | Deferred; dashboard rebuild/data-source work is separately planned and was not changed. |
+| `artifacts/rentrix/src/lib/i18n.ts` | No change; app/session language remains separate from saved company default language. |
+
+### Safe wiring completed
+
+- Added a read-only persisted-record-to-contract adapter for downstream company settings consumption.
+- Added a normalized settings hook that falls back through the existing company settings defaults.
+- Updated contracts list/detail display formatting only; no contract mutation, renewal defaults, invoice/payment data, document shell behavior, or financial calculations changed.
+
+### Deferred downstream checklist
+
+- Receipt and invoice prefixes: defer until receipt/invoice numbering or document generation is explicitly in scope.
+- Receipt/invoice/PDF/print output: defer because it changes generated document behavior.
+- Financials invoice and receipt components: defer until a display-only financials settings pass can avoid mutation paths.
+- Contract CSV export/report-style outputs: defer until export/report localization is explicitly scoped.
+- Dashboard cards and charts: defer to the planned dashboard phase.
+- App-wide language switching or document-level `lang`/`dir`: defer until product confirms company default language versus user/session language.
+- Logo upload/storage or document branding: defer until branding output/storage is explicitly scoped.
+- Per-contract/per-invoice currency or exchange conversion: defer until schema/product scope exists.
+
 ## Risks and notes before implementation
 
 - **Phase 3 dependency risk:** SettingsPage i18n should not be coded until Phase 3 completion report is accepted. If Phase 3 PR 3 changes shared i18n keys, re-check before coding.
@@ -412,7 +453,7 @@ This audit intentionally did **not** change:
 - Communications or WhatsApp.
 - Legacy source imports or routing architecture.
 
-## Validation plan for this docs-only PR
+## Validation plan for PR 4 code/docs update
 
 Requested validation commands:
 

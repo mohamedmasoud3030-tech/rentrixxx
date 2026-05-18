@@ -268,6 +268,7 @@ Follow this order unless a blocking bug requires a stabilization PR first.
 - Default currency
 - Country and timezone
 - Receipt/invoice settings foundation
+- PR 4 safe downstream consumption: normalized company settings hook may feed display-only consumers; generated documents, numbering, reports, and calculations remain deferred.
 
 ### Phase 5 - Dashboard
 
