@@ -6,6 +6,7 @@ const maintenanceMocks = vi.hoisted(() => ({
   createMutation: { isPending: false, mutate: vi.fn() },
   maintenanceQuery: { data: [] as unknown[], error: null as Error | null, isError: false, isLoading: false, refetch: vi.fn() },
   propertiesQuery: { data: { rows: [] as unknown[] }, error: null as Error | null, isError: false, isLoading: false, refetch: vi.fn() },
+  allUnitsQuery: { data: [] as unknown[], isLoading: false },
   unitsQuery: { data: [] as unknown[], isLoading: false },
   updateStatusMutation: { isPending: false, mutate: vi.fn() },
 }));
@@ -15,6 +16,7 @@ vi.mock('@/features/properties/use-properties', () => ({
 }));
 
 vi.mock('@/features/units/use-units', () => ({
+  useAllUnits: () => maintenanceMocks.allUnitsQuery,
   useUnits: () => maintenanceMocks.unitsQuery,
 }));
 
@@ -27,7 +29,7 @@ vi.mock('./use-maintenance', () => ({
 const maintenanceRow = {
   id: 'maintenance-1',
   property_id: 'property-1',
-  unit_id: null,
+  unit_id: 'unit-1',
   title: 'إصلاح المكيف',
   description: null,
   priority: 'urgent',
@@ -50,15 +52,19 @@ describe('MaintenancePage recovery states', () => {
     maintenanceMocks.propertiesQuery.error = null;
     maintenanceMocks.propertiesQuery.isError = false;
     maintenanceMocks.propertiesQuery.isLoading = false;
+    maintenanceMocks.allUnitsQuery.data = [];
     maintenanceMocks.unitsQuery.data = [];
   });
 
-  it('renders Arabic maintenance status and priority labels', () => {
+  it('renders Arabic maintenance status, priority, and location labels', () => {
     maintenanceMocks.maintenanceQuery.data = [maintenanceRow];
+    maintenanceMocks.propertiesQuery.data = { rows: [{ id: 'property-1', title: 'برج النخيل' }] };
+    maintenanceMocks.allUnitsQuery.data = [{ id: 'unit-1', property_id: 'property-1', unit_number: 'A-12' }];
 
     const html = renderToStaticMarkup(<MaintenancePage />);
 
     expect(html).toContain('إصلاح المكيف');
+    expect(html).toContain('برج النخيل / A-12');
     expect(html).toContain('قيد التنفيذ');
     expect(html).toContain('عاجلة');
     expect(html).toContain('تم الحل');
