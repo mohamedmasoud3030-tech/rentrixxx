@@ -34,7 +34,7 @@ export function PropertiesListPage() {
   const hasFilterValues = search.trim().length > 0 || status !== 'all';
 
   const handleArchiveProperty = async (propertyId: string, title: string) => {
-    const shouldArchive = window.confirm(`سيتم أرشفة العقار "${title}" وإخفاؤه من القوائم النشطة. يمكنك مراجعته لاحقًا من السجلات المؤرشفة. هل تريد المتابعة؟`);
+    const shouldArchive = globalThis.confirm(`سيتم أرشفة العقار "${title}" وإخفاؤه من القوائم النشطة. يمكنك مراجعته لاحقًا من السجلات المؤرشفة. هل تريد المتابعة؟`);
     if (!shouldArchive) {
       return;
     }
@@ -62,11 +62,13 @@ export function PropertiesListPage() {
       </Card>
 
       <Card className="overflow-hidden">
-        {propertiesQuery.isLoading ? (
+        {propertiesQuery.isLoading && (
           <div className="space-y-3 p-6">
             {Array.from({ length: 6 }, (_, index) => <Skeleton key={index} className="h-14" />)}
           </div>
-        ) : propertiesQuery.isError ? (
+        )}
+
+        {!propertiesQuery.isLoading && propertiesQuery.isError && (
           <div className="p-6">
             <EmptyState
               title="تعذر تحميل قائمة العقارات"
@@ -74,7 +76,9 @@ export function PropertiesListPage() {
               action={<Button onClick={() => { propertiesQuery.refetch(); }}>إعادة المحاولة</Button>}
             />
           </div>
-        ) : propertiesQuery.data?.rows.length ? (
+        )}
+
+        {!propertiesQuery.isLoading && !propertiesQuery.isError && propertiesQuery.data?.rows.length ? (
           <div className="overflow-x-auto">
             <Table>
               <TableHeader>
@@ -110,7 +114,9 @@ export function PropertiesListPage() {
               </TableBody>
             </Table>
           </div>
-        ) : (
+        ) : null}
+
+        {!propertiesQuery.isLoading && !propertiesQuery.isError && !propertiesQuery.data?.rows.length && (
           <div className="p-6"><EmptyState title={hasFilterValues ? 'لا توجد عقارات مطابقة' : 'لا توجد عقارات حتى الآن'} description={hasFilterValues ? 'جرّب تعديل البحث أو الحالة لعرض نتائج أخرى.' : 'أضف أول عقار لبدء إدارة المحفظة العقارية في النسخة التجارية التجريبية.'} action={<Button asChild><Link to="/properties/new">إضافة عقار</Link></Button>} /></div>
         )}
       </Card>
