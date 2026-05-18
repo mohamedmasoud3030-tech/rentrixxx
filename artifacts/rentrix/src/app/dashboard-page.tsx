@@ -8,17 +8,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Skeleton } from '@/components/ui/skeleton';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { formatDefaultCompanyMoney } from '@/lib/companyFormatters';
+import { useCompanySettingsContract } from '@/features/settings/useCompanySettings';
+import { formatCompanyDate, formatCompanyMoney } from '@/lib/companyFormatters';
+import type { CompanySettingsContract } from '@/lib/companySettings';
 import { cn } from '@/lib/utils';
-import { useContracts } from '@/features/contracts/useContracts';
 import type { ContractListItem } from '@/features/contracts/services/contractService';
-import {
-  useAgedReceivablesReport,
-  useArrearsSummaryReport,
-  useFinancialPeriodSummaryReport,
-  useOverdueInvoicesReport,
-} from '@/features/financials/reports/useFinancialReports';
-import { getDashboardOverview } from './dashboardService';
+import { getDashboardSnapshot, type DashboardSnapshot } from './dashboardSnapshot';
 
 const dashboardWindowDays = 30;
 const maxExpiringContracts = 5;
@@ -57,6 +52,8 @@ type ExpiringContractRow = {
   daysRemaining: number;
 };
 
+type DashboardMoneyFormatter = (value: number | null | undefined) => string;
+
 function toDateInputValue(date: Date) {
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, '0');
@@ -77,12 +74,8 @@ function calculateDaysRemaining(endDate: string, today: Date) {
   return Math.max(0, Math.ceil((endTimestamp - todayTimestamp) / (24 * 60 * 60 * 1000)));
 }
 
-function formatDate(value: string) {
-  return new Intl.DateTimeFormat('ar', { year: 'numeric', month: 'short', day: 'numeric' }).format(new Date(`${value}T00:00:00.000Z`));
-}
-
-function formatMoney(value: number) {
-  return formatDefaultCompanyMoney(value);
+function formatDashboardDate(settings: CompanySettingsContract, value: string) {
+  return formatCompanyDate(settings, `${value}T00:00:00`);
 }
 
 function getContractLocation(contract: ContractListItem) {
@@ -109,9 +102,68 @@ function buildExpiringContracts(contracts: ContractListItem[] | undefined, today
     .slice(0, maxExpiringContracts);
 }
 
+export function buildDashboardSummaryCards(snapshot: DashboardSnapshot | undefined, formatMoney: DashboardMoneyFormatter): KpiCard[] {
+  return [
+    {
+      title: 'الإيجار المستحق',
+      value: formatMoney(snapshot?.financial.rentDue ?? 0),
+      icon: Banknote,
+      description: 'إجمالي المفوتر خلال الفترة الحالية',
+      tone: 'bg-sky-600',
+      isMoney: true,
+    },
+    {
+      title: 'المحصل هذا الشهر',
+      value: formatMoney(snapshot?.financial.collectedRent ?? 0),
+      icon: WalletCards,
+      description: `${snapshot?.financial.paymentsCount ?? 0} دفعات مسجلة`,
+      tone: 'bg-emerald-600',
+      isMoney: true,
+    },
+    {
+      title: 'الرصيد المتبقي',
+      value: formatMoney(snapshot?.financial.outstandingRent ?? 0),
+      icon: ReceiptText,
+      description: `${snapshot?.financial.invoicesCount ?? 0} فواتير في الفترة`,
+      tone: 'bg-amber-600',
+      isMoney: true,
+    },
+    {
+      title: 'المصروفات',
+      value: formatMoney(snapshot?.financial.expenses ?? 0),
+      icon: AlertTriangle,
+      description: `${snapshot?.financial.expensesCount ?? 0} مصروفات مسجلة`,
+      tone: 'bg-rose-600',
+      isMoney: true,
+    },
+    {
+      title: 'صافي المركز',
+      value: formatMoney(snapshot?.financial.netPosition ?? 0),
+      icon: Building2,
+      description: 'تحصيل الفترة ناقص المصروفات',
+      tone: 'bg-indigo-600',
+      isMoney: true,
+    },
+    {
+      title: 'الإشغال',
+      value: `${snapshot?.operational.occupancyRate ?? 0}%`,
+      icon: Home,
+      description: `${snapshot?.operational.occupiedUnits ?? 0} مشغولة / ${snapshot?.operational.units ?? 0} وحدة`,
+      tone: 'bg-cyan-600',
+    },
+    {
+      title: 'تنتهي خلال 30 يوم',
+      value: snapshot?.operational.expiringContracts30Days ?? 0,
+      icon: CalendarClock,
+      description: 'عقود تحتاج متابعة',
+      tone: 'bg-orange-600',
+    },
+  ];
+}
+
 function KpiGrid({ cards, isLoading }: Readonly<{ cards: KpiCard[]; isLoading: boolean }>) {
   return (
-    <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6">
+    <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4 2xl:grid-cols-7">
       {cards.map((card) => {
         const Icon = card.icon;
         return (
@@ -135,7 +187,15 @@ function KpiGrid({ cards, isLoading }: Readonly<{ cards: KpiCard[]; isLoading: b
   );
 }
 
-function ExpiringContractsPanel({ rows, isLoading }: Readonly<{ rows: ExpiringContractRow[]; isLoading: boolean }>) {
+function ExpiringContractsPanel({
+  rows,
+  isLoading,
+  formatDate,
+}: Readonly<{
+  rows: ExpiringContractRow[];
+  isLoading: boolean;
+  formatDate: (value: string) => string;
+}>) {
   return (
     <Card className="xl:col-span-2">
       <CardHeader className="flex flex-row items-start justify-between gap-4 space-y-0">
@@ -198,12 +258,14 @@ function ArrearsPanel({
   averageDaysOverdue,
   buckets,
   isLoading,
+  formatMoney,
 }: Readonly<{
   totalOverdue: number;
   overdueInvoiceCount: number;
   averageDaysOverdue: number;
   buckets: { label: string; total: number; invoiceCount: number }[];
   isLoading: boolean;
+  formatMoney: DashboardMoneyFormatter;
 }>) {
   return (
     <Card>
@@ -274,88 +336,43 @@ function QuickActionsPanel() {
   );
 }
 
+function DashboardErrorCard({ onRetry }: Readonly<{ onRetry: () => void }>) {
+  return (
+    <Card className="border-destructive/40 bg-destructive/5">
+      <CardHeader>
+        <CardTitle>تعذر تحميل بيانات لوحة التحكم</CardTitle>
+        <CardDescription>راجع اتصال Supabase أو صلاحيات التقارير الحالية ثم أعد المحاولة.</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <Button type="button" variant="secondary" onClick={onRetry}>إعادة المحاولة</Button>
+      </CardContent>
+    </Card>
+  );
+}
+
 export function DashboardPage() {
   const now = useMemo(() => new Date(), []);
+  const settings = useCompanySettingsContract();
   const today = toDateInputValue(now);
-  const monthStart = useMemo(() => toDateInputValue(new Date(now.getFullYear(), now.getMonth(), 1)), [now]);
-  const periodFilters = useMemo(() => ({ dateFrom: monthStart, dateTo: today }), [monthStart, today]);
-  const arrearsFilters = useMemo(() => ({ asOf: today }), [today]);
+  const dashboardDate = (value: string) => formatDashboardDate(settings, value);
+  const dashboardMoney = (value: number | null | undefined) => formatCompanyMoney(settings, value);
 
   const dashboardQuery = useQuery({
-    queryKey: ['dashboard-overview', now.getMonth() + 1, now.getFullYear(), today],
-    queryFn: () => getDashboardOverview(now),
+    queryKey: ['dashboard-snapshot', now.getMonth() + 1, now.getFullYear(), today],
+    queryFn: () => getDashboardSnapshot(now),
   });
-  const activeContractsQuery = useContracts({ status: 'active' });
-  const periodSummaryQuery = useFinancialPeriodSummaryReport(periodFilters);
-  const overdueInvoicesQuery = useOverdueInvoicesReport(arrearsFilters);
-  const arrearsSummaryQuery = useArrearsSummaryReport(arrearsFilters);
-  const agedReceivablesQuery = useAgedReceivablesReport(arrearsFilters);
 
-  const overview = dashboardQuery.data;
-  const expiringContracts = useMemo(() => buildExpiringContracts(activeContractsQuery.data, now), [activeContractsQuery.data, now]);
-  const activeContractsCount = activeContractsQuery.data?.length ?? overview?.operational.activeContracts ?? 0;
-  const monthlyCollection = periodSummaryQuery.data?.paid ?? overview?.financial.total_collected ?? 0;
-  const overdueAmount = overdueInvoicesQuery.data?.totalOverdue ?? overview?.financial.total_overdue_invoices ?? 0;
-  const overdueInvoiceCount = overdueInvoicesQuery.data?.invoiceCount ?? overview?.operational.overdueInvoices ?? 0;
-
-  const kpiCards: KpiCard[] = [
-    {
-      title: 'إجمالي العقارات',
-      value: overview?.operational.properties ?? '—',
-      icon: Building2,
-      description: 'العقارات غير المؤرشفة',
-      tone: 'bg-sky-600',
-    },
-    {
-      title: 'إجمالي الوحدات',
-      value: overview?.operational.units ?? '—',
-      icon: Home,
-      description: 'الوحدات المسجلة',
-      tone: 'bg-cyan-600',
-    },
-    {
-      title: 'العقود النشطة',
-      value: activeContractsCount,
-      icon: FileText,
-      description: 'عقود سارية المفعول',
-      tone: 'bg-emerald-600',
-    },
-    {
-      title: 'تنتهي خلال 30 يوم',
-      value: overview?.operational.expiringContracts30Days ?? expiringContracts.length,
-      icon: CalendarClock,
-      description: 'عقود تحتاج متابعة',
-      tone: 'bg-amber-600',
-    },
-    {
-      title: 'الفواتير المتأخرة',
-      value: overdueInvoiceCount,
-      icon: AlertTriangle,
-      description: formatMoney(overdueAmount),
-      tone: 'bg-rose-600',
-    },
-    {
-      title: 'تحصيل الشهر',
-      value: formatMoney(monthlyCollection),
-      icon: WalletCards,
-      description: 'دفعات محصلة هذا الشهر',
-      tone: 'bg-indigo-600',
-      isMoney: true,
-    },
-  ];
-
+  const snapshot = dashboardQuery.data;
+  const expiringContracts = useMemo(() => buildExpiringContracts(snapshot?.activeContracts, now), [snapshot?.activeContracts, now]);
+  const kpiCards = useMemo(() => buildDashboardSummaryCards(snapshot, dashboardMoney), [snapshot, dashboardMoney]);
   const buckets = arrearsBucketOrder.map((key) => {
-    const bucket = agedReceivablesQuery.data?.buckets[key];
+    const bucket = snapshot?.arrears.agedReceivables.buckets[key];
     return {
       label: arrearsBucketLabels[key],
       total: bucket?.total ?? 0,
       invoiceCount: bucket?.invoiceCount ?? 0,
     };
   });
-
-  const isKpiLoading = dashboardQuery.isLoading || activeContractsQuery.isLoading || periodSummaryQuery.isLoading || overdueInvoicesQuery.isLoading;
-  const isArrearsLoading = overdueInvoicesQuery.isLoading || arrearsSummaryQuery.isLoading || agedReceivablesQuery.isLoading;
-  const hasDashboardError = dashboardQuery.isError || activeContractsQuery.isError || periodSummaryQuery.isError || overdueInvoicesQuery.isError || arrearsSummaryQuery.isError || agedReceivablesQuery.isError;
 
   return (
     <div className="space-y-6">
@@ -370,25 +387,28 @@ export function DashboardPage() {
           </div>
           <div className="rounded-3xl bg-primary/10 p-5 text-primary">
             <p className="text-xs font-black text-muted-foreground">حتى تاريخ</p>
-            <p className="mt-2 text-2xl font-black">{formatDate(today)}</p>
+            <p className="mt-2 text-2xl font-black">{dashboardDate(snapshot?.period.dateTo ?? today)}</p>
           </div>
         </div>
       </section>
 
-      <KpiGrid cards={kpiCards} isLoading={isKpiLoading} />
+      {dashboardQuery.isError ? <DashboardErrorCard onRetry={() => void dashboardQuery.refetch()} /> : null}
+
+      <KpiGrid cards={kpiCards} isLoading={dashboardQuery.isLoading} />
 
       <section className="grid gap-4 xl:grid-cols-3">
-        <ExpiringContractsPanel rows={expiringContracts} isLoading={activeContractsQuery.isLoading} />
+        <ExpiringContractsPanel rows={expiringContracts} isLoading={dashboardQuery.isLoading} formatDate={dashboardDate} />
         <QuickActionsPanel />
       </section>
 
       <section className="grid gap-4 xl:grid-cols-[1.15fr_0.85fr]">
         <ArrearsPanel
-          totalOverdue={overdueAmount}
-          overdueInvoiceCount={overdueInvoiceCount}
-          averageDaysOverdue={arrearsSummaryQuery.data?.averageDaysOverdue ?? 0}
+          totalOverdue={snapshot?.arrears.totalOverdue ?? 0}
+          overdueInvoiceCount={snapshot?.arrears.overdueInvoiceCount ?? 0}
+          averageDaysOverdue={snapshot?.arrears.averageDaysOverdue ?? 0}
           buckets={buckets}
-          isLoading={isArrearsLoading}
+          isLoading={dashboardQuery.isLoading}
+          formatMoney={dashboardMoney}
         />
         <Card>
           <CardHeader>
@@ -396,27 +416,19 @@ export function DashboardPage() {
             <CardDescription>ملخص يعتمد على تقرير الفترة المالية الحالي.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
-            {periodSummaryQuery.isLoading ? <Skeleton className="h-48 w-full" /> : null}
-            {!periodSummaryQuery.isLoading ? (
+            {dashboardQuery.isLoading ? <Skeleton className="h-48 w-full" /> : null}
+            {!dashboardQuery.isLoading ? (
               <>
-                <div className="flex items-center justify-between rounded-2xl bg-muted p-4"><span className="font-bold text-muted-foreground">المفوتر</span><span className="font-black" dir="ltr">{formatMoney(periodSummaryQuery.data?.invoiced ?? 0)}</span></div>
-                <div className="flex items-center justify-between rounded-2xl bg-muted p-4"><span className="font-bold text-muted-foreground">المحصل</span><span className="font-black" dir="ltr">{formatMoney(monthlyCollection)}</span></div>
-                <div className="flex items-center justify-between rounded-2xl bg-muted p-4"><span className="font-bold text-muted-foreground">المتبقي</span><span className="font-black" dir="ltr">{formatMoney(periodSummaryQuery.data?.outstanding ?? 0)}</span></div>
+                <div className="flex items-center justify-between rounded-2xl bg-muted p-4"><span className="font-bold text-muted-foreground">المفوتر</span><span className="font-black" dir="ltr">{dashboardMoney(snapshot?.financial.rentDue ?? 0)}</span></div>
+                <div className="flex items-center justify-between rounded-2xl bg-muted p-4"><span className="font-bold text-muted-foreground">المحصل</span><span className="font-black" dir="ltr">{dashboardMoney(snapshot?.financial.collectedRent ?? 0)}</span></div>
+                <div className="flex items-center justify-between rounded-2xl bg-muted p-4"><span className="font-bold text-muted-foreground">المتبقي</span><span className="font-black" dir="ltr">{dashboardMoney(snapshot?.financial.outstandingRent ?? 0)}</span></div>
+                <div className="flex items-center justify-between rounded-2xl bg-muted p-4"><span className="font-bold text-muted-foreground">صافي المركز</span><span className="font-black" dir="ltr">{dashboardMoney(snapshot?.financial.netPosition ?? 0)}</span></div>
                 <Button asChild className="w-full"><Link to="/financials">فتح المالية</Link></Button>
               </>
             ) : null}
           </CardContent>
         </Card>
       </section>
-
-      {hasDashboardError ? (
-        <Card className="border-destructive/40 bg-destructive/5">
-          <CardHeader>
-            <CardTitle>تعذر تحميل جزء من بيانات اللوحة</CardTitle>
-            <CardDescription>راجع اتصال Supabase أو صلاحيات التقارير الحالية. ستظل الروابط والبيانات المحملة متاحة.</CardDescription>
-          </CardHeader>
-        </Card>
-      ) : null}
     </div>
   );
 }
