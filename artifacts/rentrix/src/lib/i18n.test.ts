@@ -19,15 +19,11 @@ const HOME_KEY = 'home';
 const UNKNOWN_TRANSLATION_KEY = 'missing.key';
 const ARABIC_HOME_LABEL = 'الرئيسية';
 const ENGLISH_HOME_LABEL = 'Home';
-const RETRY_KEY = 'retry';
-const DASHBOARD_KEY = 'dashboard';
-const ROUTE_LOADING_ARIA_KEY = 'routeLoadingAria';
-const ARABIC_RETRY_LABEL = 'إعادة المحاولة';
-const ENGLISH_RETRY_LABEL = 'Retry';
-const ARABIC_DASHBOARD_LABEL = 'لوحة التحكم';
-const ENGLISH_DASHBOARD_LABEL = 'Dashboard';
-const ARABIC_ROUTE_LOADING_ARIA_LABEL = 'جار التحميل';
-const ENGLISH_ROUTE_LOADING_ARIA_LABEL = 'Loading';
+const sharedCoreLabelCases = [
+  { key: 'retry', arabicLabel: 'إعادة المحاولة', englishLabel: 'Retry' },
+  { key: 'dashboard', arabicLabel: 'لوحة التحكم', englishLabel: 'Dashboard' },
+  { key: 'routeLoadingAria', arabicLabel: 'جار التحميل', englishLabel: 'Loading' },
+] as const;
 
 const ARABIC_LANGUAGE_STATE = { language: ARABIC_LANGUAGE, locale: ARABIC_LANGUAGE, direction: RTL_DIRECTION };
 const ENGLISH_LANGUAGE_STATE = { language: ENGLISH_LANGUAGE, locale: ENGLISH_LANGUAGE, direction: LTR_DIRECTION };
@@ -71,12 +67,10 @@ describe('lightweight i18n and direction foundation', () => {
   });
 
   it('provides shared core labels in Arabic and English', () => {
-    expect(translateSharedLabel(RETRY_KEY)).toBe(ARABIC_RETRY_LABEL);
-    expect(translateSharedLabel(RETRY_KEY, ENGLISH_LANGUAGE)).toBe(ENGLISH_RETRY_LABEL);
-    expect(translateSharedLabel(DASHBOARD_KEY)).toBe(ARABIC_DASHBOARD_LABEL);
-    expect(translateSharedLabel(DASHBOARD_KEY, ENGLISH_LANGUAGE)).toBe(ENGLISH_DASHBOARD_LABEL);
-    expect(translateSharedLabel(ROUTE_LOADING_ARIA_KEY)).toBe(ARABIC_ROUTE_LOADING_ARIA_LABEL);
-    expect(translateSharedLabel(ROUTE_LOADING_ARIA_KEY, ENGLISH_LANGUAGE)).toBe(ENGLISH_ROUTE_LOADING_ARIA_LABEL);
+    for (const { key, arabicLabel, englishLabel } of sharedCoreLabelCases) {
+      expect(translateSharedLabel(key)).toBe(arabicLabel);
+      expect(translateSharedLabel(key, ENGLISH_LANGUAGE)).toBe(englishLabel);
+    }
   });
 
   it('can apply the default language and direction to a document root', () => {
