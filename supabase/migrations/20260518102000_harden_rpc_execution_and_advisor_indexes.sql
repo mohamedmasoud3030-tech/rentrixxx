@@ -11,55 +11,39 @@
 -- not dropped here because this project is still being built out and many
 -- indexes support required FK/reporting/query paths even if they have not yet
 -- appeared in pg_stat_user_indexes.
+--
+-- PostgreSQL does not support `ALTER FUNCTION IF EXISTS ...`, so each function
+-- is resolved with to_regprocedure before applying ALTER/REVOKE/GRANT.
 
 begin;
 
--- Mutation RPCs
-alter function if exists public.post_receipt_atomic(jsonb) security invoker;
-alter function if exists public.renew_contract_atomic(uuid, jsonb) security invoker;
-alter function if exists public.void_receipt_atomic(uuid, bigint, jsonb, jsonb) security invoker;
-
--- Report RPCs
-alter function if exists public.rpt_aged_receivables(date) security invoker;
-alter function if exists public.rpt_balance_sheet(date) security invoker;
-alter function if exists public.rpt_daily_collection(date, date) security invoker;
-alter function if exists public.rpt_financial_summary(date, date) security invoker;
-alter function if exists public.rpt_income_statement(date, date) security invoker;
-alter function if exists public.rpt_overdue_invoices(date) security invoker;
-alter function if exists public.rpt_owner_statement(uuid, date, date) security invoker;
-alter function if exists public.rpt_rent_roll(date) security invoker;
-alter function if exists public.rpt_tenant_statement(uuid) security invoker;
-alter function if exists public.rpt_trial_balance(date) security invoker;
-
--- Keep RPCs callable only by expected runtime roles, not PUBLIC/anonymous by default.
-revoke execute on function public.post_receipt_atomic(jsonb) from public;
-revoke execute on function public.renew_contract_atomic(uuid, jsonb) from public;
-revoke execute on function public.void_receipt_atomic(uuid, bigint, jsonb, jsonb) from public;
-revoke execute on function public.rpt_aged_receivables(date) from public;
-revoke execute on function public.rpt_balance_sheet(date) from public;
-revoke execute on function public.rpt_daily_collection(date, date) from public;
-revoke execute on function public.rpt_financial_summary(date, date) from public;
-revoke execute on function public.rpt_income_statement(date, date) from public;
-revoke execute on function public.rpt_overdue_invoices(date) from public;
-revoke execute on function public.rpt_owner_statement(uuid, date, date) from public;
-revoke execute on function public.rpt_rent_roll(date) from public;
-revoke execute on function public.rpt_tenant_statement(uuid) from public;
-revoke execute on function public.rpt_trial_balance(date) from public;
-
--- Authenticated app users still need these RPCs, now without SECURITY DEFINER elevation.
-grant execute on function public.post_receipt_atomic(jsonb) to authenticated;
-grant execute on function public.renew_contract_atomic(uuid, jsonb) to authenticated;
-grant execute on function public.void_receipt_atomic(uuid, bigint, jsonb, jsonb) to authenticated;
-grant execute on function public.rpt_aged_receivables(date) to authenticated;
-grant execute on function public.rpt_balance_sheet(date) to authenticated;
-grant execute on function public.rpt_daily_collection(date, date) to authenticated;
-grant execute on function public.rpt_financial_summary(date, date) to authenticated;
-grant execute on function public.rpt_income_statement(date, date) to authenticated;
-grant execute on function public.rpt_overdue_invoices(date) to authenticated;
-grant execute on function public.rpt_owner_statement(uuid, date, date) to authenticated;
-grant execute on function public.rpt_rent_roll(date) to authenticated;
-grant execute on function public.rpt_tenant_statement(uuid) to authenticated;
-grant execute on function public.rpt_trial_balance(date) to authenticated;
+do $$
+declare
+  rpc_signature text;
+  rpc_functions text[] := array[
+    'public.post_receipt_atomic(jsonb)',
+    'public.renew_contract_atomic(uuid,jsonb)',
+    'public.void_receipt_atomic(uuid,bigint,jsonb,jsonb)',
+    'public.rpt_aged_receivables(date)',
+    'public.rpt_balance_sheet(date)',
+    'public.rpt_daily_collection(date,date)',
+    'public.rpt_financial_summary(date,date)',
+    'public.rpt_income_statement(date,date)',
+    'public.rpt_overdue_invoices(date)',
+    'public.rpt_owner_statement(uuid,date,date)',
+    'public.rpt_rent_roll(date)',
+    'public.rpt_tenant_statement(uuid)',
+    'public.rpt_trial_balance(date)'
+  ];
+begin
+  foreach rpc_signature in array rpc_functions loop
+    if to_regprocedure(rpc_signature) is not null then
+      execute format('alter function %s security invoker', rpc_signature);
+      execute format('revoke execute on function %s from public', rpc_signature);
+      execute format('grant execute on function %s to authenticated', rpc_signature);
+    end if;
+  end loop;
+end $$;
 
 -- Cover FK automation_run_logs.job_id.
 create index if not exists idx_automation_run_logs_job_id
