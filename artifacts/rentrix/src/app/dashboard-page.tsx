@@ -1,7 +1,7 @@
 import { Link } from '@tanstack/react-router';
 import { AlertTriangle, ArrowLeft, Banknote, Building2, CalendarClock, FileText, Home, ReceiptText, WalletCards } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
-import { useMemo } from 'react';
+import { useCallback, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -102,58 +102,72 @@ function buildExpiringContracts(contracts: ContractListItem[] | undefined, today
     .slice(0, maxExpiringContracts);
 }
 
+function createMoneyCard(params: Omit<KpiCard, 'value' | 'isMoney'> & { amount: number; formatMoney: DashboardMoneyFormatter }): KpiCard {
+  return {
+    title: params.title,
+    value: params.formatMoney(params.amount),
+    icon: params.icon,
+    description: params.description,
+    tone: params.tone,
+    isMoney: true,
+  };
+}
+
 export function buildDashboardSummaryCards(snapshot: DashboardSnapshot | undefined, formatMoney: DashboardMoneyFormatter): KpiCard[] {
+  const financial = snapshot?.financial;
+  const operational = snapshot?.operational;
+
   return [
-    {
+    createMoneyCard({
       title: 'الإيجار المستحق',
-      value: formatMoney(snapshot?.financial.rentDue ?? 0),
+      amount: financial?.rentDue ?? 0,
       icon: Banknote,
       description: 'إجمالي المفوتر خلال الفترة الحالية',
       tone: 'bg-sky-600',
-      isMoney: true,
-    },
-    {
+      formatMoney,
+    }),
+    createMoneyCard({
       title: 'المحصل هذا الشهر',
-      value: formatMoney(snapshot?.financial.collectedRent ?? 0),
+      amount: financial?.collectedRent ?? 0,
       icon: WalletCards,
-      description: `${snapshot?.financial.paymentsCount ?? 0} دفعات مسجلة`,
+      description: `${financial?.paymentsCount ?? 0} دفعات مسجلة`,
       tone: 'bg-emerald-600',
-      isMoney: true,
-    },
-    {
+      formatMoney,
+    }),
+    createMoneyCard({
       title: 'الرصيد المتبقي',
-      value: formatMoney(snapshot?.financial.outstandingRent ?? 0),
+      amount: financial?.outstandingRent ?? 0,
       icon: ReceiptText,
-      description: `${snapshot?.financial.invoicesCount ?? 0} فواتير في الفترة`,
+      description: `${financial?.invoicesCount ?? 0} فواتير في الفترة`,
       tone: 'bg-amber-600',
-      isMoney: true,
-    },
-    {
+      formatMoney,
+    }),
+    createMoneyCard({
       title: 'المصروفات',
-      value: formatMoney(snapshot?.financial.expenses ?? 0),
+      amount: financial?.expenses ?? 0,
       icon: AlertTriangle,
-      description: `${snapshot?.financial.expensesCount ?? 0} مصروفات مسجلة`,
+      description: `${financial?.expensesCount ?? 0} مصروفات مسجلة`,
       tone: 'bg-rose-600',
-      isMoney: true,
-    },
-    {
+      formatMoney,
+    }),
+    createMoneyCard({
       title: 'صافي المركز',
-      value: formatMoney(snapshot?.financial.netPosition ?? 0),
+      amount: financial?.netPosition ?? 0,
       icon: Building2,
       description: 'تحصيل الفترة ناقص المصروفات',
       tone: 'bg-indigo-600',
-      isMoney: true,
-    },
+      formatMoney,
+    }),
     {
       title: 'الإشغال',
-      value: `${snapshot?.operational.occupancyRate ?? 0}%`,
+      value: `${operational?.occupancyRate ?? 0}%`,
       icon: Home,
-      description: `${snapshot?.operational.occupiedUnits ?? 0} مشغولة / ${snapshot?.operational.units ?? 0} وحدة`,
+      description: `${operational?.occupiedUnits ?? 0} مشغولة / ${operational?.units ?? 0} وحدة`,
       tone: 'bg-cyan-600',
     },
     {
       title: 'تنتهي خلال 30 يوم',
-      value: snapshot?.operational.expiringContracts30Days ?? 0,
+      value: operational?.expiringContracts30Days ?? 0,
       icon: CalendarClock,
       description: 'عقود تحتاج متابعة',
       tone: 'bg-orange-600',
@@ -354,8 +368,8 @@ export function DashboardPage() {
   const now = useMemo(() => new Date(), []);
   const settings = useCompanySettingsContract();
   const today = toDateInputValue(now);
-  const dashboardDate = (value: string) => formatDashboardDate(settings, value);
-  const dashboardMoney = (value: number | null | undefined) => formatCompanyMoney(settings, value);
+  const dashboardDate = useCallback((value: string) => formatDashboardDate(settings, value), [settings]);
+  const dashboardMoney = useCallback((value: number | null | undefined) => formatCompanyMoney(settings, value), [settings]);
 
   const dashboardQuery = useQuery({
     queryKey: ['dashboard-snapshot', now.getMonth() + 1, now.getFullYear(), today],
