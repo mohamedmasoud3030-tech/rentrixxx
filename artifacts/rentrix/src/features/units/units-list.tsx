@@ -1,5 +1,6 @@
-import { Edit, Plus, Trash2 } from 'lucide-react';
+import { Archive, Edit, Plus } from 'lucide-react';
 import { useState } from 'react';
+import type { UseQueryResult } from '@tanstack/react-query';
 import { EmptyState } from '@/components/empty-state';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -11,7 +12,7 @@ import { formatCompanyMoney } from '@/lib/companyFormatters';
 import type { Unit } from '@/types/domain';
 import { unitStatusLabels } from './unit-schema';
 import { UnitFormModal } from './unit-form-modal';
-import { useSoftDeleteUnit, useUnits } from './use-units';
+import { useSoftDeleteUnit } from './use-units';
 
 const unitStatusTone = { available: 'green', occupied: 'blue', maintenance: 'gold', reserved: 'gray' } as const;
 
@@ -20,20 +21,33 @@ function money(value: number | null) {
   return formatCompanyMoney(defaultCompanyLocalSettings, value);
 }
 
-export function UnitsList({ propertyId }: { propertyId: string }) {
-  const unitsQuery = useUnits(propertyId);
+export function UnitsList({ propertyId, unitsQuery }: Readonly<{ propertyId: string; unitsQuery: UseQueryResult<Unit[]> }>) {
   const deleteMutation = useSoftDeleteUnit(propertyId);
   const [editingUnit, setEditingUnit] = useState<Unit | null>(null);
+  const [archiveCandidate, setArchiveCandidate] = useState<Unit | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
 
   const openForCreate = () => {
     setEditingUnit(null);
+    setArchiveCandidate(null);
     setModalOpen(true);
   };
 
   const openForEdit = (unit: Unit) => {
     setEditingUnit(unit);
+    setArchiveCandidate(null);
     setModalOpen(true);
+  };
+
+  const requestArchiveUnit = (unit: Unit) => {
+    setArchiveCandidate(unit);
+  };
+
+  const confirmArchiveUnit = () => {
+    if (!archiveCandidate) return;
+    deleteMutation.mutate(archiveCandidate.id, {
+      onSuccess: () => setArchiveCandidate(null),
+    });
   };
 
   return (
@@ -45,7 +59,18 @@ export function UnitsList({ propertyId }: { propertyId: string }) {
         </div>
         <Button onClick={openForCreate}><Plus className="ml-2 size-4" />إضافة وحدة</Button>
       </CardHeader>
-      <CardContent>
+      <CardContent className="space-y-4">
+        {archiveCandidate ? (
+          <div className="rounded-2xl border border-destructive/30 bg-destructive/5 p-4">
+            <p className="font-black">تأكيد أرشفة الوحدة {archiveCandidate.unit_number}</p>
+            <p className="mt-1 text-sm text-muted-foreground">ستبقى بيانات الوحدة محفوظة كسجل أرشيفي ولن تظهر ضمن الوحدات النشطة.</p>
+            <div className="mt-3 flex flex-wrap gap-2">
+              <Button variant="danger" onClick={confirmArchiveUnit} disabled={deleteMutation.isPending}>تأكيد الأرشفة</Button>
+              <Button variant="secondary" onClick={() => setArchiveCandidate(null)} disabled={deleteMutation.isPending}>إلغاء</Button>
+            </div>
+          </div>
+        ) : null}
+
         {unitsQuery.isLoading ? (
           <div className="space-y-3">
             {Array.from({ length: 4 }, (_, index) => <Skeleton key={index} className="h-14" />)}
@@ -74,7 +99,7 @@ export function UnitsList({ propertyId }: { propertyId: string }) {
                     <TableCell>
                       <div className="flex gap-2">
                         <Button variant="secondary" className="min-h-9 px-3" onClick={() => openForEdit(unit)}><Edit className="size-4" /></Button>
-                        <Button variant="danger" className="min-h-9 px-3" onClick={() => void deleteMutation.mutate(unit.id)} disabled={deleteMutation.isPending}><Trash2 className="size-4" /></Button>
+                        <Button variant="danger" className="min-h-9 px-3" aria-label="أرشفة الوحدة" onClick={() => requestArchiveUnit(unit)} disabled={deleteMutation.isPending}><Archive className="size-4" /></Button>
                       </div>
                     </TableCell>
                   </TableRow>
