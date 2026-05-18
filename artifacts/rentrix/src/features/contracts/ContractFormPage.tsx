@@ -13,6 +13,7 @@ import { RouteLoadingState } from '@/components/loading-state';
 import { listPeople } from '@/features/people/people-service';
 import { listProperties } from '@/features/properties/property-service';
 import { listUnitsByProperty } from '@/features/units/unit-service';
+import { buildContractUnitOptionLabel, isUnitSelectableForContract } from './contract-unit-options';
 import { contractSchema, contractStatusLabels, contractStatusValues, paymentCycleLabels, paymentCycleValues, type ContractFormValues } from './contractSchema';
 import { useContract, useCreateContract, useUpdateContract } from './useContracts';
 
@@ -30,9 +31,11 @@ export function ContractFormPage() {
     defaultValues: { property_id: '', unit_id: '', tenant_id: '', start_date: '', end_date: '', rent_amount: 0, payment_cycle: 'monthly', status: 'draft', cancellation_reason: '', notes: '' },
   });
   const propertyId = useWatch({ control: form.control, name: 'property_id' });
+  const selectedUnitId = useWatch({ control: form.control, name: 'unit_id' });
   const propertiesQuery = useQuery({ queryKey: ['contracts', 'properties-options'], queryFn: () => listProperties({ search: '', status: 'all', page: 1, pageSize: 200 }) });
   const peopleQuery = useQuery({ queryKey: ['contracts', 'tenant-options'], queryFn: () => listPeople({ search: '', type: 'tenant', page: 1, pageSize: 200 }) });
   const unitsQuery = useQuery({ queryKey: ['contracts', 'unit-options', propertyId], queryFn: () => listUnitsByProperty(propertyId || ''), enabled: Boolean(propertyId) });
+  const selectedProperty = propertiesQuery.data?.rows.find((property) => property.id === propertyId);
 
   useEffect(() => {
     if (!contractQuery.data) return;
@@ -62,7 +65,7 @@ export function ContractFormPage() {
       <CardContent>
         <form className="grid gap-5 md:grid-cols-2" onSubmit={form.handleSubmit(async (values) => { const payload = contractSchema.parse(values); if (isEdit && contractId) await updateMutation.mutateAsync(payload); else await createMutation.mutateAsync(payload); await navigate({ to: '/contracts' }); })}>
           <label className="grid gap-2 text-sm font-bold">العقار<Select {...form.register('property_id')}><option value="">اختر العقار</option>{propertiesQuery.data?.rows.map((property) => <option key={property.id} value={property.id}>{property.title}</option>)}</Select>{fieldError(form.formState.errors.property_id?.message)}</label>
-          <label className="grid gap-2 text-sm font-bold">الوحدة<Select {...form.register('unit_id')} disabled={!propertyId}><option value="">اختر الوحدة</option>{unitsQuery.data?.map((unit) => <option key={unit.id} value={unit.id}>{unit.unit_number}</option>)}</Select>{fieldError(form.formState.errors.unit_id?.message)}</label>
+          <label className="grid gap-2 text-sm font-bold">الوحدة<Select {...form.register('unit_id')} disabled={!propertyId}><option value="">اختر الوحدة</option>{unitsQuery.data?.map((unit) => <option key={unit.id} value={unit.id} disabled={!isUnitSelectableForContract({ unit, selectedUnitId })}>{buildContractUnitOptionLabel({ unit, property: selectedProperty })}</option>)}</Select>{fieldError(form.formState.errors.unit_id?.message)}</label>
           <label className="grid gap-2 text-sm font-bold">المستأجر<Select {...form.register('tenant_id')}><option value="">اختر المستأجر</option>{peopleQuery.data?.rows.map((person) => <option key={person.id} value={person.id}>{person.full_name}</option>)}</Select>{fieldError(form.formState.errors.tenant_id?.message)}</label>
           <label className="grid gap-2 text-sm font-bold">الحالة<Select {...form.register('status')}>{contractStatusValues.map((status) => <option key={status} value={status}>{contractStatusLabels[status]}</option>)}</Select>{fieldError(form.formState.errors.status?.message)}</label>
           <label className="grid gap-2 text-sm font-bold">تاريخ البداية<Input type="date" {...form.register('start_date')} />{fieldError(form.formState.errors.start_date?.message)}</label>
