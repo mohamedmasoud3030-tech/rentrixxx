@@ -2,20 +2,21 @@ import { CatchBoundary, ErrorComponent, type ErrorComponentProps } from '@tansta
 import type { PropsWithChildren } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { translateSharedLabel } from '@/lib/i18n';
 
 export function RouteErrorFallback({ error, reset }: ErrorComponentProps) {
   return (
     <div className="flex min-h-[60vh] items-center justify-center p-6">
       <Card className="max-w-2xl border-destructive/30">
         <CardHeader>
-          <CardTitle>تعذر تحميل هذه الصفحة</CardTitle>
-          <CardDescription>حدث خطأ غير متوقع. راجع الإعدادات أو اتصال Supabase ثم حاول مرة أخرى.</CardDescription>
+          <CardTitle>{translateSharedLabel('pageLoadErrorTitle')}</CardTitle>
+          <CardDescription>{translateSharedLabel('pageLoadErrorDescription')}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="rounded-xl bg-destructive/10 p-4 text-left font-mono text-xs text-destructive" dir="ltr">
             <ErrorComponent error={error} />
           </div>
-          <Button onClick={reset}>إعادة المحاولة</Button>
+          <Button onClick={reset}>{translateSharedLabel('retry')}</Button>
         </CardContent>
       </Card>
     </div>
