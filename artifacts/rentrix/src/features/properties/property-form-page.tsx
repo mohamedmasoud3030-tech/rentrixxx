@@ -62,7 +62,7 @@ export function PropertyFormPage() {
       <CardHeader className="flex flex-row items-start justify-between gap-4">
         <div>
           <CardTitle>{isEdit ? 'تعديل عقار' : 'إضافة عقار جديد'}</CardTitle>
-          <CardDescription>أدخل بيانات العقار الأساسية. الحذف لاحقاً يكون حذفاً أرشيفياً فقط.</CardDescription>
+          <CardDescription>أدخل بيانات العقار الأساسية. اسم المالك هنا للعرض الخفيف فقط وليس ربط ملكية أو حسابات ملاك.</CardDescription>
         </div>
         <Button variant="secondary" asChild><Link to="/properties"><ArrowRight className="ml-2 size-4" />العودة</Link></Button>
       </CardHeader>
@@ -95,8 +95,9 @@ export function PropertyFormPage() {
             {fieldError(form.formState.errors.address?.message)}
           </label>
           <label className="grid gap-2 text-sm font-bold">
-            اسم المالك
-            <Input {...form.register('owner_name')} placeholder="اختياري" />
+            اسم المالك للعرض
+            <Input {...form.register('owner_name')} placeholder="اسم عرض اختياري يظهر في قائمة وتفاصيل العقار" />
+            <p className="text-xs font-medium text-muted-foreground">حقل نصي خفيف للعرض فقط، ولا ينشئ حساب مالك أو نسب ملكية.</p>
           </label>
           <label className="grid gap-2 text-sm font-bold">
             الحالة
