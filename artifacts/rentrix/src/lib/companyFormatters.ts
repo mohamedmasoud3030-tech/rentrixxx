@@ -1,20 +1,27 @@
-import { getLanguageLocale, normalizeCompanyLocalSettings, type CompanyLocalSettings, defaultCompanyLocalSettings } from './companySettings';
+import {
+  defaultCompanySettingsContract,
+  normalizeCompanySettingsContract,
+  type CompanyLocalSettings,
+  type CompanySettingsContract,
+} from './companySettings';
 import { formatMoney } from './formatters';
 
-export function getCompanyLocale(settings: Partial<CompanyLocalSettings> | null | undefined) {
-  const normalized = normalizeCompanyLocalSettings(settings);
-  return getLanguageLocale(normalized.defaultLanguage);
+type CompanyFormatterSettings = Partial<CompanyLocalSettings & Pick<CompanySettingsContract, 'locale'>> | null | undefined;
+
+export function getCompanyLocale(settings: CompanyFormatterSettings) {
+  return normalizeCompanySettingsContract(settings).locale;
 }
 
-export function formatCompanyMoney(settings: Partial<CompanyLocalSettings> | null | undefined, amount: number | null | undefined) {
-  const normalized = normalizeCompanyLocalSettings(settings);
-  return formatMoney({ amount, currency: normalized.defaultCurrency, locale: getCompanyLocale(normalized) });
+export function formatCompanyMoney(settings: CompanyFormatterSettings, amount: number | null | undefined) {
+  const normalized = normalizeCompanySettingsContract(settings);
+  return formatMoney({ amount, currency: normalized.defaultCurrency, locale: normalized.locale });
 }
 
 export function formatDefaultCompanyMoney(amount: number | null | undefined) {
-  return formatCompanyMoney(defaultCompanyLocalSettings, amount);
+  return formatCompanyMoney(defaultCompanySettingsContract, amount);
 }
 
-export function formatCompanyDate(settings: Partial<CompanyLocalSettings> | null | undefined, value: string | number | Date) {
-  return new Date(value).toLocaleDateString(getCompanyLocale(settings));
+export function formatCompanyDate(settings: CompanyFormatterSettings, value: string | number | Date) {
+  const normalized = normalizeCompanySettingsContract(settings);
+  return new Date(value).toLocaleDateString(normalized.locale, { timeZone: normalized.timezone });
 }

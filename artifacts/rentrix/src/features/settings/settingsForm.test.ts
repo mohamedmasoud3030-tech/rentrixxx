@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   areCompanySettingsDraftsEqual,
+  companySettingsDraftToLocalSettings,
   companySettingsDraftToPayload,
   validateCompanySettingsDraft,
   type CompanySettingsDraft,
@@ -15,7 +16,7 @@ const validDraft: CompanySettingsDraft = {
   email: '',
   address: '',
   city: 'Muscat',
-  country: 'Oman',
+  country: 'OM',
   currency: 'OMR',
   locale: 'ar-OM',
   timezone: 'Asia/Muscat',
@@ -68,6 +69,21 @@ describe('settingsForm helpers', () => {
     expect(areCompanySettingsDraftsEqual(validDraft, { ...validDraft, invoice_prefix: 'BILL' })).toBe(false);
   });
 
+  it('converts drafts to normalized local settings for formatter/runtime consumers', () => {
+    expect(companySettingsDraftToLocalSettings({
+      ...validDraft,
+      currency: 'XYZ',
+      locale: 'en-OM',
+      country: 'Oman',
+      timezone: 'Europe/Paris',
+    })).toMatchObject({
+      defaultLanguage: 'en',
+      defaultCurrency: 'OMR',
+      country: 'OM',
+      timezone: 'Asia/Muscat',
+    });
+  });
+
   it('converts drafts to update payloads without dropping persisted fields', () => {
     expect(companySettingsDraftToPayload(validDraft)).toEqual({
       company_name: 'Rentrix',
@@ -78,7 +94,7 @@ describe('settingsForm helpers', () => {
       email: '',
       address: '',
       city: 'Muscat',
-      country: 'Oman',
+      country: 'OM',
       currency: 'OMR',
       locale: 'ar-OM',
       timezone: 'Asia/Muscat',
