@@ -40,6 +40,7 @@ describe('companySettingsService', () => {
       legal_name: '  Rentrix LLC  ',
       currency: '   ',
       locale: '',
+      country: ' Oman ',
       timezone: undefined,
       date_format: ' yyyy-MM-dd ',
       number_format: undefined,
@@ -50,6 +51,7 @@ describe('companySettingsService', () => {
       legal_name: 'Rentrix LLC',
       currency: 'OMR',
       locale: 'ar-OM',
+      country: 'OM',
       timezone: 'Asia/Muscat',
       date_format: 'yyyy-MM-dd',
       number_format: 'ar-OM',
@@ -100,6 +102,7 @@ describe('companySettingsService', () => {
       company_name: 'Rentrix',
       currency: 'OMR',
       locale: 'ar-OM',
+      country: 'OM',
       timezone: 'Asia/Muscat',
     });
     expect(supabaseMock.from).toHaveBeenCalledTimes(1);
@@ -110,14 +113,20 @@ describe('companySettingsService', () => {
 
     expect(normalizeCompanySettingsUpdatePayload({
       company_name: ' New Name ',
+      country: 'unsupported',
       currency: '',
+      locale: 'fr-FR',
+      timezone: 'Europe/Paris',
       id: 'should-not-update',
       created_at: 'should-not-update',
       updated_at: 'should-not-update',
       singleton_key: false,
     } as Parameters<typeof normalizeCompanySettingsUpdatePayload>[0])).toEqual({
       company_name: 'New Name',
+      country: 'OM',
       currency: 'OMR',
+      locale: 'ar-OM',
+      timezone: 'Asia/Muscat',
     });
   });
 

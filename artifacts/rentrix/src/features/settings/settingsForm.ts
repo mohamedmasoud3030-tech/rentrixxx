@@ -1,5 +1,4 @@
-import type { CompanyLocalSettings } from '@/lib/companySettings';
-import type { SupportedCurrency } from '@/lib/formatters';
+import { normalizeCompanySettingsContract, type CompanyLocalSettings } from '@/lib/companySettings';
 import type { CompanySettingsRecord, CompanySettingsUpdatePayload } from './companySettingsService';
 
 export type CompanySettingsDraft = {
@@ -117,16 +116,16 @@ export function companySettingsDraftToPayload(draft: CompanySettingsDraft): Comp
 }
 
 export function companySettingsDraftToLocalSettings(draft: CompanySettingsDraft): CompanyLocalSettings {
-  return {
+  return normalizeCompanySettingsContract({
     companyName: draft.company_name,
     logoUrl: draft.logo_url || null,
-    defaultLanguage: draft.locale.trim().toLowerCase().startsWith('en') ? 'en' : 'ar',
-    defaultCurrency: draft.currency as SupportedCurrency,
+    locale: draft.locale,
+    defaultCurrency: draft.currency,
     country: draft.country,
     timezone: draft.timezone,
     receiptPrefix: draft.receipt_prefix,
     invoicePrefix: draft.invoice_prefix,
-  };
+  });
 }
 
 export function areCompanySettingsDraftsEqual(left: CompanySettingsDraft | null, right: CompanySettingsDraft | null): boolean {

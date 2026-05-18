@@ -1,4 +1,6 @@
 import { supabase } from '@/integrations/supabase/client';
+import { normalizeCompanyLocale, normalizeCountry, normalizeTimezone } from '@/lib/companySettings';
+import { normalizeCurrency } from '@/lib/formatters';
 import { handleSupabaseError } from '@/lib/supabase-error';
 import type { Database } from '@/types/database';
 
@@ -43,7 +45,7 @@ const defaultCompanySettings: CompanySettingsRecord = {
   email: null,
   address: null,
   city: null,
-  country: 'Oman',
+  country: 'OM',
   currency: 'OMR',
   locale: 'ar-OM',
   timezone: 'Asia/Muscat',
@@ -105,16 +107,39 @@ function cleanRequiredString(value: unknown, fallback: string): string {
   return stringifyPrimitive(value) || fallback;
 }
 
+function normalizeRequiredCompanySettingsField(field: (typeof requiredStringFields)[number], value: unknown): string {
+  const cleanedValue = cleanRequiredString(value, defaultCompanySettings[field]);
+
+  switch (field) {
+    case 'currency':
+      return normalizeCurrency(cleanedValue);
+    case 'locale':
+      return normalizeCompanyLocale(cleanedValue);
+    case 'timezone':
+      return normalizeTimezone(cleanedValue);
+    default:
+      return cleanedValue;
+  }
+}
+
+function normalizeNullableCompanySettingsField(field: (typeof nullableStringFields)[number], value: unknown): string | null {
+  if (field === 'country') {
+    return normalizeCountry(value);
+  }
+
+  return cleanNullableString(value);
+}
+
 export function normalizeCompanySettingsRecord(value: Partial<CompanySettingsRecord> | null | undefined): CompanySettingsRecord {
   const source = value ?? defaultCompanySettings;
   const normalized = { ...defaultCompanySettings, ...source };
 
   for (const field of nullableStringFields) {
-    normalized[field] = cleanNullableString(normalized[field]);
+    normalized[field] = normalizeNullableCompanySettingsField(field, normalized[field]);
   }
 
   for (const field of requiredStringFields) {
-    normalized[field] = cleanRequiredString(normalized[field], defaultCompanySettings[field]);
+    normalized[field] = normalizeRequiredCompanySettingsField(field, normalized[field]);
   }
 
   normalized.id = cleanRequiredString(normalized.id, defaultCompanySettings.id);
@@ -132,12 +157,12 @@ export function normalizeCompanySettingsUpdatePayload(payload: CompanySettingsUp
     if (!updateableFields.has(key as keyof CompanySettingsUpdatePayload)) continue;
 
     if ((nullableStringFields as readonly string[]).includes(key)) {
-      normalized[key as (typeof nullableStringFields)[number]] = cleanNullableString(value);
+      normalized[key as (typeof nullableStringFields)[number]] = normalizeNullableCompanySettingsField(key as (typeof nullableStringFields)[number], value);
       continue;
     }
 
     const requiredKey = key as (typeof requiredStringFields)[number];
-    normalized[requiredKey] = cleanRequiredString(value, defaultCompanySettings[requiredKey]);
+    normalized[requiredKey] = normalizeRequiredCompanySettingsField(requiredKey, value);
   }
 
   return normalized;
