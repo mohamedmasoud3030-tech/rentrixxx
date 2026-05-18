@@ -502,8 +502,8 @@ export function ReportsPage() {
         {supportedReportNames.map((name) => <StatusBadge key={name} tone="green">{name}</StatusBadge>)}
       </div>
 
-      {firstError ? <Card><CardContent className="p-4 text-sm text-destructive">{getErrorMessage(firstError, 'تعذر تحميل بعض التقارير')}</CardContent></Card> : null}
-      {isLoading ? <Card><CardContent className="p-4 text-sm text-muted-foreground">جاري تحميل التقارير...</CardContent></Card> : null}
+      {firstError ? <Card><CardContent className="p-4 text-sm text-destructive">{getErrorMessage(firstError, 'تعذر تحميل بعض التقارير. يمكنك تحديث الصفحة أو إعادة المحاولة بأمان دون تعديل أي بيانات.')}</CardContent></Card> : null}
+      {isLoading ? <Card><CardContent className="p-4 text-sm text-muted-foreground">جارٍ تحميل معاينات التقارير التجارية للقراءة فقط...</CardContent></Card> : null}
 
       <FinancialSummarySection summary={financialSummaryQuery.data} cashflowRows={financialCashflowQuery.data?.rows ?? []} />
       <RentRollSection rows={rentRollRows} />

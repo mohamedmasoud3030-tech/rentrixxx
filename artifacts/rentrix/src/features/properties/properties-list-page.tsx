@@ -31,6 +31,15 @@ export function PropertiesListPage() {
   const propertiesQuery = useProperties(params);
   const deleteMutation = useSoftDeleteProperty();
   const totalPages = Math.max(1, Math.ceil((propertiesQuery.data?.count ?? 0) / pageSize));
+  const hasFilterValues = search.trim().length > 0 || status !== 'all';
+
+  const handleArchiveProperty = async (propertyId: string, title: string) => {
+    const shouldArchive = window.confirm(`سيتم أرشفة العقار "${title}" وإخفاؤه من القوائم النشطة. يمكنك مراجعته لاحقًا من السجلات المؤرشفة. هل تريد المتابعة؟`);
+    if (!shouldArchive) {
+      return;
+    }
+    await deleteMutation.mutateAsync(propertyId);
+  };
 
   return (
     <div className="space-y-6">
@@ -56,6 +65,14 @@ export function PropertiesListPage() {
         {propertiesQuery.isLoading ? (
           <div className="space-y-3 p-6">
             {Array.from({ length: 6 }, (_, index) => <Skeleton key={index} className="h-14" />)}
+          </div>
+        ) : propertiesQuery.isError ? (
+          <div className="p-6">
+            <EmptyState
+              title="تعذر تحميل قائمة العقارات"
+              description="حدث خطأ أثناء تحميل البيانات. تحديث الصفحة أو إعادة المحاولة آمن ولن يؤثر على البيانات المسجلة."
+              action={<Button onClick={() => { propertiesQuery.refetch(); }}>إعادة المحاولة</Button>}
+            />
           </div>
         ) : propertiesQuery.data?.rows.length ? (
           <div className="overflow-x-auto">
@@ -85,7 +102,7 @@ export function PropertiesListPage() {
                       <div className="flex flex-wrap gap-2">
                         <Button variant="secondary" className="min-h-9 px-3" asChild><Link to="/properties/$propertyId" params={{ propertyId: property.id }}><Eye className="size-4" /></Link></Button>
                         <Button variant="secondary" className="min-h-9 px-3" asChild><Link to="/properties/$propertyId/edit" params={{ propertyId: property.id }}><Edit className="size-4" /></Link></Button>
-                        <Button variant="danger" className="min-h-9 px-3" onClick={() => { if (window.confirm('هل أنت متأكد من الأرشفة؟')) void deleteMutation.mutate(property.id); }} disabled={deleteMutation.isPending}><Trash2 className="size-4" /></Button>
+                        <Button variant="danger" className="min-h-9 px-3" onClick={async () => { await handleArchiveProperty(property.id, property.title); }} disabled={deleteMutation.isPending}><Trash2 className="size-4" /></Button>
                       </div>
                     </TableCell>
                   </TableRow>
@@ -94,7 +111,7 @@ export function PropertiesListPage() {
             </Table>
           </div>
         ) : (
-          <div className="p-6"><EmptyState title="لا توجد عقارات" description="غيّر الفلاتر أو أضف أول عقار في النظام." action={<Button asChild><Link to="/properties/new">إضافة عقار</Link></Button>} /></div>
+          <div className="p-6"><EmptyState title={hasFilterValues ? 'لا توجد عقارات مطابقة' : 'لا توجد عقارات حتى الآن'} description={hasFilterValues ? 'جرّب تعديل البحث أو الحالة لعرض نتائج أخرى.' : 'أضف أول عقار لبدء إدارة المحفظة العقارية في النسخة التجارية التجريبية.'} action={<Button asChild><Link to="/properties/new">إضافة عقار</Link></Button>} /></div>
         )}
       </Card>
 
