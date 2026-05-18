@@ -63,7 +63,7 @@ export function PropertyDetailPage() {
       <Card>
         <CardHeader>
           <CardTitle>معلومات العقار</CardTitle>
-          <CardDescription>كل الحقول الأساسية المخزنة في Supabase.</CardDescription>
+          <CardDescription>كل الحقول الأساسية المخزنة في Supabase، مع إبقاء اسم المالك كحقل عرض نصي خفيف.</CardDescription>
         </CardHeader>
         <CardContent className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
           <InfoItem label="النوع" value={property.type} />
@@ -71,7 +71,7 @@ export function PropertyDetailPage() {
             <p className="text-xs font-bold text-muted-foreground">الحالة</p>
             <div className="mt-2"><StatusBadge tone={propertyStatusTone[property.status]}>{propertyStatusLabels[property.status]}</StatusBadge></div>
           </div>
-          <InfoItem label="المالك" value={property.owner_name ?? '—'} />
+          <InfoItem label="اسم المالك للعرض" value={property.owner_name ?? '—'} />
           <InfoItem label="قيمة الشراء" value={money(property.purchase_value)} />
           <InfoItem label="القيمة الحالية" value={money(property.current_value)} />
           <InfoItem label="تاريخ الإنشاء" value={formatCompanyDate(defaultCompanyLocalSettings, property.created_at)} />

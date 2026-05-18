@@ -44,7 +44,7 @@ export function PropertiesListPage() {
 
       <Card>
         <CardContent className="grid gap-3 pt-6 md:grid-cols-[1fr_14rem]">
-          <Input value={search} onChange={(event) => { setSearch(event.target.value); setPage(1); }} placeholder="بحث بالاسم أو العنوان أو المالك" />
+          <Input value={search} onChange={(event) => { setSearch(event.target.value); setPage(1); }} placeholder="بحث بالاسم أو العنوان أو اسم المالك للعرض" />
           <Select value={status} onChange={(event) => { setStatus(event.target.value as PropertyStatusFilter); setPage(1); }}>
             <option value="all">كل الحالات</option>
             {propertyStatusValues.map((item) => <option key={item} value={item}>{propertyStatusLabels[item]}</option>)}
@@ -64,7 +64,7 @@ export function PropertiesListPage() {
                 <TableRow>
                   <TableHead>العقار</TableHead>
                   <TableHead>النوع</TableHead>
-                  <TableHead>المالك</TableHead>
+                  <TableHead>اسم المالك للعرض</TableHead>
                   <TableHead>الحالة</TableHead>
                   <TableHead>القيمة الحالية</TableHead>
                   <TableHead className="w-52">إجراءات</TableHead>
