@@ -7,10 +7,10 @@
 -- while making execution follow the caller's privileges/RLS context.
 --
 -- Also add the missing covering index for automation_run_logs.job_id reported
--- by the performance advisor. Existing "unused index" hints are intentionally
--- not dropped here because this project is still being built out and many
--- indexes support required FK/reporting/query paths even if they have not yet
--- appeared in pg_stat_user_indexes.
+-- by the performance advisor when that table exists. Existing "unused index"
+-- hints are intentionally not dropped here because this project is still being
+-- built out and many indexes support required FK/reporting/query paths even if
+-- they have not yet appeared in pg_stat_user_indexes.
 --
 -- PostgreSQL does not support `ALTER FUNCTION IF EXISTS ...`, so each function
 -- is resolved with to_regprocedure before applying ALTER/REVOKE/GRANT.
@@ -45,8 +45,12 @@ begin
   end loop;
 end $$;
 
--- Cover FK automation_run_logs.job_id.
-create index if not exists idx_automation_run_logs_job_id
-  on public.automation_run_logs(job_id);
+do $$
+begin
+  if to_regclass('public.automation_run_logs') is not null then
+    create index if not exists idx_automation_run_logs_job_id
+      on public.automation_run_logs(job_id);
+  end if;
+end $$;
 
 commit;
