@@ -90,8 +90,19 @@ function isValidEmailAddress(value: string): boolean {
 }
 
 export function companySettingsRecordToDraft(settings: CompanySettingsRecord): CompanySettingsDraft {
+  const normalizedSettings = normalizeCompanySettingsContract({
+    companyName: settings.company_name,
+    logoUrl: settings.logo_url,
+    locale: settings.locale,
+    defaultCurrency: settings.currency,
+    country: settings.country,
+    timezone: settings.timezone,
+    receiptPrefix: settings.receipt_prefix,
+    invoicePrefix: settings.invoice_prefix,
+  });
+
   return {
-    company_name: settings.company_name,
+    company_name: normalizedSettings.companyName,
     legal_name: settings.legal_name ?? '',
     tax_number: settings.tax_number ?? '',
     registration_number: settings.registration_number ?? '',
@@ -99,20 +110,41 @@ export function companySettingsRecordToDraft(settings: CompanySettingsRecord): C
     email: settings.email ?? '',
     address: settings.address ?? '',
     city: settings.city ?? '',
-    country: settings.country ?? '',
-    currency: settings.currency,
-    locale: settings.locale,
-    timezone: settings.timezone,
+    country: normalizedSettings.country,
+    currency: normalizedSettings.defaultCurrency,
+    locale: normalizedSettings.locale,
+    timezone: normalizedSettings.timezone,
     date_format: settings.date_format,
     number_format: settings.number_format,
-    logo_url: settings.logo_url ?? '',
-    invoice_prefix: settings.invoice_prefix,
-    receipt_prefix: settings.receipt_prefix,
+    logo_url: normalizedSettings.logoUrl ?? '',
+    invoice_prefix: normalizedSettings.invoicePrefix,
+    receipt_prefix: normalizedSettings.receiptPrefix,
   };
 }
 
 export function companySettingsDraftToPayload(draft: CompanySettingsDraft): CompanySettingsUpdatePayload {
-  return { ...draft };
+  const normalizedSettings = normalizeCompanySettingsContract({
+    companyName: draft.company_name,
+    logoUrl: draft.logo_url || null,
+    locale: draft.locale,
+    defaultCurrency: draft.currency,
+    country: draft.country,
+    timezone: draft.timezone,
+    receiptPrefix: draft.receipt_prefix,
+    invoicePrefix: draft.invoice_prefix,
+  });
+
+  return {
+    ...draft,
+    company_name: normalizedSettings.companyName,
+    country: normalizedSettings.country,
+    currency: normalizedSettings.defaultCurrency,
+    locale: normalizedSettings.locale,
+    timezone: normalizedSettings.timezone,
+    logo_url: normalizedSettings.logoUrl ?? '',
+    invoice_prefix: normalizedSettings.invoicePrefix,
+    receipt_prefix: normalizedSettings.receiptPrefix,
+  };
 }
 
 export function companySettingsDraftToLocalSettings(draft: CompanySettingsDraft): CompanyLocalSettings {
