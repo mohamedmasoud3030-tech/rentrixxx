@@ -42,6 +42,8 @@ const sharedTranslationEntries = [
   ['maintenance', 'الصيانة', 'Maintenance'],
   ['settings', 'الإعدادات', 'Settings'],
   ['collapseMenu', 'طي القائمة', 'Collapse menu'],
+  ['openMenu', 'فتح القائمة', 'Open menu'],
+  ['closeMenu', 'إغلاق القائمة', 'Close menu'],
   ['toggleTheme', 'تبديل الوضع', 'Toggle theme'],
   ['recoverySection', 'قيد الاسترجاع', 'Under recovery'],
   [
