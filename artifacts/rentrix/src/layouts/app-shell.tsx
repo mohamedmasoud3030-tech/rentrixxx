@@ -34,15 +34,19 @@ const recoveryModules = [
   { labelKey: 'aiAssistant', icon: Bot },
 ] as const;
 
+const DESKTOP_NAVIGATION_QUERY = '(min-width: 1024px)';
+
+type SharedLabel = (key: string) => string;
+
 type NavigationLinksProps = Readonly<{
   expanded: boolean;
-  sharedLabel: (key: string) => string;
+  sharedLabel: SharedLabel;
   onNavigate?: () => void;
 }>;
 
 type RecoveryLinksProps = Readonly<{
   expanded: boolean;
-  sharedLabel: (key: string) => string;
+  sharedLabel: SharedLabel;
 }>;
 
 function NavigationLinks({ expanded, sharedLabel, onNavigate }: NavigationLinksProps) {
@@ -83,6 +87,91 @@ function RecoveryLinks({ expanded, sharedLabel }: RecoveryLinksProps) {
   );
 }
 
+type MobileNavigationDrawerProps = Readonly<{
+  open: boolean;
+  appName: string;
+  sharedLabel: SharedLabel;
+  onClose: () => void;
+  onLogout: () => void;
+}>;
+
+type DesktopSidebarProps = Readonly<{
+  appName: string;
+  collapsed: boolean;
+  sharedLabel: SharedLabel;
+  onLogout: () => void;
+}>;
+
+function isDesktopNavigationViewport(matchMediaRef: typeof globalThis.matchMedia | undefined = globalThis.matchMedia) {
+  return matchMediaRef?.(DESKTOP_NAVIGATION_QUERY).matches ?? true;
+}
+
+function MobileNavigationDrawer({ open, appName, sharedLabel, onClose, onLogout }: MobileNavigationDrawerProps) {
+  if (!open) {
+    return null;
+  }
+
+  return (
+    <div className="fixed inset-0 z-40 lg:hidden" role="dialog" aria-modal="true" aria-label={sharedLabel('openMenu')}>
+      <button type="button" className="absolute inset-0 bg-slate-950/55" aria-label={sharedLabel('closeMenu')} onClick={onClose} />
+      <aside className="absolute inset-y-0 right-0 flex w-[min(21rem,88vw)] flex-col overflow-hidden border-l border-sidebar-border bg-sidebar text-sidebar-foreground shadow-sidebar">
+        <div className="h-[3px] w-full bg-accent" />
+        <div className="flex h-24 items-center justify-between gap-3 border-b border-white/10 px-5">
+          <div className="flex items-center gap-3">
+            <div className="grid size-11 place-items-center rounded-2xl bg-white text-lg font-black text-slate-950 shadow-lg shadow-blue-500/10">R</div>
+            <div>
+              <p className="text-xl font-black text-white">{appName}</p>
+              <p className="text-xs font-bold text-sidebar-foreground">{sharedLabel('realEstateManagement')}</p>
+            </div>
+          </div>
+          <Button variant="ghost" className="size-11 px-0 text-sidebar-foreground hover:bg-sidebar-accent hover:text-white" onClick={onClose} aria-label={sharedLabel('closeMenu')}>
+            <ChevronLeft className="size-5" />
+          </Button>
+        </div>
+        <nav className="flex-1 space-y-2 overflow-y-auto p-4">
+          <NavigationLinks expanded sharedLabel={sharedLabel} onNavigate={onClose} />
+          <RecoveryLinks expanded sharedLabel={sharedLabel} />
+        </nav>
+        <div className="border-t border-white/10 p-4">
+          <Button variant="ghost" className="min-h-11 w-full justify-start gap-3 text-sidebar-foreground hover:bg-sidebar-accent hover:text-white" onClick={onLogout}>
+            <LogOut className="size-5" />
+            <span>{sharedLabel('logout')}</span>
+          </Button>
+        </div>
+      </aside>
+    </div>
+  );
+}
+
+function DesktopSidebar({ appName, collapsed, sharedLabel, onLogout }: DesktopSidebarProps) {
+  const expanded = collapsed === false;
+
+  return (
+    <aside className={cn('fixed inset-y-0 right-0 z-30 hidden overflow-hidden border-l border-sidebar-border bg-sidebar text-sidebar-foreground shadow-sidebar transition-all lg:flex lg:flex-col', collapsed ? 'w-20' : 'w-72')}>
+      <div className="h-[3px] w-full bg-accent" />
+      <div className="flex h-24 items-center gap-3 border-b border-white/10 px-5">
+        <div className="grid size-11 place-items-center rounded-2xl bg-white text-lg font-black text-slate-950 shadow-lg shadow-blue-500/10">R</div>
+        {expanded ? (
+          <div>
+            <p className="text-xl font-black text-white">{appName}</p>
+            <p className="text-xs font-bold text-sidebar-foreground">{sharedLabel('realEstateManagement')}</p>
+          </div>
+        ) : null}
+      </div>
+      <nav className="flex-1 space-y-2 overflow-y-auto p-4">
+        <NavigationLinks expanded={expanded} sharedLabel={sharedLabel} />
+        <RecoveryLinks expanded={expanded} sharedLabel={sharedLabel} />
+      </nav>
+      <div className="border-t border-white/10 p-4">
+        <Button variant="ghost" className="w-full justify-start gap-3 text-sidebar-foreground hover:bg-sidebar-accent hover:text-white" onClick={onLogout}>
+          <LogOut className="size-5" />
+          {expanded ? <span>{sharedLabel('logout')}</span> : null}
+        </Button>
+      </div>
+    </aside>
+  );
+}
+
 export function AppShell() {
   const router = useRouter();
   const matches = useMatches();
@@ -90,7 +179,6 @@ export function AppShell() {
   const { sidebarCollapsed, theme, toggleSidebar, setTheme, syncStatus, lastSyncedAt } = useUiStore();
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const appLanguage = getAppLanguageState();
-  const isSidebarExpanded = sidebarCollapsed === false;
   const pageTitle = ([...matches].reverse().find((match) => (match.staticData as { title?: string } | undefined)?.title)?.staticData as { title?: string } | undefined)?.title ?? 'Rentrix';
   const sharedLabel = (key: string) => translateSharedLabel(key, appLanguage.language);
   const appName = sharedLabel('appName');
@@ -110,8 +198,10 @@ export function AppShell() {
     return () => window.removeEventListener('keydown', onKey);
   }, [router]);
 
+  const closeMobileNav = () => setMobileNavOpen(false);
+
   const handleMenuToggle = () => {
-    if (window.matchMedia('(min-width: 1024px)').matches) {
+    if (isDesktopNavigationViewport()) {
       toggleSidebar();
       return;
     }
@@ -119,67 +209,19 @@ export function AppShell() {
     setMobileNavOpen(true);
   };
 
+  const handleThemeToggle = () => setTheme(theme === 'dark' ? 'light' : 'dark');
+
   const handleLogout = async () => {
     await logout();
-    setMobileNavOpen(false);
+    closeMobileNav();
     toast.success(sharedLabel('logoutSuccess'));
     await router.navigate({ to: '/login' });
   };
 
   return (
     <div className="min-h-screen bg-background text-foreground" dir={appLanguage.direction}>
-      {mobileNavOpen ? (
-        <div className="fixed inset-0 z-40 lg:hidden" role="dialog" aria-modal="true" aria-label={sharedLabel('openMenu')}>
-          <button type="button" className="absolute inset-0 bg-slate-950/55" aria-label={sharedLabel('closeMenu')} onClick={() => setMobileNavOpen(false)} />
-          <aside className="absolute inset-y-0 right-0 flex w-[min(21rem,88vw)] flex-col overflow-hidden border-l border-sidebar-border bg-sidebar text-sidebar-foreground shadow-sidebar">
-            <div className="h-[3px] w-full bg-accent" />
-            <div className="flex h-24 items-center justify-between gap-3 border-b border-white/10 px-5">
-              <div className="flex items-center gap-3">
-                <div className="grid size-11 place-items-center rounded-2xl bg-white text-lg font-black text-slate-950 shadow-lg shadow-blue-500/10">R</div>
-                <div>
-                  <p className="text-xl font-black text-white">{appName}</p>
-                  <p className="text-xs font-bold text-sidebar-foreground">{sharedLabel('realEstateManagement')}</p>
-                </div>
-              </div>
-              <Button variant="ghost" className="size-11 px-0 text-sidebar-foreground hover:bg-sidebar-accent hover:text-white" onClick={() => setMobileNavOpen(false)} aria-label={sharedLabel('closeMenu')}>
-                <ChevronLeft className="size-5" />
-              </Button>
-            </div>
-            <nav className="flex-1 space-y-2 overflow-y-auto p-4">
-              <NavigationLinks expanded sharedLabel={sharedLabel} onNavigate={() => setMobileNavOpen(false)} />
-              <RecoveryLinks expanded sharedLabel={sharedLabel} />
-            </nav>
-            <div className="border-t border-white/10 p-4">
-              <Button variant="ghost" className="min-h-11 w-full justify-start gap-3 text-sidebar-foreground hover:bg-sidebar-accent hover:text-white" onClick={handleLogout}>
-                <LogOut className="size-5" />
-                <span>{sharedLabel('logout')}</span>
-              </Button>
-            </div>
-          </aside>
-        </div>
-      ) : null}
-      <aside className={cn('fixed inset-y-0 right-0 z-30 hidden overflow-hidden border-l border-sidebar-border bg-sidebar text-sidebar-foreground shadow-sidebar transition-all lg:flex lg:flex-col', sidebarCollapsed ? 'w-20' : 'w-72')}>
-        <div className="h-[3px] w-full bg-accent" />
-        <div className="flex h-24 items-center gap-3 border-b border-white/10 px-5">
-          <div className="grid size-11 place-items-center rounded-2xl bg-white text-lg font-black text-slate-950 shadow-lg shadow-blue-500/10">R</div>
-          {isSidebarExpanded ? (
-            <div>
-              <p className="text-xl font-black text-white">{appName}</p>
-              <p className="text-xs font-bold text-sidebar-foreground">{sharedLabel('realEstateManagement')}</p>
-            </div>
-          ) : null}
-        </div>
-        <nav className="flex-1 space-y-2 overflow-y-auto p-4">
-          <NavigationLinks expanded={isSidebarExpanded} sharedLabel={sharedLabel} />
-          <RecoveryLinks expanded={isSidebarExpanded} sharedLabel={sharedLabel} />
-        </nav>
-        <div className="border-t border-white/10 p-4">
-          <Button variant="ghost" className="w-full justify-start gap-3 text-sidebar-foreground hover:bg-sidebar-accent hover:text-white" onClick={handleLogout}>
-            <LogOut className="size-5" />
-            {isSidebarExpanded ? <span>{sharedLabel('logout')}</span> : null}
-          </Button>
-        </div>
-      </aside>
+      <MobileNavigationDrawer open={mobileNavOpen} appName={appName} sharedLabel={sharedLabel} onClose={closeMobileNav} onLogout={handleLogout} />
+      <DesktopSidebar appName={appName} collapsed={sidebarCollapsed} sharedLabel={sharedLabel} onLogout={handleLogout} />
       <div className={cn('transition-all lg:pr-72', sidebarCollapsed && 'lg:pr-20')}>
         <header className="sticky top-0 z-20 border-b border-border bg-background/88 backdrop-blur-xl">
           <div className="flex h-20 items-center justify-between px-6">
@@ -201,7 +243,7 @@ export function AppShell() {
                 <span className="font-bold text-foreground">{syncStatus}</span>
                 {lastSyncedAt ? ` · ${new Date(lastSyncedAt).toLocaleTimeString(appLanguage.locale)}` : ''}
               </div>
-              <Button variant="secondary" className="size-10 px-0" onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')} aria-label={sharedLabel('toggleTheme')}>
+              <Button variant="secondary" className="size-10 px-0" onClick={handleThemeToggle} aria-label={sharedLabel('toggleTheme')}>
                 {theme === 'dark' ? <Sun className="size-5" /> : <Moon className="size-5" />}
               </Button>
               <div className="hidden text-left text-xs text-muted-foreground xl:block" dir="ltr">{user?.email}</div>
