@@ -1,7 +1,8 @@
 import { useMemo } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { normalizeCompanySettingsContract, type CompanySettingsContract } from '@/lib/companySettings';
-import { getCompanySettings, updateCompanySettings, type CompanySettingsRecord, type CompanySettingsUpdatePayload } from './companySettingsService';
+import type { CompanySettingsContract } from '@/lib/companySettings';
+import { companySettingsRecordToContract } from './companySettingsContractAdapter';
+import { getCompanySettings, updateCompanySettings, type CompanySettingsUpdatePayload } from './companySettingsService';
 
 export const companySettingsKeys = {
   all: ['company-settings'] as const,
@@ -12,18 +13,7 @@ export function useCompanySettings() {
   return useQuery({ queryKey: companySettingsKeys.detail(), queryFn: getCompanySettings });
 }
 
-export function companySettingsRecordToContract(settings: CompanySettingsRecord | null | undefined): CompanySettingsContract {
-  return normalizeCompanySettingsContract({
-    companyName: settings?.company_name,
-    logoUrl: settings?.logo_url,
-    locale: settings?.locale,
-    defaultCurrency: settings?.currency,
-    country: settings?.country,
-    timezone: settings?.timezone,
-    receiptPrefix: settings?.receipt_prefix,
-    invoicePrefix: settings?.invoice_prefix,
-  });
-}
+export { companySettingsRecordToContract } from './companySettingsContractAdapter';
 
 export function useCompanySettingsContract(): CompanySettingsContract {
   const companySettingsQuery = useCompanySettings();

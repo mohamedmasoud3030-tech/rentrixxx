@@ -382,43 +382,20 @@ These should not be part of Phase 4's initial Settings readiness implementation 
 
 ## PR 4 downstream consumption audit update — 2026-05-18
 
-Phase 4 PR 4 inspected the normalized company settings contract against existing low-risk downstream consumers. The safe runtime consumption path is now:
+Phase 4 PR 4 keeps the runtime path intentionally small: persisted settings load through `useCompanySettings()`, `companySettingsRecordToContract()` adapts the row with existing normalization, and `useCompanySettingsContract()` exposes a default-safe `CompanySettingsContract` for display-only formatters.
 
-1. `useCompanySettings()` continues to own persisted settings loading.
-2. `companySettingsRecordToContract()` adapts the persisted singleton record into `CompanySettingsContract` using the existing normalization helpers.
-3. `useCompanySettingsContract()` exposes the normalized contract with default fallback while settings are loading or unavailable.
-4. Safe display consumers pass that contract into `formatCompanyMoney()` and `formatCompanyDate()`.
+### Consumers inspected and outcome
 
-### Consumers inspected
-
-| Area | Outcome |
-| --- | --- |
-| `artifacts/rentrix/src/lib/companySettings.ts` | Existing normalized contract remains the source of truth for locale, direction, currency, timezone, country, and prefixes. |
-| `artifacts/rentrix/src/lib/companyFormatters.ts` | Existing company-aware money/date helpers remain the supported formatter boundary. |
-| `artifacts/rentrix/src/features/settings/*` | Settings hooks now expose a normalized read-only downstream contract; SettingsPage preview already consumed company-aware formatters. |
-| `artifacts/rentrix/src/features/contracts/ContractsListPage.tsx` | Safely wired display-only rent and contract dates to the normalized company settings contract. |
-| `artifacts/rentrix/src/features/contracts/ContractDetailPage.tsx` | Safely wired display-only rent, lifecycle dates, timestamps, and day-count numeral locale to the normalized company settings contract. |
-| `artifacts/rentrix/src/features/contracts/contractListExport.ts` | Deferred; CSV export is an output/reporting boundary and should wait for an explicitly scoped export/report phase. |
-| `artifacts/rentrix/src/features/financials/components/*` | Deferred; many components sit next to payment/receipt mutation and generated receipt views, so wiring should be a focused financial display PR. |
-| `artifacts/rentrix/src/app/dashboard-page.tsx` | Deferred; dashboard rebuild/data-source work is separately planned and was not changed. |
-| `artifacts/rentrix/src/lib/i18n.ts` | No change; app/session language remains separate from saved company default language. |
-
-### Safe wiring completed
-
-- Added a read-only persisted-record-to-contract adapter for downstream company settings consumption.
-- Added a normalized settings hook that falls back through the existing company settings defaults.
-- Updated contracts list/detail display formatting only; no contract mutation, renewal defaults, invoice/payment data, document shell behavior, or financial calculations changed.
+- `lib/companySettings.ts` and `lib/companyFormatters.ts`: unchanged source of truth for normalized settings plus company-aware money/date formatting.
+- `features/settings/*`: shared the persisted-record adapter with Settings form draft conversion and downstream hook consumption.
+- `ContractsListPage.tsx` and `ContractDetailPage.tsx`: wired existing read-only rent/date/timestamp display through the normalized contract.
+- Deferred by scope: contract CSV export, financial invoice/receipt components, dashboard display, and document-level i18n because those paths touch exports, mutations, reports, generated documents, or product-level language decisions.
 
 ### Deferred downstream checklist
 
-- Receipt and invoice prefixes: defer until receipt/invoice numbering or document generation is explicitly in scope.
-- Receipt/invoice/PDF/print output: defer because it changes generated document behavior.
-- Financials invoice and receipt components: defer until a display-only financials settings pass can avoid mutation paths.
-- Contract CSV export/report-style outputs: defer until export/report localization is explicitly scoped.
-- Dashboard cards and charts: defer to the planned dashboard phase.
-- App-wide language switching or document-level `lang`/`dir`: defer until product confirms company default language versus user/session language.
-- Logo upload/storage or document branding: defer until branding output/storage is explicitly scoped.
-- Per-contract/per-invoice currency or exchange conversion: defer until schema/product scope exists.
+- Numbering/document output: receipt and invoice prefixes, PDFs, print views, and generated receipts/invoices.
+- Financial/reporting surfaces: mutation-adjacent financial components, report-style exports, dashboard cards, and any exchange/per-record currency behavior.
+- Product decisions: app-wide language direction, logo upload/storage, and document branding outside the existing settings preview.
 
 ## Risks and notes before implementation
 

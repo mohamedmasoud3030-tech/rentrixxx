@@ -2,22 +2,11 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ContractDetailPage } from './ContractDetailPage';
 
-const companySettingsMock = vi.hoisted(() => ({
-  companyName: 'Rentrix',
-  logoUrl: null,
-  defaultLanguage: 'ar' as const,
-  defaultCurrency: 'OMR' as const,
-  country: 'OM' as const,
-  timezone: 'Asia/Muscat' as const,
-  receiptPrefix: 'REC',
-  invoicePrefix: 'INV',
-  locale: 'ar-OM' as const,
-  direction: 'rtl' as const,
-}));
+vi.mock('../settings/useCompanySettings', async () => {
+  const { testCompanySettingsContract } = await import('../../test/companySettingsContractMock');
 
-vi.mock('../settings/useCompanySettings', () => ({
-  useCompanySettingsContract: () => companySettingsMock,
-}));
+  return { useCompanySettingsContract: () => testCompanySettingsContract };
+});
 
 vi.mock('@tanstack/react-router', () => ({
   Link: ({ children, params, to }: Readonly<{ children: React.ReactNode; params?: { contractId?: string }; to: string }>) => {

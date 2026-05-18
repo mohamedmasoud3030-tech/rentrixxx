@@ -10,16 +10,21 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { StatusBadge } from '@/components/ui/status-badge';
-import { formatCompanyDate, formatCompanyMoney } from '@/lib/companyFormatters';
 import type { CompanySettingsContract } from '@/lib/companySettings';
 import { useCompanySettingsContract } from '../settings/useCompanySettings';
+import {
+  formatContractDate,
+  formatContractDateTime,
+  formatContractDayCount,
+  formatContractMoney,
+  getContractInclusiveDays,
+  getContractRemainingDays,
+} from './contractDisplayFormatters';
 import { contractStatusLabels, contractStatusTone, paymentCycleLabels, renewalSchema, type RenewalPayload } from './contractSchema';
 import { ContractDocumentsShell } from './contractDocumentsShell';
 import { ContractPaymentsTab } from './contractPaymentsTab';
 import type { ContractDetail } from './services/contractService';
 import { useContract, useRenewContract } from './useContracts';
-
-const DAY_IN_MS = 86_400_000;
 
 type TimelineTone = 'blue' | 'green' | 'red' | 'gray' | 'gold';
 type TimelineItem = Readonly<{
@@ -29,25 +34,12 @@ type TimelineItem = Readonly<{
   tone: TimelineTone;
 }>;
 
-function money(settings: CompanySettingsContract, value: number) {
-  return formatCompanyMoney(settings, value);
-}
-
 function fieldError(message?: string) {
   return message ? <span className="text-xs font-bold text-destructive">{message}</span> : null;
 }
 
 function getContractDetailErrorMessage(error: unknown): string {
   return error instanceof Error ? error.message : 'حدث خطأ غير متوقع أثناء تحميل العقد.';
-}
-
-function formatDate(settings: CompanySettingsContract, value: string): string {
-  return formatCompanyDate(settings, value);
-}
-
-function formatDateTime(settings: CompanySettingsContract, value: string): string {
-  const normalizedDate = new Date(value);
-  return normalizedDate.toLocaleString(settings.locale, { dateStyle: 'medium', timeStyle: 'short', timeZone: settings.timezone });
 }
 
 function toDateInputValue(date: Date): string {
@@ -83,34 +75,21 @@ function canRenewContract(contract: ContractDetail): boolean {
   return contract.status === 'active' || contract.status === 'expired';
 }
 
-function getInclusiveDays(startDate: string, endDate: string): number {
-  const startTime = new Date(startDate).getTime();
-  const endTime = new Date(endDate).getTime();
-  return Math.max(1, Math.round((endTime - startTime) / DAY_IN_MS) + 1);
-}
-
-function getRemainingDays(endDate: string): number {
-  const today = new Date();
-  const endTime = new Date(endDate).getTime();
-  const todayTime = new Date(today.getFullYear(), today.getMonth(), today.getDate()).getTime();
-  return Math.ceil((endTime - todayTime) / DAY_IN_MS);
-}
-
 function getExpiryDescription(settings: CompanySettingsContract, contract: ContractDetail): string {
   if (contract.status === 'terminated') {
     return 'تم إنهاء العقد ولا توجد مدة متبقية معروضة.';
   }
 
-  const remainingDays = getRemainingDays(contract.end_date);
+  const remainingDays = getContractRemainingDays(contract.end_date);
   if (remainingDays < 0) {
-    return `انتهى منذ ${Math.abs(remainingDays).toLocaleString(settings.locale)} يوم.`;
+    return `انتهى منذ ${formatContractDayCount(settings, Math.abs(remainingDays))} يوم.`;
   }
 
   if (remainingDays === 0) {
     return 'ينتهي اليوم حسب تاريخ نهاية العقد.';
   }
 
-  return `باقي ${remainingDays.toLocaleString(settings.locale)} يوم حتى تاريخ النهاية.`;
+  return `باقي ${formatContractDayCount(settings, remainingDays)} يوم حتى تاريخ النهاية.`;
 }
 
 function getExpiryTone(contract: ContractDetail): TimelineTone {
@@ -118,7 +97,7 @@ function getExpiryTone(contract: ContractDetail): TimelineTone {
     return 'red';
   }
 
-  const remainingDays = getRemainingDays(contract.end_date);
+  const remainingDays = getContractRemainingDays(contract.end_date);
   if (remainingDays < 0) {
     return 'gray';
   }
@@ -130,25 +109,25 @@ function getLifecycleTimeline(settings: CompanySettingsContract, contract: Contr
   return [
     {
       title: 'إنشاء العقد',
-      value: formatDateTime(settings, contract.created_at),
+      value: formatContractDateTime(settings, contract.created_at),
       description: 'وقت تسجيل العقد في النظام.',
       tone: 'blue',
     },
     {
       title: 'تاريخ البداية',
-      value: formatDate(settings, contract.start_date),
-      description: `بداية الالتزام التجاري لمدة ${getInclusiveDays(contract.start_date, contract.end_date).toLocaleString(settings.locale)} يوم.`,
+      value: formatContractDate(settings, contract.start_date),
+      description: `بداية الالتزام التجاري لمدة ${formatContractDayCount(settings, getContractInclusiveDays(contract.start_date, contract.end_date))} يوم.`,
       tone: 'green',
     },
     {
       title: 'تاريخ النهاية',
-      value: formatDate(settings, contract.end_date),
+      value: formatContractDate(settings, contract.end_date),
       description: getExpiryDescription(settings, contract),
       tone: getExpiryTone(contract),
     },
     {
       title: 'آخر تحديث',
-      value: formatDateTime(settings, contract.updated_at),
+      value: formatContractDateTime(settings, contract.updated_at),
       description: 'آخر تعديل محفوظ على بيانات العقد.',
       tone: 'gray',
     },
@@ -159,7 +138,7 @@ function getFinancialTimeline(settings: CompanySettingsContract, contract: Contr
   return [
     {
       title: 'قيمة الإيجار',
-      value: money(settings, contract.rent_amount),
+      value: formatContractMoney(settings, contract.rent_amount),
       description: `دورة السداد: ${paymentCycleLabels[contract.payment_cycle]}.`,
       tone: 'blue',
     },
@@ -251,9 +230,9 @@ export function ContractDetailPage() {
           <Info label="المستأجر" value={contract.people?.full_name ?? '—'} />
           <Info label="الوحدة" value={contract.units?.unit_number ?? '—'} />
           <Info label="العقار" value={contract.properties?.title ?? '—'} />
-          <Info label="تاريخ البداية" value={formatDate(companySettings, contract.start_date)} />
-          <Info label="تاريخ النهاية" value={formatDate(companySettings, contract.end_date)} />
-          <Info label="قيمة الإيجار" value={money(companySettings, contract.rent_amount)} />
+          <Info label="تاريخ البداية" value={formatContractDate(companySettings, contract.start_date)} />
+          <Info label="تاريخ النهاية" value={formatContractDate(companySettings, contract.end_date)} />
+          <Info label="قيمة الإيجار" value={formatContractMoney(companySettings, contract.rent_amount)} />
           <Info label="دورة السداد" value={paymentCycleLabels[contract.payment_cycle]} />
           <div className="rounded-2xl border border-border bg-background p-4">
             <p className="text-xs font-bold text-muted-foreground">الحالة</p>
@@ -370,7 +349,7 @@ function LifecycleActionsCard({ contract, companySettings, renewalAllowed, onRen
           {previousContract ? (
             <div className="mt-2 space-y-2 text-sm leading-6 text-muted-foreground">
               <p>هذا العقد مجدد من عقد سابق.</p>
-              <p>الفترة السابقة: {formatDate(companySettings, previousContract.start_date)} ← {formatDate(companySettings, previousContract.end_date)}</p>
+              <p>الفترة السابقة: {formatContractDate(companySettings, previousContract.start_date)} ← {formatContractDate(companySettings, previousContract.end_date)}</p>
               <StatusBadge tone={contractStatusTone[previousContract.status]}>{contractStatusLabels[previousContract.status]}</StatusBadge>
             </div>
           ) : (
