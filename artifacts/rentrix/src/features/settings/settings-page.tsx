@@ -22,6 +22,7 @@ import {
   companySettingsDraftToLocalSettings,
   companySettingsDraftToPayload,
   companySettingsRecordToDraft,
+  getCompanySettingsPreviewModel,
   hasCompanySettingsValidationErrors,
   validateCompanySettingsDraft,
   type CompanySettingsDraft,
@@ -150,6 +151,92 @@ function AppPreferencesCard({ lang, theme, onLanguageChange, onToggleTheme }: Ap
         <Button variant="secondary" onClick={onToggleTheme}>تبديل السمة ({theme})</Button>
       </CardContent>
     </Card>
+  );
+}
+
+
+type PreviewFieldProps = Readonly<{
+  label: string;
+  value: string;
+  muted?: boolean;
+}>;
+
+function PreviewField({ label, value, muted = false }: PreviewFieldProps) {
+  return (
+    <div className="rounded-xl border bg-background/70 p-3">
+      <dt className="text-xs font-medium text-muted-foreground">{label}</dt>
+      <dd className={muted ? 'mt-1 text-sm text-muted-foreground' : 'mt-1 text-sm font-semibold text-foreground'}>
+        {value}
+      </dd>
+    </div>
+  );
+}
+
+type CompanySettingsPreviewCardProps = Readonly<{
+  draft: CompanySettingsDraft;
+  formattedPreviewDate: string;
+  formattedPreviewMoney: string;
+}>;
+
+function CompanySettingsPreviewCard({ draft, formattedPreviewDate, formattedPreviewMoney }: CompanySettingsPreviewCardProps) {
+  const preview = getCompanySettingsPreviewModel(draft);
+
+  return (
+    <section className="space-y-4 rounded-2xl border bg-muted/20 p-4" aria-labelledby="company-settings-preview-title">
+      <div>
+        <h3 id="company-settings-preview-title" className="text-base font-semibold text-foreground">معاينة العلامة التجارية والمستندات</h3>
+        <p className="text-sm text-muted-foreground">
+          عرض آمن للقيم التي ستُستخدم لاحقاً في الفواتير والإيصالات بدون إنشاء مستندات.
+        </p>
+      </div>
+
+      <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_14rem]">
+        <dl className="grid gap-3 md:grid-cols-2">
+          <PreviewField label="اسم الشركة" value={preview.companyName} />
+          <PreviewField label="الاسم القانوني" value={preview.legalName} muted={preview.legalName === 'غير محدد'} />
+          <PreviewField label="اللغة الافتراضية" value={`${preview.defaultLanguage} (${preview.locale})`} />
+          <PreviewField label="العملة الافتراضية" value={preview.defaultCurrency} />
+          <PreviewField label="الدولة" value={preview.country} />
+          <PreviewField label="المنطقة الزمنية" value={preview.timezone} />
+          <PreviewField label="بادئة الفواتير" value={preview.invoicePrefix} />
+          <PreviewField label="بادئة الإيصالات" value={preview.receiptPrefix} />
+          <PreviewField label="معاينة التاريخ" value={formattedPreviewDate} />
+          <PreviewField label="معاينة المبلغ" value={formattedPreviewMoney} />
+        </dl>
+
+        <div className="flex min-h-44 flex-col items-center justify-center rounded-2xl border border-dashed bg-background/70 p-4 text-center">
+          {preview.logoUrl ? (
+            <>
+              <img src={preview.logoUrl} alt={`شعار ${preview.companyName}`} className="max-h-24 max-w-full rounded-lg object-contain" />
+              <a
+                className="mt-3 break-all text-xs text-primary underline-offset-4 hover:underline"
+                href={preview.logoUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                فتح رابط الشعار
+              </a>
+            </>
+          ) : (
+            <div className="space-y-2 text-sm text-muted-foreground">
+              <div className="mx-auto flex size-16 items-center justify-center rounded-2xl bg-primary/10 text-lg font-bold text-primary">
+                {preview.companyName.slice(0, 2)}
+              </div>
+              <p>{preview.logoFallbackLabel}</p>
+            </div>
+          )}
+        </div>
+      </div>
+
+      <div className="space-y-2">
+        <h4 className="text-sm font-semibold text-foreground">بيانات التواصل</h4>
+        <dl className="grid gap-2 md:grid-cols-2 xl:grid-cols-3">
+          {preview.contactDetails.map((detail) => (
+            <PreviewField key={detail.label} label={detail.label} value={detail.value} muted={detail.isFallback} />
+          ))}
+        </dl>
+      </div>
+    </section>
   );
 }
 
@@ -333,16 +420,7 @@ export function SettingsPage() {
             {errors.address ? <span className="block text-xs text-destructive">{errors.address}</span> : null}
           </label>
 
-          <div className="grid gap-3 rounded-xl border bg-muted/20 p-4 text-sm md:grid-cols-2">
-            <div>
-              <div className="font-semibold">معاينة التاريخ</div>
-              <div className="text-muted-foreground">{formattedPreviewDate}</div>
-            </div>
-            <div>
-              <div className="font-semibold">معاينة المبلغ</div>
-              <div className="text-muted-foreground">{formattedPreviewMoney}</div>
-            </div>
-          </div>
+          <CompanySettingsPreviewCard draft={draft} formattedPreviewDate={formattedPreviewDate} formattedPreviewMoney={formattedPreviewMoney} />
 
           <div className="flex flex-wrap items-center gap-3">
             <Button type="submit" disabled={!isDirty || isSaving}>{isSaving ? 'جارٍ الحفظ...' : 'حفظ إعدادات الشركة'}</Button>

@@ -1,5 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
-import { normalizeCompanyLocale, normalizeCountry, normalizeTimezone } from '@/lib/companySettings';
+import { normalizeCompanyLocale, normalizeCompanyLogoUrl, normalizeCountry, normalizeTimezone } from '@/lib/companySettings';
 import { normalizeCurrency } from '@/lib/formatters';
 import { handleSupabaseError } from '@/lib/supabase-error';
 import type { Database } from '@/types/database';
@@ -125,6 +125,10 @@ function normalizeRequiredCompanySettingsField(field: (typeof requiredStringFiel
 function normalizeNullableCompanySettingsField(field: (typeof nullableStringFields)[number], value: unknown): string | null {
   if (field === 'country') {
     return normalizeCountry(value);
+  }
+
+  if (field === 'logo_url') {
+    return normalizeCompanyLogoUrl(value);
   }
 
   return cleanNullableString(value);

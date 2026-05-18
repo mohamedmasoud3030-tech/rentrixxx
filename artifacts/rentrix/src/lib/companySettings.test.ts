@@ -8,6 +8,7 @@ import {
   languageFromCompanyLocale,
   normalizeCompanyLocale,
   normalizeCompanyLocalSettings,
+  normalizeCompanyLogoUrl,
   normalizeCompanySettingsContract,
   normalizeCountry,
   normalizeTimezone,
@@ -59,6 +60,22 @@ describe('company settings runtime contract', () => {
       defaultCurrency: 'OMR',
       country: 'OM',
       timezone: 'Asia/Muscat',
+    });
+  });
+
+
+  it('normalizes logo URLs safely and falls document prefixes back to defaults', () => {
+    expect(normalizeCompanyLogoUrl(' https://example.test/logo.png ')).toBe('https://example.test/logo.png');
+    expect(normalizeCompanyLogoUrl('javascript:alert(1)')).toBeNull();
+    expect(normalizeCompanyLogoUrl('not a url')).toBeNull();
+    expect(normalizeCompanySettingsContract({
+      logoUrl: 'ftp://example.test/logo.png',
+      invoicePrefix: ' ',
+      receiptPrefix: '',
+    })).toMatchObject({
+      logoUrl: null,
+      invoicePrefix: 'INV',
+      receiptPrefix: 'REC',
     });
   });
 

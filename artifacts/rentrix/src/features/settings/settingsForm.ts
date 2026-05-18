@@ -160,6 +160,68 @@ export function companySettingsDraftToLocalSettings(draft: CompanySettingsDraft)
   });
 }
 
+
+type CompanySettingsPreviewValue = Readonly<{
+  label: string;
+  value: string;
+  isFallback: boolean;
+}>;
+
+export type CompanySettingsPreviewModel = Readonly<{
+  companyName: string;
+  legalName: string;
+  logoUrl: string | null;
+  logoFallbackLabel: string;
+  locale: string;
+  defaultLanguage: string;
+  defaultCurrency: string;
+  country: string;
+  timezone: string;
+  invoicePrefix: string;
+  receiptPrefix: string;
+  contactDetails: readonly CompanySettingsPreviewValue[];
+}>;
+
+function previewText(value: string, fallback: string): string {
+  return value.trim() || fallback;
+}
+
+function buildPreviewValue(label: string, value: string, fallback: string): CompanySettingsPreviewValue {
+  const trimmedValue = value.trim();
+
+  return {
+    label,
+    value: trimmedValue || fallback,
+    isFallback: !trimmedValue,
+  };
+}
+
+export function getCompanySettingsPreviewModel(draft: CompanySettingsDraft): CompanySettingsPreviewModel {
+  const normalizedSettings = companySettingsDraftToLocalSettings(draft);
+
+  return {
+    companyName: normalizedSettings.companyName,
+    legalName: previewText(draft.legal_name, 'غير محدد'),
+    logoUrl: normalizedSettings.logoUrl ?? null,
+    logoFallbackLabel: normalizedSettings.logoUrl ? '' : 'لا يوجد رابط شعار محفوظ حالياً',
+    locale: normalizeCompanySettingsContract({ locale: draft.locale }).locale,
+    defaultLanguage: normalizedSettings.defaultLanguage === 'ar' ? 'العربية' : 'الإنجليزية',
+    defaultCurrency: normalizedSettings.defaultCurrency,
+    country: normalizedSettings.country,
+    timezone: normalizedSettings.timezone,
+    invoicePrefix: normalizedSettings.invoicePrefix,
+    receiptPrefix: normalizedSettings.receiptPrefix,
+    contactDetails: [
+      buildPreviewValue('الهاتف', draft.phone, 'لا يوجد هاتف'),
+      buildPreviewValue('البريد الإلكتروني', draft.email, 'لا يوجد بريد إلكتروني'),
+      buildPreviewValue('المدينة', draft.city, 'لا توجد مدينة'),
+      buildPreviewValue('العنوان', draft.address, 'لا يوجد عنوان'),
+      buildPreviewValue('الرقم الضريبي', draft.tax_number, 'لا يوجد رقم ضريبي'),
+      buildPreviewValue('السجل التجاري', draft.registration_number, 'لا يوجد سجل تجاري'),
+    ],
+  };
+}
+
 export function areCompanySettingsDraftsEqual(left: CompanySettingsDraft | null, right: CompanySettingsDraft | null): boolean {
   if (!left || !right) return left === right;
   return draftFields.every((field) => left[field] === right[field]);

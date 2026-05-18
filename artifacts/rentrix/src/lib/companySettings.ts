@@ -152,6 +152,19 @@ function normalizeOptionalString(value: unknown): string | null {
   return typeof value === 'string' ? value.trim() : null;
 }
 
+export function normalizeCompanyLogoUrl(value: unknown): string | null {
+  const trimmedUrl = normalizeOptionalString(value);
+
+  if (!trimmedUrl) return null;
+
+  try {
+    const url = new URL(trimmedUrl);
+    return ['http:', 'https:'].includes(url.protocol) ? url.href : null;
+  } catch {
+    return null;
+  }
+}
+
 export function normalizeCompanySettingsContract(value: CompanySettingsInput | null | undefined): CompanySettingsContract {
   const defaultLanguage = isSupportedLanguage(value?.defaultLanguage)
     ? value.defaultLanguage
@@ -161,7 +174,7 @@ export function normalizeCompanySettingsContract(value: CompanySettingsInput | n
 
   return {
     companyName: normalizeOptionalString(value?.companyName) || defaultCompanySettingsContract.companyName,
-    logoUrl: normalizeOptionalString(value?.logoUrl) || defaultCompanySettingsContract.logoUrl,
+    logoUrl: normalizeCompanyLogoUrl(value?.logoUrl),
     defaultLanguage: normalizedLanguage,
     defaultCurrency: normalizeCurrency(value?.defaultCurrency),
     country: normalizeCountry(value?.country),
