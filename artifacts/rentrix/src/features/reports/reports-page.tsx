@@ -41,11 +41,11 @@ type SafeLinkProps = Readonly<{
 
 const latestReceiptLimit = 100;
 const supportedReportNames = [
-  'Financial Summary',
-  'Rent Roll',
-  'Overdue Invoices',
-  'Aged Receivables',
-  'Daily Collection',
+  'ملخص التحصيل للفترة',
+  'قائمة العقود الإيجارية (Rent Roll)',
+  'الفواتير المتأخرة',
+  'تقادم الذمم',
+  'التحصيل اليومي',
 ];
 const deferredReports = [
   { title: 'Owner Statement', reason: 'مؤجل حتى تتوفر خدمة owner settlements/statement آمنة في الطبقة الحالية بدون تصنيع أرصدة.' },
@@ -159,7 +159,7 @@ function DeferredReportCard({ title, reason }: DeferredReportCardProps) {
       <CardHeader>
         <div className="flex items-center justify-between gap-3">
           <CardTitle className="flex items-center gap-2 text-base"><FileClock className="size-4" />{title}</CardTitle>
-          <StatusBadge tone="gray">Deferred</StatusBadge>
+          <StatusBadge tone="gray">مؤجل</StatusBadge>
         </div>
         <CardDescription>{reason}</CardDescription>
       </CardHeader>
@@ -172,7 +172,7 @@ function MetricCard({ label, value, helper, tone = 'blue' }: MetricCardProps) {
     <div className="rounded-2xl border border-border bg-background/80 p-4">
       <div className="flex items-center justify-between gap-3">
         <p className="text-xs font-bold text-muted-foreground">{label}</p>
-        <StatusBadge tone={tone}>Live</StatusBadge>
+        <StatusBadge tone={tone}>قراءة فقط</StatusBadge>
       </div>
       <p className="mt-3 text-2xl font-black" dir="ltr">{value}</p>
       <p className="mt-1 text-xs text-muted-foreground">{helper}</p>
@@ -190,9 +190,9 @@ function FiltersPanel({ filters, onChange, onResetCurrentMonth }: Readonly<{
       <CardHeader className="space-y-3">
         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <div>
-            <p className="text-sm font-black text-primary">Reports hub</p>
+            <p className="text-sm font-black text-primary">مركز التقارير التشغيلية</p>
             <h2 className="text-3xl font-black tracking-tight">مركز التقارير</h2>
-            <CardDescription>تقارير موحدة من hooks/services الحالية فقط، بدون أرقام أو أرصدة مصطنعة.</CardDescription>
+            <CardDescription>معاينة تشغيلية للقراءة فقط من hooks/services الحالية فقط، بدون إنشاء قيود أو تعديل بيانات مالية.</CardDescription>
           </div>
           <div className="flex flex-wrap gap-2">
             <Button variant="secondary" asChild><Link to="/invoices">الفواتير</Link></Button>
@@ -211,7 +211,7 @@ function FiltersPanel({ filters, onChange, onResetCurrentMonth }: Readonly<{
             <Input type="date" value={filters.to} onChange={(event) => onChange({ ...filters, to: event.target.value })} />
           </label>
           <label className="space-y-1 text-sm font-bold">
-            <span>As-of date</span>
+            <span>تاريخ الاحتساب (As of)</span>
             <Input type="date" value={filters.asOf} onChange={(event) => onChange({ ...filters, asOf: event.target.value })} />
           </label>
           <div className="flex items-end">
@@ -232,16 +232,16 @@ function FinancialSummarySection({ summary, cashflowRows }: Readonly<{
 
   return (
     <ReportCard
-      title="1. Financial Summary"
-      description="ملخص مالي للفترة من الفواتير، المدفوعات، المصروفات، والتدفق النقدي الحالي."
+      title="1. ملخص التحصيل للفترة"
+      description="عرض تشغيلي للقراءة فقط للفترة المحددة اعتمادًا على الفواتير والمدفوعات والمصروفات."
       action={<Button variant="secondary" onClick={() => downloadCsv('financial-summary.csv', toFinancialSummaryCsv(report))}>تصدير CSV</Button>}
     >
       <div className="grid gap-3 p-4 md:grid-cols-5">
-        <MetricCard label="Invoiced" value={formatMoney(report.invoiced)} helper={`${report.invoicesCount} فواتير`} />
-        <MetricCard label="Collected" value={formatMoney(report.paid)} helper={`${report.paymentsCount} مدفوعات`} tone="green" />
-        <MetricCard label="Outstanding" value={formatMoney(report.outstanding)} helper="من فواتير الفترة" tone="gold" />
-        <MetricCard label="Expenses" value={formatMoney(report.expenses)} helper={`${report.expensesCount} مصروفات`} tone="red" />
-        <MetricCard label="Net cash" value={formatMoney(report.netCash)} helper="المقبوض - المصروف" tone={report.netCash >= 0 ? 'green' : 'red'} />
+        <MetricCard label="إجمالي الفواتير" value={formatMoney(report.invoiced)} helper={`${report.invoicesCount} فواتير`} />
+        <MetricCard label="إجمالي التحصيل" value={formatMoney(report.paid)} helper={`${report.paymentsCount} مدفوعات`} tone="green" />
+        <MetricCard label="الرصيد المستحق" value={formatMoney(report.outstanding)} helper="من فواتير الفترة" tone="gold" />
+        <MetricCard label="إجمالي المصروفات" value={formatMoney(report.expenses)} helper={`${report.expensesCount} مصروفات`} tone="red" />
+        <MetricCard label="صافي التدفق النقدي" value={formatMoney(report.netCash)} helper="المقبوض - المصروف" tone={report.netCash >= 0 ? 'green' : 'red'} />
       </div>
       <div className="h-80 p-4 pt-0">
         <ResponsiveContainer width="100%" height="100%">
@@ -263,7 +263,7 @@ function FinancialSummarySection({ summary, cashflowRows }: Readonly<{
 function RentRollSection({ rows }: Readonly<{ rows: RentRollRow[] }>) {
   return (
     <ReportCard
-      title="2. Rent Roll"
+      title="2. قائمة العقود الإيجارية (Rent Roll)"
       description="قائمة الإيجارات من العقود الحالية فقط، مع روابط آمنة لتفاصيل العقود."
       action={<Button variant="secondary" onClick={() => downloadCsv('rent-roll.csv', rows)}>تصدير CSV</Button>}
     >
@@ -303,7 +303,7 @@ function RentRollSection({ rows }: Readonly<{ rows: RentRollRow[] }>) {
 function OverdueInvoicesSection({ rows }: Readonly<{ rows: OverdueInvoiceReportRow[] }>) {
   return (
     <ReportCard
-      title="3. Overdue Invoices"
+      title="3. الفواتير المتأخرة"
       description="الفواتير المتأخرة المحسوبة من خدمة arrears الحالية حسب as-of date."
       action={<Button variant="secondary" onClick={() => downloadCsv('overdue-invoices.csv', rows)}>تصدير CSV</Button>}
     >
@@ -345,7 +345,7 @@ function AgedReceivablesSection({ report }: Readonly<{ report: NonNullable<Retur
 
   return (
     <ReportCard
-      title="4. Aged Receivables"
+      title="4. تقادم الذمم"
       description="تقادم الذمم حسب العقود والفئات العمرية الآمنة من خدمة التقارير الحالية."
       action={<Button variant="secondary" onClick={() => downloadCsv('aged-receivables.csv', rows.map((row) => ({ contractId: row.contractId, tenantName: row.tenantName, totalOutstanding: row.totalOutstanding, totalOverdue: row.totalOverdue, invoiceCount: row.invoiceCount })))}>تصدير CSV</Button>}
     >
@@ -392,7 +392,7 @@ function DailyCollectionSection({ rows, receiptRows }: Readonly<{
 }>) {
   return (
     <ReportCard
-      title="5. Daily Collection"
+      title="5. التحصيل اليومي"
       description="تحصيل يومي من خدمة payments الحالية، وروابط الإيصالات تستخدم /receipts?receiptId=<id> فقط."
       action={<Button variant="secondary" onClick={() => downloadCsv('daily-collection.csv', toDailyCollectionCsv(rows))}>تصدير CSV</Button>}
     >
