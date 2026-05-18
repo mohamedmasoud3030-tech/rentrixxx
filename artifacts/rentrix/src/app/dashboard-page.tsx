@@ -13,10 +13,12 @@ import { formatCompanyDate, formatCompanyMoney } from '@/lib/companyFormatters';
 import type { CompanySettingsContract } from '@/lib/companySettings';
 import { cn } from '@/lib/utils';
 import type { ContractListItem } from '@/features/contracts/services/contractService';
+import type { OverdueInvoiceReportRow } from '@/features/financials/reports/financialReportsService';
 import { getDashboardSnapshot, type DashboardSnapshot } from './dashboardSnapshot';
 
 const dashboardWindowDays = 30;
 const maxExpiringContracts = 5;
+const maxOverdueTenantRows = 5;
 
 const quickActions = [
   { label: 'إنشاء عقد', to: '/contracts/new', icon: FileText },
@@ -50,6 +52,15 @@ type ExpiringContractRow = {
   location: string;
   endDate: string;
   daysRemaining: number;
+};
+
+type OverdueTenantRow = {
+  invoiceId: string;
+  tenantName: string;
+  location: string;
+  dueDate: string;
+  daysOverdue: number;
+  remainingAmount: number;
 };
 
 function toDateInputValue(date: Date) {
@@ -86,6 +97,11 @@ function getContractLocation(contract: ContractListItem) {
   return unitNumber ? `${propertyTitle} / وحدة ${unitNumber}` : propertyTitle;
 }
 
+function getInvoiceLocation(row: OverdueInvoiceReportRow) {
+  const propertyTitle = row.propertyTitle ?? 'عقار غير محدد';
+  return row.unitNumber ? `${propertyTitle} / وحدة ${row.unitNumber}` : propertyTitle;
+}
+
 function buildExpiringContracts(contracts: ContractListItem[] | undefined, today: Date) {
   const todayValue = toDateInputValue(today);
   const windowEnd = toDateInputValue(addDays(today, dashboardWindowDays));
@@ -102,6 +118,20 @@ function buildExpiringContracts(contracts: ContractListItem[] | undefined, today
     }))
     .sort((first, second) => first.daysRemaining - second.daysRemaining || first.contractNumber.localeCompare(second.contractNumber, 'ar'))
     .slice(0, maxExpiringContracts);
+}
+
+export function buildOverdueTenantRows(rows: OverdueInvoiceReportRow[] | undefined): OverdueTenantRow[] {
+  return (rows ?? [])
+    .map((row) => ({
+      invoiceId: row.invoiceId,
+      tenantName: row.tenantName ?? 'مستأجر غير محدد',
+      location: getInvoiceLocation(row),
+      dueDate: row.dueDate,
+      daysOverdue: row.daysOverdue,
+      remainingAmount: row.remainingAmount,
+    }))
+    .sort((first, second) => second.remainingAmount - first.remainingAmount || second.daysOverdue - first.daysOverdue)
+    .slice(0, maxOverdueTenantRows);
 }
 
 function createMoneyCard(params: Omit<KpiCard, 'value' | 'isMoney'> & { amount: number; settings: CompanySettingsContract }): KpiCard {
@@ -208,6 +238,9 @@ function ExpiringContractsPanel({ rows, isLoading, settings }: Readonly<{
   isLoading: boolean;
   settings: CompanySettingsContract;
 }>) {
+  const isLoaded = isLoading === false;
+  const hasRows = rows.length > 0;
+
   return (
     <Card className="xl:col-span-2">
       <CardHeader className="flex flex-row items-start justify-between gap-4 space-y-0">
@@ -219,12 +252,12 @@ function ExpiringContractsPanel({ rows, isLoading, settings }: Readonly<{
       </CardHeader>
       <CardContent>
         {isLoading ? <Skeleton className="h-52 w-full" /> : null}
-        {!isLoading && rows.length === 0 ? (
+        {isLoaded && !hasRows ? (
           <div className="rounded-2xl border border-dashed border-border p-8 text-center text-sm font-bold text-muted-foreground">
             لا توجد عقود نشطة تنتهي خلال 30 يومًا.
           </div>
         ) : null}
-        {!isLoading && rows.length > 0 ? (
+        {isLoaded && hasRows ? (
           <div className="overflow-x-auto">
             <Table>
               <TableHeader>
@@ -264,6 +297,52 @@ function ExpiringContractsPanel({ rows, isLoading, settings }: Readonly<{
   );
 }
 
+function OverdueTenantsPanel({ rows, isLoading, settings }: Readonly<{
+  rows: OverdueTenantRow[];
+  isLoading: boolean;
+  settings: CompanySettingsContract;
+}>) {
+  const isLoaded = isLoading === false;
+  const hasRows = rows.length > 0;
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>مستأجرون متأخرون</CardTitle>
+        <CardDescription>أعلى فواتير متأخرة من مسار تقارير المتأخرات الحالي.</CardDescription>
+      </CardHeader>
+      <CardContent>
+        {isLoading ? <Skeleton className="h-64 w-full" /> : null}
+        {isLoaded && !hasRows ? (
+          <div className="rounded-2xl border border-dashed border-border p-8 text-center text-sm font-bold text-muted-foreground">
+            لا توجد فواتير متأخرة للعرض.
+          </div>
+        ) : null}
+        {isLoaded && hasRows ? (
+          <div className="space-y-3">
+            {rows.map((row) => (
+              <div key={row.invoiceId} className="rounded-2xl border border-border p-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="font-black">{row.tenantName}</p>
+                    <p className="mt-1 text-sm font-bold text-muted-foreground">{row.location}</p>
+                  </div>
+                  <StatusBadge tone={row.daysOverdue > 90 ? 'red' : 'gold'}>{row.daysOverdue} يوم</StatusBadge>
+                </div>
+                <div className="mt-4 flex items-center justify-between gap-3">
+                  <span className="text-sm font-bold text-muted-foreground">متبقي منذ {formatDashboardDate(settings, row.dueDate)}</span>
+                  <span className="font-black" dir="ltr">{formatDashboardMoney(settings, row.remainingAmount)}</span>
+                </div>
+              </div>
+            ))}
+            <Button asChild variant="secondary" className="w-full"><Link to="/arrears">فتح المتأخرات</Link></Button>
+          </div>
+        ) : null}
+      </CardContent>
+    </Card>
+  );
+}
+
 function ArrearsPanel({ totalOverdue, overdueInvoiceCount, averageDaysOverdue, buckets, isLoading, settings }: Readonly<{
   totalOverdue: number;
   overdueInvoiceCount: number;
@@ -272,6 +351,8 @@ function ArrearsPanel({ totalOverdue, overdueInvoiceCount, averageDaysOverdue, b
   isLoading: boolean;
   settings: CompanySettingsContract;
 }>) {
+  const isLoaded = isLoading === false;
+
   return (
     <Card>
       <CardHeader>
@@ -280,7 +361,7 @@ function ArrearsPanel({ totalOverdue, overdueInvoiceCount, averageDaysOverdue, b
       </CardHeader>
       <CardContent className="space-y-5">
         {isLoading ? <Skeleton className="h-56 w-full" /> : null}
-        {!isLoading ? (
+        {isLoaded ? (
           <>
             <div className="grid grid-cols-2 gap-3">
               <div className="rounded-2xl bg-muted p-4">
@@ -371,6 +452,7 @@ export function DashboardPage() {
   const snapshot = dashboardQuery.data;
   const isDashboardLoaded = dashboardQuery.isLoading === false;
   const expiringContracts = useMemo(() => buildExpiringContracts(snapshot?.activeContracts, now), [snapshot?.activeContracts, now]);
+  const overdueTenantRows = useMemo(() => buildOverdueTenantRows(snapshot?.arrears.overdueInvoices), [snapshot?.arrears.overdueInvoices]);
   const kpiCards = useMemo(() => buildDashboardSummaryCards(snapshot, settings), [snapshot, settings]);
   const buckets = arrearsBucketOrder.map((key) => {
     const bucket = snapshot?.arrears.agedReceivables.buckets[key];
@@ -417,25 +499,27 @@ export function DashboardPage() {
           isLoading={dashboardQuery.isLoading}
           settings={settings}
         />
-        <Card>
-          <CardHeader>
-            <CardTitle>نظرة مالية للشهر</CardTitle>
-            <CardDescription>ملخص يعتمد على تقرير الفترة المالية الحالي.</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {dashboardQuery.isLoading ? <Skeleton className="h-48 w-full" /> : null}
-            {isDashboardLoaded ? (
-              <>
-                <div className="flex items-center justify-between rounded-2xl bg-muted p-4"><span className="font-bold text-muted-foreground">المفوتر</span><span className="font-black" dir="ltr">{formatDashboardMoney(settings, snapshot?.financial.rentDue ?? 0)}</span></div>
-                <div className="flex items-center justify-between rounded-2xl bg-muted p-4"><span className="font-bold text-muted-foreground">المحصل</span><span className="font-black" dir="ltr">{formatDashboardMoney(settings, snapshot?.financial.collectedRent ?? 0)}</span></div>
-                <div className="flex items-center justify-between rounded-2xl bg-muted p-4"><span className="font-bold text-muted-foreground">المتبقي</span><span className="font-black" dir="ltr">{formatDashboardMoney(settings, snapshot?.financial.outstandingRent ?? 0)}</span></div>
-                <div className="flex items-center justify-between rounded-2xl bg-muted p-4"><span className="font-bold text-muted-foreground">صافي المركز</span><span className="font-black" dir="ltr">{formatDashboardMoney(settings, snapshot?.financial.netPosition ?? 0)}</span></div>
-                <Button asChild className="w-full"><Link to="/financials">فتح المالية</Link></Button>
-              </>
-            ) : null}
-          </CardContent>
-        </Card>
+        <OverdueTenantsPanel rows={overdueTenantRows} isLoading={dashboardQuery.isLoading} settings={settings} />
       </section>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>نظرة مالية للشهر</CardTitle>
+          <CardDescription>ملخص يعتمد على تقرير الفترة المالية الحالي.</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          {dashboardQuery.isLoading ? <Skeleton className="h-48 w-full" /> : null}
+          {isDashboardLoaded ? (
+            <>
+              <div className="flex items-center justify-between rounded-2xl bg-muted p-4"><span className="font-bold text-muted-foreground">المفوتر</span><span className="font-black" dir="ltr">{formatDashboardMoney(settings, snapshot?.financial.rentDue ?? 0)}</span></div>
+              <div className="flex items-center justify-between rounded-2xl bg-muted p-4"><span className="font-bold text-muted-foreground">المحصل</span><span className="font-black" dir="ltr">{formatDashboardMoney(settings, snapshot?.financial.collectedRent ?? 0)}</span></div>
+              <div className="flex items-center justify-between rounded-2xl bg-muted p-4"><span className="font-bold text-muted-foreground">المتبقي</span><span className="font-black" dir="ltr">{formatDashboardMoney(settings, snapshot?.financial.outstandingRent ?? 0)}</span></div>
+              <div className="flex items-center justify-between rounded-2xl bg-muted p-4"><span className="font-bold text-muted-foreground">صافي المركز</span><span className="font-black" dir="ltr">{formatDashboardMoney(settings, snapshot?.financial.netPosition ?? 0)}</span></div>
+              <Button asChild className="w-full"><Link to="/financials">فتح المالية</Link></Button>
+            </>
+          ) : null}
+        </CardContent>
+      </Card>
     </div>
   );
 }

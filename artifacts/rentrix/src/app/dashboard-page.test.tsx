@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { buildDashboardSummaryCards } from './dashboard-page';
+import { buildDashboardSummaryCards, buildOverdueTenantRows } from './dashboard-page';
 import type { DashboardSnapshot } from './dashboardSnapshot';
+import { defaultCompanySettingsContract } from '@/lib/companySettings';
+import type { OverdueInvoiceReportRow } from '@/features/financials/reports/financialReportsService';
 
 const snapshot = {
   financial: {
@@ -25,8 +27,8 @@ const snapshot = {
 } as DashboardSnapshot;
 
 describe('buildDashboardSummaryCards', () => {
-  it('maps dashboard snapshot metrics into summary cards with formatted money', () => {
-    const cards = buildDashboardSummaryCards(snapshot, (value) => `OMR ${value ?? 0}`);
+  it('maps dashboard snapshot metrics into summary cards with company-aware formatted money', () => {
+    const cards = buildDashboardSummaryCards(snapshot, defaultCompanySettingsContract);
 
     expect(cards.map((card) => card.title)).toEqual([
       'الإيجار المستحق',
@@ -38,11 +40,11 @@ describe('buildDashboardSummaryCards', () => {
       'تنتهي خلال 30 يوم',
     ]);
     expect(cards.map((card) => card.value)).toEqual([
-      'OMR 1200',
-      'OMR 900',
-      'OMR 300',
-      'OMR 125',
-      'OMR 775',
+      '‏١٬٢٠٠٫٠٠٠ OMR',
+      '‏٩٠٠٫٠٠٠ OMR',
+      '‏٣٠٠٫٠٠٠ OMR',
+      '‏١٢٥٫٠٠٠ OMR',
+      '‏٧٧٥٫٠٠٠ OMR',
       '70%',
       2,
     ]);
@@ -50,16 +52,76 @@ describe('buildDashboardSummaryCards', () => {
   });
 
   it('falls back to zero metrics when the snapshot is not loaded yet', () => {
-    const cards = buildDashboardSummaryCards(undefined, (value) => `OMR ${value ?? 0}`);
+    const cards = buildDashboardSummaryCards(undefined, defaultCompanySettingsContract);
 
     expect(cards.map((card) => card.value)).toEqual([
-      'OMR 0',
-      'OMR 0',
-      'OMR 0',
-      'OMR 0',
-      'OMR 0',
+      '‏٠٫٠٠٠ OMR',
+      '‏٠٫٠٠٠ OMR',
+      '‏٠٫٠٠٠ OMR',
+      '‏٠٫٠٠٠ OMR',
+      '‏٠٫٠٠٠ OMR',
       '0%',
       0,
+    ]);
+  });
+});
+
+describe('buildOverdueTenantRows', () => {
+  it('maps overdue invoices into sorted read-only tenant rows', () => {
+    const rows: OverdueInvoiceReportRow[] = [
+      {
+        invoiceId: 'invoice-low',
+        shortInvoiceId: 'invoice-',
+        contractId: 'contract-1',
+        tenantId: null,
+        tenantName: null,
+        propertyId: 'property-1',
+        propertyTitle: null,
+        unitId: null,
+        unitNumber: null,
+        dueDate: '2026-05-10',
+        daysOverdue: 8,
+        amount: 100,
+        paidAmount: 25,
+        remainingAmount: 75,
+        status: 'overdue',
+      },
+      {
+        invoiceId: 'invoice-high',
+        shortInvoiceId: 'invoice-',
+        contractId: 'contract-2',
+        tenantId: 'tenant-2',
+        tenantName: 'شركة الاختبار',
+        propertyId: 'property-2',
+        propertyTitle: 'برج الاختبار',
+        unitId: 'unit-2',
+        unitNumber: '12',
+        dueDate: '2026-05-01',
+        daysOverdue: 17,
+        amount: 500,
+        paidAmount: 100,
+        remainingAmount: 400,
+        status: 'overdue',
+      },
+    ];
+
+    expect(buildOverdueTenantRows(rows)).toEqual([
+      {
+        invoiceId: 'invoice-high',
+        tenantName: 'شركة الاختبار',
+        location: 'برج الاختبار / وحدة 12',
+        dueDate: '2026-05-01',
+        daysOverdue: 17,
+        remainingAmount: 400,
+      },
+      {
+        invoiceId: 'invoice-low',
+        tenantName: 'مستأجر غير محدد',
+        location: 'عقار غير محدد',
+        dueDate: '2026-05-10',
+        daysOverdue: 8,
+        remainingAmount: 75,
+      },
     ]);
   });
 });
