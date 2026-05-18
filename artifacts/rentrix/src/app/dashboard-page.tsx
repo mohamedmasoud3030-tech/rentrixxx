@@ -177,7 +177,7 @@ function ExpiringContractsPanel({ rows, isLoading }: Readonly<{ rows: ExpiringCo
                       <Button asChild variant="secondary" className="min-h-9 px-3">
                         <Link to="/contracts/$contractId" params={{ contractId: row.id }}>
                           فتح
-                          <ArrowLeft className="mr-2 size-4" />
+                          <ArrowLeft className="ms-2 size-4" />
                         </Link>
                       </Button>
                     </TableCell>

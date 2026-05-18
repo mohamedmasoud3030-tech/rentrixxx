@@ -37,7 +37,7 @@ export const DialogContent = forwardRef<
       {...props}
     >
       {children}
-      <DialogPrimitive.Close className="absolute left-4 top-4 rounded-xl p-2 text-muted-foreground transition hover:bg-muted hover:text-foreground">
+      <DialogPrimitive.Close className="absolute end-4 top-4 rounded-xl p-2 text-muted-foreground transition hover:bg-muted hover:text-foreground">
         <X className="size-4" />
         <span className="sr-only">إغلاق</span>
       </DialogPrimitive.Close>
@@ -47,7 +47,7 @@ export const DialogContent = forwardRef<
 DialogContent.displayName = DialogPrimitive.Content.displayName;
 
 export function DialogHeader({ className, ...props }: ComponentPropsWithoutRef<'div'>) {
-  return <div className={cn('space-y-2 text-right', className)} {...props} />;
+  return <div className={cn('space-y-2 text-start', className)} {...props} />;
 }
 
 export function DialogTitle({ className, ...props }: ComponentPropsWithoutRef<typeof DialogPrimitive.Title>) {

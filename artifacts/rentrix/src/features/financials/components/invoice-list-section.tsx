@@ -71,7 +71,7 @@ export function InvoiceListSection({
               <button
                 key={invoice.id}
                 className={cn(
-                  'grid w-full gap-3 rounded-2xl border p-4 text-right transition hover:border-primary/60 hover:bg-muted/40 md:grid-cols-[1.2fr_1fr_1fr_1fr_1fr_auto]',
+                  'grid w-full gap-3 rounded-2xl border p-4 text-start transition hover:border-primary/60 hover:bg-muted/40 md:grid-cols-[1.2fr_1fr_1fr_1fr_1fr_auto]',
                   isSelected ? 'border-primary bg-primary/5 ring-2 ring-primary/20' : 'bg-background',
                 )}
                 onClick={() => onSelectInvoice(invoice.id)}
