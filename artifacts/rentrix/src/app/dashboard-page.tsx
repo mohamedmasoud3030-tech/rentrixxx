@@ -364,9 +364,12 @@ export function DashboardPage() {
     queryKey: ['dashboard-snapshot', now.getMonth() + 1, now.getFullYear(), today],
     queryFn: () => getDashboardSnapshot(now),
   });
-  const retryDashboard = useCallback(() => { void dashboardQuery.refetch(); }, [dashboardQuery]);
+  const retryDashboard = useCallback(() => {
+    dashboardQuery.refetch().catch(() => undefined);
+  }, [dashboardQuery]);
 
   const snapshot = dashboardQuery.data;
+  const isDashboardLoaded = dashboardQuery.isLoading === false;
   const expiringContracts = useMemo(() => buildExpiringContracts(snapshot?.activeContracts, now), [snapshot?.activeContracts, now]);
   const kpiCards = useMemo(() => buildDashboardSummaryCards(snapshot, settings), [snapshot, settings]);
   const buckets = arrearsBucketOrder.map((key) => {
@@ -421,7 +424,7 @@ export function DashboardPage() {
           </CardHeader>
           <CardContent className="space-y-3">
             {dashboardQuery.isLoading ? <Skeleton className="h-48 w-full" /> : null}
-            {!dashboardQuery.isLoading ? (
+            {isDashboardLoaded ? (
               <>
                 <div className="flex items-center justify-between rounded-2xl bg-muted p-4"><span className="font-bold text-muted-foreground">المفوتر</span><span className="font-black" dir="ltr">{formatDashboardMoney(settings, snapshot?.financial.rentDue ?? 0)}</span></div>
                 <div className="flex items-center justify-between rounded-2xl bg-muted p-4"><span className="font-bold text-muted-foreground">المحصل</span><span className="font-black" dir="ltr">{formatDashboardMoney(settings, snapshot?.financial.collectedRent ?? 0)}</span></div>
