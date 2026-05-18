@@ -61,9 +61,9 @@ export function useSoftDeleteUnit(propertyId: string) {
     },
     onError: (error, _unitId, context) => {
       if (context?.previousUnits) queryClient.setQueryData(unitKeys.property(propertyId), context.previousUnits);
-      toast.error(error instanceof Error ? error.message : 'تعذر حذف الوحدة');
+      toast.error(error instanceof Error ? error.message : 'تعذر أرشفة الوحدة');
     },
-    onSuccess: () => toast.success('تم حذف الوحدة أرشيفياً'),
+    onSuccess: () => toast.success('تمت أرشفة الوحدة بنجاح'),
     onSettled: async () => {
       await queryClient.invalidateQueries({ queryKey: unitKeys.all });
     },

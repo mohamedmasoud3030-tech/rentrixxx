@@ -1,5 +1,6 @@
-import { Edit, Plus, Trash2 } from 'lucide-react';
+import { Archive, Edit, Plus } from 'lucide-react';
 import { useState } from 'react';
+import type { UseQueryResult } from '@tanstack/react-query';
 import { EmptyState } from '@/components/empty-state';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -11,7 +12,7 @@ import { formatCompanyMoney } from '@/lib/companyFormatters';
 import type { Unit } from '@/types/domain';
 import { unitStatusLabels } from './unit-schema';
 import { UnitFormModal } from './unit-form-modal';
-import { useSoftDeleteUnit, useUnits } from './use-units';
+import { useSoftDeleteUnit } from './use-units';
 
 const unitStatusTone = { available: 'green', occupied: 'blue', maintenance: 'gold', reserved: 'gray' } as const;
 
@@ -20,8 +21,7 @@ function money(value: number | null) {
   return formatCompanyMoney(defaultCompanyLocalSettings, value);
 }
 
-export function UnitsList({ propertyId }: { propertyId: string }) {
-  const unitsQuery = useUnits(propertyId);
+export function UnitsList({ propertyId, unitsQuery }: Readonly<{ propertyId: string; unitsQuery: UseQueryResult<Unit[]> }>) {
   const deleteMutation = useSoftDeleteUnit(propertyId);
   const [editingUnit, setEditingUnit] = useState<Unit | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
@@ -34,6 +34,12 @@ export function UnitsList({ propertyId }: { propertyId: string }) {
   const openForEdit = (unit: Unit) => {
     setEditingUnit(unit);
     setModalOpen(true);
+  };
+
+  const archiveUnit = (unitId: string) => {
+    if (window.confirm('هل أنت متأكد من أرشفة الوحدة؟ ستبقى البيانات محفوظة كسجل أرشيفي.')) {
+      deleteMutation.mutate(unitId);
+    }
   };
 
   return (
@@ -74,7 +80,7 @@ export function UnitsList({ propertyId }: { propertyId: string }) {
                     <TableCell>
                       <div className="flex gap-2">
                         <Button variant="secondary" className="min-h-9 px-3" onClick={() => openForEdit(unit)}><Edit className="size-4" /></Button>
-                        <Button variant="danger" className="min-h-9 px-3" onClick={() => void deleteMutation.mutate(unit.id)} disabled={deleteMutation.isPending}><Trash2 className="size-4" /></Button>
+                        <Button variant="danger" className="min-h-9 px-3" aria-label="أرشفة الوحدة" onClick={() => archiveUnit(unit.id)} disabled={deleteMutation.isPending}><Archive className="size-4" /></Button>
                       </div>
                     </TableCell>
                   </TableRow>

@@ -6,19 +6,26 @@ import { EmptyState } from '@/components/empty-state';
 import { RouteLoadingState } from '@/components/loading-state';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { UnitsList } from '@/features/units/units-list';
+import { useUnits } from '@/features/units/use-units';
 import { defaultCompanyLocalSettings } from '@/lib/companySettings';
-import { formatCompanyDate, formatCompanyMoney } from '@/lib/companyFormatters';
+import { formatCompanyDate, formatCompanyMoney, getCompanyLocale } from '@/lib/companyFormatters';
 import { propertyStatusLabels } from './property-schema';
+import { summarizePropertyUnits } from './property-unit-summary';
 import { useProperty } from './use-properties';
 
 const propertyStatusTone = { active: 'green', inactive: 'gray', maintenance: 'gold', sold: 'blue' } as const;
+const companyLocale = getCompanyLocale(defaultCompanyLocalSettings);
 
 function money(value: number | null) {
   if (value === null) return '—';
   return formatCompanyMoney(defaultCompanyLocalSettings, value);
 }
 
-function InfoItem({ label, value }: { label: string; value: string }) {
+function count(value: number) {
+  return value.toLocaleString(companyLocale);
+}
+
+function InfoItem({ label, value }: Readonly<{ label: string; value: string }>) {
   return (
     <div className="rounded-2xl border border-border bg-background p-4">
       <p className="text-xs font-bold text-muted-foreground">{label}</p>
@@ -31,11 +38,13 @@ export function PropertyDetailPage() {
   const params = useParams({ strict: false });
   const propertyId = typeof params.propertyId === 'string' ? params.propertyId : '';
   const propertyQuery = useProperty(propertyId);
+  const unitsQuery = useUnits(propertyId);
 
   if (propertyQuery.isLoading) return <RouteLoadingState />;
   if (!propertyQuery.data) return <EmptyState title="العقار غير موجود" description="ربما تم حذف العقار أو لا تملك صلاحية الوصول إليه." />;
 
   const property = propertyQuery.data;
+  const unitSummary = summarizePropertyUnits(unitsQuery.data ?? []);
 
   return (
     <div className="space-y-6">
@@ -73,7 +82,22 @@ export function PropertyDetailPage() {
         </CardContent>
       </Card>
 
-      <UnitsList propertyId={property.id} />
+      <Card>
+        <CardHeader>
+          <CardTitle>ملخص الوحدات</CardTitle>
+          <CardDescription>مؤشرات قراءة فقط محسوبة من الوحدات المسجلة لهذا العقار.</CardDescription>
+        </CardHeader>
+        <CardContent className="grid gap-4 md:grid-cols-2 xl:grid-cols-6">
+          <InfoItem label="إجمالي الوحدات" value={count(unitSummary.totalUnits)} />
+          <InfoItem label="الوحدات المتاحة" value={count(unitSummary.availableUnits)} />
+          <InfoItem label="الوحدات المشغولة" value={count(unitSummary.occupiedUnits)} />
+          <InfoItem label="وحدات الصيانة" value={count(unitSummary.maintenanceUnits)} />
+          <InfoItem label="الوحدات المحجوزة" value={count(unitSummary.reservedUnits)} />
+          <InfoItem label="إجمالي الإيجار المتوقع" value={formatCompanyMoney(defaultCompanyLocalSettings, unitSummary.expectedRentTotal)} />
+        </CardContent>
+      </Card>
+
+      <UnitsList propertyId={property.id} unitsQuery={unitsQuery} />
     </div>
   );
 }
