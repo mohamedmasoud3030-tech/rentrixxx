@@ -7,12 +7,13 @@ import { ArrearsWorkspaceSection } from './components/arrears-workspace-section'
 import { ExpensesSection, type ExpenseFormValues } from './components/expenses-section';
 import { FinancialReportsPreviewSection } from './components/financial-reports-preview-section';
 import { InvoiceWorkspaceSection } from './components/invoice-workspace-section';
+import { OPERATIONAL_EXPENSE_CATEGORIES, type OperationalExpenseFilterValues } from './expenses/operational-expenses';
 import { useCreateExpense, useExpenses } from './expenses/useExpenses';
 import { useCollectionSummaryReport } from './reports/useFinancialReports';
 
 const expenseSchema = z.object({
   property_id: z.string().uuid('اختر العقار'),
-  category: z.enum(['صيانة', 'مرافق', 'إدارية', 'تأمين', 'أخرى'], { message: 'اختر التصنيف' }),
+  category: z.enum(OPERATIONAL_EXPENSE_CATEGORIES, { message: 'اختر التصنيف' }),
   amount: z.coerce.number().positive('المبلغ يجب أن يكون أكبر من صفر'),
   expense_date: z.string().min(1, 'اختر التاريخ'),
   description: z.string().optional(),
@@ -31,7 +32,7 @@ function getCurrentMonthReportRange() {
 
 export function FinancialsPage() {
   const { data: properties } = useProperties({ page: 1, pageSize: 100, search: '', status: 'all' });
-  const [filters] = useState({ propertyId: '', category: '', from: '', to: '' });
+  const [filters, setFilters] = useState<OperationalExpenseFilterValues>({ propertyId: '', category: '', from: '', to: '' });
   const { data: expenses = [] } = useExpenses(filters);
   const reportFilters = useMemo(() => getCurrentMonthReportRange(), []);
   const collectionReport = useCollectionSummaryReport(reportFilters);
@@ -88,6 +89,8 @@ export function FinancialsPage() {
       <ExpensesSection
         expenses={expenses}
         propertyRows={propertyRows}
+        filters={filters}
+        onFiltersChange={setFilters}
         expenseForm={expenseForm}
         isCreateExpensePending={createExpense.isPending}
         onCreateExpense={onCreateExpense}
