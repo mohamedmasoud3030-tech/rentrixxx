@@ -46,6 +46,7 @@ describe('companySettingsService', () => {
       number_format: undefined,
       invoice_prefix: ' INV-OM ',
       receipt_prefix: '',
+      logo_url: 'javascript:alert(1)',
     })).toMatchObject({
       company_name: 'Rentrix Oman',
       legal_name: 'Rentrix LLC',
@@ -57,6 +58,7 @@ describe('companySettingsService', () => {
       number_format: 'ar-OM',
       invoice_prefix: 'INV-OM',
       receipt_prefix: 'REC',
+      logo_url: null,
     });
   });
 

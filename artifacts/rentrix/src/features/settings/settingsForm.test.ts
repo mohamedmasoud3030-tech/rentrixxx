@@ -4,6 +4,7 @@ import {
   companySettingsDraftToLocalSettings,
   companySettingsDraftToPayload,
   companySettingsRecordToDraft,
+  getCompanySettingsPreviewModel,
   validateCompanySettingsDraft,
   type CompanySettingsDraft,
 } from './settingsForm';
@@ -153,6 +154,48 @@ describe('settingsForm helpers', () => {
       invoice_prefix: 'INV',
       receipt_prefix: 'REC',
     });
+  });
+
+
+  it('builds a branding and document preview model with safe fallbacks', () => {
+    const preview = getCompanySettingsPreviewModel({
+      ...validDraft,
+      company_name: '  Rentrix Oman  ',
+      legal_name: ' ',
+      logo_url: 'javascript:alert(1)',
+      locale: 'en-OM',
+      currency: 'XYZ',
+      country: 'Oman',
+      timezone: 'Europe/Paris',
+      invoice_prefix: '',
+      receipt_prefix: '   ',
+      phone: '',
+      email: '',
+      address: '  ',
+    });
+
+    expect(preview).toMatchObject({
+      companyName: 'Rentrix Oman',
+      legalName: 'غير محدد',
+      logoUrl: null,
+      logoFallbackLabel: 'لا يوجد رابط شعار محفوظ حالياً',
+      locale: 'en-OM',
+      defaultLanguage: 'الإنجليزية',
+      defaultCurrency: 'OMR',
+      country: 'OM',
+      timezone: 'Asia/Muscat',
+      invoicePrefix: 'INV',
+      receiptPrefix: 'REC',
+    });
+    expect(preview.contactDetails).toContainEqual({ label: 'الهاتف', value: 'لا يوجد هاتف', isFallback: true });
+    expect(preview.contactDetails).toContainEqual({ label: 'العنوان', value: 'لا يوجد عنوان', isFallback: true });
+  });
+
+  it('keeps safe http and https logo URLs available for the preview', () => {
+    expect(getCompanySettingsPreviewModel({
+      ...validDraft,
+      logo_url: ' https://example.test/logo.png ',
+    }).logoUrl).toBe('https://example.test/logo.png');
   });
 
   it('converts drafts to update payloads without dropping persisted fields', () => {
