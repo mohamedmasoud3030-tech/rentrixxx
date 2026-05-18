@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -7,8 +7,15 @@ import { EmptyState } from '@/components/empty-state';
 import { Skeleton } from '@/components/ui/skeleton';
 import { DataTable } from '@/components/shared/DataTable';
 import { useProperties } from '@/features/properties/use-properties';
-import { useUnits } from '@/features/units/use-units';
+import { useAllUnits, useUnits } from '@/features/units/use-units';
 import { useMaintenance, useCreateMaintenance, useUpdateMaintenanceStatus } from './use-maintenance';
+import {
+  buildMaintenanceLocationLabel,
+  filterMaintenanceRequests,
+  summarizeMaintenanceRequests,
+  type MaintenancePriorityFilter,
+  type MaintenanceStatusFilter,
+} from './maintenance-helpers';
 
 const schema = z.object({
   property_id: z.string().uuid('اختر العقار'),
@@ -38,9 +45,14 @@ function getLoadErrorMessage(error: unknown, fallback: string): string {
   return error instanceof Error ? error.message : fallback;
 }
 
-const statusFilterValues = ['all', 'open', 'in_progress', 'resolved', 'closed'] as const;
-type MaintenanceStatusFilter = typeof statusFilterValues[number];
 type MaintenanceAction = Readonly<{ label: string; status: Exclude<MaintenanceStatusFilter, 'all'> }>;
+
+const summaryCards = [
+  { key: 'total', label: 'إجمالي الطلبات' },
+  { key: 'open', label: 'طلبات مفتوحة' },
+  { key: 'inProgress', label: 'قيد التنفيذ' },
+  { key: 'urgent', label: 'عاجلة' },
+] as const;
 
 function getMaintenanceStatusActions(status: keyof typeof maintenanceStatusLabels): MaintenanceAction[] {
   if (status === 'open') {
@@ -57,6 +69,7 @@ function getMaintenanceStatusActions(status: keyof typeof maintenanceStatusLabel
 
 export function MaintenancePage() {
   const [statusFilter, setStatusFilter] = useState<MaintenanceStatusFilter>('all');
+  const [priorityFilter, setPriorityFilter] = useState<MaintenancePriorityFilter>('all');
   const [propertyFilterId, setPropertyFilterId] = useState('');
 
   const maintenanceQuery = useMaintenance(statusFilter, propertyFilterId);
@@ -71,10 +84,17 @@ export function MaintenancePage() {
 
   const formPropertyId = form.watch('property_id');
   const unitsQuery = useUnits(formPropertyId);
+  const allUnitsQuery = useAllUnits();
 
   const properties = propertiesQuery.data?.rows ?? [];
   const units = unitsQuery.data ?? [];
+  const allUnits = allUnitsQuery.data ?? [];
   const maintenanceRows = maintenanceQuery.data ?? [];
+  const filteredMaintenanceRows = useMemo(
+    () => filterMaintenanceRequests(maintenanceRows, { status: statusFilter, priority: priorityFilter, propertyId: propertyFilterId }),
+    [maintenanceRows, priorityFilter, propertyFilterId, statusFilter],
+  );
+  const maintenanceSummary = useMemo(() => summarizeMaintenanceRequests(filteredMaintenanceRows), [filteredMaintenanceRows]);
   const loadError = maintenanceQuery.error ?? propertiesQuery.error;
   const hasLoadError = maintenanceQuery.isError || propertiesQuery.isError;
   const retryMaintenanceWorkspace = async () => {
@@ -108,18 +128,34 @@ export function MaintenancePage() {
 
   return (
     <div className="space-y-6" dir="rtl">
-      <div className="grid gap-2 md:grid-cols-2">
-        <select className="rounded border px-2 py-2" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value as typeof statusFilter)}>
+      <div className="grid gap-2 md:grid-cols-3">
+        <select className="rounded border px-2 py-2" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value as MaintenanceStatusFilter)}>
           <option value="all">كل الحالات</option>
           <option value="open">مفتوح</option>
           <option value="in_progress">قيد التنفيذ</option>
           <option value="resolved">تم الحل</option>
           <option value="closed">مغلق</option>
         </select>
+        <select className="rounded border px-2 py-2" value={priorityFilter} onChange={(e) => setPriorityFilter(e.target.value as MaintenancePriorityFilter)}>
+          <option value="all">كل الأولويات</option>
+          <option value="low">منخفضة</option>
+          <option value="medium">متوسطة</option>
+          <option value="high">عالية</option>
+          <option value="urgent">عاجلة</option>
+        </select>
         <select className="rounded border px-2 py-2" value={propertyFilterId} onChange={(e) => setPropertyFilterId(e.target.value)}>
           <option value="">كل العقارات</option>
           {propertyOptions}
         </select>
+      </div>
+
+      <div className="grid gap-3 md:grid-cols-4">
+        {summaryCards.map((card) => (
+          <div key={card.key} className="rounded border bg-muted/20 p-3">
+            <p className="text-xs text-muted-foreground">{card.label}</p>
+            <p className="mt-1 text-2xl font-bold">{maintenanceSummary[card.key]}</p>
+          </div>
+        ))}
       </div>
 
       <form className="grid gap-3 rounded border p-4" onSubmit={form.handleSubmit(onSubmit)}>
@@ -163,10 +199,11 @@ export function MaintenancePage() {
       ) : null}
       {!maintenanceQuery.isLoading && !propertiesQuery.isLoading && !hasLoadError ? (
         <DataTable
-          rows={maintenanceRows}
+          rows={filteredMaintenanceRows}
           keyOf={(row) => row.id}
           columns={[
             { key: 'title', header: 'العنوان', render: (row) => row.title },
+            { key: 'location', header: 'العقار / الوحدة', render: (row) => buildMaintenanceLocationLabel(row, properties, allUnits) },
             { key: 'status', header: 'الحالة', render: (row) => maintenanceStatusLabels[row.status] },
             { key: 'priority', header: 'الأولوية', render: (row) => maintenancePriorityLabels[row.priority] },
             {
@@ -196,7 +233,7 @@ export function MaintenancePage() {
               },
             },
           ]}
-          empty={<EmptyState title="لا توجد طلبات صيانة" description="أضف طلب صيانة جديد للبدء." />}
+          empty={<EmptyState title="لا توجد طلبات صيانة" description="غيّر عوامل التصفية أو أضف طلب صيانة جديد للبدء." />}
         />
       ) : null}
     </div>
