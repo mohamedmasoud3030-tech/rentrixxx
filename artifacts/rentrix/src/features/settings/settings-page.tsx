@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type ChangeEvent, type FormEvent } from 'react';
+import { useEffect, useMemo, useRef, useState, type ChangeEvent, type FormEvent } from 'react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -6,6 +6,15 @@ import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { formatCompanyDate, formatCompanyMoney } from '@/lib/companyFormatters';
+import {
+  normalizeCompanyLocale,
+  supportedCompanyLocales,
+  supportedCountries,
+  supportedTimezones,
+  type SupportedLanguage,
+} from '@/lib/companySettings';
+import { supportedCurrencies } from '@/lib/formatters';
+import { getAppLanguageState } from '@/lib/i18n';
 import { useUiStore } from '@/store/ui-store';
 import { useCompanySettings, useUpdateCompanySettings } from './useCompanySettings';
 import {
@@ -20,11 +29,12 @@ import {
   type CompanySettingsValidationErrors,
 } from './settingsForm';
 
-const currencyOptions = ['OMR', 'AED', 'SAR', 'QAR', 'KWD', 'BHD', 'USD', 'EGP'];
-const localeOptions = ['ar-OM', 'en-OM', 'ar', 'en'];
+const currencyOptions = supportedCurrencies;
+const localeOptions = supportedCompanyLocales;
+const countryOptions = supportedCountries;
 const numberFormatOptions = ['ar-OM', 'en-OM', 'ar', 'en-US'];
 const dateFormatOptions = ['dd/MM/yyyy', 'yyyy-MM-dd', 'MM/dd/yyyy'];
-const timezoneOptions = ['Asia/Muscat', 'Asia/Dubai', 'Asia/Riyadh', 'UTC'];
+const timezoneOptions = supportedTimezones;
 
 type BaseFieldProps = Readonly<{
   label: string;
@@ -119,16 +129,19 @@ function UserManagementCard({ users, inviteEmail, onInviteEmailChange, onInviteU
 }
 
 type AppPreferencesCardProps = Readonly<{
-  lang: 'ar' | 'en';
+  lang: SupportedLanguage;
   theme: string;
-  onLanguageChange: (language: 'ar' | 'en') => void;
+  onLanguageChange: (language: SupportedLanguage) => void;
   onToggleTheme: () => void;
 }>;
 
 function AppPreferencesCard({ lang, theme, onLanguageChange, onToggleTheme }: AppPreferencesCardProps) {
   return (
     <Card>
-      <CardHeader><CardTitle>تفضيلات التطبيق</CardTitle></CardHeader>
+      <CardHeader>
+        <CardTitle>تفضيلات التطبيق</CardTitle>
+        <CardDescription>تستخدم أزرار اللغة المحلية المحفوظة كإعداد افتراضي للشركة.</CardDescription>
+      </CardHeader>
       <CardContent className="space-y-3">
         <div className="flex gap-2">
           <Button variant={lang === 'ar' ? 'primary' : 'secondary'} onClick={() => onLanguageChange('ar')}>AR</Button>
@@ -150,10 +163,11 @@ export function SettingsPage() {
   const updateCompanySettingsMutation = useUpdateCompanySettings();
   const [baseDraft, setBaseDraft] = useState<CompanySettingsDraft | null>(null);
   const [draft, setDraft] = useState<CompanySettingsDraft | null>(null);
+  const baseDraftRef = useRef<CompanySettingsDraft | null>(null);
+  const draftRef = useRef<CompanySettingsDraft | null>(null);
   const [errors, setErrors] = useState<CompanySettingsValidationErrors>({});
   const [users, setUsers] = useState<UserAccount[]>([{ email: 'admin@rentrix.app', active: true }]);
   const [inviteEmail, setInviteEmail] = useState('');
-  const [lang, setLang] = useState<'ar' | 'en'>('ar');
 
   const isDirty = !areCompanySettingsDraftsEqual(draft, baseDraft);
   const isSaving = updateCompanySettingsMutation.isPending;
@@ -161,24 +175,35 @@ export function SettingsPage() {
   useEffect(() => {
     if (!companySettingsQuery.data) return;
 
+    const currentDraft = draftRef.current;
+    const currentBaseDraft = baseDraftRef.current;
     const nextDraft = companySettingsRecordToDraft(companySettingsQuery.data);
-    setBaseDraft((currentBaseDraft) => {
-      setDraft((currentDraft) => {
-        if (currentDraft && currentBaseDraft && !areCompanySettingsDraftsEqual(currentDraft, currentBaseDraft)) {
-          return currentDraft;
-        }
-        return nextDraft;
-      });
-      return nextDraft;
-    });
+    const hasUnsavedDraft = Boolean(
+      currentDraft
+        && currentBaseDraft
+        && !areCompanySettingsDraftsEqual(currentDraft, currentBaseDraft),
+    );
+
+    baseDraftRef.current = nextDraft;
+    setBaseDraft(nextDraft);
+
+    if (!hasUnsavedDraft) {
+      draftRef.current = nextDraft;
+      setDraft(nextDraft);
+    }
   }, [companySettingsQuery.data]);
 
   const previewSettings = useMemo(() => draft ? companySettingsDraftToLocalSettings(draft) : null, [draft]);
+  const pageLanguage = getAppLanguageState(previewSettings?.defaultLanguage);
   const formattedPreviewDate = previewSettings ? formatCompanyDate(previewSettings, new Date()) : '—';
   const formattedPreviewMoney = previewSettings ? formatCompanyMoney(previewSettings, 1234.56) : '—';
 
   const handleDraftChange = (field: CompanySettingsDraftField, value: string) => {
-    setDraft((currentDraft) => currentDraft ? { ...currentDraft, [field]: value } : currentDraft);
+    setDraft((currentDraft) => {
+      const nextDraft = currentDraft ? { ...currentDraft, [field]: value } : currentDraft;
+      draftRef.current = nextDraft;
+      return nextDraft;
+    });
     setErrors((currentErrors) => {
       if (!currentErrors[field]) return currentErrors;
       const nextErrors = { ...currentErrors };
@@ -208,6 +233,10 @@ export function SettingsPage() {
     setTheme(theme === 'dark' ? 'light' : 'dark');
   };
 
+  const handleDefaultLanguageChange = (language: SupportedLanguage) => {
+    handleDraftChange('locale', normalizeCompanyLocale(undefined, language));
+  };
+
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!draft) return;
@@ -222,6 +251,8 @@ export function SettingsPage() {
     try {
       const savedSettings = await updateCompanySettingsMutation.mutateAsync(companySettingsDraftToPayload(draft));
       const savedDraft = companySettingsRecordToDraft(savedSettings);
+      baseDraftRef.current = savedDraft;
+      draftRef.current = savedDraft;
       setBaseDraft(savedDraft);
       setDraft(savedDraft);
       toast.success('تم حفظ إعدادات الشركة بنجاح');
@@ -232,7 +263,7 @@ export function SettingsPage() {
 
   if (companySettingsQuery.isError) {
     return (
-      <div className="grid gap-4" dir="rtl">
+      <div className="grid gap-4" dir={pageLanguage.direction} lang={pageLanguage.locale}>
         <Card>
           <CardHeader>
             <CardTitle>تعذر تحميل إعدادات الشركة</CardTitle>
@@ -248,7 +279,7 @@ export function SettingsPage() {
 
   if (companySettingsQuery.isLoading || !draft) {
     return (
-      <div className="grid gap-4" dir="rtl">
+      <div className="grid gap-4" dir={pageLanguage.direction} lang={pageLanguage.locale}>
         <Card>
           <CardHeader>
             <CardTitle>إعدادات الشركة</CardTitle>
@@ -262,7 +293,7 @@ export function SettingsPage() {
     );
   }
 
-  return <div className="grid gap-4 lg:grid-cols-2" dir="rtl">
+  return <div className="grid gap-4 lg:grid-cols-2" dir={pageLanguage.direction} lang={pageLanguage.locale}>
     <Card className="lg:col-span-2">
       <CardHeader>
         <CardTitle>ملف الشركة</CardTitle>
@@ -280,7 +311,7 @@ export function SettingsPage() {
             <FormField label="الهاتف" field="phone" draft={draft} errors={errors} disabled={isSaving} onChange={handleDraftChange} />
             <FormField label="البريد الإلكتروني" field="email" draft={draft} errors={errors} disabled={isSaving} type="email" placeholder="email@example.com" onChange={handleDraftChange} />
             <FormField label="المدينة" field="city" draft={draft} errors={errors} disabled={isSaving} onChange={handleDraftChange} />
-            <FormField label="الدولة" field="country" draft={draft} errors={errors} disabled={isSaving} onChange={handleDraftChange} />
+            <SelectField label="الدولة" field="country" draft={draft} errors={errors} disabled={isSaving} options={countryOptions} onChange={handleDraftChange} />
             <SelectField label="العملة" field="currency" draft={draft} errors={errors} disabled={isSaving} options={currencyOptions} onChange={handleDraftChange} />
             <SelectField label="المحلية" field="locale" draft={draft} errors={errors} disabled={isSaving} options={localeOptions} onChange={handleDraftChange} />
             <SelectField label="المنطقة الزمنية" field="timezone" draft={draft} errors={errors} disabled={isSaving} options={timezoneOptions} onChange={handleDraftChange} />
@@ -328,6 +359,6 @@ export function SettingsPage() {
       onInviteUser={handleInviteUser}
       onToggleUser={handleToggleUser}
     />
-    <AppPreferencesCard lang={lang} theme={theme} onLanguageChange={setLang} onToggleTheme={handleToggleTheme} />
+    <AppPreferencesCard lang={pageLanguage.language} theme={theme} onLanguageChange={handleDefaultLanguageChange} onToggleTheme={handleToggleTheme} />
   </div>;
 }

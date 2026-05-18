@@ -3,9 +3,34 @@ import {
   areCompanySettingsDraftsEqual,
   companySettingsDraftToLocalSettings,
   companySettingsDraftToPayload,
+  companySettingsRecordToDraft,
   validateCompanySettingsDraft,
   type CompanySettingsDraft,
 } from './settingsForm';
+
+const validRecord = {
+  id: 'settings_1',
+  singleton_key: true,
+  company_name: 'Rentrix',
+  legal_name: null,
+  tax_number: null,
+  registration_number: null,
+  phone: null,
+  email: null,
+  address: null,
+  city: 'Muscat',
+  country: 'OM',
+  currency: 'OMR',
+  locale: 'ar-OM',
+  timezone: 'Asia/Muscat',
+  date_format: 'dd/MM/yyyy',
+  number_format: 'ar-OM',
+  logo_url: null,
+  invoice_prefix: 'INV',
+  receipt_prefix: 'REC',
+  created_at: '2026-05-18T00:00:00.000Z',
+  updated_at: '2026-05-18T00:00:00.000Z',
+} as const;
 
 const validDraft: CompanySettingsDraft = {
   company_name: 'Rentrix',
@@ -81,6 +106,52 @@ describe('settingsForm helpers', () => {
       defaultCurrency: 'OMR',
       country: 'OM',
       timezone: 'Asia/Muscat',
+    });
+  });
+
+  it('normalizes persisted record values before binding settings controls', () => {
+    expect(companySettingsRecordToDraft({
+      ...validRecord,
+      company_name: '  ',
+      country: 'Oman',
+      currency: 'XYZ',
+      locale: 'en-OM',
+      timezone: 'Europe/Paris',
+      logo_url: ' https://example.test/logo.png ',
+      invoice_prefix: '',
+      receipt_prefix: '',
+    })).toMatchObject({
+      company_name: 'Rentrix',
+      country: 'OM',
+      currency: 'OMR',
+      locale: 'en-OM',
+      timezone: 'Asia/Muscat',
+      logo_url: 'https://example.test/logo.png',
+      invoice_prefix: 'INV',
+      receipt_prefix: 'REC',
+    });
+  });
+
+  it('normalizes draft option values before saving the update payload', () => {
+    expect(companySettingsDraftToPayload({
+      ...validDraft,
+      company_name: '  Rentrix Oman  ',
+      country: 'Oman',
+      currency: 'XYZ',
+      locale: 'fr-FR',
+      timezone: 'Europe/Paris',
+      logo_url: ' https://example.test/logo.png ',
+      invoice_prefix: '',
+      receipt_prefix: '',
+    })).toMatchObject({
+      company_name: 'Rentrix Oman',
+      country: 'OM',
+      currency: 'OMR',
+      locale: 'ar-OM',
+      timezone: 'Asia/Muscat',
+      logo_url: 'https://example.test/logo.png',
+      invoice_prefix: 'INV',
+      receipt_prefix: 'REC',
     });
   });
 
