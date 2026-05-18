@@ -233,9 +233,9 @@ export function ContractDetailPage() {
           <p className="text-sm text-muted-foreground">عرض كامل للعقد وسجل مراحله.</p>
         </div>
         <div className="flex gap-2">
-          <Button variant="secondary" asChild><Link to="/contracts"><ArrowRight className="ml-2 size-4" />العودة</Link></Button>
-          <Button variant="secondary" onClick={() => openRenewalDialog(contract)} disabled={!renewalAllowed}><RefreshCw className="ml-2 size-4" />تجديد</Button>
-          <Button asChild><Link to="/contracts/$contractId/edit" params={{ contractId }}><Edit className="ml-2 size-4" />تعديل</Link></Button>
+          <Button variant="secondary" asChild><Link to="/contracts"><ArrowRight className="me-2 size-4" />العودة</Link></Button>
+          <Button variant="secondary" onClick={() => openRenewalDialog(contract)} disabled={!renewalAllowed}><RefreshCw className="me-2 size-4" />تجديد</Button>
+          <Button asChild><Link to="/contracts/$contractId/edit" params={{ contractId }}><Edit className="me-2 size-4" />تعديل</Link></Button>
         </div>
       </div>
 
@@ -351,7 +351,7 @@ function LifecycleActionsCard({ contract, renewalAllowed, onRenew }: Readonly<{ 
             {renewalAllowed ? 'سيتم اقتراح بداية اليوم التالي لتاريخ نهاية العقد مع نفس قيمة الإيجار قبل إنشاء العقد الجديد.' : 'التجديد متاح للعقود النشطة أو المنتهية فقط حفاظًا على وضوح الحالة.'}
           </p>
           <Button className="mt-4" variant="secondary" onClick={onRenew} disabled={!renewalAllowed}>
-            <RefreshCw className="ml-2 size-4" />فتح نموذج التجديد
+            <RefreshCw className="me-2 size-4" />فتح نموذج التجديد
           </Button>
         </div>
         <div className="rounded-2xl border border-border bg-background p-4">

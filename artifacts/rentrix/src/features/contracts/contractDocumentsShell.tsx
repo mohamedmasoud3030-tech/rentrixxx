@@ -27,7 +27,7 @@ export function ContractDocumentsShell({ contractId }: Readonly<{ contractId: st
             <CardTitle className="flex items-center gap-2"><FileText className="size-5 text-primary" />تبويب مستندات العقد</CardTitle>
             <CardDescription>غلاف قراءة فقط لملفات العقد المستقبلية دون PDF أو جداول جديدة.</CardDescription>
           </div>
-          <StatusBadge tone="gray"><LockKeyhole className="ml-1 size-3" />قراءة فقط</StatusBadge>
+          <StatusBadge tone="gray"><LockKeyhole className="me-1 size-3" />قراءة فقط</StatusBadge>
         </div>
       </CardHeader>
       <CardContent className="space-y-4 pt-6">

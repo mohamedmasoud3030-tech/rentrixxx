@@ -27,7 +27,7 @@ export function ReceiptDetailCard({ selectedReceiptId, receiptDetail, isLoading,
         <div className="mt-3 space-y-3">
           <div className="flex justify-end">
             <Button variant="secondary" asChild>
-              <a href={getReceiptPrintHref(receiptDetail.id)}><Printer className="ml-2 size-4" />عرض/طباعة الإيصال</a>
+              <a href={getReceiptPrintHref(receiptDetail.id)}><Printer className="me-2 size-4" />عرض/طباعة الإيصال</a>
             </Button>
           </div>
           <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">

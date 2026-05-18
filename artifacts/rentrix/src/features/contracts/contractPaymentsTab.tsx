@@ -214,7 +214,7 @@ export function ContractPaymentsTab({
             </CardDescription>
           </div>
           <StatusBadge tone="gray">
-            <LockKeyhole className="ml-1 size-3" />
+            <LockKeyhole className="me-1 size-3" />
             قراءة فقط
           </StatusBadge>
         </div>

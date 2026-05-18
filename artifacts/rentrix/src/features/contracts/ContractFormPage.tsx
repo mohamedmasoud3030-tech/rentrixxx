@@ -57,7 +57,7 @@ export function ContractFormPage() {
     <Card>
       <CardHeader className="flex flex-row items-start justify-between gap-3">
         <div><CardTitle className="text-3xl">{isEdit ? 'تعديل عقد' : 'إنشاء عقد'}</CardTitle><CardDescription>العقد رقم، المستأجر، الوحدة، التواريخ، قيمة الإيجار، الحالة، والملاحظات.</CardDescription></div>
-        <Button variant="secondary" asChild><Link to="/contracts"><ArrowRight className="ml-2 size-4" />العودة</Link></Button>
+        <Button variant="secondary" asChild><Link to="/contracts"><ArrowRight className="me-2 size-4" />العودة</Link></Button>
       </CardHeader>
       <CardContent>
         <form className="grid gap-5 md:grid-cols-2" onSubmit={form.handleSubmit(async (values) => { const payload = contractSchema.parse(values); if (isEdit && contractId) await updateMutation.mutateAsync(payload); else await createMutation.mutateAsync(payload); await navigate({ to: '/contracts' }); })}>

@@ -155,12 +155,12 @@ export function ContractsListPage() {
         </div>
         <div className="flex flex-wrap gap-2">
           <Button variant="secondary" onClick={() => exportContractsCsv(filteredContracts)} disabled={!filteredContracts.length}>
-            <Download className="ml-2 size-4" />
+            <Download className="me-2 size-4" />
             تصدير CSV
           </Button>
           <Button asChild>
             <Link to="/contracts/new">
-              <Plus className="ml-2 size-4" />إنشاء عقد
+              <Plus className="me-2 size-4" />إنشاء عقد
             </Link>
           </Button>
         </div>
@@ -181,18 +181,18 @@ export function ContractsListPage() {
             </Button>
           ))}
           <Button variant={expiringOnly ? 'primary' : 'secondary'} onClick={() => setExpiringOnly((current) => !current)}>
-            <AlertTriangle className="ml-2 size-4" />
+            <AlertTriangle className="me-2 size-4" />
             تنتهي خلال 30 يوم
           </Button>
           {hasActiveFilters ? <Button variant="ghost" onClick={resetFilters}>مسح الفلاتر</Button> : null}
         </div>
         <div className="relative w-full lg:max-w-md">
-          <Search className="absolute right-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+          <Search className="absolute start-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             value={searchTerm}
             onChange={(event) => setSearchTerm(event.target.value)}
             placeholder="بحث باسم المستأجر، الوحدة، العقار، أو رقم العقد"
-            className="pr-10"
+            className="ps-10"
             aria-label="بحث العقود"
           />
         </div>
@@ -325,7 +325,7 @@ export function ContractsListPage() {
                 action={
                   <Button asChild>
                     <Link to="/contracts/new">
-                      <FileText className="ml-2 size-4" />إنشاء عقد
+                      <FileText className="me-2 size-4" />إنشاء عقد
                     </Link>
                   </Button>
                 }

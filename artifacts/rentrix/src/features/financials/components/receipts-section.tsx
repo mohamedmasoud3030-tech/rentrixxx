@@ -48,7 +48,7 @@ export function ReceiptsSection({
               <button
                 key={receipt.id}
                 className={cn(
-                  'grid w-full gap-3 rounded-2xl border p-4 text-right transition hover:border-primary/60 hover:bg-muted/40 lg:grid-cols-[1.1fr_1fr_1fr_1fr_1fr_1.3fr_auto]',
+                  'grid w-full gap-3 rounded-2xl border p-4 text-start transition hover:border-primary/60 hover:bg-muted/40 lg:grid-cols-[1.1fr_1fr_1fr_1fr_1fr_1.3fr_auto]',
                   isSelected ? 'border-primary bg-primary/5 ring-2 ring-primary/20' : 'bg-background',
                 )}
                 onClick={() => onSelectReceipt(receipt.id)}
