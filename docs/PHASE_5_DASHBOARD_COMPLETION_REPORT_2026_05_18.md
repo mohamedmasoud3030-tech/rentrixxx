@@ -166,6 +166,20 @@ rg "legacy-src|useApp|AppContext|dataService|local db|react-router-dom" artifact
 
 Hosted checks were handled per PR during the Dashboard sequence. Any Sonar issues found during Phase 5 were fixed in the same PR branch before merge.
 
+## PR #535 post-merge check clarification
+
+PR #535 was documentation-only and changed only this completion report.
+
+Observed hosted status for #535:
+
+- Vercel preview: Ready.
+- SonarQube Cloud: Quality Gate passed, 0 new issues, 0 security hotspots, 0.0% duplication on new code.
+- Codacy: 0 new issues.
+- Supabase preview branching: ignored because no `supabase` directory changes were detected. This is expected for a docs-only PR.
+- Codex code review: unavailable because the repository reached Codex usage limits for code reviews. This was not a runtime, CI, Sonar, Codacy, Vercel, Supabase, schema, or application failure.
+
+This clarification was added after merge so future phase work does not treat the Codex usage-limit notice as a Dashboard implementation blocker.
+
 ## Risks and notes
 
 - The dashboard still depends on existing Supabase/report paths and the `rpt_financial_summary` compatibility path through `dashboardService`.
