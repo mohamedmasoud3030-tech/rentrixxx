@@ -1,24 +1,19 @@
 import { Link } from '@tanstack/react-router';
 import { AlertTriangle, ArrowLeft, Banknote, Building2, CalendarClock, FileText, Home, ReceiptText, WalletCards } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
-import { useMemo } from 'react';
+import { useCallback, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { formatDefaultCompanyMoney } from '@/lib/companyFormatters';
+import { useCompanySettingsContract } from '@/features/settings/useCompanySettings';
+import { formatCompanyDate, formatCompanyMoney } from '@/lib/companyFormatters';
+import type { CompanySettingsContract } from '@/lib/companySettings';
 import { cn } from '@/lib/utils';
-import { useContracts } from '@/features/contracts/useContracts';
 import type { ContractListItem } from '@/features/contracts/services/contractService';
-import {
-  useAgedReceivablesReport,
-  useArrearsSummaryReport,
-  useFinancialPeriodSummaryReport,
-  useOverdueInvoicesReport,
-} from '@/features/financials/reports/useFinancialReports';
-import { getDashboardOverview } from './dashboardService';
+import { getDashboardSnapshot, type DashboardSnapshot } from './dashboardSnapshot';
 
 const dashboardWindowDays = 30;
 const maxExpiringContracts = 5;
@@ -77,12 +72,12 @@ function calculateDaysRemaining(endDate: string, today: Date) {
   return Math.max(0, Math.ceil((endTimestamp - todayTimestamp) / (24 * 60 * 60 * 1000)));
 }
 
-function formatDate(value: string) {
-  return new Intl.DateTimeFormat('ar', { year: 'numeric', month: 'short', day: 'numeric' }).format(new Date(`${value}T00:00:00.000Z`));
+function formatDashboardDate(settings: CompanySettingsContract, value: string) {
+  return formatCompanyDate(settings, `${value}T00:00:00`);
 }
 
-function formatMoney(value: number) {
-  return formatDefaultCompanyMoney(value);
+function formatDashboardMoney(settings: CompanySettingsContract, value: number | null | undefined) {
+  return formatCompanyMoney(settings, value);
 }
 
 function getContractLocation(contract: ContractListItem) {
@@ -109,9 +104,82 @@ function buildExpiringContracts(contracts: ContractListItem[] | undefined, today
     .slice(0, maxExpiringContracts);
 }
 
+function createMoneyCard(params: Omit<KpiCard, 'value' | 'isMoney'> & { amount: number; settings: CompanySettingsContract }): KpiCard {
+  return {
+    title: params.title,
+    value: formatDashboardMoney(params.settings, params.amount),
+    icon: params.icon,
+    description: params.description,
+    tone: params.tone,
+    isMoney: true,
+  };
+}
+
+export function buildDashboardSummaryCards(snapshot: DashboardSnapshot | undefined, settings: CompanySettingsContract): KpiCard[] {
+  const financial = snapshot?.financial;
+  const operational = snapshot?.operational;
+
+  return [
+    createMoneyCard({
+      title: 'الإيجار المستحق',
+      amount: financial?.rentDue ?? 0,
+      icon: Banknote,
+      description: 'إجمالي المفوتر خلال الفترة الحالية',
+      tone: 'bg-sky-600',
+      settings,
+    }),
+    createMoneyCard({
+      title: 'المحصل هذا الشهر',
+      amount: financial?.collectedRent ?? 0,
+      icon: WalletCards,
+      description: `${financial?.paymentsCount ?? 0} دفعات مسجلة`,
+      tone: 'bg-emerald-600',
+      settings,
+    }),
+    createMoneyCard({
+      title: 'الرصيد المتبقي',
+      amount: financial?.outstandingRent ?? 0,
+      icon: ReceiptText,
+      description: `${financial?.invoicesCount ?? 0} فواتير في الفترة`,
+      tone: 'bg-amber-600',
+      settings,
+    }),
+    createMoneyCard({
+      title: 'المصروفات',
+      amount: financial?.expenses ?? 0,
+      icon: AlertTriangle,
+      description: `${financial?.expensesCount ?? 0} مصروفات مسجلة`,
+      tone: 'bg-rose-600',
+      settings,
+    }),
+    createMoneyCard({
+      title: 'صافي المركز',
+      amount: financial?.netPosition ?? 0,
+      icon: Building2,
+      description: 'تحصيل الفترة ناقص المصروفات',
+      tone: 'bg-indigo-600',
+      settings,
+    }),
+    {
+      title: 'الإشغال',
+      value: `${operational?.occupancyRate ?? 0}%`,
+      icon: Home,
+      description: `${operational?.occupiedUnits ?? 0} مشغولة / ${operational?.units ?? 0} وحدة`,
+      tone: 'bg-cyan-600',
+    },
+    {
+      title: 'تنتهي خلال 30 يوم',
+      value: operational?.expiringContracts30Days ?? 0,
+      icon: CalendarClock,
+      description: 'عقود تحتاج متابعة',
+      tone: 'bg-orange-600',
+    },
+  ];
+}
+
 function KpiGrid({ cards, isLoading }: Readonly<{ cards: KpiCard[]; isLoading: boolean }>) {
   return (
-    <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6">
+    <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4 2xl:grid-cols-7">
       {cards.map((card) => {
         const Icon = card.icon;
         return (
@@ -135,7 +203,11 @@ function KpiGrid({ cards, isLoading }: Readonly<{ cards: KpiCard[]; isLoading: b
   );
 }
 
-function ExpiringContractsPanel({ rows, isLoading }: Readonly<{ rows: ExpiringContractRow[]; isLoading: boolean }>) {
+function ExpiringContractsPanel({ rows, isLoading, settings }: Readonly<{
+  rows: ExpiringContractRow[];
+  isLoading: boolean;
+  settings: CompanySettingsContract;
+}>) {
   return (
     <Card className="xl:col-span-2">
       <CardHeader className="flex flex-row items-start justify-between gap-4 space-y-0">
@@ -171,7 +243,7 @@ function ExpiringContractsPanel({ rows, isLoading }: Readonly<{ rows: ExpiringCo
                     <TableCell className="font-black" dir="ltr">#{row.contractNumber}</TableCell>
                     <TableCell>{row.tenantName}</TableCell>
                     <TableCell>{row.location}</TableCell>
-                    <TableCell>{formatDate(row.endDate)}</TableCell>
+                    <TableCell>{formatDashboardDate(settings, row.endDate)}</TableCell>
                     <TableCell><StatusBadge tone={row.daysRemaining <= 7 ? 'red' : 'gold'}>{row.daysRemaining} يوم</StatusBadge></TableCell>
                     <TableCell>
                       <Button asChild variant="secondary" className="min-h-9 px-3">
@@ -192,18 +264,13 @@ function ExpiringContractsPanel({ rows, isLoading }: Readonly<{ rows: ExpiringCo
   );
 }
 
-function ArrearsPanel({
-  totalOverdue,
-  overdueInvoiceCount,
-  averageDaysOverdue,
-  buckets,
-  isLoading,
-}: Readonly<{
+function ArrearsPanel({ totalOverdue, overdueInvoiceCount, averageDaysOverdue, buckets, isLoading, settings }: Readonly<{
   totalOverdue: number;
   overdueInvoiceCount: number;
   averageDaysOverdue: number;
   buckets: { label: string; total: number; invoiceCount: number }[];
   isLoading: boolean;
+  settings: CompanySettingsContract;
 }>) {
   return (
     <Card>
@@ -218,7 +285,7 @@ function ArrearsPanel({
             <div className="grid grid-cols-2 gap-3">
               <div className="rounded-2xl bg-muted p-4">
                 <p className="text-xs font-black text-muted-foreground">إجمالي المتأخرات</p>
-                <p className="mt-2 text-xl font-black" dir="ltr">{formatMoney(totalOverdue)}</p>
+                <p className="mt-2 text-xl font-black" dir="ltr">{formatDashboardMoney(settings, totalOverdue)}</p>
               </div>
               <div className="rounded-2xl bg-muted p-4">
                 <p className="text-xs font-black text-muted-foreground">فواتير متأخرة</p>
@@ -234,7 +301,7 @@ function ArrearsPanel({
                 {buckets.map((bucket) => (
                   <div key={bucket.label} className="flex items-center justify-between gap-3 rounded-xl bg-muted/60 px-3 py-2">
                     <span className="text-sm font-bold text-muted-foreground">{bucket.label}</span>
-                    <span className="text-sm font-black" dir="ltr">{formatMoney(bucket.total)} · {bucket.invoiceCount}</span>
+                    <span className="text-sm font-black" dir="ltr">{formatDashboardMoney(settings, bucket.total)} · {bucket.invoiceCount}</span>
                   </div>
                 ))}
               </div>
@@ -274,88 +341,45 @@ function QuickActionsPanel() {
   );
 }
 
+function DashboardErrorCard({ onRetry }: Readonly<{ onRetry: () => void }>) {
+  return (
+    <Card className="border-destructive/40 bg-destructive/5">
+      <CardHeader>
+        <CardTitle>تعذر تحميل بيانات لوحة التحكم</CardTitle>
+        <CardDescription>راجع اتصال Supabase أو صلاحيات التقارير الحالية ثم أعد المحاولة.</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <Button type="button" variant="secondary" onClick={onRetry}>إعادة المحاولة</Button>
+      </CardContent>
+    </Card>
+  );
+}
+
 export function DashboardPage() {
   const now = useMemo(() => new Date(), []);
+  const settings = useCompanySettingsContract();
   const today = toDateInputValue(now);
-  const monthStart = useMemo(() => toDateInputValue(new Date(now.getFullYear(), now.getMonth(), 1)), [now]);
-  const periodFilters = useMemo(() => ({ dateFrom: monthStart, dateTo: today }), [monthStart, today]);
-  const arrearsFilters = useMemo(() => ({ asOf: today }), [today]);
 
   const dashboardQuery = useQuery({
-    queryKey: ['dashboard-overview', now.getMonth() + 1, now.getFullYear(), today],
-    queryFn: () => getDashboardOverview(now),
+    queryKey: ['dashboard-snapshot', now.getMonth() + 1, now.getFullYear(), today],
+    queryFn: () => getDashboardSnapshot(now),
   });
-  const activeContractsQuery = useContracts({ status: 'active' });
-  const periodSummaryQuery = useFinancialPeriodSummaryReport(periodFilters);
-  const overdueInvoicesQuery = useOverdueInvoicesReport(arrearsFilters);
-  const arrearsSummaryQuery = useArrearsSummaryReport(arrearsFilters);
-  const agedReceivablesQuery = useAgedReceivablesReport(arrearsFilters);
+  const retryDashboard = useCallback(() => {
+    dashboardQuery.refetch().catch(() => undefined);
+  }, [dashboardQuery]);
 
-  const overview = dashboardQuery.data;
-  const expiringContracts = useMemo(() => buildExpiringContracts(activeContractsQuery.data, now), [activeContractsQuery.data, now]);
-  const activeContractsCount = activeContractsQuery.data?.length ?? overview?.operational.activeContracts ?? 0;
-  const monthlyCollection = periodSummaryQuery.data?.paid ?? overview?.financial.total_collected ?? 0;
-  const overdueAmount = overdueInvoicesQuery.data?.totalOverdue ?? overview?.financial.total_overdue_invoices ?? 0;
-  const overdueInvoiceCount = overdueInvoicesQuery.data?.invoiceCount ?? overview?.operational.overdueInvoices ?? 0;
-
-  const kpiCards: KpiCard[] = [
-    {
-      title: 'إجمالي العقارات',
-      value: overview?.operational.properties ?? '—',
-      icon: Building2,
-      description: 'العقارات غير المؤرشفة',
-      tone: 'bg-sky-600',
-    },
-    {
-      title: 'إجمالي الوحدات',
-      value: overview?.operational.units ?? '—',
-      icon: Home,
-      description: 'الوحدات المسجلة',
-      tone: 'bg-cyan-600',
-    },
-    {
-      title: 'العقود النشطة',
-      value: activeContractsCount,
-      icon: FileText,
-      description: 'عقود سارية المفعول',
-      tone: 'bg-emerald-600',
-    },
-    {
-      title: 'تنتهي خلال 30 يوم',
-      value: overview?.operational.expiringContracts30Days ?? expiringContracts.length,
-      icon: CalendarClock,
-      description: 'عقود تحتاج متابعة',
-      tone: 'bg-amber-600',
-    },
-    {
-      title: 'الفواتير المتأخرة',
-      value: overdueInvoiceCount,
-      icon: AlertTriangle,
-      description: formatMoney(overdueAmount),
-      tone: 'bg-rose-600',
-    },
-    {
-      title: 'تحصيل الشهر',
-      value: formatMoney(monthlyCollection),
-      icon: WalletCards,
-      description: 'دفعات محصلة هذا الشهر',
-      tone: 'bg-indigo-600',
-      isMoney: true,
-    },
-  ];
-
+  const snapshot = dashboardQuery.data;
+  const isDashboardLoaded = dashboardQuery.isLoading === false;
+  const expiringContracts = useMemo(() => buildExpiringContracts(snapshot?.activeContracts, now), [snapshot?.activeContracts, now]);
+  const kpiCards = useMemo(() => buildDashboardSummaryCards(snapshot, settings), [snapshot, settings]);
   const buckets = arrearsBucketOrder.map((key) => {
-    const bucket = agedReceivablesQuery.data?.buckets[key];
+    const bucket = snapshot?.arrears.agedReceivables.buckets[key];
     return {
       label: arrearsBucketLabels[key],
       total: bucket?.total ?? 0,
       invoiceCount: bucket?.invoiceCount ?? 0,
     };
   });
-
-  const isKpiLoading = dashboardQuery.isLoading || activeContractsQuery.isLoading || periodSummaryQuery.isLoading || overdueInvoicesQuery.isLoading;
-  const isArrearsLoading = overdueInvoicesQuery.isLoading || arrearsSummaryQuery.isLoading || agedReceivablesQuery.isLoading;
-  const hasDashboardError = dashboardQuery.isError || activeContractsQuery.isError || periodSummaryQuery.isError || overdueInvoicesQuery.isError || arrearsSummaryQuery.isError || agedReceivablesQuery.isError;
 
   return (
     <div className="space-y-6">
@@ -370,25 +394,28 @@ export function DashboardPage() {
           </div>
           <div className="rounded-3xl bg-primary/10 p-5 text-primary">
             <p className="text-xs font-black text-muted-foreground">حتى تاريخ</p>
-            <p className="mt-2 text-2xl font-black">{formatDate(today)}</p>
+            <p className="mt-2 text-2xl font-black">{formatDashboardDate(settings, snapshot?.period.dateTo ?? today)}</p>
           </div>
         </div>
       </section>
 
-      <KpiGrid cards={kpiCards} isLoading={isKpiLoading} />
+      {dashboardQuery.isError ? <DashboardErrorCard onRetry={retryDashboard} /> : null}
+
+      <KpiGrid cards={kpiCards} isLoading={dashboardQuery.isLoading} />
 
       <section className="grid gap-4 xl:grid-cols-3">
-        <ExpiringContractsPanel rows={expiringContracts} isLoading={activeContractsQuery.isLoading} />
+        <ExpiringContractsPanel rows={expiringContracts} isLoading={dashboardQuery.isLoading} settings={settings} />
         <QuickActionsPanel />
       </section>
 
       <section className="grid gap-4 xl:grid-cols-[1.15fr_0.85fr]">
         <ArrearsPanel
-          totalOverdue={overdueAmount}
-          overdueInvoiceCount={overdueInvoiceCount}
-          averageDaysOverdue={arrearsSummaryQuery.data?.averageDaysOverdue ?? 0}
+          totalOverdue={snapshot?.arrears.totalOverdue ?? 0}
+          overdueInvoiceCount={snapshot?.arrears.overdueInvoiceCount ?? 0}
+          averageDaysOverdue={snapshot?.arrears.averageDaysOverdue ?? 0}
           buckets={buckets}
-          isLoading={isArrearsLoading}
+          isLoading={dashboardQuery.isLoading}
+          settings={settings}
         />
         <Card>
           <CardHeader>
@@ -396,27 +423,19 @@ export function DashboardPage() {
             <CardDescription>ملخص يعتمد على تقرير الفترة المالية الحالي.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
-            {periodSummaryQuery.isLoading ? <Skeleton className="h-48 w-full" /> : null}
-            {!periodSummaryQuery.isLoading ? (
+            {dashboardQuery.isLoading ? <Skeleton className="h-48 w-full" /> : null}
+            {isDashboardLoaded ? (
               <>
-                <div className="flex items-center justify-between rounded-2xl bg-muted p-4"><span className="font-bold text-muted-foreground">المفوتر</span><span className="font-black" dir="ltr">{formatMoney(periodSummaryQuery.data?.invoiced ?? 0)}</span></div>
-                <div className="flex items-center justify-between rounded-2xl bg-muted p-4"><span className="font-bold text-muted-foreground">المحصل</span><span className="font-black" dir="ltr">{formatMoney(monthlyCollection)}</span></div>
-                <div className="flex items-center justify-between rounded-2xl bg-muted p-4"><span className="font-bold text-muted-foreground">المتبقي</span><span className="font-black" dir="ltr">{formatMoney(periodSummaryQuery.data?.outstanding ?? 0)}</span></div>
+                <div className="flex items-center justify-between rounded-2xl bg-muted p-4"><span className="font-bold text-muted-foreground">المفوتر</span><span className="font-black" dir="ltr">{formatDashboardMoney(settings, snapshot?.financial.rentDue ?? 0)}</span></div>
+                <div className="flex items-center justify-between rounded-2xl bg-muted p-4"><span className="font-bold text-muted-foreground">المحصل</span><span className="font-black" dir="ltr">{formatDashboardMoney(settings, snapshot?.financial.collectedRent ?? 0)}</span></div>
+                <div className="flex items-center justify-between rounded-2xl bg-muted p-4"><span className="font-bold text-muted-foreground">المتبقي</span><span className="font-black" dir="ltr">{formatDashboardMoney(settings, snapshot?.financial.outstandingRent ?? 0)}</span></div>
+                <div className="flex items-center justify-between rounded-2xl bg-muted p-4"><span className="font-bold text-muted-foreground">صافي المركز</span><span className="font-black" dir="ltr">{formatDashboardMoney(settings, snapshot?.financial.netPosition ?? 0)}</span></div>
                 <Button asChild className="w-full"><Link to="/financials">فتح المالية</Link></Button>
               </>
             ) : null}
           </CardContent>
         </Card>
       </section>
-
-      {hasDashboardError ? (
-        <Card className="border-destructive/40 bg-destructive/5">
-          <CardHeader>
-            <CardTitle>تعذر تحميل جزء من بيانات اللوحة</CardTitle>
-            <CardDescription>راجع اتصال Supabase أو صلاحيات التقارير الحالية. ستظل الروابط والبيانات المحملة متاحة.</CardDescription>
-          </CardHeader>
-        </Card>
-      ) : null}
     </div>
   );
 }
