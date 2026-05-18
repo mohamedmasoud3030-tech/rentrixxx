@@ -67,10 +67,10 @@ export function ArrearsWorkflowSection({
           onBucketFilterChange={onBucketFilterChange}
         />
 
-        {isLoading ? <div className="rounded-2xl border border-dashed p-6 text-center text-muted-foreground">جارٍ تحميل Workflow تحصيل المتأخرات...</div> : null}
+        {isLoading ? <div className="rounded-2xl border border-dashed p-6 text-center text-muted-foreground">جارٍ تحميل معاينة تحصيل المتأخرات للقراءة فقط...</div> : null}
         {isError ? (
           <div className="rounded-2xl border border-destructive/40 bg-destructive/10 p-6 text-center text-destructive">
-            {getErrorMessage(error, 'تعذر تحميل تقارير المتأخرات')}
+            {getErrorMessage(error, 'تعذر تحميل تقارير المتأخرات. إعادة المحاولة أو تحديث الصفحة آمن ولن ينفّذ أي عملية دفع.')}
           </div>
         ) : null}
 
