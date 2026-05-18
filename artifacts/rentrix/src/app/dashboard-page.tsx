@@ -52,8 +52,6 @@ type ExpiringContractRow = {
   daysRemaining: number;
 };
 
-type DashboardMoneyFormatter = (value: number | null | undefined) => string;
-
 function toDateInputValue(date: Date) {
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, '0');
@@ -76,6 +74,10 @@ function calculateDaysRemaining(endDate: string, today: Date) {
 
 function formatDashboardDate(settings: CompanySettingsContract, value: string) {
   return formatCompanyDate(settings, `${value}T00:00:00`);
+}
+
+function formatDashboardMoney(settings: CompanySettingsContract, value: number | null | undefined) {
+  return formatCompanyMoney(settings, value);
 }
 
 function getContractLocation(contract: ContractListItem) {
@@ -102,10 +104,10 @@ function buildExpiringContracts(contracts: ContractListItem[] | undefined, today
     .slice(0, maxExpiringContracts);
 }
 
-function createMoneyCard(params: Omit<KpiCard, 'value' | 'isMoney'> & { amount: number; formatMoney: DashboardMoneyFormatter }): KpiCard {
+function createMoneyCard(params: Omit<KpiCard, 'value' | 'isMoney'> & { amount: number; settings: CompanySettingsContract }): KpiCard {
   return {
     title: params.title,
-    value: params.formatMoney(params.amount),
+    value: formatDashboardMoney(params.settings, params.amount),
     icon: params.icon,
     description: params.description,
     tone: params.tone,
@@ -113,7 +115,7 @@ function createMoneyCard(params: Omit<KpiCard, 'value' | 'isMoney'> & { amount: 
   };
 }
 
-export function buildDashboardSummaryCards(snapshot: DashboardSnapshot | undefined, formatMoney: DashboardMoneyFormatter): KpiCard[] {
+export function buildDashboardSummaryCards(snapshot: DashboardSnapshot | undefined, settings: CompanySettingsContract): KpiCard[] {
   const financial = snapshot?.financial;
   const operational = snapshot?.operational;
 
@@ -124,7 +126,7 @@ export function buildDashboardSummaryCards(snapshot: DashboardSnapshot | undefin
       icon: Banknote,
       description: 'إجمالي المفوتر خلال الفترة الحالية',
       tone: 'bg-sky-600',
-      formatMoney,
+      settings,
     }),
     createMoneyCard({
       title: 'المحصل هذا الشهر',
@@ -132,7 +134,7 @@ export function buildDashboardSummaryCards(snapshot: DashboardSnapshot | undefin
       icon: WalletCards,
       description: `${financial?.paymentsCount ?? 0} دفعات مسجلة`,
       tone: 'bg-emerald-600',
-      formatMoney,
+      settings,
     }),
     createMoneyCard({
       title: 'الرصيد المتبقي',
@@ -140,7 +142,7 @@ export function buildDashboardSummaryCards(snapshot: DashboardSnapshot | undefin
       icon: ReceiptText,
       description: `${financial?.invoicesCount ?? 0} فواتير في الفترة`,
       tone: 'bg-amber-600',
-      formatMoney,
+      settings,
     }),
     createMoneyCard({
       title: 'المصروفات',
@@ -148,7 +150,7 @@ export function buildDashboardSummaryCards(snapshot: DashboardSnapshot | undefin
       icon: AlertTriangle,
       description: `${financial?.expensesCount ?? 0} مصروفات مسجلة`,
       tone: 'bg-rose-600',
-      formatMoney,
+      settings,
     }),
     createMoneyCard({
       title: 'صافي المركز',
@@ -156,7 +158,7 @@ export function buildDashboardSummaryCards(snapshot: DashboardSnapshot | undefin
       icon: Building2,
       description: 'تحصيل الفترة ناقص المصروفات',
       tone: 'bg-indigo-600',
-      formatMoney,
+      settings,
     }),
     {
       title: 'الإشغال',
@@ -201,14 +203,10 @@ function KpiGrid({ cards, isLoading }: Readonly<{ cards: KpiCard[]; isLoading: b
   );
 }
 
-function ExpiringContractsPanel({
-  rows,
-  isLoading,
-  formatDate,
-}: Readonly<{
+function ExpiringContractsPanel({ rows, isLoading, settings }: Readonly<{
   rows: ExpiringContractRow[];
   isLoading: boolean;
-  formatDate: (value: string) => string;
+  settings: CompanySettingsContract;
 }>) {
   return (
     <Card className="xl:col-span-2">
@@ -245,7 +243,7 @@ function ExpiringContractsPanel({
                     <TableCell className="font-black" dir="ltr">#{row.contractNumber}</TableCell>
                     <TableCell>{row.tenantName}</TableCell>
                     <TableCell>{row.location}</TableCell>
-                    <TableCell>{formatDate(row.endDate)}</TableCell>
+                    <TableCell>{formatDashboardDate(settings, row.endDate)}</TableCell>
                     <TableCell><StatusBadge tone={row.daysRemaining <= 7 ? 'red' : 'gold'}>{row.daysRemaining} يوم</StatusBadge></TableCell>
                     <TableCell>
                       <Button asChild variant="secondary" className="min-h-9 px-3">
@@ -266,20 +264,13 @@ function ExpiringContractsPanel({
   );
 }
 
-function ArrearsPanel({
-  totalOverdue,
-  overdueInvoiceCount,
-  averageDaysOverdue,
-  buckets,
-  isLoading,
-  formatMoney,
-}: Readonly<{
+function ArrearsPanel({ totalOverdue, overdueInvoiceCount, averageDaysOverdue, buckets, isLoading, settings }: Readonly<{
   totalOverdue: number;
   overdueInvoiceCount: number;
   averageDaysOverdue: number;
   buckets: { label: string; total: number; invoiceCount: number }[];
   isLoading: boolean;
-  formatMoney: DashboardMoneyFormatter;
+  settings: CompanySettingsContract;
 }>) {
   return (
     <Card>
@@ -294,7 +285,7 @@ function ArrearsPanel({
             <div className="grid grid-cols-2 gap-3">
               <div className="rounded-2xl bg-muted p-4">
                 <p className="text-xs font-black text-muted-foreground">إجمالي المتأخرات</p>
-                <p className="mt-2 text-xl font-black" dir="ltr">{formatMoney(totalOverdue)}</p>
+                <p className="mt-2 text-xl font-black" dir="ltr">{formatDashboardMoney(settings, totalOverdue)}</p>
               </div>
               <div className="rounded-2xl bg-muted p-4">
                 <p className="text-xs font-black text-muted-foreground">فواتير متأخرة</p>
@@ -310,7 +301,7 @@ function ArrearsPanel({
                 {buckets.map((bucket) => (
                   <div key={bucket.label} className="flex items-center justify-between gap-3 rounded-xl bg-muted/60 px-3 py-2">
                     <span className="text-sm font-bold text-muted-foreground">{bucket.label}</span>
-                    <span className="text-sm font-black" dir="ltr">{formatMoney(bucket.total)} · {bucket.invoiceCount}</span>
+                    <span className="text-sm font-black" dir="ltr">{formatDashboardMoney(settings, bucket.total)} · {bucket.invoiceCount}</span>
                   </div>
                 ))}
               </div>
@@ -368,17 +359,16 @@ export function DashboardPage() {
   const now = useMemo(() => new Date(), []);
   const settings = useCompanySettingsContract();
   const today = toDateInputValue(now);
-  const dashboardDate = useCallback((value: string) => formatDashboardDate(settings, value), [settings]);
-  const dashboardMoney = useCallback((value: number | null | undefined) => formatCompanyMoney(settings, value), [settings]);
 
   const dashboardQuery = useQuery({
     queryKey: ['dashboard-snapshot', now.getMonth() + 1, now.getFullYear(), today],
     queryFn: () => getDashboardSnapshot(now),
   });
+  const retryDashboard = useCallback(() => { void dashboardQuery.refetch(); }, [dashboardQuery]);
 
   const snapshot = dashboardQuery.data;
   const expiringContracts = useMemo(() => buildExpiringContracts(snapshot?.activeContracts, now), [snapshot?.activeContracts, now]);
-  const kpiCards = useMemo(() => buildDashboardSummaryCards(snapshot, dashboardMoney), [snapshot, dashboardMoney]);
+  const kpiCards = useMemo(() => buildDashboardSummaryCards(snapshot, settings), [snapshot, settings]);
   const buckets = arrearsBucketOrder.map((key) => {
     const bucket = snapshot?.arrears.agedReceivables.buckets[key];
     return {
@@ -401,17 +391,17 @@ export function DashboardPage() {
           </div>
           <div className="rounded-3xl bg-primary/10 p-5 text-primary">
             <p className="text-xs font-black text-muted-foreground">حتى تاريخ</p>
-            <p className="mt-2 text-2xl font-black">{dashboardDate(snapshot?.period.dateTo ?? today)}</p>
+            <p className="mt-2 text-2xl font-black">{formatDashboardDate(settings, snapshot?.period.dateTo ?? today)}</p>
           </div>
         </div>
       </section>
 
-      {dashboardQuery.isError ? <DashboardErrorCard onRetry={() => void dashboardQuery.refetch()} /> : null}
+      {dashboardQuery.isError ? <DashboardErrorCard onRetry={retryDashboard} /> : null}
 
       <KpiGrid cards={kpiCards} isLoading={dashboardQuery.isLoading} />
 
       <section className="grid gap-4 xl:grid-cols-3">
-        <ExpiringContractsPanel rows={expiringContracts} isLoading={dashboardQuery.isLoading} formatDate={dashboardDate} />
+        <ExpiringContractsPanel rows={expiringContracts} isLoading={dashboardQuery.isLoading} settings={settings} />
         <QuickActionsPanel />
       </section>
 
@@ -422,7 +412,7 @@ export function DashboardPage() {
           averageDaysOverdue={snapshot?.arrears.averageDaysOverdue ?? 0}
           buckets={buckets}
           isLoading={dashboardQuery.isLoading}
-          formatMoney={dashboardMoney}
+          settings={settings}
         />
         <Card>
           <CardHeader>
@@ -433,10 +423,10 @@ export function DashboardPage() {
             {dashboardQuery.isLoading ? <Skeleton className="h-48 w-full" /> : null}
             {!dashboardQuery.isLoading ? (
               <>
-                <div className="flex items-center justify-between rounded-2xl bg-muted p-4"><span className="font-bold text-muted-foreground">المفوتر</span><span className="font-black" dir="ltr">{dashboardMoney(snapshot?.financial.rentDue ?? 0)}</span></div>
-                <div className="flex items-center justify-between rounded-2xl bg-muted p-4"><span className="font-bold text-muted-foreground">المحصل</span><span className="font-black" dir="ltr">{dashboardMoney(snapshot?.financial.collectedRent ?? 0)}</span></div>
-                <div className="flex items-center justify-between rounded-2xl bg-muted p-4"><span className="font-bold text-muted-foreground">المتبقي</span><span className="font-black" dir="ltr">{dashboardMoney(snapshot?.financial.outstandingRent ?? 0)}</span></div>
-                <div className="flex items-center justify-between rounded-2xl bg-muted p-4"><span className="font-bold text-muted-foreground">صافي المركز</span><span className="font-black" dir="ltr">{dashboardMoney(snapshot?.financial.netPosition ?? 0)}</span></div>
+                <div className="flex items-center justify-between rounded-2xl bg-muted p-4"><span className="font-bold text-muted-foreground">المفوتر</span><span className="font-black" dir="ltr">{formatDashboardMoney(settings, snapshot?.financial.rentDue ?? 0)}</span></div>
+                <div className="flex items-center justify-between rounded-2xl bg-muted p-4"><span className="font-bold text-muted-foreground">المحصل</span><span className="font-black" dir="ltr">{formatDashboardMoney(settings, snapshot?.financial.collectedRent ?? 0)}</span></div>
+                <div className="flex items-center justify-between rounded-2xl bg-muted p-4"><span className="font-bold text-muted-foreground">المتبقي</span><span className="font-black" dir="ltr">{formatDashboardMoney(settings, snapshot?.financial.outstandingRent ?? 0)}</span></div>
+                <div className="flex items-center justify-between rounded-2xl bg-muted p-4"><span className="font-bold text-muted-foreground">صافي المركز</span><span className="font-black" dir="ltr">{formatDashboardMoney(settings, snapshot?.financial.netPosition ?? 0)}</span></div>
                 <Button asChild className="w-full"><Link to="/financials">فتح المالية</Link></Button>
               </>
             ) : null}
