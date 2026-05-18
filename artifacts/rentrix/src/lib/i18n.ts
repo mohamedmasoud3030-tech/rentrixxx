@@ -3,7 +3,6 @@ import {
   getLanguageDirection,
   getLanguageLocale,
   normalizeLanguage,
-  supportedLanguages,
   type SupportedLanguage,
   type TextDirection,
 } from './companySettings';
