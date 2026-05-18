@@ -8,38 +8,19 @@ import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { formatMoney, DEFAULT_CURRENCY, DEFAULT_LOCALE } from '@/lib/formatters';
+import type { CompanySettingsContract } from '@/lib/companySettings';
 import { cn } from '@/lib/utils';
 import { buildContractsCsvBlob, buildContractsCsvFilename, getContractNumber } from './contractListExport';
+import { formatContractDate, formatContractMoney, getContractRemainingDays, parseContractDisplayDate } from './contractDisplayFormatters';
 import { contractStatusLabels, contractStatusTone, contractStatusValues, paymentCycleLabels } from './contractSchema';
+import { useCompanySettingsContract } from '../settings/useCompanySettings';
 import { useContracts, useSoftDeleteContract } from './useContracts';
 import type { ContractListItem, ContractStatusFilter } from './services/contractService';
 
 const filterLabels: Record<ContractStatusFilter, string> = { all: 'الكل', draft: 'مسودة', active: 'نشط', expired: 'منتهي', terminated: 'ملغي' };
-const activeCurrency = DEFAULT_CURRENCY;
-const activeLocale = DEFAULT_LOCALE;
-
-function displayMoney(value: number) {
-  return formatMoney({ amount: value, currency: activeCurrency, locale: activeLocale });
-}
-
-function parseContractDate(value: string) {
-  const parsed = new Date(`${value}T00:00:00`);
-  return Number.isNaN(parsed.getTime()) ? null : parsed;
-}
-
-function formatDate(value: string) {
-  const parsed = parseContractDate(value);
-  return parsed ? parsed.toLocaleDateString(activeLocale) : '—';
-}
 
 function getDaysUntilEnd(contract: ContractListItem) {
-  const endDate = parseContractDate(contract.end_date);
-  if (!endDate) return null;
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const diff = endDate.getTime() - today.getTime();
-  return Math.ceil(diff / (1000 * 60 * 60 * 24));
+  return parseContractDisplayDate(contract.end_date) ? getContractRemainingDays(contract.end_date) : null;
 }
 
 function isExpiringSoon(contract: ContractListItem) {
@@ -121,6 +102,7 @@ export function ContractsListPage() {
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const params = useMemo(() => ({ status }), [status]);
   const contractsQuery = useContracts(params);
+  const companySettings = useCompanySettingsContract();
   const deleteMutation = useSoftDeleteContract();
   const filters: ContractStatusFilter[] = ['all', ...contractStatusValues];
   const normalizedSearch = normalizeSearchText(searchTerm.trim());
@@ -170,7 +152,7 @@ export function ContractsListPage() {
         <SummaryCard label="إجمالي العقود" value={String(listSummary.total)} description="كل العقود المحملة حسب فلتر الحالة الحالي." icon={FileText} />
         <SummaryCard label="العقود النشطة" value={String(listSummary.active)} description="العقود التي حالتها نشطة ضمن النتيجة الحالية." icon={WalletCards} />
         <SummaryCard label="تنتهي قريبًا" value={String(listSummary.expiringSoon)} description="عقود نشطة تنتهي خلال 30 يومًا." icon={CalendarClock} />
-        <SummaryCard label="إيجار النتائج الظاهرة" value={displayMoney(visibleSummary.rentTotal)} description="إجمالي قيمة الإيجار للعقود الظاهرة بعد البحث والفلاتر." icon={WalletCards} />
+        <SummaryCard label="إيجار النتائج الظاهرة" value={formatContractMoney(companySettings, visibleSummary.rentTotal)} description="إجمالي قيمة الإيجار للعقود الظاهرة بعد البحث والفلاتر." icon={WalletCards} />
       </div>
 
       <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
@@ -251,9 +233,9 @@ export function ContractsListPage() {
                         </TableCell>
                         <TableCell>{contract.people?.full_name ?? '—'}</TableCell>
                         <TableCell>{contract.units?.unit_number ?? contract.properties?.title ?? '—'}</TableCell>
-                        <TableCell>{formatDate(contract.start_date)}</TableCell>
-                        <TableCell>{formatDate(contract.end_date)}</TableCell>
-                        <TableCell>{displayMoney(contract.rent_amount)}</TableCell>
+                        <TableCell>{formatContractDate(companySettings, contract.start_date)}</TableCell>
+                        <TableCell>{formatContractDate(companySettings, contract.end_date)}</TableCell>
+                        <TableCell>{formatContractMoney(companySettings, contract.rent_amount)}</TableCell>
                         <TableCell>
                           <StatusBadge tone={contractStatusTone[contract.status]}>{contractStatusLabels[contract.status]}</StatusBadge>
                         </TableCell>
@@ -291,11 +273,11 @@ export function ContractsListPage() {
                                 <p className="text-muted-foreground">العنوان: {contract.properties?.address ?? '—'}</p>
                               </DetailBox>
                               <DetailBox label="قيمة الإيجار">
-                                <p className="text-lg font-black" dir="ltr">{displayMoney(contract.rent_amount)}</p>
+                                <p className="text-lg font-black" dir="ltr">{formatContractMoney(companySettings, contract.rent_amount)}</p>
                                 <p className="text-muted-foreground">دورة السداد: {paymentCycleLabels[contract.payment_cycle]}</p>
                               </DetailBox>
                               <DetailBox label="فترة العقد">
-                                <p>{formatDate(contract.start_date)} ← {formatDate(contract.end_date)}</p>
+                                <p>{formatContractDate(companySettings, contract.start_date)} ← {formatContractDate(companySettings, contract.end_date)}</p>
                                 <p className="text-muted-foreground">رقم العقد: {getContractNumber(contract)}</p>
                                 {expiringSoon ? <p className="font-bold text-amber-700">تنبيه: العقد ينتهي خلال {daysUntilEnd} يوم.</p> : null}
                               </DetailBox>

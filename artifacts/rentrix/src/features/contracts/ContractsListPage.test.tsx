@@ -2,6 +2,12 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ContractsListPage } from './ContractsListPage';
 
+vi.mock('../settings/useCompanySettings', async () => {
+  const { testCompanySettingsContract } = await import('../../test/companySettingsContractMock');
+
+  return { useCompanySettingsContract: () => testCompanySettingsContract };
+});
+
 vi.mock('@tanstack/react-router', () => ({
   Link: ({ children, params, to }: Readonly<{ children: React.ReactNode; params?: { contractId?: string }; to: string }>) => {
     const href = params?.contractId ? `/contracts/${params.contractId}` : to;

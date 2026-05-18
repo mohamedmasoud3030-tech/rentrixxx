@@ -2,6 +2,12 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ContractDetailPage } from './ContractDetailPage';
 
+vi.mock('../settings/useCompanySettings', async () => {
+  const { testCompanySettingsContract } = await import('../../test/companySettingsContractMock');
+
+  return { useCompanySettingsContract: () => testCompanySettingsContract };
+});
+
 vi.mock('@tanstack/react-router', () => ({
   Link: ({ children, params, to }: Readonly<{ children: React.ReactNode; params?: { contractId?: string }; to: string }>) => {
     const href = params?.contractId ? `/contracts/${params.contractId}` : to;
@@ -53,7 +59,6 @@ const contractDetail = {
   renewed_from: null,
   units: { id: 'unit-1', unit_number: 'A-1', floor: '1', status: 'occupied', rent_amount: 1234.5 },
 };
-
 
 const contractPaymentsSnapshot = {
   invoices: [{

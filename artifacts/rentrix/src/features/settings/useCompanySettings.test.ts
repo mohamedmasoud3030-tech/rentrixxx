@@ -25,6 +25,32 @@ describe('useCompanySettings hooks', () => {
     queryMock.invalidateQueries.mockResolvedValue(undefined);
   });
 
+  it('adapts persisted company settings records to the normalized downstream contract', async () => {
+    const { companySettingsRecordToContract } = await import('./useCompanySettings');
+
+    expect(companySettingsRecordToContract({
+      company_name: ' شركة الاختبار ',
+      logo_url: ' https://example.test/logo.png ',
+      locale: 'en-OM',
+      currency: 'AED',
+      country: 'AE',
+      timezone: 'Asia/Dubai',
+      receipt_prefix: ' RCT ',
+      invoice_prefix: ' TAX ',
+    } as never)).toMatchObject({
+      companyName: 'شركة الاختبار',
+      logoUrl: 'https://example.test/logo.png',
+      defaultLanguage: 'en',
+      defaultCurrency: 'AED',
+      country: 'AE',
+      timezone: 'Asia/Dubai',
+      receiptPrefix: 'RCT',
+      invoicePrefix: 'TAX',
+      locale: 'en-OM',
+      direction: 'ltr',
+    });
+  });
+
   it('invalidates company settings queries after updating settings', async () => {
     const { companySettingsKeys, useUpdateCompanySettings } = await import('./useCompanySettings');
 

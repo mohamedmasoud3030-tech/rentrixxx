@@ -1,4 +1,5 @@
 import { normalizeCompanySettingsContract, type CompanyLocalSettings } from '@/lib/companySettings';
+import { companySettingsRecordToContract } from './companySettingsContractAdapter';
 import type { CompanySettingsRecord, CompanySettingsUpdatePayload } from './companySettingsService';
 
 export type CompanySettingsDraft = {
@@ -90,16 +91,7 @@ function isValidEmailAddress(value: string): boolean {
 }
 
 export function companySettingsRecordToDraft(settings: CompanySettingsRecord): CompanySettingsDraft {
-  const normalizedSettings = normalizeCompanySettingsContract({
-    companyName: settings.company_name,
-    logoUrl: settings.logo_url,
-    locale: settings.locale,
-    defaultCurrency: settings.currency,
-    country: settings.country,
-    timezone: settings.timezone,
-    receiptPrefix: settings.receipt_prefix,
-    invoicePrefix: settings.invoice_prefix,
-  });
+  const normalizedSettings = companySettingsRecordToContract(settings);
 
   return {
     company_name: normalizedSettings.companyName,

@@ -379,6 +379,24 @@ Only when explicitly scoped in later phases:
 
 These should not be part of Phase 4's initial Settings readiness implementation because they touch financial/document/reporting domains.
 
+
+## PR 4 downstream consumption audit update — 2026-05-18
+
+Phase 4 PR 4 keeps the runtime path intentionally small: persisted settings load through `useCompanySettings()`, `companySettingsRecordToContract()` adapts the row with existing normalization, and `useCompanySettingsContract()` exposes a default-safe `CompanySettingsContract` for display-only formatters.
+
+### Consumers inspected and outcome
+
+- `lib/companySettings.ts` and `lib/companyFormatters.ts`: unchanged source of truth for normalized settings plus company-aware money/date formatting.
+- `features/settings/*`: shared the persisted-record adapter with Settings form draft conversion and downstream hook consumption.
+- `ContractsListPage.tsx` and `ContractDetailPage.tsx`: wired existing read-only rent/date/timestamp display through the normalized contract.
+- Deferred by scope: contract CSV export, financial invoice/receipt components, dashboard display, and document-level i18n because those paths touch exports, mutations, reports, generated documents, or product-level language decisions.
+
+### Deferred downstream checklist
+
+- Numbering/document output: receipt and invoice prefixes, PDFs, print views, and generated receipts/invoices.
+- Financial/reporting surfaces: mutation-adjacent financial components, report-style exports, dashboard cards, and any exchange/per-record currency behavior.
+- Product decisions: app-wide language direction, logo upload/storage, and document branding outside the existing settings preview.
+
 ## Risks and notes before implementation
 
 - **Phase 3 dependency risk:** SettingsPage i18n should not be coded until Phase 3 completion report is accepted. If Phase 3 PR 3 changes shared i18n keys, re-check before coding.
@@ -412,7 +430,7 @@ This audit intentionally did **not** change:
 - Communications or WhatsApp.
 - Legacy source imports or routing architecture.
 
-## Validation plan for this docs-only PR
+## Validation plan for PR 4 code/docs update
 
 Requested validation commands:
 
