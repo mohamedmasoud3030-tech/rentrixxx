@@ -20,8 +20,58 @@ const ensurePage = (doc: jsPDF, y: number, needed = 10): number => {
   return PAGE_MARGIN_Y;
 };
 
+const ARABIC_REGEX = /[\u0600-\u06FF]/;
+
+function escapeHtml(value: string): string {
+  return value
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#39;');
+}
+
+export function modelHasArabicText(model: UnifiedDocumentModel): boolean {
+  const chunks: string[] = [
+    model.header.companyName,
+    model.header.companyAddress ?? '',
+    model.header.companyPhone ?? '',
+    model.header.title,
+    model.header.documentNo ?? '',
+    model.header.dateLabel ?? '',
+    model.header.dateValue ?? '',
+    ...model.kpis.flatMap((kpi) => [kpi.label, kpi.value]),
+    ...model.tables.flatMap((table) => [table.title ?? '', ...table.columns, ...table.rows.flat(), ...(table.totals ?? [])]),
+    ...model.footer.signatures.map((role) => signatureLabel[role]),
+    model.footer.companyStampLabel ?? '',
+    model.footer.metadata ?? '',
+  ];
+  return chunks.some((chunk) => ARABIC_REGEX.test(chunk));
+}
+
+function renderRtlPrintPreview(model: UnifiedDocumentModel): void {
+  const popup = globalThis.open('', '_blank', 'noopener,noreferrer,width=1024,height=768');
+  if (!popup) return;
+  const kpis = model.kpis.map((kpi) => `<tr><th>${escapeHtml(kpi.label)}</th><td>${escapeHtml(kpi.value)}</td></tr>`).join('');
+  const tables = model.tables.map((table) => {
+    const header = table.columns.map((c) => `<th>${escapeHtml(c)}</th>`).join('');
+    const rows = table.rows.map((row) => `<tr>${row.map((cell) => `<td>${escapeHtml(cell)}</td>`).join('')}</tr>`).join('');
+    const totals = table.totals?.length ? `<tfoot><tr>${table.totals.map((cell) => `<td>${escapeHtml(cell)}</td>`).join('')}</tr></tfoot>` : '';
+    const title = table.title ? `<h3>${escapeHtml(table.title)}</h3>` : '';
+    return `${title}<table><thead><tr>${header}</tr></thead><tbody>${rows}</tbody>${totals}</table>`;
+  }).join('');
+  popup.document.write(`<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8" /><title>${escapeHtml(model.fileName)}</title><style>body{font-family:"Noto Naskh Arabic","Tahoma","Arial",sans-serif;padding:24px;line-height:1.6}table{width:100%;border-collapse:collapse;margin:12px 0}th,td{border:1px solid #ddd;padding:8px;text-align:right}h1,h2,h3{margin:8px 0}</style></head><body><h1>${escapeHtml(model.header.companyName)}</h1><h2>${escapeHtml(model.header.title)}</h2><p>${escapeHtml(model.header.documentNo ? `رقم: ${model.header.documentNo}` : '')}</p><p>${escapeHtml(model.header.dateValue ? `${model.header.dateLabel ?? 'التاريخ'}: ${model.header.dateValue}` : '')}</p><table><tbody>${kpis}</tbody></table>${tables}</body></html>`);
+  popup.document.close();
+  popup.focus();
+  popup.print();
+}
+
 export const DocumentRenderer = {
   renderToPDF(model: UnifiedDocumentModel): void {
+    if (modelHasArabicText(model)) {
+      renderRtlPrintPreview(model);
+      return;
+    }
     const doc = newDoc();
     let y = PAGE_MARGIN_Y;
     doc.setFont('helvetica', 'bold');

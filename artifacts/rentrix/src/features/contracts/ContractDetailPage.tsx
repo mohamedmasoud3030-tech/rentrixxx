@@ -1,6 +1,6 @@
 import { Link, useNavigate, useParams } from '@tanstack/react-router';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { ArrowRight, CalendarDays, Edit, RefreshCw, ShieldAlert, WalletCards } from 'lucide-react';
+import { ArrowRight, CalendarDays, Edit, FileDown, RefreshCw, ShieldAlert, WalletCards } from 'lucide-react';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { EmptyState } from '@/components/empty-state';
@@ -12,6 +12,7 @@ import { Input } from '@/components/ui/input';
 import { StatusBadge } from '@/components/ui/status-badge';
 import type { CompanySettingsContract } from '@/lib/companySettings';
 import { useCompanySettingsContract } from '../settings/useCompanySettings';
+import { exportContractToPdf } from '@/services/pdfService';
 import {
   formatContractDate,
   formatContractDateTime,
@@ -205,6 +206,16 @@ export function ContractDetailPage() {
   const renewalAllowed = canRenewContract(contract);
   const cancellationReason = contract.cancellation_reason?.trim() || '—';
 
+  const exportContractPdf = () => {
+    exportContractToPdf(contract, {
+      settings: companySettings,
+      contracts: [contract],
+      people: contract.people ? [{ id: contract.people.id, full_name: contract.people.full_name }] : [],
+      units: contract.units ? [{ id: contract.units.id, property_id: contract.property_id, unit_number: contract.units.unit_number }] : [],
+      properties: contract.properties ? [{ id: contract.properties.id, title: contract.properties.title }] : [],
+    });
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-start justify-between gap-3">
@@ -216,6 +227,7 @@ export function ContractDetailPage() {
         <div className="flex gap-2">
           <Button variant="secondary" asChild><Link to="/contracts"><ArrowRight className="me-2 size-4" />العودة</Link></Button>
           <Button variant="secondary" onClick={() => openRenewalDialog(contract)} disabled={!renewalAllowed}><RefreshCw className="me-2 size-4" />تجديد</Button>
+          <Button variant="secondary" onClick={exportContractPdf}><FileDown className="me-2 size-4" />تصدير PDF</Button>
           <Button asChild><Link to="/contracts/$contractId/edit" params={{ contractId }}><Edit className="me-2 size-4" />تعديل</Link></Button>
         </div>
       </div>
