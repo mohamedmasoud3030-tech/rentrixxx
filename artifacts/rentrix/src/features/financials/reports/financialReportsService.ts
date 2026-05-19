@@ -657,10 +657,15 @@ async function loadInvoices(filters: FinancialReportFilters): Promise<InvoiceRep
 }
 
 async function loadArrearsInvoices(filters: ArrearsReportFilters): Promise<InvoiceReportRow[]> {
+  const lookbackDate = new Date(filters.asOf);
+  lookbackDate.setFullYear(lookbackDate.getFullYear() - 2);
+  const lookbackIsoDate = lookbackDate.toISOString().slice(0, 10);
+
   let query = supabase
     .from('invoices')
     .select(invoiceReportSelect)
     .is('deleted_at', null)
+    .gte('due_date', lookbackIsoDate)
     .in('status', receivableInvoiceStatuses);
 
   if (filters.contractId) query = query.eq('contract_id', filters.contractId);

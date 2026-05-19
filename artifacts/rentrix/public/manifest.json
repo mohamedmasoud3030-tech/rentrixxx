@@ -14,25 +14,25 @@
   "icons": [
     {
       "src": "/icon-rentrix.png",
-      "sizes": "192x192",
+      "sizes": "1024x1024",
       "type": "image/png",
       "purpose": "any"
     },
     {
       "src": "/icon-rentrix.png",
-      "sizes": "192x192",
+      "sizes": "1024x1024",
       "type": "image/png",
       "purpose": "maskable"
     },
     {
       "src": "/icon-rentrix.png",
-      "sizes": "512x512",
+      "sizes": "1024x1024",
       "type": "image/png",
       "purpose": "any"
     },
     {
       "src": "/icon-rentrix.png",
-      "sizes": "512x512",
+      "sizes": "1024x1024",
       "type": "image/png",
       "purpose": "maskable"
     }

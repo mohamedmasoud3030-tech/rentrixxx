@@ -1,6 +1,6 @@
 import { Link, Outlet, useMatches, useRouter } from '@tanstack/react-router';
 import { useEffect, useState } from 'react';
-import { Bot, Building2, ChevronLeft, ClipboardList, FileText, Home, Landmark, LayoutDashboard, LogOut, Map, Menu, MessageCircle, Moon, ReceiptText, Settings, Sun, UserRoundCog, Users, WalletCards, Wrench } from 'lucide-react';
+import { Building2, ChevronLeft, ClipboardList, FileText, Home, LayoutDashboard, LogOut, Menu, Moon, ReceiptText, Settings, Sun, UserRoundCog, Users, WalletCards, Wrench } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/use-auth';
@@ -24,27 +24,12 @@ const navigation = [
   { to: '/settings', labelKey: 'settings', icon: Settings },
 ] as const;
 
-const recoveryModules = [
-  { labelKey: 'communications', icon: MessageCircle },
-  { labelKey: 'propertyMap', icon: Map },
-  { labelKey: 'lands', icon: Landmark },
-  { labelKey: 'prospects', icon: Users },
-  { labelKey: 'commissions', icon: WalletCards },
-  { labelKey: 'auditLog', icon: ClipboardList },
-  { labelKey: 'aiAssistant', icon: Bot },
-] as const;
-
 type SharedLabel = (key: string) => string;
 
 type NavigationLinksProps = Readonly<{
   expanded: boolean;
   sharedLabel: SharedLabel;
   onNavigate?: () => void;
-}>;
-
-type RecoveryLinksProps = Readonly<{
-  expanded: boolean;
-  sharedLabel: SharedLabel;
 }>;
 
 type MobileNavigationDrawerProps = Readonly<{
@@ -71,28 +56,6 @@ function NavigationLinks({ expanded, sharedLabel, onNavigate }: NavigationLinksP
   );
 }
 
-function RecoveryLinks({ expanded, sharedLabel }: RecoveryLinksProps) {
-  return (
-    <>
-      {expanded ? (
-        <div className="pt-3">
-          <p className="px-3 text-[11px] font-black uppercase tracking-wide text-sidebar-foreground/60">{sharedLabel('recoverySection')}</p>
-        </div>
-      ) : null}
-      {recoveryModules.map((item) => {
-        const Icon = item.icon;
-        const label = sharedLabel(item.labelKey);
-        return (
-          <div key={item.labelKey} className="flex min-h-11 cursor-not-allowed items-center gap-3 rounded-2xl px-3 py-3 text-sm font-black text-sidebar-foreground/55" title={sharedLabel('recoveryTooltip')}>
-            <Icon className="size-5 shrink-0" />
-            {expanded ? <span>{label}</span> : null}
-          </div>
-        );
-      })}
-    </>
-  );
-}
-
 function MobileNavigationDrawer({ appName, closeMenuLabel, sharedLabel, onClose, onLogout }: MobileNavigationDrawerProps) {
   return (
     <dialog open className="fixed inset-0 z-[90] m-0 h-dvh w-screen max-w-none overflow-hidden border-0 bg-transparent p-0 lg:hidden" aria-label={closeMenuLabel}>
@@ -113,7 +76,6 @@ function MobileNavigationDrawer({ appName, closeMenuLabel, sharedLabel, onClose,
         </div>
         <nav className="flex-1 space-y-2 overflow-y-auto p-4">
           <NavigationLinks expanded sharedLabel={sharedLabel} onNavigate={onClose} />
-          <RecoveryLinks expanded sharedLabel={sharedLabel} />
         </nav>
         <div className="border-t border-white/10 p-4">
           <Button variant="ghost" className="min-h-11 w-full justify-start gap-3 text-sidebar-foreground hover:bg-sidebar-accent hover:text-white" onClick={onLogout}>
@@ -182,7 +144,6 @@ export function AppShell() {
         </div>
         <nav className="flex-1 space-y-2 overflow-y-auto p-4">
           <NavigationLinks expanded={isSidebarExpanded} sharedLabel={sharedLabel} />
-          <RecoveryLinks expanded={isSidebarExpanded} sharedLabel={sharedLabel} />
         </nav>
         <div className="border-t border-white/10 p-4">
           <Button variant="ghost" className="w-full justify-start gap-3 text-sidebar-foreground hover:bg-sidebar-accent hover:text-white" onClick={handleLogout}>
