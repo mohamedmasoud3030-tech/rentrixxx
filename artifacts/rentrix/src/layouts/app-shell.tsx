@@ -95,9 +95,9 @@ function RecoveryLinks({ expanded, sharedLabel }: RecoveryLinksProps) {
 
 function MobileNavigationDrawer({ appName, closeMenuLabel, sharedLabel, onClose, onLogout }: MobileNavigationDrawerProps) {
   return (
-    <dialog open className="fixed inset-0 z-40 m-0 h-dvh w-screen max-w-none overflow-hidden border-0 bg-transparent p-0 lg:hidden" aria-label={closeMenuLabel}>
+    <dialog open className="fixed inset-0 z-[90] m-0 h-dvh w-screen max-w-none overflow-hidden border-0 bg-transparent p-0 lg:hidden" aria-label={closeMenuLabel}>
       <button type="button" className="absolute inset-0 bg-slate-950/55" aria-label={closeMenuLabel} onClick={onClose} />
-      <aside className="absolute inset-y-0 right-0 flex w-[min(21rem,88vw)] flex-col overflow-hidden border-l border-sidebar-border bg-sidebar text-sidebar-foreground shadow-sidebar">
+      <aside className="absolute inset-y-0 right-0 flex w-[min(20rem,85vw)] flex-col overflow-hidden border-l border-sidebar-border bg-sidebar text-sidebar-foreground shadow-sidebar">
         <div className="h-[3px] w-full bg-accent" />
         <div className="flex h-24 items-center justify-between gap-3 border-b border-white/10 px-5">
           <div className="flex min-w-0 items-center gap-3">
@@ -191,7 +191,7 @@ export function AppShell() {
           </Button>
         </div>
       </aside>
-      <div className={cn('transition-all lg:pr-72', sidebarCollapsed && 'lg:pr-20')}>
+      <div className={cn('w-full transition-all lg:pr-72', sidebarCollapsed && 'lg:pr-20')}>
         <header className="sticky top-0 z-20 border-b border-border bg-background/88 backdrop-blur-xl">
           <div className="flex min-h-20 flex-col items-stretch justify-center gap-3 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-6">
             <div className="flex min-w-0 items-center gap-3 sm:gap-4">
@@ -222,7 +222,7 @@ export function AppShell() {
             </div>
           </div>
         </header>
-        <main className="animate-route-in overflow-x-hidden p-4 sm:p-6"><Outlet /></main>
+        <main className="animate-route-in overflow-x-hidden p-3 sm:p-5 lg:p-6"><Outlet /></main>
       </div>
     </div>
   );
