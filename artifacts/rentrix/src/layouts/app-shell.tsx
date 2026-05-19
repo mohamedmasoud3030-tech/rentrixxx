@@ -95,7 +95,7 @@ function RecoveryLinks({ expanded, sharedLabel }: RecoveryLinksProps) {
 
 function MobileNavigationDrawer({ appName, closeMenuLabel, sharedLabel, onClose, onLogout }: MobileNavigationDrawerProps) {
   return (
-    <div className="fixed inset-0 z-40 lg:hidden" role="dialog" aria-modal="true" aria-label={sharedLabel('navigation')}>
+    <dialog open className="fixed inset-0 z-40 m-0 h-dvh w-screen max-w-none overflow-hidden border-0 bg-transparent p-0 lg:hidden" aria-label={closeMenuLabel}>
       <button type="button" className="absolute inset-0 bg-slate-950/55" aria-label={closeMenuLabel} onClick={onClose} />
       <aside className="absolute inset-y-0 right-0 flex w-[min(21rem,88vw)] flex-col overflow-hidden border-l border-sidebar-border bg-sidebar text-sidebar-foreground shadow-sidebar">
         <div className="h-[3px] w-full bg-accent" />
@@ -122,7 +122,7 @@ function MobileNavigationDrawer({ appName, closeMenuLabel, sharedLabel, onClose,
           </Button>
         </div>
       </aside>
-    </div>
+    </dialog>
   );
 }
 
