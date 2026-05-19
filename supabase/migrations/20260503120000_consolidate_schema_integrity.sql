@@ -154,6 +154,25 @@ AS $$
   FROM unnest(target_tables) AS target_table;
 $$;
 
+CREATE OR REPLACE FUNCTION pg_temp.rentrix_column_type_matches(child_table text, child_column text, parent_table text, parent_column text)
+RETURNS boolean
+LANGUAGE sql
+AS $$
+  SELECT EXISTS (
+    SELECT 1
+    FROM information_schema.columns AS child_col
+    JOIN information_schema.columns AS parent_col
+      ON parent_col.table_schema = child_col.table_schema
+     AND parent_col.data_type = child_col.data_type
+     AND parent_col.udt_name = child_col.udt_name
+    WHERE child_col.table_schema = pg_temp.rentrix_name('s')
+      AND child_col.table_name = child_table
+      AND child_col.column_name = child_column
+      AND parent_col.table_name = parent_table
+      AND parent_col.column_name = parent_column
+  );
+$$;
+
 
 -- =============================================================================
 -- SECTION 1–2: FK CONSTRAINTS — guarded by child/parent tables and columns
@@ -220,6 +239,7 @@ BEGIN
        AND pg_temp.rentrix_table_exists(fk.parent_table)
        AND pg_temp.rentrix_column_exists(fk.child_table, fk.child_column)
        AND pg_temp.rentrix_column_exists(fk.parent_table, fk.parent_column)
+       AND pg_temp.rentrix_column_type_matches(fk.child_table, fk.child_column, fk.parent_table, fk.parent_column)
     THEN
       IF NOT pg_temp.rentrix_constraint_exists(fk.conname) THEN
         EXECUTE format(
@@ -236,7 +256,7 @@ BEGIN
         EXECUTE format('ALTER TABLE public.%I VALIDATE CONSTRAINT %I', fk.child_table, fk.conname);
       END IF;
     ELSE
-      RAISE NOTICE 'Skipping FK %. Required table/column is missing.', fk.conname;
+      RAISE NOTICE 'Skipping FK %: %I.%I -> %I.%I (missing table/column and/or incompatible column types).', fk.conname, fk.child_table, fk.child_column, fk.parent_table, fk.parent_column;
     END IF;
   END LOOP;
 END $$;
