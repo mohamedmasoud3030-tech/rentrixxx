@@ -4,6 +4,7 @@ import { ArrowRight, CalendarDays, Edit, RefreshCw, ShieldAlert, WalletCards } f
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { EmptyState } from '@/components/empty-state';
+import { exportContractToPdf } from '@/services/pdfService';
 import { RouteLoadingState } from '@/components/loading-state';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -205,6 +206,16 @@ export function ContractDetailPage() {
   const renewalAllowed = canRenewContract(contract);
   const cancellationReason = contract.cancellation_reason?.trim() || '—';
 
+  const exportContractPdf = () => {
+    exportContractToPdf(contract, {
+      settings: { general: { company: { name: 'Rentrix' } } },
+      contracts: [contract],
+      tenants: contract.people ? [{ ...contract.people } as any] : [],
+      units: contract.units ? [{ ...contract.units, property_id: contract.property_id } as any] : [],
+      properties: contract.properties ? [{ ...contract.properties } as any] : [],
+    });
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-start justify-between gap-3">
@@ -216,6 +227,7 @@ export function ContractDetailPage() {
         <div className="flex gap-2">
           <Button variant="secondary" asChild><Link to="/contracts"><ArrowRight className="me-2 size-4" />العودة</Link></Button>
           <Button variant="secondary" onClick={() => openRenewalDialog(contract)} disabled={!renewalAllowed}><RefreshCw className="me-2 size-4" />تجديد</Button>
+          <Button variant="secondary" onClick={exportContractPdf}>تصدير PDF</Button>
           <Button asChild><Link to="/contracts/$contractId/edit" params={{ contractId }}><Edit className="me-2 size-4" />تعديل</Link></Button>
         </div>
       </div>
