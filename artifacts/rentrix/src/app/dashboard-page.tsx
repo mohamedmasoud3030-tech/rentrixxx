@@ -4,6 +4,7 @@ import type { LucideIcon } from 'lucide-react';
 import { useCallback, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
+import { DataErrorScreen } from '@/components/data-error-screen';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { StatusBadge } from '@/components/ui/status-badge';
@@ -134,10 +135,10 @@ export function buildOverdueTenantRows(rows: OverdueInvoiceReportRow[] | undefin
     .slice(0, maxOverdueTenantRows);
 }
 
-function createMoneyCard(params: Omit<KpiCard, 'value' | 'isMoney'> & { amount: number; settings: CompanySettingsContract }): KpiCard {
+function createMoneyCard(params: Omit<KpiCard, 'value' | 'isMoney'> & { amount: number; settings: CompanySettingsContract; displayValue?: string }): KpiCard {
   return {
     title: params.title,
-    value: formatDashboardMoney(params.settings, params.amount),
+    value: params.displayValue ?? formatDashboardMoney(params.settings, params.amount),
     icon: params.icon,
     description: params.description,
     tone: params.tone,
@@ -145,8 +146,9 @@ function createMoneyCard(params: Omit<KpiCard, 'value' | 'isMoney'> & { amount: 
   };
 }
 
-export function buildDashboardSummaryCards(snapshot: DashboardSnapshot | undefined, settings: CompanySettingsContract): KpiCard[] {
+export function buildDashboardSummaryCards(snapshot: DashboardSnapshot | undefined, settings: CompanySettingsContract, hasError = false): KpiCard[] {
   const financial = snapshot?.financial;
+  const moneyOrUnavailable = (value: number | null | undefined) => (hasError ? 'غير متاح' : formatDashboardMoney(settings, value ?? 0));
   const operational = snapshot?.operational;
 
   return [
@@ -157,6 +159,7 @@ export function buildDashboardSummaryCards(snapshot: DashboardSnapshot | undefin
       description: 'إجمالي المفوتر خلال الفترة الحالية',
       tone: 'bg-sky-600',
       settings,
+      displayValue: moneyOrUnavailable(financial?.rentDue),
     }),
     createMoneyCard({
       title: 'المحصل هذا الشهر',
@@ -165,6 +168,7 @@ export function buildDashboardSummaryCards(snapshot: DashboardSnapshot | undefin
       description: `${financial?.paymentsCount ?? 0} دفعات مسجلة`,
       tone: 'bg-emerald-600',
       settings,
+      displayValue: moneyOrUnavailable(financial?.collectedRent),
     }),
     createMoneyCard({
       title: 'الرصيد المتبقي',
@@ -173,6 +177,7 @@ export function buildDashboardSummaryCards(snapshot: DashboardSnapshot | undefin
       description: `${financial?.invoicesCount ?? 0} فواتير في الفترة`,
       tone: 'bg-amber-600',
       settings,
+      displayValue: moneyOrUnavailable(financial?.outstandingRent),
     }),
     createMoneyCard({
       title: 'المصروفات',
@@ -181,6 +186,7 @@ export function buildDashboardSummaryCards(snapshot: DashboardSnapshot | undefin
       description: `${financial?.expensesCount ?? 0} مصروفات مسجلة`,
       tone: 'bg-rose-600',
       settings,
+      displayValue: moneyOrUnavailable(financial?.expenses),
     }),
     createMoneyCard({
       title: 'صافي المركز',
@@ -189,6 +195,7 @@ export function buildDashboardSummaryCards(snapshot: DashboardSnapshot | undefin
       description: 'تحصيل الفترة ناقص المصروفات',
       tone: 'bg-indigo-600',
       settings,
+      displayValue: moneyOrUnavailable(financial?.netPosition),
     }),
     {
       title: 'الإشغال',
@@ -453,17 +460,12 @@ function MonthlyFinancialPanel({ snapshot, isLoading, settings }: Readonly<{
   );
 }
 
-function DashboardErrorCard({ onRetry }: Readonly<{ onRetry: () => void }>) {
+function DashboardErrorCard({ onRetry, error }: Readonly<{ onRetry: () => void; error: unknown }>) {
   return (
-    <Card className="border-destructive/40 bg-destructive/5">
-      <CardHeader>
-        <CardTitle>تعذر تحميل بيانات لوحة التحكم</CardTitle>
-        <CardDescription>راجع اتصال Supabase أو صلاحيات التقارير الحالية ثم أعد المحاولة.</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <Button type="button" variant="secondary" onClick={onRetry}>إعادة المحاولة</Button>
-      </CardContent>
-    </Card>
+    <div className="space-y-3">
+      <DataErrorScreen title="تعذر تحميل بيانات لوحة التحكم" fallbackMessage="راجع اتصال Supabase أو صلاحيات التقارير الحالية ثم أعد المحاولة." error={error} />
+      <Button type="button" variant="secondary" onClick={onRetry}>إعادة المحاولة</Button>
+    </div>
   );
 }
 
@@ -483,7 +485,7 @@ export function DashboardPage() {
   const snapshot = dashboardQuery.data;
   const expiringContracts = useMemo(() => buildExpiringContracts(snapshot?.activeContracts, now), [snapshot?.activeContracts, now]);
   const overdueTenantRows = useMemo(() => buildOverdueTenantRows(snapshot?.arrears.overdueInvoices), [snapshot?.arrears.overdueInvoices]);
-  const kpiCards = useMemo(() => buildDashboardSummaryCards(snapshot, settings), [snapshot, settings]);
+  const kpiCards = useMemo(() => buildDashboardSummaryCards(snapshot, settings, dashboardQuery.isError), [snapshot, settings, dashboardQuery.isError]);
   const buckets = useMemo(() => arrearsBucketOrder.map((key) => {
     const bucket = snapshot?.arrears.agedReceivables.buckets[key];
     return {
@@ -511,7 +513,7 @@ export function DashboardPage() {
         </div>
       </section>
 
-      {dashboardQuery.isError ? <DashboardErrorCard onRetry={retryDashboard} /> : null}
+      {dashboardQuery.isError ? <DashboardErrorCard onRetry={retryDashboard} error={dashboardQuery.error} /> : null}
 
       <KpiGrid cards={kpiCards} isLoading={dashboardQuery.isLoading} />
 

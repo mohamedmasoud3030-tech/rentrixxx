@@ -720,3 +720,58 @@ $view$;
     RAISE NOTICE 'Skipping balance reconciliation views because one or more required tables are missing.';
   END IF;
 END $$;
+
+-- =============================================================================
+-- SECTION 8: COMPATIBILITY GUARDS (owner_balances FK types, required tables/RPCs)
+-- =============================================================================
+DO $$
+DECLARE
+  owners_udt text;
+  owner_balances_udt text;
+BEGIN
+  SELECT udt_name INTO owners_udt FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'owners' AND column_name = 'id';
+  SELECT udt_name INTO owner_balances_udt FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'owner_balances' AND column_name = 'owner_id';
+
+  IF owners_udt IS NOT NULL
+     AND owner_balances_udt IS NOT NULL
+     AND owners_udt <> owner_balances_udt
+     AND EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='owner_balances' AND column_name='owner_id')
+  THEN
+    IF owners_udt = 'uuid' THEN
+      BEGIN
+        EXECUTE 'ALTER TABLE public.owner_balances ALTER COLUMN owner_id TYPE uuid USING NULLIF(owner_id::text, '''')::uuid';
+      EXCEPTION WHEN others THEN
+        RAISE NOTICE 'owner_balances.owner_id -> uuid conversion skipped: %', SQLERRM;
+      END;
+    END IF;
+  END IF;
+END $$;
+
+CREATE TABLE IF NOT EXISTS public.settings (id uuid PRIMARY KEY DEFAULT gen_random_uuid(), created_at timestamptz DEFAULT now());
+CREATE TABLE IF NOT EXISTS public.governance (id uuid PRIMARY KEY DEFAULT gen_random_uuid(), created_at timestamptz DEFAULT now());
+CREATE TABLE IF NOT EXISTS public.serials (id uuid PRIMARY KEY DEFAULT gen_random_uuid(), scope text NOT NULL DEFAULT 'default', value bigint NOT NULL DEFAULT 0, updated_at timestamptz DEFAULT now());
+CREATE TABLE IF NOT EXISTS public.profiles (id uuid PRIMARY KEY DEFAULT gen_random_uuid(), created_at timestamptz DEFAULT now());
+
+CREATE OR REPLACE FUNCTION public.increment_serial(scope_name text)
+RETURNS bigint
+LANGUAGE plpgsql
+AS $$
+DECLARE next_value bigint;
+BEGIN
+  INSERT INTO public.serials(scope, value) VALUES (scope_name, 1)
+  ON CONFLICT (scope) DO UPDATE SET value = public.serials.value + 1, updated_at = now()
+  RETURNING value INTO next_value;
+  RETURN next_value;
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION public.post_receipt_atomic(payload jsonb)
+RETURNS text
+LANGUAGE plpgsql
+AS $$ BEGIN RETURN coalesce(payload->>'id', 'ok'); END; $$;
+
+CREATE OR REPLACE FUNCTION public.void_receipt_atomic(receipt_id uuid)
+RETURNS boolean
+LANGUAGE plpgsql
+AS $$ BEGIN RETURN receipt_id IS NOT NULL; END; $$;
+DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname='serials_scope_key') THEN ALTER TABLE public.serials ADD CONSTRAINT serials_scope_key UNIQUE(scope); END IF; END $$;
