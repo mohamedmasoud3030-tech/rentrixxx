@@ -16,6 +16,8 @@
 --   • The application no longer calls incrementSerial for receipts.
 -- =============================================================================
 
+DROP FUNCTION IF EXISTS public.post_receipt_atomic(jsonb);
+
 CREATE OR REPLACE FUNCTION public.post_receipt_atomic(
   payload jsonb
 ) RETURNS jsonb
@@ -342,4 +344,6 @@ BEGIN
 END;
 $$;
 
+REVOKE ALL ON FUNCTION public.post_receipt_atomic(jsonb) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION public.post_receipt_atomic(jsonb) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.post_receipt_atomic(jsonb) TO service_role;
