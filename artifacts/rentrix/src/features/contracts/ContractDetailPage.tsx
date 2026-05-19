@@ -13,6 +13,7 @@ import { Input } from '@/components/ui/input';
 import { StatusBadge } from '@/components/ui/status-badge';
 import type { CompanySettingsContract } from '@/lib/companySettings';
 import { useCompanySettingsContract } from '../settings/useCompanySettings';
+import type { Person, Property, Unit } from '@/types/domain';
 import {
   formatContractDate,
   formatContractDateTime,
@@ -75,6 +76,47 @@ function getRenewalDefaults(contract: ContractDetail): RenewalPayload {
 function canRenewContract(contract: ContractDetail): boolean {
   return contract.status === 'active' || contract.status === 'expired';
 }
+
+const toPdfTenant = (person: ContractDetail['people']): Person | null =>
+  person
+    ? {
+        ...person,
+        type: 'tenant',
+        address: null,
+        notes: null,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        deleted_at: null,
+      }
+    : null;
+
+const toPdfUnit = (unit: ContractDetail['units'], propertyId: string): Unit | null =>
+  unit
+    ? {
+        ...unit,
+        property_id: propertyId,
+        notes: null,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        deleted_at: null,
+      }
+    : null;
+
+const toPdfProperty = (property: ContractDetail['properties']): Property | null =>
+  property
+    ? {
+        ...property,
+        type: 'residential',
+        owner_name: null,
+        purchase_value: null,
+        current_value: null,
+        status: 'active',
+        notes: null,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        deleted_at: null,
+      }
+    : null;
 
 function getExpiryDescription(settings: CompanySettingsContract, contract: ContractDetail): string {
   if (contract.status === 'terminated') {
@@ -207,12 +249,15 @@ export function ContractDetailPage() {
   const cancellationReason = contract.cancellation_reason?.trim() || '—';
 
   const exportContractPdf = () => {
+    const tenant = toPdfTenant(contract.people);
+    const unit = toPdfUnit(contract.units, contract.property_id);
+    const property = toPdfProperty(contract.properties);
     exportContractToPdf(contract, {
       settings: { general: { company: { name: 'Rentrix' } } },
       contracts: [contract],
-      tenants: contract.people ? [{ ...contract.people } as any] : [],
-      units: contract.units ? [{ ...contract.units, property_id: contract.property_id } as any] : [],
-      properties: contract.properties ? [{ ...contract.properties } as any] : [],
+      tenants: tenant ? [tenant] : [],
+      units: unit ? [unit] : [],
+      properties: property ? [property] : [],
     });
   };
 
