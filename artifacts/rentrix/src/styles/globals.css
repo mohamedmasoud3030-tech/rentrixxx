@@ -58,7 +58,7 @@
 @layer base {
   * { border-color: hsl(var(--border)); }
   html { direction: rtl; font-family: var(--font-sans); }
-  body { margin: 0; min-width: 1024px; background: hsl(var(--background)); color: hsl(var(--foreground)); }
+  body { margin: 0; min-width: 320px; background: hsl(var(--background)); color: hsl(var(--foreground)); }
   button, input, textarea, select { font: inherit; }
   main { animation: route-in 0.2s ease-out both; }
 }

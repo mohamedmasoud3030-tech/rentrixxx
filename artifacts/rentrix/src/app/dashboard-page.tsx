@@ -216,7 +216,7 @@ export function buildDashboardSummaryCards(snapshot: DashboardSnapshot | undefin
 
 function KpiGrid({ cards, isLoading }: Readonly<{ cards: KpiCard[]; isLoading: boolean }>) {
   return (
-    <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4 2xl:grid-cols-7">
+    <section className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 xl:grid-cols-4 2xl:grid-cols-7">
       {cards.map((card) => {
         const Icon = card.icon;
         return (
@@ -517,12 +517,12 @@ export function DashboardPage() {
 
       <KpiGrid cards={kpiCards} isLoading={dashboardQuery.isLoading} />
 
-      <section className="grid gap-4 xl:grid-cols-3">
+      <section className="grid gap-3 sm:gap-4 xl:grid-cols-3">
         <ExpiringContractsPanel rows={expiringContracts} isLoading={dashboardQuery.isLoading} settings={settings} />
         <QuickActionsPanel />
       </section>
 
-      <section className="grid gap-4 xl:grid-cols-[1.15fr_0.85fr]">
+      <section className="grid gap-3 sm:gap-4 xl:grid-cols-[1.15fr_0.85fr]">
         <ArrearsPanel
           totalOverdue={snapshot?.arrears.totalOverdue ?? 0}
           overdueInvoiceCount={snapshot?.arrears.overdueInvoiceCount ?? 0}
