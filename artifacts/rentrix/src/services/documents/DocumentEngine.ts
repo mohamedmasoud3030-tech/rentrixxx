@@ -9,7 +9,21 @@ const fmtDateTime = (v?: string | null) => (v ? new Date(v).toLocaleString('en-G
 const currencyOf = (s?: Settings) => s?.operational?.currency || 'OMR';
 const toMoney = (value: number, s?: Settings) => `${Number.isFinite(value) ? value.toFixed(3) : '0.000'} ${currencyOf(s)}`;
 const baseHeader = (s: Settings, title: string, dateValue?: string, documentNo?: string) => ({ companyName: s.general?.company?.name || 'Rentrix', companyAddress: s.general?.company?.address, companyPhone: s.general?.company?.phone, title, documentNo, dateLabel: 'Date', dateValue, currency: currencyOf(s) });
-const kpi = (label: string, value: unknown) => ({ label, value: value ? String(value) : '-' });
+const formatDocumentValue = (value: unknown): string => {
+  if (value == null) return '—';
+  if (typeof value === 'string') return value;
+  if (typeof value === 'number' || typeof value === 'boolean' || typeof value === 'bigint') return String(value);
+  if (value instanceof Date) return Number.isNaN(value.getTime()) ? '—' : value.toISOString();
+  if (Array.isArray(value) || typeof value === 'object') {
+    try {
+      return JSON.stringify(value);
+    } catch {
+      return '—';
+    }
+  }
+  return '—';
+};
+const kpi = (label: string, value: unknown) => ({ label, value: formatDocumentValue(value) });
 const footer = (signatures: SignatureRole[]) => ({ signatures, companyStampLabel: 'Company Stamp' });
 const fileName = (prefix: string, id: string | null, fallback: string) => `${prefix}_${id || fallback}`;
 const resolveContractContext = (db: AppLikeDb, contractId: string | null) => { const contract = db.contracts.find((c) => c.id === contractId); const tenant = contract ? db.tenants.find((t) => t.id === contract.tenant_id) : null; const unit = contract ? db.units.find((u) => u.id === contract.unit_id) : null; const property = unit ? db.properties.find((p) => p.id === unit.property_id) : null; return { contract, tenant, unit, property }; };

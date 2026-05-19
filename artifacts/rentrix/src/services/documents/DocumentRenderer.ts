@@ -14,18 +14,68 @@ export const collectDocumentTextChunks = (model: UnifiedDocumentModel): string[]
 };
 const modelHasArabicText = (model: UnifiedDocumentModel): boolean => collectDocumentTextChunks(model).some((x) => ARABIC_REGEX.test(x));
 const buildHtmlRows = (rows: string[][]) => rows.map((r) => `<tr>${r.map((c) => `<td>${c}</td>`).join('')}</tr>`).join('');
-const buildHtmlTable = (table: UnifiedDocumentModel['tables'][number]) => `<section><h3>${table.title ?? ''}</h3><table><thead><tr>${table.columns.map((c)=>`<th>${c}</th>`).join('')}</tr></thead><tbody>${buildHtmlRows(table.rows)}</tbody>${table.totals?.length?`<tfoot><tr>${table.totals.map((t)=>`<th>${t}</th>`).join('')}</tr></tfoot>`:''}</table></section>`;
-const buildRtlPrintHtml = (model: UnifiedDocumentModel) => `<!doctype html><html dir="rtl"><head><meta charset="utf-8"/><style>body{font-family:Tahoma,Arial;padding:24px}table{width:100%;border-collapse:collapse}td,th{border:1px solid #ddd;padding:6px}h1,h2,h3{margin:8px 0}</style></head><body><h2>${model.header.companyName}</h2><h1>${model.header.title}</h1>${model.kpis.map((k)=>`<p><strong>${k.label}:</strong> ${k.value}</p>`).join('')}${model.tables.map(buildHtmlTable).join('')}<h3>التواقيع</h3>${model.footer.signatures.map((r)=>`<p>${signatureLabel[r]}: ____________________</p>`).join('')}<p>${model.footer.companyStampLabel ?? ''}</p><p>${model.footer.metadata ?? ''}</p></body></html>`;
+const buildHtmlTable = (table: UnifiedDocumentModel['tables'][number]) => {
+  const tableHead = table.columns.map((column) => `<th>${column}</th>`).join('');
+  const tableFoot = table.totals?.length
+    ? `<tfoot><tr>${table.totals.map((total) => `<th>${total}</th>`).join('')}</tr></tfoot>`
+    : '';
+  return `<section><h3>${table.title ?? ''}</h3><table><thead><tr>${tableHead}</tr></thead><tbody>${buildHtmlRows(table.rows)}</tbody>${tableFoot}</table></section>`;
+};
+const buildRtlPrintHtml = (model: UnifiedDocumentModel) => {
+  const kpiHtml = model.kpis.map((k) => `<p><strong>${k.label}:</strong> ${k.value}</p>`).join('');
+  const signaturesHtml = model.footer.signatures.map((role) => `<p>${signatureLabel[role]}: ____________________</p>`).join('');
+  return [
+    '<!doctype html><html dir="rtl"><head><meta charset="utf-8"/>',
+    '<style>body{font-family:Tahoma,Arial;padding:24px}table{width:100%;border-collapse:collapse}td,th{border:1px solid #ddd;padding:6px}h1,h2,h3{margin:8px 0}</style>',
+    '</head><body>',
+    `<h2>${model.header.companyName}</h2>`,
+    `<h1>${model.header.title}</h1>`,
+    kpiHtml,
+    model.tables.map(buildHtmlTable).join(''),
+    '<h3>التواقيع</h3>',
+    signaturesHtml,
+    `<p>${model.footer.companyStampLabel ?? ''}</p>`,
+    `<p>${model.footer.metadata ?? ''}</p>`,
+    '</body></html>',
+  ].join('');
+};
 const openPrintWindowSafely = (): Window => {
   const popup = globalThis.open('', '_blank', 'width=1024,height=768');
   if (!popup) throw new Error('تعذر فتح نافذة الطباعة. يرجى السماح بالنوافذ المنبثقة ثم إعادة المحاولة.');
   return popup;
 };
-const renderRtlPrintPreview = (model: UnifiedDocumentModel): void => { const w = openPrintWindowSafely(); w.document.open(); w.document.write(buildRtlPrintHtml(model)); w.document.close(); w.focus(); w.print(); };
+const renderRtlPrintPreview = (model: UnifiedDocumentModel): void => {
+  const w = openPrintWindowSafely();
+  const htmlBlob = new Blob([buildRtlPrintHtml(model)], { type: 'text/html;charset=utf-8' });
+  const objectUrl = URL.createObjectURL(htmlBlob);
+  const onLoad = () => {
+    w.focus();
+    w.print();
+    w.removeEventListener('load', onLoad);
+    URL.revokeObjectURL(objectUrl);
+  };
+  w.addEventListener('load', onLoad);
+  w.location.replace(objectUrl);
+};
 
 const renderPdfHeader = (doc: jsPDF, model: UnifiedDocumentModel, y: number): number => { doc.setFont('helvetica','bold'); doc.setFontSize(12); doc.text(model.header.companyName || 'Rentrix', PAGE_MARGIN_X, y); y+=LINE_HEIGHT; doc.setFont('helvetica','normal'); doc.setFontSize(9); [model.header.companyAddress, model.header.companyPhone].forEach((line)=>{ if(line){doc.text(line, PAGE_MARGIN_X, y); y+=LINE_HEIGHT;}}); doc.setFont('helvetica','bold'); doc.setFontSize(13); doc.text(model.header.title, PAGE_MARGIN_X, y); y+=LINE_HEIGHT; doc.setFont('helvetica','normal'); doc.setFontSize(10); if(model.header.documentNo){doc.text(`No: ${model.header.documentNo}`, PAGE_MARGIN_X,y); y+=LINE_HEIGHT;} if(model.header.dateLabel&&model.header.dateValue){doc.text(`${model.header.dateLabel}: ${model.header.dateValue}`, PAGE_MARGIN_X,y); y+=LINE_HEIGHT;} return y+2; };
 const renderPdfKpis = (doc: jsPDF, model: UnifiedDocumentModel, y: number): number => { model.kpis.forEach((k)=>{ y=ensurePage(doc,y,LINE_HEIGHT); doc.setFont('helvetica','bold'); doc.text(`${k.label}:`,PAGE_MARGIN_X,y); doc.setFont('helvetica','normal'); doc.text(k.value,PAGE_MARGIN_X+55,y); y+=LINE_HEIGHT;}); return y+2; };
 const renderPdfTables = (doc: jsPDF, model: UnifiedDocumentModel, y: number): number => { model.tables.forEach((t)=>{ y=ensurePage(doc,y,20); if(t.title){doc.setFont('helvetica','bold'); doc.text(t.title,PAGE_MARGIN_X,y); y+=LINE_HEIGHT;} doc.setFont('helvetica','bold'); doc.setFontSize(9); doc.text(t.columns.join(' | '),PAGE_MARGIN_X,y); y+=LINE_HEIGHT; doc.setFont('helvetica','normal'); t.rows.forEach((r)=>{ y=ensurePage(doc,y,LINE_HEIGHT); doc.text(r.join(' | '),PAGE_MARGIN_X,y); y+=LINE_HEIGHT;}); if(t.totals?.length){ y=ensurePage(doc,y,LINE_HEIGHT); doc.setFont('helvetica','bold'); doc.text(t.totals.join(' | '),PAGE_MARGIN_X,y); y+=LINE_HEIGHT;} y+=2;}); return y; };
 const renderPdfFooter = (doc: jsPDF, model: UnifiedDocumentModel, y: number): number => { y=ensurePage(doc,y,24); doc.setFont('helvetica','bold'); doc.text('Signatures',PAGE_MARGIN_X,y); y+=LINE_HEIGHT; model.footer.signatures.forEach((r)=>{ y=ensurePage(doc,y,LINE_HEIGHT); doc.setFont('helvetica','normal'); doc.text(`${signatureLabel[r]}: ____________________`,PAGE_MARGIN_X,y); y+=LINE_HEIGHT;}); [model.footer.companyStampLabel, model.footer.metadata].forEach((line)=>{ if(line){ y=ensurePage(doc,y,LINE_HEIGHT); doc.text(line,PAGE_MARGIN_X,y); y+=LINE_HEIGHT;}}); return y; };
 
-export const DocumentRenderer = { renderToPDF(model: UnifiedDocumentModel): void { if (modelHasArabicText(model)) return renderRtlPrintPreview(model); const doc = newDoc(); let y = PAGE_MARGIN_Y; y = renderPdfHeader(doc, model, y); y = renderPdfKpis(doc, model, y); y = renderPdfTables(doc, model, y); renderPdfFooter(doc, model, y); doc.save(`${model.fileName}.pdf`); } };
+export const DocumentRenderer = {
+  renderToPDF(model: UnifiedDocumentModel): void {
+    if (modelHasArabicText(model)) {
+      renderRtlPrintPreview(model);
+      return;
+    }
+
+    const doc = newDoc();
+    let y = PAGE_MARGIN_Y;
+    y = renderPdfHeader(doc, model, y);
+    y = renderPdfKpis(doc, model, y);
+    y = renderPdfTables(doc, model, y);
+    renderPdfFooter(doc, model, y);
+    doc.save(`${model.fileName}.pdf`);
+  },
+};
