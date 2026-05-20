@@ -3,17 +3,53 @@
 ## Status
 
 **Phase:** P1-C  
-**Status:** first safe primitive batch ported  
-**Visual rule:** components are ported from `legacy-src` as feature/code slices, then lightly adjusted toward the Figma visual direction from `FIGMA_VISUAL_DIRECTION.md`.
+**Status:** deferred after quality-gate failure  
+**Reason:** direct shadcn/Radix-style primitive ports caused SonarCloud quality-gate failures, especially duplication on new code.  
+**Visual rule:** Figma Paperpillar remains the target visual direction, but UI primitives must now be reintroduced only through small focused PRs with CI/Sonar checks.
 
-## Source and target
+## What happened
 
-| Source | Target | Rule |
-|---|---|---|
-| `artifacts/rentrix/legacy-src/components/ui` | `artifacts/rentrix/src/components/ui` | Port only missing primitives; do not duplicate existing primitives. |
-| Figma Paperpillar UI Kit | Rentrix visual direction | Figma is the final visual target. Legacy is not the visual target. |
+A first primitive batch was attempted from:
 
-## Current production primitives already existed before this batch
+```txt
+artifacts/rentrix/legacy-src/components/ui
+```
+
+into:
+
+```txt
+artifacts/rentrix/src/components/ui
+```
+
+The batch included primitives such as tabs, tooltip, separator, scroll-area, popover, accordion, sheet, and dropdown-menu. The approach was functionally valid but too similar to existing shadcn/Radix code patterns and triggered SonarCloud gate failures:
+
+- high duplication on new code
+- security hotspots
+- reliability/security rating degradation
+
+## Immediate rollback/defer action
+
+The direct primitive batch is no longer considered complete.
+
+### Removed from `src/components/ui`
+
+- `tabs.tsx`
+- `tooltip.tsx`
+- `separator.tsx`
+- `scroll-area.tsx`
+
+### Deferred as temporary placeholders until a focused PR re-port
+
+- `popover.tsx`
+- `accordion.tsx`
+- `sheet.tsx`
+- `dropdown-menu.tsx`
+
+These placeholders must not be used by production pages. Re-port or delete them in the next focused cleanup PR after typecheck/build/Sonar verification.
+
+## Current production primitives that remain valid
+
+These existed before the attempted P1-C batch and were not overwritten:
 
 - `button.tsx`
 - `card.tsx`
@@ -25,29 +61,38 @@
 - `skeleton.tsx`
 - `status-badge.tsx`
 
-These were not overwritten.
+## New rule for UI component recovery
 
-## Ported in this batch
+Do **not** bulk-copy shadcn/Radix primitives from legacy.
 
-| Component | Source | Target | Notes |
-|---|---|---|---|
-| Tabs | `legacy-src/components/ui/tabs.tsx` | `src/components/ui/tabs.tsx` | Ported with larger rounded Figma-aligned trigger/list styling. |
-| Tooltip | `legacy-src/components/ui/tooltip.tsx` | `src/components/ui/tooltip.tsx` | Ported with rounded tooltip surface and stronger text weight. |
-| Separator | `legacy-src/components/ui/separator.tsx` | `src/components/ui/separator.tsx` | Ported as neutral primitive. |
-| Scroll Area | `legacy-src/components/ui/scroll-area.tsx` | `src/components/ui/scroll-area.tsx` | Ported as neutral primitive. |
-| Popover | `legacy-src/components/ui/popover.tsx` | `src/components/ui/popover.tsx` | Ported with rounded card-like popover surface. |
-| Accordion | `legacy-src/components/ui/accordion.tsx` | `src/components/ui/accordion.tsx` | Ported with RTL-friendly text alignment and stronger trigger hierarchy. |
-| Sheet | `legacy-src/components/ui/sheet.tsx` | `src/components/ui/sheet.tsx` | Ported with softened overlay, rounded control affordances, and overflow support. |
-| Dropdown Menu | `legacy-src/components/ui/dropdown-menu.tsx` | `src/components/ui/dropdown-menu.tsx` | Ported with rounded menu items and logical RTL spacing. |
+Future UI recovery must follow this sequence:
+
+1. Pick one component or one tiny related pair only.
+2. Confirm it is needed by a real page/feature.
+3. Prefer generating a minimal local wrapper over copying the full legacy file.
+4. Avoid matching shadcn boilerplate line-for-line when it causes Sonar duplication.
+5. Keep Figma visual direction in `FIGMA_VISUAL_DIRECTION.md` as the styling target.
+6. Run:
+
+```bash
+pnpm --filter @workspace/rentrix typecheck
+pnpm --filter @workspace/rentrix build
+```
+
+7. Wait for SonarCloud before adding the next component.
 
 ## Deferred components
 
-These are still available in `legacy-src` and should be considered in later safe batches:
+### Safe only as focused future PRs
 
-### Good next candidates
-
-- `calendar.tsx`
-- `command.tsx`
+- `tabs.tsx`
+- `tooltip.tsx`
+- `separator.tsx`
+- `scroll-area.tsx`
+- `popover.tsx`
+- `accordion.tsx`
+- `sheet.tsx`
+- `dropdown-menu.tsx`
 - `checkbox.tsx`
 - `radio-group.tsx`
 - `switch.tsx`
@@ -60,6 +105,8 @@ These are still available in `legacy-src` and should be considered in later safe
 
 ### Requires extra review
 
+- `calendar.tsx` — date picker behavior and RTL need focused testing.
+- `command.tsx` — search/combobox behavior needs focused testing.
 - `chart.tsx` — check Recharts integration and current dashboard/reporting needs first.
 - `drawer.tsx` — current app shell already has a custom mobile drawer; avoid conflicts.
 - `sidebar.tsx` — current app shell already has a production sidebar; do not replace blindly.
@@ -67,36 +114,21 @@ These are still available in `legacy-src` and should be considered in later safe
 - `modal.tsx` — current app already has `dialog.tsx`; avoid duplicate modal abstraction.
 - `page-primitives.tsx`, `page-states.tsx`, `empty.tsx`, `app-card.tsx` — useful later for page redesign, but should be aligned with Figma direction first.
 
-## Safety rules applied
+## Separate blocker: Supabase Preview
 
-- No imports from `legacy-src` at runtime.
-- No existing production primitives were overwritten.
-- No routes/pages were redesigned in this batch.
-- No Supabase/auth/RLS/schema/financial logic was touched.
-- RTL-friendly logical spacing was used where practical (`ps`, `pe`, `ms`).
+The Supabase failure is separate from P1-C UI work:
 
-## Validation note
-
-This batch was added through repository file operations. A local `typecheck`/`build` was not available from this tool context. The next Codex/CI step must run:
-
-```bash
-pnpm --filter @workspace/rentrix typecheck
-pnpm --filter @workspace/rentrix build
+```txt
+Remote migration versions not found in local migrations directory.
 ```
 
-If any Tailwind animation utility or Radix dependency issue appears, fix only the affected primitive without changing application behavior.
+Handle this through a dedicated migration-history PR or by finishing the existing Supabase compatibility PR. Do not mix Supabase migration fixes with UI component ports.
 
-## Next step
+## Next required step
 
-Run CI/typecheck/build for this batch. If clean, continue with a second primitive batch:
+Before continuing UI work:
 
-1. `checkbox.tsx`
-2. `radio-group.tsx`
-3. `switch.tsx`
-4. `progress.tsx`
-5. `avatar.tsx`
-6. `pagination.tsx`
-7. `breadcrumb.tsx`
-8. `alert.tsx`
-
-Keep `calendar.tsx` and `command.tsx` for a separate focused batch because they are more likely to affect forms/date-pickers/search flows.
+1. Ensure the current main branch is green again after the rollback/defer commits.
+2. Fix Supabase migration-history separately.
+3. Fix any remaining Sonar issues separately.
+4. Resume UI components only as one-component PRs.
