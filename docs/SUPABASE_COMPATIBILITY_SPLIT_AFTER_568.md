@@ -48,3 +48,11 @@ Out-of-scope in this PR:
 ## Current recommendation for PR #568
 
 Keep PR #568 **blocked**, or close it as **superseded** once replacement compatibility slices are merged.
+
+
+## Supabase Preview blocker and precondition fix
+
+- Blocker: Supabase Preview replay failed at `20260519120000_p0_harden_rls_user_scoped.sql` with `relation "public.users" does not exist` because helper functions in that migration reference `public.users` before it exists in fresh replay order.
+- Fix: added precondition migration `supabase/migrations/20260519115900_ensure_public_users_for_rls_hardening.sql` immediately before `20260519120000`, ensuring `public.users` exists with required compatibility columns/constraints before RLS hardening helpers are created.
+- This precondition fix is independent from PR #568 serial/RPC compatibility slices.
+- PR #568 still must not be merged as-is.
