@@ -29,7 +29,7 @@ export async function createExpense(payload: ExpensePayload): Promise<Expense> {
     return data;
   } catch (error) {
     handleSupabaseError(error, 'تعذر إنشاء المصروف');
-    return null as never;
+    throw error instanceof Error ? error : new Error('تعذر إنشاء المصروف');
   }
 }
 
@@ -41,6 +41,6 @@ export async function updateExpense(id: string, payload: ExpensePayload): Promis
     return data;
   } catch (error) {
     handleSupabaseError(error, 'تعذر تعديل المصروف');
-    return null as never;
+    throw error instanceof Error ? error : new Error('تعذر تعديل المصروف');
   }
 }
