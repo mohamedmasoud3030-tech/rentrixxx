@@ -1,0 +1,62 @@
+export const figmaVisualTokens = {
+  source: 'Property Management Dashboard UI Kit — Paperpillar',
+  sourceUrl:
+    'https://www.figma.com/design/qjQCQbj2ZVyKADJIztdRcr/Property-Management-Dashboard-UI-Kit---Paperpillar--Community-?m=auto&is-community-duplicate=1&fuid=1441938369831861052',
+  colors: {
+    appCanvas: 'hsl(220 33% 98%)',
+    surface: 'hsl(0 0% 100%)',
+    surfaceMuted: 'hsl(220 25% 96%)',
+    sidebar: 'hsl(224 47% 11%)',
+    sidebarAccent: 'hsl(224 64% 18%)',
+    primary: 'hsl(221 83% 53%)',
+    primarySoft: 'hsl(221 83% 96%)',
+    success: 'hsl(158 64% 42%)',
+    successSoft: 'hsl(158 64% 95%)',
+    warning: 'hsl(38 92% 50%)',
+    warningSoft: 'hsl(38 92% 95%)',
+    danger: 'hsl(346 77% 49%)',
+    dangerSoft: 'hsl(346 77% 96%)',
+    textStrong: 'hsl(222 47% 11%)',
+    textMuted: 'hsl(215 16% 47%)',
+    border: 'hsl(214 32% 91%)',
+  },
+  radius: {
+    sm: '0.75rem',
+    md: '1rem',
+    lg: '1.25rem',
+    xl: '1.5rem',
+    card: '1.5rem',
+    hero: '2rem',
+    pill: '999px',
+  },
+  spacing: {
+    pageMobile: '0.75rem',
+    pageTablet: '1rem',
+    pageDesktop: '1.5rem',
+    cardPaddingMobile: '1rem',
+    cardPaddingDesktop: '1.5rem',
+    sectionGap: '1.5rem',
+  },
+  shadows: {
+    card: '0 18px 45px -32px hsl(222 47% 11% / 0.35)',
+    elevated: '0 24px 70px -42px hsl(222 47% 11% / 0.45)',
+    sidebar: '0 24px 70px -42px hsl(224 47% 11% / 0.7)',
+  },
+  typography: {
+    pageTitle: 'text-2xl font-black tracking-tight sm:text-3xl',
+    sectionTitle: 'text-lg font-black tracking-tight',
+    cardTitle: 'text-base font-black',
+    kpiValue: 'text-3xl font-black tracking-tight',
+    label: 'text-xs font-bold text-muted-foreground',
+  },
+  componentIntent: {
+    shell: 'sidebar-first desktop layout with mobile drawer and bottom navigation',
+    card: 'white elevated rounded cards on soft neutral canvas',
+    kpi: 'icon block, title, short description, bold value',
+    table: 'generous row height with mobile horizontal scroll',
+    action: 'clear rounded buttons with no cramped duplicate actions',
+    rtl: 'Arabic-first spacing and alignment must remain stable',
+  },
+} as const;
+
+export type FigmaVisualTokens = typeof figmaVisualTokens;
