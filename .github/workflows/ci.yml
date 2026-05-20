@@ -14,15 +14,35 @@ jobs:
       VITE_SUPABASE_URL: https://example.supabase.co
       VITE_SUPABASE_ANON_KEY: test-anon-key
     steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+      - uses: pnpm/action-setup@f40ffcd9367d9f12939873eb1018b921a783ffaa
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
         with:
           node-version: 22
           cache: pnpm
+      - uses: supabase/setup-cli@cd9b0fd6c9b461031b64e97090fcbdec9ba23711
+        with:
+          version: latest
+
       - run: pnpm install --frozen-lockfile
       - run: pnpm typecheck
       - run: pnpm lint
       - run: pnpm build
       - run: pnpm --filter ./artifacts/rentrix test
       - run: pnpm --filter ./artifacts/rentrix run test:financials
+
+      - name: Supabase validation (remote when token available)
+        if: ${{ secrets.SUPABASE_ACCESS_TOKEN != '' }}
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+        run: |
+          supabase --version
+          supabase migration list --project-ref nnggcnpcuomwfuupupwg
+
+      - name: Supabase validation (local/static fallback)
+        if: ${{ secrets.SUPABASE_ACCESS_TOKEN == '' }}
+        run: |
+          supabase --version
+          test -f supabase/migrations/20260520030000_current_schema_baseline.sql
+          find supabase/migrations -maxdepth 1 -type f -name '*_remote_history_placeholder.sql' | wc -l | awk '{ if ($1 < 16) { exit 1 } }'
+          find supabase/migrations -maxdepth 1 -type f -name '*_remote_history_placeholder.sql' -print0 | xargs -0 awk 'BEGIN{ok=1} /^[[:space:]]*$/ {next} /^[[:space:]]*--/ {next} /^[[:space:]]*SELECT[[:space:]]+1;[[:space:]]*$/ {next} {ok=0; print FILENAME ":" FNR ":" $0} END{exit(ok?0:1)}'
