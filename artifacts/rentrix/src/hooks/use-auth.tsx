@@ -36,8 +36,8 @@ export function AuthProvider({ children }: PropsWithChildren) {
         setSession(null);
         setIsLoading(false);
 
-        if (window.location.pathname !== '/login') {
-          void window.location.assign('/login');
+        if (globalThis.location.pathname !== '/login') {
+          globalThis.location.href = '/login';
         }
         return;
       }
