@@ -749,8 +749,17 @@ END $$;
 
 CREATE TABLE IF NOT EXISTS public.settings (id uuid PRIMARY KEY DEFAULT gen_random_uuid(), created_at timestamptz DEFAULT now());
 CREATE TABLE IF NOT EXISTS public.governance (id uuid PRIMARY KEY DEFAULT gen_random_uuid(), created_at timestamptz DEFAULT now());
-CREATE TABLE IF NOT EXISTS public.serials (id uuid PRIMARY KEY DEFAULT gen_random_uuid(), scope text NOT NULL DEFAULT 'default', value bigint NOT NULL DEFAULT 0, updated_at timestamptz DEFAULT now());
-CREATE TABLE IF NOT EXISTS public.profiles (id uuid PRIMARY KEY DEFAULT gen_random_uuid(), created_at timestamptz DEFAULT now());
+CREATE TABLE IF NOT EXISTS public.serials (
+  id integer PRIMARY KEY,
+  receipt bigint NOT NULL DEFAULT 0,
+  invoice bigint NOT NULL DEFAULT 0,
+  payment bigint NOT NULL DEFAULT 0,
+  journal bigint NOT NULL DEFAULT 0,
+  maintenance bigint NOT NULL DEFAULT 0,
+  created_at timestamptz DEFAULT now(),
+  updated_at timestamptz DEFAULT now()
+);
+CREATE TABLE IF NOT EXISTS public.profiles (id uuid PRIMARY KEY DEFAULT gen_random_uuid(), role text DEFAULT 'USER', created_at timestamptz DEFAULT now());
 
 CREATE OR REPLACE FUNCTION public.increment_serial(scope_name text)
 RETURNS bigint
@@ -758,20 +767,70 @@ LANGUAGE plpgsql
 AS $$
 DECLARE next_value bigint;
 BEGIN
-  INSERT INTO public.serials(scope, value) VALUES (scope_name, 1)
-  ON CONFLICT (scope) DO UPDATE SET value = public.serials.value + 1, updated_at = now()
-  RETURNING value INTO next_value;
+  IF EXISTS (
+    SELECT 1
+    FROM information_schema.columns
+    WHERE table_schema = 'public' AND table_name = 'serials' AND column_name = 'scope'
+  ) THEN
+    INSERT INTO public.serials(scope, value) VALUES (scope_name, 1)
+    ON CONFLICT (scope) DO UPDATE SET value = public.serials.value + 1, updated_at = now()
+    RETURNING value INTO next_value;
+  ELSE
+    INSERT INTO public.serials(id, receipt) VALUES (1, 1)
+    ON CONFLICT (id) DO UPDATE SET receipt = public.serials.receipt + 1, updated_at = now()
+    RETURNING receipt INTO next_value;
+  END IF;
   RETURN next_value;
 END;
 $$;
 
-CREATE OR REPLACE FUNCTION public.post_receipt_atomic(payload jsonb)
-RETURNS text
-LANGUAGE plpgsql
-AS $$ BEGIN RETURN coalesce(payload->>'id', 'ok'); END; $$;
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1
+    FROM pg_proc p
+    JOIN pg_namespace n ON n.oid = p.pronamespace
+    WHERE n.nspname = 'public'
+      AND p.proname = 'post_receipt_atomic'
+      AND pg_get_function_identity_arguments(p.oid) = 'payload jsonb'
+  ) THEN
+    EXECUTE $fn$
+      CREATE FUNCTION public.post_receipt_atomic(payload jsonb)
+      RETURNS jsonb
+      LANGUAGE plpgsql
+      AS $$ BEGIN RETURN jsonb_build_object('id', payload->>'id', 'ok', true); END; $$
+    $fn$;
+  END IF;
+END $$;
 
 CREATE OR REPLACE FUNCTION public.void_receipt_atomic(receipt_id uuid)
 RETURNS boolean
 LANGUAGE plpgsql
 AS $$ BEGIN RETURN receipt_id IS NOT NULL; END; $$;
-DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname='serials_scope_key') THEN ALTER TABLE public.serials ADD CONSTRAINT serials_scope_key UNIQUE(scope); END IF; END $$;
+
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1
+    FROM information_schema.columns
+    WHERE table_schema = 'public' AND table_name = 'serials' AND column_name = 'receipt'
+  ) AND NOT EXISTS (
+    SELECT 1
+    FROM information_schema.columns
+    WHERE table_schema = 'public' AND table_name = 'serials' AND column_name = 'scope'
+  ) THEN
+    INSERT INTO public.serials(id) VALUES (1)
+    ON CONFLICT (id) DO NOTHING;
+  END IF;
+END $$;
+
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1
+    FROM information_schema.columns
+    WHERE table_schema = 'public' AND table_name = 'serials' AND column_name = 'scope'
+  ) AND NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname='serials_scope_key') THEN
+    ALTER TABLE public.serials ADD CONSTRAINT serials_scope_key UNIQUE(scope);
+  END IF;
+END $$;
