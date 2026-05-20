@@ -38,6 +38,8 @@ alter table public.users
   add column if not exists role text,
   add column if not exists status text;
 
+alter table public.users enable row level security;
+
 -- ---------------------------------------------------------------------------
 -- 1. Helper: is_app_user()
 --    Returns TRUE if auth.uid() is a registered, non-disabled application user.
