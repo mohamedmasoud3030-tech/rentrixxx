@@ -29,8 +29,23 @@ export function AuthProvider({ children }: PropsWithChildren) {
         if (mounted) setIsLoading(false);
       });
 
-    const { data } = supabase.auth.onAuthStateChange((_event, nextSession) => {
-      setSession(nextSession);
+    const { data } = supabase.auth.onAuthStateChange((event, nextSession) => {
+      if (!mounted) return;
+
+      if (event === 'SIGNED_OUT') {
+        setSession(null);
+        setIsLoading(false);
+
+        if (window.location.pathname !== '/login') {
+          void window.location.assign('/login');
+        }
+        return;
+      }
+
+      if (event === 'SIGNED_IN' || event === 'USER_UPDATED') {
+        setSession(nextSession);
+      }
+
       setIsLoading(false);
     });
 
