@@ -14,6 +14,12 @@ type AuthContextValue = {
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
+const LOGIN_PATH = '/login';
+
+function shouldRedirectToLogin(pathname: string): boolean {
+  return pathname !== LOGIN_PATH;
+}
+
 export function AuthProvider({ children }: PropsWithChildren) {
   const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -21,29 +27,39 @@ export function AuthProvider({ children }: PropsWithChildren) {
   useEffect(() => {
     let mounted = true;
 
+    const stopLoadingIfMounted = () => {
+      if (mounted) {
+        setIsLoading(false);
+      }
+    };
+
     getCurrentSession()
       .then((restoredSession) => {
-        if (mounted) setSession(restoredSession);
+        if (mounted) {
+          setSession(restoredSession);
+        }
       })
-      .finally(() => {
-        if (mounted) setIsLoading(false);
-      });
+      .finally(stopLoadingIfMounted);
 
     const { data } = supabase.auth.onAuthStateChange((event, nextSession) => {
-      if (!mounted) return;
-
-      if (event === 'SIGNED_OUT') {
-        setSession(null);
-        setIsLoading(false);
-
-        if (window.location.pathname !== '/login') {
-          void window.location.assign('/login');
-        }
+      if (!mounted) {
         return;
       }
 
-      if (event === 'SIGNED_IN' || event === 'USER_UPDATED') {
-        setSession(nextSession);
+      switch (event) {
+        case 'SIGNED_OUT':
+          setSession(null);
+
+          if (shouldRedirectToLogin(window.location.pathname)) {
+            void window.location.assign(LOGIN_PATH);
+          }
+          break;
+        case 'SIGNED_IN':
+        case 'USER_UPDATED':
+          setSession(nextSession);
+          break;
+        default:
+          break;
       }
 
       setIsLoading(false);
@@ -55,19 +71,22 @@ export function AuthProvider({ children }: PropsWithChildren) {
     };
   }, []);
 
-  const value = useMemo<AuthContextValue>(() => ({
-    session,
-    user: session?.user ?? null,
-    isLoading,
-    isAuthenticated: Boolean(session),
-    login: async (email, password) => {
-      await signInWithEmail(email, password);
-    },
-    logout: async () => {
-      await signOut();
-      setSession(null);
-    },
-  }), [isLoading, session]);
+  const value = useMemo<AuthContextValue>(
+    () => ({
+      session,
+      user: session?.user ?? null,
+      isLoading,
+      isAuthenticated: Boolean(session),
+      login: async (email, password) => {
+        await signInWithEmail(email, password);
+      },
+      logout: async () => {
+        await signOut();
+        setSession(null);
+      },
+    }),
+    [isLoading, session],
+  );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
