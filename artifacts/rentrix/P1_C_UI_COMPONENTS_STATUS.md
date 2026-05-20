@@ -38,14 +38,14 @@ The direct primitive batch is no longer considered complete.
 - `separator.tsx`
 - `scroll-area.tsx`
 
-### Deferred as temporary placeholders until a focused PR re-port
+### Deferred primitive batch fully cleaned up
 
 - `popover.tsx`
 - `accordion.tsx`
 - `sheet.tsx`
 - `dropdown-menu.tsx`
 
-These placeholders must not be used by production pages. Re-port or delete them in the next focused cleanup PR after typecheck/build/Sonar verification.
+All four temporary placeholder runtime files were removed from `src/components/ui` during emergency cleanup. The attempted primitive batch is now fully deferred with no placeholder runtime files remaining.
 
 ## Current production primitives that remain valid
 
@@ -89,10 +89,6 @@ pnpm --filter @workspace/rentrix build
 - `tooltip.tsx`
 - `separator.tsx`
 - `scroll-area.tsx`
-- `popover.tsx`
-- `accordion.tsx`
-- `sheet.tsx`
-- `dropdown-menu.tsx`
 - `checkbox.tsx`
 - `radio-group.tsx`
 - `switch.tsx`
