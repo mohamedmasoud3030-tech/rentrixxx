@@ -20,6 +20,12 @@ function shouldRedirectToLogin(pathname: string): boolean {
   return pathname !== LOGIN_PATH;
 }
 
+function redirectToLogin(): void {
+  if (shouldRedirectToLogin(globalThis.location.pathname)) {
+    globalThis.location.href = LOGIN_PATH;
+  }
+}
+
 export function AuthProvider({ children }: PropsWithChildren) {
   const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -49,10 +55,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
       switch (event) {
         case 'SIGNED_OUT':
           setSession(null);
-
-          if (shouldRedirectToLogin(window.location.pathname)) {
-            void window.location.assign(LOGIN_PATH);
-          }
+          redirectToLogin();
           break;
         case 'SIGNED_IN':
         case 'USER_UPDATED':
