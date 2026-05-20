@@ -6,16 +6,18 @@ This change resets local migration replay to a deterministic baseline without mo
 
 ## What was changed
 
-1. Archived the previous local migration chain to:
-   - `supabase/migrations_archived_pre_baseline_20260520/`
-2. Recreated placeholder migration files for remote versions already applied in Supabase migration history.
+1. Removed the old drifted migration SQL chain from active source control.
+   - The prior archive folder was intentionally deleted to eliminate non-runtime duplication noise in Sonar and prevent accidental replay of superseded SQL.
+2. Preserved remote migration history as replay-safe placeholders in `supabase/migrations/*_remote_history_placeholder.sql`.
    - Each placeholder contains: `SELECT 1;`
-3. Added a new baseline migration:
+3. Added/kept the canonical baseline migration:
    - `supabase/migrations/20260520030000_current_schema_baseline.sql`
 
-## Why old migrations were archived
+## Why old migrations were removed
 
-The previous chain had drift and ordering failures that caused replay errors (missing dependencies/tables/functions). Since production schema is currently correct, replay reliability is best restored by preserving remote migration history entries as no-op placeholders and introducing a single schema baseline after the latest remote-applied version.
+The previous chain had drift and ordering failures that caused replay errors (missing dependencies/tables/functions). Keeping large superseded SQL archives in-repo also introduced Sonar duplication noise without runtime value. The canonical migration source is now:
+- historical continuity via remote-history placeholders
+- current schema definition via the baseline migration
 
 ## Remote versions preserved as placeholders
 
@@ -67,8 +69,6 @@ Baseline content was derived from the provided live database inventory in task r
 
 - `pnpm --filter @workspace/rentrix typecheck`
 - `pnpm --filter @workspace/rentrix build`
-
-(See PR checks/logs for command outputs.)
 
 ## Risks
 
