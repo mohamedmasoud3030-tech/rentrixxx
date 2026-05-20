@@ -25,6 +25,19 @@
 
 begin;
 
+
+-- Precondition: ensure public.users exists for hosted previews that may replay
+-- this migration without prior compatibility bootstrap migrations.
+create table if not exists public.users (
+  id uuid primary key,
+  role text,
+  status text
+);
+
+alter table public.users
+  add column if not exists role text,
+  add column if not exists status text;
+
 -- ---------------------------------------------------------------------------
 -- 1. Helper: is_app_user()
 --    Returns TRUE if auth.uid() is a registered, non-disabled application user.
