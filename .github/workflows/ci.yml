@@ -45,4 +45,4 @@ jobs:
           supabase --version
           test -f supabase/migrations/20260520030000_current_schema_baseline.sql
           find supabase/migrations -maxdepth 1 -type f -name '*_remote_history_placeholder.sql' | wc -l | awk '{ if ($1 < 16) { exit 1 } }'
-          supabase migration list --local
+          find supabase/migrations -maxdepth 1 -type f -name '*_remote_history_placeholder.sql' -print0 | xargs -0 awk 'BEGIN{ok=1} /^[[:space:]]*$/ {next} /^[[:space:]]*--/ {next} /^[[:space:]]*SELECT[[:space:]]+1;[[:space:]]*$/ {next} {ok=0; print FILENAME ":" FNR ":" $0} END{exit(ok?0:1)}'
