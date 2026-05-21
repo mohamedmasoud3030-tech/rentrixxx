@@ -138,13 +138,14 @@ export async function listReceipts(supabase: SupabaseClient, params: ReceiptList
 }
 
 export async function getReceiptDetail(supabase: SupabaseClient, receiptOrPaymentId: string): Promise<ReceiptRecord> {
-  const { data: payment, error } = await supabase
+  const { data: paymentRows, error } = await supabase
     .from('payments')
     .select('*')
     .eq('id', receiptOrPaymentId)
     .is('deleted_at', null)
-    .single()
-    .returns<Payment>();
+    .limit(1)
+    .returns<Payment[]>();
+  const payment = paymentRows?.[0];
   if (error || !payment) throw error ?? new Error('Receipt not found');
   const [receipt] = await loadReceiptRecords(supabase, [payment]);
   if (!receipt) throw new Error('Receipt not found');
