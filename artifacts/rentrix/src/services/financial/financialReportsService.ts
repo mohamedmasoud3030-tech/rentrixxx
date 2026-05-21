@@ -640,7 +640,7 @@ function uniqueStrings(values: Array<string | null | undefined>) {
   return Array.from(new Set(values.filter((value): value is string => Boolean(value))));
 }
 
-async function loadInvoices(filters: FinancialReportFilters): Promise<InvoiceReportRow[]> {
+async function loadInvoices(supabase: SupabaseClient, filters: FinancialReportFilters): Promise<InvoiceReportRow[]> {
   let query = supabase
     .from('invoices')
     .select(invoiceReportSelect)
@@ -656,7 +656,7 @@ async function loadInvoices(filters: FinancialReportFilters): Promise<InvoiceRep
   return filterInvoicesForReport(data ?? [], filters);
 }
 
-async function loadArrearsInvoices(filters: ArrearsReportFilters): Promise<InvoiceReportRow[]> {
+async function loadArrearsInvoices(supabase: SupabaseClient, filters: ArrearsReportFilters): Promise<InvoiceReportRow[]> {
   let query = supabase
     .from('invoices')
     .select(invoiceReportSelect)
@@ -670,7 +670,7 @@ async function loadArrearsInvoices(filters: ArrearsReportFilters): Promise<Invoi
   return filterInvoicesForArrearsReport(data ?? [], filters);
 }
 
-async function loadPaymentContexts(payments: PaymentReportRow[]): Promise<PaymentWithInvoiceContext[]> {
+async function loadPaymentContexts(supabase: SupabaseClient, payments: PaymentReportRow[]): Promise<PaymentWithInvoiceContext[]> {
   if (payments.length === 0) return [];
 
   // Batched hydration only: one invoice lookup for all payment invoice ids, then
@@ -679,14 +679,14 @@ async function loadPaymentContexts(payments: PaymentReportRow[]): Promise<Paymen
   const invoiceIds = uniqueStrings(payments.map((payment) => payment.invoice_id));
   const { data: invoices, error: invoicesError } = await supabase
     .from('invoices')
-    .select('id, contract_id, deleted_at')
+    .select('id, contract_id')
     .in('id', invoiceIds)
     .is('deleted_at', null)
-    .returns<Array<Pick<InvoiceReportRow, 'id' | 'contract_id' | 'deleted_at'>>>();
+    .returns<Array<Pick<InvoiceReportRow, 'id' | 'contract_id'>>>();
   if (invoicesError) throw invoicesError;
 
   const invoiceRows = invoices ?? [];
-  const contractIds = uniqueStrings(invoiceRows.map((invoice) => invoice.contract_id));
+  const contractIds = uniqueStrings(invoiceRows.map((invoice: Pick<InvoiceReportRow, 'contract_id'>) => invoice.contract_id));
   const { data: contracts, error: contractsError } = contractIds.length > 0
     ? await supabase
       .from('contracts')
@@ -697,8 +697,8 @@ async function loadPaymentContexts(payments: PaymentReportRow[]): Promise<Paymen
     : { data: [], error: null };
   if (contractsError) throw contractsError;
 
-  const invoiceById = new Map(invoiceRows.map((invoice) => [invoice.id, invoice]));
-  const contractById = new Map((contracts ?? []).map((contract) => [contract.id, contract]));
+  const invoiceById = new Map(invoiceRows.map((invoice: Pick<InvoiceReportRow, 'id' | 'contract_id'>) => [invoice.id, invoice]));
+  const contractById = new Map((contracts ?? []).map((contract: ContractContext) => [contract.id, contract]));
 
   return payments.map((payment) => {
     const invoice = invoiceById.get(payment.invoice_id) ?? null;
@@ -710,7 +710,7 @@ async function loadPaymentContexts(payments: PaymentReportRow[]): Promise<Paymen
   });
 }
 
-async function loadPayments(filters: FinancialReportFilters): Promise<PaymentWithInvoiceContext[]> {
+async function loadPayments(supabase: SupabaseClient, filters: FinancialReportFilters): Promise<PaymentWithInvoiceContext[]> {
   const { data, error } = await supabase
     .from('payments')
     .select(paymentReportSelect)
@@ -720,11 +720,11 @@ async function loadPayments(filters: FinancialReportFilters): Promise<PaymentWit
     .returns<PaymentReportRow[]>();
   if (error) throw error;
 
-  const contexts = await loadPaymentContexts(data ?? []);
+  const contexts = await loadPaymentContexts(supabase, data ?? []);
   return filterPaymentsForReport(contexts, filters);
 }
 
-async function loadExpenses(filters: ExpenseBreakdownReportFilters): Promise<ExpenseReportRow[]> {
+async function loadExpenses(supabase: SupabaseClient, filters: ExpenseBreakdownReportFilters): Promise<ExpenseReportRow[]> {
   let query = supabase
     .from('expenses')
     .select(expenseReportSelect)
@@ -742,30 +742,30 @@ async function loadExpenses(filters: ExpenseBreakdownReportFilters): Promise<Exp
 }
 
 export async function getInvoiceTotalsReport(supabase: SupabaseClient, filters: FinancialReportFilters): Promise<InvoiceTotalsReport> {
-  const invoices = await loadInvoices(filters);
+  const invoices = await loadInvoices(supabase, filters);
   return summarizeInvoiceTotals(invoices);
 }
 
 export async function getPaymentTotalsReport(supabase: SupabaseClient, filters: FinancialReportFilters): Promise<PaymentTotalsReport> {
-  const payments = await loadPayments(filters);
+  const payments = await loadPayments(supabase, filters);
   return summarizePaymentTotals(payments);
 }
 
 export async function getExpenseTotalsReport(supabase: SupabaseClient, filters: FinancialReportFilters): Promise<ExpenseTotalsReport> {
-  const expenses = await loadExpenses(filters);
+  const expenses = await loadExpenses(supabase, filters);
   return summarizeExpenseTotals(expenses);
 }
 
 export async function getOutstandingBalanceReport(supabase: SupabaseClient, filters: FinancialReportFilters): Promise<OutstandingBalanceReport> {
-  const invoices = await loadInvoices(filters);
+  const invoices = await loadInvoices(supabase, filters);
   return summarizeOutstandingBalance(invoices);
 }
 
 export async function getCollectionSummaryReport(supabase: SupabaseClient, filters: FinancialReportFilters): Promise<CollectionSummaryReport> {
   const [invoices, payments, expenses] = await Promise.all([
-    loadInvoices(filters),
-    loadPayments(filters),
-    loadExpenses(filters),
+    loadInvoices(supabase, filters),
+    loadPayments(supabase, filters),
+    loadExpenses(supabase, filters),
   ]);
 
   return summarizeCollectionReport({
@@ -778,7 +778,7 @@ export async function getCollectionSummaryReport(supabase: SupabaseClient, filte
   });
 }
 
-async function loadPropertiesById(propertyIds: string[]): Promise<Map<string, PropertyContext>> {
+async function loadPropertiesById(supabase: SupabaseClient, propertyIds: string[]): Promise<Map<string, PropertyContext>> {
   if (propertyIds.length === 0) return new Map();
 
   const { data, error } = await supabase
@@ -789,10 +789,10 @@ async function loadPropertiesById(propertyIds: string[]): Promise<Map<string, Pr
     .returns<PropertyContext[]>();
   if (error) throw error;
 
-  return new Map((data ?? []).map((property) => [property.id, property]));
+  return new Map((data ?? []).map((property: PropertyContext) => [property.id, property]));
 }
 
-async function loadPeopleById(tenantIds: string[]): Promise<Map<string, PersonContext>> {
+async function loadPeopleById(supabase: SupabaseClient, tenantIds: string[]): Promise<Map<string, PersonContext>> {
   if (tenantIds.length === 0) return new Map();
 
   const { data, error } = await supabase
@@ -803,10 +803,10 @@ async function loadPeopleById(tenantIds: string[]): Promise<Map<string, PersonCo
     .returns<PersonContext[]>();
   if (error) throw error;
 
-  return new Map((data ?? []).map((person) => [person.id, person]));
+  return new Map((data ?? []).map((person: PersonContext) => [person.id, person]));
 }
 
-async function loadUnitsById(unitIds: string[]): Promise<Map<string, UnitContext>> {
+async function loadUnitsById(supabase: SupabaseClient, unitIds: string[]): Promise<Map<string, UnitContext>> {
   if (unitIds.length === 0) return new Map();
 
   const { data, error } = await supabase
@@ -817,19 +817,19 @@ async function loadUnitsById(unitIds: string[]): Promise<Map<string, UnitContext
     .returns<UnitContext[]>();
   if (error) throw error;
 
-  return new Map((data ?? []).map((unit) => [unit.id, unit]));
+  return new Map((data ?? []).map((unit: UnitContext) => [unit.id, unit]));
 }
 
 function mapFromSettledContext<T>(result: PromiseSettledResult<Map<string, T>>): Map<string, T> {
   return result.status === 'fulfilled' ? result.value : new Map<string, T>();
 }
 
-async function loadArrearsContextMaps(invoices: ArrearsInvoiceRow[]): Promise<ArrearsContextMaps> {
+async function loadArrearsContextMaps(supabase: SupabaseClient, invoices: ArrearsInvoiceRow[]): Promise<ArrearsContextMaps> {
   const contracts = invoices.map((invoice) => invoice.contracts).filter((contract): contract is ContractContext => Boolean(contract));
   const [tenantsResult, propertiesResult, unitsResult] = await Promise.allSettled([
-    loadPeopleById(uniqueStrings(contracts.map((contract) => contract.tenant_id))),
-    loadPropertiesById(uniqueStrings(contracts.map((contract) => contract.property_id))),
-    loadUnitsById(uniqueStrings(contracts.map((contract) => contract.unit_id))),
+    loadPeopleById(supabase, uniqueStrings(contracts.map((contract) => contract.tenant_id))),
+    loadPropertiesById(supabase, uniqueStrings(contracts.map((contract) => contract.property_id))),
+    loadUnitsById(supabase, uniqueStrings(contracts.map((contract) => contract.unit_id))),
   ]);
 
   return {
@@ -840,33 +840,33 @@ async function loadArrearsContextMaps(invoices: ArrearsInvoiceRow[]): Promise<Ar
 }
 
 export async function getOverdueInvoicesReport(supabase: SupabaseClient, filters: ArrearsReportFilters): Promise<OverdueInvoicesReport> {
-  const invoices = await loadArrearsInvoices(filters);
+  const invoices = await loadArrearsInvoices(supabase, filters);
   const overdueInvoices = invoices.filter((invoice) => invoice.due_date <= filters.asOf);
-  const contexts = await loadArrearsContextMaps(overdueInvoices);
+  const contexts = await loadArrearsContextMaps(supabase, overdueInvoices);
   return summarizeOverdueInvoicesReport(overdueInvoices, filters, contexts);
 }
 
 export async function getAgedReceivablesReport(supabase: SupabaseClient, filters: ArrearsReportFilters): Promise<AgedReceivablesReport> {
-  const invoices = await loadArrearsInvoices(filters);
-  const contexts = await loadArrearsContextMaps(invoices);
+  const invoices = await loadArrearsInvoices(supabase, filters);
+  const contexts = await loadArrearsContextMaps(supabase, invoices);
   return summarizeAgedReceivablesReport(invoices, filters, contexts);
 }
 
 export async function getArrearsSummaryReport(supabase: SupabaseClient, filters: ArrearsReportFilters): Promise<ArrearsSummaryReport> {
-  const invoices = await loadArrearsInvoices(filters);
+  const invoices = await loadArrearsInvoices(supabase, filters);
   return summarizeArrearsSummaryReport(invoices, filters);
 }
 
 export async function getDailyCollectionReport(supabase: SupabaseClient, filters: FinancialReportFilters): Promise<DailyCollectionReport> {
-  const payments = await loadPayments(filters);
+  const payments = await loadPayments(supabase, filters);
   return summarizeDailyCollectionReport(payments);
 }
 
 export async function getFinancialPeriodSummaryReport(supabase: SupabaseClient, filters: FinancialReportFilters): Promise<FinancialPeriodSummaryReport> {
   const [invoices, payments, expenses] = await Promise.all([
-    loadInvoices(filters),
-    loadPayments(filters),
-    loadExpenses(filters),
+    loadInvoices(supabase, filters),
+    loadPayments(supabase, filters),
+    loadExpenses(supabase, filters),
   ]);
 
   return summarizeFinancialPeriodSummaryReport({
@@ -880,18 +880,18 @@ export async function getFinancialPeriodSummaryReport(supabase: SupabaseClient, 
 
 export async function getFinancialCashflowReport(supabase: SupabaseClient, filters: FinancialReportFilters): Promise<FinancialCashflowReport> {
   const [payments, expenses] = await Promise.all([
-    loadPayments(filters),
-    loadExpenses(filters),
+    loadPayments(supabase, filters),
+    loadExpenses(supabase, filters),
   ]);
 
   return summarizeFinancialCashflowReport({ payments, expenses });
 }
 
 export async function getExpenseBreakdownReport(supabase: SupabaseClient, filters: ExpenseBreakdownReportFilters): Promise<ExpenseBreakdownReport> {
-  const expenses = await loadExpenses(filters);
+  const expenses = await loadExpenses(supabase, filters);
   const includePropertyBreakdown = !filters.propertyId;
   const propertiesById = includePropertyBreakdown
-    ? await loadPropertiesById(uniqueStrings(expenses.map((expense) => expense.property_id)))
+    ? await loadPropertiesById(supabase, uniqueStrings(expenses.map((expense) => expense.property_id)))
     : new Map<string, PropertyContext>();
 
   return summarizeExpenseBreakdownReport(expenses, propertiesById, includePropertyBreakdown);

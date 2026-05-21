@@ -12,6 +12,23 @@ import { supabase } from '@/integrations/supabase/client';import {
   getFinancialCashflowReport as getFinancialCashflowReportService,
   getExpenseBreakdownReport as getExpenseBreakdownReportService
 } from '@/services/financial/financialReportsService';
+import type {
+  ArrearsReportFilters,
+  ArrearsSummaryReport,
+  AgedReceivablesReport,
+  CollectionSummaryReport,
+  DailyCollectionReport,
+  ExpenseBreakdownReport,
+  ExpenseBreakdownReportFilters,
+  ExpenseTotalsReport,
+  FinancialCashflowReport,
+  FinancialPeriodSummaryReport,
+  FinancialReportFilters,
+  InvoiceTotalsReport,
+  OutstandingBalanceReport,
+  OverdueInvoicesReport,
+  PaymentTotalsReport,
+} from '@/services/financial/financialReportsService';
 export { getAgingBucketKey } from '@/services/financial/financialReportsService';
 export type { FinancialReportStatus, FinancialReportFilters, InvoiceTotalsReport, PaymentTotalsReport, ExpenseTotalsReport, OutstandingBalanceReport, CollectionSummaryReport, PaymentMethodTotals, DailyCollectionReportRow, DailyCollectionReport, FinancialPeriodSummaryReport, FinancialCashflowReportRow, FinancialCashflowReport, ExpenseBreakdownReportFilters, ExpenseBreakdownCategoryRow, ExpenseBreakdownPropertyRow, ExpenseBreakdownReport, ArrearsReportFilters, AgingBucketKey, AgedReceivablesBucket, OverdueInvoiceReportRow, AgedReceivablesGroupRow, AgedReceivablesReport, OverdueInvoicesReport, ArrearsSummaryReport } from '@/services/financial/financialReportsService';
 export async function getInvoiceTotalsReport(filters: FinancialReportFilters): Promise<InvoiceTotalsReport> {

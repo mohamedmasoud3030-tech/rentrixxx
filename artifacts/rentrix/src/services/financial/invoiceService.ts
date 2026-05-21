@@ -10,7 +10,7 @@ export type InvoiceSummary = { totalAmount: number; totalPaid: number; totalRema
 
 const invoiceSelect = '*, contracts:contract_id(id,property_id,tenant_id)';
 
-function applyStatusFilter(query: ReturnType<SupabaseClient['from']>, status: InvoiceStatusFilter) {
+function applyStatusFilter(query: any, status: InvoiceStatusFilter) {
   if (status === 'unpaid') return query.eq('status', 'issued').eq('paid_amount', 0);
   if (status === 'partial') return query.eq('status', 'partial');
   if (status === 'paid') return query.eq('status', 'paid');
@@ -58,7 +58,7 @@ export async function getInvoiceDetail(supabase: SupabaseClient, invoiceId: stri
 }
 
 export async function generateInvoicesFromActiveContracts(supabase: SupabaseClient): Promise<number> {
-  const { data, error } = await supabase.rpc('generate_invoices_from_active_contracts').returns<number>();
+  const { data, error } = await supabase.rpc('generate_invoices_from_active_contracts').single().returns<number>();
   if (error) throw error;
   return data ?? 0;
 }
