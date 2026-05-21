@@ -3,7 +3,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { cn } from '@/lib/utils';
 import type { OverdueInvoiceReportRow } from '../reports/financialReportsService';
 import { ARABIC_LOCALE, EMPTY_FIELD_VALUE, getArrearsBucketLabel, getOverdueRowBucketKey } from './arrears-workflow-helpers';
-import { formatDate, formatInvoiceStatusLabel, formatMoney, formatShortId } from './financials-formatters';
+import { formatDate, formatInvoiceStatusLabel, formatMoney, formatShortId } from '@lib/format';
 
 type OverdueInvoicesTableProps = Readonly<{
   rows: OverdueInvoiceReportRow[];

@@ -1,4 +1,4 @@
-import { formatCompanyDate, formatCompanyMoney } from '@/lib/companyFormatters';
+import { formatCompanyDate, formatCompanyMoney } from '@lib/format';
 import type { CompanySettingsContract } from '@/lib/companySettings';
 
 export const CONTRACT_DAY_IN_MS = 86_400_000;

@@ -1,7 +1,7 @@
 import { toFinancialNumber } from '../financialMath';
 import type { AgedReceivablesBucket, AgedReceivablesReport, AgingBucketKey, ArrearsSummaryReport, OverdueInvoicesReport } from '../reports/financialReportsService';
 import { ARABIC_LOCALE, OVER_90_BUCKET_KEY } from './arrears-workflow-helpers';
-import { formatMoney } from './financials-formatters';
+import { formatMoney } from '@lib/format';
 
 const neutralCardTone = 'bg-muted/40 text-foreground';
 

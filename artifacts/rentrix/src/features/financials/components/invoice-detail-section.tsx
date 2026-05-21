@@ -1,7 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import type { Payment } from '@/types/domain';
 import type { InvoiceDetail } from '../invoices/invoiceService';
-import { formatDate, formatMoney, getErrorMessage } from './financials-formatters';
+import { formatDate, formatMoney, getErrorMessage } from '@lib/format';
 import { QuickPaymentForm } from './quick-payment-form';
 
 type InvoiceDetailSectionProps = {

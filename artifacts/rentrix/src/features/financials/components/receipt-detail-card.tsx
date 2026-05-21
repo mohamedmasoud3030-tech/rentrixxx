@@ -1,8 +1,8 @@
 import { Printer } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import type { ReceiptRecord } from '../receipts/receiptService';
-import { formatDate, formatMoney, formatShortId, getErrorMessage } from './financials-formatters';
-import { formatReceiptContext, paymentMethodLabels } from './receipt-formatters';
+import { formatDate, formatMoney, formatShortId, getErrorMessage } from '@lib/format';
+import { formatReceiptContext, paymentMethodLabels } from '@lib/format';
 
 type ReceiptDetailCardProps = {
   selectedReceiptId: string;

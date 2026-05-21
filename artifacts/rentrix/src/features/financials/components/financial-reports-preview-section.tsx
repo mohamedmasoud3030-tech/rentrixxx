@@ -1,6 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import type { CollectionSummaryReport, FinancialReportFilters } from '../reports/financialReportsService';
-import { formatDate, formatMoney, getErrorMessage } from './financials-formatters';
+import { formatDate, formatMoney, getErrorMessage } from '@lib/format';
 
 type FinancialReportsPreviewSectionProps = {
   reportFilters: Pick<FinancialReportFilters, 'dateFrom' | 'dateTo'>;

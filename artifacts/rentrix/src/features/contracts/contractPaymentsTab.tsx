@@ -17,9 +17,9 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { formatDefaultCompanyMoney } from '@/lib/companyFormatters';
+import { formatDefaultCompanyMoney } from '@lib/format';
 import { invoiceStatusLabels } from '@/features/financials/components/invoice-status-labels';
-import { paymentMethodLabels } from '@/features/financials/components/receipt-formatters';
+import { paymentMethodLabels } from '@lib/format';
 import type { ContractPaymentsSnapshot } from './services/contractPaymentService';
 import { useContractPayments } from './useContractPayments';
 

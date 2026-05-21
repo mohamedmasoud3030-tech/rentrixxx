@@ -1,5 +1,5 @@
 import type { Property, Unit } from '@/types/domain';
-import { formatDefaultCompanyMoney } from '@/lib/companyFormatters';
+import { formatDefaultCompanyMoney } from '@lib/format';
 import { unitStatusLabels } from '@/features/units/unit-schema';
 
 export type ContractUnitOptionUnit = Pick<Unit, 'id' | 'unit_number' | 'status' | 'rent_amount'>;

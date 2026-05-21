@@ -21,7 +21,7 @@ import {
   formatContractMoney,
   getContractInclusiveDays,
   getContractRemainingDays,
-} from './contractDisplayFormatters';
+} from '@lib/format';
 import { contractStatusLabels, contractStatusTone, paymentCycleLabels, renewalSchema, type RenewalPayload } from './contractSchema';
 import { ContractDocumentsShell } from './contractDocumentsShell';
 import { ContractPaymentsTab } from './contractPaymentsTab';
