@@ -1,6 +1,6 @@
 import type { AgedReceivablesReport } from '../reports/financialReportsService';
 import { ARABIC_LOCALE, EMPTY_FIELD_VALUE, arrearsBucketKeys, getArrearsBucketLabel, safePercentage } from './arrears-workflow-helpers';
-import { formatMoney } from './financials-formatters';
+import { formatMoney } from '@lib/format';
 
 type ArrearsAgingBucketsProps = Readonly<{
   agedReceivablesReport: AgedReceivablesReport | undefined;

@@ -4,7 +4,7 @@ import { ArrearsAgingBuckets } from './arrears-aging-buckets';
 import { ArrearsFilters } from './arrears-filters';
 import { ArrearsSummaryCards } from './arrears-summary-cards';
 import { filterOverdueInvoiceRows, type ArrearsBucketFilter } from './arrears-workflow-helpers';
-import { formatDate, getErrorMessage } from './financials-formatters';
+import { formatDate, getErrorMessage } from '@lib/format';
 import { OverdueInvoicesTable, SelectedOverdueInvoiceCard } from './overdue-invoices-table';
 
 type ArrearsWorkflowSectionProps = Readonly<{

@@ -9,7 +9,7 @@ import { StatusBadge } from '@/components/ui/status-badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useContracts } from '@/features/contracts/useContracts';
 import type { ContractListItem } from '@/features/contracts/services/contractService';
-import { formatDate, formatInvoiceStatusLabel, formatMoney, formatShortId, getErrorMessage } from '@/features/financials/components/financials-formatters';
+import { formatDate, formatInvoiceStatusLabel, formatMoney, formatShortId, getErrorMessage } from '@lib/format';
 import { useReceipts } from '@/features/financials/receipts/useReceipts';
 import {
   type AgedReceivablesBucket,

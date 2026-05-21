@@ -10,7 +10,7 @@ import { StatusBadge } from '@/components/ui/status-badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { cn } from '@/lib/utils';
 import { buildContractsCsvBlob, buildContractsCsvFilename, getContractNumber } from './contractListExport';
-import { formatContractDate, formatContractMoney, getContractRemainingDays, parseContractDisplayDate } from './contractDisplayFormatters';
+import { formatContractDate, formatContractMoney, getContractRemainingDays, parseContractDisplayDate } from '@lib/format';
 import { contractStatusLabels, contractStatusTone, contractStatusValues, paymentCycleLabels } from './contractSchema';
 import { useCompanySettingsContract } from '../settings/useCompanySettings';
 import { useContracts, useSoftDeleteContract } from './useContracts';

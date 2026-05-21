@@ -1,5 +1,5 @@
 import type { InvoiceSummary } from '../invoices/invoiceService';
-import { formatMoney } from './financials-formatters';
+import { formatMoney } from '@lib/format';
 
 type InvoiceSummaryCardsProps = {
   summary: InvoiceSummary;

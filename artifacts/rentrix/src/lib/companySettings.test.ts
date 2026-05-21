@@ -13,7 +13,7 @@ import {
   normalizeCountry,
   normalizeTimezone,
 } from './companySettings';
-import { formatCompanyDate, formatCompanyMoney, getCompanyLocale } from './companyFormatters';
+import { formatCompanyDate, formatCompanyMoney, getCompanyLocale } from '@lib/format';
 
 describe('company settings runtime contract', () => {
   it('keeps Master Plan defaults for language, country, timezone, and currency', () => {

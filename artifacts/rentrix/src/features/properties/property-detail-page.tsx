@@ -8,7 +8,7 @@ import { StatusBadge } from '@/components/ui/status-badge';
 import { UnitsList } from '@/features/units/units-list';
 import { useUnits } from '@/features/units/use-units';
 import { defaultCompanyLocalSettings } from '@/lib/companySettings';
-import { formatCompanyDate, formatCompanyMoney, getCompanyLocale } from '@/lib/companyFormatters';
+import { formatCompanyDate, formatCompanyMoney, getCompanyLocale } from '@lib/format';
 import { propertyStatusLabels } from './property-schema';
 import { summarizePropertyUnits } from './property-unit-summary';
 import { useProperty } from './use-properties';

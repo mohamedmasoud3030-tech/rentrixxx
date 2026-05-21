@@ -2,7 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import { getSafeRemainingAmount } from '../financialMath';
 import type { InvoiceListItem, InvoiceStatusFilter, InvoiceSummary } from '../invoices/invoiceService';
-import { formatDate, formatInvoiceStatusLabel, formatMoney, getErrorMessage } from './financials-formatters';
+import { formatDate, formatInvoiceStatusLabel, formatMoney, getErrorMessage } from '@lib/format';
 import { InvoiceFilters } from './invoice-filters';
 import { InvoiceSummaryCards } from './invoice-summary-cards';
 

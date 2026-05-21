@@ -10,7 +10,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useCompanySettingsContract } from '@/features/settings/useCompanySettings';
-import { formatCompanyDate, formatCompanyMoney } from '@/lib/companyFormatters';
+import { formatCompanyDate, formatCompanyMoney } from '@lib/format';
 import type { CompanySettingsContract } from '@/lib/companySettings';
 import { cn } from '@/lib/utils';
 import type { ContractListItem } from '@/features/contracts/services/contractService';

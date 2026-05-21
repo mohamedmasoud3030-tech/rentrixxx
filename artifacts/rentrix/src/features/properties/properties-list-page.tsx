@@ -10,7 +10,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { defaultCompanyLocalSettings } from '@/lib/companySettings';
-import { formatCompanyMoney } from '@/lib/companyFormatters';
+import { formatCompanyMoney } from '@lib/format';
 import { propertyStatusLabels, propertyStatusValues } from './property-schema';
 import { useProperties, useSoftDeleteProperty } from './use-properties';
 import type { PropertyStatusFilter } from './property-service';

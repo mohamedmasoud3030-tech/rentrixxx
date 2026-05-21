@@ -2,7 +2,7 @@ import type { UseFormReturn } from 'react-hook-form';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import type { Expense, Property } from '@/types/domain';
-import { formatDate, formatMoney } from './financials-formatters';
+import { formatDate, formatMoney } from '@lib/format';
 import {
   buildExpensePropertyLabel,
   OPERATIONAL_EXPENSE_CATEGORIES,

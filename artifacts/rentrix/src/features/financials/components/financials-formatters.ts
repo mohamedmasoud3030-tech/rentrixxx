@@ -1,4 +1,4 @@
-import { formatCompanyDate, formatDefaultCompanyMoney } from '@/lib/companyFormatters';
+import { formatCompanyDate, formatDefaultCompanyMoney } from '@lib/format';
 import { defaultCompanyLocalSettings } from '@/lib/companySettings';
 import { toFinancialNumber } from '../financialMath';
 

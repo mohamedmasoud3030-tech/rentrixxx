@@ -3,8 +3,8 @@ import { ArrowRight, Printer, ReceiptText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { defaultCompanyLocalSettings } from '@/lib/companySettings';
-import { formatDate, formatMoney, formatShortId, getErrorMessage } from '../components/financials-formatters';
-import { paymentMethodLabels } from '../components/receipt-formatters';
+import { formatDate, formatMoney, formatShortId, getErrorMessage } from '@lib/format';
+import { paymentMethodLabels } from '@lib/format';
 import type { ReceiptRecord } from './receiptService';
 import { useReceipt } from './useReceipts';
 

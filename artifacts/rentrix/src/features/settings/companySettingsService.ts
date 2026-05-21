@@ -1,6 +1,6 @@
 import { supabase } from '@/integrations/supabase/client';
 import { normalizeCompanyLocale, normalizeCompanyLogoUrl, normalizeCountry, normalizeTimezone } from '@/lib/companySettings';
-import { normalizeCurrency } from '@/lib/formatters';
+import { normalizeCurrency } from '@lib/format';
 import { handleSupabaseError } from '@/lib/supabase-error';
 import type { Database } from '@/types/database';
 
