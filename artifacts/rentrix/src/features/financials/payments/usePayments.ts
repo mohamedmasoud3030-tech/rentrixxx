@@ -3,12 +3,13 @@ import { toast } from 'sonner';
 import { invoiceKeys } from '../invoices/useInvoices';
 import { receiptKeys } from '../receipts/useReceipts';
 import { financialReportKeys } from '../reports/useFinancialReports';
-import { postReceiptAtomic, type PaymentPayload } from './paymentService';
+import { postReceiptAtomic, type PaymentPayload } from '@/services/financial/paymentService';
+import { supabase } from '@/integrations/supabase/client';
 
 export function usePostPayment() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (payload: PaymentPayload) => postReceiptAtomic(payload),
+    mutationFn: (payload: PaymentPayload) => postReceiptAtomic(supabase, payload),
     onSuccess: async () => {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: invoiceKeys.all }),

@@ -1,3 +1,4 @@
+import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
 import {
   getAgedReceivablesReport,
@@ -15,7 +16,7 @@ import {
   type ArrearsReportFilters,
   type ExpenseBreakdownReportFilters,
   type FinancialReportFilters,
-} from './financialReportsService';
+} from '@/services/financial/financialReportsService';
 
 export const financialReportKeys = {
   all: ['financialReports'] as const,
@@ -44,7 +45,7 @@ function hasRequiredAsOf(filters: Pick<ArrearsReportFilters, 'asOf'>) {
 export function useCollectionSummaryReport(filters: FinancialReportFilters) {
   return useQuery({
     queryKey: financialReportKeys.collectionSummary(filters),
-    queryFn: () => getCollectionSummaryReport(filters),
+    queryFn: () => getCollectionSummaryReport(supabase, filters),
     enabled: hasRequiredDateRange(filters),
   });
 }
@@ -52,7 +53,7 @@ export function useCollectionSummaryReport(filters: FinancialReportFilters) {
 export function useDailyCollectionReport(filters: FinancialReportFilters) {
   return useQuery({
     queryKey: financialReportKeys.dailyCollection(filters),
-    queryFn: () => getDailyCollectionReport(filters),
+    queryFn: () => getDailyCollectionReport(supabase, filters),
     enabled: hasRequiredDateRange(filters),
   });
 }
@@ -60,7 +61,7 @@ export function useDailyCollectionReport(filters: FinancialReportFilters) {
 export function useFinancialPeriodSummaryReport(filters: FinancialReportFilters) {
   return useQuery({
     queryKey: financialReportKeys.financialPeriodSummary(filters),
-    queryFn: () => getFinancialPeriodSummaryReport(filters),
+    queryFn: () => getFinancialPeriodSummaryReport(supabase, filters),
     enabled: hasRequiredDateRange(filters),
   });
 }
@@ -68,7 +69,7 @@ export function useFinancialPeriodSummaryReport(filters: FinancialReportFilters)
 export function useFinancialCashflowReport(filters: FinancialReportFilters) {
   return useQuery({
     queryKey: financialReportKeys.financialCashflow(filters),
-    queryFn: () => getFinancialCashflowReport(filters),
+    queryFn: () => getFinancialCashflowReport(supabase, filters),
     enabled: hasRequiredDateRange(filters),
   });
 }
@@ -76,7 +77,7 @@ export function useFinancialCashflowReport(filters: FinancialReportFilters) {
 export function useInvoiceTotalsReport(filters: FinancialReportFilters) {
   return useQuery({
     queryKey: financialReportKeys.invoiceTotals(filters),
-    queryFn: () => getInvoiceTotalsReport(filters),
+    queryFn: () => getInvoiceTotalsReport(supabase, filters),
     enabled: hasRequiredDateRange(filters),
   });
 }
@@ -84,7 +85,7 @@ export function useInvoiceTotalsReport(filters: FinancialReportFilters) {
 export function usePaymentTotalsReport(filters: FinancialReportFilters) {
   return useQuery({
     queryKey: financialReportKeys.paymentTotals(filters),
-    queryFn: () => getPaymentTotalsReport(filters),
+    queryFn: () => getPaymentTotalsReport(supabase, filters),
     enabled: hasRequiredDateRange(filters),
   });
 }
@@ -92,7 +93,7 @@ export function usePaymentTotalsReport(filters: FinancialReportFilters) {
 export function useExpenseTotalsReport(filters: FinancialReportFilters) {
   return useQuery({
     queryKey: financialReportKeys.expenseTotals(filters),
-    queryFn: () => getExpenseTotalsReport(filters),
+    queryFn: () => getExpenseTotalsReport(supabase, filters),
     enabled: hasRequiredDateRange(filters),
   });
 }
@@ -100,7 +101,7 @@ export function useExpenseTotalsReport(filters: FinancialReportFilters) {
 export function useExpenseBreakdownReport(filters: ExpenseBreakdownReportFilters) {
   return useQuery({
     queryKey: financialReportKeys.expenseBreakdown(filters),
-    queryFn: () => getExpenseBreakdownReport(filters),
+    queryFn: () => getExpenseBreakdownReport(supabase, filters),
     enabled: hasRequiredDateRange(filters),
   });
 }
@@ -108,7 +109,7 @@ export function useExpenseBreakdownReport(filters: ExpenseBreakdownReportFilters
 export function useOutstandingBalanceReport(filters: FinancialReportFilters) {
   return useQuery({
     queryKey: financialReportKeys.outstandingBalance(filters),
-    queryFn: () => getOutstandingBalanceReport(filters),
+    queryFn: () => getOutstandingBalanceReport(supabase, filters),
     enabled: hasRequiredDateRange(filters),
   });
 }
@@ -116,7 +117,7 @@ export function useOutstandingBalanceReport(filters: FinancialReportFilters) {
 export function useOverdueInvoicesReport(filters: ArrearsReportFilters) {
   return useQuery({
     queryKey: financialReportKeys.overdueInvoices(filters),
-    queryFn: () => getOverdueInvoicesReport(filters),
+    queryFn: () => getOverdueInvoicesReport(supabase, filters),
     enabled: hasRequiredAsOf(filters),
   });
 }
@@ -124,7 +125,7 @@ export function useOverdueInvoicesReport(filters: ArrearsReportFilters) {
 export function useAgedReceivablesReport(filters: ArrearsReportFilters) {
   return useQuery({
     queryKey: financialReportKeys.agedReceivables(filters),
-    queryFn: () => getAgedReceivablesReport(filters),
+    queryFn: () => getAgedReceivablesReport(supabase, filters),
     enabled: hasRequiredAsOf(filters),
   });
 }
@@ -132,7 +133,7 @@ export function useAgedReceivablesReport(filters: ArrearsReportFilters) {
 export function useArrearsSummaryReport(filters: ArrearsReportFilters) {
   return useQuery({
     queryKey: financialReportKeys.arrearsSummary(filters),
-    queryFn: () => getArrearsSummaryReport(filters),
+    queryFn: () => getArrearsSummaryReport(supabase, filters),
     enabled: hasRequiredAsOf(filters),
   });
 }
