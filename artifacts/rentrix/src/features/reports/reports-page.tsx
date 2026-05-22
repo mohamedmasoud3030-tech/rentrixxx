@@ -29,6 +29,7 @@ const contractStatusLabels: Record<ContractListItem['status'], string> = {
   expired: 'منتهي',
   terminated: 'منهى',
 };
+const knownContractStatuses: ContractListItem['status'][] = ['draft', 'active', 'expired', 'terminated'];
 
 function getTodayInput() {
   return new Date().toISOString().slice(0, 10);
@@ -56,7 +57,9 @@ export function ReportsPage() {
 
   const contractStatusSummary = useMemo(() => {
     return contracts.reduce<Record<ContractListItem['status'], number>>((acc, contract) => {
-      acc[contract.status] += 1;
+      if (knownContractStatuses.includes(contract.status)) {
+        acc[contract.status] += 1;
+      }
       return acc;
     }, { draft: 0, active: 0, expired: 0, terminated: 0 });
   }, [contracts]);
@@ -92,7 +95,7 @@ export function ReportsPage() {
       {isLoading ? <Card><CardContent className="p-4 text-sm text-muted-foreground">جارٍ تحميل التقارير...</CardContent></Card> : null}
 
       <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
-        <MetricCard label="نسبة الإشغال" value={`${occupancyRate}%`} helper={`${occupiedUnits} مشغولة من ${totalUnits} وحدة`} tone="green" />
+        <MetricCard label="نسبة الإشغال" value={`${occupancyRate}%`} helper={`${occupiedUnits} مشغولة من ${totalUnits} وحدة (مبني على العقود الحالية)`} tone="green" />
         <MetricCard label="العقود النشطة" value={contractStatusSummary.active.toLocaleString('ar')} helper="من جميع العقود الحالية" />
         <MetricCard label="إجمالي الفواتير" value={formatMoney(invoiceSummary.totalAmount)} helper={`${invoices.length} فاتورة`} tone="blue" />
         <MetricCard label="إجمالي التحصيل" value={formatMoney(invoiceSummary.paidAmount)} helper="مدفوع من الفواتير الحالية" tone="green" />
@@ -101,7 +104,7 @@ export function ReportsPage() {
 
       <Card>
         <CardHeader><CardTitle>ملخص حالة العقود</CardTitle><CardDescription>إجمالي العقود حسب الحالة الحالية.</CardDescription></CardHeader>
-        <CardContent className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">{(Object.keys(contractStatusSummary) as Array<ContractListItem['status']>).map((status) => <div key={status} className="rounded-xl border border-border bg-muted/30 p-3"><p className="text-sm text-muted-foreground">{contractStatusLabels[status]}</p><p className="text-xl font-black">{contractStatusSummary[status].toLocaleString('ar')}</p></div>)}</CardContent>
+        <CardContent className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">{knownContractStatuses.map((status) => <div key={status} className="rounded-xl border border-border bg-muted/30 p-3"><p className="text-sm text-muted-foreground">{contractStatusLabels[status]}</p><p className="text-xl font-black">{contractStatusSummary[status].toLocaleString('ar')}</p></div>)}</CardContent>
       </Card>
 
       <Card>
