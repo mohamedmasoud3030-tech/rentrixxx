@@ -26,7 +26,8 @@ const contractDetailSelect =
 export async function listContracts(params: ContractListParams): Promise<ContractListItem[]> {
   const page = params.page ?? 1;
   const pageSize = params.pageSize ?? 20;
-  const { from, to } = getPaginationRange(page, pageSize);
+  const from = (page - 1) * pageSize;
+  const to = from + pageSize - 1;
 
   let query = supabase
     .from('contracts')

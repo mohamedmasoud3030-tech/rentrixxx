@@ -37,7 +37,8 @@ export async function listInvoices(supabase: SupabaseClient, params: InvoiceStat
   const search = typeof params === 'string' ? '' : params.search?.trim() ?? '';
   const page = typeof params === 'string' ? 1 : params.page ?? 1;
   const pageSize = typeof params === 'string' ? 20 : params.pageSize ?? 20;
-  const { from, to } = getPaginationRange(page, pageSize);
+  const from = (page - 1) * pageSize;
+  const to = from + pageSize - 1;
 
   let query = supabase
     .from('invoices')
