@@ -215,7 +215,7 @@ function FiltersPanel({ filters, onChange, onResetCurrentMonth }: Readonly<{
             <Input type="date" value={filters.asOf} onChange={(event) => onChange({ ...filters, asOf: event.target.value })} />
           </label>
           <div className="flex items-end">
-            <Button className="w-full" onClick={onResetCurrentMonth} variant="secondary"><RefreshCcw className="ml-2 size-4" />الشهر الحالي</Button>
+            <Button className="w-full" onClick={onResetCurrentMonth} variant="secondary"><RefreshCcw className="ms-2 size-4" />الشهر الحالي</Button>
           </div>
         </div>
       </CardHeader>

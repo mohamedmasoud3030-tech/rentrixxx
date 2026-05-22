@@ -30,7 +30,7 @@ export function PeopleListPage() {
           <h2 className="text-xl font-black">الأشخاص</h2>
           <p className="text-sm text-muted-foreground">جدول موحد للمستأجرين والملاك وجهات الاتصال.</p>
         </div>
-        <Button asChild><Link to="/people/new"><Plus className="ml-2 size-4" />إضافة شخص</Link></Button>
+        <Button asChild><Link to="/people/new"><Plus className="ms-2 size-4" />إضافة شخص</Link></Button>
       </div>
 
       <Card>

@@ -28,7 +28,12 @@ export default defineConfig({
       workbox: {
         globPatterns: ["**/*.{js,css,html,ico,png,svg,webp,woff2}"],
         navigateFallback: "/offline.html",
-        navigateFallbackDenylist: [/^\/api\//],
+        navigateFallbackDenylist: [/^\/api\//, /^https:\/\/.*supabase\.co\//],
+        runtimeCaching: [{
+          urlPattern: ({ request }) => request.destination === "document",
+          handler: "NetworkFirst",
+          options: { cacheName: "pages" },
+        }],
       },
     }),
     ...(process.env.NODE_ENV !== "production" &&

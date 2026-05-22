@@ -62,7 +62,7 @@ export function PersonFormPage() {
           <CardTitle>{isEdit ? 'تعديل شخص' : 'إضافة شخص'}</CardTitle>
           <CardDescription>الجدول موحد للمستأجرين والملاك وجهات الاتصال.</CardDescription>
         </div>
-        <Button variant="secondary" asChild><Link to="/people"><ArrowRight className="ml-2 size-4" />العودة</Link></Button>
+        <Button variant="secondary" asChild><Link to="/people"><ArrowRight className="ms-2 size-4" />العودة</Link></Button>
       </CardHeader>
       <CardContent>
         <form

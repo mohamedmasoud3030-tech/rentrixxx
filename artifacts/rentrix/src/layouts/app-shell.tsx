@@ -1,7 +1,7 @@
 import { Link, Outlet, useMatches, useRouter } from '@tanstack/react-router';
 import { useEffect, useState } from 'react';
 import {
-  Bot, Building2, ChevronLeft, ClipboardList, FileText, Home,
+  Bot, Building2, ChevronLeft, ChevronRight, ClipboardList, FileText, Home,
   Landmark, LayoutDashboard, LogOut, Map, Menu, MessageCircle,
   Moon, ReceiptText, Settings, Sun, UserRoundCog, Users,
   WalletCards, Wrench, X,
@@ -333,7 +333,7 @@ export function AppShell() {
             <div className="min-w-0 flex-1">
               <div className="flex min-w-0 items-center gap-1 truncate text-xs text-muted-foreground">
                 <span className="hidden sm:inline">{sharedLabel('home')}</span>
-                <ChevronLeft className="hidden size-3 sm:inline" />
+                {appLanguage.direction === "rtl" ? <ChevronRight className="hidden size-3 sm:inline" /> : <ChevronLeft className="hidden size-3 sm:inline" />}
                 <span className="font-bold">{pageTitle}</span>
               </div>
               <h1 className="mt-0.5 truncate text-lg font-black tracking-tight sm:text-2xl lg:text-3xl">

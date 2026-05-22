@@ -57,7 +57,7 @@ export function UnitsList({ propertyId, unitsQuery }: Readonly<{ propertyId: str
           <CardTitle>الوحدات</CardTitle>
           <CardDescription>إدارة وحدات العقار الحالي فقط.</CardDescription>
         </div>
-        <Button onClick={openForCreate}><Plus className="ml-2 size-4" />إضافة وحدة</Button>
+        <Button onClick={openForCreate}><Plus className="ms-2 size-4" />إضافة وحدة</Button>
       </CardHeader>
       <CardContent className="space-y-4">
         {archiveCandidate ? (
