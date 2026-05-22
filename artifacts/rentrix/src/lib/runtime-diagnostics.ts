@@ -13,6 +13,39 @@ export type RuntimeDiagnostic = {
   technical: string;
 };
 
+type SupabaseErrorLike = Partial<PostgrestError> & {
+  message?: string;
+  details?: string;
+  hint?: string;
+  code?: string;
+};
+
+function readSupabaseContext(error: SupabaseErrorLike): string | null {
+  const haystack = `${error.message ?? ''} ${error.details ?? ''}`;
+  const relationMatch = haystack.match(/relation\s+"?([a-zA-Z0-9_.]+)"?\s+does not exist/i);
+  if (relationMatch?.[1]) return `table=${relationMatch[1]}`;
+
+  const functionMatch = haystack.match(/function\s+([a-zA-Z0-9_.]+)\s*\(/i);
+  if (functionMatch?.[1]) return `rpc=${functionMatch[1]}`;
+
+  const schemaFunctionMatch = haystack.match(/function\s+"?([a-zA-Z0-9_.]+)"?\s+does not exist/i);
+  if (schemaFunctionMatch?.[1]) return `rpc=${schemaFunctionMatch[1]}`;
+
+  return null;
+}
+
+function formatSupabaseMetadata(error: SupabaseErrorLike): string {
+  const metadata = [
+    `code=${error.code ?? 'unknown'}`,
+    `message=${error.message ?? 'Unknown error'}`,
+    `details=${error.details ?? 'none'}`,
+    `hint=${error.hint ?? 'none'}`,
+  ];
+  const context = readSupabaseContext(error);
+  if (context) metadata.push(context);
+  return metadata.join(' | ');
+}
+
 export function getEnvDiagnostics(): RuntimeDiagnostic[] {
   const diagnostics: RuntimeDiagnostic[] = [];
   if (!import.meta.env.VITE_SUPABASE_URL) {
@@ -37,14 +70,15 @@ export function getEnvDiagnostics(): RuntimeDiagnostic[] {
 export function parseSupabaseDiagnostics(error: unknown): RuntimeDiagnostic[] {
   if (!error) return [];
   const diagnostics: RuntimeDiagnostic[] = [];
-  const maybe = error as Partial<PostgrestError> & { message?: string; details?: string; hint?: string; code?: string };
+  const maybe = error as SupabaseErrorLike;
   const text = `${maybe.message ?? ''} ${maybe.details ?? ''}`.toLowerCase();
+  const metadata = formatSupabaseMetadata(maybe);
 
   if (text.includes('failed to fetch') || text.includes('network') || maybe.code === 'ECONNREFUSED') {
     diagnostics.push({
       code: 'supabase_connection_failure',
       messageAr: 'فشل الاتصال بخدمة Supabase. تحقق من الشبكة وصحة رابط المشروع.',
-      technical: `Supabase connectivity error: ${maybe.message ?? 'Unknown error'}`,
+      technical: `Supabase connectivity error: ${metadata}`,
     });
   }
 
@@ -52,7 +86,7 @@ export function parseSupabaseDiagnostics(error: unknown): RuntimeDiagnostic[] {
     diagnostics.push({
       code: 'missing_required_table',
       messageAr: 'يوجد جدول مطلوب غير موجود في قاعدة البيانات الحالية.',
-      technical: `Missing relation/table detected: ${maybe.message ?? 'Unknown relation error'}`,
+      technical: `Missing relation/table detected: ${metadata}`,
     });
   }
 
@@ -60,7 +94,7 @@ export function parseSupabaseDiagnostics(error: unknown): RuntimeDiagnostic[] {
     diagnostics.push({
       code: 'missing_required_rpc',
       messageAr: 'يوجد إجراء RPC مطلوب غير موجود في قاعدة البيانات الحالية.',
-      technical: `Missing RPC function detected: ${maybe.message ?? 'Unknown RPC error'}`,
+      technical: `Missing RPC function detected: ${metadata}`,
     });
   }
 
@@ -68,7 +102,17 @@ export function parseSupabaseDiagnostics(error: unknown): RuntimeDiagnostic[] {
     diagnostics.push({
       code: 'supabase_connection_failure',
       messageAr: 'حدث خطأ أثناء تحميل البيانات من Supabase.',
-      technical: `Unhandled Supabase error: ${maybe.message ?? 'Unknown error'}`,
+      technical: `Unhandled Supabase error: ${metadata}`,
+    });
+  }
+
+  if (typeof console !== 'undefined') {
+    console.error('[supabase-runtime-diagnostic]', {
+      code: maybe.code ?? 'unknown',
+      message: maybe.message ?? 'Unknown error',
+      details: maybe.details ?? null,
+      hint: maybe.hint ?? null,
+      context: readSupabaseContext(maybe),
     });
   }
 
