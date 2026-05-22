@@ -522,6 +522,28 @@ BEGIN
        t_contracts,
        t_tenants
      )
+     AND pg_temp.rentrix_column_exists(t_account_balances, 'account_id')
+     AND pg_temp.rentrix_column_exists(t_account_balances, 'debit_total')
+     AND pg_temp.rentrix_column_exists(t_account_balances, 'credit_total')
+     AND pg_temp.rentrix_column_exists(t_journal_entries, 'account_id')
+     AND pg_temp.rentrix_column_exists(t_journal_entries, 'amount')
+     AND pg_temp.rentrix_column_exists(t_journal_entries, 'type')
+     AND pg_temp.rentrix_column_exists(t_journal_entries, 'entity_type')
+     AND pg_temp.rentrix_column_exists(t_journal_entries, 'entity_id')
+     AND pg_temp.rentrix_column_exists(t_owner_balances, 'owner_id')
+     AND pg_temp.rentrix_column_exists(t_owner_balances, 'net_balance')
+     AND pg_temp.rentrix_column_exists(t_contract_balances, 'contract_id')
+     AND pg_temp.rentrix_column_exists(t_contract_balances, 'balance_due')
+     AND pg_temp.rentrix_column_exists(t_tenant_balances, 'tenant_id')
+     AND pg_temp.rentrix_column_exists(t_tenant_balances, 'balance_due')
+     AND pg_temp.rentrix_column_exists(t_accounts, 'id')
+     AND pg_temp.rentrix_column_exists(t_accounts, 'name')
+     AND pg_temp.rentrix_column_exists(t_owners, 'id')
+     AND pg_temp.rentrix_column_exists(t_owners, 'name')
+     AND pg_temp.rentrix_column_exists(t_contracts, 'id')
+     AND pg_temp.rentrix_column_exists(t_contracts, 'no')
+     AND pg_temp.rentrix_column_exists(t_tenants, 'id')
+     AND pg_temp.rentrix_column_exists(t_tenants, 'name')
   THEN
     EXECUTE format($view$
 CREATE OR REPLACE VIEW public.v_balance_reconciliation AS
@@ -717,7 +739,7 @@ $view$;
     GRANT SELECT ON public.v_balance_reconciliation       TO authenticated;
     GRANT SELECT ON public.v_balance_reconciliation_drift TO authenticated;
   ELSE
-    RAISE NOTICE 'Skipping balance reconciliation views because one or more required tables are missing.';
+    RAISE NOTICE 'Skipping balance reconciliation views because required reconciliation tables/columns are missing.';
   END IF;
 END $$;
 
@@ -752,18 +774,64 @@ CREATE TABLE IF NOT EXISTS public.governance (id uuid PRIMARY KEY DEFAULT gen_ra
 CREATE TABLE IF NOT EXISTS public.serials (id uuid PRIMARY KEY DEFAULT gen_random_uuid(), scope text NOT NULL DEFAULT 'default', value bigint NOT NULL DEFAULT 0, updated_at timestamptz DEFAULT now());
 CREATE TABLE IF NOT EXISTS public.profiles (id uuid PRIMARY KEY DEFAULT gen_random_uuid(), created_at timestamptz DEFAULT now());
 
-CREATE OR REPLACE FUNCTION public.increment_serial(scope_name text)
-RETURNS bigint
-LANGUAGE plpgsql
-AS $$
-DECLARE next_value bigint;
+DO $$
+DECLARE
+  existing_returns_bigint boolean;
+  function_exists boolean;
 BEGIN
-  INSERT INTO public.serials(scope, value) VALUES (scope_name, 1)
-  ON CONFLICT (scope) DO UPDATE SET value = public.serials.value + 1, updated_at = now()
-  RETURNING value INTO next_value;
-  RETURN next_value;
-END;
-$$;
+  SELECT EXISTS (
+    SELECT 1
+    FROM pg_proc p
+    JOIN pg_namespace n ON n.oid = p.pronamespace
+    WHERE n.nspname = 'public'
+      AND p.proname = 'increment_serial'
+      AND pg_get_function_identity_arguments(p.oid) = 'scope_name text'
+  ) INTO function_exists;
+
+  SELECT EXISTS (
+    SELECT 1
+    FROM pg_proc p
+    JOIN pg_namespace n ON n.oid = p.pronamespace
+    WHERE n.nspname = 'public'
+      AND p.proname = 'increment_serial'
+      AND pg_get_function_identity_arguments(p.oid) = 'scope_name text'
+      AND p.prorettype = 'bigint'::regtype
+  ) INTO existing_returns_bigint;
+
+  IF function_exists AND NOT existing_returns_bigint THEN
+    IF EXISTS (
+      SELECT 1
+      FROM pg_depend d
+      JOIN pg_proc p ON p.oid = d.refobjid
+      JOIN pg_namespace n ON n.oid = p.pronamespace
+      WHERE n.nspname = 'public'
+        AND p.proname = 'increment_serial'
+        AND pg_get_function_identity_arguments(p.oid) = 'scope_name text'
+        AND d.classid = 'pg_proc'::regclass
+        AND d.deptype IN ('n', 'a', 'i', 'e')
+    ) THEN
+      RAISE NOTICE 'Skipping increment_serial return-type replacement: dependent objects exist for public.increment_serial(scope_name text).';
+      RETURN;
+    END IF;
+
+    DROP FUNCTION public.increment_serial(scope_name text);
+  END IF;
+
+  EXECUTE $fn$
+    CREATE OR REPLACE FUNCTION public.increment_serial(scope_name text)
+    RETURNS bigint
+    LANGUAGE plpgsql
+    AS $$
+    DECLARE next_value bigint;
+    BEGIN
+      INSERT INTO public.serials(scope, value) VALUES (scope_name, 1)
+      ON CONFLICT (scope) DO UPDATE SET value = public.serials.value + 1, updated_at = now()
+      RETURNING value INTO next_value;
+      RETURN next_value;
+    END;
+    $$;
+  $fn$;
+END $$;
 
 CREATE OR REPLACE FUNCTION public.post_receipt_atomic(payload jsonb)
 RETURNS text
