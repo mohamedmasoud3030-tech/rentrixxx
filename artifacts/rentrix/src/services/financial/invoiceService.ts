@@ -1,6 +1,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Invoice, Payment } from '@/types/domain';
 import { getSafeRemainingAmount, toFinancialNumber } from '@/features/financials/financialMath';
+import { getPaginationRange } from '@/lib/pagination';
 
 export type InvoiceStatusFilter = 'unpaid' | 'partial' | 'paid' | 'overdue' | 'all';
 export type InvoiceListItem = Invoice & { contracts: { id: string; property_id: string; tenant_id: string } | null };
@@ -36,8 +37,7 @@ export async function listInvoices(supabase: SupabaseClient, params: InvoiceStat
   const search = typeof params === 'string' ? '' : params.search?.trim() ?? '';
   const page = typeof params === 'string' ? 1 : params.page ?? 1;
   const pageSize = typeof params === 'string' ? 20 : params.pageSize ?? 20;
-  const from = (page - 1) * pageSize;
-  const to = from + pageSize - 1;
+  const { from, to } = getPaginationRange(page, pageSize);
 
   let query = supabase
     .from('invoices')

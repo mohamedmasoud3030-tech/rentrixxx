@@ -1,4 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
+import { getPaginationRange } from '@/lib/pagination';
 import type { Database } from '@/types/database';
 import type { Contract, Person, Property, Unit } from '@/types/domain';
 import type { ContractPayload, RenewalPayload } from '../contractSchema';
@@ -25,8 +26,7 @@ const contractDetailSelect =
 export async function listContracts(params: ContractListParams): Promise<ContractListItem[]> {
   const page = params.page ?? 1;
   const pageSize = params.pageSize ?? 20;
-  const from = (page - 1) * pageSize;
-  const to = from + pageSize - 1;
+  const { from, to } = getPaginationRange(page, pageSize);
 
   let query = supabase
     .from('contracts')
