@@ -5,7 +5,7 @@ import { getSafeRemainingAmount, toFinancialNumber } from '@/features/financials
 export type InvoiceStatusFilter = 'unpaid' | 'partial' | 'paid' | 'overdue' | 'all';
 export type InvoiceListItem = Invoice & { contracts: { id: string; property_id: string; tenant_id: string } | null };
 export type InvoiceDetail = InvoiceListItem & { payments: Payment[] };
-export type InvoiceListParams = { status: InvoiceStatusFilter; search?: string };
+export type InvoiceListParams = { status: InvoiceStatusFilter; search?: string; page?: number; pageSize?: number };
 export type InvoiceSummary = { totalAmount: number; totalPaid: number; totalRemaining: number; count: number };
 
 const invoiceSelect = '*, contracts:contract_id(id,property_id,tenant_id)';
@@ -34,7 +34,17 @@ export function summarizeInvoices(invoices: Pick<Invoice, 'amount' | 'paid_amoun
 export async function listInvoices(supabase: SupabaseClient, params: InvoiceStatusFilter | InvoiceListParams): Promise<InvoiceListItem[]> {
   const status = typeof params === 'string' ? params : params.status;
   const search = typeof params === 'string' ? '' : params.search?.trim() ?? '';
-  let query = supabase.from('invoices').select(invoiceSelect).is('deleted_at', null).order('due_date', { ascending: false });
+  const page = typeof params === 'string' ? 1 : params.page ?? 1;
+  const pageSize = typeof params === 'string' ? 20 : params.pageSize ?? 20;
+  const from = (page - 1) * pageSize;
+  const to = from + pageSize - 1;
+
+  let query = supabase
+    .from('invoices')
+    .select(invoiceSelect, { count: 'exact' })
+    .is('deleted_at', null)
+    .order('due_date', { ascending: false })
+    .range(from, to);
 
   query = applyStatusFilter(query, status);
 
