@@ -55,8 +55,8 @@ export function PropertyDetailPage() {
           <p className="mt-1 text-sm text-muted-foreground">{property.address}</p>
         </div>
         <div className="flex gap-2">
-          <Button variant="secondary" asChild><Link to="/properties"><ArrowRight className="ml-2 size-4" />العودة</Link></Button>
-          <Button asChild><Link to="/properties/$propertyId/edit" params={{ propertyId }}><Edit className="ml-2 size-4" />تعديل</Link></Button>
+          <Button variant="secondary" asChild><Link to="/properties"><ArrowRight className="ms-2 size-4" />العودة</Link></Button>
+          <Button asChild><Link to="/properties/$propertyId/edit" params={{ propertyId }}><Edit className="ms-2 size-4" />تعديل</Link></Button>
         </div>
       </div>
 

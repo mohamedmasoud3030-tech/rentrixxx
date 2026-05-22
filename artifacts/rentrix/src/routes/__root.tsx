@@ -8,8 +8,8 @@ export function RootRouteComponent() {
   return (
     <AppCatchBoundary>
       <Outlet />
-      <Toaster richColors position="top-left" dir={getAppLanguageState().direction} />
-      {import.meta.env.DEV ? <TanStackRouterDevtools position="bottom-left" /> : null}
+      <Toaster richColors position="top-right" dir={getAppLanguageState().direction} />
+      {import.meta.env.DEV ? <TanStackRouterDevtools position="bottom-right" /> : null}
     </AppCatchBoundary>
   );
 }

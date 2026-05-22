@@ -173,7 +173,7 @@ function OwnerWorkspaceRowView({ row, selectedOwnerId, onEditOwner, onSelectOwne
       <TableCell><OwnerPropertyLinks row={row} /></TableCell>
       <TableCell><OwnershipSummary row={row} /></TableCell>
       <TableCell>{row.activeContractCount > 0 ? row.activeContractCount.toLocaleString('ar') : '—'}</TableCell>
-      <TableCell><div className="flex flex-wrap gap-2"><Button type="button" variant="secondary" className="min-h-9 px-3" onClick={() => onSelectOwner(row.owner.id)}><Eye className="ml-1 size-4" />العلاقات</Button><Button type="button" variant="secondary" className="min-h-9 px-3" onClick={() => onEditOwner(row.owner)}><Pencil className="ml-1 size-4" />تعديل</Button></div></TableCell>
+      <TableCell><div className="flex flex-wrap gap-2"><Button type="button" variant="secondary" className="min-h-9 px-3" onClick={() => onSelectOwner(row.owner.id)}><Eye className="ms-1 size-4" />العلاقات</Button><Button type="button" variant="secondary" className="min-h-9 px-3" onClick={() => onEditOwner(row.owner)}><Pencil className="ms-1 size-4" />تعديل</Button></div></TableCell>
     </TableRow>
   );
 }
@@ -310,7 +310,7 @@ export function OwnersPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-3"><div><h2 className="text-xl font-black">إدارة الملاك</h2><p className="text-sm text-muted-foreground">إدارة علاقات ملكية العقارات بشكل منفصل عن الحسابات والتسويات المالية.</p></div><Button onClick={openCreateForm}><Plus className="ml-2 size-4" />إضافة مالك</Button></div>
+      <div className="flex flex-wrap items-center justify-between gap-3"><div><h2 className="text-xl font-black">إدارة الملاك</h2><p className="text-sm text-muted-foreground">إدارة علاقات ملكية العقارات بشكل منفصل عن الحسابات والتسويات المالية.</p></div><Button onClick={openCreateForm}><Plus className="ms-2 size-4" />إضافة مالك</Button></div>
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4"><SummaryCard label="إجمالي الملاك" value={summary.totalOwners} icon={Users} /><SummaryCard label="الملاك النشطون" value={summary.activeOwners} icon={Users} /><SummaryCard label="عقارات مرتبطة" value={summary.linkedPropertiesCount} icon={Building2} /><SummaryCard label="عقارات بلا علاقة مالك" value={summary.propertiesWithoutLinkedOwner} icon={LinkIcon} /></div>
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1.1fr)_minmax(24rem,0.9fr)]">
         <Card className="overflow-hidden"><CardHeader><CardTitle>مساحة عمل الملاك</CardTitle><CardDescription>ملخص آمن من بيانات الملاك والعقارات والعقود الحالية بدون أرصدة أو تسويات افتراضية.</CardDescription></CardHeader><CardContent><OwnerWorkspaceTable rows={filteredOwnerRows} search={ownerSearch} selectedOwner={selectedOwner} onCreateOwner={openCreateForm} onEditOwner={openEditForm} onSearchChange={setOwnerSearch} onSelectOwner={setSelectedOwnerId} /></CardContent></Card>

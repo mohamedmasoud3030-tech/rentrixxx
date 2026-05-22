@@ -115,8 +115,8 @@ export function ReceiptDetailPage() {
           <p className="text-sm text-muted-foreground">عرض جاهز للطباعة بدون إضافة اعتماد PDF جديد.</p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <Button variant="secondary" asChild><Link to="/financials"><ArrowRight className="ml-2 size-4" />العودة للمالية</Link></Button>
-          <Button onClick={() => globalThis.print()}><Printer className="ml-2 size-4" />طباعة</Button>
+          <Button variant="secondary" asChild><Link to="/financials"><ArrowRight className="ms-2 size-4" />العودة للمالية</Link></Button>
+          <Button onClick={() => globalThis.print()}><Printer className="ms-2 size-4" />طباعة</Button>
         </div>
       </div>
 
