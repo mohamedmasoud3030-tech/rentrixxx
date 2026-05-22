@@ -57,12 +57,12 @@ export function PersonFormPage() {
 
   return (
     <Card className="mx-auto max-w-5xl">
-      <CardHeader className="flex flex-row items-start justify-between gap-4">
+      <CardHeader className="flex flex-row iteme-start justify-between gap-4">
         <div>
           <CardTitle>{isEdit ? 'تعديل شخص' : 'إضافة شخص'}</CardTitle>
           <CardDescription>الجدول موحد للمستأجرين والملاك وجهات الاتصال.</CardDescription>
         </div>
-        <Button variant="secondary" asChild><Link to="/people"><ArrowRight className="ms-2 size-4" />العودة</Link></Button>
+        <Button variant="secondary" asChild><Link to="/people"><ArrowRight className="me-2 size-4" />العودة</Link></Button>
       </CardHeader>
       <CardContent>
         <form

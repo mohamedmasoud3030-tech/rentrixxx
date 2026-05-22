@@ -48,15 +48,15 @@ export function PropertyDetailPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-start justify-between gap-3">
+      <div className="flex flex-wrap iteme-start justify-between gap-3">
         <div>
           <p className="text-sm font-bold text-primary">تفاصيل العقار</p>
           <h2 className="text-2xl font-black">{property.title}</h2>
           <p className="mt-1 text-sm text-muted-foreground">{property.address}</p>
         </div>
         <div className="flex gap-2">
-          <Button variant="secondary" asChild><Link to="/properties"><ArrowRight className="ms-2 size-4" />العودة</Link></Button>
-          <Button asChild><Link to="/properties/$propertyId/edit" params={{ propertyId }}><Edit className="ms-2 size-4" />تعديل</Link></Button>
+          <Button variant="secondary" asChild><Link to="/properties"><ArrowRight className="me-2 size-4" />العودة</Link></Button>
+          <Button asChild><Link to="/properties/$propertyId/edit" params={{ propertyId }}><Edit className="me-2 size-4" />تعديل</Link></Button>
         </div>
       </div>
 

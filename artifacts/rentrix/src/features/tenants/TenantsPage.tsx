@@ -42,7 +42,7 @@ function getTenantLocationText(tenant: TenantWorkspaceRow): TenantLocationText {
 function InfoPill({ icon: Icon, label, value, dir }: Readonly<{ icon: typeof Phone; label: string; value: string | number | null | undefined; dir?: 'ltr' | 'rtl' }>) {
   return (
     <div className="rounded-2xl border bg-background px-3 py-2">
-      <div className="flex items-center gap-2 text-xs font-bold text-muted-foreground">
+      <div className="flex iteme-center gap-2 text-xs font-bold text-muted-foreground">
         <Icon className="size-3.5" />
         <span>{label}</span>
       </div>
@@ -72,11 +72,11 @@ function TenantSafeLinks({ tenant }: Readonly<{ tenant: TenantWorkspaceRow }>) {
     <div className="flex flex-wrap gap-2">
       {tenant.primaryContractId !== null ? (
         <Button variant="secondary" className="min-h-9 px-3" asChild>
-          <Link to="/contracts/$contractId" params={{ contractId: tenant.primaryContractId }}><FileText className="ms-1 size-4" />العقد</Link>
+          <Link to="/contracts/$contractId" params={{ contractId: tenant.primaryContractId }}><FileText className="me-1 size-4" />العقد</Link>
         </Button>
       ) : null}
-      {tenant.hasInvoices ? <Button variant="secondary" className="min-h-9 px-3" asChild><Link to="/invoices"><ReceiptText className="ms-1 size-4" />الفواتير</Link></Button> : null}
-      {tenant.hasArrears ? <Button variant="secondary" className="min-h-9 px-3 text-amber-700" asChild><Link to="/arrears"><TriangleAlert className="ms-1 size-4" />المتأخرات</Link></Button> : null}
+      {tenant.hasInvoices ? <Button variant="secondary" className="min-h-9 px-3" asChild><Link to="/invoices"><ReceiptText className="me-1 size-4" />الفواتير</Link></Button> : null}
+      {tenant.hasArrears ? <Button variant="secondary" className="min-h-9 px-3 text-amber-700" asChild><Link to="/arrears"><TriangleAlert className="me-1 size-4" />المتأخرات</Link></Button> : null}
     </div>
   );
 }
@@ -85,7 +85,7 @@ function TenantCard({ tenant }: Readonly<{ tenant: TenantWorkspaceRow }>) {
   return (
     <Card className="overflow-hidden">
       <CardContent className="space-y-4 p-5">
-        <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+        <div className="flex flex-col gap-3 md:flex-row md:iteme-start md:justify-between">
           <div>
             <p className="text-xs font-black text-primary">مستأجر</p>
             <h3 className="mt-1 text-xl font-black">{tenant.person.full_name}</h3>
@@ -143,9 +143,9 @@ export function TenantsPage() {
   return (
     <div className="space-y-6" dir="rtl">
       <Card className="overflow-hidden border-primary/10 bg-gradient-to-l from-primary/10 via-background to-background">
-        <CardContent className="flex flex-col gap-4 p-6 md:flex-row md:items-center md:justify-between">
+        <CardContent className="flex flex-col gap-4 p-6 md:flex-row md:iteme-center md:justify-between">
           <div className="space-y-2">
-            <div className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-xs font-black text-primary"><Users className="size-4" />مساحة عمل مسترجعة</div>
+            <div className="inline-flex iteme-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-xs font-black text-primary"><Users className="size-4" />مساحة عمل مسترجعة</div>
             <div>
               <h2 className="text-2xl font-black">المستأجرين</h2>
               <p className="text-sm text-muted-foreground">عرض مستقل للمستأجرين مبني بأمان على بيانات الأشخاص والعقود والفواتير الحالية.</p>
@@ -168,7 +168,7 @@ export function TenantsPage() {
 
       <TenantWorkspaceContent isLoading={tenantsQuery.isLoading} rows={rows} />
 
-      <div className="flex items-center justify-between text-sm text-muted-foreground">
+      <div className="flex iteme-center justify-between text-sm text-muted-foreground">
         <span>الصفحة {page} من {totalPages}</span>
         <div className="flex gap-2">
           <Button variant="secondary" disabled={page <= 1} onClick={() => setPage((value) => Math.max(1, value - 1))}>السابق</Button>

@@ -43,12 +43,12 @@ export function PropertiesListPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
+      <div className="flex flex-wrap iteme-center justify-between gap-3">
         <div>
           <h2 className="text-xl font-black">العقارات</h2>
           <p className="text-sm text-muted-foreground">إدارة العقارات كمصدر بيانات أساسي في Supabase.</p>
         </div>
-        <Button asChild><Link to="/properties/new"><Plus className="ms-2 size-4" />إضافة عقار</Link></Button>
+        <Button asChild><Link to="/properties/new"><Plus className="me-2 size-4" />إضافة عقار</Link></Button>
       </div>
 
       <Card>
@@ -121,7 +121,7 @@ export function PropertiesListPage() {
         )}
       </Card>
 
-      <div className="flex items-center justify-between text-sm text-muted-foreground">
+      <div className="flex iteme-center justify-between text-sm text-muted-foreground">
         <span>الصفحة {page} من {totalPages}</span>
         <div className="flex gap-2">
           <Button variant="secondary" disabled={page <= 1} onClick={() => setPage((value) => Math.max(1, value - 1))}>السابق</Button>
