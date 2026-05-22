@@ -16,7 +16,6 @@ import { useUiStore } from '@/store/ui-store';
 const navigation = [
   { to: '/',            labelKey: 'dashboard',   icon: LayoutDashboard },
   { to: '/properties',  labelKey: 'properties',  icon: Building2 },
-  { to: '/people',      labelKey: 'people',      icon: Users },
   { to: '/tenants',     labelKey: 'tenants',      icon: Users },
   { to: '/owners',      labelKey: 'owners',      icon: UserRoundCog },
   { to: '/contracts',   labelKey: 'contracts',   icon: FileText },
@@ -26,6 +25,8 @@ const navigation = [
   { to: '/accounting',  labelKey: 'accounting',  icon: ReceiptText },
   { to: '/reports',     labelKey: 'reports',     icon: Home },
   { to: '/maintenance', labelKey: 'maintenance', icon: Wrench },
+  { to: '/leads',       labelKey: 'leads',       icon: Users },
+  { to: '/property-map', labelKey: 'propertyMap', icon: Map },
   { to: '/settings',   labelKey: 'settings',    icon: Settings },
 ] as const;
 
@@ -42,9 +43,7 @@ const recoveryModules = [
   { to: '/communication', labelKey: 'communications', icon: MessageCircle, enabled: true },
   { to: '/audit-log', labelKey: 'auditLog', icon: ClipboardList, enabled: true },
   { to: '/assistant', labelKey: 'aiAssistant', icon: Bot, enabled: true },
-  { labelKey: 'propertyMap', icon: Map, enabled: false },
   { labelKey: 'lands', icon: Landmark, enabled: false },
-  { labelKey: 'prospects', icon: Users, enabled: false },
   { labelKey: 'commissions', icon: WalletCards, enabled: false },
 ] as const;
 
