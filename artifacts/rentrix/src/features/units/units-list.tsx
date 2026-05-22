@@ -52,12 +52,12 @@ export function UnitsList({ propertyId, unitsQuery }: Readonly<{ propertyId: str
 
   return (
     <Card>
-      <CardHeader className="flex flex-row items-start justify-between gap-3">
+      <CardHeader className="flex flex-row iteme-start justify-between gap-3">
         <div>
           <CardTitle>الوحدات</CardTitle>
           <CardDescription>إدارة وحدات العقار الحالي فقط.</CardDescription>
         </div>
-        <Button onClick={openForCreate}><Plus className="ms-2 size-4" />إضافة وحدة</Button>
+        <Button onClick={openForCreate}><Plus className="me-2 size-4" />إضافة وحدة</Button>
       </CardHeader>
       <CardContent className="space-y-4">
         {archiveCandidate ? (

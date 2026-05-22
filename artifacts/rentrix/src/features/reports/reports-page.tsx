@@ -131,7 +131,7 @@ function toDailyCollectionCsv(rows: DailyCollectionReportRow[]): CsvRow[] {
 
 function SafeAnchor({ href, label }: SafeLinkProps) {
   return (
-    <a className="inline-flex items-center gap-1 font-black text-primary hover:underline" href={href}>
+    <a className="inline-flex iteme-center gap-1 font-black text-primary hover:underline" href={href}>
       {label}
       <ArrowUpLeft className="size-3" />
     </a>
@@ -141,7 +141,7 @@ function SafeAnchor({ href, label }: SafeLinkProps) {
 function ReportCard({ title, description, action, children }: ReportCardProps) {
   return (
     <Card className="overflow-hidden border-primary/10 bg-card/95">
-      <CardHeader className="flex flex-col gap-3 border-b border-border/70 bg-muted/20 md:flex-row md:items-start md:justify-between">
+      <CardHeader className="flex flex-col gap-3 border-b border-border/70 bg-muted/20 md:flex-row md:iteme-start md:justify-between">
         <div>
           <CardTitle>{title}</CardTitle>
           <CardDescription>{description}</CardDescription>
@@ -157,8 +157,8 @@ function DeferredReportCard({ title, reason }: DeferredReportCardProps) {
   return (
     <Card className="border-dashed border-muted-foreground/30 bg-muted/20">
       <CardHeader>
-        <div className="flex items-center justify-between gap-3">
-          <CardTitle className="flex items-center gap-2 text-base"><FileClock className="size-4" />{title}</CardTitle>
+        <div className="flex iteme-center justify-between gap-3">
+          <CardTitle className="flex iteme-center gap-2 text-base"><FileClock className="size-4" />{title}</CardTitle>
           <StatusBadge tone="gray">مؤجل</StatusBadge>
         </div>
         <CardDescription>{reason}</CardDescription>
@@ -170,7 +170,7 @@ function DeferredReportCard({ title, reason }: DeferredReportCardProps) {
 function MetricCard({ label, value, helper, tone = 'blue' }: MetricCardProps) {
   return (
     <div className="rounded-2xl border border-border bg-background/80 p-4">
-      <div className="flex items-center justify-between gap-3">
+      <div className="flex iteme-center justify-between gap-3">
         <p className="text-xs font-bold text-muted-foreground">{label}</p>
         <StatusBadge tone={tone}>قراءة فقط</StatusBadge>
       </div>
@@ -188,7 +188,7 @@ function FiltersPanel({ filters, onChange, onResetCurrentMonth }: Readonly<{
   return (
     <Card className="border-primary/10 bg-gradient-to-br from-primary/10 via-card to-card">
       <CardHeader className="space-y-3">
-        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+        <div className="flex flex-col gap-3 md:flex-row md:iteme-center md:justify-between">
           <div>
             <p className="text-sm font-black text-primary">مركز التقارير التشغيلية</p>
             <h2 className="text-3xl font-black tracking-tight">مركز التقارير</h2>
@@ -214,8 +214,8 @@ function FiltersPanel({ filters, onChange, onResetCurrentMonth }: Readonly<{
             <span>تاريخ الاحتساب (As of)</span>
             <Input type="date" value={filters.asOf} onChange={(event) => onChange({ ...filters, asOf: event.target.value })} />
           </label>
-          <div className="flex items-end">
-            <Button className="w-full" onClick={onResetCurrentMonth} variant="secondary"><RefreshCcw className="ms-2 size-4" />الشهر الحالي</Button>
+          <div className="flex iteme-end">
+            <Button className="w-full" onClick={onResetCurrentMonth} variant="secondary"><RefreshCcw className="me-2 size-4" />الشهر الحالي</Button>
           </div>
         </div>
       </CardHeader>
@@ -426,7 +426,7 @@ function DailyCollectionSection({ rows, receiptRows }: Readonly<{
         </Table>
       </div>
       <div className="border-t border-border/70 p-4">
-        <div className="mb-3 flex items-center justify-between gap-3">
+        <div className="mb-3 flex iteme-center justify-between gap-3">
           <div>
             <p className="font-black">روابط الإيصالات المتاحة</p>
             <p className="text-xs text-muted-foreground">من أحدث {latestReceiptLimit} إيصال عبر خدمة الإيصالات الحالية؛ الرابط يستخدم query string فقط.</p>
@@ -436,11 +436,11 @@ function DailyCollectionSection({ rows, receiptRows }: Readonly<{
         <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-3">
           {receiptRows.map((receipt) => (
             <a key={receipt.id} className="rounded-2xl border border-border bg-background/80 p-3 transition hover:border-primary/40" href={createReceiptPrintHref(receipt.id)}>
-              <div className="flex items-center justify-between gap-2">
+              <div className="flex iteme-center justify-between gap-2">
                 <span className="font-black">{receipt.receipt_number}</span>
                 <span className="text-xs text-muted-foreground">{formatDate(receipt.payment_date)}</span>
               </div>
-              <div className="mt-2 flex items-center justify-between gap-2 text-sm">
+              <div className="mt-2 flex iteme-center justify-between gap-2 text-sm">
                 <span className="text-muted-foreground">{receipt.tenant_name ?? '—'}</span>
                 <span className="font-black" dir="ltr">{formatMoney(receipt.amount)}</span>
               </div>
@@ -496,7 +496,7 @@ export function ReportsPage() {
     <div className="space-y-6" dir="rtl">
       <FiltersPanel filters={filters} onChange={setFilters} onResetCurrentMonth={() => setFilters(getCurrentMonthFilters())} />
 
-      <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-border bg-card p-3">
+      <div className="flex flex-wrap iteme-center gap-2 rounded-2xl border border-border bg-card p-3">
         <CalendarDays className="size-4 text-primary" />
         <span className="text-sm font-bold text-muted-foreground">مدعوم الآن:</span>
         {supportedReportNames.map((name) => <StatusBadge key={name} tone="green">{name}</StatusBadge>)}

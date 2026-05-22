@@ -59,9 +59,9 @@ function getOwnerPageErrorMessage(error: unknown, fallback: string): string {
 function SummaryCard({ label, value, icon: Icon }: SummaryCardProps) {
   return (
     <Card className="overflow-hidden">
-      <CardContent className="flex items-center justify-between gap-4 pt-6">
+      <CardContent className="flex iteme-center justify-between gap-4 pt-6">
         <div><p className="text-sm font-bold text-muted-foreground">{label}</p><p className="mt-2 text-3xl font-black">{value.toLocaleString('ar')}</p></div>
-        <div className="grid size-12 place-items-center rounded-2xl bg-primary/10 text-primary"><Icon className="size-6" /></div>
+        <div className="grid size-12 place-iteme-center rounded-2xl bg-primary/10 text-primary"><Icon className="size-6" /></div>
       </CardContent>
     </Card>
   );
@@ -173,7 +173,7 @@ function OwnerWorkspaceRowView({ row, selectedOwnerId, onEditOwner, onSelectOwne
       <TableCell><OwnerPropertyLinks row={row} /></TableCell>
       <TableCell><OwnershipSummary row={row} /></TableCell>
       <TableCell>{row.activeContractCount > 0 ? row.activeContractCount.toLocaleString('ar') : '—'}</TableCell>
-      <TableCell><div className="flex flex-wrap gap-2"><Button type="button" variant="secondary" className="min-h-9 px-3" onClick={() => onSelectOwner(row.owner.id)}><Eye className="ms-1 size-4" />العلاقات</Button><Button type="button" variant="secondary" className="min-h-9 px-3" onClick={() => onEditOwner(row.owner)}><Pencil className="ms-1 size-4" />تعديل</Button></div></TableCell>
+      <TableCell><div className="flex flex-wrap gap-2"><Button type="button" variant="secondary" className="min-h-9 px-3" onClick={() => onSelectOwner(row.owner.id)}><Eye className="me-1 size-4" />العلاقات</Button><Button type="button" variant="secondary" className="min-h-9 px-3" onClick={() => onEditOwner(row.owner)}><Pencil className="me-1 size-4" />تعديل</Button></div></TableCell>
     </TableRow>
   );
 }
@@ -200,7 +200,7 @@ type OwnerRelationshipsListProps = Readonly<{ linkedProperties: LinkedPropertyIt
 
 function OwnerRelationshipsList({ linkedProperties, endLinkPending, onEditLink, onEndLink }: OwnerRelationshipsListProps) {
   if (!linkedProperties.length) return <p className="rounded-2xl border border-dashed border-border p-4 text-sm text-muted-foreground">لا توجد عقارات مرتبطة بهذا المالك بعد.</p>;
-  return linkedProperties.map(({ property, links }) => links.map((link) => <div key={link.id} className="rounded-2xl border border-border bg-muted/25 p-4"><div className="flex items-start justify-between gap-3"><div><p className="font-black">{property.title}</p><p className="text-xs text-muted-foreground">{property.address}</p></div><StatusBadge tone={link.is_primary ? 'blue' : 'gray'}>{link.is_primary ? 'أساسي' : 'ثانوي'}</StatusBadge></div><div className="mt-3 grid gap-2 text-sm text-muted-foreground sm:grid-cols-3"><span>نسبة الملكية: <b className="text-foreground">{link.ownership_percentage}%</b></span><span>من: <b className="text-foreground">{link.starts_on ?? '—'}</b></span><span>إلى: <b className="text-foreground">{link.ends_on ?? '—'}</b></span></div><div className="mt-4 flex flex-wrap gap-2"><Button type="button" variant="secondary" className="min-h-9 px-3" onClick={() => onEditLink(link)}>تعديل العلاقة</Button><Button type="button" variant="danger" className="min-h-9 px-3" disabled={endLinkPending} onClick={() => onEndLink(link)}>إنهاء العلاقة</Button></div></div>));
+  return linkedProperties.map(({ property, links }) => links.map((link) => <div key={link.id} className="rounded-2xl border border-border bg-muted/25 p-4"><div className="flex iteme-start justify-between gap-3"><div><p className="font-black">{property.title}</p><p className="text-xs text-muted-foreground">{property.address}</p></div><StatusBadge tone={link.is_primary ? 'blue' : 'gray'}>{link.is_primary ? 'أساسي' : 'ثانوي'}</StatusBadge></div><div className="mt-3 grid gap-2 text-sm text-muted-foreground sm:grid-cols-3"><span>نسبة الملكية: <b className="text-foreground">{link.ownership_percentage}%</b></span><span>من: <b className="text-foreground">{link.starts_on ?? '—'}</b></span><span>إلى: <b className="text-foreground">{link.ends_on ?? '—'}</b></span></div><div className="mt-4 flex flex-wrap gap-2"><Button type="button" variant="secondary" className="min-h-9 px-3" onClick={() => onEditLink(link)}>تعديل العلاقة</Button><Button type="button" variant="danger" className="min-h-9 px-3" disabled={endLinkPending} onClick={() => onEndLink(link)}>إنهاء العلاقة</Button></div></div>));
 }
 
 type OwnershipLinkFormProps = Readonly<{
@@ -223,7 +223,7 @@ function OwnershipLinkForm({ values, availableProperties, editingLink, error, is
       {error ? <div className="mt-3 rounded-2xl border border-destructive/20 bg-destructive/10 p-3 text-sm font-bold text-destructive">{error}</div> : null}
       <div className="mt-4 grid gap-3 sm:grid-cols-[1fr_8rem]"><OwnerPropertySelect value={values.property_id} onValueChange={(propertyId) => onValueChange('property_id', propertyId)} disabled={isEditing || !availableProperties.length} properties={availableProperties} /><Input type="number" min="0.01" max="100" step="0.01" value={values.ownership_percentage} onChange={(event) => onValueChange('ownership_percentage', event.target.value)} aria-label="نسبة الملكية" /></div>
       <div className="mt-3 grid gap-3 sm:grid-cols-2"><Field label="تاريخ البداية"><Input type="date" value={values.starts_on} onChange={(event) => onValueChange('starts_on', event.target.value)} /></Field><Field label="تاريخ النهاية"><Input type="date" value={values.ends_on} onChange={(event) => onValueChange('ends_on', event.target.value)} /></Field></div>
-      <OwnerCheckbox checked={values.is_primary} label="مالك أساسي" onCheckedChange={(checked) => onValueChange('is_primary', checked)} className="mt-3 flex items-center gap-3 rounded-2xl border border-border bg-muted/30 p-3 text-sm font-bold" />
+      <OwnerCheckbox checked={values.is_primary} label="مالك أساسي" onCheckedChange={(checked) => onValueChange('is_primary', checked)} className="mt-3 flex iteme-center gap-3 rounded-2xl border border-border bg-muted/30 p-3 text-sm font-bold" />
       <Button className="mt-3 w-full" type="submit" disabled={!values.property_id || isSaving}>{isEditing ? 'حفظ علاقة الملكية' : 'ربط المالك بالعقار'}</Button>
       {isEditing ? <Button className="mt-2 w-full" type="button" variant="secondary" onClick={onCancelEdit}>إلغاء التعديل</Button> : null}
     </form>
@@ -310,7 +310,7 @@ export function OwnersPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-3"><div><h2 className="text-xl font-black">إدارة الملاك</h2><p className="text-sm text-muted-foreground">إدارة علاقات ملكية العقارات بشكل منفصل عن الحسابات والتسويات المالية.</p></div><Button onClick={openCreateForm}><Plus className="ms-2 size-4" />إضافة مالك</Button></div>
+      <div className="flex flex-wrap iteme-center justify-between gap-3"><div><h2 className="text-xl font-black">إدارة الملاك</h2><p className="text-sm text-muted-foreground">إدارة علاقات ملكية العقارات بشكل منفصل عن الحسابات والتسويات المالية.</p></div><Button onClick={openCreateForm}><Plus className="me-2 size-4" />إضافة مالك</Button></div>
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4"><SummaryCard label="إجمالي الملاك" value={summary.totalOwners} icon={Users} /><SummaryCard label="الملاك النشطون" value={summary.activeOwners} icon={Users} /><SummaryCard label="عقارات مرتبطة" value={summary.linkedPropertiesCount} icon={Building2} /><SummaryCard label="عقارات بلا علاقة مالك" value={summary.propertiesWithoutLinkedOwner} icon={LinkIcon} /></div>
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1.1fr)_minmax(24rem,0.9fr)]">
         <Card className="overflow-hidden"><CardHeader><CardTitle>مساحة عمل الملاك</CardTitle><CardDescription>ملخص آمن من بيانات الملاك والعقارات والعقود الحالية بدون أرصدة أو تسويات افتراضية.</CardDescription></CardHeader><CardContent><OwnerWorkspaceTable rows={filteredOwnerRows} search={ownerSearch} selectedOwner={selectedOwner} onCreateOwner={openCreateForm} onEditOwner={openEditForm} onSearchChange={setOwnerSearch} onSelectOwner={setSelectedOwnerId} /></CardContent></Card>

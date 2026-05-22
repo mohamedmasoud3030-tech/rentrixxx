@@ -28,12 +28,12 @@ export default defineConfig({
       workbox: {
         globPatterns: ["**/*.{js,css,html,ico,png,svg,webp,woff2}"],
         navigateFallback: "/offline.html",
-        navigateFallbackDenylist: [/^\/api\//, /^https:\/\/.*supabase\.co\//],
-        runtimeCaching: [{
-          urlPattern: ({ request }) => request.destination === "document",
-          handler: "NetworkFirst",
-          options: { cacheName: "pages" },
-        }],
+        navigateFallbackDenylist: [
+          /^\/api\//,
+          /^\/auth\/callback(?:$|\?)/,
+          /^\/auth\/confirm(?:$|\?)/,
+          /^\/(?:functions|rest|storage|realtime|auth)\/v1\//,
+        ],
       },
     }),
     ...(process.env.NODE_ENV !== "production" &&

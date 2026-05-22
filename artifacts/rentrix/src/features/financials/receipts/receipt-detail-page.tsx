@@ -54,7 +54,7 @@ function ReceiptPrintDocument({ receipt }: Readonly<{ receipt: ReceiptRecord }>)
     <Card className="mx-auto max-w-3xl overflow-hidden border-primary/10 bg-card print:border-0 print:shadow-none">
       <CardContent className="space-y-8 p-8 print:p-0">
         <header className="flex flex-col gap-5 border-b pb-6 print:border-slate-300">
-          <div className="flex items-start justify-between gap-4">
+          <div className="flex iteme-start justify-between gap-4">
             <div>
               <p className="text-sm font-bold text-muted-foreground print:text-slate-500">{defaultCompanyLocalSettings.companyName}</p>
               <h1 className="mt-2 text-3xl font-black text-foreground print:text-slate-950">إيصال دفع</h1>
@@ -108,15 +108,15 @@ export function ReceiptDetailPage() {
 
   return (
     <div className="space-y-6 print:bg-white" dir="rtl">
-      <div className="flex flex-wrap items-start justify-between gap-3 print:hidden">
+      <div className="flex flex-wrap iteme-start justify-between gap-3 print:hidden">
         <div>
           <p className="text-sm font-black text-primary">Receipt #{receiptId ? receiptId.slice(0, 8) : '—'}</p>
           <h2 className="text-3xl font-black">عرض إيصال الدفع</h2>
           <p className="text-sm text-muted-foreground">عرض جاهز للطباعة بدون إضافة اعتماد PDF جديد.</p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <Button variant="secondary" asChild><Link to="/financials"><ArrowRight className="ms-2 size-4" />العودة للمالية</Link></Button>
-          <Button onClick={() => globalThis.print()}><Printer className="ms-2 size-4" />طباعة</Button>
+          <Button variant="secondary" asChild><Link to="/financials"><ArrowRight className="me-2 size-4" />العودة للمالية</Link></Button>
+          <Button onClick={() => globalThis.print()}><Printer className="me-2 size-4" />طباعة</Button>
         </div>
       </div>
 
