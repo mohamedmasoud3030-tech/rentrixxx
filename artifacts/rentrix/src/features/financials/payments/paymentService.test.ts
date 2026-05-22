@@ -29,6 +29,21 @@ describe('postReceiptAtomic', () => {
   });
 
 
+
+  it('throws when RPC succeeds but returns an empty payment id', async () => {
+    supabaseMock.rpc.mockResolvedValue({ data: '', error: null });
+    const { postReceiptAtomic } = await import('./paymentService');
+    const payload = {
+      invoice_id: 'inv_1',
+      amount: 50,
+      method: 'cash' as const,
+      date: '2026-05-14',
+      reference: null,
+    };
+
+    await expect(postReceiptAtomic(payload)).rejects.toThrow('post_receipt_atomic returned an invalid payment id');
+  });
+
   it('propagates RPC validation/authorization errors from post_receipt_atomic', async () => {
     const { postReceiptAtomic } = await import('./paymentService');
     const payload = {

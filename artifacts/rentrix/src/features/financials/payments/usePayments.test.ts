@@ -64,4 +64,12 @@ describe('usePostPayment', () => {
     mutationOptions.onError(new Error('Payment exceeds remaining balance'));
     expect(mutationMock.toastError).toHaveBeenCalledWith('Payment exceeds remaining balance');
   });
+
+  it('shows fallback error toast when payment mutation fails with a non-Error value', async () => {
+    const { usePostPayment } = await import('./usePayments');
+    const mutationOptions = usePostPayment() as unknown as { onError: (error: unknown) => void };
+
+    mutationOptions.onError('rpc exploded');
+    expect(mutationMock.toastError).toHaveBeenCalledWith('تعذر تسجيل الدفعة');
+  });
 });
