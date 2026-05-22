@@ -64,6 +64,7 @@ export type Database = {
       owners: {
         Row: {
           id: string;
+          person_id: string | null;
           full_name: string;
           display_name: string | null;
           phone: string | null;
@@ -75,6 +76,7 @@ export type Database = {
           is_active: boolean;
           created_at: string;
           updated_at: string;
+          deleted_at: string | null;
         };
         Insert: Partial<Database['public']['Tables']['owners']['Row']> & Pick<Database['public']['Tables']['owners']['Row'], 'full_name'>;
         Update: Partial<Database['public']['Tables']['owners']['Row']>;
