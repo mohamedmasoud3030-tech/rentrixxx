@@ -29,7 +29,22 @@ import type {
   OverdueInvoicesReport,
   PaymentTotalsReport,
 } from '@/services/financial/financialReportsService';
-export { getAgingBucketKey } from '@/services/financial/financialReportsService';
+export {
+  filterInvoicesForReport,
+  summarizeInvoiceTotals,
+  summarizePaymentTotals,
+  summarizeExpenseTotals,
+  summarizeOutstandingBalance,
+  summarizeCollectionReport,
+  summarizeDailyCollectionReport,
+  summarizeFinancialPeriodSummaryReport,
+  summarizeFinancialCashflowReport,
+  summarizeExpenseBreakdownReport,
+  summarizeOverdueInvoicesReport,
+  summarizeAgedReceivablesReport,
+  summarizeArrearsSummaryReport,
+  getAgingBucketKey,
+} from '@/services/financial/financialReportsService';
 export type { FinancialReportStatus, FinancialReportFilters, InvoiceTotalsReport, PaymentTotalsReport, ExpenseTotalsReport, OutstandingBalanceReport, CollectionSummaryReport, PaymentMethodTotals, DailyCollectionReportRow, DailyCollectionReport, FinancialPeriodSummaryReport, FinancialCashflowReportRow, FinancialCashflowReport, ExpenseBreakdownReportFilters, ExpenseBreakdownCategoryRow, ExpenseBreakdownPropertyRow, ExpenseBreakdownReport, ArrearsReportFilters, AgingBucketKey, AgedReceivablesBucket, OverdueInvoiceReportRow, AgedReceivablesGroupRow, AgedReceivablesReport, OverdueInvoicesReport, ArrearsSummaryReport } from '@/services/financial/financialReportsService';
 export async function getInvoiceTotalsReport(filters: FinancialReportFilters): Promise<InvoiceTotalsReport> {
   return getInvoiceTotalsReportService(supabase, filters);
