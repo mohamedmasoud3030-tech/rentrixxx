@@ -774,18 +774,71 @@ CREATE TABLE IF NOT EXISTS public.governance (id uuid PRIMARY KEY DEFAULT gen_ra
 CREATE TABLE IF NOT EXISTS public.serials (id uuid PRIMARY KEY DEFAULT gen_random_uuid(), scope text NOT NULL DEFAULT 'default', value bigint NOT NULL DEFAULT 0, updated_at timestamptz DEFAULT now());
 CREATE TABLE IF NOT EXISTS public.profiles (id uuid PRIMARY KEY DEFAULT gen_random_uuid(), created_at timestamptz DEFAULT now());
 
-CREATE OR REPLACE FUNCTION public.increment_serial(scope_name text)
-RETURNS bigint
-LANGUAGE plpgsql
-AS $$
-DECLARE next_value bigint;
+DO $outer$
+DECLARE
+  existing_returns_bigint boolean;
+  function_exists boolean;
+  v_schema_name constant text := 'public';
+  v_function_name constant text := 'increment_serial';
+  v_function_args constant text := 'scope_name text';
 BEGIN
-  INSERT INTO public.serials(scope, value) VALUES (scope_name, 1)
-  ON CONFLICT (scope) DO UPDATE SET value = public.serials.value + 1, updated_at = now()
-  RETURNING value INTO next_value;
-  RETURN next_value;
-END;
-$$;
+  SELECT EXISTS (
+    SELECT 1
+    FROM pg_proc p
+    JOIN pg_namespace n ON n.oid = p.pronamespace
+    WHERE n.nspname = v_schema_name
+      AND p.proname = v_function_name
+      AND pg_get_function_identity_arguments(p.oid) = v_function_args
+  ) INTO function_exists;
+
+  SELECT EXISTS (
+    SELECT 1
+    FROM pg_proc p
+    JOIN pg_namespace n ON n.oid = p.pronamespace
+    WHERE n.nspname = v_schema_name
+      AND p.proname = v_function_name
+      AND pg_get_function_identity_arguments(p.oid) = v_function_args
+      AND p.prorettype = 'bigint'::regtype
+  ) INTO existing_returns_bigint;
+
+  IF function_exists AND NOT existing_returns_bigint THEN
+    IF EXISTS (
+      SELECT 1
+      FROM pg_depend d
+      JOIN pg_proc p ON p.oid = d.refobjid
+      JOIN pg_namespace n ON n.oid = p.pronamespace
+      WHERE n.nspname = v_schema_name
+        AND p.proname = v_function_name
+        AND pg_get_function_identity_arguments(p.oid) = v_function_args
+        AND d.classid = 'pg_proc'::regclass
+        AND d.deptype IN ('n', 'a', 'i', 'e')
+    ) THEN
+      RAISE NOTICE 'Skipping % return-type replacement: dependent objects exist for %.%(%)',
+        v_function_name,
+        v_schema_name,
+        v_function_name,
+        v_function_args;
+      RETURN;
+    END IF;
+
+    EXECUTE format('DROP FUNCTION %I.%I(%s)', v_schema_name, v_function_name, v_function_args);
+  END IF;
+
+  EXECUTE $fn$
+    CREATE OR REPLACE FUNCTION public.increment_serial(scope_name text)
+    RETURNS bigint
+    LANGUAGE plpgsql
+    AS $body$
+    DECLARE next_value bigint;
+    BEGIN
+      INSERT INTO public.serials(scope, value) VALUES (scope_name, 1)
+      ON CONFLICT (scope) DO UPDATE SET value = public.serials.value + 1, updated_at = now()
+      RETURNING value INTO next_value;
+      RETURN next_value;
+    END;
+    $body$;
+  $fn$;
+END $outer$;
 
 CREATE OR REPLACE FUNCTION public.post_receipt_atomic(payload jsonb)
 RETURNS text

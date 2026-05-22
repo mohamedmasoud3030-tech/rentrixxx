@@ -131,16 +131,23 @@ end $$;
 -- ---------------------------------------------------------------------------
 -- 4. audit_log — keep existing split policies, just harden the check
 -- ---------------------------------------------------------------------------
-drop policy if exists audit_log_select on public.audit_log;
-drop policy if exists audit_log_insert on public.audit_log;
+do $$
+begin
+  if to_regclass('public.audit_log') is not null then
+    drop policy if exists audit_log_select on public.audit_log;
+    drop policy if exists audit_log_insert on public.audit_log;
 
-create policy audit_log_select
-on public.audit_log for select to authenticated
-using (public.is_app_user());
+    create policy audit_log_select
+    on public.audit_log for select to authenticated
+    using (public.is_app_user());
 
-create policy audit_log_insert
-on public.audit_log for insert to authenticated
-with check (public.is_app_user());
+    create policy audit_log_insert
+    on public.audit_log for insert to authenticated
+    with check (public.is_app_user());
+  else
+    raise notice 'Skipping audit_log policy hardening because public.audit_log does not exist.';
+  end if;
+end $$;
 
 -- ---------------------------------------------------------------------------
 -- 5. users table — split into read/write with role awareness
