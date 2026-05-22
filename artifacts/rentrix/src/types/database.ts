@@ -163,6 +163,25 @@ export type Database = {
         Update: Partial<Database['public']['Tables']['people']['Row']>;
         Relationships: [];
       };
+
+      leads: {
+        Row: {
+          id: string;
+          full_name: string;
+          phone: string | null;
+          email: string | null;
+          source: string | null;
+          status: 'new' | 'contacted' | 'qualified' | 'won' | 'lost';
+          notes: string | null;
+          assigned_to: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: Partial<Database['public']['Tables']['leads']['Row']> & Pick<Database['public']['Tables']['leads']['Row'], 'full_name'>;
+        Update: Partial<Database['public']['Tables']['leads']['Row']>;
+        Relationships: [];
+      };
+
       contracts: {
         Row: {
           id: string;
