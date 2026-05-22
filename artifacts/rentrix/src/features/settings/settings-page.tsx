@@ -16,6 +16,7 @@ import {
 import { supportedCurrencies } from '@lib/format';
 import { getAppLanguageState } from '@/lib/i18n';
 import { useUiStore } from '@/store/ui-store';
+import { supabase } from '@/integrations/supabase/client';
 import { useCompanySettings, useUpdateCompanySettings } from './useCompanySettings';
 import {
   areCompanySettingsDraftsEqual,
@@ -240,6 +241,58 @@ function CompanySettingsPreviewCard({ draft, formattedPreviewDate, formattedPrev
   );
 }
 
+
+function ChangePasswordCard() {
+  const [nextPassword, setNextPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [saving, setSaving] = useState(false);
+
+  const handleChangePassword = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!nextPassword) {
+      toast.error('يرجى إدخال كلمة المرور الجديدة');
+      return;
+    }
+    if (nextPassword.length < 8) {
+      toast.error('يجب أن تكون كلمة المرور الجديدة 8 أحرف على الأقل');
+      return;
+    }
+    if (nextPassword !== confirmPassword) {
+      toast.error('تأكيد كلمة المرور غير مطابق');
+      return;
+    }
+
+    setSaving(true);
+    try {
+      const { error } = await supabase.auth.updateUser({ password: nextPassword });
+      if (error) throw error;
+      setNextPassword('');
+      setConfirmPassword('');
+      toast.success('تم تحديث كلمة المرور بنجاح');
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'تعذر تحديث كلمة المرور');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>تغيير كلمة المرور</CardTitle>
+        <CardDescription>تحديث كلمة مرور الحساب الحالي عبر مزود المصادقة (قد يطلب المزود إعادة تسجيل الدخول).</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <form className="space-y-3" onSubmit={handleChangePassword}>
+          <Input type="password" placeholder="كلمة المرور الجديدة" value={nextPassword} onChange={(e) => setNextPassword(e.target.value)} />
+          <Input type="password" placeholder="تأكيد كلمة المرور الجديدة" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} />
+          <Button type="submit" disabled={saving}>{saving ? 'جارٍ التحديث...' : 'تحديث كلمة المرور'}</Button>
+        </form>
+      </CardContent>
+    </Card>
+  );
+}
+
 function toggleUserStatus(users: UserAccount[], email: string): UserAccount[] {
   return users.map((user) => user.email === email ? { ...user, active: !user.active } : user);
 }
@@ -438,5 +491,6 @@ export function SettingsPage() {
       onToggleUser={handleToggleUser}
     />
     <AppPreferencesCard lang={pageLanguage.language} theme={theme} onLanguageChange={handleDefaultLanguageChange} onToggleTheme={handleToggleTheme} />
+    <ChangePasswordCard />
   </div>;
 }

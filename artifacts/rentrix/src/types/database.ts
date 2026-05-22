@@ -31,6 +31,36 @@ export type Database = {
         Update: Partial<Database['public']['Tables']['company_settings']['Row']>;
         Relationships: [];
       };
+      users: {
+        Row: {
+          id: string;
+          email: string;
+          full_name: string;
+          role: 'ADMIN' | 'MANAGER' | 'USER' | 'TENANT';
+          status: string;
+          is_active: boolean;
+          created_at: string;
+          updated_at: string;
+          deleted_at: string | null;
+        };
+        Insert: Partial<Database['public']['Tables']['users']['Row']>;
+        Update: Partial<Database['public']['Tables']['users']['Row']>;
+        Relationships: [];
+      };
+      audit_log: {
+        Row: {
+          id: string;
+          actor_user_id: string | null;
+          action: string;
+          entity_type: string | null;
+          entity_id: string | null;
+          details: Json;
+          created_at: string;
+        };
+        Insert: Partial<Database['public']['Tables']['audit_log']['Row']> & Pick<Database['public']['Tables']['audit_log']['Row'], 'action'>;
+        Update: Partial<Database['public']['Tables']['audit_log']['Row']>;
+        Relationships: [];
+      };
       owners: {
         Row: {
           id: string;

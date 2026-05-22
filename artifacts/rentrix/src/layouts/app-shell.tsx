@@ -39,13 +39,13 @@ const bottomNavItems = [
 ] as const;
 
 const recoveryModules = [
-  { labelKey: 'communications', icon: MessageCircle },
-  { labelKey: 'propertyMap',    icon: Map },
-  { labelKey: 'lands',          icon: Landmark },
-  { labelKey: 'prospects',      icon: Users },
-  { labelKey: 'commissions',    icon: WalletCards },
-  { labelKey: 'auditLog',       icon: ClipboardList },
-  { labelKey: 'aiAssistant',    icon: Bot },
+  { to: '/communication', labelKey: 'communications', icon: MessageCircle, enabled: true },
+  { to: '/audit-log', labelKey: 'auditLog', icon: ClipboardList, enabled: true },
+  { to: '/assistant', labelKey: 'aiAssistant', icon: Bot, enabled: true },
+  { labelKey: 'propertyMap', icon: Map, enabled: false },
+  { labelKey: 'lands', icon: Landmark, enabled: false },
+  { labelKey: 'prospects', icon: Users, enabled: false },
+  { labelKey: 'commissions', icon: WalletCards, enabled: false },
 ] as const;
 
 type SharedLabel = (key: string) => string;
@@ -91,6 +91,18 @@ function RecoveryLinks({
       ) : null}
       {recoveryModules.map((item) => {
         const Icon = item.icon;
+        if (item.enabled && item.to) {
+          return (
+            <Link
+              key={item.labelKey}
+              to={item.to}
+              className="flex min-h-11 items-center gap-3 rounded-2xl px-3 py-3 text-sm font-black text-sidebar-foreground transition hover:bg-sidebar-accent hover:text-white [&.active]:bg-primary [&.active]:text-primary-foreground"
+            >
+              <Icon className="size-5 shrink-0" />
+              {expanded ? <span>{sharedLabel(item.labelKey)}</span> : null}
+            </Link>
+          );
+        }
         return (
           <div
             key={item.labelKey}
