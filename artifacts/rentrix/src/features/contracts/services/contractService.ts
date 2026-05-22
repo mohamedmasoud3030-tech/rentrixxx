@@ -67,7 +67,7 @@ export async function softDeleteContract(contractId: string): Promise<void> {
 }
 
 export async function renewContract(contractId: string, payload: RenewalPayload): Promise<string> {
-  const { data, error } = await supabase.rpc('renew_contract_atomic', { contract_id: contractId, ...payload }).returns<string>();
+  const { data, error } = await supabase.rpc('renew_contract_atomic', { old_contract_id: contractId, new_contract_data: payload }).returns<string>();
   if (error) throw error;
   return data;
 }

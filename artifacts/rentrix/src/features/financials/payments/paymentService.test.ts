@@ -25,7 +25,7 @@ describe('postReceiptAtomic', () => {
     };
 
     await expect(postReceiptAtomic(payload)).resolves.toBe('payment_123');
-    expect(supabaseMock.rpc).toHaveBeenCalledWith('post_receipt_atomic', payload);
+    expect(supabaseMock.rpc).toHaveBeenCalledWith('post_receipt_atomic', { payload });
   });
 
 
