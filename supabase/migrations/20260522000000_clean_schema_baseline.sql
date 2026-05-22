@@ -2,11 +2,11 @@ create extension if not exists pgcrypto;
 
 create type public.app_role as enum ('ADMIN', 'MANAGER', 'USER', 'TENANT');
 create type public.user_status as enum ('ACTIVE', 'DISABLED', 'SUSPENDED');
-create type public.contract_status as enum ('DRAFT', 'ACTIVE', 'ENDED', 'CANCELLED');
-create type public.invoice_status as enum ('DRAFT', 'ISSUED', 'PARTIAL', 'PAID', 'VOID');
-create type public.receipt_status as enum ('POSTED', 'VOID');
-create type public.payment_method as enum ('CASH', 'BANK_TRANSFER', 'CARD', 'CHECK', 'OTHER');
-create type public.maintenance_status as enum ('OPEN', 'IN_PROGRESS', 'DONE', 'CANCELLED');
+create type public.contract_status as enum ('draft', 'active', 'expired', 'terminated');
+create type public.invoice_status as enum ('draft', 'issued', 'partial', 'paid', 'overdue', 'void');
+create type public.receipt_status as enum ('posted', 'void');
+create type public.payment_method as enum ('cash', 'bank_transfer', 'card', 'check', 'other');
+create type public.maintenance_status as enum ('open', 'in_progress', 'done', 'cancelled');
 
 create or replace function public.set_updated_at()
 returns trigger
@@ -26,16 +26,19 @@ create table public.users (
   status public.user_status not null default 'ACTIVE',
   is_active boolean not null default true,
   created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now()
+  updated_at timestamptz not null default now(),
+  deleted_at timestamptz
 );
 
 create table public.properties (
   id uuid primary key default gen_random_uuid(),
-  name text not null,
+  title text not null,
   address text,
+  status text not null default 'active' check (status in ('active','inactive','maintenance','sold')),
   created_by uuid references public.users(id),
   created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now()
+  updated_at timestamptz not null default now(),
+  deleted_at timestamptz
 );
 
 create table public.people (
@@ -44,7 +47,8 @@ create table public.people (
   email text,
   phone text,
   created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now()
+  updated_at timestamptz not null default now(),
+  deleted_at timestamptz
 );
 
 create table public.owners (
@@ -53,6 +57,7 @@ create table public.owners (
   notes text,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
+  deleted_at timestamptz,
   unique(person_id)
 );
 
@@ -61,6 +66,7 @@ create table public.tenants (
   person_id uuid not null references public.people(id) on delete restrict,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
+  deleted_at timestamptz,
   unique(person_id)
 );
 
@@ -68,11 +74,13 @@ create table public.units (
   id uuid primary key default gen_random_uuid(),
   property_id uuid not null references public.properties(id) on delete cascade,
   owner_id uuid references public.owners(id) on delete set null,
-  code text not null,
+  unit_number text not null,
+  status text not null default 'available' check (status in ('available','occupied','maintenance','reserved')),
   rent_amount numeric(12,2) not null default 0 check (rent_amount >= 0),
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
-  unique(property_id, code)
+  deleted_at timestamptz,
+  unique(property_id, unit_number)
 );
 
 create table public.contracts (
@@ -82,9 +90,10 @@ create table public.contracts (
   start_date date not null,
   end_date date,
   monthly_rent numeric(12,2) not null check (monthly_rent >= 0),
-  status public.contract_status not null default 'DRAFT',
+  status public.contract_status not null default 'draft',
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
+  deleted_at timestamptz,
   check (end_date is null or end_date >= start_date)
 );
 
@@ -94,10 +103,11 @@ create table public.invoices (
   issue_date date not null,
   due_date date not null,
   amount numeric(12,2) not null check (amount >= 0),
-  balance_due numeric(12,2) not null check (balance_due >= 0),
-  status public.invoice_status not null default 'ISSUED',
+  paid_amount numeric(12,2) not null default 0 check (paid_amount >= 0),
+  status public.invoice_status not null default 'issued',
   created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now()
+  updated_at timestamptz not null default now(),
+  deleted_at timestamptz
 );
 
 create table public.receipts (
@@ -106,12 +116,14 @@ create table public.receipts (
   receipt_date date not null default current_date,
   payer_tenant_id uuid references public.tenants(id) on delete set null,
   amount_total numeric(12,2) not null check (amount_total > 0),
-  method public.payment_method not null default 'CASH',
-  status public.receipt_status not null default 'POSTED',
+  method public.payment_method not null default 'cash',
+  reference text,
+  status public.receipt_status not null default 'posted',
   voided_at timestamptz,
   created_by uuid references public.users(id),
   created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now()
+  updated_at timestamptz not null default now(),
+  deleted_at timestamptz
 );
 
 create table public.receipt_allocations (
@@ -120,6 +132,7 @@ create table public.receipt_allocations (
   invoice_id uuid not null references public.invoices(id) on delete cascade,
   amount numeric(12,2) not null check (amount > 0),
   created_at timestamptz not null default now(),
+  deleted_at timestamptz,
   unique(receipt_id, invoice_id)
 );
 
@@ -129,10 +142,13 @@ create table public.payments (
   invoice_id uuid references public.invoices(id) on delete set null,
   receipt_id uuid references public.receipts(id) on delete set null,
   amount numeric(12,2) not null check (amount > 0),
-  paid_at timestamptz not null default now(),
-  method public.payment_method not null default 'CASH',
+  payment_date date not null default current_date,
+  payment_method public.payment_method not null default 'cash',
+  status text not null default 'posted' check (status in ('posted','void')),
+  voided_at timestamptz,
   created_by uuid references public.users(id),
-  created_at timestamptz not null default now()
+  created_at timestamptz not null default now(),
+  deleted_at timestamptz
 );
 
 create table public.expenses (
@@ -144,7 +160,8 @@ create table public.expenses (
   notes text,
   created_by uuid references public.users(id),
   created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now()
+  updated_at timestamptz not null default now(),
+  deleted_at timestamptz
 );
 
 create table public.maintenance_requests (
@@ -154,10 +171,11 @@ create table public.maintenance_requests (
   tenant_id uuid references public.tenants(id) on delete set null,
   title text not null,
   description text,
-  status public.maintenance_status not null default 'OPEN',
+  status public.maintenance_status not null default 'open',
   created_by uuid references public.users(id),
   created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now()
+  updated_at timestamptz not null default now(),
+  deleted_at timestamptz
 );
 
 create table public.company_settings (
@@ -271,21 +289,50 @@ as $$
 declare
   v_uid uuid := auth.uid();
   v_role public.app_role;
+  v_invoice_id uuid;
+  v_amount numeric;
+  v_method public.payment_method;
+  v_date date;
+  v_reference text;
+  v_invoice record;
+  v_receipt_id uuid;
+  v_payment_id uuid;
 begin
-  if v_uid is null then
-    raise exception 'AUTH_REQUIRED: user must be authenticated';
-  end if;
+  if v_uid is null then raise exception 'AUTH_REQUIRED: user must be authenticated'; end if;
+  select role into v_role from public.users where id = v_uid and status = 'ACTIVE' and deleted_at is null;
+  if v_role is null then raise exception 'USER_NOT_FOUND_OR_INACTIVE: caller must exist in public.users and be active'; end if;
+  if v_role not in ('ADMIN','MANAGER') then raise exception 'FORBIDDEN: ADMIN or MANAGER role required'; end if;
 
-  select role into v_role from public.users where id = v_uid and status = 'ACTIVE';
-  if v_role is null then
-    raise exception 'USER_NOT_FOUND_OR_INACTIVE: caller must exist in public.users and be active';
-  end if;
+  v_invoice_id := (payload->>'invoice_id')::uuid;
+  v_amount := (payload->>'amount')::numeric;
+  v_method := coalesce((payload->>'method')::public.payment_method,'cash'::public.payment_method);
+  v_date := coalesce((payload->>'date')::date,current_date);
+  v_reference := payload->>'reference';
 
-  if v_role not in ('ADMIN', 'MANAGER') then
-    raise exception 'FORBIDDEN: ADMIN or MANAGER role required';
-  end if;
+  if v_invoice_id is null then raise exception 'VALIDATION_ERROR: invoice_id is required'; end if;
+  if v_amount is null or v_amount <= 0 then raise exception 'VALIDATION_ERROR: amount must be positive'; end if;
 
-  return jsonb_build_object('ok', true, 'fn', 'post_receipt_atomic', 'payload', coalesce(payload, '{}'::jsonb));
+  select * into v_invoice from public.invoices where id=v_invoice_id and deleted_at is null for update;
+  if not found then raise exception 'NOT_FOUND: invoice not found'; end if;
+  if (v_invoice.amount - v_invoice.paid_amount) < v_amount then raise exception 'VALIDATION_ERROR: overpayment not allowed'; end if;
+
+  insert into public.receipts(receipt_date,payer_tenant_id,amount_total,method,reference,status,created_by)
+  values(v_date,(select tenant_id from public.contracts where id=v_invoice.contract_id),v_amount,v_method,v_reference,'posted',v_uid)
+  returning id into v_receipt_id;
+
+  insert into public.payments(contract_id,invoice_id,receipt_id,amount,payment_date,payment_method,status,created_by)
+  values(v_invoice.contract_id,v_invoice.id,v_receipt_id,v_amount,v_date,v_method,'posted',v_uid)
+  returning id into v_payment_id;
+
+  insert into public.receipt_allocations(receipt_id,invoice_id,amount) values(v_receipt_id,v_invoice.id,v_amount);
+
+  update public.invoices
+  set paid_amount = paid_amount + v_amount,
+      status = case when paid_amount + v_amount >= amount then 'paid'::public.invoice_status else 'partial'::public.invoice_status end,
+      updated_at = now()
+  where id = v_invoice.id;
+
+  return jsonb_build_object('success', true, 'receipt_id', v_receipt_id, 'payment_id', v_payment_id);
 end;
 $$;
 
@@ -294,24 +341,29 @@ returns jsonb
 language plpgsql
 security invoker
 as $$
-declare
-  v_uid uuid := auth.uid();
-  v_role public.app_role;
+declare v_uid uuid := auth.uid(); v_role public.app_role; v_old public.contracts%rowtype; v_new_id uuid;
 begin
-  if v_uid is null then
-    raise exception 'AUTH_REQUIRED: user must be authenticated';
-  end if;
+  if v_uid is null then raise exception 'AUTH_REQUIRED: user must be authenticated'; end if;
+  select role into v_role from public.users where id=v_uid and status='ACTIVE' and deleted_at is null;
+  if v_role is null then raise exception 'USER_NOT_FOUND_OR_INACTIVE: caller must exist in public.users and be active'; end if;
+  if v_role not in ('ADMIN','MANAGER') then raise exception 'FORBIDDEN: ADMIN or MANAGER role required'; end if;
 
-  select role into v_role from public.users where id = v_uid and status = 'ACTIVE';
-  if v_role is null then
-    raise exception 'USER_NOT_FOUND_OR_INACTIVE: caller must exist in public.users and be active';
-  end if;
+  select * into v_old from public.contracts where id=old_contract_id and deleted_at is null for update;
+  if not found then raise exception 'NOT_FOUND: old contract not found'; end if;
 
-  if v_role not in ('ADMIN', 'MANAGER') then
-    raise exception 'FORBIDDEN: ADMIN or MANAGER role required';
-  end if;
+  update public.contracts set status='expired', end_date=coalesce(end_date,current_date), updated_at=now() where id=old_contract_id;
 
-  return jsonb_build_object('ok', true, 'fn', 'renew_contract_atomic', 'old_contract_id', old_contract_id, 'new_contract_data', coalesce(new_contract_data, '{}'::jsonb));
+  insert into public.contracts(unit_id,tenant_id,start_date,end_date,monthly_rent,status)
+  values(
+    coalesce((new_contract_data->>'unit_id')::uuid, v_old.unit_id),
+    coalesce((new_contract_data->>'tenant_id')::uuid, v_old.tenant_id),
+    coalesce((new_contract_data->>'start_date')::date, current_date),
+    (new_contract_data->>'end_date')::date,
+    coalesce((new_contract_data->>'monthly_rent')::numeric, v_old.monthly_rent),
+    coalesce((new_contract_data->>'status')::public.contract_status, 'active'::public.contract_status)
+  ) returning id into v_new_id;
+
+  return jsonb_build_object('success', true, 'new_contract_id', v_new_id);
 end;
 $$;
 
@@ -325,31 +377,39 @@ returns jsonb
 language plpgsql
 security invoker
 as $$
-declare
-  v_uid uuid := auth.uid();
-  v_role public.app_role;
+declare v_uid uuid := auth.uid(); v_role public.app_role; v_voided_at timestamptz;
 begin
-  if v_uid is null then
-    raise exception 'AUTH_REQUIRED: user must be authenticated';
-  end if;
+  if v_uid is null then raise exception 'AUTH_REQUIRED: user must be authenticated'; end if;
+  select role into v_role from public.users where id=v_uid and status='ACTIVE' and deleted_at is null;
+  if v_role is null then raise exception 'USER_NOT_FOUND_OR_INACTIVE: caller must exist in public.users and be active'; end if;
+  if v_role not in ('ADMIN','MANAGER') then raise exception 'FORBIDDEN: ADMIN or MANAGER role required'; end if;
 
-  select role into v_role from public.users where id = v_uid and status = 'ACTIVE';
-  if v_role is null then
-    raise exception 'USER_NOT_FOUND_OR_INACTIVE: caller must exist in public.users and be active';
-  end if;
+  v_voided_at := to_timestamp(p_voided_at::double precision / 1000.0);
 
-  if v_role not in ('ADMIN', 'MANAGER') then
-    raise exception 'FORBIDDEN: ADMIN or MANAGER role required';
-  end if;
+  update public.receipts set status='void', voided_at=v_voided_at, updated_at=now()
+  where id=p_receipt_id and deleted_at is null;
+  if not found then raise exception 'NOT_FOUND: receipt not found'; end if;
 
-  return jsonb_build_object(
-    'ok', true,
-    'fn', 'void_receipt_atomic',
-    'p_receipt_id', p_receipt_id,
-    'p_voided_at', p_voided_at,
-    'p_invoice_updates', coalesce(p_invoice_updates, '[]'::jsonb),
-    'p_reverse_entries', coalesce(p_reverse_entries, '[]'::jsonb)
-  );
+  update public.payments set status='void', voided_at=v_voided_at
+  where receipt_id=p_receipt_id and deleted_at is null;
+
+  update public.invoices i
+  set paid_amount = greatest(0, i.paid_amount - a.sum_amount),
+      status = case
+        when greatest(0, i.paid_amount - a.sum_amount) = 0 then 'issued'::public.invoice_status
+        when greatest(0, i.paid_amount - a.sum_amount) >= i.amount then 'paid'::public.invoice_status
+        else 'partial'::public.invoice_status
+      end,
+      updated_at = now()
+  from (
+    select invoice_id, sum(amount) as sum_amount
+    from public.receipt_allocations
+    where receipt_id = p_receipt_id and deleted_at is null
+    group by invoice_id
+  ) a
+  where i.id = a.invoice_id and i.deleted_at is null;
+
+  return jsonb_build_object('success', true, 'receipt_id', p_receipt_id, 'voided_at', v_voided_at, 'invoice_updates', coalesce(p_invoice_updates, '[]'::jsonb), 'reverse_entries', coalesce(p_reverse_entries, '[]'::jsonb));
 end;
 $$;
 
@@ -359,7 +419,13 @@ language sql
 stable
 security invoker
 as $$
-  select jsonb_build_object('from', p_from, 'to', p_to, 'invoices', 0, 'receipts', 0, 'expenses', 0);
+  select jsonb_build_object(
+    'total_collected', coalesce((select sum(amount) from public.payments where deleted_at is null and status='posted' and payment_date between p_from and p_to),0),
+    'total_overdue_invoices', coalesce((select sum(greatest(amount - paid_amount,0)) from public.invoices where deleted_at is null and status='overdue' and due_date between p_from and p_to),0),
+    'total_expenses', coalesce((select sum(amount) from public.expenses where deleted_at is null and expense_date between p_from and p_to),0),
+    'net_revenue', coalesce((select sum(amount) from public.payments where deleted_at is null and status='posted' and payment_date between p_from and p_to),0)
+                   - coalesce((select sum(amount) from public.expenses where deleted_at is null and expense_date between p_from and p_to),0)
+  );
 $$;
 
 create or replace function public.rpt_owner_statement(p_owner_id uuid, p_from date, p_to date)
