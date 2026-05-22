@@ -15,7 +15,7 @@ export function useCurrentUserRole() {
         .eq('id', userId)
         .maybeSingle();
       if (error) throw error;
-      return data?.role ?? null;
+      return data?.role?.toUpperCase() ?? null;
     },
   });
 }

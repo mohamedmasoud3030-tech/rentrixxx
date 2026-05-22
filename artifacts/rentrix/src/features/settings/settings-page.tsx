@@ -243,15 +243,14 @@ function CompanySettingsPreviewCard({ draft, formattedPreviewDate, formattedPrev
 
 
 function ChangePasswordCard() {
-  const [currentPassword, setCurrentPassword] = useState('');
   const [nextPassword, setNextPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [saving, setSaving] = useState(false);
 
   const handleChangePassword = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (!currentPassword || !nextPassword) {
-      toast.error('يرجى إدخال كلمة المرور الحالية والجديدة');
+    if (!nextPassword) {
+      toast.error('يرجى إدخال كلمة المرور الجديدة');
       return;
     }
     if (nextPassword.length < 8) {
@@ -267,7 +266,6 @@ function ChangePasswordCard() {
     try {
       const { error } = await supabase.auth.updateUser({ password: nextPassword });
       if (error) throw error;
-      setCurrentPassword('');
       setNextPassword('');
       setConfirmPassword('');
       toast.success('تم تحديث كلمة المرور بنجاح');
@@ -282,11 +280,10 @@ function ChangePasswordCard() {
     <Card>
       <CardHeader>
         <CardTitle>تغيير كلمة المرور</CardTitle>
-        <CardDescription>تحديث كلمة مرور الحساب الحالي عبر مزود المصادقة.</CardDescription>
+        <CardDescription>تحديث كلمة مرور الحساب الحالي عبر مزود المصادقة (قد يطلب المزود إعادة تسجيل الدخول).</CardDescription>
       </CardHeader>
       <CardContent>
         <form className="space-y-3" onSubmit={handleChangePassword}>
-          <Input type="password" placeholder="كلمة المرور الحالية" value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} />
           <Input type="password" placeholder="كلمة المرور الجديدة" value={nextPassword} onChange={(e) => setNextPassword(e.target.value)} />
           <Input type="password" placeholder="تأكيد كلمة المرور الجديدة" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} />
           <Button type="submit" disabled={saving}>{saving ? 'جارٍ التحديث...' : 'تحديث كلمة المرور'}</Button>

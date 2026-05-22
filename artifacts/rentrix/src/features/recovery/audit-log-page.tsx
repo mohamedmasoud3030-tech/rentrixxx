@@ -9,9 +9,10 @@ import { RouteLoadingState } from '@/components/loading-state';
 import { supabase } from '@/integrations/supabase/client';
 import { useCurrentUserRole } from './useCurrentUserRole';
 
-function useAuditLog() {
+function useAuditLog(enabled: boolean) {
   return useQuery({
     queryKey: ['recovery', 'audit-log'],
+    enabled,
     queryFn: async () => {
       const { data, error } = await supabase
         .from('audit_log')
@@ -26,12 +27,13 @@ function useAuditLog() {
 
 export function AuditLogPage() {
   const roleQuery = useCurrentUserRole();
-  const logQuery = useAuditLog();
+  const normalizedRole = roleQuery.data?.toUpperCase() ?? null;
+  const canView = normalizedRole === 'ADMIN' || normalizedRole === 'MANAGER';
+  const logQuery = useAuditLog(canView);
   const [action, setAction] = useState('');
   const [entity, setEntity] = useState('all');
   const [actor, setActor] = useState('');
 
-  const canView = roleQuery.data === 'ADMIN' || roleQuery.data === 'MANAGER';
   const entityOptions = useMemo(() => {
     const values = new Set<string>();
     (logQuery.data ?? []).forEach((item) => {
@@ -47,9 +49,10 @@ export function AuditLogPage() {
     return byAction && byEntity && byActor;
   }), [logQuery.data, action, entity, actor]);
 
-  if (roleQuery.isLoading || logQuery.isLoading) return <RouteLoadingState />;
+  if (roleQuery.isLoading) return <RouteLoadingState />;
   if (roleQuery.isError) return <DataErrorScreen title="تعذر التحقق من الصلاحيات" fallbackMessage="حاول تحديث الصفحة." />;
   if (!canView) return <DataErrorScreen title="غير مصرح" fallbackMessage="هذه الصفحة متاحة للمدير أو المشرف فقط." />;
+  if (logQuery.isLoading) return <RouteLoadingState />;
   if (logQuery.isError) return <DataErrorScreen title="تعذر تحميل سجل التدقيق" fallbackMessage="تحقق من صلاحيات قاعدة البيانات أو الاتصال." />;
 
   return (
