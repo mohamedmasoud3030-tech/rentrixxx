@@ -36,6 +36,8 @@ export const toPdfProperty = (property: ContractDetail['properties']): Property 
         current_value: null,
         status: 'active',
         notes: null,
+        latitude: null,
+        longitude: null,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
         deleted_at: null,

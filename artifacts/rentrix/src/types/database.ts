@@ -120,6 +120,8 @@ export type Database = {
           current_value: number | null;
           status: 'active' | 'inactive' | 'maintenance' | 'sold';
           notes: string | null;
+          latitude: number | null;
+          longitude: number | null;
           created_at: string;
           updated_at: string;
           deleted_at: string | null;
@@ -182,6 +184,26 @@ export type Database = {
         Relationships: [];
       };
 
+
+      tenants: {
+        Row: { id: string; person_id: string; created_at: string; updated_at: string; deleted_at: string | null; };
+        Insert: Partial<Database['public']['Tables']['tenants']['Row']> & Pick<Database['public']['Tables']['tenants']['Row'], 'person_id'>;
+        Update: Partial<Database['public']['Tables']['tenants']['Row']>;
+        Relationships: [];
+      };
+      receipts: {
+        Row: { id: string; receipt_no: number; receipt_date: string; payer_tenant_id: string | null; amount_total: number; method: 'cash' | 'bank_transfer' | 'card' | 'check' | 'other'; reference: string | null; status: 'posted' | 'void'; voided_at: string | null; created_by: string | null; created_at: string; updated_at: string; deleted_at: string | null; };
+        Insert: Partial<Database['public']['Tables']['receipts']['Row']>;
+        Update: Partial<Database['public']['Tables']['receipts']['Row']>;
+        Relationships: [];
+      };
+      receipt_allocations: {
+        Row: { id: string; receipt_id: string; invoice_id: string; amount: number; created_at: string; deleted_at: string | null; };
+        Insert: Partial<Database['public']['Tables']['receipt_allocations']['Row']> & Pick<Database['public']['Tables']['receipt_allocations']['Row'], 'receipt_id' | 'invoice_id' | 'amount'>;
+        Update: Partial<Database['public']['Tables']['receipt_allocations']['Row']>;
+        Relationships: [];
+      };
+
       contracts: {
         Row: {
           id: string;
@@ -191,6 +213,7 @@ export type Database = {
           start_date: string;
           end_date: string;
           rent_amount: number;
+          monthly_rent: number;
           payment_cycle: 'monthly' | 'quarterly' | 'semi_annual' | 'annual';
           status: 'draft' | 'active' | 'expired' | 'terminated';
           cancellation_reason: string | null;
@@ -230,6 +253,11 @@ export type Database = {
           payment_method: 'cash' | 'bank_transfer' | 'card' | 'check' | 'other';
           payment_date: string;
           reference_number: string | null;
+          contract_id: string | null;
+          receipt_id: string | null;
+          status: 'posted' | 'void';
+          voided_at: string | null;
+          created_by: string | null;
           created_at: string;
           updated_at: string;
           deleted_at: string | null;
