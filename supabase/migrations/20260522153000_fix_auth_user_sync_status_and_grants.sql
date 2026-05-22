@@ -19,8 +19,8 @@ begin
   insert into public.users (id, role, status)
   values (new.id, 'USER', 'ACTIVE')
   on conflict (id) do update
-    set status = 'ACTIVE',
-        role = coalesce(public.users.role, excluded.role);
+    set role = coalesce(public.users.role, excluded.role),
+        status = coalesce(public.users.status, excluded.status);
 
   return new;
 end;
@@ -45,7 +45,7 @@ insert into public.users (id, role, status)
 select au.id, 'USER', 'ACTIVE'
 from auth.users au
 on conflict (id) do update
-  set status = 'ACTIVE',
-      role = coalesce(public.users.role, excluded.role);
+  set role = coalesce(public.users.role, excluded.role),
+      status = coalesce(public.users.status, excluded.status);
 
 commit;
