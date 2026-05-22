@@ -22,7 +22,6 @@ const navigation = [
   { to: '/financials',  labelKey: 'financials',  icon: WalletCards },
   { to: '/invoices',    labelKey: 'invoices',    icon: ReceiptText },
   { to: '/arrears',     labelKey: 'arrears',     icon: ClipboardList },
-  { to: '/accounting',  labelKey: 'accounting',  icon: ReceiptText },
   { to: '/reports',     labelKey: 'reports',     icon: Home },
   { to: '/maintenance', labelKey: 'maintenance', icon: Wrench },
   { to: '/leads',       labelKey: 'leads',       icon: Users },
