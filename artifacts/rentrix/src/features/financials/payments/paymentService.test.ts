@@ -27,4 +27,20 @@ describe('postReceiptAtomic', () => {
     await expect(postReceiptAtomic(payload)).resolves.toBe('payment_123');
     expect(supabaseMock.rpc).toHaveBeenCalledWith('post_receipt_atomic', payload);
   });
+
+
+  it('throws when the post_receipt_atomic RPC returns an error', async () => {
+    supabaseMock.rpc.mockResolvedValue({ data: null, error: new Error('Insufficient privileges to post payment receipts') });
+    const { postReceiptAtomic } = await import('./paymentService');
+    const payload = {
+      invoice_id: 'inv_1',
+      amount: 50,
+      method: 'cash' as const,
+      date: '2026-05-14',
+      reference: null,
+    };
+
+    await expect(postReceiptAtomic(payload)).rejects.toThrow('Insufficient privileges to post payment receipts');
+  });
+
 });
