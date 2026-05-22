@@ -16,10 +16,10 @@ type QueryLogEntry = { table: string; method: string; args: unknown[] };
 type InvoiceSummaryFixture = Pick<Invoice, 'amount' | 'paid_amount'>;
 type InvoiceFixture = InvoiceSummaryFixture & Pick<Invoice, 'id' | 'status'> & { contracts: null };
 type PaymentFixture = Pick<Payment, 'id' | 'invoice_id' | 'amount' | 'payment_date' | 'deleted_at'>;
-type ChainMethod = 'select' | 'is' | 'eq' | 'or' | 'order';
+type ChainMethod = 'select' | 'is' | 'eq' | 'or' | 'order' | 'range';
 type QueryBuilder = Record<ChainMethod | 'single' | 'returns', ReturnType<typeof vi.fn>>;
 
-const chainMethods: ChainMethod[] = ['select', 'is', 'eq', 'or', 'order'];
+const chainMethods: ChainMethod[] = ['select', 'is', 'eq', 'or', 'order', 'range'];
 
 function createInvoiceFixture(overrides: Partial<InvoiceFixture> = {}): InvoiceFixture {
   return {
@@ -118,6 +118,7 @@ describe('invoiceService financial reconciliation', () => {
       { table: 'invoices', method: 'eq', args: ['status', 'partial'] },
       { table: 'invoices', method: 'or', args: ['id.ilike."%invoice\\_\\%%",status.ilike."%invoice\\_\\%%"'] },
     ]));
+    expect(log).toEqual(expect.arrayContaining([{ table: 'invoices', method: 'range', args: [0, 19] }]));
     expect(supabaseMock.rpc).not.toHaveBeenCalled();
     expect(log.some((entry) => ['insert', 'update', 'delete', 'upsert'].includes(entry.method))).toBe(false);
   });
