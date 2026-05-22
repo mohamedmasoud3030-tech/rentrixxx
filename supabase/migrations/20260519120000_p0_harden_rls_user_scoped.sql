@@ -109,6 +109,10 @@ declare
   ];
 begin
   foreach t in array core_tables loop
+    if to_regclass(format('public.%s', t)) is null then
+      continue;
+    end if;
+
     -- Drop the old flat policy (handles both naming conventions used historically)
     execute format('drop policy if exists %I on public.%I', t || '_all_auth', t);
     execute format('drop policy if exists %I on public.%I', 'authenticated_manage_' || t, t);
@@ -212,20 +216,20 @@ with check (public.is_app_user());
 -- 9. Ensure FORCE ROW LEVEL SECURITY on all tables that store business data
 --    (prevents table owners / service role bypasses from going unnoticed)
 -- ---------------------------------------------------------------------------
-alter table public.properties            force row level security;
-alter table public.units                 force row level security;
-alter table public.tenants               force row level security;
-alter table public.owners                force row level security;
-alter table public.contracts             force row level security;
-alter table public.invoices              force row level security;
-alter table public.receipts              force row level security;
-alter table public.receipt_allocations   force row level security;
-alter table public.expenses              force row level security;
-alter table public.maintenance_records   force row level security;
-alter table public.payments              force row level security;
-alter table public.journal_entries       force row level security;
-alter table public.deposit_txs           force row level security;
-alter table public.accounts              force row level security;
-alter table public.owner_settlements     force row level security;
+do $$
+declare
+  t text;
+  force_rls_tables text[] := array[
+    'properties','units','tenants','owners','contracts','invoices','receipts',
+    'receipt_allocations','expenses','maintenance_records','payments',
+    'journal_entries','deposit_txs','accounts','owner_settlements'
+  ];
+begin
+  foreach t in array force_rls_tables loop
+    if to_regclass(format('public.%s', t)) is not null then
+      execute format('alter table public.%I force row level security', t);
+    end if;
+  end loop;
+end $$;
 
 commit;
