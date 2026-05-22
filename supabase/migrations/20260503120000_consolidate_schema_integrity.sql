@@ -522,6 +522,28 @@ BEGIN
        t_contracts,
        t_tenants
      )
+     AND pg_temp.rentrix_column_exists(t_account_balances, 'account_id')
+     AND pg_temp.rentrix_column_exists(t_account_balances, 'debit_total')
+     AND pg_temp.rentrix_column_exists(t_account_balances, 'credit_total')
+     AND pg_temp.rentrix_column_exists(t_journal_entries, 'account_id')
+     AND pg_temp.rentrix_column_exists(t_journal_entries, 'amount')
+     AND pg_temp.rentrix_column_exists(t_journal_entries, 'type')
+     AND pg_temp.rentrix_column_exists(t_journal_entries, 'entity_type')
+     AND pg_temp.rentrix_column_exists(t_journal_entries, 'entity_id')
+     AND pg_temp.rentrix_column_exists(t_owner_balances, 'owner_id')
+     AND pg_temp.rentrix_column_exists(t_owner_balances, 'net_balance')
+     AND pg_temp.rentrix_column_exists(t_contract_balances, 'contract_id')
+     AND pg_temp.rentrix_column_exists(t_contract_balances, 'balance_due')
+     AND pg_temp.rentrix_column_exists(t_tenant_balances, 'tenant_id')
+     AND pg_temp.rentrix_column_exists(t_tenant_balances, 'balance_due')
+     AND pg_temp.rentrix_column_exists(t_accounts, 'id')
+     AND pg_temp.rentrix_column_exists(t_accounts, 'name')
+     AND pg_temp.rentrix_column_exists(t_owners, 'id')
+     AND pg_temp.rentrix_column_exists(t_owners, 'name')
+     AND pg_temp.rentrix_column_exists(t_contracts, 'id')
+     AND pg_temp.rentrix_column_exists(t_contracts, 'no')
+     AND pg_temp.rentrix_column_exists(t_tenants, 'id')
+     AND pg_temp.rentrix_column_exists(t_tenants, 'name')
   THEN
     EXECUTE format($view$
 CREATE OR REPLACE VIEW public.v_balance_reconciliation AS
@@ -717,7 +739,7 @@ $view$;
     GRANT SELECT ON public.v_balance_reconciliation       TO authenticated;
     GRANT SELECT ON public.v_balance_reconciliation_drift TO authenticated;
   ELSE
-    RAISE NOTICE 'Skipping balance reconciliation views because one or more required tables are missing.';
+    RAISE NOTICE 'Skipping balance reconciliation views because required reconciliation tables/columns are missing.';
   END IF;
 END $$;
 
