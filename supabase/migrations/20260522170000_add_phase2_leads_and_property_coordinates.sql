@@ -20,8 +20,10 @@ create table if not exists public.leads (
 create index if not exists leads_status_idx on public.leads(status);
 create index if not exists leads_assigned_to_idx on public.leads(assigned_to) where assigned_to is not null;
 
-create trigger leads_set_updated_at before update on public.leads
-for each row execute function public.set_updated_at();
+do $$ begin
+  create trigger leads_set_updated_at before update on public.leads
+  for each row execute function public.set_updated_at();
+exception when duplicate_object then null; end $$;
 
 alter table public.leads enable row level security;
 alter table public.leads force row level security;
@@ -34,4 +36,4 @@ do $$ begin
   create policy leads_write_admin_manager on public.leads for all to authenticated using (public.is_admin_or_manager()) with check (public.is_admin_or_manager());
 exception when duplicate_object then null; end $$;
 
-grant select on public.leads to authenticated;
+grant select, insert, update, delete on public.leads to authenticated;
