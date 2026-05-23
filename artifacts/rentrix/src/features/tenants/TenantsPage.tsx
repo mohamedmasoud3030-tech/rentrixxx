@@ -69,11 +69,11 @@ function TenantSafeLinks({ tenant }: Readonly<{ tenant: TenantWorkspaceRow }>) {
   if (hasLinks) {
     return (
       <div className="flex flex-wrap gap-2">
-        {tenant.primaryContractId !== null ? (
+        {tenant.primaryContractId === null ? null : (
           <Button variant="secondary" className="min-h-9 px-3" asChild>
             <Link to="/contracts/$contractId" params={{ contractId: tenant.primaryContractId }}><FileText className="ms-1 size-4" />العقد</Link>
           </Button>
-        ) : null}
+        )}
         {tenant.hasInvoices ? <Button variant="secondary" className="min-h-9 px-3" asChild><Link to="/invoices"><ReceiptText className="ms-1 size-4" />الفواتير</Link></Button> : null}
         {tenant.hasArrears ? <Button variant="secondary" className="min-h-9 px-3 text-amber-700" asChild><Link to="/arrears"><TriangleAlert className="ms-1 size-4" />المتأخرات</Link></Button> : null}
       </div>
