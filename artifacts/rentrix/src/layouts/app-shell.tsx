@@ -12,6 +12,7 @@ import { useAuth } from '@/hooks/use-auth';
 import { getAppLanguageState, translateSharedLabel } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
 import { useUiStore } from '@/store/ui-store';
+import { BottomNav } from '@/components/layout/BottomNav';
 
 const navigation = [
   { to: '/',            labelKey: 'dashboard',   icon: LayoutDashboard },
@@ -28,15 +29,6 @@ const navigation = [
   { to: '/leads',       labelKey: 'leads',       icon: Users },
   { to: '/property-map', labelKey: 'propertyMap', icon: Map },
   { to: '/settings',   labelKey: 'settings',    icon: Settings },
-] as const;
-
-// Bottom nav shows the 5 most-used routes on mobile
-const bottomNavItems = [
-  { to: '/',           labelKey: 'dashboard',  icon: LayoutDashboard },
-  { to: '/contracts',  labelKey: 'contracts',  icon: FileText },
-  { to: '/financials', labelKey: 'financials', icon: WalletCards },
-  { to: '/invoices',   labelKey: 'invoices',   icon: ReceiptText },
-  { to: '/arrears',    labelKey: 'arrears',    icon: ClipboardList },
 ] as const;
 
 const recoveryModules = [
@@ -181,37 +173,6 @@ function MobileNavigationDrawer({
         </div>
       </aside>
     </dialog>
-  );
-}
-
-/** Mobile bottom navigation bar — only the 5 primary routes */
-function MobileBottomNav({
-  sharedLabel,
-}: Readonly<{ sharedLabel: SharedLabel }>) {
-  return (
-    <nav
-      className="fixed bottom-0 inset-x-0 z-40 border-t border-border bg-background/95 backdrop-blur-xl lg:hidden"
-      style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
-    >
-      <div className="grid h-16 grid-cols-5">
-        {bottomNavItems.map((item) => {
-          const Icon = item.icon;
-          return (
-            <Link
-              key={item.to}
-              to={item.to}
-              activeOptions={{ exact: item.to === '/' }}
-              className="flex flex-col items-center justify-center gap-1 text-muted-foreground transition-colors [&.active]:text-primary"
-            >
-              <Icon className="size-5" />
-              <span className="text-[10px] font-bold leading-none">
-                {sharedLabel(item.labelKey)}
-              </span>
-            </Link>
-          );
-        })}
-      </div>
-    </nav>
   );
 }
 
@@ -383,7 +344,7 @@ export function AppShell() {
       </div>
 
       {/* Mobile bottom navigation */}
-      <MobileBottomNav sharedLabel={sharedLabel} />
+      <BottomNav labelFor={sharedLabel} />
     </div>
   );
 }

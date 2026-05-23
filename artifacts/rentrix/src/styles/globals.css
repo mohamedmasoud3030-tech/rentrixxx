@@ -1,54 +1,9 @@
 @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;700;800;900&display=swap');
+@import './theme.css';
 @import 'tailwindcss';
 
 @theme {
   --font-sans: 'Cairo', ui-sans-serif, system-ui, sans-serif;
-}
-
-:root {
-  --background: var(--color-bg);
-  --foreground: var(--color-text-primary);
-  --card: var(--color-card);
-  --card-foreground: var(--color-text-primary);
-  --primary: var(--color-primary);
-  --primary-foreground: var(--color-primary-fg);
-  --secondary: 220 22% 94%;
-  --secondary-foreground: var(--color-text-primary);
-  --muted: 220 22% 94%;
-  --muted-foreground: var(--color-text-muted);
-  --destructive: 0 72% 48%;
-  --destructive-foreground: 0 0% 100%;
-  --border: var(--color-border);
-  --input: var(--color-border);
-  --sidebar: var(--color-sidebar-bg);
-  --sidebar-foreground: var(--color-sidebar-text);
-  --sidebar-accent: var(--color-sidebar-hover-bg);
-  --sidebar-accent-foreground: var(--color-sidebar-active-text);
-  --sidebar-border: 222 20% 22%;
-  --accent: var(--color-accent);
-}
-
-[data-theme='dark'] {
-  --background: var(--color-bg);
-  --foreground: var(--color-text-primary);
-  --card: var(--color-card);
-  --card-foreground: var(--color-text-primary);
-  --primary: var(--color-primary);
-  --primary-foreground: var(--color-primary-fg);
-  --secondary: 222 24% 16%;
-  --secondary-foreground: var(--color-text-primary);
-  --muted: 222 24% 16%;
-  --muted-foreground: var(--color-text-muted);
-  --destructive: 0 68% 51%;
-  --destructive-foreground: 0 0% 100%;
-  --border: var(--color-border);
-  --input: var(--color-border);
-  --sidebar: var(--color-sidebar-bg);
-  --sidebar-foreground: var(--color-sidebar-text);
-  --sidebar-accent: var(--color-sidebar-hover-bg);
-  --sidebar-accent-foreground: var(--color-sidebar-active-text);
-  --sidebar-border: 222 20% 18%;
-  --accent: var(--color-accent);
 }
 
 @keyframes route-in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
@@ -89,9 +44,9 @@
   .bg-accent { background-color: hsl(var(--accent)); }
   .animate-route-in { animation: route-in 0.2s ease-out both; }
   .animate-row-in { animation: row-in 0.22s ease-out both; }
-  .hover-card { transition: transform 0.18s ease, box-shadow 0.18s ease; }
+  .hover-card { transition: transform var(--transition-base), box-shadow var(--transition-base); }
   .hover-card:hover { transform: scale(1.01); box-shadow: var(--shadow-card-hover); }
-  .pressable { transition: transform 0.1s ease, background-color 0.2s ease, border-color 0.2s ease, color 0.15s ease; }
+  .pressable { transition: transform 0.1s ease, background-color var(--transition-base), border-color var(--transition-base), color var(--transition-fast); }
   .pressable:active { transform: scale(0.97); }
   .skeleton-shimmer { position: relative; overflow: hidden; }
   .skeleton-shimmer::after { content: ''; position: absolute; inset: 0; transform: translateX(100%); background: linear-gradient(90deg, transparent, hsl(var(--foreground) / 0.08), transparent); animation: shimmer 1.35s infinite; }
