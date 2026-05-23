@@ -221,13 +221,9 @@ begin
   end if;
 end $$;
 
-update public.maintenance_requests
-set status = 'resolved'
-where status = 'done';
-
-update public.maintenance_requests
-set status = 'closed'
-where status = 'cancelled';
+-- NOTE: Do not update rows to newly added enum values in the same migration transaction.
+-- PostgreSQL raises SQLSTATE 55P04 for unsafe enum use in this case.
+-- Existing rows remain on already-valid statuses; future writes may use resolved/closed.
 
 -- F) Company settings alignment
 alter table if exists public.company_settings
