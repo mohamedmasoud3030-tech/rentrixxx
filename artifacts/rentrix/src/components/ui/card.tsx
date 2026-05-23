@@ -1,8 +1,16 @@
 import type { HTMLAttributes } from 'react';
 import { cn } from '@/lib/utils';
 
-export function Card({ className, ...props }: HTMLAttributes<HTMLDivElement>) {
-  return <div className={cn('hover-card rounded-2xl border border-border bg-card text-card-foreground shadow-sm', className)} {...props} />;
+type CardVariant = 'default' | 'kpi' | 'luxury';
+
+const variantStyles: Record<CardVariant, string> = {
+  default: 'shadow-sm',
+  kpi: 'surface-card shadow-[var(--shadow-soft)]',
+  luxury: 'surface-card border-[hsl(var(--accent)/0.45)] shadow-[var(--shadow-card)]',
+};
+
+export function Card({ className, variant = 'default', ...props }: HTMLAttributes<HTMLDivElement> & { variant?: CardVariant }) {
+  return <div className={cn('hover-card rounded-2xl border border-border bg-card text-card-foreground', variantStyles[variant], className)} {...props} />;
 }
 
 export function CardHeader({ className, ...props }: HTMLAttributes<HTMLDivElement>) {
