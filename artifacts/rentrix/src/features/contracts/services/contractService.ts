@@ -19,9 +19,9 @@ type ContractInsert = Database['public']['Tables']['contracts']['Insert'];
 type ContractUpdate = Database['public']['Tables']['contracts']['Update'];
 
 const contractSelect =
-  '*, properties:property_id(id,title,address,latitude,longitude), units:unit_id(id,unit_number,floor,status,rent_amount), people:tenant_id(id,full_name,phone,email,national_id)';
+  '*, properties:property_id(id,title,address,latitude,longitude), units:unit_id(id,unit_number,floor,status,rent_amount), people:people!contracts_tenant_id_people_app_fkey(id,full_name,phone,email,national_id)';
 const contractDetailSelect =
-  '*, properties:property_id(id,title,address,latitude,longitude), units:unit_id(id,unit_number,floor,status,rent_amount), people:tenant_id(id,full_name,phone,email,national_id), renewed_from:renewed_from_id(id,start_date,end_date,rent_amount,status)';
+  '*, properties:property_id(id,title,address,latitude,longitude), units:unit_id(id,unit_number,floor,status,rent_amount), people:people!contracts_tenant_id_people_app_fkey(id,full_name,phone,email,national_id), renewed_from:renewed_from_id(id,start_date,end_date,rent_amount,status)';
 
 export async function listContracts(params: ContractListParams): Promise<ContractListItem[]> {
   const page = params.page ?? 1;
