@@ -1,6 +1,7 @@
 import { Link } from '@tanstack/react-router';
 import { Download, Edit, Plus, Trash2 } from 'lucide-react';
 import { useMemo, useState } from 'react';
+import { toast } from 'sonner';
 import { BulkActionsBar } from '@/components/BulkActionsBar';
 import { EmptyState } from '@/components/empty-state';
 import { Button } from '@/components/ui/button';
@@ -12,7 +13,7 @@ import { useBulkSelection } from '@/hooks/useBulkSelection';
 import { downloadCsv, type CsvRow } from '@/utils/helpers';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { personTypeLabels, personTypeValues } from './person-schema';
-import type { PersonTypeFilter } from './people-service';
+import { listPeopleByIds, listPeopleForExport, type PersonTypeFilter } from './people-service';
 import { usePeople, useSoftDeletePerson } from './use-people';
 
 const pageSize = 10;
@@ -33,21 +34,29 @@ export function PeopleListPage() {
   const bulkSelection = useBulkSelection(peopleRows.map((person) => person.id));
   const deleteMutation = useSoftDeletePerson();
   const totalPages = Math.max(1, Math.ceil((peopleQuery.data?.count ?? 0) / pageSize));
-  const selectedPeople = peopleRows.filter((person) => bulkSelection.selectedIds.has(person.id));
 
   const tableState = getPeopleTableState(peopleQuery.isLoading, peopleRows.length);
 
-  const exportPeople = (mode: 'selected' | 'filtered') => {
-    const targetRows = mode === 'selected' ? selectedPeople : peopleRows;
-    const csvRows: CsvRow[] = targetRows.map((person) => ({
+  const exportPeople = async (mode: 'selected' | 'filtered') => {
+    try {
+      const targetRows = mode === 'selected'
+        ? await listPeopleByIds([...bulkSelection.selectedIds])
+        : await listPeopleForExport(search, type);
+      if (mode === 'selected' && targetRows.length !== bulkSelection.selectedCount) {
+        throw new Error('تعذر تصدير كل السجلات المحددة. ربما تم حذف بعض الأشخاص أو تغيّر الوصول إليها.');
+      }
+      const csvRows: CsvRow[] = targetRows.map((person) => ({
       fullName: person.full_name ?? '',
       type: personTypeLabels[person.type],
       phone: person.phone ?? '',
       email: person.email ?? '',
       nationalId: person.national_id ?? '',
       address: person.address ?? '',
-    }));
-    downloadCsv('people-export', csvRows, ['fullName', 'type', 'phone', 'email', 'nationalId', 'address']);
+      }));
+      downloadCsv('people-export', csvRows, ['fullName', 'type', 'phone', 'email', 'nationalId', 'address']);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'تعذر تصدير بيانات الأشخاص');
+    }
   };
 
   function renderPeopleContent() {
@@ -115,7 +124,7 @@ export function PeopleListPage() {
           <p className="text-sm text-muted-foreground">جدول موحد للمستأجرين والملاك وجهات الاتصال.</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <Button variant="secondary" onClick={() => exportPeople('filtered')} disabled={peopleRows.length === 0}><Download className="ms-2 size-4" />تصدير النتائج</Button>
+          <Button variant="secondary" onClick={() => void exportPeople('filtered')} disabled={(peopleQuery.data?.count ?? 0) === 0}><Download className="ms-2 size-4" />تصدير النتائج</Button>
           <Button asChild><Link to="/people/new"><Plus className="ms-2 size-4" />إضافة شخص</Link></Button>
         </div>
       </div>
@@ -137,7 +146,7 @@ export function PeopleListPage() {
         selectedCount={bulkSelection.selectedCount}
         selectionLabel={`تم تحديد ${bulkSelection.selectedCount.toLocaleString('ar')} شخص`}
         onClear={bulkSelection.clear}
-        actions={<Button variant="secondary" onClick={() => exportPeople('selected')}><Download className="ms-2 size-4" />تصدير المحدد</Button>}
+        actions={<Button variant="secondary" onClick={() => void exportPeople('selected')}><Download className="ms-2 size-4" />تصدير المحدد</Button>}
       />
 
       <div className="flex items-center justify-between text-sm text-muted-foreground">
