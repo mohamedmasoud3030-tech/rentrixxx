@@ -10,7 +10,7 @@ const ensurePage = (doc: jsPDF, y: number, needed = 10): number => (y + needed <
 
 export const collectDocumentTextChunks = (model: UnifiedDocumentModel): string[] => {
   const signatureTexts = model.footer.signatures.map((role) => signatureLabel[role]).filter((label) => !DEFAULT_SIGNATURE_LABELS.has(label));
-  return [model.header.companyName, model.header.companyAddress, model.header.companyPhone, model.header.title, model.header.documentNo, model.header.dateLabel, model.header.dateValue, ...model.kpis.flatMap((k) => [k.label, k.value]), ...model.tables.flatMap((t) => [t.title, ...t.columns, ...t.rows.flat(), ...(t.totals ?? [])]), model.footer.companyStampLabel, model.footer.metadata, ...signatureTexts].filter((v): v is string => Boolean(v));
+  return [model.header.companyName, model.header.companyAddress, model.header.companyPhone, model.header.title, model.header.documentNo, model.header.dateLabel, model.header.dateValue, ...model.metadata?.flatMap((item) => [item.label, item.value]) ?? [], ...model.kpis.flatMap((k) => [k.label, k.value]), ...model.tables.flatMap((t) => [t.title, ...t.columns, ...t.rows.flat(), ...(t.totals ?? [])]), ...(model.footer.notes ?? []), model.footer.companyStampLabel, model.footer.metadata, ...signatureTexts].filter((v): v is string => Boolean(v));
 };
 const modelHasArabicText = (model: UnifiedDocumentModel): boolean => collectDocumentTextChunks(model).some((x) => ARABIC_REGEX.test(x));
 const buildHtmlRows = (rows: string[][]) => rows.map((r) => {
@@ -25,22 +25,26 @@ const buildHtmlTable = (table: UnifiedDocumentModel['tables'][number]) => {
   const tableFoot = hasTotals ? tableFootMarkup : '';
   return `<section><h3>${table.title ?? ''}</h3><table><thead><tr>${tableHead}</tr></thead><tbody>${buildHtmlRows(table.rows)}</tbody>${tableFoot}</table></section>`;
 };
-const buildRtlPrintHtml = (model: UnifiedDocumentModel) => {
-  const kpiHtml = model.kpis.map((k) => `<p><strong>${k.label}:</strong> ${k.value}</p>`).join('');
+export const buildRtlPrintHtml = (model: UnifiedDocumentModel) => {
+  const kpiHtml = model.kpis.map((k) => `<article class="kpi-card"><span>${k.label}</span><strong>${k.value}</strong></article>`).join('');
+  const metadataHtml = (model.metadata ?? []).map((item) => `<article class="meta-item"><span>${item.label}</span><strong>${item.value}</strong></article>`).join('');
+  const notesHtml = (model.footer.notes ?? []).map((note) => `<li>${note}</li>`).join('');
   const signaturesHtml = model.footer.signatures.map((role) => `<p>${signatureLabel[role]}: ____________________</p>`).join('');
   return [
-    '<!doctype html><html dir="rtl"><head><meta charset="utf-8"/>',
-    '<style>body{font-family:Tahoma,Arial;padding:24px}table{width:100%;border-collapse:collapse}td,th{border:1px solid #ddd;padding:6px}h1,h2,h3{margin:8px 0}</style>',
+    '<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"/>',
+    '<style>@page{size:A4;margin:8mm 10mm}*{box-sizing:border-box}body{margin:0;font-family:"Tahoma","Segoe UI","Noto Naskh Arabic","Arial",sans-serif;font-size:10.5px;line-height:1.4;color:#111;word-break:break-word;overflow-wrap:anywhere}.sheet{padding:2mm 0}.block{border:1px solid #d7d7d7;border-radius:8px;padding:8px;margin-bottom:6px;break-inside:avoid;page-break-inside:avoid}.meta-grid,.kpi-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:5px}.meta-item,.kpi-card{padding:5px;border:1px solid #ececec;border-radius:6px;break-inside:avoid}.meta-item span,.kpi-card span{display:block;font-size:9px;color:#444}h1{font-size:17px;margin:0 0 4px}h2{font-size:13px;margin:0 0 3px}h3{font-size:11px;margin:0 0 4px}table{width:100%;border-collapse:collapse;font-size:9.6px;table-layout:fixed}td,th{border:1px solid #ddd;padding:3px 4px;text-align:right;vertical-align:top}tr{break-inside:avoid;page-break-inside:avoid}ul{margin:0;padding-inline-start:14px}@media print{body{print-color-adjust:exact;-webkit-print-color-adjust:exact}.screen-only{display:none}}</style>',
     '</head><body>',
-    `<h2>${model.header.companyName}</h2>`,
-    `<h1>${model.header.title}</h1>`,
-    kpiHtml,
+    '<main class="sheet">',
+    `<section class="block"><h2>${model.header.companyName}</h2><h1>${model.header.title}</h1></section>`,
+    metadataHtml ? `<section class="block"><h3>بيانات المستند</h3><div class="meta-grid">${metadataHtml}</div></section>` : '',
+    kpiHtml ? `<section class="block"><h3>الملخص التشغيلي</h3><div class="kpi-grid">${kpiHtml}</div></section>` : '',
     model.tables.map(buildHtmlTable).join(''),
+    notesHtml ? `<section class="block"><h3>ملاحظات</h3><ul>${notesHtml}</ul></section>` : '',
     '<h3>التواقيع</h3>',
-    signaturesHtml,
+    `<section class="block">${signaturesHtml}</section>`,
     `<p>${model.footer.companyStampLabel ?? ''}</p>`,
     `<p>${model.footer.metadata ?? ''}</p>`,
-    '</body></html>',
+    '</main></body></html>',
   ].join('');
 };
 const openPrintWindowSafely = (): Window => {
@@ -52,13 +56,17 @@ const renderRtlPrintPreview = (model: UnifiedDocumentModel): void => {
   const w = openPrintWindowSafely();
   const htmlBlob = new Blob([buildRtlPrintHtml(model)], { type: 'text/html;charset=utf-8' });
   const objectUrl = URL.createObjectURL(htmlBlob);
-  const onLoad = () => {
-    w.focus();
-    w.print();
+  const cleanup = () => {
     w.removeEventListener('load', onLoad);
     URL.revokeObjectURL(objectUrl);
   };
+  const onLoad = () => {
+    w.focus();
+    w.print();
+    cleanup();
+  };
   w.addEventListener('load', onLoad);
+  w.onbeforeunload = cleanup;
   w.location.replace(objectUrl);
 };
 

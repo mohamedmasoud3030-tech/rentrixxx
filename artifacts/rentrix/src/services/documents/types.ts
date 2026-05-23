@@ -13,6 +13,8 @@ export type DocumentHeader = {
 
 export type DocumentKpi = { label: string; value: string };
 
+export type DocumentMetadataItem = { label: string; value: string };
+
 export type DocumentTable = {
   title?: string;
   columns: string[];
@@ -24,10 +26,12 @@ export type UnifiedDocumentModel = {
   type: string;
   header: DocumentHeader;
   kpis: DocumentKpi[];
+  metadata?: DocumentMetadataItem[];
   tables: DocumentTable[];
   charts?: Array<{ kind: string; title: string }>;
   footer: {
     signatures: SignatureRole[];
+    notes?: string[];
     companyStampLabel?: string | null;
     metadata?: string | null;
   };
