@@ -16,7 +16,7 @@ export type ExpiringContractRow = { id: string; contractNumber: string; tenantNa
 
 function toDateInputValue(date: Date) { return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`; }
 function addDays(date: Date, days: number) { const nextDate = new Date(date); nextDate.setDate(nextDate.getDate() + days); return nextDate; }
-function calculateDaysRemaining(endDate: string, today: Date) { const todayTimestamp = Date.parse(`${toDateInputValue(today)}T00:00:00.000Z`); const endTimestamp = Date.parse(`${endDate}T00:00:00.000Z`); if (!Number.isFinite(todayTimestamp) || !Number.isFinite(endTimestamp)) return 0; return Math.max(0, Math.ceil((endTimestamp - todayTimestamp) / (24 * 60 * 60 * 1000))); }
+function calculateDaysRemaining(endDate: string, today: Date) { const todayTimestamp = Date.parse(`${toDateInputValue(today)}T00:00:00.000Z`); const endTimestamp = Date.parse(`${endDate}T00:00:00.000Z`); if (!Number.isFinite(todayTimestamp) || !Number.isFinite(endTimestamp)) { return 0; } return Math.max(0, Math.ceil((endTimestamp - todayTimestamp) / (24 * 60 * 60 * 1000))); }
 function getContractLocation(contract: ContractListItem) { const propertyTitle = contract.properties?.title ?? 'عقار غير محدد'; const unitNumber = contract.units?.unit_number; return unitNumber ? `${propertyTitle} / وحدة ${unitNumber}` : propertyTitle; }
 
 export function buildExpiringContracts(contracts: ContractListItem[] | undefined, today: Date): ExpiringContractRow[] {

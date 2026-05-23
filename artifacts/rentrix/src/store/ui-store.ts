@@ -15,7 +15,7 @@ type UiState = {
 };
 
 const getInitialTheme = (): Theme => {
-  if (typeof globalThis.window === 'undefined') return 'light';
+  if (globalThis.window === undefined) return 'light';
   return (globalThis.window.localStorage.getItem('rentrix-theme') as Theme | null) ?? 'light';
 };
 

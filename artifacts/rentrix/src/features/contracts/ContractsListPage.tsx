@@ -44,7 +44,7 @@ function normalizeSearchText(value: string) {
     .toLowerCase()
     .replace(/[\u064B-\u065F\u0670\u06D6-\u06ED]/g, '')
     .replace(/[أإآ]/g, 'ا')
-    .replace(/ى/g, 'ي')
+    .replaceAll(/ى/g, 'ي')
     .replaceAll(/[٠-٩]/g, (digit) => String((digit.codePointAt(0) ?? 0) - 0x0660))
     .replaceAll(/[۰-۹]/g, (digit) => String((digit.codePointAt(0) ?? 0) - 0x06f0));
 }
@@ -64,7 +64,7 @@ function exportContractsCsv(contracts: ContractListItem[]) {
   URL.revokeObjectURL(url);
 }
 
-function DetailBox({ label, children }: { label: string; children: ReactNode }) {
+function DetailBox({ label, children }: Readonly<{ label: string; children: ReactNode }>) {
   return (
     <div className="rounded-2xl border border-border bg-background p-4">
       <p className="mb-2 text-xs font-black text-muted-foreground">{label}</p>
@@ -77,7 +77,7 @@ function getContractsLoadErrorMessage(error: unknown): string {
   return error instanceof Error ? error.message : 'حدث خطأ غير متوقع أثناء تحميل العقود.';
 }
 
-function SummaryCard({ label, value, description, icon: Icon }: { label: string; value: string; description: string; icon: typeof FileText }) {
+function SummaryCard({ label, value, description, icon: Icon }: Readonly<{ label: string; value: string; description: string; icon: typeof FileText }>) {
   return (
     <Card className="p-4">
       <div className="flex items-start justify-between gap-3">

@@ -49,6 +49,7 @@ function InfoPill({ icon: Icon, label, value, dir }: Readonly<{ icon: typeof Pho
       <p className="mt-1 text-sm font-black" dir={dir}>{valueOrDash(value)}</p>
     </div>
   );
+
 }
 
 function TenantLocation({ tenant }: Readonly<{ tenant: TenantWorkspaceRow }>) {
@@ -60,25 +61,26 @@ function TenantLocation({ tenant }: Readonly<{ tenant: TenantWorkspaceRow }>) {
       {location.hasLocation ? <p className="text-xs text-muted-foreground">{location.unitLabel}</p> : null}
     </div>
   );
+
 }
 
 function TenantSafeLinks({ tenant }: Readonly<{ tenant: TenantWorkspaceRow }>) {
   const hasLinks = tenant.primaryContractId !== null || tenant.hasInvoices || tenant.hasArrears;
-  if (hasLinks === false) {
-    return <p className="text-sm text-muted-foreground">لا توجد روابط متاحة حتى الآن</p>;
+  if (hasLinks) {
+    return (
+      <div className="flex flex-wrap gap-2">
+        {tenant.primaryContractId !== null ? (
+          <Button variant="secondary" className="min-h-9 px-3" asChild>
+            <Link to="/contracts/$contractId" params={{ contractId: tenant.primaryContractId }}><FileText className="ms-1 size-4" />العقد</Link>
+          </Button>
+        ) : null}
+        {tenant.hasInvoices ? <Button variant="secondary" className="min-h-9 px-3" asChild><Link to="/invoices"><ReceiptText className="ms-1 size-4" />الفواتير</Link></Button> : null}
+        {tenant.hasArrears ? <Button variant="secondary" className="min-h-9 px-3 text-amber-700" asChild><Link to="/arrears"><TriangleAlert className="ms-1 size-4" />المتأخرات</Link></Button> : null}
+      </div>
+    );
   }
 
-  return (
-    <div className="flex flex-wrap gap-2">
-      {tenant.primaryContractId !== null ? (
-        <Button variant="secondary" className="min-h-9 px-3" asChild>
-          <Link to="/contracts/$contractId" params={{ contractId: tenant.primaryContractId }}><FileText className="ms-1 size-4" />العقد</Link>
-        </Button>
-      ) : null}
-      {tenant.hasInvoices ? <Button variant="secondary" className="min-h-9 px-3" asChild><Link to="/invoices"><ReceiptText className="ms-1 size-4" />الفواتير</Link></Button> : null}
-      {tenant.hasArrears ? <Button variant="secondary" className="min-h-9 px-3 text-amber-700" asChild><Link to="/arrears"><TriangleAlert className="ms-1 size-4" />المتأخرات</Link></Button> : null}
-    </div>
-  );
+  return <p className="text-sm text-muted-foreground">لا توجد روابط متاحة حتى الآن</p>;
 }
 
 function TenantCard({ tenant }: Readonly<{ tenant: TenantWorkspaceRow }>) {
