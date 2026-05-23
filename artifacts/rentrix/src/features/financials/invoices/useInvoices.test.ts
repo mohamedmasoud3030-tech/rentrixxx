@@ -57,8 +57,10 @@ function setupInvoiceHookTest() {
   mutationMock.invalidateQueries.mockResolvedValue(undefined);
 }
 
-function useGenerateInvoicesOnSuccess() {
-  return useGenerateInvoices() as unknown as { onSuccess: (value: number) => Promise<void> };
+type GenerateInvoicesMutationResult = { onSuccess: (value: number) => Promise<void> };
+
+function runGenerateInvoicesOnSuccess(result: { current: GenerateInvoicesMutationResult }, value: number) {
+  return result.current.onSuccess(value);
 }
 
 function expectInvoiceInvalidation() {
@@ -76,9 +78,11 @@ describe('useGenerateInvoices', () => {
   });
 
   it('invalidates invoice and financial report queries after successful invoice generation', async () => {
-    const { result } = renderHook(() => useGenerateInvoicesOnSuccess());
+    const { result } = renderHook(
+      () => useGenerateInvoices() as unknown as GenerateInvoicesMutationResult,
+    );
 
-    await result.current.onSuccess(2);
+    await runGenerateInvoicesOnSuccess(result, 2);
 
     expectInvoiceInvalidation();
     expect(mutationMock.toastSuccess).toHaveBeenCalledWith('تم إنشاء 2 فاتورة');
