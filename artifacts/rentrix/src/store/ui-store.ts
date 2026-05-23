@@ -15,8 +15,8 @@ type UiState = {
 };
 
 const getInitialTheme = (): Theme => {
-  if (typeof window === 'undefined') return 'light';
-  return (localStorage.getItem('rentrix-theme') as Theme | null) ?? 'light';
+  if (globalThis.window === undefined) return 'light';
+  return (globalThis.window.localStorage.getItem('rentrix-theme') as Theme | null) ?? 'light';
 };
 
 export const useUiStore = create<UiState>((set) => ({
@@ -26,8 +26,8 @@ export const useUiStore = create<UiState>((set) => ({
   lastSyncedAt: null,
   toggleSidebar: () => set((state) => ({ sidebarCollapsed: !state.sidebarCollapsed })),
   setTheme: (theme) => {
-    localStorage.setItem('rentrix-theme', theme);
-    document.documentElement.dataset.theme = theme;
+    globalThis.window.localStorage.setItem('rentrix-theme', theme);
+    globalThis.window.document.documentElement.dataset.theme = theme;
     set({ theme });
   },
   setSyncStatus: (syncStatus) => set({ syncStatus }),

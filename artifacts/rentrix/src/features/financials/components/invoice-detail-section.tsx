@@ -44,14 +44,14 @@ export function InvoiceDetailSection({
   onPaymentDateChange,
   onReferenceChange,
   onPostPayment,
-}: InvoiceDetailSectionProps) {
+}: Readonly<InvoiceDetailSectionProps>) {
   return (
     <Card>
       <CardHeader>
         <CardTitle>تفاصيل الفاتورة وسجل المدفوعات</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        {!selectedInvoiceId ? <div className="rounded-2xl border border-dashed p-6 text-center text-muted-foreground">اختر فاتورة لعرض التفاصيل وتسجيل دفعة</div> : null}
+        {selectedInvoiceId ? null : <div className="rounded-2xl border border-dashed p-6 text-center text-muted-foreground">اختر فاتورة لعرض التفاصيل وتسجيل دفعة</div>}
         {selectedInvoiceId && isLoading ? <div className="rounded-2xl border border-dashed p-6 text-center text-muted-foreground">جارٍ تحميل تفاصيل الفاتورة...</div> : null}
         {selectedInvoiceId && isError ? <div className="rounded-2xl border border-destructive/40 bg-destructive/10 p-6 text-center text-destructive">{getErrorMessage(error, 'تعذر تحميل تفاصيل الفاتورة')}</div> : null}
         {invoiceDetail ? <>

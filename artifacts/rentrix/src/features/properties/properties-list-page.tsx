@@ -41,6 +41,74 @@ export function PropertiesListPage() {
     await deleteMutation.mutateAsync(propertyId);
   };
 
+  function renderPropertiesContent() {
+    if (propertiesQuery.isLoading) {
+      return (
+        <div className="space-y-3 p-6">
+          {Array.from({ length: 6 }, (_, index) => <Skeleton key={index} className="h-14" />)}
+        </div>
+      );
+    }
+
+    if (propertiesQuery.isError) {
+      return (
+        <div className="p-6">
+          <EmptyState
+            title="تعذر تحميل قائمة العقارات"
+            description="حدث خطأ أثناء تحميل البيانات. تحديث الصفحة أو إعادة المحاولة آمن ولن يؤثر على البيانات المسجلة."
+            action={<Button onClick={() => { propertiesQuery.refetch(); }}>إعادة المحاولة</Button>}
+          />
+        </div>
+      );
+    }
+
+    if (propertiesQuery.data?.rows.length) {
+      return (
+        <div className="overflow-x-auto">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>العقار</TableHead>
+                <TableHead>النوع</TableHead>
+                <TableHead>اسم المالك للعرض</TableHead>
+                <TableHead>الحالة</TableHead>
+                <TableHead>القيمة الحالية</TableHead>
+                <TableHead className="w-52">إجراءات</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {propertiesQuery.data.rows.map((property) => (
+                <TableRow key={property.id}>
+                  <TableCell>
+                    <div className="font-black">{property.title}</div>
+                    <div className="text-xs text-muted-foreground">{property.address}</div>
+                  </TableCell>
+                  <TableCell>{property.type}</TableCell>
+                  <TableCell>{property.owner_name ?? '—'}</TableCell>
+                  <TableCell><StatusBadge tone={propertyStatusTone[property.status]}>{propertyStatusLabels[property.status]}</StatusBadge></TableCell>
+                  <TableCell dir="ltr" className="font-bold">{money(property.current_value)}</TableCell>
+                  <TableCell>
+                    <div className="flex flex-wrap gap-2">
+                      <Button variant="secondary" className="min-h-9 px-3" asChild><Link to="/properties/$propertyId" params={{ propertyId: property.id }}><Eye className="size-4" /></Link></Button>
+                      <Button variant="secondary" className="min-h-9 px-3" asChild><Link to="/properties/$propertyId/edit" params={{ propertyId: property.id }}><Edit className="size-4" /></Link></Button>
+                      <Button variant="danger" className="min-h-9 px-3" onClick={async () => { await handleArchiveProperty(property.id, property.title); }} disabled={deleteMutation.isPending}><Trash2 className="size-4" /></Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      );
+    }
+
+    return (
+      <div className="p-6">
+        <EmptyState title={hasFilterValues ? 'لا توجد عقارات مطابقة' : 'لا توجد عقارات حتى الآن'} description={hasFilterValues ? 'جرّب تعديل البحث أو الحالة لعرض نتائج أخرى.' : 'أضف أول عقار لبدء إدارة المحفظة العقارية في النسخة التجارية التجريبية.'} action={<Button asChild><Link to="/properties/new">إضافة عقار</Link></Button>} />
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -62,63 +130,7 @@ export function PropertiesListPage() {
       </Card>
 
       <Card className="overflow-hidden">
-        {propertiesQuery.isLoading && (
-          <div className="space-y-3 p-6">
-            {Array.from({ length: 6 }, (_, index) => <Skeleton key={index} className="h-14" />)}
-          </div>
-        )}
-
-        {!propertiesQuery.isLoading && propertiesQuery.isError && (
-          <div className="p-6">
-            <EmptyState
-              title="تعذر تحميل قائمة العقارات"
-              description="حدث خطأ أثناء تحميل البيانات. تحديث الصفحة أو إعادة المحاولة آمن ولن يؤثر على البيانات المسجلة."
-              action={<Button onClick={() => { propertiesQuery.refetch(); }}>إعادة المحاولة</Button>}
-            />
-          </div>
-        )}
-
-        {!propertiesQuery.isLoading && !propertiesQuery.isError && propertiesQuery.data?.rows.length ? (
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>العقار</TableHead>
-                  <TableHead>النوع</TableHead>
-                  <TableHead>اسم المالك للعرض</TableHead>
-                  <TableHead>الحالة</TableHead>
-                  <TableHead>القيمة الحالية</TableHead>
-                  <TableHead className="w-52">إجراءات</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {propertiesQuery.data.rows.map((property) => (
-                  <TableRow key={property.id}>
-                    <TableCell>
-                      <div className="font-black">{property.title}</div>
-                      <div className="text-xs text-muted-foreground">{property.address}</div>
-                    </TableCell>
-                    <TableCell>{property.type}</TableCell>
-                    <TableCell>{property.owner_name ?? '—'}</TableCell>
-                    <TableCell><StatusBadge tone={propertyStatusTone[property.status]}>{propertyStatusLabels[property.status]}</StatusBadge></TableCell>
-                    <TableCell dir="ltr" className="font-bold">{money(property.current_value)}</TableCell>
-                    <TableCell>
-                      <div className="flex flex-wrap gap-2">
-                        <Button variant="secondary" className="min-h-9 px-3" asChild><Link to="/properties/$propertyId" params={{ propertyId: property.id }}><Eye className="size-4" /></Link></Button>
-                        <Button variant="secondary" className="min-h-9 px-3" asChild><Link to="/properties/$propertyId/edit" params={{ propertyId: property.id }}><Edit className="size-4" /></Link></Button>
-                        <Button variant="danger" className="min-h-9 px-3" onClick={async () => { await handleArchiveProperty(property.id, property.title); }} disabled={deleteMutation.isPending}><Trash2 className="size-4" /></Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
-        ) : null}
-
-        {!propertiesQuery.isLoading && !propertiesQuery.isError && !propertiesQuery.data?.rows.length && (
-          <div className="p-6"><EmptyState title={hasFilterValues ? 'لا توجد عقارات مطابقة' : 'لا توجد عقارات حتى الآن'} description={hasFilterValues ? 'جرّب تعديل البحث أو الحالة لعرض نتائج أخرى.' : 'أضف أول عقار لبدء إدارة المحفظة العقارية في النسخة التجارية التجريبية.'} action={<Button asChild><Link to="/properties/new">إضافة عقار</Link></Button>} /></div>
-        )}
+        {renderPropertiesContent()}
       </Card>
 
       <div className="flex items-center justify-between text-sm text-muted-foreground">

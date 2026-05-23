@@ -14,14 +14,74 @@ import { usePeople, useSoftDeletePerson } from './use-people';
 
 const pageSize = 10;
 
+function getPeopleTableState(isLoading: boolean, peopleCount: number): 'loading' | 'table' | 'empty' {
+  if (isLoading) return 'loading';
+  if (peopleCount > 0) return 'table';
+  return 'empty';
+}
+
 export function PeopleListPage() {
   const [search, setSearch] = useState('');
   const [type, setType] = useState<PersonTypeFilter>('all');
   const [page, setPage] = useState(1);
   const params = useMemo(() => ({ search, type, page, pageSize }), [page, search, type]);
   const peopleQuery = usePeople(params);
+  const peopleRows = peopleQuery.data?.rows ?? [];
   const deleteMutation = useSoftDeletePerson();
   const totalPages = Math.max(1, Math.ceil((peopleQuery.data?.count ?? 0) / pageSize));
+
+  const tableState = getPeopleTableState(peopleQuery.isLoading, peopleRows.length);
+
+  function renderPeopleContent() {
+    if (tableState === 'loading') {
+      return (
+        <div className="space-y-3 p-6">
+          {Array.from({ length: 6 }, (_, index) => <Skeleton key={index} className="h-14" />)}
+        </div>
+      );
+    }
+
+    if (tableState === 'table') {
+      return (
+        <div className="overflow-x-auto">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>الاسم</TableHead>
+                <TableHead>النوع</TableHead>
+                <TableHead>الهاتف</TableHead>
+                <TableHead>البريد</TableHead>
+                <TableHead>رقم الهوية</TableHead>
+                <TableHead className="w-40">إجراءات</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {peopleRows.map((person) => (
+                <TableRow key={person.id}>
+                  <TableCell>
+                    <div className="font-black">{person.full_name}</div>
+                    <div className="text-xs text-muted-foreground">{person.address ?? '—'}</div>
+                  </TableCell>
+                  <TableCell>{personTypeLabels[person.type]}</TableCell>
+                  <TableCell>{person.phone ?? '—'}</TableCell>
+                  <TableCell dir="ltr" className="text-right">{person.email ?? '—'}</TableCell>
+                  <TableCell>{person.national_id ?? '—'}</TableCell>
+                  <TableCell>
+                    <div className="flex gap-2">
+                      <Button variant="secondary" className="min-h-9 px-3" asChild><Link to="/people/$personId/edit" params={{ personId: person.id }}><Edit className="size-4" /></Link></Button>
+                      <Button variant="danger" className="min-h-9 px-3" onClick={() => deleteMutation.mutate(person.id)} disabled={deleteMutation.isPending}><Trash2 className="size-4" /></Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      );
+    }
+
+    return <div className="p-6"><EmptyState title="لا توجد سجلات أشخاص" description="أضف مستأجراً أو مالكاً أو جهة اتصال." action={<Button asChild><Link to="/people/new">إضافة شخص</Link></Button>} /></div>;
+  }
 
   return (
     <div className="space-y-6">
@@ -44,48 +104,7 @@ export function PeopleListPage() {
       </Card>
 
       <Card className="overflow-hidden">
-        {peopleQuery.isLoading ? (
-          <div className="space-y-3 p-6">
-            {Array.from({ length: 6 }, (_, index) => <Skeleton key={index} className="h-14" />)}
-          </div>
-        ) : peopleQuery.data?.rows.length ? (
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>الاسم</TableHead>
-                  <TableHead>النوع</TableHead>
-                  <TableHead>الهاتف</TableHead>
-                  <TableHead>البريد</TableHead>
-                  <TableHead>رقم الهوية</TableHead>
-                  <TableHead className="w-40">إجراءات</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {peopleQuery.data.rows.map((person) => (
-                  <TableRow key={person.id}>
-                    <TableCell>
-                      <div className="font-black">{person.full_name}</div>
-                      <div className="text-xs text-muted-foreground">{person.address ?? '—'}</div>
-                    </TableCell>
-                    <TableCell>{personTypeLabels[person.type]}</TableCell>
-                    <TableCell>{person.phone ?? '—'}</TableCell>
-                    <TableCell dir="ltr" className="text-right">{person.email ?? '—'}</TableCell>
-                    <TableCell>{person.national_id ?? '—'}</TableCell>
-                    <TableCell>
-                      <div className="flex gap-2">
-                        <Button variant="secondary" className="min-h-9 px-3" asChild><Link to="/people/$personId/edit" params={{ personId: person.id }}><Edit className="size-4" /></Link></Button>
-                        <Button variant="danger" className="min-h-9 px-3" onClick={() => void deleteMutation.mutate(person.id)} disabled={deleteMutation.isPending}><Trash2 className="size-4" /></Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
-        ) : (
-          <div className="p-6"><EmptyState title="لا توجد سجلات أشخاص" description="أضف مستأجراً أو مالكاً أو جهة اتصال." action={<Button asChild><Link to="/people/new">إضافة شخص</Link></Button>} /></div>
-        )}
+        {renderPeopleContent()}
       </Card>
 
       <div className="flex items-center justify-between text-sm text-muted-foreground">

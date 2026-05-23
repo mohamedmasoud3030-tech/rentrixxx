@@ -1,8 +1,7 @@
 import { Printer } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import type { ReceiptRecord } from '../receipts/receiptService';
-import { formatDate, formatMoney, formatShortId, getErrorMessage } from '@lib/format';
-import { formatReceiptContext, paymentMethodLabels } from '@lib/format';
+import { formatDate, formatMoney, formatReceiptContext, formatShortId, getErrorMessage, paymentMethodLabels } from '@lib/format';
 
 type ReceiptDetailCardProps = {
   selectedReceiptId: string;
@@ -16,7 +15,7 @@ function getReceiptPrintHref(receiptId: string) {
   return `/receipts?receiptId=${encodeURIComponent(receiptId)}`;
 }
 
-export function ReceiptDetailCard({ selectedReceiptId, receiptDetail, isLoading, isError, error }: ReceiptDetailCardProps) {
+export function ReceiptDetailCard({ selectedReceiptId, receiptDetail, isLoading, isError, error }: Readonly<ReceiptDetailCardProps>) {
   return (
     <div className="rounded-2xl border p-4">
       <h4 className="font-black">تفاصيل الإيصال</h4>

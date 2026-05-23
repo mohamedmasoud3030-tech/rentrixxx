@@ -38,7 +38,7 @@ export function InvoiceListSection({
   onInvoiceSearchChange,
   onGenerateInvoices,
   onSelectInvoice,
-}: InvoiceListSectionProps) {
+}: Readonly<InvoiceListSectionProps>) {
   return (
     <Card>
       <CardHeader>

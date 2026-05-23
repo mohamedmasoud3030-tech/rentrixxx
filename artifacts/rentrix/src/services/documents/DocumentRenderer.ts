@@ -13,12 +13,16 @@ export const collectDocumentTextChunks = (model: UnifiedDocumentModel): string[]
   return [model.header.companyName, model.header.companyAddress, model.header.companyPhone, model.header.title, model.header.documentNo, model.header.dateLabel, model.header.dateValue, ...model.kpis.flatMap((k) => [k.label, k.value]), ...model.tables.flatMap((t) => [t.title, ...t.columns, ...t.rows.flat(), ...(t.totals ?? [])]), model.footer.companyStampLabel, model.footer.metadata, ...signatureTexts].filter((v): v is string => Boolean(v));
 };
 const modelHasArabicText = (model: UnifiedDocumentModel): boolean => collectDocumentTextChunks(model).some((x) => ARABIC_REGEX.test(x));
-const buildHtmlRows = (rows: string[][]) => rows.map((r) => `<tr>${r.map((c) => `<td>${c}</td>`).join('')}</tr>`).join('');
+const buildHtmlRows = (rows: string[][]) => rows.map((r) => {
+  const cellsHtml = r.map((c) => `<td>${c}</td>`).join('');
+  return `<tr>${cellsHtml}</tr>`;
+}).join('');
 const buildHtmlTable = (table: UnifiedDocumentModel['tables'][number]) => {
   const tableHead = table.columns.map((column) => `<th>${column}</th>`).join('');
-  const tableFoot = table.totals?.length
-    ? `<tfoot><tr>${table.totals.map((total) => `<th>${total}</th>`).join('')}</tr></tfoot>`
-    : '';
+  const footerCells = table.totals?.map((total) => `<th>${total}</th>`).join('') ?? '';
+  const tableFootMarkup = `<tfoot><tr>${footerCells}</tr></tfoot>`;
+  const hasTotals = Boolean(table.totals?.length);
+  const tableFoot = hasTotals ? tableFootMarkup : '';
   return `<section><h3>${table.title ?? ''}</h3><table><thead><tr>${tableHead}</tr></thead><tbody>${buildHtmlRows(table.rows)}</tbody>${tableFoot}</table></section>`;
 };
 const buildRtlPrintHtml = (model: UnifiedDocumentModel) => {
@@ -61,7 +65,7 @@ const renderRtlPrintPreview = (model: UnifiedDocumentModel): void => {
 const renderPdfHeader = (doc: jsPDF, model: UnifiedDocumentModel, y: number): number => { doc.setFont('helvetica','bold'); doc.setFontSize(12); doc.text(model.header.companyName || 'Rentrix', PAGE_MARGIN_X, y); y+=LINE_HEIGHT; doc.setFont('helvetica','normal'); doc.setFontSize(9); [model.header.companyAddress, model.header.companyPhone].forEach((line)=>{ if(line){doc.text(line, PAGE_MARGIN_X, y); y+=LINE_HEIGHT;}}); doc.setFont('helvetica','bold'); doc.setFontSize(13); doc.text(model.header.title, PAGE_MARGIN_X, y); y+=LINE_HEIGHT; doc.setFont('helvetica','normal'); doc.setFontSize(10); if(model.header.documentNo){doc.text(`No: ${model.header.documentNo}`, PAGE_MARGIN_X,y); y+=LINE_HEIGHT;} if(model.header.dateLabel&&model.header.dateValue){doc.text(`${model.header.dateLabel}: ${model.header.dateValue}`, PAGE_MARGIN_X,y); y+=LINE_HEIGHT;} return y+2; };
 const renderPdfKpis = (doc: jsPDF, model: UnifiedDocumentModel, y: number): number => { model.kpis.forEach((k)=>{ y=ensurePage(doc,y,LINE_HEIGHT); doc.setFont('helvetica','bold'); doc.text(`${k.label}:`,PAGE_MARGIN_X,y); doc.setFont('helvetica','normal'); doc.text(k.value,PAGE_MARGIN_X+55,y); y+=LINE_HEIGHT;}); return y+2; };
 const renderPdfTables = (doc: jsPDF, model: UnifiedDocumentModel, y: number): number => { model.tables.forEach((t)=>{ y=ensurePage(doc,y,20); if(t.title){doc.setFont('helvetica','bold'); doc.text(t.title,PAGE_MARGIN_X,y); y+=LINE_HEIGHT;} doc.setFont('helvetica','bold'); doc.setFontSize(9); doc.text(t.columns.join(' | '),PAGE_MARGIN_X,y); y+=LINE_HEIGHT; doc.setFont('helvetica','normal'); t.rows.forEach((r)=>{ y=ensurePage(doc,y,LINE_HEIGHT); doc.text(r.join(' | '),PAGE_MARGIN_X,y); y+=LINE_HEIGHT;}); if(t.totals?.length){ y=ensurePage(doc,y,LINE_HEIGHT); doc.setFont('helvetica','bold'); doc.text(t.totals.join(' | '),PAGE_MARGIN_X,y); y+=LINE_HEIGHT;} y+=2;}); return y; };
-const renderPdfFooter = (doc: jsPDF, model: UnifiedDocumentModel, y: number): number => { y=ensurePage(doc,y,24); doc.setFont('helvetica','bold'); doc.text('Signatures',PAGE_MARGIN_X,y); y+=LINE_HEIGHT; model.footer.signatures.forEach((r)=>{ y=ensurePage(doc,y,LINE_HEIGHT); doc.setFont('helvetica','normal'); doc.text(`${signatureLabel[r]}: ____________________`,PAGE_MARGIN_X,y); y+=LINE_HEIGHT;}); [model.footer.companyStampLabel, model.footer.metadata].forEach((line)=>{ if(line){ y=ensurePage(doc,y,LINE_HEIGHT); doc.text(line,PAGE_MARGIN_X,y); y+=LINE_HEIGHT;}}); return y; };
+const renderPdfFooter = (doc: jsPDF, model: UnifiedDocumentModel, y: number): number => { y=ensurePage(doc,y,24); doc.setFont('helvetica','bold'); doc.text('Signatures',PAGE_MARGIN_X,y); y+=LINE_HEIGHT; model.footer.signatures.forEach((r)=>{ y=ensurePage(doc,y,LINE_HEIGHT); doc.setFont('helvetica','normal'); const signatureText = `${signatureLabel[r]}: ____________________`; doc.text(signatureText,PAGE_MARGIN_X,y); y+=LINE_HEIGHT;}); [model.footer.companyStampLabel, model.footer.metadata].forEach((line)=>{ if(line){ y=ensurePage(doc,y,LINE_HEIGHT); doc.text(line,PAGE_MARGIN_X,y); y+=LINE_HEIGHT;}}); return y; };
 
 export const DocumentRenderer = {
   renderToPDF(model: UnifiedDocumentModel): void {

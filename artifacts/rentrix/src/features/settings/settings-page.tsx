@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { formatCompanyDate, formatCompanyMoney } from '@lib/format';
+import { formatCompanyDate, formatCompanyMoney, supportedCurrencies } from '@lib/format';
 import {
   normalizeCompanyLocale,
   supportedCompanyLocales,
@@ -13,7 +13,6 @@ import {
   supportedTimezones,
   type SupportedLanguage,
 } from '@/lib/companySettings';
-import { supportedCurrencies } from '@lib/format';
 import { getAppLanguageState } from '@/lib/i18n';
 import { useUiStore } from '@/store/ui-store';
 import { supabase } from '@/integrations/supabase/client';

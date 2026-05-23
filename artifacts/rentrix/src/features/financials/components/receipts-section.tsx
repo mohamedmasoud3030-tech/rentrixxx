@@ -1,9 +1,8 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import type { ReceiptRecord } from '../receipts/receiptService';
-import { formatDate, formatMoney, formatShortId, getErrorMessage } from '@lib/format';
+import { formatDate, formatMoney, formatReceiptContext, formatShortId, getErrorMessage, paymentMethodLabels, receiptStatusLabels } from '@lib/format';
 import { ReceiptDetailCard } from './receipt-detail-card';
-import { formatReceiptContext, paymentMethodLabels, receiptStatusLabels } from '@lib/format';
 
 type ReceiptsSectionProps = {
   receipts: ReceiptRecord[];
@@ -29,7 +28,7 @@ export function ReceiptsSection({
   isReceiptDetailError,
   receiptDetailError,
   onSelectReceipt,
-}: ReceiptsSectionProps) {
+}: Readonly<ReceiptsSectionProps>) {
   return (
     <Card>
       <CardHeader>
