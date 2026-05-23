@@ -30,6 +30,8 @@ export function PeopleListPage() {
   const deleteMutation = useSoftDeletePerson();
   const totalPages = Math.max(1, Math.ceil((peopleQuery.data?.count ?? 0) / pageSize));
 
+  const tableState = getPeopleTableState(peopleQuery.isLoading, peopleRows.length);
+
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -51,11 +53,11 @@ export function PeopleListPage() {
       </Card>
 
       <Card className="overflow-hidden">
-        {getPeopleTableState(peopleQuery.isLoading, peopleRows.length) === 'loading' ? (
+        {tableState === 'loading' ? (
           <div className="space-y-3 p-6">
             {Array.from({ length: 6 }, (_, index) => <Skeleton key={index} className="h-14" />)}
           </div>
-        ) : getPeopleTableState(peopleQuery.isLoading, peopleRows.length) === 'table' ? (
+        ) : tableState === 'table' ? (
           <div className="overflow-x-auto">
             <Table>
               <TableHeader>
