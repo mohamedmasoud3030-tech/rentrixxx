@@ -14,6 +14,12 @@ import { usePeople, useSoftDeletePerson } from './use-people';
 
 const pageSize = 10;
 
+function getPeopleTableState(isLoading: boolean, peopleCount: number): 'loading' | 'table' | 'empty' {
+  if (isLoading) return 'loading';
+  if (peopleCount > 0) return 'table';
+  return 'empty';
+}
+
 export function PeopleListPage() {
   const [search, setSearch] = useState('');
   const [type, setType] = useState<PersonTypeFilter>('all');
@@ -45,11 +51,11 @@ export function PeopleListPage() {
       </Card>
 
       <Card className="overflow-hidden">
-        {peopleQuery.isLoading ? (
+        {getPeopleTableState(peopleQuery.isLoading, peopleRows.length) === 'loading' ? (
           <div className="space-y-3 p-6">
             {Array.from({ length: 6 }, (_, index) => <Skeleton key={index} className="h-14" />)}
           </div>
-        ) : peopleRows.length > 0 ? (
+        ) : getPeopleTableState(peopleQuery.isLoading, peopleRows.length) === 'table' ? (
           <div className="overflow-x-auto">
             <Table>
               <TableHeader>

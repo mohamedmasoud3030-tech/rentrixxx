@@ -7,7 +7,6 @@ import {
   type InvoiceListItem,
   type InvoiceListParams,
   type InvoiceStatusFilter,
-  type InvoiceSummary,
 } from '@/services/financial/invoiceService';
 
 export type { InvoiceDetail, InvoiceListItem, InvoiceListParams, InvoiceStatusFilter };
