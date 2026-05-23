@@ -13,14 +13,16 @@ export const collectDocumentTextChunks = (model: UnifiedDocumentModel): string[]
   return [model.header.companyName, model.header.companyAddress, model.header.companyPhone, model.header.title, model.header.documentNo, model.header.dateLabel, model.header.dateValue, ...model.kpis.flatMap((k) => [k.label, k.value]), ...model.tables.flatMap((t) => [t.title, ...t.columns, ...t.rows.flat(), ...(t.totals ?? [])]), model.footer.companyStampLabel, model.footer.metadata, ...signatureTexts].filter((v): v is string => Boolean(v));
 };
 const modelHasArabicText = (model: UnifiedDocumentModel): boolean => collectDocumentTextChunks(model).some((x) => ARABIC_REGEX.test(x));
-const buildHtmlRows = (rows: string[][]) => rows.map((r) => `<tr>${r.map((c) => `<td>${c}</td>`).join('')}</tr>`).join('');
+const buildHtmlRows = (rows: string[][]) => rows.map((r) => {
+  const cellsHtml = r.map((c) => `<td>${c}</td>`).join('');
+  return `<tr>${cellsHtml}</tr>`;
+}).join('');
 const buildHtmlTable = (table: UnifiedDocumentModel['tables'][number]) => {
   const tableHead = table.columns.map((column) => `<th>${column}</th>`).join('');
   const footerCells = table.totals?.map((total) => `<th>${total}</th>`).join('') ?? '';
   const tableFootMarkup = `<tfoot><tr>${footerCells}</tr></tfoot>`;
-  const tableFoot = table.totals?.length
-    ? tableFootMarkup
-    : '';
+  const hasTotals = Boolean(table.totals?.length);
+  const tableFoot = hasTotals ? tableFootMarkup : '';
   return `<section><h3>${table.title ?? ''}</h3><table><thead><tr>${tableHead}</tr></thead><tbody>${buildHtmlRows(table.rows)}</tbody>${tableFoot}</table></section>`;
 };
 const buildRtlPrintHtml = (model: UnifiedDocumentModel) => {

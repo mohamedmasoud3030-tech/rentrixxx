@@ -66,8 +66,11 @@ function TenantLocation({ tenant }: Readonly<{ tenant: TenantWorkspaceRow }>) {
 
 function TenantSafeLinks({ tenant }: Readonly<{ tenant: TenantWorkspaceRow }>) {
   const hasLinks = tenant.primaryContractId !== null || tenant.hasInvoices || tenant.hasArrears;
-  if (hasLinks) {
-    return (
+  if (!hasLinks) {
+    return <p className="text-sm text-muted-foreground">لا توجد روابط متاحة حتى الآن</p>;
+  }
+
+  return (
       <div className="flex flex-wrap gap-2">
         {tenant.primaryContractId !== null ? (
           <Button variant="secondary" className="min-h-9 px-3" asChild>
@@ -78,9 +81,6 @@ function TenantSafeLinks({ tenant }: Readonly<{ tenant: TenantWorkspaceRow }>) {
         {tenant.hasArrears ? <Button variant="secondary" className="min-h-9 px-3 text-amber-700" asChild><Link to="/arrears"><TriangleAlert className="ms-1 size-4" />المتأخرات</Link></Button> : null}
       </div>
     );
-  }
-
-  return <p className="text-sm text-muted-foreground">لا توجد روابط متاحة حتى الآن</p>;
 }
 
 function TenantCard({ tenant }: Readonly<{ tenant: TenantWorkspaceRow }>) {

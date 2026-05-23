@@ -44,7 +44,7 @@ function normalizeSearchText(value: string) {
     .toLowerCase()
     .replace(/[\u064B-\u065F\u0670\u06D6-\u06ED]/g, '')
     .replace(/[أإآ]/g, 'ا')
-    .replaceAll(/ى/g, 'ي')
+    .replaceAll('ى', 'ي')
     .replaceAll(/[٠-٩]/g, (digit) => String((digit.codePointAt(0) ?? 0) - 0x0660))
     .replaceAll(/[۰-۹]/g, (digit) => String((digit.codePointAt(0) ?? 0) - 0x06f0));
 }

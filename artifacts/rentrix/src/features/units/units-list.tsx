@@ -50,6 +50,8 @@ export function UnitsList({ propertyId, unitsQuery }: Readonly<{ propertyId: str
     setArchiveCandidate(unit);
   };
 
+  const tableState = getUnitsTableState(unitsQuery.isLoading, unitRows.length);
+
   const confirmArchiveUnit = () => {
     if (!archiveCandidate) return;
     deleteMutation.mutate(archiveCandidate.id, {
@@ -78,11 +80,11 @@ export function UnitsList({ propertyId, unitsQuery }: Readonly<{ propertyId: str
           </div>
         ) : null}
 
-        {getUnitsTableState(unitsQuery.isLoading, unitRows.length) === 'loading' ? (
+        {tableState === 'loading' ? (
           <div className="space-y-3">
             {Array.from({ length: 4 }, (_, index) => <Skeleton key={index} className="h-14" />)}
           </div>
-        ) : getUnitsTableState(unitsQuery.isLoading, unitRows.length) === 'table' ? (
+        ) : tableState === 'table' ? (
           <div className="overflow-x-auto rounded-2xl border border-border">
             <Table>
               <TableHeader>
