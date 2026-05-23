@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Link } from '@tanstack/react-router';
-import { CalendarDays, FileClock, RefreshCcw } from 'lucide-react';
+import { CalendarDays, FileClock, Printer, RefreshCcw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -14,6 +14,7 @@ import { useInvoices } from '@/features/financials/invoices/useInvoices';
 import { useLeads } from '@/features/leads/use-leads';
 import { useAgedReceivablesReport, useOverdueInvoicesReport } from '@/features/financials/reports/useFinancialReports';
 import { formatDate, formatInvoiceStatusLabel, formatMoney, getErrorMessage } from '@lib/format';
+import { canPrintOperationalReport, runOperationalPrint } from '@/lib/operationalPrint';
 
 type FilterState = Readonly<{ asOf: string }>;
 type MetricCardProps = Readonly<{ label: string; value: string; helper: string; tone?: 'blue' | 'green' | 'red' | 'gray' | 'gold' }>;
@@ -91,11 +92,13 @@ export function ReportsPage() {
     leads.length > 0 ||
     totalOverdue > 0;
 
+  const printError = !canPrintOperationalReport(hasAnyData, isLoading, Boolean(firstError)) ? 'لا تتوفر بيانات كافية للطباعة حالياً.' : null;
+
   return (
     <div className="space-y-6" dir="rtl">
       <Card className="border-primary/10 bg-gradient-to-br from-primary/10 via-card to-card">
         <CardHeader className="space-y-3">
-          <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between"><div><p className="text-sm font-black text-primary">مركز التقارير التشغيلية</p><h2 className="text-3xl font-black tracking-tight">التقارير</h2><CardDescription>قراءة فقط من البيانات الحالية بدون أي منطق محاسبي متقدم أو ترحيل جديد.</CardDescription></div><div className="flex flex-wrap gap-2"><Button variant="secondary" asChild><Link to="/arrears">المتأخرات</Link></Button><Button variant="secondary" asChild><Link to="/invoices">الفواتير</Link></Button></div></div>
+          <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between"><div><p className="text-sm font-black text-primary">مركز التقارير التشغيلية</p><h2 className="text-3xl font-black tracking-tight">التقارير</h2><CardDescription>قراءة فقط من البيانات الحالية بدون أي منطق محاسبي متقدم أو ترحيل جديد.</CardDescription></div><div className="flex flex-wrap gap-2"><Button variant="secondary" asChild><Link to="/arrears">المتأخرات</Link></Button><Button variant="secondary" asChild><Link to="/invoices">الفواتير</Link></Button><Button variant="secondary" onClick={() => { const err = runOperationalPrint(hasAnyData, isLoading, Boolean(firstError)); if (err) globalThis.alert(err); }} disabled={!canPrintOperationalReport(hasAnyData, isLoading, Boolean(firstError))}><Printer className="ms-2 size-4" />طباعة التقرير</Button></div></div>
           <div className="grid gap-3 md:grid-cols-[1fr_auto]"><label className="space-y-1 text-sm font-bold"><span>تاريخ الاحتساب (As of)</span><Input type="date" value={filters.asOf} onChange={(event) => setFilters({ asOf: event.target.value })} /></label><div className="flex items-end"><Button className="w-full" onClick={() => setFilters({ asOf: getTodayInput() })} variant="secondary"><RefreshCcw className="ms-2 size-4" />اليوم</Button></div></div>
         </CardHeader>
       </Card>
@@ -105,6 +108,7 @@ export function ReportsPage() {
       {firstError ? <Card><CardContent className="flex items-center justify-between gap-3 p-4 text-sm text-destructive"><span>{getErrorMessage(firstError, 'تعذر تحميل التقارير. يمكنك إعادة المحاولة بأمان.')}</span><Button variant="secondary" onClick={() => { contractsQuery.refetch(); propertiesQuery.refetch(); ownersQuery.refetch(); invoicesQuery.refetch(); leadsQuery.refetch(); overdueInvoicesQuery.refetch(); agedReceivablesQuery.refetch(); }}>إعادة المحاولة</Button></CardContent></Card> : null}
       {isLoading ? <Card><CardContent className="p-4 text-sm text-muted-foreground">جارٍ تحميل التقارير...</CardContent></Card> : null}
       {!isLoading && !firstError && !hasAnyData ? <Card><CardContent className="p-4 text-sm text-muted-foreground">لا توجد بيانات متاحة للتقارير حالياً.</CardContent></Card> : null}
+      {printError ? <p className="text-xs text-muted-foreground">{printError}</p> : null}
 
       <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
         <MetricCard label="نسبة الإشغال" value={`${occupancyRate}%`} helper={`${occupiedUnits} مشغولة من ${totalUnits} وحدة (مبني على العقود الحالية)`} tone="green" />
