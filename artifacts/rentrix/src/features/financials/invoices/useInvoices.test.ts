@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { financialReportKeys } from '../reports/useFinancialReports';
-import { invoiceKeys } from './useInvoices';
+import { invoiceKeys, useGenerateInvoices } from './useInvoices';
 
 const mutationMock = vi.hoisted(() => ({
   invalidateQueries: vi.fn(),
@@ -36,9 +36,12 @@ describe('useGenerateInvoices', () => {
     mutationMock.invalidateQueries.mockResolvedValue(undefined);
   }
 
+  function useGenerateInvoicesOnSuccess() {
+    return useGenerateInvoices() as unknown as { onSuccess: (value: number) => Promise<void> };
+  }
+
   async function runGenerateInvoicesOnSuccess(count: number) {
-    const { useGenerateInvoices } = await import('./useInvoices');
-    const mutationOptions = useGenerateInvoices() as unknown as { onSuccess: (value: number) => Promise<void> };
+    const mutationOptions = useGenerateInvoicesOnSuccess();
     await mutationOptions.onSuccess(count);
   }
 
