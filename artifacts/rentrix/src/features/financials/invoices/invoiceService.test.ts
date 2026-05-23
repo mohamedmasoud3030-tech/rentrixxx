@@ -113,10 +113,13 @@ describe('invoiceService financial reconciliation', () => {
 
     await expect(listInvoices({ status: 'partial', search: 'invoice_%' })).resolves.toEqual([invoice]);
 
+    const escapedSearch = String.raw`%invoice\_\%%`;
+    const expectedPattern = `id.ilike."${escapedSearch}",status.ilike."${escapedSearch}"`;
+
     expect(log).toEqual(expect.arrayContaining([
       { table: 'invoices', method: 'is', args: ['deleted_at', null] },
       { table: 'invoices', method: 'eq', args: ['status', 'partial'] },
-      { table: 'invoices', method: 'or', args: [`id.ilike."${String.raw`%invoice\_\%%`}",status.ilike."${String.raw`%invoice\_\%%`}"`] },
+      { table: 'invoices', method: 'or', args: [expectedPattern] },
     ]));
     expect(log).toEqual(expect.arrayContaining([{ table: 'invoices', method: 'range', args: [0, 19] }]));
     expect(supabaseMock.rpc).not.toHaveBeenCalled();

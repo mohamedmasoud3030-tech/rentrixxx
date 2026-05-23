@@ -1,6 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
 import {
-  formatReceiptNumber,
   getReceiptDetail as getReceiptDetailService,
   listReceipts as listReceiptsService,
   type ReceiptListParams,

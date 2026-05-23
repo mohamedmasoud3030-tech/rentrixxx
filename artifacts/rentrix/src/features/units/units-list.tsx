@@ -21,6 +21,12 @@ function money(value: number | null) {
   return formatCompanyMoney(defaultCompanyLocalSettings, value);
 }
 
+function getUnitsTableState(isLoading: boolean, unitsCount: number): 'loading' | 'table' | 'empty' {
+  if (isLoading) return 'loading';
+  if (unitsCount > 0) return 'table';
+  return 'empty';
+}
+
 export function UnitsList({ propertyId, unitsQuery }: Readonly<{ propertyId: string; unitsQuery: UseQueryResult<Unit[]> }>) {
   const unitRows = unitsQuery.data ?? [];
   const deleteMutation = useSoftDeleteUnit(propertyId);
@@ -72,11 +78,11 @@ export function UnitsList({ propertyId, unitsQuery }: Readonly<{ propertyId: str
           </div>
         ) : null}
 
-        {unitsQuery.isLoading ? (
+        {getUnitsTableState(unitsQuery.isLoading, unitRows.length) === 'loading' ? (
           <div className="space-y-3">
             {Array.from({ length: 4 }, (_, index) => <Skeleton key={index} className="h-14" />)}
           </div>
-        ) : unitRows.length > 0 ? (
+        ) : getUnitsTableState(unitsQuery.isLoading, unitRows.length) === 'table' ? (
           <div className="overflow-x-auto rounded-2xl border border-border">
             <Table>
               <TableHeader>
