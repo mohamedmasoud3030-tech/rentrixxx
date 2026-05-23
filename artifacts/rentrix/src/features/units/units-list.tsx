@@ -52,6 +52,54 @@ export function UnitsList({ propertyId, unitsQuery }: Readonly<{ propertyId: str
 
   const tableState = getUnitsTableState(unitsQuery.isLoading, unitRows.length);
 
+  function renderUnitsContent() {
+    if (tableState === 'loading') {
+      return (
+        <div className="space-y-3">
+          {Array.from({ length: 4 }, (_, index) => <Skeleton key={index} className="h-14" />)}
+        </div>
+      );
+    }
+
+    if (tableState === 'table') {
+      return (
+        <div className="overflow-x-auto rounded-2xl border border-border">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>رقم الوحدة</TableHead>
+                <TableHead>الدور</TableHead>
+                <TableHead>الحالة</TableHead>
+                <TableHead>الإيجار</TableHead>
+                <TableHead>ملاحظات</TableHead>
+                <TableHead>إجراءات</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {unitRows.map((unit) => (
+                <TableRow key={unit.id}>
+                  <TableCell className="font-black">{unit.unit_number}</TableCell>
+                  <TableCell>{unit.floor ?? '—'}</TableCell>
+                  <TableCell><StatusBadge tone={unitStatusTone[unit.status]}>{unitStatusLabels[unit.status]}</StatusBadge></TableCell>
+                  <TableCell dir="ltr" className="font-bold">{money(unit.rent_amount)}</TableCell>
+                  <TableCell>{unit.notes ?? '—'}</TableCell>
+                  <TableCell>
+                    <div className="flex gap-2">
+                      <Button variant="secondary" className="min-h-9 px-3" onClick={() => openForEdit(unit)}><Edit className="size-4" /></Button>
+                      <Button variant="danger" className="min-h-9 px-3" aria-label="أرشفة الوحدة" onClick={() => requestArchiveUnit(unit)} disabled={deleteMutation.isPending}><Archive className="size-4" /></Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      );
+    }
+
+    return <EmptyState title="لا توجد وحدات" description="أضف الوحدات التابعة لهذا العقار من هنا." action={<Button onClick={openForCreate}>إضافة وحدة</Button>} />;
+  }
+
   const confirmArchiveUnit = () => {
     if (!archiveCandidate) return;
     deleteMutation.mutate(archiveCandidate.id, {
@@ -80,45 +128,7 @@ export function UnitsList({ propertyId, unitsQuery }: Readonly<{ propertyId: str
           </div>
         ) : null}
 
-        {tableState === 'loading' ? (
-          <div className="space-y-3">
-            {Array.from({ length: 4 }, (_, index) => <Skeleton key={index} className="h-14" />)}
-          </div>
-        ) : tableState === 'table' ? (
-          <div className="overflow-x-auto rounded-2xl border border-border">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>رقم الوحدة</TableHead>
-                  <TableHead>الدور</TableHead>
-                  <TableHead>الحالة</TableHead>
-                  <TableHead>الإيجار</TableHead>
-                  <TableHead>ملاحظات</TableHead>
-                  <TableHead>إجراءات</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {unitRows.map((unit) => (
-                  <TableRow key={unit.id}>
-                    <TableCell className="font-black">{unit.unit_number}</TableCell>
-                    <TableCell>{unit.floor ?? '—'}</TableCell>
-                    <TableCell><StatusBadge tone={unitStatusTone[unit.status]}>{unitStatusLabels[unit.status]}</StatusBadge></TableCell>
-                    <TableCell dir="ltr" className="font-bold">{money(unit.rent_amount)}</TableCell>
-                    <TableCell>{unit.notes ?? '—'}</TableCell>
-                    <TableCell>
-                      <div className="flex gap-2">
-                        <Button variant="secondary" className="min-h-9 px-3" onClick={() => openForEdit(unit)}><Edit className="size-4" /></Button>
-                        <Button variant="danger" className="min-h-9 px-3" aria-label="أرشفة الوحدة" onClick={() => requestArchiveUnit(unit)} disabled={deleteMutation.isPending}><Archive className="size-4" /></Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
-        ) : (
-          <EmptyState title="لا توجد وحدات" description="أضف الوحدات التابعة لهذا العقار من هنا." action={<Button onClick={openForCreate}>إضافة وحدة</Button>} />
-        )}
+        {renderUnitsContent()}
       </CardContent>
       <UnitFormModal propertyId={propertyId} unit={editingUnit} open={modalOpen} onOpenChange={setModalOpen} />
     </Card>
