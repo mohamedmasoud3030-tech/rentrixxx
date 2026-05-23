@@ -2,6 +2,7 @@ import { Link } from '@tanstack/react-router';
 import { Download, FileText, Mail, Phone, ReceiptText, Search, ShieldCheck, TriangleAlert, Users } from 'lucide-react';
 import type { ChangeEvent } from 'react';
 import { useCallback, useMemo, useState } from 'react';
+import { toast } from 'sonner';
 import { BulkActionsBar } from '@/components/BulkActionsBar';
 import { EmptyState } from '@/components/empty-state';
 import { Button } from '@/components/ui/button';
@@ -10,7 +11,7 @@ import { useBulkSelection } from '@/hooks/useBulkSelection';
 import { downloadCsv, type CsvRow } from '@/utils/helpers';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
-import type { TenantWorkspaceRow } from './tenantWorkspaceService';
+import { listTenantWorkspaceByIds, listTenantWorkspaceForExport, type TenantWorkspaceRow } from './tenantWorkspaceService';
 import { useTenantWorkspace } from './useTenantWorkspace';
 
 const pageSize = 10;
@@ -160,11 +161,16 @@ export function TenantsPage() {
   const tenantsQuery = useTenantWorkspace(params);
   const rows = tenantsQuery.data?.rows ?? [];
   const bulkSelection = useBulkSelection(rows.map((tenant) => tenant.person.id));
-  const selectedTenants = rows.filter((tenant) => bulkSelection.selectedIds.has(tenant.person.id));
   const totalPages = Math.max(1, Math.ceil((tenantsQuery.data?.count ?? 0) / pageSize));
-  const exportTenants = (mode: 'selected' | 'filtered') => {
-    const targetRows = mode === 'selected' ? selectedTenants : rows;
-    const csvRows: CsvRow[] = targetRows.map((tenant) => ({
+  const exportTenants = async (mode: 'selected' | 'filtered') => {
+    try {
+      const targetRows = mode === 'selected'
+        ? await listTenantWorkspaceByIds([...bulkSelection.selectedIds])
+        : await listTenantWorkspaceForExport(search);
+      if (mode === 'selected' && targetRows.length !== bulkSelection.selectedCount) {
+        throw new Error('تعذر تصدير كل السجلات المحددة. ربما تم حذف بعض المستأجرين أو تغيّر الوصول إليهم.');
+      }
+      const csvRows: CsvRow[] = targetRows.map((tenant) => ({
       fullName: tenant.person.full_name ?? '',
       phone: tenant.person.phone ?? '',
       email: tenant.person.email ?? '',
@@ -173,8 +179,11 @@ export function TenantsPage() {
       unitNumber: tenant.unitNumber ?? '',
       activeContractCount: tenant.activeContractCount,
       safeLinks: tenant.primaryContractId || tenant.hasInvoices || tenant.hasArrears ? 'متاحة' : 'غير متاحة',
-    }));
-    downloadCsv('tenants-export', csvRows, ['fullName', 'phone', 'email', 'nationalId', 'propertyTitle', 'unitNumber', 'activeContractCount', 'safeLinks']);
+      }));
+      downloadCsv('tenants-export', csvRows, ['fullName', 'phone', 'email', 'nationalId', 'propertyTitle', 'unitNumber', 'activeContractCount', 'safeLinks']);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'تعذر تصدير بيانات المستأجرين');
+    }
   };
 
   return (
@@ -189,7 +198,7 @@ export function TenantsPage() {
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <Button variant="secondary" onClick={() => exportTenants('filtered')} disabled={rows.length === 0}><Download className="ms-2 size-4" />تصدير النتائج</Button>
+            <Button variant="secondary" onClick={() => void exportTenants('filtered')} disabled={(tenantsQuery.data?.count ?? 0) === 0}><Download className="ms-2 size-4" />تصدير النتائج</Button>
             <input type="checkbox" checked={bulkSelection.allSelected} onChange={() => bulkSelection.toggleAll()} aria-label="تحديد كل المستأجرين الحاليين" className="size-4 accent-primary" />
             <div className="rounded-2xl border border-border bg-card px-4 py-3 text-sm font-bold text-muted-foreground">
             إجمالي النتائج: <span className="text-foreground">{tenantsQuery.data?.count ?? 0}</span>
@@ -212,7 +221,7 @@ export function TenantsPage() {
         selectedCount={bulkSelection.selectedCount}
         selectionLabel={`تم تحديد ${bulkSelection.selectedCount.toLocaleString('ar')} مستأجر`}
         onClear={bulkSelection.clear}
-        actions={<Button variant="secondary" onClick={() => exportTenants('selected')}><Download className="ms-2 size-4" />تصدير المحدد</Button>}
+        actions={<Button variant="secondary" onClick={() => void exportTenants('selected')}><Download className="ms-2 size-4" />تصدير المحدد</Button>}
       />
 
       <div className="flex items-center justify-between text-sm text-muted-foreground">

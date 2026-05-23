@@ -168,3 +168,52 @@ export async function listTenantWorkspace(params: TenantWorkspaceParams): Promis
     count: count ?? 0,
   };
 }
+
+async function listTenantPeople(search: string, limit: number): Promise<TenantPerson[]> {
+  let query = supabase
+    .from('people')
+    .select('id,full_name,phone,email,national_id')
+    .eq('type', 'tenant')
+    .is('deleted_at', null)
+    .order('created_at', { ascending: false })
+    .limit(limit);
+  query = applyTenantSearch(query, search);
+  const { data, error } = await query.returns<TenantPerson[]>();
+  if (error) throw error;
+  return data ?? [];
+}
+
+async function listTenantPeopleByIds(ids: string[]): Promise<TenantPerson[]> {
+  if (ids.length === 0) return [];
+  const { data, error } = await supabase
+    .from('people')
+    .select('id,full_name,phone,email,national_id')
+    .in('id', ids)
+    .eq('type', 'tenant')
+    .is('deleted_at', null)
+    .returns<TenantPerson[]>();
+  if (error) throw error;
+  return data ?? [];
+}
+
+function buildTenantWorkspaceRows(tenantPeople: TenantPerson[], contracts: TenantContract[], invoices: TenantInvoice[]): TenantWorkspaceRow[] {
+  const contractsByTenant = groupBy(contracts, (contract) => contract.tenant_id);
+  const invoicesByContract = groupBy(invoices, (invoice) => invoice.contract_id);
+  const invoicesByTenant = getInvoicesByTenant(contractsByTenant, invoicesByContract);
+  const today = getTodayLocalDateString();
+  return tenantPeople.map((person) => buildTenantRow(person, contractsByTenant[person.id] ?? [], invoicesByTenant[person.id] ?? [], today));
+}
+
+export async function listTenantWorkspaceForExport(search: string, limit = 5000): Promise<TenantWorkspaceRow[]> {
+  const tenantPeople = await listTenantPeople(search, limit);
+  const contracts = await listTenantContracts(tenantPeople.map((person) => person.id));
+  const invoices = await listTenantInvoices(contracts.map((contract) => contract.id));
+  return buildTenantWorkspaceRows(tenantPeople, contracts, invoices);
+}
+
+export async function listTenantWorkspaceByIds(ids: string[]): Promise<TenantWorkspaceRow[]> {
+  const tenantPeople = await listTenantPeopleByIds(ids);
+  const contracts = await listTenantContracts(tenantPeople.map((person) => person.id));
+  const invoices = await listTenantInvoices(contracts.map((contract) => contract.id));
+  return buildTenantWorkspaceRows(tenantPeople, contracts, invoices);
+}

@@ -1,6 +1,7 @@
 import { Link } from '@tanstack/react-router';
 import { Building2, Download, Eye, LinkIcon, Pencil, Plus, Search, Users } from 'lucide-react';
 import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from 'react';
+import { toast } from 'sonner';
 import { BulkActionsBar } from '@/components/BulkActionsBar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -276,7 +277,7 @@ export function OwnersPage() {
   const ownerWorkspaceRows = useMemo(() => buildOwnerWorkspaceRows(owners, properties, activeContracts), [activeContracts, owners, properties]);
   const filteredOwnerRows = useMemo(() => filterOwnerWorkspaceRows(ownerWorkspaceRows, ownerSearch), [ownerSearch, ownerWorkspaceRows]);
   const bulkSelection = useBulkSelection(filteredOwnerRows.map((row) => row.owner.id));
-  const selectedOwnerRows = filteredOwnerRows.filter((row) => bulkSelection.selectedIds.has(row.owner.id));
+  const selectedOwnerRows = ownerWorkspaceRows.filter((row) => bulkSelection.selectedIds.has(row.owner.id));
   const linkedProperties = useMemo(() => getLinkedPropertiesForOwner(selectedOwner, properties), [properties, selectedOwner]);
   const availableProperties = useMemo(() => getAvailablePropertiesForLink(selectedOwner, properties, editingLink), [editingLink, properties, selectedOwner]);
 
@@ -301,6 +302,10 @@ export function OwnersPage() {
   };
   const exportOwners = (mode: 'selected' | 'filtered') => {
     const rowsToExport = mode === 'selected' ? selectedOwnerRows : filteredOwnerRows;
+    if (mode === 'selected' && rowsToExport.length !== bulkSelection.selectedCount) {
+      toast.error('تعذر تصدير كل السجلات المحددة. ربما تم حذف بعض الملاك أو تغيّر الوصول إليهم.');
+      return;
+    }
     const csvRows: CsvRow[] = rowsToExport.map((row) => ({
       fullName: row.owner.full_name ?? '',
       phone: row.owner.phone ?? '',
