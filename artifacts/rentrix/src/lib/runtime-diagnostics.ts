@@ -5,7 +5,10 @@ export type DiagnosticCode =
   | 'missing_supabase_anon_key'
   | 'supabase_connection_failure'
   | 'missing_required_table'
-  | 'missing_required_rpc';
+  | 'missing_required_rpc'
+  | 'ambiguous_relationship'
+  | 'missing_required_column'
+  | 'blank_runtime_error';
 
 export type RuntimeDiagnostic = {
   code: DiagnosticCode;
@@ -97,12 +100,26 @@ export function parseSupabaseDiagnostics(error: unknown): RuntimeDiagnostic[] {
       technical: `Missing RPC function detected: ${metadata}`,
     });
   }
+  if (text.includes('more than one relationship was found') || maybe.code === 'PGRST201') {
+    diagnostics.push({
+      code: 'ambiguous_relationship',
+      messageAr: 'العلاقة بين الجداول غير واضحة. يلزم تحديد العلاقة صراحة في الاستعلام.',
+      technical: `Ambiguous relationship (PGRST) detected: ${metadata}`,
+    });
+  }
+  if (text.includes('column') && text.includes('does not exist')) {
+    diagnostics.push({
+      code: 'missing_required_column',
+      messageAr: 'يوجد عمود مطلوب غير موجود في قاعدة البيانات الحالية.',
+      technical: `Missing column detected: ${metadata}`,
+    });
+  }
 
   if (diagnostics.length === 0) {
     diagnostics.push({
-      code: 'supabase_connection_failure',
-      messageAr: 'حدث خطأ أثناء تحميل البيانات من Supabase.',
-      technical: `Unhandled Supabase error: ${metadata}`,
+      code: 'blank_runtime_error',
+      messageAr: 'حدث خطأ غير متوقع أثناء تحميل البيانات. راجع التفاصيل التقنية أدناه.',
+      technical: `Unhandled Supabase/runtime error: ${metadata}`,
     });
   }
 

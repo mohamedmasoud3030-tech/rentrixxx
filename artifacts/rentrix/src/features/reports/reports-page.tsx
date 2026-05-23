@@ -79,6 +79,7 @@ export function ReportsPage() {
   const firstError = contractsQuery.error ?? propertiesQuery.error ?? ownersQuery.error ?? invoicesQuery.error ?? leadsQuery.error ?? overdueInvoicesQuery.error ?? agedReceivablesQuery.error;
 
   const overdueRows = overdueInvoicesQuery.data?.rows ?? [];
+  const hasAnyData = contracts.length > 0 || properties.length > 0 || invoices.length > 0 || overdueRows.length > 0;
 
   return (
     <div className="space-y-6" dir="rtl">
@@ -91,8 +92,9 @@ export function ReportsPage() {
 
       <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-border bg-card p-3"><CalendarDays className="size-4 text-primary" /><span className="text-sm font-bold text-muted-foreground">مدعوم الآن:</span>{supportedReportNames.map((name) => <StatusBadge key={name} tone="green">{name}</StatusBadge>)}</div>
 
-      {firstError ? <Card><CardContent className="p-4 text-sm text-destructive">{getErrorMessage(firstError, 'تعذر تحميل التقارير. يمكنك إعادة المحاولة بأمان.')}</CardContent></Card> : null}
+      {firstError ? <Card><CardContent className="flex items-center justify-between gap-3 p-4 text-sm text-destructive"><span>{getErrorMessage(firstError, 'تعذر تحميل التقارير. يمكنك إعادة المحاولة بأمان.')}</span><Button variant="secondary" onClick={() => { contractsQuery.refetch(); propertiesQuery.refetch(); ownersQuery.refetch(); invoicesQuery.refetch(); leadsQuery.refetch(); overdueInvoicesQuery.refetch(); agedReceivablesQuery.refetch(); }}>إعادة المحاولة</Button></CardContent></Card> : null}
       {isLoading ? <Card><CardContent className="p-4 text-sm text-muted-foreground">جارٍ تحميل التقارير...</CardContent></Card> : null}
+      {!isLoading && !firstError && !hasAnyData ? <Card><CardContent className="p-4 text-sm text-muted-foreground">لا توجد بيانات متاحة للتقارير حالياً.</CardContent></Card> : null}
 
       <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
         <MetricCard label="نسبة الإشغال" value={`${occupancyRate}%`} helper={`${occupiedUnits} مشغولة من ${totalUnits} وحدة (مبني على العقود الحالية)`} tone="green" />
