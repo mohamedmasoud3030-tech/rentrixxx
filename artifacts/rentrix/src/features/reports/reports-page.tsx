@@ -79,7 +79,17 @@ export function ReportsPage() {
   const firstError = contractsQuery.error ?? propertiesQuery.error ?? ownersQuery.error ?? invoicesQuery.error ?? leadsQuery.error ?? overdueInvoicesQuery.error ?? agedReceivablesQuery.error;
 
   const overdueRows = overdueInvoicesQuery.data?.rows ?? [];
-  const hasAnyData = contracts.length > 0 || properties.length > 0 || invoices.length > 0 || overdueRows.length > 0;
+  const owners = ownersQuery.data ?? [];
+  const leads = leadsQuery.data ?? [];
+  const totalOverdue = agedReceivablesQuery.data?.totalOverdue ?? 0;
+  const hasAnyData =
+    contracts.length > 0 ||
+    properties.length > 0 ||
+    invoices.length > 0 ||
+    overdueRows.length > 0 ||
+    owners.length > 0 ||
+    leads.length > 0 ||
+    totalOverdue > 0;
 
   return (
     <div className="space-y-6" dir="rtl">
@@ -101,7 +111,7 @@ export function ReportsPage() {
         <MetricCard label="العقود النشطة" value={contractStatusSummary.active.toLocaleString('ar')} helper="من جميع العقود الحالية" />
         <MetricCard label="إجمالي الفواتير" value={formatMoney(invoiceSummary.totalAmount)} helper={`${invoices.length} فاتورة`} tone="blue" />
         <MetricCard label="إجمالي التحصيل" value={formatMoney(invoiceSummary.paidAmount)} helper="مدفوع من الفواتير الحالية" tone="green" />
-        <MetricCard label="إجمالي المتأخرات" value={formatMoney(agedReceivablesQuery.data?.totalOverdue ?? 0)} helper={`${overdueRows.length} فاتورة متأخرة`} tone="gold" />
+        <MetricCard label="إجمالي المتأخرات" value={formatMoney(totalOverdue)} helper={`${overdueRows.length} فاتورة متأخرة`} tone="gold" />
       </section>
 
       <Card>
@@ -111,7 +121,7 @@ export function ReportsPage() {
 
       <Card>
         <CardHeader><CardTitle>ملخص العقارات والوحدات</CardTitle><CardDescription>من بيانات العقارات الحالية فقط.</CardDescription></CardHeader>
-        <CardContent className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3"><div className="rounded-xl border border-border bg-muted/30 p-3"><p className="text-sm text-muted-foreground">عدد العقارات</p><p className="text-xl font-black">{properties.length.toLocaleString('ar')}</p></div><div className="rounded-xl border border-border bg-muted/30 p-3"><p className="text-sm text-muted-foreground">عدد الوحدات</p><p className="text-xl font-black">{totalUnits.toLocaleString('ar')}</p></div><div className="rounded-xl border border-border bg-muted/30 p-3"><p className="text-sm text-muted-foreground">عدد الملاك</p><p className="text-xl font-black">{(ownersQuery.data ?? []).length.toLocaleString('ar')}</p></div></CardContent>
+        <CardContent className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3"><div className="rounded-xl border border-border bg-muted/30 p-3"><p className="text-sm text-muted-foreground">عدد العقارات</p><p className="text-xl font-black">{properties.length.toLocaleString('ar')}</p></div><div className="rounded-xl border border-border bg-muted/30 p-3"><p className="text-sm text-muted-foreground">عدد الوحدات</p><p className="text-xl font-black">{totalUnits.toLocaleString('ar')}</p></div><div className="rounded-xl border border-border bg-muted/30 p-3"><p className="text-sm text-muted-foreground">عدد الملاك</p><p className="text-xl font-black">{owners.length.toLocaleString('ar')}</p></div></CardContent>
       </Card>
 
       <Card>
@@ -121,7 +131,7 @@ export function ReportsPage() {
         </CardContent>
       </Card>
 
-      {(leadsQuery.data?.length ?? 0) > 0 ? <Card><CardHeader><CardTitle>ملخص العملاء المحتملين</CardTitle><CardDescription>قراءة فقط من خدمة Leads الحالية بدون دمج مع People.</CardDescription></CardHeader><CardContent><p className="text-sm">إجمالي العملاء المحتملين: <span className="font-black">{leadsQuery.data!.length.toLocaleString('ar')}</span></p></CardContent></Card> : null}
+      {leads.length > 0 ? <Card><CardHeader><CardTitle>ملخص العملاء المحتملين</CardTitle><CardDescription>قراءة فقط من خدمة Leads الحالية بدون دمج مع People.</CardDescription></CardHeader><CardContent><p className="text-sm">إجمالي العملاء المحتملين: <span className="font-black">{leads.length.toLocaleString('ar')}</span></p></CardContent></Card> : null}
 
       <section className="grid gap-4 md:grid-cols-2" aria-label="Deferred reports">{deferredReports.map((report) => <Card key={report.title} className="border-dashed border-muted-foreground/30 bg-muted/20"><CardHeader><div className="flex items-center justify-between gap-3"><CardTitle className="flex items-center gap-2 text-base"><FileClock className="size-4" />{report.title}</CardTitle><StatusBadge tone="gray">مؤجل</StatusBadge></div><CardDescription>{report.reason}</CardDescription></CardHeader></Card>)}</section>
     </div>
