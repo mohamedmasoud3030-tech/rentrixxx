@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { formatCompanyDate, formatCompanyMoney, supportedCurrencies } from '@lib/format';
-import { normalizeCompanyLocale, supportedCompanyLocales, supportedCountries, supportedTimezones, type SupportedLanguage } from '@/lib/companySettings';
+import { normalizeCompanyLocale, supportedCompanyLocales, supportedCountries, supportedTimezones } from '@/lib/companySettings';
 import { getAppLanguageState } from '@/lib/i18n';
 import { useUiStore } from '@/store/ui-store';
 import { supabase } from '@/integrations/supabase/client';
@@ -37,7 +37,7 @@ function SelectField({ label, field, draft, errors, disabled, options, onChange 
   return <label className="space-y-1 text-sm font-medium"><span>{label}</span><Select value={draft[field]} disabled={disabled} aria-invalid={Boolean(errors[field])} onChange={(event: ChangeEvent<HTMLSelectElement>) => onChange(field, event.target.value)}>{options.map((option) => <option key={option} value={option}>{option}</option>)}</Select>{errors[field] ? <span className="block text-xs text-destructive">{errors[field]}</span> : null}</label>;
 }
 
-function ChangePasswordCard() { const [nextPassword, setNextPassword] = useState(''); const [confirmPassword, setConfirmPassword] = useState(''); const [saving, setSaving] = useState(false); const handleChangePassword = async (event: FormEvent<HTMLFormElement>) => { event.preventDefault(); if (!nextPassword || nextPassword.length < 8 || nextPassword !== confirmPassword) { toast.error('تحقق من كلمة المرور الجديدة والتأكيد (8 أحرف على الأقل).'); return; } setSaving(true); try { const { error } = await supabase.auth.updateUser({ password: nextPassword }); if (error) throw error; setNextPassword(''); setConfirmPassword(''); toast.success('تم تحديث كلمة المرور بنجاح'); } catch (error) { toast.error(error instanceof Error ? error.message : 'تعذر تحديث كلمة المرور'); } finally { setSaving(false); } }; return <Card><CardHeader><CardTitle>تغيير كلمة المرور</CardTitle><CardDescription>يتم استخدام نفس مسار المصادقة الحالي بدون أي منطق إضافي.</CardDescription></CardHeader><CardContent><form className="space-y-3" onSubmit={handleChangePassword}><Input type="password" placeholder="كلمة المرور الجديدة" value={nextPassword} onChange={(e) => setNextPassword(e.target.value)} /><Input type="password" placeholder="تأكيد كلمة المرور الجديدة" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} /><Button type="submit" disabled={saving}>{saving ? 'جارٍ التحديث...' : 'تحديث كلمة المرور'}</Button></form></CardContent></Card>; }
+function ChangePasswordCard() { const [nextPassword, setNextPassword] = useState(''); const [confirmPassword, setConfirmPassword] = useState(''); const [saving, setSaving] = useState(false); const handleChangePassword = async (event: FormEvent<HTMLFormElement>) => { event.preventDefault(); if (!nextPassword || nextPassword.length < 8 || nextPassword !== confirmPassword) { toast.error('تحقق من كلمة المرور الجديدة والتأكيد (8 أحرف على الأقل).'); return; } setSaving(true); try { const { error } = await supabase.auth.updateUser({ password: nextPassword }); if (error) { throw error; } setNextPassword(''); setConfirmPassword(''); toast.success('تم تحديث كلمة المرور بنجاح'); } catch (error) { toast.error(error instanceof Error ? error.message : 'تعذر تحديث كلمة المرور'); } finally { setSaving(false); } }; return <Card><CardHeader><CardTitle>تغيير كلمة المرور</CardTitle><CardDescription>يتم استخدام نفس مسار المصادقة الحالي بدون أي منطق إضافي.</CardDescription></CardHeader><CardContent><form className="space-y-3" onSubmit={handleChangePassword}><Input type="password" placeholder="كلمة المرور الجديدة" value={nextPassword} onChange={(e) => setNextPassword(e.target.value)} /><Input type="password" placeholder="تأكيد كلمة المرور الجديدة" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} /><Button type="submit" disabled={saving}>{saving ? 'جارٍ التحديث...' : 'تحديث كلمة المرور'}</Button></form></CardContent></Card>; }
 
 export function SettingsPage() {
   const { theme, setTheme } = useUiStore();
@@ -52,14 +52,26 @@ export function SettingsPage() {
   const isSaving = updateCompanySettingsMutation.isPending;
   const isDirty = !areCompanySettingsDraftsEqual(draft, baseDraft);
 
-  useEffect(() => { if (!companySettingsQuery.data) return; const nextDraft = companySettingsRecordToDraft(companySettingsQuery.data); const hasUnsaved = Boolean(draftRef.current && baseDraftRef.current && !areCompanySettingsDraftsEqual(draftRef.current, baseDraftRef.current)); baseDraftRef.current = nextDraft; setBaseDraft(nextDraft); if (!hasUnsaved) { draftRef.current = nextDraft; setDraft(nextDraft); } }, [companySettingsQuery.data]);
+  useEffect(() => {
+    if (!companySettingsQuery.data) {
+      return;
+    }
+    const nextDraft = companySettingsRecordToDraft(companySettingsQuery.data);
+    const hasUnsaved = Boolean(draftRef.current && baseDraftRef.current && !areCompanySettingsDraftsEqual(draftRef.current, baseDraftRef.current));
+    baseDraftRef.current = nextDraft;
+    setBaseDraft(nextDraft);
+    if (!hasUnsaved) {
+      draftRef.current = nextDraft;
+      setDraft(nextDraft);
+    }
+  }, [companySettingsQuery.data]);
 
   const previewSettings = useMemo(() => draft ? companySettingsDraftToLocalSettings(draft) : null, [draft]);
   const pageLanguage = getAppLanguageState(previewSettings?.defaultLanguage);
   const preview = useMemo(() => (draft ? getCompanySettingsPreviewModel(draft) : null), [draft]);
 
   const handleDraftChange = (field: CompanySettingsDraftField, value: string) => { setDraft((current) => { const next = current ? { ...current, [field]: value } : current; draftRef.current = next; return next; }); };
-  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => { event.preventDefault(); if (!draft) return; const validationErrors = validateCompanySettingsDraft(draft); setErrors(validationErrors); if (hasCompanySettingsValidationErrors(validationErrors)) return; try { const saved = await updateCompanySettingsMutation.mutateAsync(companySettingsDraftToPayload(draft)); const savedDraft = companySettingsRecordToDraft(saved); baseDraftRef.current = savedDraft; draftRef.current = savedDraft; setBaseDraft(savedDraft); setDraft(savedDraft); toast.success('تم حفظ إعدادات الشركة بنجاح'); } catch (error) { toast.error(error instanceof Error ? error.message : 'تعذر حفظ إعدادات الشركة'); } };
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => { event.preventDefault(); if (!draft) { return; } const validationErrors = validateCompanySettingsDraft(draft); setErrors(validationErrors); if (hasCompanySettingsValidationErrors(validationErrors)) { return; } try { const saved = await updateCompanySettingsMutation.mutateAsync(companySettingsDraftToPayload(draft)); const savedDraft = companySettingsRecordToDraft(saved); baseDraftRef.current = savedDraft; draftRef.current = savedDraft; setBaseDraft(savedDraft); setDraft(savedDraft); toast.success('تم حفظ إعدادات الشركة بنجاح'); } catch (error) { toast.error(error instanceof Error ? error.message : 'تعذر حفظ إعدادات الشركة'); } };
 
   if (companySettingsQuery.isLoading || !draft || !previewSettings || !preview) return <Card><CardHeader><CardTitle>إعدادات الشركة</CardTitle><CardDescription>جارٍ تحميل الإعدادات...</CardDescription></CardHeader></Card>;
   if (companySettingsQuery.isError) return <Card><CardHeader><CardTitle>تعذر تحميل إعدادات الشركة</CardTitle></CardHeader><CardContent><Button onClick={() => companySettingsQuery.refetch()}>إعادة المحاولة</Button></CardContent></Card>;
