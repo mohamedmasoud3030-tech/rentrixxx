@@ -1,5 +1,31 @@
 -- Supabase schema compatibility pass (idempotent/replay-safe).
 
+create or replace function pg_temp.rentrix_add_column_if_missing(
+  p_table_name text,
+  p_column_name text,
+  p_column_definition text
+) returns void
+language plpgsql
+as $$
+begin
+  if to_regclass(format('public.%I', p_table_name)) is not null
+     and not exists (
+       select 1
+       from information_schema.columns c
+       where c.table_schema = 'public'
+         and c.table_name = p_table_name
+         and c.column_name = p_column_name
+     ) then
+    execute format(
+      'alter table public.%I add column %I %s',
+      p_table_name,
+      p_column_name,
+      p_column_definition
+    );
+  end if;
+end;
+$$;
+
 -- 1) property_owners compatibility + active duplicate guard.
 create table if not exists public.property_owners (
   id uuid primary key default gen_random_uuid(),
@@ -93,17 +119,14 @@ end;
 $$;
 
 -- 3 + 9) contracts compatibility & rent sync.
-alter table if exists public.people
-  add column if not exists type text not null default 'tenant' check (type in ('tenant','owner','contact')),
-  add column if not exists national_id text;
+select pg_temp.rentrix_add_column_if_missing('people', 'type', 'text not null default ''tenant'' check (type in (''tenant'',''owner'',''contact''))');
+select pg_temp.rentrix_add_column_if_missing('people', 'national_id', 'text');
 
-alter table if exists public.units
-  add column if not exists floor text;
+select pg_temp.rentrix_add_column_if_missing('units', 'floor', 'text');
 
-alter table if exists public.contracts
-  add column if not exists rent_amount numeric(12,2),
-  add column if not exists payment_cycle text not null default 'monthly' check (payment_cycle in ('monthly','quarterly','semi_annual','semiannual','annual','yearly')),
-  add column if not exists renewed_from_id uuid;
+select pg_temp.rentrix_add_column_if_missing('contracts', 'rent_amount', 'numeric(12,2)');
+select pg_temp.rentrix_add_column_if_missing('contracts', 'payment_cycle', 'text not null default ''monthly'' check (payment_cycle in (''monthly'',''quarterly'',''semi_annual'',''semiannual'',''annual'',''yearly''))');
+select pg_temp.rentrix_add_column_if_missing('contracts', 'renewed_from_id', 'uuid');
 
 update public.contracts
 set rent_amount = coalesce(rent_amount, monthly_rent)
@@ -187,24 +210,22 @@ revoke all on function public.generate_invoices_from_active_contracts() from pub
 grant execute on function public.generate_invoices_from_active_contracts() to authenticated;
 
 -- 10) company settings compatibility.
-alter table if exists public.company_settings
-  add column if not exists legal_name text,
-  add column if not exists tax_number text,
-  add column if not exists registration_number text,
-  add column if not exists phone text,
-  add column if not exists email text,
-  add column if not exists address text,
-  add column if not exists city text,
-  add column if not exists country text,
-  add column if not exists date_format text not null default 'dd/MM/yyyy',
-  add column if not exists number_format text not null default 'en-US',
-  add column if not exists logo_url text,
-  add column if not exists invoice_prefix text not null default 'INV',
-  add column if not exists receipt_prefix text not null default 'REC';
+select pg_temp.rentrix_add_column_if_missing('company_settings', 'legal_name', 'text');
+select pg_temp.rentrix_add_column_if_missing('company_settings', 'tax_number', 'text');
+select pg_temp.rentrix_add_column_if_missing('company_settings', 'registration_number', 'text');
+select pg_temp.rentrix_add_column_if_missing('company_settings', 'phone', 'text');
+select pg_temp.rentrix_add_column_if_missing('company_settings', 'email', 'text');
+select pg_temp.rentrix_add_column_if_missing('company_settings', 'address', 'text');
+select pg_temp.rentrix_add_column_if_missing('company_settings', 'city', 'text');
+select pg_temp.rentrix_add_column_if_missing('company_settings', 'country', 'text');
+select pg_temp.rentrix_add_column_if_missing('company_settings', 'date_format', 'text not null default ''dd/MM/yyyy''');
+select pg_temp.rentrix_add_column_if_missing('company_settings', 'number_format', 'text not null default ''en-US''');
+select pg_temp.rentrix_add_column_if_missing('company_settings', 'logo_url', 'text');
+select pg_temp.rentrix_add_column_if_missing('company_settings', 'invoice_prefix', 'text not null default ''INV''');
+select pg_temp.rentrix_add_column_if_missing('company_settings', 'receipt_prefix', 'text not null default ''REC''');
 
 -- 11) expenses description compatibility.
-alter table if exists public.expenses
-  add column if not exists description text;
+select pg_temp.rentrix_add_column_if_missing('expenses', 'description', 'text');
 
 update public.expenses
 set description = coalesce(description, notes)
