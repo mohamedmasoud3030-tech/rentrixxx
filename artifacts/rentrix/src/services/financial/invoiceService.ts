@@ -11,7 +11,10 @@ export type InvoiceSummary = { totalAmount: number; totalPaid: number; totalRema
 
 const invoiceSelect = '*, contracts:contract_id(id,property_id,tenant_id)';
 
-function applyStatusFilter(query: any, status: InvoiceStatusFilter) {
+function applyStatusFilter<TQuery extends { eq: (column: string, value: unknown) => TQuery }>(
+  query: TQuery,
+  status: InvoiceStatusFilter,
+): TQuery {
   if (status === 'unpaid') return query.eq('status', 'issued').eq('paid_amount', 0);
   if (status === 'partial') return query.eq('status', 'partial');
   if (status === 'paid') return query.eq('status', 'paid');
