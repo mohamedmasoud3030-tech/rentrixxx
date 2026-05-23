@@ -1,6 +1,7 @@
 import { Link } from '@tanstack/react-router';
-import { Building2, Eye, LinkIcon, Pencil, Plus, Search, Users } from 'lucide-react';
+import { Building2, Download, Eye, LinkIcon, Pencil, Plus, Search, Users } from 'lucide-react';
 import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from 'react';
+import { BulkActionsBar } from '@/components/BulkActionsBar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -10,6 +11,8 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Textarea } from '@/components/ui/textarea';
+import { useBulkSelection } from '@/hooks/useBulkSelection';
+import { downloadCsv, type CsvRow } from '@/utils/helpers';
 import { OwnerCheckbox } from './OwnerCheckbox';
 import { OwnerPropertySelect } from './OwnerPropertySelect';
 import type { Owner, PropertyOwner, PropertyWithOwners } from './ownerService';
@@ -141,13 +144,17 @@ type OwnerWorkspaceTableProps = Readonly<{
   rows: OwnerWorkspaceRow[];
   search: string;
   selectedOwner: Owner | null;
+  allSelected: boolean;
+  isSelected: (ownerId: string) => boolean;
   onCreateOwner: () => void;
   onEditOwner: (owner: Owner) => void;
   onSearchChange: (search: string) => void;
   onSelectOwner: (ownerId: string) => void;
+  onToggleAll: () => void;
+  onToggleSelection: (ownerId: string) => void;
 }>;
 
-type OwnerWorkspaceRowProps = Readonly<{ row: OwnerWorkspaceRow; selectedOwnerId: string | null; onEditOwner: (owner: Owner) => void; onSelectOwner: (ownerId: string) => void }>;
+type OwnerWorkspaceRowProps = Readonly<{ row: OwnerWorkspaceRow; selectedOwnerId: string | null; isChecked: boolean; onEditOwner: (owner: Owner) => void; onSelectOwner: (ownerId: string) => void; onToggleSelection: (ownerId: string) => void }>;
 
 function OwnerContact({ owner }: Readonly<{ owner: Owner }>) {
   return <div className="space-y-1 text-sm"><div dir="ltr" className="text-right">{owner.phone ?? '—'}</div><div dir="ltr" className="text-right text-muted-foreground">{owner.email ?? '—'}</div></div>;
@@ -163,7 +170,7 @@ function OwnershipSummary({ row }: Readonly<{ row: OwnerWorkspaceRow }>) {
   return <div className="space-y-1 text-xs text-muted-foreground">{row.properties.map((property) => <div key={`${row.owner.id}-${property.id}-ownership`}>{getOwnerPropertyOwnershipLabel(property)}</div>)}</div>;
 }
 
-function OwnerWorkspaceRowView({ row, selectedOwnerId, onEditOwner, onSelectOwner }: OwnerWorkspaceRowProps) {
+function OwnerWorkspaceRowView({ row, selectedOwnerId, isChecked, onEditOwner, onSelectOwner, onToggleSelection }: OwnerWorkspaceRowProps) {
   const isSelected = row.owner.id === selectedOwnerId;
   return (
     <TableRow className={isSelected ? 'bg-primary/5' : undefined}>
@@ -173,27 +180,28 @@ function OwnerWorkspaceRowView({ row, selectedOwnerId, onEditOwner, onSelectOwne
       <TableCell><OwnerPropertyLinks row={row} /></TableCell>
       <TableCell><OwnershipSummary row={row} /></TableCell>
       <TableCell>{row.activeContractCount > 0 ? row.activeContractCount.toLocaleString('ar') : '—'}</TableCell>
+      <TableCell className="text-center"><input type="checkbox" checked={isChecked} onChange={() => onToggleSelection(row.owner.id)} aria-label={`تحديد ${getOwnerDisplayLabel(row.owner)}`} className="size-4 accent-primary" /></TableCell>
       <TableCell><div className="flex flex-wrap gap-2"><Button type="button" variant="secondary" className="min-h-9 px-3" onClick={() => onSelectOwner(row.owner.id)}><Eye className="ms-1 size-4" />العلاقات</Button><Button type="button" variant="secondary" className="min-h-9 px-3" onClick={() => onEditOwner(row.owner)}><Pencil className="ms-1 size-4" />تعديل</Button></div></TableCell>
     </TableRow>
   );
 }
 
-function OwnerTableContent({ rows, selectedOwner, onEditOwner, onSelectOwner }: Omit<OwnerWorkspaceTableProps, 'search' | 'onCreateOwner' | 'onSearchChange'>) {
+function OwnerTableContent({ rows, selectedOwner, allSelected, isSelected, onEditOwner, onSelectOwner, onToggleAll, onToggleSelection }: Omit<OwnerWorkspaceTableProps, 'search' | 'onCreateOwner' | 'onSearchChange'>) {
   return (
     <div className="overflow-x-auto">
       <Table>
-        <TableHeader><TableRow><TableHead>اسم المالك</TableHead><TableHead>الهاتف والإيميل</TableHead><TableHead>عدد العقارات</TableHead><TableHead>أسماء العقارات</TableHead><TableHead>نسبة الملكية/الدور</TableHead><TableHead>العقود النشطة</TableHead><TableHead>روابط آمنة</TableHead></TableRow></TableHeader>
-        <TableBody>{rows.map((row) => <OwnerWorkspaceRowView key={row.owner.id} row={row} selectedOwnerId={selectedOwner?.id ?? null} onEditOwner={onEditOwner} onSelectOwner={onSelectOwner} />)}</TableBody>
+        <TableHeader><TableRow><TableHead>اسم المالك</TableHead><TableHead>الهاتف والإيميل</TableHead><TableHead>عدد العقارات</TableHead><TableHead>أسماء العقارات</TableHead><TableHead>نسبة الملكية/الدور</TableHead><TableHead>العقود النشطة</TableHead><TableHead className="text-center"><input type="checkbox" checked={allSelected} onChange={onToggleAll} aria-label="تحديد جميع الملاك" className="size-4 accent-primary" /></TableHead><TableHead>روابط آمنة</TableHead></TableRow></TableHeader>
+        <TableBody>{rows.map((row) => <OwnerWorkspaceRowView key={row.owner.id} row={row} selectedOwnerId={selectedOwner?.id ?? null} isChecked={isSelected(row.owner.id)} onEditOwner={onEditOwner} onSelectOwner={onSelectOwner} onToggleSelection={onToggleSelection} />)}</TableBody>
       </Table>
     </div>
   );
 }
 
-function OwnerWorkspaceTable({ rows, search, selectedOwner, onCreateOwner, onEditOwner, onSearchChange, onSelectOwner }: OwnerWorkspaceTableProps) {
+function OwnerWorkspaceTable({ rows, search, selectedOwner, allSelected, isSelected, onCreateOwner, onEditOwner, onSearchChange, onSelectOwner, onToggleAll, onToggleSelection }: OwnerWorkspaceTableProps) {
   const hasSearch = Boolean(search.trim());
   const emptyState = <EmptyState title={hasSearch ? 'لا توجد نتائج مطابقة' : 'لا يوجد ملاك'} description={hasSearch ? 'جرّب البحث باسم أو هاتف أو بريد أو اسم عقار آخر.' : 'أضف أول مالك لبدء ربطه بالعقارات.'} action={hasSearch ? undefined : <Button onClick={onCreateOwner}>إضافة مالك</Button>} />;
 
-  return <div className="space-y-4"><div className="relative"><Search className="pointer-events-none absolute right-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" /><Input className="pr-10" value={search} onChange={(event) => onSearchChange(event.target.value)} placeholder="بحث باسم المالك أو الهاتف أو الإيميل أو العقار" /></div>{rows.length > 0 ? <OwnerTableContent rows={rows} selectedOwner={selectedOwner} onEditOwner={onEditOwner} onSelectOwner={onSelectOwner} /> : emptyState}</div>;
+  return <div className="space-y-4"><div className="relative"><Search className="pointer-events-none absolute right-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" /><Input className="pr-10" value={search} onChange={(event) => onSearchChange(event.target.value)} placeholder="بحث باسم المالك أو الهاتف أو الإيميل أو العقار" /></div>{rows.length > 0 ? <OwnerTableContent rows={rows} selectedOwner={selectedOwner} allSelected={allSelected} isSelected={isSelected} onEditOwner={onEditOwner} onSelectOwner={onSelectOwner} onToggleAll={onToggleAll} onToggleSelection={onToggleSelection} /> : emptyState}</div>;
 }
 
 type OwnerRelationshipsListProps = Readonly<{ linkedProperties: LinkedPropertyItem[]; endLinkPending: boolean; onEditLink: (link: PropertyOwner) => void; onEndLink: (link: PropertyOwner) => void }>;
@@ -267,6 +275,8 @@ export function OwnersPage() {
   const summary = useMemo(() => summarizeOwners(owners, properties), [owners, properties]);
   const ownerWorkspaceRows = useMemo(() => buildOwnerWorkspaceRows(owners, properties, activeContracts), [activeContracts, owners, properties]);
   const filteredOwnerRows = useMemo(() => filterOwnerWorkspaceRows(ownerWorkspaceRows, ownerSearch), [ownerSearch, ownerWorkspaceRows]);
+  const bulkSelection = useBulkSelection(filteredOwnerRows.map((row) => row.owner.id));
+  const selectedOwnerRows = filteredOwnerRows.filter((row) => bulkSelection.selectedIds.has(row.owner.id));
   const linkedProperties = useMemo(() => getLinkedPropertiesForOwner(selectedOwner, properties), [properties, selectedOwner]);
   const availableProperties = useMemo(() => getAvailablePropertiesForLink(selectedOwner, properties, editingLink), [editingLink, properties, selectedOwner]);
 
@@ -289,6 +299,18 @@ export function OwnersPage() {
     else await linkMutation.mutateAsync({ owner_id: selectedOwner.id, property_id: linkFormValues.property_id, ...propertyOwnershipLinkFormToPayload(linkFormValues) });
     resetLinkForm();
   };
+  const exportOwners = (mode: 'selected' | 'filtered') => {
+    const rowsToExport = mode === 'selected' ? selectedOwnerRows : filteredOwnerRows;
+    const csvRows: CsvRow[] = rowsToExport.map((row) => ({
+      fullName: row.owner.full_name ?? '',
+      phone: row.owner.phone ?? '',
+      email: row.owner.email ?? '',
+      nationalId: row.owner.national_id ?? '',
+      propertyCount: row.propertyCount,
+      activeContractCount: row.activeContractCount,
+    }));
+    downloadCsv('owners-export', csvRows, ['fullName', 'phone', 'email', 'nationalId', 'propertyCount', 'activeContractCount']);
+  };
 
   const firstLoadError = ownersQuery.error ?? propertiesQuery.error ?? activeContractsQuery.error;
   const hasLoadError = ownersQuery.isError || propertiesQuery.isError || activeContractsQuery.isError;
@@ -310,12 +332,13 @@ export function OwnersPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-3"><div><h2 className="text-xl font-black">إدارة الملاك</h2><p className="text-sm text-muted-foreground">إدارة علاقات ملكية العقارات بشكل منفصل عن الحسابات والتسويات المالية.</p></div><Button onClick={openCreateForm}><Plus className="ms-2 size-4" />إضافة مالك</Button></div>
+      <div className="flex flex-wrap items-center justify-between gap-3"><div><h2 className="text-xl font-black">إدارة الملاك</h2><p className="text-sm text-muted-foreground">إدارة علاقات ملكية العقارات بشكل منفصل عن الحسابات والتسويات المالية.</p></div><div className="flex flex-wrap gap-2"><Button variant="secondary" onClick={() => exportOwners('filtered')} disabled={filteredOwnerRows.length === 0}><Download className="ms-2 size-4" />تصدير النتائج</Button><Button onClick={openCreateForm}><Plus className="ms-2 size-4" />إضافة مالك</Button></div></div>
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4"><SummaryCard label="إجمالي الملاك" value={summary.totalOwners} icon={Users} /><SummaryCard label="الملاك النشطون" value={summary.activeOwners} icon={Users} /><SummaryCard label="عقارات مرتبطة" value={summary.linkedPropertiesCount} icon={Building2} /><SummaryCard label="عقارات بلا علاقة مالك" value={summary.propertiesWithoutLinkedOwner} icon={LinkIcon} /></div>
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1.1fr)_minmax(24rem,0.9fr)]">
-        <Card className="overflow-hidden"><CardHeader><CardTitle>مساحة عمل الملاك</CardTitle><CardDescription>ملخص آمن من بيانات الملاك والعقارات والعقود الحالية بدون أرصدة أو تسويات افتراضية.</CardDescription></CardHeader><CardContent><OwnerWorkspaceTable rows={filteredOwnerRows} search={ownerSearch} selectedOwner={selectedOwner} onCreateOwner={openCreateForm} onEditOwner={openEditForm} onSearchChange={setOwnerSearch} onSelectOwner={setSelectedOwnerId} /></CardContent></Card>
+        <Card className="overflow-hidden"><CardHeader><CardTitle>مساحة عمل الملاك</CardTitle><CardDescription>ملخص آمن من بيانات الملاك والعقارات والعقود الحالية بدون أرصدة أو تسويات افتراضية.</CardDescription></CardHeader><CardContent><OwnerWorkspaceTable rows={filteredOwnerRows} search={ownerSearch} selectedOwner={selectedOwner} allSelected={bulkSelection.allSelected} isSelected={bulkSelection.isSelected} onCreateOwner={openCreateForm} onEditOwner={openEditForm} onSearchChange={setOwnerSearch} onSelectOwner={setSelectedOwnerId} onToggleAll={bulkSelection.toggleAll} onToggleSelection={bulkSelection.toggleOne} /></CardContent></Card>
         <Card><CardHeader><CardTitle>علاقات الملكية</CardTitle><CardDescription>{selectedOwner ? `العقارات المرتبطة بـ ${getOwnerDisplayLabel(selectedOwner)}` : 'اختر مالكاً لعرض علاقات الملكية.'}</CardDescription></CardHeader><CardContent className="space-y-5">{selectedOwner ? <><div className="space-y-3"><OwnerRelationshipsList linkedProperties={linkedProperties} endLinkPending={unlinkMutation.isPending} onEditLink={beginEditLink} onEndLink={handleEndPropertyOwnership} /></div><OwnershipLinkForm values={linkFormValues} availableProperties={availableProperties} editingLink={editingLink} error={linkFormError} isSaving={isSavingLink} onCancelEdit={resetLinkForm} onSubmit={handleLinkProperty} onValueChange={setLinkField} /></> : null}</CardContent></Card>
       </div>
+      <BulkActionsBar selectedCount={bulkSelection.selectedCount} selectionLabel={`تم تحديد ${bulkSelection.selectedCount.toLocaleString('ar')} مالك`} onClear={bulkSelection.clear} actions={<Button variant="secondary" onClick={() => exportOwners('selected')}><Download className="ms-2 size-4" />تصدير المحدد</Button>} />
       <OwnerFormDialog owner={editingOwner} open={formOpen} onOpenChange={setFormOpen} />
     </div>
   );

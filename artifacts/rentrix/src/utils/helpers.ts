@@ -11,6 +11,17 @@ const arabicHeaderMap: Record<string, string> = {
   date: 'التاريخ',
   dueDate: 'تاريخ الاستحقاق',
   notes: 'ملاحظات',
+  fullName: 'الاسم',
+  type: 'النوع',
+  phone: 'الهاتف',
+  email: 'البريد الإلكتروني',
+  nationalId: 'رقم الهوية',
+  address: 'العنوان',
+  propertyTitle: 'العقار',
+  unitNumber: 'الوحدة',
+  activeContractCount: 'العقود النشطة',
+  safeLinks: 'روابط آمنة',
+  propertyCount: 'عدد العقارات',
 };
 
 function escapeCsvValue(value: CsvRow[string]): string {

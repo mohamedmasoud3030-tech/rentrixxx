@@ -1,12 +1,15 @@
 import { Link } from '@tanstack/react-router';
-import { Edit, Plus, Trash2 } from 'lucide-react';
+import { Download, Edit, Plus, Trash2 } from 'lucide-react';
 import { useMemo, useState } from 'react';
+import { BulkActionsBar } from '@/components/BulkActionsBar';
 import { EmptyState } from '@/components/empty-state';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useBulkSelection } from '@/hooks/useBulkSelection';
+import { downloadCsv, type CsvRow } from '@/utils/helpers';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { personTypeLabels, personTypeValues } from './person-schema';
 import type { PersonTypeFilter } from './people-service';
@@ -27,10 +30,25 @@ export function PeopleListPage() {
   const params = useMemo(() => ({ search, type, page, pageSize }), [page, search, type]);
   const peopleQuery = usePeople(params);
   const peopleRows = peopleQuery.data?.rows ?? [];
+  const bulkSelection = useBulkSelection(peopleRows.map((person) => person.id));
   const deleteMutation = useSoftDeletePerson();
   const totalPages = Math.max(1, Math.ceil((peopleQuery.data?.count ?? 0) / pageSize));
+  const selectedPeople = peopleRows.filter((person) => bulkSelection.selectedIds.has(person.id));
 
   const tableState = getPeopleTableState(peopleQuery.isLoading, peopleRows.length);
+
+  const exportPeople = (mode: 'selected' | 'filtered') => {
+    const targetRows = mode === 'selected' ? selectedPeople : peopleRows;
+    const csvRows: CsvRow[] = targetRows.map((person) => ({
+      fullName: person.full_name ?? '',
+      type: personTypeLabels[person.type],
+      phone: person.phone ?? '',
+      email: person.email ?? '',
+      nationalId: person.national_id ?? '',
+      address: person.address ?? '',
+    }));
+    downloadCsv('people-export', csvRows, ['fullName', 'type', 'phone', 'email', 'nationalId', 'address']);
+  };
 
   function renderPeopleContent() {
     if (tableState === 'loading') {
@@ -52,6 +70,9 @@ export function PeopleListPage() {
                 <TableHead>الهاتف</TableHead>
                 <TableHead>البريد</TableHead>
                 <TableHead>رقم الهوية</TableHead>
+                <TableHead className="w-14 text-center">
+                  <input type="checkbox" checked={bulkSelection.allSelected} onChange={() => bulkSelection.toggleAll()} aria-label="تحديد كل الأشخاص" className="size-4 accent-primary" />
+                </TableHead>
                 <TableHead className="w-40">إجراءات</TableHead>
               </TableRow>
             </TableHeader>
@@ -66,6 +87,9 @@ export function PeopleListPage() {
                   <TableCell>{person.phone ?? '—'}</TableCell>
                   <TableCell dir="ltr" className="text-right">{person.email ?? '—'}</TableCell>
                   <TableCell>{person.national_id ?? '—'}</TableCell>
+                  <TableCell className="text-center">
+                    <input type="checkbox" checked={bulkSelection.isSelected(person.id)} onChange={() => bulkSelection.toggleOne(person.id)} aria-label={`تحديد ${person.full_name}`} className="size-4 accent-primary" />
+                  </TableCell>
                   <TableCell>
                     <div className="flex gap-2">
                       <Button variant="secondary" className="min-h-9 px-3" asChild><Link to="/people/$personId/edit" params={{ personId: person.id }}><Edit className="size-4" /></Link></Button>
@@ -90,7 +114,10 @@ export function PeopleListPage() {
           <h2 className="text-xl font-black">الأشخاص</h2>
           <p className="text-sm text-muted-foreground">جدول موحد للمستأجرين والملاك وجهات الاتصال.</p>
         </div>
-        <Button asChild><Link to="/people/new"><Plus className="ms-2 size-4" />إضافة شخص</Link></Button>
+        <div className="flex flex-wrap items-center gap-2">
+          <Button variant="secondary" onClick={() => exportPeople('filtered')} disabled={peopleRows.length === 0}><Download className="ms-2 size-4" />تصدير النتائج</Button>
+          <Button asChild><Link to="/people/new"><Plus className="ms-2 size-4" />إضافة شخص</Link></Button>
+        </div>
       </div>
 
       <Card>
@@ -106,6 +133,12 @@ export function PeopleListPage() {
       <Card className="overflow-hidden">
         {renderPeopleContent()}
       </Card>
+      <BulkActionsBar
+        selectedCount={bulkSelection.selectedCount}
+        selectionLabel={`تم تحديد ${bulkSelection.selectedCount.toLocaleString('ar')} شخص`}
+        onClear={bulkSelection.clear}
+        actions={<Button variant="secondary" onClick={() => exportPeople('selected')}><Download className="ms-2 size-4" />تصدير المحدد</Button>}
+      />
 
       <div className="flex items-center justify-between text-sm text-muted-foreground">
         <span>الصفحة {page} من {totalPages}</span>
