@@ -116,7 +116,7 @@ describe('invoiceService financial reconciliation', () => {
     expect(log).toEqual(expect.arrayContaining([
       { table: 'invoices', method: 'is', args: ['deleted_at', null] },
       { table: 'invoices', method: 'eq', args: ['status', 'partial'] },
-      { table: 'invoices', method: 'or', args: ['id.ilike."%invoice\\_\\%%",status.ilike."%invoice\\_\\%%"'] },
+      { table: 'invoices', method: 'or', args: [`id.ilike."${String.raw`%invoice\_\%%`}",status.ilike."${String.raw`%invoice\_\%%`}"`] },
     ]));
     expect(log).toEqual(expect.arrayContaining([{ table: 'invoices', method: 'range', args: [0, 19] }]));
     expect(supabaseMock.rpc).not.toHaveBeenCalled();

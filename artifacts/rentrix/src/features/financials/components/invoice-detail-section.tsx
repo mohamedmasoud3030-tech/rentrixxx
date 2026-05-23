@@ -44,7 +44,7 @@ export function InvoiceDetailSection({
   onPaymentDateChange,
   onReferenceChange,
   onPostPayment,
-}: InvoiceDetailSectionProps) {
+}: Readonly<InvoiceDetailSectionProps>) {
   return (
     <Card>
       <CardHeader>

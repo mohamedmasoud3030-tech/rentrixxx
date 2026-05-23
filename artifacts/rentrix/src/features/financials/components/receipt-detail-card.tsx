@@ -16,7 +16,7 @@ function getReceiptPrintHref(receiptId: string) {
   return `/receipts?receiptId=${encodeURIComponent(receiptId)}`;
 }
 
-export function ReceiptDetailCard({ selectedReceiptId, receiptDetail, isLoading, isError, error }: ReceiptDetailCardProps) {
+export function ReceiptDetailCard({ selectedReceiptId, receiptDetail, isLoading, isError, error }: Readonly<ReceiptDetailCardProps>) {
   return (
     <div className="rounded-2xl border p-4">
       <h4 className="font-black">تفاصيل الإيصال</h4>

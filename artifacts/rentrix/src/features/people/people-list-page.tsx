@@ -20,6 +20,7 @@ export function PeopleListPage() {
   const [page, setPage] = useState(1);
   const params = useMemo(() => ({ search, type, page, pageSize }), [page, search, type]);
   const peopleQuery = usePeople(params);
+  const peopleRows = peopleQuery.data?.rows ?? [];
   const deleteMutation = useSoftDeletePerson();
   const totalPages = Math.max(1, Math.ceil((peopleQuery.data?.count ?? 0) / pageSize));
 
@@ -48,7 +49,7 @@ export function PeopleListPage() {
           <div className="space-y-3 p-6">
             {Array.from({ length: 6 }, (_, index) => <Skeleton key={index} className="h-14" />)}
           </div>
-        ) : peopleQuery.data?.rows.length ? (
+        ) : peopleRows.length > 0 ? (
           <div className="overflow-x-auto">
             <Table>
               <TableHeader>
@@ -62,7 +63,7 @@ export function PeopleListPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {peopleQuery.data.rows.map((person) => (
+                {peopleRows.map((person) => (
                   <TableRow key={person.id}>
                     <TableCell>
                       <div className="font-black">{person.full_name}</div>
@@ -75,7 +76,7 @@ export function PeopleListPage() {
                     <TableCell>
                       <div className="flex gap-2">
                         <Button variant="secondary" className="min-h-9 px-3" asChild><Link to="/people/$personId/edit" params={{ personId: person.id }}><Edit className="size-4" /></Link></Button>
-                        <Button variant="danger" className="min-h-9 px-3" onClick={() => void deleteMutation.mutate(person.id)} disabled={deleteMutation.isPending}><Trash2 className="size-4" /></Button>
+                        <Button variant="danger" className="min-h-9 px-3" onClick={() => deleteMutation.mutate(person.id)} disabled={deleteMutation.isPending}><Trash2 className="size-4" /></Button>
                       </div>
                     </TableCell>
                   </TableRow>

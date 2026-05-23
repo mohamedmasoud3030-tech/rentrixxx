@@ -32,7 +32,7 @@ export async function listProperties(params: PropertyListParams): Promise<Pagina
 
   const trimmedSearch = params.search.trim();
   if (trimmedSearch) {
-    const escaped = trimmedSearch.replaceAll('%', '\\%').replaceAll('_', '\\_');
+    const escaped = trimmedSearch.replaceAll('%', String.raw`\%`).replaceAll('_', String.raw`\_`);
     const term = `"%${escaped}%"`;
     query = query.or(`title.ilike.${term},address.ilike.${term},owner_name.ilike.${term}`);
   }

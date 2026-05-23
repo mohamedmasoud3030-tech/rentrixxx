@@ -49,7 +49,7 @@ export async function listInvoices(supabase: SupabaseClient, params: InvoiceStat
   query = applyStatusFilter(query, status);
 
   if (search) {
-    const escaped = search.replaceAll('%', '\\%').replaceAll('_', '\\_');
+    const escaped = search.replaceAll('%', String.raw`\%`).replaceAll('_', String.raw`\_`);
     const term = `"%${escaped}%"`;
     query = query.or(`id.ilike.${term},status.ilike.${term}`);
   }
