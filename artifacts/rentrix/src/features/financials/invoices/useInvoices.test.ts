@@ -1,6 +1,8 @@
+import { createElement } from 'react';
+import { renderToString } from 'react-dom/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { financialReportKeys } from '../reports/useFinancialReports';
-import { invoiceKeys } from './useInvoices';
+import { invoiceKeys, useGenerateInvoices } from './useInvoices';
 
 const mutationMock = vi.hoisted(() => ({
   invalidateQueries: vi.fn(),
@@ -30,33 +32,54 @@ vi.mock('./invoiceService', () => ({
   listInvoices: vi.fn(),
 }));
 
+function renderHook<T>(useHook: () => T) {
+  let current: T | undefined;
+
+  function HookHarness() {
+    current = useHook();
+    return null;
+  }
+
+  renderToString(createElement(HookHarness));
+
+  return {
+    result: {
+      get current() {
+        return current as T;
+      },
+    },
+  };
+}
+
+
+function setupInvoiceHookTest() {
+  mutationMock.useQueryClient.mockReturnValue({ invalidateQueries: mutationMock.invalidateQueries });
+  mutationMock.invalidateQueries.mockResolvedValue(undefined);
+}
+
+function useGenerateInvoicesOnSuccess() {
+  return useGenerateInvoices() as unknown as { onSuccess: (value: number) => Promise<void> };
+}
+
+function expectInvoiceInvalidation() {
+  const expectedKeys = [invoiceKeys.all, financialReportKeys.all];
+  expectedKeys.forEach((queryKey) => {
+    expect(mutationMock.invalidateQueries).toHaveBeenCalledWith({ queryKey });
+  });
+  expect(mutationMock.invalidateQueries).toHaveBeenCalledTimes(expectedKeys.length);
+}
+
 describe('useGenerateInvoices', () => {
-  function setupInvoiceHookTest() {
-    mutationMock.useQueryClient.mockReturnValue({ invalidateQueries: mutationMock.invalidateQueries });
-    mutationMock.invalidateQueries.mockResolvedValue(undefined);
-  }
-
-  async function runGenerateInvoicesOnSuccess(count: number) {
-    const { useGenerateInvoices } = await import('./useInvoices');
-    const mutationOptions = useGenerateInvoices() as unknown as { onSuccess: (value: number) => Promise<void> };
-    await mutationOptions.onSuccess(count);
-  }
-
-  function expectInvoiceInvalidation() {
-    const expectedKeys = [invoiceKeys.all, financialReportKeys.all];
-    expectedKeys.forEach((queryKey) => {
-      expect(mutationMock.invalidateQueries).toHaveBeenCalledWith({ queryKey });
-    });
-    expect(mutationMock.invalidateQueries).toHaveBeenCalledTimes(expectedKeys.length);
-  }
-
   beforeEach(() => {
     vi.clearAllMocks();
     setupInvoiceHookTest();
   });
 
   it('invalidates invoice and financial report queries after successful invoice generation', async () => {
-    await runGenerateInvoicesOnSuccess(2);
+    const { result } = renderHook(() => useGenerateInvoicesOnSuccess());
+
+    await result.current.onSuccess(2);
+
     expectInvoiceInvalidation();
     expect(mutationMock.toastSuccess).toHaveBeenCalledWith('تم إنشاء 2 فاتورة');
   });
