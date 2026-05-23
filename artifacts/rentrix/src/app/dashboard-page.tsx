@@ -13,21 +13,26 @@ function DashboardErrorCard({ onRetry, error }: Readonly<{ onRetry: () => void; 
 
 export function DashboardPage(_: Readonly<Record<string, never>>) {
   const { today, settings, dashboardQuery, retryDashboard, kpiCards, collectionTrendRows, recentInvoices, recentContracts } = useDashboardData();
-  const collectionTrendContent = dashboardQuery.isLoading
-    ? <Skeleton className="h-44 w-full" />
-    : collectionTrendRows.length === 0
-      ? <p className="text-sm text-muted-foreground">لا توجد دفعات خلال هذه الفترة.</p>
-      : <div className="space-y-2">{collectionTrendRows.map((row) => <div key={row.paymentDate} className="flex items-center justify-between rounded-xl bg-muted/60 px-3 py-2"><span className="text-sm">{formatCompanyDate(settings, `${row.paymentDate}T00:00:00`)}</span><strong dir="ltr">{formatCompanyMoney(settings, row.totalPaid)}</strong></div>)}</div>;
-  const recentInvoicesContent = dashboardQuery.isLoading
-    ? <Skeleton className="h-36 w-full" />
-    : recentInvoices.length === 0
-      ? <p className="text-sm text-muted-foreground">لا توجد فواتير متأخرة حالياً.</p>
-      : <div className="space-y-2">{recentInvoices.map((invoice) => <div key={invoice.invoiceId} className="flex items-center justify-between rounded-xl border p-2"><span className="text-sm">{invoice.shortInvoiceId} · {invoice.tenantName ?? 'مستأجر غير محدد'}</span><span dir="ltr" className="font-bold">{formatCompanyMoney(settings, invoice.remainingAmount)}</span></div>)}</div>;
-  const recentContractsContent = dashboardQuery.isLoading
-    ? <Skeleton className="h-36 w-full" />
-    : recentContracts.length === 0
-      ? <p className="text-sm text-muted-foreground">لا توجد عقود نشطة في البيانات الحالية.</p>
-      : <div className="space-y-2">{recentContracts.map((contract) => <div key={contract.id} className="flex items-center justify-between rounded-xl border p-2"><span className="text-sm">{contract.people?.full_name ?? 'مستأجر غير محدد'} · {contract.units?.unit_number ?? contract.properties?.title ?? 'وحدة غير محددة'}</span><span className="text-xs text-muted-foreground">ينتهي {formatCompanyDate(settings, `${contract.end_date}T00:00:00`)}</span></div>)}</div>;
+  let collectionTrendContent = <div className="space-y-2">{collectionTrendRows.map((row) => <div key={row.paymentDate} className="flex items-center justify-between rounded-xl bg-muted/60 px-3 py-2"><span className="text-sm">{formatCompanyDate(settings, `${row.paymentDate}T00:00:00`)}</span><strong dir="ltr">{formatCompanyMoney(settings, row.totalPaid)}</strong></div>)}</div>;
+  if (dashboardQuery.isLoading) {
+    collectionTrendContent = <Skeleton className="h-44 w-full" />;
+  } else if (collectionTrendRows.length === 0) {
+    collectionTrendContent = <p className="text-sm text-muted-foreground">لا توجد دفعات خلال هذه الفترة.</p>;
+  }
+
+  let recentInvoicesContent = <div className="space-y-2">{recentInvoices.map((invoice) => <div key={invoice.invoiceId} className="flex items-center justify-between rounded-xl border p-2"><span className="text-sm">{invoice.shortInvoiceId} · {invoice.tenantName ?? 'مستأجر غير محدد'}</span><span dir="ltr" className="font-bold">{formatCompanyMoney(settings, invoice.remainingAmount)}</span></div>)}</div>;
+  if (dashboardQuery.isLoading) {
+    recentInvoicesContent = <Skeleton className="h-36 w-full" />;
+  } else if (recentInvoices.length === 0) {
+    recentInvoicesContent = <p className="text-sm text-muted-foreground">لا توجد فواتير متأخرة حالياً.</p>;
+  }
+
+  let recentContractsContent = <div className="space-y-2">{recentContracts.map((contract) => <div key={contract.id} className="flex items-center justify-between rounded-xl border p-2"><span className="text-sm">{contract.people?.full_name ?? 'مستأجر غير محدد'} · {contract.units?.unit_number ?? contract.properties?.title ?? 'وحدة غير محددة'}</span><span className="text-xs text-muted-foreground">ينتهي {formatCompanyDate(settings, `${contract.end_date}T00:00:00`)}</span></div>)}</div>;
+  if (dashboardQuery.isLoading) {
+    recentContractsContent = <Skeleton className="h-36 w-full" />;
+  } else if (recentContracts.length === 0) {
+    recentContractsContent = <p className="text-sm text-muted-foreground">لا توجد عقود نشطة في البيانات الحالية.</p>;
+  }
 
   return <div className="space-y-6">
     <section className="rounded-3xl border bg-card p-6"><p className="text-sm font-bold text-primary">لوحة التحكم التشغيلية</p><h2 className="mt-2 text-2xl font-black">مؤشرات العقود والتحصيل من البيانات الفعلية</h2><p className="mt-2 text-sm text-muted-foreground">حتى تاريخ {formatCompanyDate(settings, `${today}T00:00:00`)}</p></section>
