@@ -3,7 +3,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { useProperties } from './use-properties';
 
 export function PropertyMapPage() {
-  const propertiesQuery = useProperties({ search: '', status: 'all', page: 1, pageSize: 100 });
+  const propertiesQuery = useProperties({ search: '', status: 'all', page: 1, pageSize: 1000 });
 
   if (propertiesQuery.isLoading) return <div dir="rtl" className="space-y-2"><p>جارٍ تحميل العقارات...</p></div>;
   if (propertiesQuery.isError) return <EmptyState title="تعذر تحميل العقارات" description="تعذر تجهيز عرض الخريطة. حاول إعادة المحاولة." />;
