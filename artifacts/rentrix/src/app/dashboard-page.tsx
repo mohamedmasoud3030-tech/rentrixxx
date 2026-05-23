@@ -39,7 +39,7 @@ export function DashboardPage(_: Readonly<Record<string, never>>) {
 
     {dashboardQuery.isError ? <DashboardErrorCard onRetry={retryDashboard} error={dashboardQuery.error} /> : null}
 
-    <section className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">{kpiCards.map((card) => <Card key={card.title}><CardHeader><CardTitle className="text-base">{card.title}</CardTitle><CardDescription>{card.description}</CardDescription></CardHeader><CardContent>{dashboardQuery.isLoading ? <Skeleton className="h-7 w-20" /> : <p className="text-2xl font-black" dir={card.isMoney ? 'ltr' : 'rtl'}>{card.value}</p>}</CardContent></Card>)}</section>
+    <section className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">{kpiCards.map((card) => <Card key={card.title}><CardHeader><CardTitle className="text-base">{card.title}</CardTitle><CardDescription>{card.description}</CardDescription></CardHeader><CardContent>{dashboardQuery.isLoading ? <Skeleton className="h-7 w-20" /> : <p className="text-2xl font-black" dir={card.isMoney ? 'ltr' : 'rtl'}>{card.displayValue}</p>}</CardContent></Card>)}</section>
 
     <section className="grid gap-4 xl:grid-cols-2">
       <Card><CardHeader><CardTitle>اتجاه التحصيل اليومي (هذا الشهر)</CardTitle><CardDescription>من تقرير التحصيل اليومي المتاح حالياً.</CardDescription></CardHeader><CardContent>{collectionTrendContent}</CardContent></Card>
