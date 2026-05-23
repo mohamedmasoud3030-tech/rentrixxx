@@ -22,6 +22,7 @@ function money(value: number | null) {
 }
 
 export function UnitsList({ propertyId, unitsQuery }: Readonly<{ propertyId: string; unitsQuery: UseQueryResult<Unit[]> }>) {
+  const unitRows = unitsQuery.data ?? [];
   const deleteMutation = useSoftDeleteUnit(propertyId);
   const [editingUnit, setEditingUnit] = useState<Unit | null>(null);
   const [archiveCandidate, setArchiveCandidate] = useState<Unit | null>(null);
@@ -75,7 +76,7 @@ export function UnitsList({ propertyId, unitsQuery }: Readonly<{ propertyId: str
           <div className="space-y-3">
             {Array.from({ length: 4 }, (_, index) => <Skeleton key={index} className="h-14" />)}
           </div>
-        ) : unitsQuery.data?.length ? (
+        ) : unitRows.length > 0 ? (
           <div className="overflow-x-auto rounded-2xl border border-border">
             <Table>
               <TableHeader>
@@ -89,7 +90,7 @@ export function UnitsList({ propertyId, unitsQuery }: Readonly<{ propertyId: str
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {unitsQuery.data.map((unit) => (
+                {unitRows.map((unit) => (
                   <TableRow key={unit.id}>
                     <TableCell className="font-black">{unit.unit_number}</TableCell>
                     <TableCell>{unit.floor ?? '—'}</TableCell>

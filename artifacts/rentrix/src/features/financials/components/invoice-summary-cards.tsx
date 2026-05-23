@@ -5,7 +5,7 @@ type InvoiceSummaryCardsProps = {
   summary: InvoiceSummary;
 };
 
-export function InvoiceSummaryCards({ summary }: InvoiceSummaryCardsProps) {
+export function InvoiceSummaryCards({ summary }: Readonly<InvoiceSummaryCardsProps>) {
   return (
     <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
       <div className="rounded-2xl border bg-muted/30 p-4">

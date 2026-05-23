@@ -29,7 +29,7 @@ export function ReceiptsSection({
   isReceiptDetailError,
   receiptDetailError,
   onSelectReceipt,
-}: ReceiptsSectionProps) {
+}: Readonly<ReceiptsSectionProps>) {
   return (
     <Card>
       <CardHeader>

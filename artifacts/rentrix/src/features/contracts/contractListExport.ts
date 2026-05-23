@@ -1,5 +1,4 @@
-import { DEFAULT_CURRENCY } from '@lib/format';
-import { formatDefaultCompanyMoney } from '@lib/format';
+import { DEFAULT_CURRENCY, formatDefaultCompanyMoney } from '@lib/format';
 import { contractStatusLabels, paymentCycleLabels } from './contractSchema';
 import type { ContractListItem } from './services/contractService';
 

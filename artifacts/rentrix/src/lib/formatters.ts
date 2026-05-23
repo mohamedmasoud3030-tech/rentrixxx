@@ -59,5 +59,5 @@ export function formatMoney({ amount, currency = DEFAULT_CURRENCY, locale = DEFA
     maximumFractionDigits: metadata.minorUnit,
   })
     .format(safeAmount)
-    .replace(/\u00A0/g, ' ');
+    .replaceAll(" ", " ");
 }

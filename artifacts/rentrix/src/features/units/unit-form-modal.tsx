@@ -21,7 +21,7 @@ function fieldError(message?: string) {
   return message ? <p className="text-xs font-bold text-destructive">{message}</p> : null;
 }
 
-export function UnitFormModal({ propertyId, unit, open, onOpenChange }: UnitFormModalProps) {
+export function UnitFormModal({ propertyId, unit, open, onOpenChange }: Readonly<UnitFormModalProps>) {
   const createMutation = useCreateUnit(propertyId);
   const updateMutation = useUpdateUnit(propertyId);
   const form = useForm<UnitFormValues>({
