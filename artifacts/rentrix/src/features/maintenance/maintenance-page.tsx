@@ -4,7 +4,11 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/empty-state';
+import { Input } from '@/components/ui/input';
+import { Select } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
+import { StatusBadge } from '@/components/ui/status-badge';
+import { Textarea } from '@/components/ui/textarea';
 import { DataTable } from '@/components/shared/DataTable';
 import { useProperties } from '@/features/properties/use-properties';
 import { useAllUnits, useUnits } from '@/features/units/use-units';
@@ -128,25 +132,25 @@ export function MaintenancePage() {
 
   return (
     <div className="space-y-6" dir="rtl">
-      <div className="grid gap-2 md:grid-cols-3">
-        <select className="rounded border px-2 py-2" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value as MaintenanceStatusFilter)}>
+      <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+        <Select aria-label="تصفية طلبات الصيانة حسب الحالة" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value as MaintenanceStatusFilter)}>
           <option value="all">كل الحالات</option>
           <option value="open">مفتوح</option>
           <option value="in_progress">قيد التنفيذ</option>
           <option value="resolved">تم الحل</option>
           <option value="closed">مغلق</option>
-        </select>
-        <select className="rounded border px-2 py-2" value={priorityFilter} onChange={(e) => setPriorityFilter(e.target.value as MaintenancePriorityFilter)}>
+        </Select>
+        <Select aria-label="تصفية طلبات الصيانة حسب الأولوية" value={priorityFilter} onChange={(e) => setPriorityFilter(e.target.value as MaintenancePriorityFilter)}>
           <option value="all">كل الأولويات</option>
           <option value="low">منخفضة</option>
           <option value="medium">متوسطة</option>
           <option value="high">عالية</option>
           <option value="urgent">عاجلة</option>
-        </select>
-        <select className="rounded border px-2 py-2" value={propertyFilterId} onChange={(e) => setPropertyFilterId(e.target.value)}>
+        </Select>
+        <Select aria-label="تصفية طلبات الصيانة حسب العقار" value={propertyFilterId} onChange={(e) => setPropertyFilterId(e.target.value)}>
           <option value="">كل العقارات</option>
           {propertyOptions}
-        </select>
+        </Select>
       </div>
 
       <div className="grid gap-3 md:grid-cols-4">
@@ -158,33 +162,33 @@ export function MaintenancePage() {
         ))}
       </div>
 
-      <form className="grid gap-3 rounded border p-4" onSubmit={form.handleSubmit(onSubmit)}>
-        <select className="rounded border px-2 py-2" {...form.register('property_id')}>
+      <form className="grid gap-3 rounded border p-4 sm:grid-cols-2" onSubmit={form.handleSubmit(onSubmit)}>
+        <Select aria-label="اختيار العقار" className="sm:col-span-2" {...form.register('property_id')}>
           <option value="">اختر العقار</option>
           {propertyOptions}
-        </select>
+        </Select>
         {form.formState.errors.property_id ? <p className="text-sm text-red-600">{form.formState.errors.property_id.message}</p> : null}
 
-        <select className="rounded border px-2 py-2" {...form.register('unit_id')}>
+        <Select aria-label="اختيار الوحدة" {...form.register('unit_id')}>
           <option value="">بدون وحدة</option>
           {units.map((unit) => (
             <option key={unit.id} value={unit.id}>{unit.unit_number}</option>
           ))}
-        </select>
+        </Select>
 
-        <input className="rounded border px-2 py-2" placeholder="عنوان الطلب" {...form.register('title')} />
+        <Input aria-label="عنوان طلب الصيانة" placeholder="عنوان الطلب" {...form.register('title')} />
         {form.formState.errors.title ? <p className="text-sm text-red-600">{form.formState.errors.title.message}</p> : null}
 
-        <textarea className="rounded border px-2 py-2" placeholder="الوصف (اختياري)" {...form.register('description')} />
+        <Textarea aria-label="وصف طلب الصيانة (اختياري)" className="sm:col-span-2" placeholder="الوصف (اختياري)" {...form.register('description')} />
 
-        <select className="rounded border px-2 py-2" {...form.register('priority')}>
+        <Select aria-label="أولوية طلب الصيانة" {...form.register('priority')}>
           <option value="low">منخفضة</option>
           <option value="medium">متوسطة</option>
           <option value="high">عالية</option>
           <option value="urgent">عاجلة</option>
-        </select>
+        </Select>
 
-        <Button type="submit" disabled={createMutation.isPending}>{createMutation.isPending ? 'جارٍ الحفظ...' : 'إضافة طلب صيانة'}</Button>
+        <Button className="sm:col-span-2" type="submit" disabled={createMutation.isPending}>{createMutation.isPending ? 'جارٍ الحفظ...' : 'إضافة طلب صيانة'}</Button>
       </form>
 
       {maintenanceQuery.isLoading || propertiesQuery.isLoading ? (
@@ -204,8 +208,8 @@ export function MaintenancePage() {
           columns={[
             { key: 'title', header: 'العنوان', render: (row) => row.title },
             { key: 'location', header: 'العقار / الوحدة', render: (row) => buildMaintenanceLocationLabel(row, properties, allUnits) },
-            { key: 'status', header: 'الحالة', render: (row) => maintenanceStatusLabels[row.status] },
-            { key: 'priority', header: 'الأولوية', render: (row) => maintenancePriorityLabels[row.priority] },
+            { key: 'status', header: 'الحالة', render: (row) => <StatusBadge tone={row.status === 'resolved' || row.status === 'closed' ? 'green' : row.status === 'in_progress' ? 'blue' : 'gold'}>{maintenanceStatusLabels[row.status]}</StatusBadge> },
+            { key: 'priority', header: 'الأولوية', render: (row) => <StatusBadge tone={row.priority === 'urgent' ? 'red' : row.priority === 'high' ? 'gold' : row.priority === 'medium' ? 'blue' : 'gray'}>{maintenancePriorityLabels[row.priority]}</StatusBadge> },
             {
               key: 'actions',
               header: 'الإجراء التالي',

@@ -1,9 +1,12 @@
 import { useMemo, useState } from 'react';
-import { Download } from 'lucide-react';
+import { Download, Printer } from 'lucide-react';
 import { BulkActionsBar } from '@/components/BulkActionsBar';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { EmptyState } from '@/components/empty-state';
 import { Input } from '@/components/ui/input';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useBulkSelection } from '@/hooks/useBulkSelection';
 import { useGenerateInvoices, useInvoices } from '@/features/financials/invoices/useInvoices';
 import { getSafeRemainingAmount } from '@/features/financials/financialMath';
@@ -44,12 +47,17 @@ export function InvoicesPage() {
   return (
     <div className="space-y-6" dir="rtl">
       <div className="flex flex-wrap items-center justify-between gap-3"><h2 className="text-3xl font-black">الفواتير</h2><Button onClick={() => generateInvoices.mutate()} disabled={generateInvoices.isPending}>إنشاء الفواتير الشهرية</Button></div>
-      <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-5">
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
         <Card className="p-4"><p>إجمالي الفواتير</p><p>{stats.total}</p></Card><Card className="p-4"><p>غير مدفوعة</p><p>{stats.unpaid}</p></Card><Card className="p-4"><p>متأخرة</p><p>{stats.overdue}</p></Card><Card className="p-4"><p>مدفوعة</p><p>{stats.paid}</p></Card><Card className="p-4"><p>إجمالي الرصيد</p><p>{formatMoney(stats.outstanding)}</p></Card>
       </div>
-      <Card className="space-y-3 p-4"><div className="flex flex-wrap gap-2">{statusFilters.map((filter) => <Button key={filter.value} variant={status === filter.value ? 'primary' : 'secondary'} onClick={() => setStatus(filter.value)}>{filter.label}</Button>)}</div><Input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="بحث" /></Card>
-      <Card className="overflow-x-auto">{invoicesQuery.isError ? <div className="p-4">{getErrorMessage(invoicesQuery.error, 'تعذر تحميل الفواتير')}</div> : null}<table className="w-full min-w-[700px]"><tbody>{filteredInvoices.map((invoice) => <tr key={invoice.id}><td><input type="checkbox" checked={bulk.isSelected(invoice.id)} onChange={() => bulk.toggleOne(invoice.id)} /></td><td>{invoice.id.slice(0, 8)}</td><td>{formatDate(invoice.due_date)}</td><td>{formatInvoiceStatusLabel(invoice.status)}</td><td>{formatMoney(invoice.amount)}</td></tr>)}</tbody></table></Card>
-      <BulkActionsBar selectedCount={bulk.selectedCount} selectionLabel={`تم تحديد ${bulk.selectedCount} فاتورة`} onClear={bulk.clear} actions={<Button variant="secondary" onClick={() => exportCsv(selectedItems)}><Download className="me-2 size-4" />تصدير</Button>} />
+      <Card className="space-y-3 p-4"><div className="flex flex-wrap gap-2">{statusFilters.map((filter) => <Button key={filter.value} variant={status === filter.value ? 'primary' : 'secondary'} onClick={() => setStatus(filter.value)}>{filter.label}</Button>)}</div><Input aria-label="بحث الفواتير" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="بحث" /></Card>
+      <Card className="overflow-hidden">
+        {invoicesQuery.isLoading ? <div className="space-y-2 p-4">{Array.from({ length: 4 }, (_, i) => <Skeleton key={i} className="h-12" />)}</div> : null}
+        {invoicesQuery.isError ? <div className="p-4 text-destructive">{getErrorMessage(invoicesQuery.error, 'تعذر تحميل الفواتير')}</div> : null}
+        {!invoicesQuery.isLoading && !invoicesQuery.isError && filteredInvoices.length === 0 ? <div className="p-4"><EmptyState title="لا توجد فواتير مطابقة" description="جرّب تعديل عوامل التصفية أو البحث لعرض النتائج." /></div> : null}
+        {!invoicesQuery.isLoading && !invoicesQuery.isError && filteredInvoices.length > 0 ? <div className="overflow-x-auto"><Table className="min-w-[760px]"><TableHeader><TableRow><TableHead>تحديد</TableHead><TableHead>رقم الفاتورة</TableHead><TableHead>تاريخ الاستحقاق</TableHead><TableHead>الحالة</TableHead><TableHead>الإجمالي</TableHead><TableHead>المتبقي</TableHead></TableRow></TableHeader><TableBody>{filteredInvoices.map((invoice) => <TableRow key={invoice.id}><TableCell><input aria-label={`تحديد الفاتورة ${invoice.id.slice(0, 8)}`} type="checkbox" checked={bulk.isSelected(invoice.id)} onChange={() => bulk.toggleOne(invoice.id)} /></TableCell><TableCell className="font-bold">{invoice.id.slice(0, 8)}</TableCell><TableCell>{formatDate(invoice.due_date)}</TableCell><TableCell>{formatInvoiceStatusLabel(invoice.status)}</TableCell><TableCell dir="ltr">{formatMoney(invoice.amount)}</TableCell><TableCell dir="ltr">{formatMoney(getSafeRemainingAmount(invoice.amount, invoice.paid_amount))}</TableCell></TableRow>)}</TableBody></Table></div> : null}
+      </Card>
+      <BulkActionsBar selectedCount={bulk.selectedCount} selectionLabel={`تم تحديد ${bulk.selectedCount} فاتورة`} onClear={bulk.clear} actions={<div className="flex gap-2"><Button variant="secondary" aria-label="تصدير الفواتير المحددة" onClick={() => exportCsv(selectedItems)}><Download className="me-2 size-4" />تصدير</Button><Button variant="secondary" aria-label="طباعة الفواتير المحددة" onClick={() => globalThis.window.print()}><Printer className="me-2 size-4" />طباعة</Button></div>} />
     </div>
   );
 }
