@@ -16,8 +16,10 @@ const modelHasArabicText = (model: UnifiedDocumentModel): boolean => collectDocu
 const buildHtmlRows = (rows: string[][]) => rows.map((r) => `<tr>${r.map((c) => `<td>${c}</td>`).join('')}</tr>`).join('');
 const buildHtmlTable = (table: UnifiedDocumentModel['tables'][number]) => {
   const tableHead = table.columns.map((column) => `<th>${column}</th>`).join('');
+  const footerCells = table.totals?.map((total) => `<th>${total}</th>`).join('') ?? '';
+  const tableFootMarkup = `<tfoot><tr>${footerCells}</tr></tfoot>`;
   const tableFoot = table.totals?.length
-    ? `<tfoot><tr>${table.totals.map((total) => `<th>${total}</th>`).join('')}</tr></tfoot>`
+    ? tableFootMarkup
     : '';
   return `<section><h3>${table.title ?? ''}</h3><table><thead><tr>${tableHead}</tr></thead><tbody>${buildHtmlRows(table.rows)}</tbody>${tableFoot}</table></section>`;
 };

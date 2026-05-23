@@ -6,11 +6,12 @@ export type PaymentPayload = { invoice_id: string; amount: number; method: Payme
 export async function postReceiptAtomic(supabase: SupabaseClient, payload: PaymentPayload): Promise<string> {
   const { data, error } = await supabase.rpc('post_receipt_atomic', { payload });
   if (error) throw error;
-  const paymentId = typeof data === 'string'
-    ? data
-    : data && typeof data === 'object' && 'payment_id' in data
-      ? (data as { payment_id?: unknown }).payment_id
-      : null;
+  let paymentId: unknown = null;
+  if (typeof data === 'string') {
+    paymentId = data;
+  } else if (data && typeof data === 'object' && 'payment_id' in data) {
+    paymentId = (data as { payment_id?: unknown }).payment_id;
+  }
   if (typeof paymentId !== 'string' || !paymentId) {
     throw new Error('post_receipt_atomic returned an invalid payment id');
   }
