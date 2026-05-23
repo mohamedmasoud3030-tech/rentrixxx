@@ -26,6 +26,17 @@ begin
 end;
 $$;
 
+create or replace function pg_temp.rentrix_set_function_authenticated_execute(
+  p_function_signature text
+) returns void
+language plpgsql
+as $$
+begin
+  execute format('revoke all on function %s from public', p_function_signature);
+  execute format('grant execute on function %s to authenticated', p_function_signature);
+end;
+$$;
+
 -- 1) property_owners compatibility + active duplicate guard.
 create table if not exists public.property_owners (
   id uuid primary key default gen_random_uuid(),
@@ -206,8 +217,7 @@ begin
 end;
 $$;
 
-revoke all on function public.generate_invoices_from_active_contracts() from public;
-grant execute on function public.generate_invoices_from_active_contracts() to authenticated;
+select pg_temp.rentrix_set_function_authenticated_execute('public.generate_invoices_from_active_contracts()');
 
 -- 10) company settings compatibility.
 select pg_temp.rentrix_add_column_if_missing('company_settings', 'legal_name', 'text');
@@ -257,18 +267,14 @@ stable
 security definer
 set search_path = public
 as $$
-  select auth.uid() is not null
+  select public.is_app_user()
      and exists (
        select 1
        from public.users u
        where u.id = auth.uid()
-         and u.status = 'ACTIVE'
-         and u.deleted_at is null
          and u.role in ('ADMIN', 'MANAGER')
      );
 $$;
 
-revoke all on function public.is_app_user() from public;
-revoke all on function public.is_admin_or_manager() from public;
-grant execute on function public.is_app_user() to authenticated;
-grant execute on function public.is_admin_or_manager() to authenticated;
+select pg_temp.rentrix_set_function_authenticated_execute('public.is_app_user()');
+select pg_temp.rentrix_set_function_authenticated_execute('public.is_admin_or_manager()');
