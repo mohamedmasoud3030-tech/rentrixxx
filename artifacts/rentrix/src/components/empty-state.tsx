@@ -2,7 +2,7 @@ import { Inbox } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 
-export function EmptyState({ title, description, action }: { title: string; description: string; action?: ReactNode }) {
+export function EmptyState({ title, description, action }: Readonly<{ title: string; description: string; action?: ReactNode }>) {
   return (
     <Card className="border-dashed bg-card/82">
       <CardContent className="flex min-h-64 flex-col items-center justify-center gap-4 text-center">

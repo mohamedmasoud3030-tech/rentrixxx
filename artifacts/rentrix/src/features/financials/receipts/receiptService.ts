@@ -8,7 +8,7 @@ import {
 } from '@/services/financial/receiptService';
 
 export type { ReceiptListParams, ReceiptRecord };
-export { formatReceiptNumber };
+export { formatReceiptNumber } from '@/services/financial/receiptService';
 
 export async function listReceipts(params: ReceiptListParams = {}): Promise<ReceiptRecord[]> {
   return listReceiptsService(supabase, params);

@@ -244,14 +244,14 @@ export function AppShell() {
     const onKey = (event: KeyboardEvent) => {
       if (event.ctrlKey && event.key.toLowerCase() === 'n') {
         event.preventDefault();
-        const current = window.location.pathname;
-        if (current.endsWith('/properties')) void router.navigate({ to: '/properties/new' });
-        if (current.endsWith('/people')) void router.navigate({ to: '/people/new' });
-        if (current.endsWith('/contracts')) void router.navigate({ to: '/contracts/new' });
+        const current = globalThis.window.location.pathname;
+        if (current.endsWith('/properties')) router.navigate({ to: '/properties/new' }).catch(console.error);
+        if (current.endsWith('/people')) router.navigate({ to: '/people/new' }).catch(console.error);
+        if (current.endsWith('/contracts')) router.navigate({ to: '/contracts/new' }).catch(console.error);
       }
     };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
+    globalThis.window.addEventListener('keydown', onKey);
+    return () => globalThis.window.removeEventListener('keydown', onKey);
   }, [router]);
 
   const closeMobileNav = () => setMobileNavOpen(false);

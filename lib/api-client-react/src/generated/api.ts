@@ -93,7 +93,7 @@ export function useHealthCheck<
 }): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
   const queryOptions = getHealthCheckQueryOptions(options);
 
-  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+  const query = useQuery(queryOptions) & {
     queryKey: QueryKey;
   };
 

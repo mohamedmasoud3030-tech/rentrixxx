@@ -1,6 +1,6 @@
 import { Link, useNavigate } from '@tanstack/react-router';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { ArrowRight, Edit, RefreshCw, ShieldAlert } from 'lucide-react';
+import { ArrowRight, Edit, RefreshCw } from 'lucide-react';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { exportContractToPdf } from '@/services/pdfService';

@@ -22,13 +22,13 @@ type SupabaseErrorLike = Partial<PostgrestError> & {
 
 function readSupabaseContext(error: SupabaseErrorLike): string | null {
   const haystack = `${error.message ?? ''} ${error.details ?? ''}`;
-  const relationMatch = haystack.match(/relation\s+"?([a-zA-Z0-9_.]+)"?\s+does not exist/i);
+  const relationMatch = /relation\s+"?([a-zA-Z0-9_.]+)"?\s+does not exist/i.exec(haystack);
   if (relationMatch?.[1]) return `table=${relationMatch[1]}`;
 
-  const functionMatch = haystack.match(/function\s+([a-zA-Z0-9_.]+)\s*\(/i);
+  const functionMatch = /function\s+([a-zA-Z0-9_.]+)\s*\(/i.exec(haystack);
   if (functionMatch?.[1]) return `rpc=${functionMatch[1]}`;
 
-  const schemaFunctionMatch = haystack.match(/function\s+"?([a-zA-Z0-9_.]+)"?\s+does not exist/i);
+  const schemaFunctionMatch = /function\s+"?([a-zA-Z0-9_.]+)"?\s+does not exist/i.exec(haystack);
   if (schemaFunctionMatch?.[1]) return `rpc=${schemaFunctionMatch[1]}`;
 
   return null;
