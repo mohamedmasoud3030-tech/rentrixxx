@@ -36,6 +36,21 @@ vi.mock('./ownerService', () => ({
 }));
 
 describe('owner hooks', () => {
+  async function expectOwnerLinkMutationInvalidation(options: {
+    hook: 'useLinkOwnerToProperty' | 'useUpdatePropertyOwnerLink';
+    successMessage: string;
+  }) {
+    const { ownerKeys, [options.hook]: hookFactory } = await import('./useOwners');
+    const mutationOptions = hookFactory() as unknown as { onSuccess: (link: { property_id: string; owner_id: string }) => Promise<void> };
+    await mutationOptions.onSuccess({ property_id: 'property-1', owner_id: 'owner-1' });
+
+    expect(mutationMock.invalidateQueries).toHaveBeenCalledWith({ queryKey: ownerKeys.all });
+    expect(mutationMock.invalidateQueries).toHaveBeenCalledWith({ queryKey: propertyKeys.all });
+    expect(mutationMock.invalidateQueries).toHaveBeenCalledWith({ queryKey: ownerKeys.propertyOwners('property-1') });
+    expect(mutationMock.invalidateQueries).toHaveBeenCalledWith({ queryKey: ownerKeys.detail('owner-1') });
+    expect(mutationMock.toastSuccess).toHaveBeenCalledWith(options.successMessage);
+  }
+
   beforeEach(() => {
     vi.clearAllMocks();
     mutationMock.useQueryClient.mockReturnValue({ invalidateQueries: mutationMock.invalidateQueries });
@@ -43,29 +58,17 @@ describe('owner hooks', () => {
   });
 
   it('invalidates owner and property ownership queries after linking an owner to a property', async () => {
-    const { ownerKeys, useLinkOwnerToProperty } = await import('./useOwners');
-
-    const mutationOptions = useLinkOwnerToProperty() as unknown as { onSuccess: (link: { property_id: string; owner_id: string }) => Promise<void> };
-    await mutationOptions.onSuccess({ property_id: 'property-1', owner_id: 'owner-1' });
-
-    expect(mutationMock.invalidateQueries).toHaveBeenCalledWith({ queryKey: ownerKeys.all });
-    expect(mutationMock.invalidateQueries).toHaveBeenCalledWith({ queryKey: propertyKeys.all });
-    expect(mutationMock.invalidateQueries).toHaveBeenCalledWith({ queryKey: ownerKeys.propertyOwners('property-1') });
-    expect(mutationMock.invalidateQueries).toHaveBeenCalledWith({ queryKey: ownerKeys.detail('owner-1') });
-    expect(mutationMock.toastSuccess).toHaveBeenCalledWith('تم ربط المالك بالعقار بنجاح');
+    await expectOwnerLinkMutationInvalidation({
+      hook: 'useLinkOwnerToProperty',
+      successMessage: 'تم ربط المالك بالعقار بنجاح',
+    });
   });
 
   it('invalidates owner and property ownership queries after updating an owner-property link', async () => {
-    const { ownerKeys, useUpdatePropertyOwnerLink } = await import('./useOwners');
-
-    const mutationOptions = useUpdatePropertyOwnerLink() as unknown as { onSuccess: (link: { property_id: string; owner_id: string }) => Promise<void> };
-    await mutationOptions.onSuccess({ property_id: 'property-1', owner_id: 'owner-1' });
-
-    expect(mutationMock.invalidateQueries).toHaveBeenCalledWith({ queryKey: ownerKeys.all });
-    expect(mutationMock.invalidateQueries).toHaveBeenCalledWith({ queryKey: propertyKeys.all });
-    expect(mutationMock.invalidateQueries).toHaveBeenCalledWith({ queryKey: ownerKeys.propertyOwners('property-1') });
-    expect(mutationMock.invalidateQueries).toHaveBeenCalledWith({ queryKey: ownerKeys.detail('owner-1') });
-    expect(mutationMock.toastSuccess).toHaveBeenCalledWith('تم تحديث علاقة الملكية بنجاح');
+    await expectOwnerLinkMutationInvalidation({
+      hook: 'useUpdatePropertyOwnerLink',
+      successMessage: 'تم تحديث علاقة الملكية بنجاح',
+    });
   });
 
   it('invalidates owner and property ownership queries after unlinking an owner from a property', async () => {
