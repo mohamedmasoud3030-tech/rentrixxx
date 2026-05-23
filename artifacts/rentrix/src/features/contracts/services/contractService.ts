@@ -6,7 +6,7 @@ import type { ContractPayload, RenewalPayload } from '../contractSchema';
 
 export type ContractStatusFilter = Contract['status'] | 'all';
 export type ContractListItem = Contract & {
-  properties: Pick<Property, 'id' | 'title' | 'address'> | null;
+  properties: Pick<Property, 'id' | 'title' | 'address' | 'latitude' | 'longitude'> | null;
   units: Pick<Unit, 'id' | 'unit_number' | 'floor' | 'status' | 'rent_amount'> | null;
   people: Pick<Person, 'id' | 'full_name' | 'phone' | 'email' | 'national_id'> | null;
 };
@@ -19,9 +19,9 @@ type ContractInsert = Database['public']['Tables']['contracts']['Insert'];
 type ContractUpdate = Database['public']['Tables']['contracts']['Update'];
 
 const contractSelect =
-  '*, properties:property_id(id,title,address), units:unit_id(id,unit_number,floor,status,rent_amount), people:tenant_id(id,full_name,phone,email,national_id)';
+  '*, properties:property_id(id,title,address,latitude,longitude), units:unit_id(id,unit_number,floor,status,rent_amount), people:tenant_id(id,full_name,phone,email,national_id)';
 const contractDetailSelect =
-  '*, properties:property_id(id,title,address), units:unit_id(id,unit_number,floor,status,rent_amount), people:tenant_id(id,full_name,phone,email,national_id), renewed_from:renewed_from_id(id,start_date,end_date,rent_amount,status)';
+  '*, properties:property_id(id,title,address,latitude,longitude), units:unit_id(id,unit_number,floor,status,rent_amount), people:tenant_id(id,full_name,phone,email,national_id), renewed_from:renewed_from_id(id,start_date,end_date,rent_amount,status)';
 
 export async function listContracts(params: ContractListParams): Promise<ContractListItem[]> {
   const page = params.page ?? 1;
@@ -67,7 +67,16 @@ export async function softDeleteContract(contractId: string): Promise<void> {
 }
 
 export async function renewContract(contractId: string, payload: RenewalPayload): Promise<string> {
-  const { data, error } = await supabase.rpc('renew_contract_atomic', { old_contract_id: contractId, new_contract_data: payload }).returns<string>();
+  const renewalPayload = {
+    start_date: payload.new_start,
+    end_date: payload.new_end,
+    monthly_rent: payload.new_amount,
+  };
+  const { data, error } = await supabase.rpc('renew_contract_atomic', { old_contract_id: contractId, new_contract_data: renewalPayload });
   if (error) throw error;
-  return data;
+  const newContractId = data && typeof data === 'object' && 'new_contract_id' in data ? (data as { new_contract_id?: unknown }).new_contract_id : null;
+  if (typeof newContractId !== 'string' || !newContractId) {
+    throw new Error('renew_contract_atomic returned an invalid contract id');
+  }
+  return newContractId;
 }

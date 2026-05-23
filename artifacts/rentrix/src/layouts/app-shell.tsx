@@ -18,6 +18,7 @@ const navigation = [
   { to: '/properties',  labelKey: 'properties',  icon: Building2 },
   { to: '/tenants',     labelKey: 'tenants',      icon: Users },
   { to: '/owners',      labelKey: 'owners',      icon: UserRoundCog },
+  { to: '/people',      labelKey: 'people',      icon: Users },
   { to: '/contracts',   labelKey: 'contracts',   icon: FileText },
   { to: '/financials',  labelKey: 'financials',  icon: WalletCards },
   { to: '/invoices',    labelKey: 'invoices',    icon: ReceiptText },

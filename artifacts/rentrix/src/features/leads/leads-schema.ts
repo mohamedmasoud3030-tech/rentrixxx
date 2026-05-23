@@ -16,7 +16,7 @@ export const leadSchema = z.object({
   source: z.string().nullable().optional(),
   status: z.enum(leadStatusValues),
   notes: z.string().nullable().optional(),
-  assigned_to: z.string().uuid().nullable().optional().or(z.literal('')),
+  assigned_to: z.preprocess((value) => value === '' ? null : value, z.string().uuid().nullable().optional()),
 });
 
 export type LeadPayload = z.infer<typeof leadSchema>;

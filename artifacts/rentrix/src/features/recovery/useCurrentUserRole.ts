@@ -1,9 +1,12 @@
 import { useQuery } from '@tanstack/react-query';
+import { useAuth } from '@/hooks/use-auth';
 import { supabase } from '@/integrations/supabase/client';
 
 export function useCurrentUserRole() {
+  const { user } = useAuth();
+
   return useQuery({
-    queryKey: ['auth', 'current-user-role'],
+    queryKey: ['auth', 'current-user-role', user?.id ?? null],
     queryFn: async () => {
       const { data: authData, error: authError } = await supabase.auth.getUser();
       if (authError) throw authError;
