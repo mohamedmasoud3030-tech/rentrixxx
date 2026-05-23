@@ -11,6 +11,6 @@ const tones: Record<StatusTone, string> = {
   gold: 'bg-amber-50 text-amber-700 ring-amber-200 dark:bg-amber-400/15 dark:text-amber-200 dark:ring-amber-400/25',
 };
 
-export function StatusBadge({ tone, children, className }: { tone: StatusTone; children: ReactNode; className?: string }) {
+export function StatusBadge({ tone, children, className }: Readonly<{ tone: StatusTone; children: ReactNode; className?: string }>) {
   return <span className={cn('inline-flex items-center rounded-full px-3 py-1 text-xs font-black ring-1 ring-inset', tones[tone], className)}>{children}</span>;
 }

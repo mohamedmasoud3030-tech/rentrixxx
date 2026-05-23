@@ -45,8 +45,8 @@ function normalizeSearchText(value: string) {
     .replace(/[\u064B-\u065F\u0670\u06D6-\u06ED]/g, '')
     .replace(/[أإآ]/g, 'ا')
     .replace(/ى/g, 'ي')
-    .replace(/[٠-٩]/g, (digit) => String(digit.charCodeAt(0) - 0x0660))
-    .replace(/[۰-۹]/g, (digit) => String(digit.charCodeAt(0) - 0x06f0));
+    .replaceAll(/[٠-٩]/g, (digit) => String((digit.codePointAt(0) ?? 0) - 0x0660))
+    .replaceAll(/[۰-۹]/g, (digit) => String((digit.codePointAt(0) ?? 0) - 0x06f0));
 }
 
 function getSearchText(contract: ContractListItem) {

@@ -42,7 +42,7 @@ export const ContractEngine = {
 
     // Create new contract
     const result = await _dataService.add('contracts', rest);
-    return result as Contract | null;
+    return result;
   },
 
   async end(contractId: string, endDate: string): Promise<void> {

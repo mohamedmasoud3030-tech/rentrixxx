@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 
 type Column<T> = { key: string; header: ReactNode; render: (row: T) => ReactNode };
 
-export function DataTable<T>({ rows, columns, keyOf, empty }: { rows: T[]; columns: Array<Column<T>>; keyOf: (row: T) => string; empty?: ReactNode }) {
+export function DataTable<T>({ rows, columns, keyOf, empty }: Readonly<{ rows: T[]; columns: Array<Column<T>>; keyOf: (row: T) => string; empty?: ReactNode }>) {
   if (!rows.length) return <>{empty ?? null}</>;
   return (
     <div className="overflow-x-auto rounded border">
