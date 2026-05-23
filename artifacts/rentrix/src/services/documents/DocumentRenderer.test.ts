@@ -1,25 +1,28 @@
 import { describe, expect, it } from 'vitest';
-import { collectDocumentTextChunks } from './DocumentRenderer';
+import { buildRtlPrintHtml } from './DocumentRenderer';
 import type { UnifiedDocumentModel } from './types';
 
-const baseModel: UnifiedDocumentModel = {
-  type: 'contract',
-  header: { companyName: 'Rentrix', title: 'Contract' },
-  kpis: [{ label: 'Tenant', value: 'John Doe' }],
-  tables: [{ columns: ['Field', 'Value'], rows: [['Status', 'Active']] }],
-  footer: { signatures: ['owner', 'tenant'], companyStampLabel: null, metadata: null },
-  fileName: 'x',
+const model: UnifiedDocumentModel = {
+  type: 'invoice',
+  fileName: 'invoice-1',
+  header: { companyName: 'شركة رنتريكس', title: 'فاتورة' },
+  metadata: [{ label: 'رقم', value: 'INV-1' }],
+  kpis: [{ label: 'المبلغ', value: '10.000 OMR' }],
+  tables: [{ columns: ['البند', 'القيمة'], rows: [['الإجمالي', '10.000 OMR']] }],
+  footer: { signatures: ['tenant'], notes: ['ملاحظة'] },
 };
 
-describe('collectDocumentTextChunks', () => {
-  it('does not inject default signature labels into Arabic detection chunks', () => {
-    const chunks = collectDocumentTextChunks(baseModel);
-    expect(chunks.join(' ')).not.toContain('توقيع');
+describe('DocumentRenderer Arabic HTML output', () => {
+  it('includes arabic rtl html shell', () => {
+    const html = buildRtlPrintHtml(model);
+    expect(html).toContain('<!doctype html>');
+    expect(html).toContain('<html lang="ar" dir="rtl">');
+    expect(html).toContain('<meta charset="utf-8"/>');
   });
 
-  it('keeps actual Arabic content in chunks', () => {
-    const model: UnifiedDocumentModel = { ...baseModel, header: { ...baseModel.header, title: 'عقد إيجار' } };
-    const chunks = collectDocumentTextChunks(model);
-    expect(chunks.some((chunk) => /[\u0600-\u06FF]/.test(chunk))).toBe(true);
+  it('includes compact A4 print css', () => {
+    const html = buildRtlPrintHtml(model);
+    expect(html).toContain('@page{size:A4;margin:8mm 10mm}');
+    expect(html).toContain('@media print');
   });
 });
