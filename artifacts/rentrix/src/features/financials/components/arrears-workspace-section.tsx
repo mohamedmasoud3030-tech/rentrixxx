@@ -25,7 +25,7 @@ export function ArrearsWorkspaceSection() {
 
   return (
     <div className="space-y-3">
-      <div className="flex justify-end"><Button variant="secondary" disabled={!canPrintOperationalReport(hasPrintData, isLoading, isError)} onClick={() => { const err = runOperationalPrint(hasPrintData, isLoading, isError); if (err) globalThis.alert(err); }}><Printer className="ms-2 size-4" />طباعة ملخص المتأخرات</Button></div>
+      <div className="flex justify-end"><Button variant="secondary" disabled={!canPrintOperationalReport(hasPrintData, isLoading, isError)} onClick={() => { const err = runOperationalPrint(hasPrintData, isLoading, isError, { title: 'ملخص المتأخرات', generatedAt: arrearsAsOf, summaryItems: arrearsSummaryReport.data ? [{ label: 'إجمالي المتأخر', value: String(arrearsSummaryReport.data.totalOverdue) }, { label: 'عدد الفواتير', value: String(arrearsSummaryReport.data.overdueInvoiceCount) }] : [], tables: [{ title: 'فواتير متأخرة', columns: ['الفاتورة', 'المستأجر', 'المتبقي'], rows: (overdueInvoicesReport.data?.rows ?? []).slice(0, 40).map((row) => [row.shortInvoiceId, row.tenantName ?? '—', String(row.remainingAmount)]) }] }); if (err) globalThis.alert(err); }}><Printer className="ms-2 size-4" />طباعة ملخص المتأخرات</Button></div>
     <ArrearsWorkflowSection
       asOf={arrearsAsOf}
       search={arrearsSearch}

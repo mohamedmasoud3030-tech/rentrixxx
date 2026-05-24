@@ -80,7 +80,7 @@ export function FinancialsPage() {
   return (
     <div className="space-y-6" dir="rtl">
       <div className="flex justify-end">
-        <Button variant="secondary" disabled={!hasFinancialPrintData || collectionReport.isLoading || collectionReport.isError} onClick={() => { const err = runOperationalPrint(hasFinancialPrintData, collectionReport.isLoading, collectionReport.isError); if (err) globalThis.alert(err); }}><Printer className="ms-2 size-4" />طباعة الملخص المالي التشغيلي</Button>
+        <Button variant="secondary" disabled={!hasFinancialPrintData || collectionReport.isLoading || collectionReport.isError} onClick={() => { const err = runOperationalPrint(hasFinancialPrintData, collectionReport.isLoading, collectionReport.isError, { title: 'الملخص المالي التشغيلي', generatedAt: new Date().toLocaleDateString('ar-OM'), summaryItems: collectionReport.data ? [{ label: 'إجمالي الفواتير', value: String(collectionReport.data.invoicesCount) }, { label: 'إجمالي التحصيل', value: String(collectionReport.data.paid) }] : [] }); if (err) globalThis.alert(err); }}><Printer className="ms-2 size-4" />طباعة الملخص المالي التشغيلي</Button>
       </div>
       <FinancialReportsPreviewSection
         reportFilters={reportFilters}

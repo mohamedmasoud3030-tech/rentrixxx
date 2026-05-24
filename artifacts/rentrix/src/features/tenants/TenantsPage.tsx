@@ -199,7 +199,7 @@ export function TenantsPage() {
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <Button variant="secondary" onClick={() => { const err = runOperationalPrint(rows.length > 0, tenantsQuery.isLoading, tenantsQuery.isError); if (err) globalThis.alert(err); }} disabled={!canPrintOperationalReport(rows.length > 0, tenantsQuery.isLoading, tenantsQuery.isError)}><Printer className="ms-2 size-4" />طباعة قائمة المستأجرين</Button>
+            <Button variant="secondary" onClick={() => { const err = runOperationalPrint(rows.length > 0, tenantsQuery.isLoading, tenantsQuery.isError, { title: 'قائمة المستأجرين', generatedAt: new Date().toLocaleDateString('ar-OM'), tables: [{ title: 'المستأجرون', columns: ['الاسم', 'الهاتف', 'العقار', 'الوحدة'], rows: rows.slice(0, 40).map((row) => [row.person.full_name, row.person.phone ?? '—', row.propertyTitle ?? '—', row.unitNumber ?? '—']) }] }); if (err) globalThis.alert(err); }} disabled={!canPrintOperationalReport(rows.length > 0, tenantsQuery.isLoading, tenantsQuery.isError)}><Printer className="ms-2 size-4" />طباعة قائمة المستأجرين</Button>
             <Button variant="secondary" onClick={() => void exportTenants('filtered')} disabled={(tenantsQuery.data?.count ?? 0) === 0}><Download className="ms-2 size-4" />تصدير النتائج</Button>
             <input type="checkbox" checked={bulkSelection.allSelected} onChange={() => bulkSelection.toggleAll()} aria-label="تحديد كل المستأجرين الحاليين" className="size-4 accent-primary" />
             <div className="rounded-2xl border border-border bg-card px-4 py-3 text-sm font-bold text-muted-foreground">
