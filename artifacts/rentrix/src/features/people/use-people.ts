@@ -1,19 +1,29 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import type { PersonPayload } from './person-schema';
-import { createPerson, getPerson, listPeople, softDeletePerson, updatePerson, type PeopleListParams } from './people-service';
+import { createPerson, getPerson, listPeople, listPeopleByIds, softDeletePerson, updatePerson, type PeopleListParams } from './people-service';
 
 export const peopleKeys = {
   all: ['people'] as const,
   lists: () => [...peopleKeys.all, 'list'] as const,
   list: (params: PeopleListParams) => [...peopleKeys.lists(), params] as const,
   detail: (personId: string) => [...peopleKeys.all, 'detail', personId] as const,
+  byIds: (ids: string[]) => [...peopleKeys.all, 'by-ids', ...ids] as const,
 };
 
 export function usePeople(params: PeopleListParams) {
   return useQuery({
     queryKey: peopleKeys.list(params),
     queryFn: () => listPeople(params),
+  });
+}
+
+
+export function usePeopleByIds(ids: string[]) {
+  return useQuery({
+    queryKey: peopleKeys.byIds(ids),
+    queryFn: () => listPeopleByIds(ids),
+    enabled: ids.length > 0,
   });
 }
 

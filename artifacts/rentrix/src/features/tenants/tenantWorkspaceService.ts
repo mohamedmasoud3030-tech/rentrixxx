@@ -168,3 +168,36 @@ export async function listTenantWorkspace(params: TenantWorkspaceParams): Promis
     count: count ?? 0,
   };
 }
+
+
+export async function listTenantWorkspaceByIds(ids: string[]): Promise<TenantWorkspaceRow[]> {
+  if (ids.length === 0) {
+    return [];
+  }
+
+  const { data: people, error } = await supabase
+    .from('people')
+    .select('id,full_name,phone,email,national_id')
+    .eq('type', 'tenant')
+    .is('deleted_at', null)
+    .in('id', ids)
+    .returns<TenantPerson[]>();
+
+  if (error) {
+    throw error;
+  }
+
+  const tenantPeople = people ?? [];
+  const contracts = await listTenantContracts(tenantPeople.map((person) => person.id));
+  const invoices = await listTenantInvoices(contracts.map((contract) => contract.id));
+  const contractsByTenant = groupBy(contracts, (contract) => contract.tenant_id);
+  const invoicesByContract = groupBy(invoices, (invoice) => invoice.contract_id);
+  const invoicesByTenant = getInvoicesByTenant(contractsByTenant, invoicesByContract);
+  const today = getTodayLocalDateString();
+
+  const byId = new Map(tenantPeople.map((person) => [person.id, person]));
+  return ids
+    .map((id) => byId.get(id))
+    .filter((person): person is TenantPerson => Boolean(person))
+    .map((person) => buildTenantRow(person, contractsByTenant[person.id] ?? [], invoicesByTenant[person.id] ?? [], today));
+}

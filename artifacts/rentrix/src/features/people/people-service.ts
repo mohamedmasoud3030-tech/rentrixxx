@@ -46,6 +46,24 @@ export async function listPeople(params: PeopleListParams): Promise<PaginatedPeo
   return { rows: data ?? [], count: count ?? 0 };
 }
 
+export async function listPeopleByIds(ids: string[]): Promise<Person[]> {
+  if (ids.length === 0) {
+    return [];
+  }
+
+  const { data, error } = await supabase
+    .from('people')
+    .select('*')
+    .in('id', ids)
+    .is('deleted_at', null)
+    .returns<Person[]>();
+
+  if (error) throw error;
+
+  const byId = new Map((data ?? []).map((person) => [person.id, person]));
+  return ids.map((id) => byId.get(id)).filter((person): person is Person => Boolean(person));
+}
+
 export async function getPerson(personId: string): Promise<Person> {
   const { data, error } = await supabase
     .from('people')

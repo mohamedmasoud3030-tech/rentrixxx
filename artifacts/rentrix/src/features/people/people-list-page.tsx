@@ -13,7 +13,7 @@ import { downloadCsv, type CsvRow } from '@/utils/helpers';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { personTypeLabels, personTypeValues } from './person-schema';
 import type { PersonTypeFilter } from './people-service';
-import { usePeople, useSoftDeletePerson } from './use-people';
+import { usePeople, usePeopleByIds, useSoftDeletePerson } from './use-people';
 
 const pageSize = 10;
 
@@ -33,12 +33,13 @@ export function PeopleListPage() {
   const bulkSelection = useBulkSelection(peopleRows.map((person) => person.id));
   const deleteMutation = useSoftDeletePerson();
   const totalPages = Math.max(1, Math.ceil((peopleQuery.data?.count ?? 0) / pageSize));
-  const selectedPeople = peopleRows.filter((person) => bulkSelection.selectedIds.has(person.id));
+  const selectedPeopleIds = useMemo(() => Array.from(bulkSelection.selectedIds), [bulkSelection.selectedIds]);
+  const selectedPeopleQuery = usePeopleByIds(selectedPeopleIds);
 
   const tableState = getPeopleTableState(peopleQuery.isLoading, peopleRows.length);
 
   const exportPeople = (mode: 'selected' | 'filtered') => {
-    const targetRows = mode === 'selected' ? selectedPeople : peopleRows;
+    const targetRows = mode === 'selected' ? (selectedPeopleQuery.data ?? []) : peopleRows;
     const csvRows: CsvRow[] = targetRows.map((person) => ({
       fullName: person.full_name ?? '',
       type: personTypeLabels[person.type],
@@ -137,7 +138,7 @@ export function PeopleListPage() {
         selectedCount={bulkSelection.selectedCount}
         selectionLabel={`تم تحديد ${bulkSelection.selectedCount.toLocaleString('ar')} شخص`}
         onClear={bulkSelection.clear}
-        actions={<Button variant="secondary" onClick={() => exportPeople('selected')}><Download className="ms-2 size-4" />تصدير المحدد</Button>}
+        actions={<Button variant="secondary" onClick={() => exportPeople('selected')} disabled={bulkSelection.selectedCount === 0 || selectedPeopleQuery.isFetching}><Download className="ms-2 size-4" />تصدير المحدد</Button>}
       />
 
       <div className="flex items-center justify-between text-sm text-muted-foreground">

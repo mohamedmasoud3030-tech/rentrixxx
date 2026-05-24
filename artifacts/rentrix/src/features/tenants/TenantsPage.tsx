@@ -11,7 +11,7 @@ import { downloadCsv, type CsvRow } from '@/utils/helpers';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
 import type { TenantWorkspaceRow } from './tenantWorkspaceService';
-import { useTenantWorkspace } from './useTenantWorkspace';
+import { useTenantWorkspace, useTenantWorkspaceByIds } from './useTenantWorkspace';
 
 const pageSize = 10;
 const tenantSkeletonKeys = ['tenant-skeleton-1', 'tenant-skeleton-2', 'tenant-skeleton-3', 'tenant-skeleton-4'] as const;
@@ -160,10 +160,11 @@ export function TenantsPage() {
   const tenantsQuery = useTenantWorkspace(params);
   const rows = tenantsQuery.data?.rows ?? [];
   const bulkSelection = useBulkSelection(rows.map((tenant) => tenant.person.id));
-  const selectedTenants = rows.filter((tenant) => bulkSelection.selectedIds.has(tenant.person.id));
+  const selectedTenantIds = useMemo(() => Array.from(bulkSelection.selectedIds), [bulkSelection.selectedIds]);
+  const selectedTenantsQuery = useTenantWorkspaceByIds(selectedTenantIds);
   const totalPages = Math.max(1, Math.ceil((tenantsQuery.data?.count ?? 0) / pageSize));
   const exportTenants = (mode: 'selected' | 'filtered') => {
-    const targetRows = mode === 'selected' ? selectedTenants : rows;
+    const targetRows = mode === 'selected' ? (selectedTenantsQuery.data ?? []) : rows;
     const csvRows: CsvRow[] = targetRows.map((tenant) => ({
       fullName: tenant.person.full_name ?? '',
       phone: tenant.person.phone ?? '',
@@ -212,7 +213,7 @@ export function TenantsPage() {
         selectedCount={bulkSelection.selectedCount}
         selectionLabel={`تم تحديد ${bulkSelection.selectedCount.toLocaleString('ar')} مستأجر`}
         onClear={bulkSelection.clear}
-        actions={<Button variant="secondary" onClick={() => exportTenants('selected')}><Download className="ms-2 size-4" />تصدير المحدد</Button>}
+        actions={<Button variant="secondary" onClick={() => exportTenants('selected')} disabled={bulkSelection.selectedCount === 0 || selectedTenantsQuery.isFetching}><Download className="ms-2 size-4" />تصدير المحدد</Button>}
       />
 
       <div className="flex items-center justify-between text-sm text-muted-foreground">
