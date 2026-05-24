@@ -75,6 +75,16 @@ alter table public.people add column if not exists deleted_at timestamptz;
 alter table public.people alter column full_name set not null;
 alter table public.people alter column type set default 'contact';
 
+update public.people
+set type = case
+  when type is null then 'contact'
+  when lower(btrim(type)) in ('tenant','owner','contact') then lower(btrim(type))
+  else 'contact'
+end
+where type is null
+   or lower(btrim(type)) not in ('tenant','owner','contact')
+   or type <> lower(btrim(type));
+
 do $$
 begin
   alter table public.people

@@ -1,6 +1,6 @@
 create table if not exists public.owner_management_agreements (
   id uuid primary key default gen_random_uuid(),
-  property_id text not null references public.properties(id) on delete cascade,
+  property_id uuid not null references public.properties(id) on delete cascade,
   owner_id uuid not null references public.owners(id) on delete restrict,
   property_owner_id uuid null references public.property_owners(id) on delete set null,
   agreement_type text not null,
@@ -183,16 +183,16 @@ drop policy if exists owner_agreement_tax_rules_write_admin_manager on public.ow
 drop policy if exists owner_agreement_tax_rules_insert_admin_manager on public.owner_agreement_tax_rules;
 drop policy if exists owner_agreement_tax_rules_update_admin_manager on public.owner_agreement_tax_rules;
 
-create policy owner_mgmt_agreements_select_admin_manager on public.owner_management_agreements for select to authenticated using (public.is_admin_or_manager());
+create policy owner_mgmt_agreements_select_auth on public.owner_management_agreements for select to authenticated using (public.is_app_user());
 create policy owner_mgmt_agreements_insert_admin_manager on public.owner_management_agreements for insert to authenticated with check (public.is_admin_or_manager());
 create policy owner_mgmt_agreements_update_admin_manager on public.owner_management_agreements for update to authenticated using (public.is_admin_or_manager()) with check (public.is_admin_or_manager());
-create policy owner_agreement_terms_select_admin_manager on public.owner_agreement_terms for select to authenticated using (public.is_admin_or_manager());
+create policy owner_agreement_terms_select_auth on public.owner_agreement_terms for select to authenticated using (public.is_app_user());
 create policy owner_agreement_terms_insert_admin_manager on public.owner_agreement_terms for insert to authenticated with check (public.is_admin_or_manager());
 create policy owner_agreement_terms_update_admin_manager on public.owner_agreement_terms for update to authenticated using (public.is_admin_or_manager()) with check (public.is_admin_or_manager());
-create policy owner_agreement_expense_rules_select_admin_manager on public.owner_agreement_expense_rules for select to authenticated using (public.is_admin_or_manager());
+create policy owner_agreement_expense_rules_select_auth on public.owner_agreement_expense_rules for select to authenticated using (public.is_app_user());
 create policy owner_agreement_expense_rules_insert_admin_manager on public.owner_agreement_expense_rules for insert to authenticated with check (public.is_admin_or_manager());
 create policy owner_agreement_expense_rules_update_admin_manager on public.owner_agreement_expense_rules for update to authenticated using (public.is_admin_or_manager()) with check (public.is_admin_or_manager());
-create policy owner_agreement_tax_rules_select_admin_manager on public.owner_agreement_tax_rules for select to authenticated using (public.is_admin_or_manager());
+create policy owner_agreement_tax_rules_select_auth on public.owner_agreement_tax_rules for select to authenticated using (public.is_app_user());
 create policy owner_agreement_tax_rules_insert_admin_manager on public.owner_agreement_tax_rules for insert to authenticated with check (public.is_admin_or_manager());
 create policy owner_agreement_tax_rules_update_admin_manager on public.owner_agreement_tax_rules for update to authenticated using (public.is_admin_or_manager()) with check (public.is_admin_or_manager());
 
