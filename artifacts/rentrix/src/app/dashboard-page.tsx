@@ -13,6 +13,12 @@ function DashboardErrorCard({ onRetry, error }: Readonly<{ onRetry: () => void; 
   return <div className="space-y-3"><DataErrorScreen title="تعذر تحميل بيانات لوحة التحكم" fallbackMessage="راجع الاتصال ثم أعد المحاولة." error={error} /><Button type="button" variant="secondary" onClick={onRetry}>إعادة المحاولة</Button></div>;
 }
 
+const dashboardWorkspaceNotes = [
+  'المؤشرات مبنية على الخدمات الحالية فقط.',
+  'الطباعة تشغيلية ولا تنشئ ترحيلات محاسبية.',
+  'الروابط السريعة تقود إلى صفحات العمل الحالية.',
+] as const;
+
 export function DashboardPage(_: Readonly<Record<string, never>>) {
   const { today, settings, dashboardQuery, retryDashboard, kpiCards, collectionTrendRows, recentInvoices, recentContracts } = useDashboardData();
   let collectionTrendContent = <div className="space-y-2">{collectionTrendRows.map((row) => <div key={row.paymentDate} className="flex items-center justify-between rounded-xl bg-muted/60 px-3 py-2"><span className="text-sm">{formatCompanyDate(settings, `${row.paymentDate}T00:00:00`)}</span><strong dir="ltr">{formatCompanyMoney(settings, row.totalPaid)}</strong></div>)}</div>;
@@ -39,7 +45,31 @@ export function DashboardPage(_: Readonly<Record<string, never>>) {
   const hasPrintData = collectionTrendRows.length > 0 || recentInvoices.length > 0 || recentContracts.length > 0;
 
   return <div className="space-y-6">
-    <section className="rounded-3xl border bg-card p-6"><div className="flex flex-wrap items-center justify-between gap-3"><div><p className="text-sm font-bold text-primary">لوحة التحكم التشغيلية</p><h2 className="mt-2 text-2xl font-black">مؤشرات العقود والتحصيل من البيانات الفعلية</h2><p className="mt-2 text-sm text-muted-foreground">حتى تاريخ {formatCompanyDate(settings, `${today}T00:00:00`)}</p></div><Button variant="secondary" disabled={!canPrintOperationalReport(hasPrintData, dashboardQuery.isLoading, dashboardQuery.isError)} onClick={() => { const err = runOperationalPrint(hasPrintData, dashboardQuery.isLoading, dashboardQuery.isError, { title: 'الملخص التشغيلي للوحة التحكم', generatedAt: formatCompanyDate(settings, new Date().toISOString()), summaryItems: kpiCards.map((card) => ({ label: card.title, value: String(card.displayValue) })), tables: [{ title: 'اتجاه التحصيل اليومي', columns: ['التاريخ', 'التحصيل'], rows: collectionTrendRows.slice(0, 20).map((row) => [formatCompanyDate(settings, `${row.paymentDate}T00:00:00`), formatCompanyMoney(settings, row.totalPaid)]) }] }); if (err) globalThis.alert(err); }}><Printer className="ms-2 size-4" />طباعة الملخص التشغيلي</Button></div></section>
+    <section className="grid gap-4 xl:grid-cols-[1fr_22rem]">
+      <div className="rounded-3xl border bg-card p-6">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <p className="text-sm font-bold text-primary">لوحة التحكم التشغيلية</p>
+            <h2 className="mt-2 text-2xl font-black">مؤشرات العقود والتحصيل من البيانات الفعلية</h2>
+            <p className="mt-2 text-sm text-muted-foreground">حتى تاريخ {formatCompanyDate(settings, `${today}T00:00:00`)}</p>
+          </div>
+          <Button variant="secondary" disabled={!canPrintOperationalReport(hasPrintData, dashboardQuery.isLoading, dashboardQuery.isError)} onClick={() => { const err = runOperationalPrint(hasPrintData, dashboardQuery.isLoading, dashboardQuery.isError, { title: 'الملخص التشغيلي للوحة التحكم', generatedAt: formatCompanyDate(settings, new Date().toISOString()), summaryItems: kpiCards.map((card) => ({ label: card.title, value: String(card.displayValue) })), tables: [{ title: 'اتجاه التحصيل اليومي', columns: ['التاريخ', 'التحصيل'], rows: collectionTrendRows.slice(0, 20).map((row) => [formatCompanyDate(settings, `${row.paymentDate}T00:00:00`), formatCompanyMoney(settings, row.totalPaid)]) }] }); if (err) globalThis.alert(err); }}><Printer className="ms-2 size-4" />طباعة الملخص التشغيلي</Button>
+        </div>
+      </div>
+      <Card className="border-dashed bg-muted/25">
+        <CardContent className="space-y-3 p-5">
+          <p className="text-sm font-black">استعادة آمنة للوحة التحكم</p>
+          <ul className="space-y-2 text-sm leading-7 text-muted-foreground">
+            {dashboardWorkspaceNotes.map((note) => (
+              <li key={note} className="flex gap-2">
+                <span className="mt-2 size-1.5 shrink-0 rounded-full bg-primary" />
+                <span>{note}</span>
+              </li>
+            ))}
+          </ul>
+        </CardContent>
+      </Card>
+    </section>
 
     {dashboardQuery.isError ? <DashboardErrorCard onRetry={retryDashboard} error={dashboardQuery.error} /> : null}
 
