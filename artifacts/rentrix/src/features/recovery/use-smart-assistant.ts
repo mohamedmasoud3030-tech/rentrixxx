@@ -1,7 +1,10 @@
 import { useMutation } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
-import { askAssistant } from '@/services/aiAssistantService';
+import { requestAiAssistant, type AiAssistantAction } from '@/services/aiAssistantService';
 
-export function useAskAssistant() {
-  return useMutation({ mutationFn: (prompt: string) => askAssistant(supabase, prompt) });
+export function useSmartAssistant() {
+  return useMutation({
+    mutationFn: async (params: { action: AiAssistantAction; prompt: string }) => {
+      return requestAiAssistant(params.action, params.prompt);
+    },
+  });
 }
