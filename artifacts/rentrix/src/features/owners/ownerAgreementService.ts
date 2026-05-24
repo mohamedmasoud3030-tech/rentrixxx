@@ -4,6 +4,8 @@ import type { OwnerAgreementStatus, OwnerAgreementTerm, OwnerManagementAgreement
 import { validateOwnerAgreementDraft, validateOwnerAgreementTerms, type OwnerAgreementDraftInput } from './ownerAgreementValidation';
 
 type OwnerAgreementWriteInput = OwnerAgreementDraftInput & Partial<OwnerManagementAgreement> & { terms?: Partial<OwnerAgreementTerm> };
+type OwnerAgreementSupabasePayload = Record<string, string | number | boolean | null | undefined>;
+
 export type OwnerAgreementListItem = OwnerManagementAgreement & {
   owner: { id: string; full_name: string | null } | null;
   property: { id: string; title: string | null } | null;
@@ -20,11 +22,11 @@ function fromOwnerManagementAgreements() {
   return supabase.from('owner_management_agreements' as never); // NOSONAR: migration-backed table is ahead of generated Database type coverage.
 }
 
-function toSupabasePayload(input: ReturnType<typeof normalizeWriteInput>) {
+function toSupabasePayload(input: OwnerAgreementSupabasePayload) {
   return input as never; // NOSONAR: required until generated Database types include owner_management_agreements.
 }
 
-function normalizeWriteInput(input: Partial<OwnerAgreementWriteInput>) {
+function normalizeWriteInput(input: Partial<OwnerAgreementWriteInput>): OwnerAgreementSupabasePayload {
   return {
     owner_id: input.owner_id,
     property_id: input.property_id,
