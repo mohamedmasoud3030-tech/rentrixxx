@@ -1,4 +1,7 @@
+import { Printer } from 'lucide-react';
 import { useMemo, useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { canPrintOperationalReport, runOperationalPrint } from '@/lib/operationalPrint';
 import type { ArrearsBucketFilter } from './arrears-workflow-helpers';
 import { ArrearsWorkflowSection } from './arrears-workflow-section';
 import { getTodayLocalDateString } from '../financials-date-utils';
@@ -18,7 +21,11 @@ export function ArrearsWorkspaceSection() {
   const isError = overdueInvoicesReport.isError || agedReceivablesReport.isError || arrearsSummaryReport.isError;
   const error = overdueInvoicesReport.error ?? agedReceivablesReport.error ?? arrearsSummaryReport.error;
 
+  const hasPrintData = (overdueInvoicesReport.data?.rows?.length ?? 0) > 0;
+
   return (
+    <div className="space-y-3">
+      <div className="flex justify-end"><Button variant="secondary" disabled={!canPrintOperationalReport(hasPrintData, isLoading, isError)} onClick={() => { const err = runOperationalPrint(hasPrintData, isLoading, isError); if (err) globalThis.alert(err); }}><Printer className="ms-2 size-4" />طباعة ملخص المتأخرات</Button></div>
     <ArrearsWorkflowSection
       asOf={arrearsAsOf}
       search={arrearsSearch}
@@ -35,5 +42,6 @@ export function ArrearsWorkspaceSection() {
       onBucketFilterChange={setArrearsBucketFilter}
       onSelectInvoice={setSelectedInvoiceId}
     />
+    </div>
   );
 }

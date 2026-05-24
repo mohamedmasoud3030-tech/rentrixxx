@@ -1,8 +1,10 @@
 import { Link } from '@tanstack/react-router';
 import { Edit, Eye, Plus, Trash2 } from 'lucide-react';
 import { useMemo, useState } from 'react';
+import { Printer } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { canPrintOperationalReport, runOperationalPrint } from '@/lib/operationalPrint';
 import { EmptyState } from '@/components/empty-state';
 import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
@@ -116,7 +118,7 @@ export function PropertiesListPage() {
           <h2 className="text-xl font-black">العقارات</h2>
           <p className="text-sm text-muted-foreground">إدارة العقارات كمصدر بيانات أساسي في Supabase.</p>
         </div>
-        <Button asChild><Link to="/properties/new"><Plus className="ms-2 size-4" />إضافة عقار</Link></Button>
+        <div className="flex flex-wrap gap-2"><Button variant="secondary" disabled={!canPrintOperationalReport((propertiesQuery.data?.rows?.length ?? 0) > 0, propertiesQuery.isLoading, propertiesQuery.isError)} onClick={() => { const err = runOperationalPrint((propertiesQuery.data?.rows?.length ?? 0) > 0, propertiesQuery.isLoading, propertiesQuery.isError); if (err) globalThis.alert(err); }}><Printer className="ms-2 size-4" />طباعة ملخص العقارات</Button><Button asChild><Link to="/properties/new"><Plus className="ms-2 size-4" />إضافة عقار</Link></Button></div>
       </div>
 
       <Card>

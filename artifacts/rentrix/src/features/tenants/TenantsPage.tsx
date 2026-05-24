@@ -1,5 +1,5 @@
 import { Link } from '@tanstack/react-router';
-import { Download, FileText, Mail, Phone, ReceiptText, Search, ShieldCheck, TriangleAlert, Users } from 'lucide-react';
+import { Download, FileText, Mail, Phone, Printer, ReceiptText, Search, ShieldCheck, TriangleAlert, Users } from 'lucide-react';
 import type { ChangeEvent } from 'react';
 import { useCallback, useMemo, useState } from 'react';
 import { toast } from 'sonner';
@@ -7,6 +7,7 @@ import { BulkActionsBar } from '@/components/BulkActionsBar';
 import { EmptyState } from '@/components/empty-state';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { canPrintOperationalReport, runOperationalPrint } from '@/lib/operationalPrint';
 import { useBulkSelection } from '@/hooks/useBulkSelection';
 import { downloadCsv, type CsvRow } from '@/utils/helpers';
 import { Input } from '@/components/ui/input';
@@ -198,6 +199,7 @@ export function TenantsPage() {
             </div>
           </div>
           <div className="flex items-center gap-2">
+            <Button variant="secondary" onClick={() => { const err = runOperationalPrint(rows.length > 0, tenantsQuery.isLoading, tenantsQuery.isError); if (err) globalThis.alert(err); }} disabled={!canPrintOperationalReport(rows.length > 0, tenantsQuery.isLoading, tenantsQuery.isError)}><Printer className="ms-2 size-4" />طباعة قائمة المستأجرين</Button>
             <Button variant="secondary" onClick={() => void exportTenants('filtered')} disabled={(tenantsQuery.data?.count ?? 0) === 0}><Download className="ms-2 size-4" />تصدير النتائج</Button>
             <input type="checkbox" checked={bulkSelection.allSelected} onChange={() => bulkSelection.toggleAll()} aria-label="تحديد كل المستأجرين الحاليين" className="size-4 accent-primary" />
             <div className="rounded-2xl border border-border bg-card px-4 py-3 text-sm font-bold text-muted-foreground">

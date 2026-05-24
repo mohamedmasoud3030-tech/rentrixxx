@@ -2,9 +2,11 @@ import { useMemo, useState } from 'react';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { Printer } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/empty-state';
 import { Input } from '@/components/ui/input';
+import { canPrintOperationalReport, runOperationalPrint } from '@/lib/operationalPrint';
 import { Select } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
 import { StatusBadge } from '@/components/ui/status-badge';
@@ -132,7 +134,7 @@ export function MaintenancePage() {
 
   return (
     <div className="space-y-6" dir="rtl">
-      <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="flex justify-end"><Button variant="secondary" onClick={() => { const err = runOperationalPrint(filteredMaintenanceRows.length > 0, maintenanceQuery.isLoading || propertiesQuery.isLoading, hasLoadError); if (err) globalThis.alert(err); }} disabled={!canPrintOperationalReport(filteredMaintenanceRows.length > 0, maintenanceQuery.isLoading || propertiesQuery.isLoading, hasLoadError)}><Printer className="ms-2 size-4" />طباعة ملخص الصيانة</Button></div><div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
         <Select aria-label="تصفية طلبات الصيانة حسب الحالة" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value as MaintenanceStatusFilter)}>
           <option value="all">كل الحالات</option>
           <option value="open">مفتوح</option>

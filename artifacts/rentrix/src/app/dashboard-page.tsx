@@ -1,9 +1,11 @@
 import { Link } from '@tanstack/react-router';
+import { Printer } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { DataErrorScreen } from '@/components/data-error-screen';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { formatCompanyDate, formatCompanyMoney } from '@lib/format';
+import { canPrintOperationalReport, runOperationalPrint } from '@/lib/operationalPrint';
 import { DashboardQuickActions } from './dashboard/DashboardQuickActions';
 import { useDashboardData } from './dashboard/useDashboardData';
 
@@ -34,8 +36,10 @@ export function DashboardPage(_: Readonly<Record<string, never>>) {
     recentContractsContent = <p className="text-sm text-muted-foreground">لا توجد عقود نشطة في البيانات الحالية.</p>;
   }
 
+  const hasPrintData = kpiCards.length > 0 || collectionTrendRows.length > 0 || recentInvoices.length > 0 || recentContracts.length > 0;
+
   return <div className="space-y-6">
-    <section className="rounded-3xl border bg-card p-6"><p className="text-sm font-bold text-primary">لوحة التحكم التشغيلية</p><h2 className="mt-2 text-2xl font-black">مؤشرات العقود والتحصيل من البيانات الفعلية</h2><p className="mt-2 text-sm text-muted-foreground">حتى تاريخ {formatCompanyDate(settings, `${today}T00:00:00`)}</p></section>
+    <section className="rounded-3xl border bg-card p-6"><div className="flex flex-wrap items-center justify-between gap-3"><div><p className="text-sm font-bold text-primary">لوحة التحكم التشغيلية</p><h2 className="mt-2 text-2xl font-black">مؤشرات العقود والتحصيل من البيانات الفعلية</h2><p className="mt-2 text-sm text-muted-foreground">حتى تاريخ {formatCompanyDate(settings, `${today}T00:00:00`)}</p></div><Button variant="secondary" disabled={!canPrintOperationalReport(hasPrintData, dashboardQuery.isLoading, dashboardQuery.isError)} onClick={() => { const err = runOperationalPrint(hasPrintData, dashboardQuery.isLoading, dashboardQuery.isError); if (err) globalThis.alert(err); }}><Printer className="ms-2 size-4" />طباعة الملخص التشغيلي</Button></div></section>
 
     {dashboardQuery.isError ? <DashboardErrorCard onRetry={retryDashboard} error={dashboardQuery.error} /> : null}
 
