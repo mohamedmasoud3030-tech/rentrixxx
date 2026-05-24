@@ -16,6 +16,14 @@ owner:owners!owner_management_agreements_owner_id_fkey(id, full_name),
 property:properties!owner_management_agreements_property_id_fkey(id, title)
 `;
 
+function fromOwnerManagementAgreements() {
+  return supabase.from('owner_management_agreements' as never); // NOSONAR: migration-backed table is ahead of generated Database type coverage.
+}
+
+function toSupabasePayload(input: ReturnType<typeof normalizeWriteInput>) {
+  return input as never; // NOSONAR: required until generated Database types include owner_management_agreements.
+}
+
 function normalizeWriteInput(input: Partial<OwnerAgreementWriteInput>) {
   return {
     owner_id: input.owner_id,
@@ -33,7 +41,7 @@ function normalizeWriteInput(input: Partial<OwnerAgreementWriteInput>) {
 }
 
 export async function listOwnerAgreements(params?: { ownerId?: string; propertyId?: string; status?: OwnerAgreementStatus }): Promise<OwnerAgreementListItem[]> {
-  let query = supabase.from('owner_management_agreements').select(AGREEMENT_SELECT).order('starts_on', { ascending: false });
+  let query = fromOwnerManagementAgreements().select(AGREEMENT_SELECT).order('starts_on', { ascending: false });
   if (params?.ownerId) query = query.eq('owner_id', params.ownerId);
   if (params?.propertyId) query = query.eq('property_id', params.propertyId);
   if (params?.status) query = query.eq('status', params.status);
@@ -43,7 +51,7 @@ export async function listOwnerAgreements(params?: { ownerId?: string; propertyI
 }
 
 export async function getOwnerAgreement(id: string): Promise<OwnerAgreementListItem> {
-  const { data, error } = await supabase.from('owner_management_agreements').select(AGREEMENT_SELECT).eq('id', id).single();
+  const { data, error } = await fromOwnerManagementAgreements().select(AGREEMENT_SELECT).eq('id', id).single();
   if (error) handleSupabaseError(error, 'تعذر تحميل اتفاقية الإدارة');
   return data as unknown as OwnerAgreementListItem;
 }
@@ -55,7 +63,7 @@ export async function createOwnerAgreement(input: OwnerAgreementWriteInput): Pro
     const terms = validateOwnerAgreementTerms(input.terms, input.agreement_type);
     if (!terms.success) throw new Error(terms.errors[0]);
   }
-  const { data, error } = await supabase.from('owner_management_agreements').insert(normalizeWriteInput(input)).select(AGREEMENT_SELECT).single();
+  const { data, error } = await fromOwnerManagementAgreements().insert(toSupabasePayload(normalizeWriteInput(input))).select(AGREEMENT_SELECT).single();
   if (error) handleSupabaseError(error, 'تعذر إنشاء اتفاقية الإدارة');
   return data as unknown as OwnerAgreementListItem;
 }
@@ -65,13 +73,14 @@ export async function updateOwnerAgreement(id: string, input: Partial<OwnerAgree
     const terms = validateOwnerAgreementTerms(input.terms, input.agreement_type);
     if (!terms.success) throw new Error(terms.errors[0]);
   }
-  const { data, error } = await supabase.from('owner_management_agreements').update(normalizeWriteInput(input)).eq('id', id).select(AGREEMENT_SELECT).single();
+  const { data, error } = await fromOwnerManagementAgreements().update(toSupabasePayload(normalizeWriteInput(input))).eq('id', id).select(AGREEMENT_SELECT).single();
   if (error) handleSupabaseError(error, 'تعذر تحديث اتفاقية الإدارة');
   return data as unknown as OwnerAgreementListItem;
 }
 
 export async function terminateOwnerAgreement(id: string, endsOn: string): Promise<OwnerAgreementListItem> {
-  const { data, error } = await supabase.from('owner_management_agreements').update({ status: 'terminated', ends_on: endsOn }).eq('id', id).select(AGREEMENT_SELECT).single();
+  const payload = toSupabasePayload({ status: 'terminated', ends_on: endsOn });
+  const { data, error } = await fromOwnerManagementAgreements().update(payload).eq('id', id).select(AGREEMENT_SELECT).single();
   if (error) handleSupabaseError(error, 'تعذر إنهاء اتفاقية الإدارة');
   return data as unknown as OwnerAgreementListItem;
 }
