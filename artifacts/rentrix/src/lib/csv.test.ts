@@ -15,6 +15,12 @@ describe('csv helpers', () => {
     expect(escapeCsvCell('@SUM(A1:A2)')).toBe("'@SUM(A1:A2)");
   });
 
+  it('neutralizes formula-like cells with leading control characters', () => {
+    expect(escapeCsvCell('\t=HYPERLINK("https://example.com")')).toBe('\'\t=HYPERLINK(""https://example.com"")');
+    expect(escapeCsvCell('\r+cmd')).toBe('\'\r+cmd');
+    expect(escapeCsvCell('\n-10')).toBe('\'\n-10');
+  });
+
   it('builds csv with headers and rows', () => {
     const csv = buildCsv(
       [

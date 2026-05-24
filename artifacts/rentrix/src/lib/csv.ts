@@ -5,7 +5,7 @@ export type CsvColumn<T> = Readonly<{
   value: (row: T) => CsvCell;
 }>;
 
-const formulaLikePrefixPattern = /^[=+\-@]/;
+const formulaLikePrefixPattern = /^[\t\r\n]*[=+\-@]/;
 
 const normalizeCsvCell = (value: CsvCell): string => {
   if (value === null || value === undefined) return '';
