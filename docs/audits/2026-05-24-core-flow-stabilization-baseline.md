@@ -3,6 +3,7 @@
 - **Date:** 2026-05-24
 - **Branch verified:** `work` (post-merge review branch; `main` was not checked out in this environment for this note)
 - **Latest commit SHA:** `5ec33d1`
+- **Latest reviewed post-cleanup SHA:** `3bff43f`
 - **Last 15 commit review verdict:** CLEAN
 - **Quality gates passed:** typecheck, build, lint
 - **Targeted smoke tests passed:** yes (from the clean last-15 review run; no branch change since that run)
