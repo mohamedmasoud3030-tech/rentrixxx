@@ -1,3 +1,16 @@
 import type { DocumentRenderModel } from '../documentTypes';
-export type GenericInput = Readonly<{ title?: string; generatedAt: string; companyName: string; summaryItems?: readonly { label: string; value: string }[]; table?: { title: string; columns: readonly string[]; rows: ReadonlyArray<readonly string[]> } }>;
-export const buildPropertiesTemplate = (input: GenericInput): DocumentRenderModel => ({ title: input.title ?? 'تقرير العقارات', fileName: 'properties-report', generatedAt: input.generatedAt, direction: 'rtl', orientation: 'portrait', branding: { companyName: input.companyName }, summaryItems: input.summaryItems, tables: input.table ? [input.table] : [] });
+
+type PropertyRow = Readonly<{ title: string; type: string; owner: string; status: string; address: string; amount: string }>;
+export type PropertiesTemplateInput = Readonly<{ generatedAt: string; companyName: string; properties: readonly PropertyRow[] }>;
+
+export const buildPropertiesTemplate = (input: PropertiesTemplateInput): DocumentRenderModel => ({
+  title: 'تقرير العقارات',
+  fileName: 'properties-report',
+  generatedAt: input.generatedAt,
+  direction: 'rtl',
+  orientation: 'portrait',
+  branding: { companyName: input.companyName },
+  summaryItems: [{ label: 'إجمالي العقارات', value: String(input.properties.length) }],
+  tables: [{ title: 'قائمة العقارات', columns: ['العقار', 'النوع', 'المالك', 'الحالة', 'العنوان', 'القيمة'], rows: input.properties.map((p) => [p.title, p.type, p.owner, p.status, p.address, p.amount]) }],
+  notes: ['تقرير تشغيلي مبني على بيانات العقارات الحالية.'],
+});

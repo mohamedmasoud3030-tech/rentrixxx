@@ -11,7 +11,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useBulkSelection } from '@/hooks/useBulkSelection';
-import { downloadCsv } from '@/utils/helpers';
+import { documentEngine } from '@/services/documents/documentEngine';
 import { formatContractDate, formatContractMoney, getContractRemainingDays, parseContractDisplayDate } from '@lib/format';
 import { useCompanySettingsContract } from '../settings/useCompanySettings';
 import { contractStatusLabels, contractStatusTone, contractStatusValues, paymentCycleLabels, type RenewalPayload } from './contractSchema';
@@ -75,15 +75,15 @@ export function ContractsListPage() {
   const exportRows = selectedContracts.length ? selectedContracts : filteredContracts;
 
   const exportCsv = () => {
-    downloadCsv(`contracts-${new Date().toISOString().slice(0, 10)}`, exportRows.map((c) => ({
+    documentEngine.exportCsv('contracts-report', { fileName: `contracts-${new Date().toISOString().slice(0, 10)}`, rows: exportRows.map((c) => ({
       contractNumber: getContractNumber(c), tenant: c.people?.full_name ?? '', property: c.properties?.title ?? '', unit: c.units?.unit_number ?? '', status: contractStatusLabels[c.status],
       startDate: c.start_date, endDate: c.end_date, amount: c.rent_amount,
-    })), ['contractNumber', 'tenant', 'property', 'unit', 'status', 'startDate', 'endDate', 'amount']);
+    })), headers: ['contractNumber', 'tenant', 'property', 'unit', 'status', 'startDate', 'endDate', 'amount'] });
   };
 
   return (
     <div className="space-y-6" dir="rtl">
-      <div className="flex flex-wrap items-center justify-between gap-3"><div><h2 className="text-3xl font-black">العقود</h2><p className="text-sm text-muted-foreground">تحسينات واجهة العقود مع إحصاءات وبحث وفلاتر وتصدير.</p></div><div className="flex flex-wrap gap-2"><Button variant="secondary" onClick={exportCsv} disabled={!exportRows.length}><Download className="me-2 size-4" />{selectedContracts.length ? 'تصدير المحدد CSV' : 'تصدير النتائج CSV'}</Button><Button asChild><Link to="/contracts/new"><Plus className="me-2 size-4" />إنشاء عقد</Link></Button></div></div>
+      <div className="flex flex-wrap items-center justify-between gap-3"><div><h2 className="text-3xl font-black">العقود</h2><p className="text-sm text-muted-foreground">تحسينات واجهة العقود مع إحصاءات وبحث وفلاتر وتصدير.</p></div><div className="flex flex-wrap gap-2"><Button variant="secondary" onClick={() => { exportCsv(); const result = documentEngine.previewDocument('contracts-report', { generatedAt: new Date().toLocaleDateString('ar-OM'), companyName: companySettings.companyName, contracts: exportRows.map((c) => ({ contractNumber: getContractNumber(c), tenant: c.people?.full_name ?? '—', property: c.properties?.title ?? '—', unit: c.units?.unit_number ?? '—', status: contractStatusLabels[c.status], startDate: formatContractDate(companySettings, c.start_date), endDate: formatContractDate(companySettings, c.end_date), amount: formatContractMoney(companySettings, c.rent_amount) })) }); if (!result.success) globalThis.alert(result.errorMessage ?? 'تعذر فتح المعاينة'); }} disabled={!exportRows.length}><Download className="me-2 size-4" />{selectedContracts.length ? 'تصدير المحدد CSV' : 'تصدير النتائج CSV'}</Button><Button asChild><Link to="/contracts/new"><Plus className="me-2 size-4" />إنشاء عقد</Link></Button></div></div>
       <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4"><Card variant="kpi" className="p-4"><p className="text-xs">العقود النشطة</p><p className="text-2xl font-black">{summary.active}</p></Card><Card variant="kpi" className="p-4"><p className="text-xs">تنتهي خلال 30 يوم</p><p className="text-2xl font-black">{summary.expiring30}</p></Card><Card variant="kpi" className="p-4"><p className="text-xs">تنتهي خلال 90 يوم</p><p className="text-2xl font-black">{summary.expiring90}</p></Card><Card variant="kpi" className="p-4"><p className="text-xs">منتهية/ملغاة</p><p className="text-2xl font-black">{summary.ended}</p></Card></div>
       <div className="flex flex-col gap-3"><div className="flex flex-wrap gap-2">{(['all', ...contractStatusValues] as ContractStatusFilter[]).map((item) => <Button key={item} variant={status === item ? 'primary' : 'secondary'} onClick={() => setStatus(item)}>{filterLabels[item]}</Button>)}<Button variant={expiringOnly ? 'primary' : 'secondary'} onClick={() => setExpiringOnly((v) => !v)}><AlertTriangle className="me-2 size-4" />تنتهي خلال 30 يوم</Button>{(Object.keys(dateFilterLabels) as DateRangeFilter[]).map((item) => <Button key={item} variant={dateRangeFilter === item ? 'primary' : 'secondary'} onClick={() => setDateRangeFilter(item)}>{dateFilterLabels[item]}</Button>)}</div><div className="relative w-full lg:max-w-md"><Search className="absolute start-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" /><Input value={searchTerm} onChange={(event) => setSearchTerm(event.target.value)} placeholder="بحث باسم المستأجر، العقار، الوحدة أو رقم العقد" className="ps-10" /></div></div>
 
@@ -93,7 +93,7 @@ export function ContractsListPage() {
       </TableBody></Table></div> : null}
       {!contractsQuery.isLoading && !contractsQuery.isError && !filteredContracts.length ? <div className="p-6"><EmptyState title={hasContracts ? 'لا توجد عقود مطابقة' : 'لا توجد عقود'} description={hasContracts ? 'جرّب تعديل الفلاتر أو البحث.' : 'ابدأ بإنشاء أول عقد.'} /></div> : null}</Card>
 
-      <BulkActionsBar selectedCount={bulk.selectedCount} selectionLabel={`تم تحديد ${bulk.selectedCount} عقد`} onClear={bulk.clear} actions={<Button variant="secondary" onClick={exportCsv} disabled={!exportRows.length}><Download className="me-2 size-4" />تصدير</Button>} />
+      <BulkActionsBar selectedCount={bulk.selectedCount} selectionLabel={`تم تحديد ${bulk.selectedCount} عقد`} onClear={bulk.clear} actions={<Button variant="secondary" onClick={() => { exportCsv(); const result = documentEngine.previewDocument('contracts-report', { generatedAt: new Date().toLocaleDateString('ar-OM'), companyName: companySettings.companyName, contracts: exportRows.map((c) => ({ contractNumber: getContractNumber(c), tenant: c.people?.full_name ?? '—', property: c.properties?.title ?? '—', unit: c.units?.unit_number ?? '—', status: contractStatusLabels[c.status], startDate: formatContractDate(companySettings, c.start_date), endDate: formatContractDate(companySettings, c.end_date), amount: formatContractMoney(companySettings, c.rent_amount) })) }); if (!result.success) globalThis.alert(result.errorMessage ?? 'تعذر فتح المعاينة'); }} disabled={!exportRows.length}><Download className="me-2 size-4" />تصدير</Button>} />
     </div>
   );
 }

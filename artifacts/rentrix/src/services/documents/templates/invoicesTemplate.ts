@@ -1,3 +1,11 @@
 import type { DocumentRenderModel } from '../documentTypes';
-export type GenericInput = Readonly<{ title?: string; generatedAt: string; companyName: string; summaryItems?: readonly { label: string; value: string }[]; table?: { title: string; columns: readonly string[]; rows: ReadonlyArray<readonly string[]> } }>;
-export const buildInvoicesTemplate = (input: GenericInput): DocumentRenderModel => ({ title: input.title ?? 'تقرير الفواتير', fileName: 'invoices-report', generatedAt: input.generatedAt, direction: 'rtl', orientation: 'portrait', branding: { companyName: input.companyName }, summaryItems: input.summaryItems, tables: input.table ? [input.table] : [] });
+
+type InvoiceRow = Readonly<{ invoiceNumber: string; dueDate: string; status: string; total: string; remaining: string }>;
+export type InvoicesTemplateInput = Readonly<{ generatedAt: string; companyName: string; invoices: readonly InvoiceRow[]; outstandingTotal: string }>;
+
+export const buildInvoicesTemplate = (input: InvoicesTemplateInput): DocumentRenderModel => ({
+  title: 'تقرير الفواتير', fileName: 'invoices-report', generatedAt: input.generatedAt, direction: 'rtl', orientation: 'portrait', branding: { companyName: input.companyName },
+  summaryItems: [{ label: 'عدد الفواتير', value: String(input.invoices.length) }, { label: 'إجمالي المتبقي', value: input.outstandingTotal }],
+  tables: [{ title: 'قائمة الفواتير', columns: ['رقم الفاتورة', 'تاريخ الاستحقاق', 'الحالة', 'الإجمالي', 'المتبقي'], rows: input.invoices.map((invoice) => [invoice.invoiceNumber, invoice.dueDate, invoice.status, invoice.total, invoice.remaining]) }],
+  notes: ['الأرقام المعروضة تشغيلية وتعتمد على البيانات المحملة في الصفحة.'],
+});
