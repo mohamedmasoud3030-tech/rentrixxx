@@ -30,7 +30,10 @@ export function useCreateUnit(propertyId: string) {
   return useMutation({
     mutationFn: (payload: UnitPayload) => createUnit(propertyId, payload),
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: unitKeys.property(propertyId) });
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: unitKeys.property(propertyId) }),
+        queryClient.invalidateQueries({ queryKey: unitKeys.list() }),
+      ]);
       toast.success('تم إنشاء الوحدة بنجاح');
     },
     onError: (error) => toast.error(error instanceof Error ? error.message : 'تعذر إنشاء الوحدة'),
@@ -42,7 +45,10 @@ export function useUpdateUnit(propertyId: string) {
   return useMutation({
     mutationFn: ({ unitId, payload }: { unitId: string; payload: UnitPayload }) => updateUnit(propertyId, unitId, payload),
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: unitKeys.property(propertyId) });
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: unitKeys.property(propertyId) }),
+        queryClient.invalidateQueries({ queryKey: unitKeys.list() }),
+      ]);
       toast.success('تم تحديث الوحدة بنجاح');
     },
     onError: (error) => toast.error(error instanceof Error ? error.message : 'تعذر تحديث الوحدة'),
@@ -65,7 +71,10 @@ export function useSoftDeleteUnit(propertyId: string) {
     },
     onSuccess: () => toast.success('تمت أرشفة الوحدة بنجاح'),
     onSettled: async () => {
-      await queryClient.invalidateQueries({ queryKey: unitKeys.property(propertyId) });
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: unitKeys.property(propertyId) }),
+        queryClient.invalidateQueries({ queryKey: unitKeys.list() }),
+      ]);
     },
   });
 }
