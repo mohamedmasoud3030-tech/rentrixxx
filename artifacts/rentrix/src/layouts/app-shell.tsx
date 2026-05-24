@@ -217,6 +217,17 @@ export function AppShell() {
     return () => globalThis.window.removeEventListener('keydown', onKey);
   }, [router]);
 
+  useEffect(() => {
+    if (!mobileNavOpen) return;
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setMobileNavOpen(false);
+      }
+    };
+    globalThis.window.addEventListener('keydown', onKey);
+    return () => globalThis.window.removeEventListener('keydown', onKey);
+  }, [mobileNavOpen]);
+
   const closeMobileNav = () => setMobileNavOpen(false);
 
   const handleLogout = async () => {
