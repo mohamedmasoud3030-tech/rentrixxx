@@ -93,7 +93,7 @@ export function UnitFormModal({ propertyId, unit, open, onOpenChange }: Readonly
             <Textarea {...form.register('notes')} />
           </label>
           <div className="flex justify-end gap-3 md:col-span-2">
-            <Button variant="secondary" onClick={() => onOpenChange(false)} disabled={isSubmitting}>إلغاء</Button>
+            <Button type="button" variant="secondary" onClick={() => onOpenChange(false)} disabled={isSubmitting}>إلغاء</Button>
             <Button type="submit" disabled={isSubmitting}>{isSubmitting ? 'جار الحفظ...' : 'حفظ الوحدة'}</Button>
           </div>
         </form>
