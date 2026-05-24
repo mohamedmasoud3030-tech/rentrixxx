@@ -1,7 +1,8 @@
 import { Link } from '@tanstack/react-router';
-import { Edit, Eye, Plus, Trash2 } from 'lucide-react';
+import { Download, Edit, Eye, Plus, Trash2 } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { Printer } from 'lucide-react';
+import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { canPrintOperationalReport, runOperationalPrint } from '@/lib/operationalPrint';
@@ -10,12 +11,13 @@ import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
 import { StatusBadge } from '@/components/ui/status-badge';
+import { downloadCsv, type CsvRow } from '@/utils/helpers';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { defaultCompanyLocalSettings } from '@/lib/companySettings';
 import { formatCompanyMoney } from '@lib/format';
 import { propertyStatusLabels, propertyStatusValues } from './property-schema';
 import { useProperties, useSoftDeleteProperty } from './use-properties';
-import type { PropertyStatusFilter } from './property-service';
+import { listPropertiesForExport, type PropertyStatusFilter } from './property-service';
 
 const pageSize = 10;
 const propertyStatusTone = { active: 'green', inactive: 'gray', maintenance: 'gold', sold: 'blue' } as const;
@@ -41,6 +43,23 @@ export function PropertiesListPage() {
       return;
     }
     await deleteMutation.mutateAsync(propertyId);
+  };
+
+  const exportProperties = async () => {
+    try {
+      const rows = await listPropertiesForExport(search, status);
+      const csvRows: CsvRow[] = rows.map((property) => ({
+        propertyTitle: property.title,
+        type: property.type,
+        owner: property.owner_name ?? '',
+        status: propertyStatusLabels[property.status],
+        address: property.address ?? '',
+        amount: property.current_value ?? '',
+      }));
+      downloadCsv('properties-export', csvRows, ['propertyTitle', 'type', 'owner', 'status', 'address', 'amount']);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'تعذر تصدير بيانات العقارات');
+    }
   };
 
   function renderPropertiesContent() {
@@ -118,7 +137,7 @@ export function PropertiesListPage() {
           <h2 className="text-xl font-black">العقارات</h2>
           <p className="text-sm text-muted-foreground">إدارة العقارات كمصدر بيانات أساسي في Supabase.</p>
         </div>
-        <div className="flex flex-wrap gap-2"><Button variant="secondary" disabled={!canPrintOperationalReport((propertiesQuery.data?.rows?.length ?? 0) > 0, propertiesQuery.isLoading, propertiesQuery.isError)} onClick={() => { const err = runOperationalPrint((propertiesQuery.data?.rows?.length ?? 0) > 0, propertiesQuery.isLoading, propertiesQuery.isError, { title: 'ملخص العقارات', generatedAt: new Date().toLocaleDateString('ar-OM'), tables: [{ title: 'العقارات', columns: ['العقار', 'النوع', 'الحالة'], rows: (propertiesQuery.data?.rows ?? []).slice(0, 30).map((row) => [row.title, row.type ?? '—', propertyStatusLabels[row.status]]) }] }); if (err) globalThis.alert(err); }}><Printer className="ms-2 size-4" />طباعة ملخص العقارات</Button><Button asChild><Link to="/properties/new"><Plus className="ms-2 size-4" />إضافة عقار</Link></Button></div>
+        <div className="flex flex-wrap gap-2"><Button variant="secondary" disabled={!canPrintOperationalReport((propertiesQuery.data?.rows?.length ?? 0) > 0, propertiesQuery.isLoading, propertiesQuery.isError)} onClick={() => { const err = runOperationalPrint((propertiesQuery.data?.rows?.length ?? 0) > 0, propertiesQuery.isLoading, propertiesQuery.isError, { title: 'ملخص العقارات', generatedAt: new Date().toLocaleDateString('ar-OM'), tables: [{ title: 'العقارات', columns: ['العقار', 'النوع', 'الحالة'], rows: (propertiesQuery.data?.rows ?? []).slice(0, 30).map((row) => [row.title, row.type ?? '—', propertyStatusLabels[row.status]]) }] }); if (err) globalThis.alert(err); }}><Printer className="ms-2 size-4" />طباعة ملخص العقارات</Button><Button variant="secondary" onClick={() => void exportProperties()} disabled={(propertiesQuery.data?.count ?? 0) === 0}><Download className="ms-2 size-4" />تصدير النتائج</Button><Button asChild><Link to="/properties/new"><Plus className="ms-2 size-4" />إضافة عقار</Link></Button></div>
       </div>
 
       <Card>
