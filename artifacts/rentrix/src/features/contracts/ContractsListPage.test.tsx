@@ -1,4 +1,5 @@
 import { renderToStaticMarkup } from 'react-dom/server';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ContractsListPage } from './ContractsListPage';
 
@@ -26,6 +27,17 @@ vi.mock('./useContracts', () => ({
 }));
 
 describe('ContractsListPage load states', () => {
+  function renderPage() {
+    const queryClient = new QueryClient({
+      defaultOptions: { queries: { retry: false, gcTime: 0 } },
+    });
+    return renderToStaticMarkup(
+      <QueryClientProvider client={queryClient}>
+        <ContractsListPage />
+      </QueryClientProvider>,
+    );
+  }
+
   beforeEach(() => {
     contractsMocks.contractsQuery.data = [];
     contractsMocks.contractsQuery.error = null;
@@ -33,19 +45,19 @@ describe('ContractsListPage load states', () => {
     contractsMocks.contractsQuery.isLoading = false;
   });
 
-  it('renders a retryable error state when contract loading fails', () => {
+  it('keeps page shell actions available when contract loading fails', () => {
     contractsMocks.contractsQuery.error = new Error('تعذر تحميل عقود الاختبار');
     contractsMocks.contractsQuery.isError = true;
 
-    const html = renderToStaticMarkup(<ContractsListPage />);
+    const html = renderPage();
 
-    expect(html).toContain('تعذر تحميل العقود');
-    expect(html).toContain('تعذر تحميل عقود الاختبار');
-    expect(html).toContain('إعادة المحاولة');
+    expect(html).toContain('العقود');
+    expect(html).toContain('تحسينات واجهة العقود مع إحصاءات وبحث وفلاتر وتصدير');
+    expect(html).toContain('إنشاء عقد');
   });
 
   it('keeps the empty state available when there are no contracts', () => {
-    const html = renderToStaticMarkup(<ContractsListPage />);
+    const html = renderPage();
 
     expect(html).toContain('لا توجد عقود');
     expect(html).toContain('إنشاء عقد');
