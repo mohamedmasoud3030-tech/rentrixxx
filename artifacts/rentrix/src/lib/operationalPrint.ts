@@ -19,7 +19,7 @@ const escapeHtml = (value: string) => value
   .replaceAll('"', '&quot;')
   .replaceAll("'", '&#39;');
 
-const buildOperationalPrintHtml = (options: OperationalPrintOptions) => {
+export const buildOperationalPrintHtml = (options: OperationalPrintOptions) => {
   const summaryHtml = (options.summaryItems ?? []).map((item) => `<article class="card"><span>${escapeHtml(item.label)}</span><strong>${escapeHtml(item.value)}</strong></article>`).join('');
   const tableHtml = (options.tables ?? []).map((table) => {
     const head = table.columns.map((column) => `<th>${escapeHtml(column)}</th>`).join('');
