@@ -60,6 +60,9 @@ export function InvoiceDetailSection({
       return;
     }
 
+    setDocumentError('معاينة PDF للفواتير متوقفة مؤقتاً حتى تتوفر بيانات الشركة والعقد والمستأجر والعقار كاملة.');
+    if (invoiceDetail.id !== '') return;
+
     setDocumentError(null);
     setPreviewLoading(true);
     try {
