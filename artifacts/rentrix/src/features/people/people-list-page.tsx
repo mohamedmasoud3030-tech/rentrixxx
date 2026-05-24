@@ -11,7 +11,8 @@ import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useBulkSelection } from '@/hooks/useBulkSelection';
-import { downloadCsv, type CsvRow } from '@/utils/helpers';
+import { documentEngine } from '@/services/documents/documentEngine';
+import type { CsvRow } from '@/utils/helpers';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { personTypeLabels, personTypeValues } from './person-schema';
 import { listPeopleByIds, listPeopleForExport, type PersonTypeFilter } from './people-service';
@@ -34,11 +35,26 @@ export function PeopleListPage() {
   const peopleRows = peopleQuery.data?.rows ?? [];
   const bulkSelection = useBulkSelection(peopleRows.map((person) => person.id));
   const deleteMutation = useSoftDeletePerson();
+  const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
+  const [isExportPending, setIsExportPending] = useState(false);
   const totalPages = Math.max(1, Math.ceil((peopleQuery.data?.count ?? 0) / pageSize));
 
   const tableState = getPeopleTableState(peopleQuery.isLoading, peopleRows.length);
 
+  const handleDeletePerson = async (personId: string, personName: string) => {
+    const confirmed = globalThis.confirm(`هل أنت متأكد من أرشفة الشخص "${personName}"؟`);
+    if (!confirmed) return;
+    setPendingDeleteId(personId);
+    try {
+      await deleteMutation.mutateAsync(personId);
+    } finally {
+      setPendingDeleteId(null);
+    }
+  };
+
   const exportPeople = async (mode: 'selected' | 'filtered') => {
+    if (isExportPending) return;
+    setIsExportPending(true);
     try {
       const targetRows = mode === 'selected'
         ? await listPeopleByIds([...bulkSelection.selectedIds])
@@ -47,16 +63,23 @@ export function PeopleListPage() {
         throw new Error('تعذر تصدير كل السجلات المحددة. ربما تم حذف بعض الأشخاص أو تغيّر الوصول إليها.');
       }
       const csvRows: CsvRow[] = targetRows.map((person) => ({
-      fullName: person.full_name ?? '',
-      type: personTypeLabels[person.type],
-      phone: person.phone ?? '',
-      email: person.email ?? '',
-      nationalId: person.national_id ?? '',
-      address: person.address ?? '',
+        fullName: person.full_name ?? '',
+        type: personTypeLabels[person.type],
+        phone: person.phone ?? '',
+        email: person.email ?? '',
+        nationalId: person.national_id ?? '',
+        address: person.address ?? '',
       }));
-      downloadCsv('people-export', csvRows, ['fullName', 'type', 'phone', 'email', 'nationalId', 'address']);
+      const result = documentEngine.exportCsv('owners-report', {
+        fileName: 'people-export',
+        rows: csvRows,
+        headers: ['fullName', 'type', 'phone', 'email', 'nationalId', 'address'],
+      });
+      if (!result.success) throw new Error(result.errorMessage ?? 'تعذر تصدير بيانات الأشخاص');
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'تعذر تصدير بيانات الأشخاص');
+    } finally {
+      setIsExportPending(false);
     }
   };
 
@@ -103,13 +126,25 @@ export function PeopleListPage() {
                   <TableCell>
                     <div className="flex gap-2">
                       <Button variant="secondary" className="min-h-9 px-3" asChild><Link to="/people/$personId/edit" params={{ personId: person.id }}><Edit className="size-4" /></Link></Button>
-                      <Button variant="danger" className="min-h-9 px-3" onClick={() => deleteMutation.mutate(person.id)} disabled={deleteMutation.isPending}><Trash2 className="size-4" /></Button>
+                      <Button variant="danger" className="min-h-9 px-3" onClick={() => void handleDeletePerson(person.id, person.full_name)} disabled={deleteMutation.isPending || pendingDeleteId === person.id}><Trash2 className="size-4" /></Button>
                     </div>
                   </TableCell>
                 </TableRow>
               ))}
             </TableBody>
           </Table>
+        </div>
+      );
+    }
+
+    if (peopleQuery.isError) {
+      return (
+        <div className="p-6">
+          <EmptyState
+            title="تعذر تحميل سجلات الأشخاص"
+            description={peopleQuery.error instanceof Error ? peopleQuery.error.message : 'حدث خطأ أثناء تحميل البيانات. حاول مرة أخرى.'}
+            action={<Button variant="secondary" onClick={() => void peopleQuery.refetch()}>إعادة المحاولة</Button>}
+          />
         </div>
       );
     }
@@ -126,7 +161,7 @@ export function PeopleListPage() {
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <Button variant="secondary" disabled={!canPrintOperationalReport(peopleRows.length > 0, peopleQuery.isLoading, peopleQuery.isError)} onClick={() => { const err = runOperationalPrint(peopleRows.length > 0, peopleQuery.isLoading, peopleQuery.isError, { title: 'قائمة الأشخاص', generatedAt: new Date().toLocaleDateString('ar-OM'), tables: [{ title: 'الأشخاص', columns: ['الاسم', 'النوع', 'الهاتف'], rows: peopleRows.slice(0, 40).map((row) => [row.full_name, personTypeLabels[row.type], row.phone ?? '—']) }] }); if (err) globalThis.alert(err); }}><Printer className="ms-2 size-4" />طباعة قائمة الأشخاص</Button>
-          <Button variant="secondary" onClick={() => void exportPeople('filtered')} disabled={(peopleQuery.data?.count ?? 0) === 0}><Download className="ms-2 size-4" />تصدير النتائج</Button>
+          <Button variant="secondary" onClick={() => void exportPeople('filtered')} disabled={(peopleQuery.data?.count ?? 0) === 0 || isExportPending}><Download className="ms-2 size-4" />تصدير النتائج</Button>
           <Button asChild><Link to="/people/new"><Plus className="ms-2 size-4" />إضافة شخص</Link></Button>
         </div>
       </div>
@@ -148,7 +183,7 @@ export function PeopleListPage() {
         selectedCount={bulkSelection.selectedCount}
         selectionLabel={`تم تحديد ${bulkSelection.selectedCount.toLocaleString('ar')} شخص`}
         onClear={bulkSelection.clear}
-        actions={<Button variant="secondary" onClick={() => void exportPeople('selected')}><Download className="ms-2 size-4" />تصدير المحدد</Button>}
+        actions={<Button variant="secondary" onClick={() => void exportPeople('selected')} disabled={isExportPending}><Download className="ms-2 size-4" />تصدير المحدد</Button>}
       />
 
       <div className="flex items-center justify-between text-sm text-muted-foreground">
