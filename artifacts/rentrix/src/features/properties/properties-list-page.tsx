@@ -1,7 +1,6 @@
 import { Link } from '@tanstack/react-router';
-import { Download, Edit, Eye, Plus, Trash2 } from 'lucide-react';
+import { Download, Edit, Eye, Plus, Printer, Trash2 } from 'lucide-react';
 import { useMemo, useState } from 'react';
-import { Printer } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -78,14 +77,15 @@ export function PropertiesListPage() {
         <div className="p-6">
           <EmptyState
             title="تعذر تحميل قائمة العقارات"
-            description="حدث خطأ أثناء تحميل البيانات. تحديث الصفحة أو إعادة المحاولة آمن ولن يؤثر على البيانات المسجلة."
-            action={<Button onClick={() => { propertiesQuery.refetch(); }}>إعادة المحاولة</Button>}
+            description={propertiesQuery.error instanceof Error ? propertiesQuery.error.message : 'حدث خطأ أثناء تحميل البيانات. حاول مرة أخرى.'}
+            action={<Button variant="secondary" onClick={() => propertiesQuery.refetch()}>إعادة المحاولة</Button>}
           />
         </div>
       );
     }
 
-    if (propertiesQuery.data?.rows.length) {
+    const rows = propertiesQuery.data?.rows ?? [];
+    if (rows.length > 0) {
       return (
         <div className="overflow-x-auto">
           <Table>
@@ -93,14 +93,14 @@ export function PropertiesListPage() {
               <TableRow>
                 <TableHead>العقار</TableHead>
                 <TableHead>النوع</TableHead>
-                <TableHead>اسم المالك للعرض</TableHead>
+                <TableHead>المالك</TableHead>
                 <TableHead>الحالة</TableHead>
                 <TableHead>القيمة الحالية</TableHead>
-                <TableHead className="w-52">إجراءات</TableHead>
+                <TableHead>إجراءات</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {propertiesQuery.data.rows.map((property) => (
+              {rows.map((property) => (
                 <TableRow key={property.id}>
                   <TableCell>
                     <div className="font-black">{property.title}</div>
@@ -111,10 +111,10 @@ export function PropertiesListPage() {
                   <TableCell><StatusBadge tone={propertyStatusTone[property.status]}>{propertyStatusLabels[property.status]}</StatusBadge></TableCell>
                   <TableCell dir="ltr" className="font-bold">{money(property.current_value)}</TableCell>
                   <TableCell>
-                    <div className="flex flex-wrap gap-2">
-                      <Button variant="secondary" className="min-h-9 px-3" aria-label={`عرض العقار ${property.title}`} asChild><Link to="/properties/$propertyId" params={{ propertyId: property.id }}><Eye className="size-4" /></Link></Button>
-                      <Button variant="secondary" className="min-h-9 px-3" aria-label={`تعديل العقار ${property.title}`} asChild><Link to="/properties/$propertyId/edit" params={{ propertyId: property.id }}><Edit className="size-4" /></Link></Button>
-                      <Button variant="danger" className="min-h-9 px-3" aria-label={`أرشفة العقار ${property.title}`} onClick={async () => { await handleArchiveProperty(property.id, property.title); }} disabled={deleteMutation.isPending}><Trash2 className="size-4" /></Button>
+                    <div className="flex gap-2">
+                      <Button variant="secondary" className="min-h-9 px-3" asChild><Link to="/properties/$propertyId" params={{ propertyId: property.id }}><Eye className="size-4" /></Link></Button>
+                      <Button variant="secondary" className="min-h-9 px-3" asChild><Link to="/properties/$propertyId/edit" params={{ propertyId: property.id }}><Edit className="size-4" /></Link></Button>
+                      <Button variant="danger" className="min-h-9 px-3" onClick={() => { void handleArchiveProperty(property.id, property.title); }} disabled={deleteMutation.isPending}><Trash2 className="size-4" /></Button>
                     </div>
                   </TableCell>
                 </TableRow>
@@ -125,11 +125,7 @@ export function PropertiesListPage() {
       );
     }
 
-    return (
-      <div className="p-6">
-        <EmptyState title={hasFilterValues ? 'لا توجد عقارات مطابقة' : 'لا توجد عقارات حتى الآن'} description={hasFilterValues ? 'جرّب تعديل البحث أو الحالة لعرض نتائج أخرى.' : 'أضف أول عقار لبدء إدارة المحفظة العقارية في النسخة التجارية التجريبية.'} action={<Button asChild><Link to="/properties/new">إضافة عقار</Link></Button>} />
-      </div>
-    );
+    return <div className="p-6"><EmptyState title="لا توجد عقارات" description={hasFilterValues ? 'غيّر البحث أو الفلتر لعرض نتائج أخرى.' : 'ابدأ بإضافة أول عقار في النظام.'} action={<Button asChild><Link to="/properties/new">إضافة عقار</Link></Button>} /></div>;
   }
 
   return (
@@ -137,15 +133,19 @@ export function PropertiesListPage() {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h2 className="text-xl font-black">العقارات</h2>
-          <p className="text-sm text-muted-foreground">إدارة العقارات كمصدر بيانات أساسي في Supabase.</p>
+          <p className="text-sm text-muted-foreground">إدارة العقارات والوحدات المرتبطة بها.</p>
         </div>
-        <div className="flex flex-wrap gap-2"><Button variant="secondary" disabled={(propertiesQuery.data?.rows?.length ?? 0) === 0 || propertiesQuery.isLoading || propertiesQuery.isError} onClick={() => { const result = documentEngine.previewDocument('properties-report', { generatedAt: new Date().toLocaleDateString('ar-OM'), companyName: defaultCompanyLocalSettings.companyName, properties: (propertiesQuery.data?.rows ?? []).map((row) => ({ title: row.title, type: row.type ?? '—', owner: row.owner_name ?? '—', status: propertyStatusLabels[row.status], address: row.address ?? '—', amount: money(row.current_value) })) }); if (!result.success) globalThis.alert(result.errorMessage ?? 'تعذر فتح المعاينة'); }}><Printer className="ms-2 size-4" />طباعة ملخص العقارات</Button><Button variant="secondary" onClick={() => void exportProperties()} disabled={(propertiesQuery.data?.count ?? 0) === 0}><Download className="ms-2 size-4" />تصدير النتائج</Button><Button asChild><Link to="/properties/new"><Plus className="ms-2 size-4" />إضافة عقار</Link></Button></div>
+        <div className="flex flex-wrap items-center gap-2">
+          <Button variant="secondary" disabled={!propertiesQuery.data?.rows.length} onClick={() => { void exportProperties(); }}><Download className="ms-2 size-4" />تصدير</Button>
+          <Button variant="secondary" disabled={!propertiesQuery.data?.rows.length} onClick={() => { const rows = propertiesQuery.data?.rows ?? []; const err = documentEngine.previewDocument('properties-report', rows); if (err.errorMessage) globalThis.alert(err.errorMessage); }}><Printer className="ms-2 size-4" />معاينة</Button>
+          <Button asChild><Link to="/properties/new"><Plus className="ms-2 size-4" />إضافة عقار</Link></Button>
+        </div>
       </div>
 
       <Card>
         <CardContent className="grid gap-3 pt-6 md:grid-cols-[1fr_14rem]">
-          <Input aria-label="بحث في العقارات" value={search} onChange={(event) => { setSearch(event.target.value); setPage(1); }} placeholder="بحث بالاسم أو العنوان أو اسم المالك للعرض" />
-          <Select aria-label="تصفية العقارات حسب الحالة" value={status} onChange={(event) => { setStatus(event.target.value as PropertyStatusFilter); setPage(1); }}>
+          <Input value={search} onChange={(event) => { setSearch(event.target.value); setPage(1); }} placeholder="بحث باسم العقار أو العنوان" />
+          <Select value={status} onChange={(event) => { setStatus(event.target.value as PropertyStatusFilter); setPage(1); }}>
             <option value="all">كل الحالات</option>
             {propertyStatusValues.map((item) => <option key={item} value={item}>{propertyStatusLabels[item]}</option>)}
           </Select>
