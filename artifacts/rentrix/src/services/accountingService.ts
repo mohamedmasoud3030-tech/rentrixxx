@@ -67,7 +67,10 @@ export async function createJournalEntry(
   const rows = lines.map((line) => ({ ...line, journal_entry_id: entry.id }));
   const { error: lineError } = await supabase.from('accounting_journal_lines').insert(rows);
   if (lineError) {
-    const { error: rollbackError } = await supabase.from('accounting_journal_entries').delete().eq('id', entry.id);
+    const { error: rollbackError } = await supabase
+      .from('accounting_journal_entries')
+      .update({ deleted_at: new Date().toISOString(), source_id: null })
+      .eq('id', entry.id);
     if (rollbackError) {
       throw new Error(`فشل إنشاء القيود اليومية وتعذر التراجع عن قيد الرأس: ${rollbackError.message}`);
     }
