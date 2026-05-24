@@ -1,11 +1,12 @@
 import { Link } from '@tanstack/react-router';
-import { Download, Edit, Plus, Trash2 } from 'lucide-react';
+import { Download, Edit, Plus, Printer, Trash2 } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { BulkActionsBar } from '@/components/BulkActionsBar';
 import { EmptyState } from '@/components/empty-state';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { canPrintOperationalReport, runOperationalPrint } from '@/lib/operationalPrint';
 import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -124,6 +125,7 @@ export function PeopleListPage() {
           <p className="text-sm text-muted-foreground">جدول موحد للمستأجرين والملاك وجهات الاتصال.</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
+          <Button variant="secondary" disabled={!canPrintOperationalReport(peopleRows.length > 0, peopleQuery.isLoading, peopleQuery.isError)} onClick={() => { const err = runOperationalPrint(peopleRows.length > 0, peopleQuery.isLoading, peopleQuery.isError); if (err) globalThis.alert(err); }}><Printer className="ms-2 size-4" />طباعة قائمة الأشخاص</Button>
           <Button variant="secondary" onClick={() => void exportPeople('filtered')} disabled={(peopleQuery.data?.count ?? 0) === 0}><Download className="ms-2 size-4" />تصدير النتائج</Button>
           <Button asChild><Link to="/people/new"><Plus className="ms-2 size-4" />إضافة شخص</Link></Button>
         </div>

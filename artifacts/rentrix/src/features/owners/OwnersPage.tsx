@@ -1,5 +1,5 @@
 import { Link } from '@tanstack/react-router';
-import { Building2, Download, Eye, LinkIcon, Pencil, Plus, Search, Users } from 'lucide-react';
+import { Building2, Download, Eye, LinkIcon, Pencil, Plus, Printer, Search, Users } from 'lucide-react';
 import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from 'react';
 import { toast } from 'sonner';
 import { BulkActionsBar } from '@/components/BulkActionsBar';
@@ -8,6 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { EmptyState } from '@/components/empty-state';
 import { Input } from '@/components/ui/input';
+import { canPrintOperationalReport, runOperationalPrint } from '@/lib/operationalPrint';
 import { Skeleton } from '@/components/ui/skeleton';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -337,7 +338,7 @@ export function OwnersPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-3"><div><h2 className="text-xl font-black">إدارة الملاك</h2><p className="text-sm text-muted-foreground">إدارة علاقات ملكية العقارات بشكل منفصل عن الحسابات والتسويات المالية.</p></div><div className="flex flex-wrap gap-2"><Button variant="secondary" onClick={() => exportOwners('filtered')} disabled={filteredOwnerRows.length === 0}><Download className="ms-2 size-4" />تصدير النتائج</Button><Button onClick={openCreateForm}><Plus className="ms-2 size-4" />إضافة مالك</Button></div></div>
+      <div className="flex flex-wrap items-center justify-between gap-3"><div><h2 className="text-xl font-black">إدارة الملاك</h2><p className="text-sm text-muted-foreground">إدارة علاقات ملكية العقارات بشكل منفصل عن الحسابات والتسويات المالية.</p></div><div className="flex flex-wrap gap-2"><Button variant="secondary" onClick={() => { const err = runOperationalPrint(filteredOwnerRows.length > 0, ownersQuery.isLoading || propertiesQuery.isLoading || activeContractsQuery.isLoading, hasLoadError); if (err) globalThis.alert(err); }} disabled={!canPrintOperationalReport(filteredOwnerRows.length > 0, ownersQuery.isLoading || propertiesQuery.isLoading || activeContractsQuery.isLoading, hasLoadError)}><Printer className="ms-2 size-4" />طباعة قائمة الملاك</Button><Button variant="secondary" onClick={() => exportOwners('filtered')} disabled={filteredOwnerRows.length === 0}><Download className="ms-2 size-4" />تصدير النتائج</Button><Button onClick={openCreateForm}><Plus className="ms-2 size-4" />إضافة مالك</Button></div></div>
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4"><SummaryCard label="إجمالي الملاك" value={summary.totalOwners} icon={Users} /><SummaryCard label="الملاك النشطون" value={summary.activeOwners} icon={Users} /><SummaryCard label="عقارات مرتبطة" value={summary.linkedPropertiesCount} icon={Building2} /><SummaryCard label="عقارات بلا علاقة مالك" value={summary.propertiesWithoutLinkedOwner} icon={LinkIcon} /></div>
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1.1fr)_minmax(24rem,0.9fr)]">
         <Card className="overflow-hidden"><CardHeader><CardTitle>مساحة عمل الملاك</CardTitle><CardDescription>ملخص آمن من بيانات الملاك والعقارات والعقود الحالية بدون أرصدة أو تسويات افتراضية.</CardDescription></CardHeader><CardContent><OwnerWorkspaceTable rows={filteredOwnerRows} search={ownerSearch} selectedOwner={selectedOwner} allSelected={bulkSelection.allSelected} isSelected={bulkSelection.isSelected} onCreateOwner={openCreateForm} onEditOwner={openEditForm} onSearchChange={setOwnerSearch} onSelectOwner={setSelectedOwnerId} onToggleAll={bulkSelection.toggleAll} onToggleSelection={bulkSelection.toggleOne} /></CardContent></Card>
