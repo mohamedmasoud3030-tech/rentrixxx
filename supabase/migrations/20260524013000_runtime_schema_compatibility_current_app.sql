@@ -61,6 +61,28 @@ create table if not exists public.people (
   deleted_at timestamptz
 );
 
+alter table public.people add column if not exists full_name text;
+alter table public.people add column if not exists phone text;
+alter table public.people add column if not exists email text;
+alter table public.people add column if not exists national_id text;
+alter table public.people add column if not exists type text;
+alter table public.people add column if not exists address text;
+alter table public.people add column if not exists notes text;
+alter table public.people add column if not exists created_at timestamptz default now();
+alter table public.people add column if not exists updated_at timestamptz default now();
+alter table public.people add column if not exists deleted_at timestamptz;
+
+alter table public.people alter column full_name set not null;
+alter table public.people alter column type set default 'contact';
+
+do $$
+begin
+  alter table public.people
+    add constraint people_type_check
+    check (type in ('tenant','owner','contact'));
+exception when duplicate_object then null;
+end $$;
+
 alter table public.people enable row level security;
 alter table public.people force row level security;
 
