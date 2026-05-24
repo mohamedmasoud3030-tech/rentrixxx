@@ -17,6 +17,7 @@ const navigation = [
   { to: '/',            labelKey: 'dashboard',   icon: LayoutDashboard },
   { to: '/properties',  labelKey: 'properties',  icon: Building2 },
   { to: '/tenants',     labelKey: 'tenants',      icon: Users },
+  { to: '/people',      labelKey: 'people',       icon: Users },
   { to: '/owners',      labelKey: 'owners',      icon: UserRoundCog },
   { to: '/contracts',   labelKey: 'contracts',   icon: FileText },
   { to: '/financials',  labelKey: 'financials',  icon: WalletCards },

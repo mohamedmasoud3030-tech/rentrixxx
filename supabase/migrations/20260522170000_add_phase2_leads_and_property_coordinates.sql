@@ -36,4 +36,5 @@ do $$ begin
   create policy leads_write_admin_manager on public.leads for all to authenticated using (public.is_admin_or_manager()) with check (public.is_admin_or_manager());
 exception when duplicate_object then null; end $$;
 
-grant select, insert, update, delete on public.leads to authenticated;
+grant select on public.leads to authenticated;
+grant insert, update, delete on public.leads to authenticated;
