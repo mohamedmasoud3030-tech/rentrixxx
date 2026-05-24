@@ -14,9 +14,8 @@ import { StatusBadge } from '@/components/ui/status-badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Textarea } from '@/components/ui/textarea';
 import { useBulkSelection } from '@/hooks/useBulkSelection';
-import { htmlTemplateEngine } from '@/services/documents/template-engine/htmlTemplateEngine';
-import { buildOwnersDocument } from '@/services/documents/templates/ownersTemplate';
-import { downloadCsv, type CsvRow } from '@/utils/helpers';
+import { documentEngine } from '@/services/documents/documentEngine';
+import type { CsvRow } from '@/utils/helpers';
 import { OwnerCheckbox } from './OwnerCheckbox';
 import { OwnerPropertySelect } from './OwnerPropertySelect';
 import type { OwnerAgreementType } from './ownerAgreementTypes';
@@ -327,11 +326,11 @@ export function OwnersPage() {
       propertyCount: row.propertyCount,
       activeContractCount: row.activeContractCount,
     }));
-    downloadCsv('owners-export', csvRows, ['fullName', 'phone', 'email', 'nationalId', 'propertyCount', 'activeContractCount']);
+    documentEngine.exportCsv('owners-report', { fileName: 'owners-export', rows: csvRows, headers: ['fullName', 'phone', 'email', 'nationalId', 'propertyCount', 'activeContractCount'] });
   };
   const printOwners = () => {
     try {
-      htmlTemplateEngine.preview(buildOwnersDocument({
+      const result = documentEngine.previewDocument('owners-report', {
         companyName: 'Rentrix',
         generatedAt: new Date().toLocaleDateString('ar-OM'),
         owners: filteredOwnerRows.slice(0, 80).map((row) => ({
@@ -340,7 +339,8 @@ export function OwnersPage() {
           propertyCount: row.propertyCount,
           contractCount: row.activeContractCount,
         })),
-      }));
+      });
+      if (!result.success) throw new Error(result.errorMessage);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'تعذر فتح معاينة مستند الملاك');
     }

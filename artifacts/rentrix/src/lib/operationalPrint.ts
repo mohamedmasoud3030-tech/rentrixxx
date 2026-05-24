@@ -1,3 +1,4 @@
+import { documentEngine } from '@/services/documents/documentEngine';
 export function canPrintOperationalReport(hasData: boolean, isLoading: boolean, hasError: boolean): boolean {
   return hasData && !isLoading && !hasError;
 }
@@ -60,25 +61,15 @@ export function runOperationalPrint(hasData: boolean, isLoading: boolean, hasErr
   if (hasError) return 'تعذر تجهيز التقرير للطباعة بسبب خطأ في تحميل البيانات.';
   if (!hasData) return 'لا توجد بيانات تشغيلية متاحة للطباعة حالياً.';
   if (!options) {
-    globalThis.print();
-    return null;
+    const result = documentEngine.printDocument('owners-report', { generatedAt: new Date().toLocaleDateString('ar-OM'), companyName: 'Rentrix', owners: [] });
+    return result.success ? null : (result.errorMessage ?? printWindowUnavailableMessage);
   }
-  const windowRef = openPrintWindow();
-  if (!windowRef) return printWindowUnavailableMessage;
-  const htmlBlob = new Blob([buildOperationalPrintHtml(options)], { type: 'text/html;charset=utf-8' });
-  const url = URL.createObjectURL(htmlBlob);
-  let hasCleanedUp = false;
-  const cleanup = () => {
-    if (hasCleanedUp) return;
-    hasCleanedUp = true;
-    URL.revokeObjectURL(url);
-  };
-  windowRef.onload = () => {
-    windowRef.focus();
-    windowRef.print();
-    windowRef.onafterprint = cleanup;
-    windowRef.onbeforeunload = cleanup;
-  };
-  windowRef.location.replace(url);
-  return null;
+  const result = documentEngine.previewDocument('properties-report', {
+    title: options.title,
+    generatedAt: options.generatedAt,
+    companyName: 'Rentrix',
+    summaryItems: options.summaryItems,
+    table: options.tables?.[0],
+  });
+  return result.success ? null : (result.errorMessage ?? printWindowUnavailableMessage);
 }
