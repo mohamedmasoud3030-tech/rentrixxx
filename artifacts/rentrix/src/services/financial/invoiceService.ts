@@ -59,6 +59,23 @@ export async function listInvoices(supabase: SupabaseClient, params: InvoiceStat
   return data ?? [];
 }
 
+
+export async function listAllInvoices(supabase: SupabaseClient, params: InvoiceStatusFilter | Omit<InvoiceListParams, 'page' | 'pageSize'>): Promise<InvoiceListItem[]> {
+  const normalized = typeof params === 'string' ? { status: params } : params;
+  const pageSize = 1000;
+  let page = 1;
+  const allInvoices: InvoiceListItem[] = [];
+
+  while (true) {
+    const rows = await listInvoices(supabase, { ...normalized, page, pageSize });
+    allInvoices.push(...rows);
+    if (rows.length < pageSize) break;
+    page += 1;
+  }
+
+  return allInvoices;
+}
+
 export async function getInvoiceDetail(supabase: SupabaseClient, invoiceId: string): Promise<InvoiceDetail> {
   const { data: invoice, error: invoiceError } = await supabase.from('invoices').select(invoiceSelect).eq('id', invoiceId).is('deleted_at', null).single().returns<InvoiceListItem>();
   if (invoiceError || !invoice) throw invoiceError ?? new Error('Invoice not found');

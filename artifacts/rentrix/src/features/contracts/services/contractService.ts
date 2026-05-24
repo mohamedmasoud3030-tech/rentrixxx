@@ -40,6 +40,22 @@ export async function listContracts(params: ContractListParams): Promise<Contrac
   return data ?? [];
 }
 
+
+export async function listAllContracts(status: ContractStatusFilter): Promise<ContractListItem[]> {
+  const pageSize = 1000;
+  let page = 1;
+  const allContracts: ContractListItem[] = [];
+
+  while (true) {
+    const rows = await listContracts({ status, page, pageSize });
+    allContracts.push(...rows);
+    if (rows.length < pageSize) break;
+    page += 1;
+  }
+
+  return allContracts;
+}
+
 export async function getContract(contractId: string): Promise<ContractDetail> {
   const { data, error } = await supabase.from('contracts').select(contractDetailSelect).eq('id', contractId).is('deleted_at', null).single().returns<ContractDetail>();
   if (error) throw error;

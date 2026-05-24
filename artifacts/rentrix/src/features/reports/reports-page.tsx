@@ -6,11 +6,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { useContracts } from '@/features/contracts/useContracts';
+import { useAllContracts } from '@/features/contracts/useContracts';
 import type { ContractListItem } from '@/features/contracts/services/contractService';
 import { useOwners } from '@/features/owners/useOwners';
 import { useProperties } from '@/features/properties/use-properties';
-import { useInvoices } from '@/features/financials/invoices/useInvoices';
+import { useAllInvoices } from '@/features/financials/invoices/useInvoices';
 import { useLeads } from '@/features/leads/use-leads';
 import { useAgedReceivablesReport, useOverdueInvoicesReport } from '@/features/financials/reports/useFinancialReports';
 import { formatDate, formatInvoiceStatusLabel, formatMoney, getErrorMessage } from '@lib/format';
@@ -43,10 +43,10 @@ export function ReportsPage() {
   const [filters, setFilters] = useState<FilterState>({ asOf: getTodayInput() });
   const arrearsFilters = useMemo(() => ({ asOf: filters.asOf }), [filters.asOf]);
 
-  const contractsQuery = useContracts({ status: 'all', page: 1, pageSize: 10_000 });
+  const contractsQuery = useAllContracts('all');
   const propertiesQuery = useProperties({ search: '', status: 'all', page: 1, pageSize: 500 });
   const ownersQuery = useOwners();
-  const invoicesQuery = useInvoices({ status: 'all', search: '', page: 1, pageSize: 10_000 });
+  const invoicesQuery = useAllInvoices({ status: 'all', search: '' });
   const leadsQuery = useLeads();
   const overdueInvoicesQuery = useOverdueInvoicesReport(arrearsFilters);
   const agedReceivablesQuery = useAgedReceivablesReport(arrearsFilters);

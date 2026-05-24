@@ -2,17 +2,22 @@ import { supabase } from '@/integrations/supabase/client';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { financialReportKeys } from '../reports/useFinancialReports';
-import { generateInvoicesFromActiveContracts, getInvoiceDetail, listInvoices, type InvoiceListParams, type InvoiceStatusFilter } from '@/services/financial/invoiceService';
+import { generateInvoicesFromActiveContracts, getInvoiceDetail, listAllInvoices, listInvoices, type InvoiceListParams, type InvoiceStatusFilter } from '@/services/financial/invoiceService';
 
 export const invoiceKeys = {
   all: ['invoices'] as const,
   lists: () => [...invoiceKeys.all, 'list'] as const,
   list: (params: InvoiceStatusFilter | InvoiceListParams) => [...invoiceKeys.lists(), params] as const,
   detail: (invoiceId: string) => [...invoiceKeys.all, 'detail', invoiceId] as const,
+  fullList: (params: InvoiceStatusFilter | Omit<InvoiceListParams, 'page' | 'pageSize'>) => [...invoiceKeys.all, 'full-list', params] as const,
 };
 
 export function useInvoices(params: InvoiceStatusFilter | InvoiceListParams) {
   return useQuery({ queryKey: invoiceKeys.list(params), queryFn: () => listInvoices(supabase, params) });
+}
+
+export function useAllInvoices(params: InvoiceStatusFilter | Omit<InvoiceListParams, 'page' | 'pageSize'>) {
+  return useQuery({ queryKey: invoiceKeys.fullList(params), queryFn: () => listAllInvoices(supabase, params) });
 }
 
 export function useInvoice(invoiceId: string) {

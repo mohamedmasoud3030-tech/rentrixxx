@@ -1,17 +1,22 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import type { ContractPayload, RenewalPayload } from './contractSchema';
-import { createContract, getContract, listContracts, renewContract, softDeleteContract, updateContract, type ContractListParams } from './services/contractService';
+import { createContract, getContract, listAllContracts, listContracts, renewContract, softDeleteContract, updateContract, type ContractListParams, type ContractStatusFilter } from './services/contractService';
 
 export const contractKeys = {
   all: ['contracts'] as const,
   lists: () => [...contractKeys.all, 'list'] as const,
   list: (params: ContractListParams) => [...contractKeys.lists(), params] as const,
   detail: (contractId: string) => [...contractKeys.all, 'detail', contractId] as const,
+  fullList: (status: ContractStatusFilter) => [...contractKeys.all, 'full-list', status] as const,
 };
 
 export function useContracts(params: ContractListParams) {
   return useQuery({ queryKey: contractKeys.list(params), queryFn: () => listContracts(params) });
+}
+
+export function useAllContracts(status: ContractStatusFilter) {
+  return useQuery({ queryKey: contractKeys.fullList(status), queryFn: () => listAllContracts(status) });
 }
 
 export function useContract(contractId: string) {
