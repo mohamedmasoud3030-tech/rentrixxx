@@ -26,6 +26,10 @@ function getPeopleTableState(isLoading: boolean, peopleCount: number): 'loading'
   return 'empty';
 }
 
+function showAsyncError(error: unknown, fallback: string): void {
+  toast.error(error instanceof Error ? error.message : fallback);
+}
+
 export function PeopleListPage() {
   const [search, setSearch] = useState('');
   const [type, setType] = useState<PersonTypeFilter>('all');
@@ -126,7 +130,14 @@ export function PeopleListPage() {
                   <TableCell>
                     <div className="flex gap-2">
                       <Button variant="secondary" className="min-h-9 px-3" asChild><Link to="/people/$personId/edit" params={{ personId: person.id }}><Edit className="size-4" /></Link></Button>
-                      <Button variant="danger" className="min-h-9 px-3" onClick={() => void handleDeletePerson(person.id, person.full_name)} disabled={deleteMutation.isPending || pendingDeleteId === person.id}><Trash2 className="size-4" /></Button>
+                      <Button
+                        variant="danger"
+                        className="min-h-9 px-3"
+                        onClick={() => { handleDeletePerson(person.id, person.full_name).catch((error) => showAsyncError(error, 'تعذر أرشفة الشخص')); }}
+                        disabled={deleteMutation.isPending || pendingDeleteId === person.id}
+                      >
+                        <Trash2 className="size-4" />
+                      </Button>
                     </div>
                   </TableCell>
                 </TableRow>
@@ -143,7 +154,7 @@ export function PeopleListPage() {
           <EmptyState
             title="تعذر تحميل سجلات الأشخاص"
             description={peopleQuery.error instanceof Error ? peopleQuery.error.message : 'حدث خطأ أثناء تحميل البيانات. حاول مرة أخرى.'}
-            action={<Button variant="secondary" onClick={() => void peopleQuery.refetch()}>إعادة المحاولة</Button>}
+            action={<Button variant="secondary" onClick={() => { peopleQuery.refetch().catch((error) => showAsyncError(error, 'تعذر إعادة تحميل الأشخاص')); }}>إعادة المحاولة</Button>}
           />
         </div>
       );
@@ -161,7 +172,7 @@ export function PeopleListPage() {
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <Button variant="secondary" disabled={!canPrintOperationalReport(peopleRows.length > 0, peopleQuery.isLoading, peopleQuery.isError)} onClick={() => { const err = runOperationalPrint(peopleRows.length > 0, peopleQuery.isLoading, peopleQuery.isError, { title: 'قائمة الأشخاص', generatedAt: new Date().toLocaleDateString('ar-OM'), tables: [{ title: 'الأشخاص', columns: ['الاسم', 'النوع', 'الهاتف'], rows: peopleRows.slice(0, 40).map((row) => [row.full_name, personTypeLabels[row.type], row.phone ?? '—']) }] }); if (err) globalThis.alert(err); }}><Printer className="ms-2 size-4" />طباعة قائمة الأشخاص</Button>
-          <Button variant="secondary" onClick={() => void exportPeople('filtered')} disabled={(peopleQuery.data?.count ?? 0) === 0 || isExportPending}><Download className="ms-2 size-4" />تصدير النتائج</Button>
+          <Button variant="secondary" onClick={() => { exportPeople('filtered').catch((error) => showAsyncError(error, 'تعذر تصدير بيانات الأشخاص')); }} disabled={(peopleQuery.data?.count ?? 0) === 0 || isExportPending}><Download className="ms-2 size-4" />تصدير النتائج</Button>
           <Button asChild><Link to="/people/new"><Plus className="ms-2 size-4" />إضافة شخص</Link></Button>
         </div>
       </div>
@@ -183,7 +194,7 @@ export function PeopleListPage() {
         selectedCount={bulkSelection.selectedCount}
         selectionLabel={`تم تحديد ${bulkSelection.selectedCount.toLocaleString('ar')} شخص`}
         onClear={bulkSelection.clear}
-        actions={<Button variant="secondary" onClick={() => void exportPeople('selected')} disabled={isExportPending}><Download className="ms-2 size-4" />تصدير المحدد</Button>}
+        actions={<Button variant="secondary" onClick={() => { exportPeople('selected').catch((error) => showAsyncError(error, 'تعذر تصدير السجلات المحددة')); }} disabled={isExportPending}><Download className="ms-2 size-4" />تصدير المحدد</Button>}
       />
 
       <div className="flex items-center justify-between text-sm text-muted-foreground">
