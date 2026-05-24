@@ -67,7 +67,12 @@ export async function createJournalEntry(
   const rows = lines.map((line) => ({ ...line, journal_entry_id: entry.id }));
   const { error: lineError } = await supabase.from('accounting_journal_lines').insert(rows);
   if (lineError) {
-    await supabase.from('accounting_journal_entries').delete().eq('id', entry.id);
+    const { error: rollbackError } = await supabase.from('accounting_journal_entries').delete().eq('id', entry.id);
+    if (rollbackError) {
+      throw new Error(
+        `فشل إدراج قيود اليومية (${lineError.message}) وفشل التراجع عن إنشاء القيد (${rollbackError.message}). قد تكون هناك بيانات غير متسقة وتحتاج لتدخل مسؤول النظام.`,
+      );
+    }
     throw lineError;
   }
   return entry as EntryRow;
