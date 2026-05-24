@@ -16,7 +16,8 @@ const arabicHeaderMap: Record<string, string> = {
 function escapeCsvValue(value: CsvRow[string]): string {
   if (value === null || value === undefined) return '';
   const normalized = value instanceof Date ? value.toISOString() : String(value);
-  const escaped = normalized.replaceAll('"', '""');
+  const sanitized = /^[=+\-@]/.test(normalized) ? `'${normalized}` : normalized;
+  const escaped = sanitized.replaceAll('"', '""');
   return /[",\n]/.test(escaped) ? `"${escaped}"` : escaped;
 }
 
