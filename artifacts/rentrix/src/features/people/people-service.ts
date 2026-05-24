@@ -21,14 +21,19 @@ export type PaginatedPeople = {
 type PersonInsert = Database['public']['Tables']['people']['Insert'];
 type PersonUpdate = Database['public']['Tables']['people']['Update'];
 
+const personColumns = 'id,full_name,phone,email,national_id,type,address,notes,created_at,updated_at,deleted_at';
+const exportPageSize = 1000;
+const maxExportPages = 200;
+
 export async function listPeople(params: PeopleListParams): Promise<PaginatedPeople> {
   const from = (params.page - 1) * params.pageSize;
   const to = from + params.pageSize - 1;
   let query = supabase
     .from('people')
-    .select('*', { count: 'exact' })
+    .select(personColumns, { count: 'exact' })
     .is('deleted_at', null)
     .order('created_at', { ascending: false })
+    .order('id', { ascending: true })
     .range(from, to);
 
   const trimmedSearch = params.search.trim();
@@ -48,18 +53,18 @@ export async function listPeople(params: PeopleListParams): Promise<PaginatedPeo
 }
 
 export async function listPeopleForExport(search: string, type: PersonTypeFilter): Promise<Person[]> {
-  const pageSize = 1000;
   const rows: Person[] = [];
   let page = 0;
 
-  while (true) {
-    const from = page * pageSize;
-    const to = from + pageSize - 1;
+  while (page < maxExportPages) {
+    const from = page * exportPageSize;
+    const to = from + exportPageSize - 1;
     let query = supabase
       .from('people')
-      .select('*')
+      .select(personColumns)
       .is('deleted_at', null)
       .order('created_at', { ascending: false })
+      .order('id', { ascending: true })
       .range(from, to);
 
     const trimmedSearch = search.trim();
@@ -79,12 +84,14 @@ export async function listPeopleForExport(search: string, type: PersonTypeFilter
     const batch = data ?? [];
     rows.push(...batch);
 
-    if (batch.length < pageSize) {
+    if (batch.length < exportPageSize) {
       return rows;
     }
 
     page += 1;
   }
+
+  throw new Error(`Export exceeded ${maxExportPages * exportPageSize} rows limit. Refine your filters and retry.`);
 }
 
 export async function listPeopleByIds(ids: string[]): Promise<Person[]> {
@@ -94,7 +101,7 @@ export async function listPeopleByIds(ids: string[]): Promise<Person[]> {
   for (const chunk of chunkItems(ids, 250)) {
     const { data, error } = await supabase
       .from('people')
-      .select('*')
+      .select(personColumns)
       .in('id', chunk)
       .is('deleted_at', null)
       .returns<Person[]>();
@@ -108,7 +115,7 @@ export async function listPeopleByIds(ids: string[]): Promise<Person[]> {
 export async function getPerson(personId: string): Promise<Person> {
   const { data, error } = await supabase
     .from('people')
-    .select('*')
+    .select(personColumns)
     .eq('id', personId)
     .is('deleted_at', null)
     .single()
@@ -119,7 +126,7 @@ export async function getPerson(personId: string): Promise<Person> {
 
 export async function createPerson(payload: PersonPayload): Promise<Person> {
   const insertPayload: PersonInsert = payload;
-  const { data, error } = await supabase.from('people').insert(insertPayload).select('*').single().returns<Person>();
+  const { data, error } = await supabase.from('people').insert(insertPayload).select(personColumns).single().returns<Person>();
   if (error) throw error;
   return data;
 }
@@ -131,7 +138,7 @@ export async function updatePerson(personId: string, payload: PersonPayload): Pr
     .update(updatePayload)
     .eq('id', personId)
     .is('deleted_at', null)
-    .select('*')
+    .select(personColumns)
     .single()
     .returns<Person>();
   if (error) throw error;

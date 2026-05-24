@@ -4,6 +4,7 @@ import {
   getArrearsSummaryReport,
   getFinancialPeriodSummaryReport,
   getOverdueInvoicesReport,
+  type AgedReceivablesBucket,
   type AgedReceivablesReport,
   type ArrearsSummaryReport,
   type FinancialPeriodSummaryReport,
@@ -56,6 +57,11 @@ export type DashboardDeferredMetric = {
   reason: string;
 };
 
+export type DashboardSectionWarning = {
+  section: "overview" | "periodSummary" | "overdueInvoices" | "arrearsSummary" | "agedReceivables" | "activeContracts";
+  message: string;
+};
+
 export type DashboardSnapshot = {
   period: DashboardPeriod;
   overview: DashboardOverview;
@@ -64,6 +70,7 @@ export type DashboardSnapshot = {
   arrears: DashboardArrearsMetrics;
   activeContracts: ContractListItem[];
   deferred: DashboardDeferredMetric[];
+  warnings: DashboardSectionWarning[];
 };
 
 export function createDashboardPeriod(date = new Date()): DashboardPeriod {
@@ -132,6 +139,28 @@ export function summarizeDashboardArrearsMetrics(params: {
   };
 }
 
+
+
+function createZeroBucket(key: AgedReceivablesBucket['key'], label: string): AgedReceivablesBucket {
+  return { key, label, total: 0, invoiceCount: 0 };
+}
+
+function createEmptyAgedReceivables(asOf: string): AgedReceivablesReport {
+  return {
+    asOf,
+    buckets: {
+      current: createZeroBucket('current', 'Current / not overdue'),
+      days_1_30: createZeroBucket('days_1_30', '1-30 days'),
+      days_31_60: createZeroBucket('days_31_60', '31-60 days'),
+      days_61_90: createZeroBucket('days_61_90', '61-90 days'),
+      days_90_plus: createZeroBucket('days_90_plus', '90+ days'),
+    },
+    totalOutstanding: 0,
+    totalOverdue: 0,
+    rows: [],
+  };
+}
+
 const dashboardDeferredMetrics: DashboardDeferredMetric[] = [
   {
     key: 'recentPayments',
@@ -152,7 +181,16 @@ export async function getDashboardSnapshot(date = new Date()): Promise<Dashboard
   const periodFilters = { dateFrom: period.dateFrom, dateTo: period.dateTo };
   const arrearsFilters = { asOf: period.asOf };
 
-  const [overview, periodSummary, overdueInvoices, arrearsSummary, agedReceivables, activeContracts] = await Promise.all([
+  const warnings: DashboardSectionWarning[] = [];
+
+  const [
+    overviewResult,
+    periodSummaryResult,
+    overdueInvoicesResult,
+    arrearsSummaryResult,
+    agedReceivablesResult,
+    activeContractsResult,
+  ] = await Promise.allSettled([
     getDashboardOverview(date),
     getFinancialPeriodSummaryReport(periodFilters),
     getOverdueInvoicesReport(arrearsFilters),
@@ -160,6 +198,61 @@ export async function getDashboardSnapshot(date = new Date()): Promise<Dashboard
     getAgedReceivablesReport(arrearsFilters),
     listContracts({ status: 'active' }),
   ]);
+
+  const warn = (section: DashboardSectionWarning['section'], result: PromiseSettledResult<unknown>) => {
+    if (result.status === 'fulfilled') return;
+    const message = result.reason instanceof Error ? result.reason.message : `${section} failed`;
+    warnings.push({ section, message });
+    console.error('[dashboard] section failed', { section, message });
+  };
+
+  warn('overview', overviewResult);
+  warn('periodSummary', periodSummaryResult);
+  warn('overdueInvoices', overdueInvoicesResult);
+  warn('arrearsSummary', arrearsSummaryResult);
+  warn('agedReceivables', agedReceivablesResult);
+  warn('activeContracts', activeContractsResult);
+
+  const overview: DashboardOverview = overviewResult.status === 'fulfilled'
+    ? overviewResult.value
+    : {
+        financial: { total_collected: 0, total_overdue_invoices: 0, total_expenses: 0, net_revenue: 0 },
+        operational: {
+          properties: 0,
+          units: 0,
+          activeContracts: 0,
+          expiringContracts30Days: 0,
+          vacantUnits: 0,
+          overdueInvoices: 0,
+        },
+      };
+
+  const periodSummary: FinancialPeriodSummaryReport = periodSummaryResult.status === 'fulfilled'
+    ? periodSummaryResult.value
+    : {
+        invoiced: 0,
+        paid: 0,
+        outstanding: 0,
+        expenses: 0,
+        netCash: 0,
+        invoicesCount: 0,
+        paymentsCount: 0,
+        expensesCount: 0,
+      };
+
+  const overdueInvoices: OverdueInvoicesReport = overdueInvoicesResult.status === 'fulfilled'
+    ? overdueInvoicesResult.value
+    : { asOf: period.asOf, rows: [], totalOverdue: 0, invoiceCount: 0 };
+
+  const arrearsSummary: ArrearsSummaryReport = arrearsSummaryResult.status === 'fulfilled'
+    ? arrearsSummaryResult.value
+    : { asOf: period.asOf, totalOverdue: 0, overdueInvoiceCount: 0, averageDaysOverdue: 0, over90Amount: 0, over90InvoiceCount: 0 };
+
+  const agedReceivables: AgedReceivablesReport = agedReceivablesResult.status === 'fulfilled'
+    ? agedReceivablesResult.value
+    : createEmptyAgedReceivables(period.asOf);
+
+  const activeContracts: ContractListItem[] = activeContractsResult.status === 'fulfilled' ? activeContractsResult.value : [];
 
   return {
     period,
@@ -169,5 +262,6 @@ export async function getDashboardSnapshot(date = new Date()): Promise<Dashboard
     arrears: summarizeDashboardArrearsMetrics({ overdueInvoices, arrearsSummary, agedReceivables }),
     activeContracts,
     deferred: dashboardDeferredMetrics,
+    warnings,
   };
 }

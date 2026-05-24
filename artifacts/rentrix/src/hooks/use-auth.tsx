@@ -21,8 +21,9 @@ function shouldRedirectToLogin(pathname: string): boolean {
 }
 
 function redirectToLogin(): void {
+  if (!globalThis.location) return;
   if (shouldRedirectToLogin(globalThis.location.pathname)) {
-    globalThis.location.href = LOGIN_PATH;
+    globalThis.location.assign(LOGIN_PATH);
   }
 }
 
