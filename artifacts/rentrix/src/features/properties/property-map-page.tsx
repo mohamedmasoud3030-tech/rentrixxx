@@ -25,19 +25,19 @@ export function PropertyMapPage() {
   const propertiesQuery = useProperties({ search: '', status: 'all', page: 1, pageSize: 1000 });
   const [cityFilter, setCityFilter] = useState('');
 
-  const rows = (propertiesQuery.data?.rows ?? []) as MapProperty[];
+  const allRows = (propertiesQuery.data?.rows ?? []) as MapProperty[];
   const filtered = useMemo(() => {
     const term = cityFilter.trim().toLowerCase();
-    if (!term) return rows;
-    return rows.filter((property) => property.address.toLowerCase().includes(term) || property.title.toLowerCase().includes(term));
-  }, [rows, cityFilter]);
+    if (!term) return allRows;
+    return allRows.filter((property) => property.address.toLowerCase().includes(term) || property.title.toLowerCase().includes(term));
+  }, [allRows, cityFilter]);
   const withCoords = useMemo(() => filtered.filter(hasCoordinates), [filtered]);
   const withoutCoords = useMemo(() => filtered.filter((property) => !hasCoordinates(property)), [filtered]);
   const center: [number, number] = withCoords.length ? [withCoords[0].latitude, withCoords[0].longitude] : [23.588, 58.3829];
 
   if (propertiesQuery.isLoading) return <div dir="rtl" className="space-y-2"><p>جارٍ تحميل العقارات...</p></div>;
   if (propertiesQuery.isError) return <EmptyState title="تعذر تحميل العقارات" description="تعذر تجهيز عرض الخريطة. حاول إعادة المحاولة." />;
-  if (!rows.length) return <EmptyState title="لا توجد عقارات" description="أضف عقارات أولاً لعرضها في خريطة العقارات." />;
+  if (!allRows.length) return <EmptyState title="لا توجد عقارات" description="أضف عقارات أولاً لعرضها في خريطة العقارات." />;
 
   return <div className="space-y-4" dir="rtl">
     <h2 className="text-2xl font-black">خريطة العقارات</h2>
