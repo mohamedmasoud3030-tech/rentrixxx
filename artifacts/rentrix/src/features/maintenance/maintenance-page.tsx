@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input';
 import { canPrintOperationalReport, runOperationalPrint } from '@/lib/operationalPrint';
 import { Select } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
-import { StatusBadge } from '@/components/ui/status-badge';
+import { StatusBadge, type StatusBadgeTone } from '@/components/ui/status-badge';
 import { Textarea } from '@/components/ui/textarea';
 import { DataTable } from '@/components/shared/DataTable';
 import { useProperties } from '@/features/properties/use-properties';
@@ -46,6 +46,20 @@ const maintenancePriorityLabels = {
   high: 'عالية',
   urgent: 'عاجلة',
 } as const;
+
+const maintenanceStatusTone: Record<keyof typeof maintenanceStatusLabels, StatusBadgeTone> = {
+  open: 'gold',
+  in_progress: 'blue',
+  resolved: 'green',
+  closed: 'green',
+};
+
+const maintenancePriorityTone: Record<keyof typeof maintenancePriorityLabels, StatusBadgeTone> = {
+  low: 'gray',
+  medium: 'blue',
+  high: 'gold',
+  urgent: 'red',
+};
 
 function getLoadErrorMessage(error: unknown, fallback: string): string {
   return error instanceof Error ? error.message : fallback;
@@ -103,6 +117,7 @@ export function MaintenancePage() {
   const maintenanceSummary = useMemo(() => summarizeMaintenanceRequests(filteredMaintenanceRows), [filteredMaintenanceRows]);
   const loadError = maintenanceQuery.error ?? propertiesQuery.error;
   const hasLoadError = maintenanceQuery.isError || propertiesQuery.isError;
+  const isWorkspaceLoading = maintenanceQuery.isLoading || propertiesQuery.isLoading;
   const retryMaintenanceWorkspace = async () => {
     await Promise.all([maintenanceQuery.refetch(), propertiesQuery.refetch()]);
   };
@@ -132,9 +147,36 @@ export function MaintenancePage() {
     );
   };
 
+  const printSummary = () => {
+    const errorMessage = runOperationalPrint(filteredMaintenanceRows.length > 0, isWorkspaceLoading, hasLoadError, {
+      title: 'ملخص الصيانة',
+      generatedAt: new Date().toLocaleDateString('ar-OM'),
+      tables: [{
+        title: 'طلبات الصيانة',
+        columns: ['العنوان', 'العقار', 'الحالة', 'الأولوية'],
+        rows: filteredMaintenanceRows.slice(0, 40).map((row) => [
+          row.title,
+          buildMaintenanceLocationLabel(row, properties, allUnits),
+          maintenanceStatusLabels[row.status],
+          maintenancePriorityLabels[row.priority],
+        ]),
+      }],
+    });
+    if (errorMessage) globalThis.alert(errorMessage);
+  };
+
   return (
     <div className="space-y-6" dir="rtl">
-      <div className="flex justify-end"><Button variant="secondary" onClick={() => { const err = runOperationalPrint(filteredMaintenanceRows.length > 0, maintenanceQuery.isLoading || propertiesQuery.isLoading, hasLoadError, { title: 'ملخص الصيانة', generatedAt: new Date().toLocaleDateString('ar-OM'), tables: [{ title: 'طلبات الصيانة', columns: ['العنوان', 'العقار', 'الحالة', 'الأولوية'], rows: filteredMaintenanceRows.slice(0, 40).map((row) => [row.title, buildMaintenanceLocationLabel(row, properties, allUnits), maintenanceStatusLabels[row.status], maintenancePriorityLabels[row.priority]]) }] }); if (err) globalThis.alert(err); }} disabled={!canPrintOperationalReport(filteredMaintenanceRows.length > 0, maintenanceQuery.isLoading || propertiesQuery.isLoading, hasLoadError)}><Printer className="ms-2 size-4" />طباعة ملخص الصيانة</Button></div><div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="flex justify-end">
+        <Button
+          variant="secondary"
+          onClick={printSummary}
+          disabled={!canPrintOperationalReport(filteredMaintenanceRows.length > 0, isWorkspaceLoading, hasLoadError)}
+        >
+          <Printer className="ms-2 size-4" />طباعة ملخص الصيانة
+        </Button>
+      </div>
+      <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
         <Select aria-label="تصفية طلبات الصيانة حسب الحالة" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value as MaintenanceStatusFilter)}>
           <option value="all">كل الحالات</option>
           <option value="open">مفتوح</option>
@@ -193,25 +235,25 @@ export function MaintenancePage() {
         <Button className="sm:col-span-2" type="submit" disabled={createMutation.isPending}>{createMutation.isPending ? 'جارٍ الحفظ...' : 'إضافة طلب صيانة'}</Button>
       </form>
 
-      {maintenanceQuery.isLoading || propertiesQuery.isLoading ? (
+      {isWorkspaceLoading ? (
         <div className="space-y-3">{Array.from({ length: 4 }, (_, index) => <Skeleton key={index} className="h-12" />)}</div>
       ) : null}
-      {!maintenanceQuery.isLoading && !propertiesQuery.isLoading && hasLoadError ? (
+      {!isWorkspaceLoading && hasLoadError ? (
         <EmptyState
           title="تعذر تحميل طلبات الصيانة"
           description={getLoadErrorMessage(loadError, 'حدث خطأ غير متوقع أثناء تحميل طلبات الصيانة.')}
           action={<Button type="button" onClick={retryMaintenanceWorkspace}>إعادة المحاولة</Button>}
         />
       ) : null}
-      {!maintenanceQuery.isLoading && !propertiesQuery.isLoading && !hasLoadError ? (
+      {!isWorkspaceLoading && !hasLoadError ? (
         <DataTable
           rows={filteredMaintenanceRows}
           keyOf={(row) => row.id}
           columns={[
             { key: 'title', header: 'العنوان', render: (row) => row.title },
             { key: 'location', header: 'العقار / الوحدة', render: (row) => buildMaintenanceLocationLabel(row, properties, allUnits) },
-            { key: 'status', header: 'الحالة', render: (row) => <StatusBadge tone={row.status === 'resolved' || row.status === 'closed' ? 'green' : row.status === 'in_progress' ? 'blue' : 'gold'}>{maintenanceStatusLabels[row.status]}</StatusBadge> },
-            { key: 'priority', header: 'الأولوية', render: (row) => <StatusBadge tone={row.priority === 'urgent' ? 'red' : row.priority === 'high' ? 'gold' : row.priority === 'medium' ? 'blue' : 'gray'}>{maintenancePriorityLabels[row.priority]}</StatusBadge> },
+            { key: 'status', header: 'الحالة', render: (row) => <StatusBadge tone={maintenanceStatusTone[row.status]}>{maintenanceStatusLabels[row.status]}</StatusBadge> },
+            { key: 'priority', header: 'الأولوية', render: (row) => <StatusBadge tone={maintenancePriorityTone[row.priority]}>{maintenancePriorityLabels[row.priority]}</StatusBadge> },
             {
               key: 'actions',
               header: 'الإجراء التالي',
