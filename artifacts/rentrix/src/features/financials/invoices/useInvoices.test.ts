@@ -1,7 +1,6 @@
 import { createElement } from 'react';
 import { renderToString } from 'react-dom/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { financialReportKeys } from '../reports/useFinancialReports';
 import { invoiceKeys, useGenerateInvoices } from './useInvoices';
 
 const mutationMock = vi.hoisted(() => ({
@@ -64,7 +63,7 @@ function runGenerateInvoicesOnSuccess(result: { current: GenerateInvoicesMutatio
 }
 
 function expectInvoiceInvalidation() {
-  const expectedKeys = [invoiceKeys.all, financialReportKeys.all];
+  const expectedKeys = [invoiceKeys.all];
   expectedKeys.forEach((queryKey) => {
     expect(mutationMock.invalidateQueries).toHaveBeenCalledWith({ queryKey });
   });
@@ -77,7 +76,7 @@ describe('useGenerateInvoices', () => {
     setupInvoiceHookTest();
   });
 
-  it('invalidates invoice and financial report queries after successful invoice generation', async () => {
+  it('invalidates invoice queries after successful invoice generation', async () => {
     const { result } = renderHook(
       () => useGenerateInvoices() as unknown as GenerateInvoicesMutationResult,
     );

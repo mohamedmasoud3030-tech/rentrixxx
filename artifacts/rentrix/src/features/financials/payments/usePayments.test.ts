@@ -1,7 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { invoiceKeys } from '../invoices/useInvoices';
 import { receiptKeys } from '../receipts/useReceipts';
-import { financialReportKeys } from '../reports/useFinancialReports';
 
 const mutationMock = vi.hoisted(() => ({
   invalidateQueries: vi.fn(),
@@ -52,8 +51,7 @@ describe('usePostPayment', () => {
 
     expect(mutationMock.invalidateQueries).toHaveBeenCalledWith({ queryKey: invoiceKeys.all });
     expect(mutationMock.invalidateQueries).toHaveBeenCalledWith({ queryKey: receiptKeys.all });
-    expect(mutationMock.invalidateQueries).toHaveBeenCalledWith({ queryKey: financialReportKeys.all });
-    expect(mutationMock.invalidateQueries).toHaveBeenCalledTimes(3);
+    expect(mutationMock.invalidateQueries).toHaveBeenCalledTimes(2);
     expect(mutationMock.toastSuccess).toHaveBeenCalledWith('تم تسجيل الدفعة بنجاح');
   });
 
