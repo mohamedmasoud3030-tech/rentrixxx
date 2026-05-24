@@ -11,12 +11,14 @@ import type { ContractListItem } from '@/features/contracts/services/contractSer
 import { useOwners } from '@/features/owners/useOwners';
 import { useProperties } from '@/features/properties/use-properties';
 import { useInvoices } from '@/features/financials/invoices/useInvoices';
+import type { Invoice } from '@/types/domain';
 import { useLeads } from '@/features/leads/use-leads';
 import { useAgedReceivablesReport, useOverdueInvoicesReport } from '@/features/financials/reports/useFinancialReports';
+import { getSafeRemainingAmount, sumFinancialValues } from '@/features/financials/financialMath';
 import { formatDate, formatInvoiceStatusLabel, formatMoney, getErrorMessage } from '@lib/format';
 import { canPrintOperationalReport, runOperationalPrint } from '@/lib/operationalPrint';
 
-type FilterState = Readonly<{ asOf: string }>;
+type FilterState = Readonly<{ asOf: string; overdueStatus: Invoice['status'] | 'all' }>;
 type MetricCardProps = Readonly<{ label: string; value: string; helper: string; tone?: 'blue' | 'green' | 'red' | 'gray' | 'gold' }>;
 
 const supportedReportNames = ['ملخص الإشغال', 'ملخص العقود', 'ملخص الفواتير والتحصيل', 'ملخص المتأخرات', 'ملخص العقارات والوحدات'];
@@ -41,7 +43,7 @@ function MetricCard({ label, value, helper, tone = 'blue' }: MetricCardProps) {
 }
 
 export function ReportsPage() {
-  const [filters, setFilters] = useState<FilterState>({ asOf: getTodayInput() });
+  const [filters, setFilters] = useState<FilterState>({ asOf: getTodayInput(), overdueStatus: 'all' });
   const arrearsFilters = useMemo(() => ({ asOf: filters.asOf }), [filters.asOf]);
 
   const contractsQuery = useContracts({ status: 'all', page: 1, pageSize: 1000 });
@@ -70,9 +72,9 @@ export function ReportsPage() {
   const occupancyRate = totalUnits > 0 ? Math.round((occupiedUnits / totalUnits) * 100) : 0;
 
   const invoiceSummary = useMemo(() => {
-    const totalAmount = invoices.reduce((sum, invoice) => sum + invoice.amount, 0);
-    const paidAmount = invoices.reduce((sum, invoice) => sum + invoice.paid_amount, 0);
-    const outstanding = Math.max(totalAmount - paidAmount, 0);
+    const totalAmount = sumFinancialValues(invoices.map((invoice) => invoice.amount));
+    const paidAmount = sumFinancialValues(invoices.map((invoice) => invoice.paid_amount));
+    const outstanding = sumFinancialValues(invoices.map((invoice) => getSafeRemainingAmount(invoice.amount, invoice.paid_amount)));
     return { totalAmount, paidAmount, outstanding };
   }, [invoices]);
 
@@ -80,6 +82,10 @@ export function ReportsPage() {
   const firstError = contractsQuery.error ?? propertiesQuery.error ?? ownersQuery.error ?? invoicesQuery.error ?? leadsQuery.error ?? overdueInvoicesQuery.error ?? agedReceivablesQuery.error;
 
   const overdueRows = overdueInvoicesQuery.data?.rows ?? [];
+  const filteredOverdueRows = useMemo(() => {
+    if (filters.overdueStatus === 'all') return overdueRows;
+    return overdueRows.filter((row) => row.status === filters.overdueStatus);
+  }, [filters.overdueStatus, overdueRows]);
   const owners = ownersQuery.data ?? [];
   const leads = leadsQuery.data ?? [];
   const totalOverdue = agedReceivablesQuery.data?.totalOverdue ?? 0;
@@ -87,7 +93,7 @@ export function ReportsPage() {
     contracts.length > 0 ||
     properties.length > 0 ||
     invoices.length > 0 ||
-    overdueRows.length > 0 ||
+    filteredOverdueRows.length > 0 ||
     owners.length > 0 ||
     leads.length > 0 ||
     totalOverdue > 0;
@@ -99,7 +105,7 @@ export function ReportsPage() {
       <Card className="border-primary/10 bg-gradient-to-br from-primary/10 via-card to-card">
         <CardHeader className="space-y-3">
           <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between"><div><p className="text-sm font-black text-primary">مركز التقارير التشغيلية</p><h2 className="text-3xl font-black tracking-tight">التقارير</h2><CardDescription>قراءة فقط من البيانات الحالية بدون أي منطق محاسبي متقدم أو ترحيل جديد.</CardDescription></div><div className="flex flex-wrap gap-2"><Button variant="secondary" asChild><Link to="/arrears">المتأخرات</Link></Button><Button variant="secondary" asChild><Link to="/invoices">الفواتير</Link></Button><Button variant="secondary" onClick={() => { const err = runOperationalPrint(hasAnyData, isLoading, Boolean(firstError), { title: 'التقرير التشغيلي', generatedAt: formatDate(new Date().toISOString()), summaryItems: [{ label: 'نسبة الإشغال', value: `${occupancyRate}%` }, { label: 'العقود النشطة', value: contractStatusSummary.active.toLocaleString('ar') }, { label: 'إجمالي الفواتير', value: formatMoney(invoiceSummary.totalAmount) }, { label: 'إجمالي المتأخرات', value: formatMoney(totalOverdue) }], tables: [{ title: 'الفواتير المتأخرة', columns: ['الفاتورة', 'المستأجر', 'الاستحقاق', 'أيام التأخير', 'المتبقي'], rows: overdueRows.slice(0, 20).map((row) => [row.shortInvoiceId, row.tenantName ?? '—', formatDate(row.dueDate), row.daysOverdue.toLocaleString('ar'), formatMoney(row.remainingAmount)]) }] }); if (err) globalThis.alert(err); }} disabled={!canPrintOperationalReport(hasAnyData, isLoading, Boolean(firstError))}><Printer className="ms-2 size-4" />طباعة التقرير</Button></div></div>
-          <div className="grid gap-3 md:grid-cols-[1fr_auto]"><label className="space-y-1 text-sm font-bold"><span>تاريخ الاحتساب (As of)</span><Input type="date" value={filters.asOf} onChange={(event) => setFilters({ asOf: event.target.value })} /></label><div className="flex items-end"><Button className="w-full" onClick={() => setFilters({ asOf: getTodayInput() })} variant="secondary"><RefreshCcw className="ms-2 size-4" />اليوم</Button></div></div>
+          <div className="grid gap-3 md:grid-cols-[1fr_1fr_auto]"><label className="space-y-1 text-sm font-bold"><span>تاريخ الاحتساب (As of)</span><Input type="date" value={filters.asOf} onChange={(event) => setFilters((prev) => ({ ...prev, asOf: event.target.value }))} /></label><label className="space-y-1 text-sm font-bold"><span>حالة الفاتورة المتأخرة</span><select className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm" value={filters.overdueStatus} onChange={(event) => setFilters((prev) => ({ ...prev, overdueStatus: event.target.value as FilterState['overdueStatus'] }))}><option value="all">كل الحالات</option><option value="issued">صادرة</option><option value="partial">جزئية</option><option value="overdue">متأخرة</option></select></label><div className="flex items-end"><Button className="w-full" onClick={() => setFilters({ asOf: getTodayInput(), overdueStatus: 'all' })} variant="secondary"><RefreshCcw className="ms-2 size-4" />إعادة التصفية</Button></div></div>
         </CardHeader>
       </Card>
 
@@ -107,7 +113,7 @@ export function ReportsPage() {
 
       {firstError ? <Card><CardContent className="flex items-center justify-between gap-3 p-4 text-sm text-destructive"><span>{getErrorMessage(firstError, 'تعذر تحميل التقارير. يمكنك إعادة المحاولة بأمان.')}</span><Button variant="secondary" onClick={() => { contractsQuery.refetch(); propertiesQuery.refetch(); ownersQuery.refetch(); invoicesQuery.refetch(); leadsQuery.refetch(); overdueInvoicesQuery.refetch(); agedReceivablesQuery.refetch(); }}>إعادة المحاولة</Button></CardContent></Card> : null}
       {isLoading ? <Card><CardContent className="p-4 text-sm text-muted-foreground">جارٍ تحميل التقارير...</CardContent></Card> : null}
-      {!isLoading && !firstError && !hasAnyData ? <Card><CardContent className="p-4 text-sm text-muted-foreground">لا توجد بيانات متاحة للتقارير حالياً.</CardContent></Card> : null}
+      {!isLoading && !firstError && !hasAnyData ? <Card><CardContent className="p-4 text-sm text-muted-foreground">لا توجد بيانات متاحة للتقارير حالياً. هذه الشاشة لا تُنشئ أرقاماً تقديرية وتعرض فقط البيانات الفعلية المتاحة.</CardContent></Card> : null}
       {printError ? <p className="text-xs text-muted-foreground">{printError}</p> : null}
 
       <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
@@ -115,7 +121,7 @@ export function ReportsPage() {
         <MetricCard label="العقود النشطة" value={contractStatusSummary.active.toLocaleString('ar')} helper="من جميع العقود الحالية" />
         <MetricCard label="إجمالي الفواتير" value={formatMoney(invoiceSummary.totalAmount)} helper={`${invoices.length} فاتورة`} tone="blue" />
         <MetricCard label="إجمالي التحصيل" value={formatMoney(invoiceSummary.paidAmount)} helper="مدفوع من الفواتير الحالية" tone="green" />
-        <MetricCard label="إجمالي المتأخرات" value={formatMoney(totalOverdue)} helper={`${overdueRows.length} فاتورة متأخرة`} tone="gold" />
+        <MetricCard label="إجمالي المتأخرات" value={formatMoney(totalOverdue)} helper={`${filteredOverdueRows.length} فاتورة متأخرة`} tone="gold" />
       </section>
 
       <Card>
@@ -131,7 +137,7 @@ export function ReportsPage() {
       <Card>
         <CardHeader><CardTitle>ملخص الفواتير المتأخرة</CardTitle><CardDescription>مبني على خدمة المتأخرات الحالية حسب تاريخ الاحتساب.</CardDescription></CardHeader>
         <CardContent className="overflow-x-auto">
-          <Table><TableHeader><TableRow><TableHead>الفاتورة</TableHead><TableHead>المستأجر</TableHead><TableHead>الاستحقاق</TableHead><TableHead>أيام التأخير</TableHead><TableHead>المتبقي</TableHead><TableHead>الحالة</TableHead></TableRow></TableHeader><TableBody>{overdueRows.slice(0, 20).map((row) => <TableRow key={row.invoiceId}><TableCell>{row.shortInvoiceId}</TableCell><TableCell>{row.tenantName ?? '—'}</TableCell><TableCell>{formatDate(row.dueDate)}</TableCell><TableCell>{row.daysOverdue.toLocaleString('ar')}</TableCell><TableCell dir="ltr">{formatMoney(row.remainingAmount)}</TableCell><TableCell>{formatInvoiceStatusLabel(row.status)}</TableCell></TableRow>)}{!isLoading && overdueRows.length === 0 ? <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground">لا توجد فواتير متأخرة حسب as-of.</TableCell></TableRow> : null}</TableBody></Table>
+          <Table><TableHeader><TableRow><TableHead>الفاتورة</TableHead><TableHead>المستأجر</TableHead><TableHead>الاستحقاق</TableHead><TableHead>أيام التأخير</TableHead><TableHead>المتبقي</TableHead><TableHead>الحالة</TableHead></TableRow></TableHeader><TableBody>{filteredOverdueRows.slice(0, 20).map((row) => <TableRow key={row.invoiceId}><TableCell>{row.shortInvoiceId}</TableCell><TableCell>{row.tenantName ?? '—'}</TableCell><TableCell>{formatDate(row.dueDate)}</TableCell><TableCell>{row.daysOverdue.toLocaleString('ar')}</TableCell><TableCell dir="ltr">{formatMoney(row.remainingAmount)}</TableCell><TableCell>{formatInvoiceStatusLabel(row.status)}</TableCell></TableRow>)}{!isLoading && filteredOverdueRows.length === 0 ? <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground">لا توجد فواتير متأخرة مطابقة للفلاتر الحالية حتى تاريخ الاحتساب.</TableCell></TableRow> : null}</TableBody></Table>
         </CardContent>
       </Card>
 
