@@ -1,6 +1,6 @@
 create table if not exists public.owner_management_agreements (
   id uuid primary key default gen_random_uuid(),
-  property_id uuid not null references public.properties(id) on delete cascade,
+  property_id text not null references public.properties(id) on delete cascade,
   owner_id uuid not null references public.owners(id) on delete restrict,
   property_owner_id uuid null references public.property_owners(id) on delete set null,
   agreement_type text not null,
@@ -45,6 +45,7 @@ create table if not exists public.owner_agreement_terms (
   apply_commission_before_expenses boolean null,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
+  constraint owner_agreement_terms_agreement_id_key unique (agreement_id),
   constraint owner_agreement_terms_office_commission_rate_check check (office_commission_rate is null or (office_commission_rate >= 0 and office_commission_rate <= 1)),
   constraint owner_agreement_terms_owner_share_rate_check check (owner_share_rate is null or (owner_share_rate >= 0 and owner_share_rate <= 1)),
   constraint owner_agreement_terms_profit_share_rate_check check (profit_share_rate is null or (profit_share_rate >= 0 and profit_share_rate <= 1)),
@@ -53,6 +54,18 @@ create table if not exists public.owner_agreement_terms (
   constraint owner_agreement_terms_guaranteed_minimum_amount_check check (guaranteed_minimum_amount is null or guaranteed_minimum_amount >= 0),
   constraint owner_agreement_terms_upside_threshold_amount_check check (upside_threshold_amount is null or upside_threshold_amount >= 0)
 );
+
+do $$
+begin
+  if not exists (
+    select 1 from pg_constraint
+    where conname = 'owner_agreement_terms_agreement_id_key'
+      and conrelid = 'public.owner_agreement_terms'::regclass
+  ) then
+    alter table public.owner_agreement_terms
+      add constraint owner_agreement_terms_agreement_id_key unique (agreement_id);
+  end if;
+end $$;
 
 create table if not exists public.owner_agreement_expense_rules (
   id uuid primary key default gen_random_uuid(),
@@ -84,16 +97,39 @@ create index if not exists owner_mgmt_agreements_property_owner_id_idx on public
 create index if not exists owner_mgmt_agreements_status_idx on public.owner_management_agreements(status);
 create index if not exists owner_mgmt_agreements_starts_ends_idx on public.owner_management_agreements(starts_on, ends_on);
 
-create or replace function public.prevent_overlapping_active_owner_agreements()
+create or replace function public.validate_owner_management_agreement_links()
 returns trigger language plpgsql as $$
 begin
-  if new.status = 'active' then
+  if new.property_owner_id is not null and not exists (
+    select 1
+    from public.property_owners link
+    where link.id = new.property_owner_id
+      and link.property_id = new.property_id
+      and link.owner_id = new.owner_id
+  ) then
+    raise exception 'رابط ملكية العقار لا يطابق المالك والعقار في اتفاقية الإدارة';
+  end if;
+  return new;
+end; $$;
+
+drop trigger if exists owner_mgmt_agreements_link_guard on public.owner_management_agreements;
+create trigger owner_mgmt_agreements_link_guard
+before insert or update on public.owner_management_agreements
+for each row execute function public.validate_owner_management_agreement_links();
+
+create or replace function public.prevent_overlapping_active_owner_agreements()
+returns trigger language plpgsql as $$
+declare
+  v_active_status constant text := 'active';
+begin
+  if new.status = v_active_status then
+    perform pg_advisory_xact_lock(hashtextextended(new.property_id::text || ':' || new.owner_id::text, 0));
     if exists (
       select 1 from public.owner_management_agreements existing
       where existing.id <> coalesce(new.id, '00000000-0000-0000-0000-000000000000'::uuid)
         and existing.property_id = new.property_id
         and existing.owner_id = new.owner_id
-        and existing.status = 'active'
+        and existing.status = v_active_status
         and daterange(existing.starts_on, coalesce(existing.ends_on, 'infinity'::date), '[]')
             && daterange(new.starts_on, coalesce(new.ends_on, 'infinity'::date), '[]')
     ) then
@@ -117,30 +153,54 @@ create trigger owner_agreement_terms_set_updated_at before update on public.owne
 for each row execute function public.set_updated_at();
 
 alter table public.owner_management_agreements enable row level security;
+alter table public.owner_management_agreements force row level security;
 alter table public.owner_agreement_terms enable row level security;
+alter table public.owner_agreement_terms force row level security;
 alter table public.owner_agreement_expense_rules enable row level security;
+alter table public.owner_agreement_expense_rules force row level security;
 alter table public.owner_agreement_tax_rules enable row level security;
+alter table public.owner_agreement_tax_rules force row level security;
 
 
 drop policy if exists owner_mgmt_agreements_select_auth on public.owner_management_agreements;
+drop policy if exists owner_mgmt_agreements_select_admin_manager on public.owner_management_agreements;
 drop policy if exists owner_mgmt_agreements_write_admin_manager on public.owner_management_agreements;
+drop policy if exists owner_mgmt_agreements_insert_admin_manager on public.owner_management_agreements;
+drop policy if exists owner_mgmt_agreements_update_admin_manager on public.owner_management_agreements;
 drop policy if exists owner_agreement_terms_select_auth on public.owner_agreement_terms;
+drop policy if exists owner_agreement_terms_select_admin_manager on public.owner_agreement_terms;
 drop policy if exists owner_agreement_terms_write_admin_manager on public.owner_agreement_terms;
+drop policy if exists owner_agreement_terms_insert_admin_manager on public.owner_agreement_terms;
+drop policy if exists owner_agreement_terms_update_admin_manager on public.owner_agreement_terms;
 drop policy if exists owner_agreement_expense_rules_select_auth on public.owner_agreement_expense_rules;
+drop policy if exists owner_agreement_expense_rules_select_admin_manager on public.owner_agreement_expense_rules;
 drop policy if exists owner_agreement_expense_rules_write_admin_manager on public.owner_agreement_expense_rules;
+drop policy if exists owner_agreement_expense_rules_insert_admin_manager on public.owner_agreement_expense_rules;
+drop policy if exists owner_agreement_expense_rules_update_admin_manager on public.owner_agreement_expense_rules;
 drop policy if exists owner_agreement_tax_rules_select_auth on public.owner_agreement_tax_rules;
+drop policy if exists owner_agreement_tax_rules_select_admin_manager on public.owner_agreement_tax_rules;
 drop policy if exists owner_agreement_tax_rules_write_admin_manager on public.owner_agreement_tax_rules;
+drop policy if exists owner_agreement_tax_rules_insert_admin_manager on public.owner_agreement_tax_rules;
+drop policy if exists owner_agreement_tax_rules_update_admin_manager on public.owner_agreement_tax_rules;
 
-create policy owner_mgmt_agreements_select_auth on public.owner_management_agreements for select to authenticated using (true);
-create policy owner_mgmt_agreements_write_admin_manager on public.owner_management_agreements for all to authenticated using (public.is_admin_or_manager()) with check (public.is_admin_or_manager());
-create policy owner_agreement_terms_select_auth on public.owner_agreement_terms for select to authenticated using (true);
-create policy owner_agreement_terms_write_admin_manager on public.owner_agreement_terms for all to authenticated using (public.is_admin_or_manager()) with check (public.is_admin_or_manager());
-create policy owner_agreement_expense_rules_select_auth on public.owner_agreement_expense_rules for select to authenticated using (true);
-create policy owner_agreement_expense_rules_write_admin_manager on public.owner_agreement_expense_rules for all to authenticated using (public.is_admin_or_manager()) with check (public.is_admin_or_manager());
-create policy owner_agreement_tax_rules_select_auth on public.owner_agreement_tax_rules for select to authenticated using (true);
-create policy owner_agreement_tax_rules_write_admin_manager on public.owner_agreement_tax_rules for all to authenticated using (public.is_admin_or_manager()) with check (public.is_admin_or_manager());
+create policy owner_mgmt_agreements_select_admin_manager on public.owner_management_agreements for select to authenticated using (public.is_admin_or_manager());
+create policy owner_mgmt_agreements_insert_admin_manager on public.owner_management_agreements for insert to authenticated with check (public.is_admin_or_manager());
+create policy owner_mgmt_agreements_update_admin_manager on public.owner_management_agreements for update to authenticated using (public.is_admin_or_manager()) with check (public.is_admin_or_manager());
+create policy owner_agreement_terms_select_admin_manager on public.owner_agreement_terms for select to authenticated using (public.is_admin_or_manager());
+create policy owner_agreement_terms_insert_admin_manager on public.owner_agreement_terms for insert to authenticated with check (public.is_admin_or_manager());
+create policy owner_agreement_terms_update_admin_manager on public.owner_agreement_terms for update to authenticated using (public.is_admin_or_manager()) with check (public.is_admin_or_manager());
+create policy owner_agreement_expense_rules_select_admin_manager on public.owner_agreement_expense_rules for select to authenticated using (public.is_admin_or_manager());
+create policy owner_agreement_expense_rules_insert_admin_manager on public.owner_agreement_expense_rules for insert to authenticated with check (public.is_admin_or_manager());
+create policy owner_agreement_expense_rules_update_admin_manager on public.owner_agreement_expense_rules for update to authenticated using (public.is_admin_or_manager()) with check (public.is_admin_or_manager());
+create policy owner_agreement_tax_rules_select_admin_manager on public.owner_agreement_tax_rules for select to authenticated using (public.is_admin_or_manager());
+create policy owner_agreement_tax_rules_insert_admin_manager on public.owner_agreement_tax_rules for insert to authenticated with check (public.is_admin_or_manager());
+create policy owner_agreement_tax_rules_update_admin_manager on public.owner_agreement_tax_rules for update to authenticated using (public.is_admin_or_manager()) with check (public.is_admin_or_manager());
 
-grant select, insert, update, delete on public.owner_management_agreements to authenticated;
-grant select, insert, update, delete on public.owner_agreement_terms to authenticated;
-grant select, insert, update, delete on public.owner_agreement_expense_rules to authenticated;
-grant select, insert, update, delete on public.owner_agreement_tax_rules to authenticated;
+grant select, insert, update on public.owner_management_agreements to authenticated;
+grant select, insert, update on public.owner_agreement_terms to authenticated;
+grant select, insert, update on public.owner_agreement_expense_rules to authenticated;
+grant select, insert, update on public.owner_agreement_tax_rules to authenticated;
+revoke delete on public.owner_management_agreements from authenticated;
+revoke delete on public.owner_agreement_terms from authenticated;
+revoke delete on public.owner_agreement_expense_rules from authenticated;
+revoke delete on public.owner_agreement_tax_rules from authenticated;
