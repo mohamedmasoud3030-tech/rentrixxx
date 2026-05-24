@@ -23,15 +23,20 @@ type SupabaseErrorLike = Partial<PostgrestError> & {
   code?: string;
 };
 
+const postgresIdentifierPattern = String.raw`([\w.]+)`;
+const missingRelationRegex = new RegExp(String.raw`relation\s+"?${postgresIdentifierPattern}"?\s+does not exist`, 'i');
+const missingFunctionCallRegex = new RegExp(String.raw`function\s+${postgresIdentifierPattern}\s*\(`, 'i');
+const missingSchemaFunctionRegex = new RegExp(String.raw`function\s+"?${postgresIdentifierPattern}"?\s+does not exist`, 'i');
+
 function readSupabaseContext(error: SupabaseErrorLike): string | null {
   const haystack = `${error.message ?? ''} ${error.details ?? ''}`;
-  const relationMatch = /relation\s+"?([a-zA-Z0-9.]+)"?\s+does not exist/i.exec(haystack);
+  const relationMatch = missingRelationRegex.exec(haystack);
   if (relationMatch?.[1]) return `table=${relationMatch[1]}`;
 
-  const functionMatch = /function\s+([a-zA-Z0-9.]+)\s*\(/i.exec(haystack);
+  const functionMatch = missingFunctionCallRegex.exec(haystack);
   if (functionMatch?.[1]) return `rpc=${functionMatch[1]}`;
 
-  const schemaFunctionMatch = /function\s+"?([a-zA-Z0-9.]+)"?\s+does not exist/i.exec(haystack);
+  const schemaFunctionMatch = missingSchemaFunctionRegex.exec(haystack);
   if (schemaFunctionMatch?.[1]) return `rpc=${schemaFunctionMatch[1]}`;
 
   return null;
