@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input';
 import { canPrintOperationalReport, runOperationalPrint } from '@/lib/operationalPrint';
 import { Select } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
-import { StatusBadge, type StatusBadgeTone } from '@/components/ui/status-badge';
+import { StatusBadge } from '@/components/ui/status-badge';
 import { Textarea } from '@/components/ui/textarea';
 import { DataTable } from '@/components/shared/DataTable';
 import { useProperties } from '@/features/properties/use-properties';
@@ -32,6 +32,7 @@ const schema = z.object({
 });
 
 type FormValues = z.infer<typeof schema>;
+type MaintenanceTone = 'blue' | 'green' | 'red' | 'gray' | 'gold';
 
 const maintenanceStatusLabels = {
   open: 'مفتوح',
@@ -47,14 +48,14 @@ const maintenancePriorityLabels = {
   urgent: 'عاجلة',
 } as const;
 
-const maintenanceStatusTone: Record<keyof typeof maintenanceStatusLabels, StatusBadgeTone> = {
+const maintenanceStatusTone: Record<keyof typeof maintenanceStatusLabels, MaintenanceTone> = {
   open: 'gold',
   in_progress: 'blue',
   resolved: 'green',
   closed: 'green',
 };
 
-const maintenancePriorityTone: Record<keyof typeof maintenancePriorityLabels, StatusBadgeTone> = {
+const maintenancePriorityTone: Record<keyof typeof maintenancePriorityLabels, MaintenanceTone> = {
   low: 'gray',
   medium: 'blue',
   high: 'gold',
@@ -168,11 +169,7 @@ export function MaintenancePage() {
   return (
     <div className="space-y-6" dir="rtl">
       <div className="flex justify-end">
-        <Button
-          variant="secondary"
-          onClick={printSummary}
-          disabled={!canPrintOperationalReport(filteredMaintenanceRows.length > 0, isWorkspaceLoading, hasLoadError)}
-        >
+        <Button variant="secondary" onClick={printSummary} disabled={!canPrintOperationalReport(filteredMaintenanceRows.length > 0, isWorkspaceLoading, hasLoadError)}>
           <Printer className="ms-2 size-4" />طباعة ملخص الصيانة
         </Button>
       </div>
