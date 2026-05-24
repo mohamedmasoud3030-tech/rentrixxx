@@ -46,28 +46,40 @@ export async function listPeople(params: PeopleListParams): Promise<PaginatedPeo
   return { rows: data ?? [], count: count ?? 0 };
 }
 
-export async function listPeopleForExport(search: string, type: PersonTypeFilter, limit = 5000): Promise<Person[]> {
-  let query = supabase
-    .from('people')
-    .select('*')
-    .is('deleted_at', null)
-    .order('created_at', { ascending: false })
-    .limit(limit);
-
+export async function listPeopleForExport(search: string, type: PersonTypeFilter): Promise<Person[]> {
+  const batchSize = 1000;
+  const rows: Person[] = [];
   const trimmedSearch = search.trim();
-  if (trimmedSearch) {
-    const escaped = trimmedSearch.replaceAll('%', String.raw`\%`).replaceAll('_', String.raw`\_`);
-    const term = `"%${escaped}%"`;
-    query = query.or(`full_name.ilike.${term},phone.ilike.${term},email.ilike.${term},national_id.ilike.${term}`);
+  const escaped = trimmedSearch.replaceAll('%', String.raw`\%`).replaceAll('_', String.raw`\_`);
+  const term = `"%${escaped}%"`;
+
+  for (let from = 0; ; from += batchSize) {
+    const to = from + batchSize - 1;
+    let query = supabase
+      .from('people')
+      .select('*')
+      .is('deleted_at', null)
+      .order('created_at', { ascending: false })
+      .range(from, to);
+
+    if (trimmedSearch) {
+      query = query.or(`full_name.ilike.${term},phone.ilike.${term},email.ilike.${term},national_id.ilike.${term}`);
+    }
+
+    if (type !== 'all') {
+      query = query.eq('type', type);
+    }
+
+    const { data, error } = await query.returns<Person[]>();
+    if (error) throw error;
+    const batch = data ?? [];
+    rows.push(...batch);
+    if (batch.length < batchSize) {
+      break;
+    }
   }
 
-  if (type !== 'all') {
-    query = query.eq('type', type);
-  }
-
-  const { data, error } = await query.returns<Person[]>();
-  if (error) throw error;
-  return data ?? [];
+  return rows;
 }
 
 export async function listPeopleByIds(ids: string[]): Promise<Person[]> {
