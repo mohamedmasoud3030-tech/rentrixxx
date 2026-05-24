@@ -65,28 +65,32 @@ exception when duplicate_object then null; end $$;
 grant select, insert, update, delete on public.property_owners to authenticated;
 
 -- B/C) Tenant/person + contracts alignment
--- Current active app uses people.id in contracts.tenant_id.
+-- Keep contracts.tenant_id pointing to tenants.id so receipt posting remains compatible.
 do $$
+declare
+  v_refs_people boolean;
 begin
-  if exists (
-    select 1 from pg_constraint
+  select exists (
+    select 1
+    from pg_constraint
     where conname = 'contracts_tenant_id_fkey'
       and conrelid = 'public.contracts'::regclass
-  ) then
+      and confrelid = 'public.people'::regclass
+  ) into v_refs_people;
+
+  if v_refs_people then
     alter table public.contracts drop constraint contracts_tenant_id_fkey;
   end if;
-end $$;
 
-do $$
-begin
   if not exists (
-    select 1 from pg_constraint
+    select 1
+    from pg_constraint
     where conname = 'contracts_tenant_id_fkey'
       and conrelid = 'public.contracts'::regclass
   ) then
     alter table public.contracts
       add constraint contracts_tenant_id_fkey
-      foreign key (tenant_id) references public.people(id) on delete restrict;
+      foreign key (tenant_id) references public.tenants(id) on delete restrict;
   end if;
 end $$;
 
@@ -126,11 +130,22 @@ returns trigger
 language plpgsql
 as $$
 begin
-  if new.rent_amount is null and new.monthly_rent is not null then
-    new.rent_amount = new.monthly_rent;
-  end if;
-  if new.monthly_rent is null and new.rent_amount is not null then
-    new.monthly_rent = new.rent_amount;
+  if tg_op = 'INSERT' then
+    if new.rent_amount is null and new.monthly_rent is not null then
+      new.rent_amount = new.monthly_rent;
+    elsif new.monthly_rent is null and new.rent_amount is not null then
+      new.monthly_rent = new.rent_amount;
+    end if;
+  else
+    if new.rent_amount is distinct from old.rent_amount and new.monthly_rent is not distinct from old.monthly_rent then
+      new.monthly_rent = new.rent_amount;
+    elsif new.monthly_rent is distinct from old.monthly_rent and new.rent_amount is not distinct from old.rent_amount then
+      new.rent_amount = new.monthly_rent;
+    elsif new.rent_amount is null and new.monthly_rent is not null then
+      new.rent_amount = new.monthly_rent;
+    elsif new.monthly_rent is null and new.rent_amount is not null then
+      new.monthly_rent = new.rent_amount;
+    end if;
   end if;
   return new;
 end;
@@ -157,6 +172,10 @@ exception when duplicate_object then null; end $$;
 create index if not exists payments_invoice_date_idx on public.payments(invoice_id, payment_date desc);
 create index if not exists invoices_due_status_idx on public.invoices(due_date, status);
 
+create unique index if not exists invoices_contract_month_unq_idx
+  on public.invoices (contract_id, date_trunc('month', issue_date))
+  where deleted_at is null;
+
 create or replace function public.generate_invoices_from_active_contracts()
 returns bigint
 language plpgsql
@@ -166,6 +185,11 @@ as $$
 declare
   v_count bigint := 0;
 begin
+  if not public.is_admin_or_manager() then
+    raise exception 'Only admins/managers can generate invoices'
+      using errcode = '42501';
+  end if;
+
   insert into public.invoices (contract_id, issue_date, due_date, amount, paid_amount, status, notes)
   select c.id,
          current_date,
@@ -177,13 +201,7 @@ begin
   from public.contracts c
   where c.deleted_at is null
     and c.status = 'active'
-    and not exists (
-      select 1
-      from public.invoices i
-      where i.deleted_at is null
-        and i.contract_id = c.id
-        and date_trunc('month', i.issue_date) = date_trunc('month', current_date)
-    );
+  on conflict (contract_id, date_trunc('month', issue_date)) where deleted_at is null do nothing;
 
   get diagnostics v_count = row_count;
   return v_count;
