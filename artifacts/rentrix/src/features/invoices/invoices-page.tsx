@@ -10,7 +10,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { useBulkSelection } from '@/hooks/useBulkSelection';
 import { useGenerateInvoices, useInvoices } from '@/features/financials/invoices/useInvoices';
 import { getSafeRemainingAmount } from '@/features/financials/financialMath';
-import { downloadCsv } from '@/utils/helpers';
+import { documentEngine } from '@/services/documents/documentEngine';
 import { formatDate, formatInvoiceStatusLabel, formatMoney, getErrorMessage } from '@lib/format';
 import type { InvoiceListItem, InvoiceStatusFilter } from '@/services/financial/invoiceService';
 
@@ -42,7 +42,7 @@ export function InvoicesPage() {
   }, { total: 0, paid: 0, overdue: 0, unpaid: 0, outstanding: 0 }), [filteredInvoices]);
   const bulk = useBulkSelection(filteredInvoices.map((item) => item.id));
   const selectedItems = useMemo(() => filteredInvoices.filter((item) => bulk.selectedIds.has(item.id)), [bulk.selectedIds, filteredInvoices]);
-  const exportCsv = (rows: InvoiceListItem[]) => downloadCsv(`invoices-${new Date().toISOString().slice(0, 10)}`, rows.map((invoice) => ({ invoiceNumber: invoice.id, amount: invoice.amount })), ['invoiceNumber', 'amount']);
+  const exportCsv = (rows: InvoiceListItem[]) => documentEngine.exportCsv('invoices-report', { fileName: `invoices-${new Date().toISOString().slice(0, 10)}`, rows: rows.map((invoice) => ({ invoiceNumber: invoice.id, amount: invoice.amount })), headers: ['invoiceNumber', 'amount'] });
 
   return (
     <div className="space-y-6" dir="rtl">
@@ -58,7 +58,7 @@ export function InvoicesPage() {
         {!invoicesQuery.isLoading && filteredInvoices.length === 0 && !invoicesQuery.isError ? <div className="p-4"><EmptyState title="لا توجد فواتير مطابقة" description="جرّب تعديل عوامل التصفية أو البحث لعرض النتائج." /></div> : null}
         {!invoicesQuery.isLoading && filteredInvoices.length > 0 ? <div className="overflow-x-auto"><Table className="min-w-[760px]"><TableHeader><TableRow><TableHead>تحديد</TableHead><TableHead>رقم الفاتورة</TableHead><TableHead>تاريخ الاستحقاق</TableHead><TableHead>الحالة</TableHead><TableHead>الإجمالي</TableHead><TableHead>المتبقي</TableHead></TableRow></TableHeader><TableBody>{filteredInvoices.map((invoice) => <TableRow key={invoice.id}><TableCell><input aria-label={`تحديد الفاتورة ${invoice.id.slice(0, 8)}`} type="checkbox" checked={bulk.isSelected(invoice.id)} onChange={() => bulk.toggleOne(invoice.id)} /></TableCell><TableCell className="font-bold">{invoice.id.slice(0, 8)}</TableCell><TableCell>{formatDate(invoice.due_date)}</TableCell><TableCell>{formatInvoiceStatusLabel(invoice.status)}</TableCell><TableCell dir="ltr">{formatMoney(invoice.amount)}</TableCell><TableCell dir="ltr">{formatMoney(getSafeRemainingAmount(invoice.amount, invoice.paid_amount))}</TableCell></TableRow>)}</TableBody></Table></div> : null}
       </Card>
-      <BulkActionsBar selectedCount={bulk.selectedCount} selectionLabel={`تم تحديد ${bulk.selectedCount} فاتورة`} onClear={bulk.clear} actions={<div className="flex gap-2"><Button variant="secondary" aria-label="تصدير الفواتير المحددة" onClick={() => exportCsv(selectedItems)}><Download className="me-2 size-4" />تصدير</Button><Button variant="secondary" aria-label="طباعة الصفحة" onClick={() => globalThis.window.print()}><Printer className="me-2 size-4" />طباعة الصفحة</Button></div>} />
+      <BulkActionsBar selectedCount={bulk.selectedCount} selectionLabel={`تم تحديد ${bulk.selectedCount} فاتورة`} onClear={bulk.clear} actions={<div className="flex gap-2"><Button variant="secondary" aria-label="تصدير الفواتير المحددة" onClick={() => exportCsv(selectedItems)}><Download className="me-2 size-4" />تصدير</Button><Button variant="secondary" aria-label="طباعة الفواتير" onClick={() => { const result = documentEngine.previewDocument('invoices-report', { generatedAt: new Date().toLocaleDateString('ar-OM'), companyName: 'Rentrix', invoices: filteredInvoices.map((invoice) => ({ invoiceNumber: invoice.id.slice(0, 8), dueDate: formatDate(invoice.due_date), status: formatInvoiceStatusLabel(invoice.status), total: formatMoney(invoice.amount), remaining: formatMoney(getSafeRemainingAmount(invoice.amount, invoice.paid_amount)) })), outstandingTotal: formatMoney(stats.outstanding) }); if (!result.success) globalThis.alert(result.errorMessage ?? 'تعذر فتح المعاينة'); }}><Printer className="me-2 size-4" />طباعة الصفحة</Button></div>} />
     </div>
   );
 }

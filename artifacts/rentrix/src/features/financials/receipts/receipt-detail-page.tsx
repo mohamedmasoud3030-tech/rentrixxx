@@ -1,5 +1,6 @@
 import { Link, useSearch } from '@tanstack/react-router';
 import { ArrowRight, Printer, ReceiptText } from 'lucide-react';
+import { documentEngine } from '@/services/documents/documentEngine';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { defaultCompanyLocalSettings } from '@/lib/companySettings';
@@ -93,7 +94,8 @@ function ReceiptDetailContent({ receiptId }: Readonly<{ receiptId: string }>) {
     return <Card><CardContent className="p-6 text-center text-muted-foreground">الإيصال غير موجود.</CardContent></Card>;
   }
 
-  return <ReceiptPrintDocument receipt={receiptQuery.data} />;
+  const receipt = receiptQuery.data;
+  return <><div className="print:hidden mb-3"><Button variant="secondary" onClick={() => { const result = documentEngine.previewDocument('receipt', { generatedAt: formatDate(receipt.payment_date), companyName: defaultCompanyLocalSettings.companyName, receiptNumber: receipt.receipt_number, paymentId: formatShortId(receipt.payment_id), invoiceId: formatShortId(receipt.invoice_id), paymentDate: formatDate(receipt.payment_date), paymentMethod: paymentMethodLabels[receipt.payment_method] ?? receipt.payment_method, amount: formatMoney(receipt.amount), tenant: valueOrDash(receipt.tenant_name), property: valueOrDash(receipt.property_title), unit: valueOrDash(receipt.unit_number), reference: valueOrDash(receipt.reference_number) }); if (!result.success) globalThis.alert(result.errorMessage ?? 'تعذر فتح المعاينة'); }}><Printer className="ms-2 size-4" />طباعة</Button></div><ReceiptPrintDocument receipt={receipt} /></>; 
 }
 
 function getReceiptIdFromSearch(search: Record<string, unknown>) {
@@ -115,7 +117,6 @@ export function ReceiptDetailPage() {
         </div>
         <div className="flex flex-wrap gap-2">
           <Button variant="secondary" asChild><Link to="/financials"><ArrowRight className="ms-2 size-4" />العودة للمالية</Link></Button>
-          <Button onClick={() => globalThis.print()}><Printer className="ms-2 size-4" />طباعة</Button>
         </div>
       </div>
 
