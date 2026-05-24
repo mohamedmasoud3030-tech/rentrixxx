@@ -32,11 +32,11 @@ const navigation = [
 ] as const;
 
 const recoveryModules = [
-  { to: '/communication', labelKey: 'communications', icon: MessageCircle, enabled: true },
-  { to: '/audit-log', labelKey: 'auditLog', icon: ClipboardList, enabled: true },
-  { to: '/assistant', labelKey: 'aiAssistant', icon: Bot, enabled: true },
-  { labelKey: 'lands', icon: Landmark, enabled: false },
-  { labelKey: 'commissions', icon: WalletCards, enabled: false },
+  { to: '/communication', labelKey: 'communications', icon: MessageCircle },
+  { to: '/audit-log', labelKey: 'auditLog', icon: ClipboardList },
+  { to: '/assistant', labelKey: 'aiAssistant', icon: Bot },
+  { to: '/lands', labelKey: 'lands', icon: Landmark },
+  { to: '/commissions', labelKey: 'commissions', icon: WalletCards },
 ] as const;
 
 type SharedLabel = (key: string) => string;
@@ -83,28 +83,16 @@ function RecoveryLinks({
       ) : null}
       {recoveryModules.map((item) => {
         const Icon = item.icon;
-        if (item.enabled && item.to) {
-          return (
-            <Link
-              key={item.labelKey}
-              to={item.to}
-              onClick={onNavigate}
-              className="flex min-h-11 items-center gap-3 rounded-2xl px-3 py-3 text-sm font-black text-sidebar-foreground transition hover:bg-sidebar-accent hover:text-white [&.active]:bg-primary [&.active]:text-primary-foreground"
-            >
-              <Icon className="size-5 shrink-0" />
-              {expanded ? <span>{sharedLabel(item.labelKey)}</span> : null}
-            </Link>
-          );
-        }
         return (
-          <div
+          <Link
             key={item.labelKey}
-            className="flex min-h-11 cursor-not-allowed items-center gap-3 rounded-2xl px-3 py-3 text-sm font-black text-sidebar-foreground/55"
-            title={sharedLabel('recoveryTooltip')}
+            to={item.to}
+            onClick={onNavigate}
+            className="flex min-h-11 items-center gap-3 rounded-2xl px-3 py-3 text-sm font-black text-sidebar-foreground transition hover:bg-sidebar-accent hover:text-white [&.active]:bg-primary [&.active]:text-primary-foreground"
           >
             <Icon className="size-5 shrink-0" />
             {expanded ? <span>{sharedLabel(item.labelKey)}</span> : null}
-          </div>
+          </Link>
         );
       })}
     </>
@@ -251,7 +239,6 @@ export function AppShell() {
       className="min-h-screen overflow-x-hidden bg-background text-foreground"
       dir={appLanguage.direction}
     >
-      {/* Mobile drawer */}
       {mobileNavOpen ? (
         <MobileNavigationDrawer
           appName={appName}
@@ -262,7 +249,6 @@ export function AppShell() {
         />
       ) : null}
 
-      {/* Desktop sidebar */}
       <aside
         className={cn(
           'fixed inset-y-0 right-0 z-30 hidden overflow-hidden border-l border-sidebar-border bg-sidebar text-sidebar-foreground shadow-sidebar transition-all lg:flex lg:flex-col',
@@ -299,12 +285,9 @@ export function AppShell() {
         </div>
       </aside>
 
-      {/* Content area */}
       <div className={cn('w-full transition-all lg:pr-72', sidebarCollapsed && 'lg:pr-20')}>
-        {/* Header */}
         <header className="sticky top-0 z-20 border-b border-border bg-background/90 backdrop-blur-xl">
           <div className="flex h-16 items-center gap-2 px-3 sm:h-20 sm:gap-3 sm:px-5">
-            {/* Mobile: hamburger */}
             <Button
               variant="ghost"
               className="size-10 shrink-0 px-0 lg:hidden"
@@ -313,7 +296,6 @@ export function AppShell() {
             >
               <Menu className="size-5" />
             </Button>
-            {/* Desktop: collapse toggle */}
             <Button
               variant="ghost"
               className="hidden size-10 shrink-0 px-0 lg:inline-flex"
@@ -323,11 +305,10 @@ export function AppShell() {
               <Menu className="size-5" />
             </Button>
 
-            {/* Title */}
             <div className="min-w-0 flex-1">
               <div className="flex min-w-0 items-center gap-1 truncate text-xs text-muted-foreground">
                 <span className="hidden sm:inline">{sharedLabel('home')}</span>
-                {appLanguage.direction === "rtl" ? <ChevronRight className="hidden size-3 sm:inline" /> : <ChevronLeft className="hidden size-3 sm:inline" />}
+                {appLanguage.direction === 'rtl' ? <ChevronRight className="hidden size-3 sm:inline" /> : <ChevronLeft className="hidden size-3 sm:inline" />}
                 <span className="font-bold">{pageTitle}</span>
               </div>
               <h1 className="mt-0.5 truncate text-lg font-black tracking-tight sm:text-2xl lg:text-3xl">
@@ -335,9 +316,7 @@ export function AppShell() {
               </h1>
             </div>
 
-            {/* Right actions */}
             <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
-              {/* Sync status — hidden on very small screens */}
               <div className="hidden min-w-0 max-w-[140px] truncate rounded-xl border border-border bg-card px-2 py-1.5 text-xs text-muted-foreground sm:block sm:px-3">
                 <span className="font-bold text-foreground">{syncStatus}</span>
                 {lastSyncedAt
@@ -359,13 +338,11 @@ export function AppShell() {
           </div>
         </header>
 
-        {/* Page content — extra bottom padding on mobile for bottom nav */}
         <main className="animate-route-in overflow-x-hidden p-3 pb-24 sm:p-4 sm:pb-28 lg:p-6 lg:pb-6">
           <Outlet />
         </main>
       </div>
 
-      {/* Mobile bottom navigation */}
       <BottomNav labelFor={sharedLabel} />
     </div>
   );
