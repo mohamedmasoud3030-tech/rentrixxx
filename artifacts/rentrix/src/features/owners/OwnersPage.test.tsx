@@ -1,4 +1,5 @@
 import { renderToStaticMarkup } from 'react-dom/server';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { OwnersPage } from './OwnersPage';
 
@@ -95,6 +96,17 @@ vi.mock('./useOwners', () => ({
 }));
 
 describe('OwnersPage relationship flow surface', () => {
+  function renderPage() {
+    const queryClient = new QueryClient({
+      defaultOptions: { queries: { retry: false, gcTime: 0 } },
+    });
+    return renderToStaticMarkup(
+      <QueryClientProvider client={queryClient}>
+        <OwnersPage />
+      </QueryClientProvider>,
+    );
+  }
+
   beforeEach(() => {
     ownerPageMocks.activeContractsQuery.data = [activeContract];
     ownerPageMocks.activeContractsQuery.error = null;
@@ -111,7 +123,7 @@ describe('OwnersPage relationship flow surface', () => {
   });
 
   it('renders native select link controls and edit/unlink actions for owner-property relationships', () => {
-    const html = renderToStaticMarkup(<OwnersPage />);
+    const html = renderPage();
 
     expect(html).toContain('<select');
     expect(html).toContain('value=""');
@@ -133,7 +145,7 @@ describe('OwnersPage relationship flow surface', () => {
     ownerPageMocks.propertiesQuery.error = new Error('تعذر تحميل علاقات الاختبار');
     ownerPageMocks.propertiesQuery.isError = true;
 
-    const html = renderToStaticMarkup(<OwnersPage />);
+    const html = renderPage();
 
     expect(html).toContain('تعذر تحميل مساحة عمل الملاك');
     expect(html).toContain('تعذر تحميل علاقات الاختبار');
