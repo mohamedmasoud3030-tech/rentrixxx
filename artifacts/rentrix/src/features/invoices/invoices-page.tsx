@@ -21,7 +21,7 @@ const statusFilters: ReadonlyArray<{ value: InvoiceStatusFilter; label: string }
 export function InvoicesPage() {
   const [status, setStatus] = useState<InvoiceStatusFilter>('all');
   const [search, setSearch] = useState('');
-  const invoicesQuery = useInvoices({ status });
+  const invoicesQuery = useInvoices({ status, search });
   const generateInvoices = useGenerateInvoices();
   const filteredInvoices = useMemo(() => {
     const term = search.trim().toLowerCase();
