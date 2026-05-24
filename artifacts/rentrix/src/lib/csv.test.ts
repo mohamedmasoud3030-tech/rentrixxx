@@ -7,6 +7,14 @@ describe('csv helpers', () => {
     expect(escapeCsvCell('line 1\nline 2')).toBe('"line 1\nline 2"');
   });
 
+
+  it('neutralizes formula-like cells to prevent spreadsheet execution', () => {
+    expect(escapeCsvCell('=2+2')).toBe("'=2+2");
+    expect(escapeCsvCell('+cmd')).toBe("'+cmd");
+    expect(escapeCsvCell('-10')).toBe("'-10");
+    expect(escapeCsvCell('@SUM(A1:A2)')).toBe("'@SUM(A1:A2)");
+  });
+
   it('builds csv with headers and rows', () => {
     const csv = buildCsv(
       [

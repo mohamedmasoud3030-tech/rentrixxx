@@ -5,13 +5,17 @@ export type CsvColumn<T> = Readonly<{
   value: (row: T) => CsvCell;
 }>;
 
+const formulaLikePrefixPattern = /^[=+\-@]/;
+
 const normalizeCsvCell = (value: CsvCell): string => {
   if (value === null || value === undefined) return '';
   return String(value);
 };
 
+const neutralizeFormulaLikeCell = (cell: string): string => (formulaLikePrefixPattern.test(cell) ? `'${cell}` : cell);
+
 export const escapeCsvCell = (value: CsvCell): string => {
-  const cell = normalizeCsvCell(value);
+  const cell = neutralizeFormulaLikeCell(normalizeCsvCell(value));
   const escaped = cell.replaceAll('"', '""');
   if (/[",\n\r]/.test(escaped)) return `"${escaped}"`;
   return escaped;
