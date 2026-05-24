@@ -228,6 +228,15 @@ export function AppShell() {
     return () => globalThis.window.removeEventListener('keydown', onKey);
   }, [mobileNavOpen]);
 
+  useEffect(() => {
+    if (!mobileNavOpen) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [mobileNavOpen]);
+
   const closeMobileNav = () => setMobileNavOpen(false);
 
   const handleLogout = async () => {
