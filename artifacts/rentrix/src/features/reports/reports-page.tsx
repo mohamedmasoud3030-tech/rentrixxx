@@ -43,10 +43,10 @@ export function ReportsPage() {
   const [filters, setFilters] = useState<FilterState>({ asOf: getTodayInput() });
   const arrearsFilters = useMemo(() => ({ asOf: filters.asOf }), [filters.asOf]);
 
-  const contractsQuery = useContracts({ status: 'all' });
+  const contractsQuery = useContracts({ status: 'all', page: 1, pageSize: 10_000 });
   const propertiesQuery = useProperties({ search: '', status: 'all', page: 1, pageSize: 500 });
   const ownersQuery = useOwners();
-  const invoicesQuery = useInvoices({ status: 'all', search: '' });
+  const invoicesQuery = useInvoices({ status: 'all', search: '', page: 1, pageSize: 10_000 });
   const leadsQuery = useLeads();
   const overdueInvoicesQuery = useOverdueInvoicesReport(arrearsFilters);
   const agedReceivablesQuery = useAgedReceivablesReport(arrearsFilters);
