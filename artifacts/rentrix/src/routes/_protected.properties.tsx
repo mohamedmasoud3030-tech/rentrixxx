@@ -1,1 +1,1 @@
-export { PropertiesListPage as PropertiesRouteComponent } from '@/features/properties/properties-list-page';
+export { PropertiesPage as PropertiesRouteComponent } from '@/features/properties/properties-page';

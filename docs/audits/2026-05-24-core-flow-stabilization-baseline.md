@@ -39,3 +39,12 @@ Accounting, Assistant, Communication, Leads, Lands, Commissions, Audit Log, Prop
 - communication backend
 - full recovery module promotion
 - schema-dependent future work
+
+## Follow-up full audit snapshot (2026-05-24)
+
+- Router and navigation wiring are internally consistent for active protected routes (`/`, `/properties`, `/tenants`, `/owners`, `/people`, `/contracts`, `/financials`, `/invoices`, `/arrears`, `/reports`, `/settings`) with recovery routes mounted separately.
+- Quality gates re-run in this pass: `typecheck`, `build`, `lint`, and targeted `test` script all pass on `work`.
+- Main stabilization risks remain non-blocking but important:
+  - duplicate invoice UI surfaces (`features/invoices/invoices-page.tsx` and `features/financials/invoices/invoices-page.tsx`) that can confuse ownership,
+  - maintenance of recovery modules that are intentionally placeholder-oriented,
+  - lint script currently duplicates typecheck (`tsc --noEmit`) and does not run ESLint rule coverage.
