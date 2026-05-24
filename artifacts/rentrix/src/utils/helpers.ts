@@ -1,4 +1,6 @@
-export type CsvRow = Record<string, string | number | boolean | null | undefined | Date>;
+import { buildCsv, downloadCsv as downloadCsvText, type CsvCell } from '@/lib/csv';
+
+export type CsvRow = Record<string, CsvCell | Date>;
 
 const arabicHeaderMap: Record<string, string> = {
   name: 'الاسم',
@@ -24,12 +26,7 @@ const arabicHeaderMap: Record<string, string> = {
   propertyCount: 'عدد العقارات',
 };
 
-function escapeCsvValue(value: CsvRow[string]): string {
-  if (value === null || value === undefined) return '';
-  const normalized = value instanceof Date ? value.toISOString() : String(value);
-  const escaped = normalized.replaceAll('"', '""');
-  return /[",\n]/.test(escaped) ? `"${escaped}"` : escaped;
-}
+const normalizeCsvValue = (value: CsvRow[string]): CsvCell => (value instanceof Date ? value.toISOString() : value);
 
 export function mapCsvHeader(header: string): string {
   return arabicHeaderMap[header] ?? header;
@@ -38,20 +35,10 @@ export function mapCsvHeader(header: string): string {
 export function toCsv(rows: CsvRow[], headers?: string[]): string {
   if (rows.length === 0) return '';
   const keys = headers ?? Object.keys(rows[0]);
-  const headerRow = keys.map((key) => escapeCsvValue(mapCsvHeader(key))).join(',');
-  const dataRows = rows.map((row) => keys.map((key) => escapeCsvValue(row[key])).join(','));
-  return [headerRow, ...dataRows].join('\n');
+  const columns = keys.map((key) => ({ header: mapCsvHeader(key), value: (row: CsvRow) => normalizeCsvValue(row[key]) }));
+  return buildCsv(columns, rows);
 }
 
 export function downloadCsv(filename: string, rows: CsvRow[], headers?: string[]): void {
-  const csv = toCsv(rows, headers);
-  const blob = new Blob([`\uFEFF${csv}`], { type: 'text/csv;charset=utf-8;' });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement('a');
-  link.href = url;
-  link.setAttribute('download', filename.endsWith('.csv') ? filename : `${filename}.csv`);
-  document.body.appendChild(link);
-  link.click();
-  link.remove();
-  URL.revokeObjectURL(url);
+  downloadCsvText(filename, toCsv(rows, headers));
 }
