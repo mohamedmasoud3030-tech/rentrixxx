@@ -10,10 +10,11 @@
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "typecheck:test": "tsc -p tsconfig.test.json --noEmit",
     "test": "vitest run --config vite.config.ts src/features/financials/receipts/receiptService.test.ts src/features/financials/payments/paymentService.test.ts src/features/financials/payments/usePayments.test.ts",
-    "lint": "tsc -p tsconfig.json --noEmit",
+    "lint": "eslint . --max-warnings=0",
     "test:financials": "vitest run --config vite.config.ts --dir src/features/financials"
   },
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
     "@hookform/resolvers": "^3.10.0",
     "@radix-ui/react-accordion": "^1.2.4",
     "@radix-ui/react-alert-dialog": "^1.1.7",

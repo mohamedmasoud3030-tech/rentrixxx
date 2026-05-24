@@ -71,8 +71,9 @@ function NavigationLinks({
 function RecoveryLinks({
   expanded,
   sharedLabel,
+  recoveryTitle,
   onNavigate,
-}: Readonly<{ expanded: boolean; sharedLabel: SharedLabel; onNavigate?: () => void }>) {
+}: Readonly<{ expanded: boolean; sharedLabel: SharedLabel; recoveryTitle: string; onNavigate?: () => void }>) {
   return (
     <>
       {expanded ? (
@@ -89,6 +90,7 @@ function RecoveryLinks({
             key={item.labelKey}
             to={item.to}
             onClick={onNavigate}
+            title={recoveryTitle}
             className="flex min-h-11 items-center gap-3 rounded-2xl px-3 py-3 text-sm font-black text-sidebar-foreground transition hover:bg-sidebar-accent hover:text-white [&.active]:bg-primary [&.active]:text-primary-foreground"
           >
             <Icon className="size-5 shrink-0" />
@@ -150,7 +152,7 @@ function MobileNavigationDrawer({
         </div>
         <nav className="flex-1 space-y-1 overflow-y-auto p-3">
           <NavigationLinks expanded sharedLabel={sharedLabel} onNavigate={onClose} />
-          <RecoveryLinks expanded sharedLabel={sharedLabel} onNavigate={onClose} />
+          <RecoveryLinks expanded sharedLabel={sharedLabel} recoveryTitle={sharedLabel('recoveryTooltip')} onNavigate={onClose} />
         </nav>
         <div className="border-t border-white/10 p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
           <Button
@@ -272,7 +274,7 @@ export function AppShell() {
         </div>
         <nav className="flex-1 space-y-2 overflow-y-auto p-4">
           <NavigationLinks expanded={isSidebarExpanded} sharedLabel={sharedLabel} />
-          <RecoveryLinks expanded={isSidebarExpanded} sharedLabel={sharedLabel} />
+          <RecoveryLinks expanded={isSidebarExpanded} sharedLabel={sharedLabel} recoveryTitle={sharedLabel('recoveryTooltip')} />
         </nav>
         <div className="border-t border-white/10 p-4">
           <Button
