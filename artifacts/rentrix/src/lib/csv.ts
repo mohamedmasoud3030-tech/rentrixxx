@@ -12,7 +12,8 @@ const normalizeCsvCell = (value: CsvCell): string => {
 
 export const escapeCsvCell = (value: CsvCell): string => {
   const cell = normalizeCsvCell(value);
-  const escaped = cell.replaceAll('"', '""');
+  const neutralized = /^[=+\-@]/.test(cell) ? `'${cell}` : cell;
+  const escaped = neutralized.replaceAll('"', '""');
   if (/[",\n\r]/.test(escaped)) return `"${escaped}"`;
   return escaped;
 };
