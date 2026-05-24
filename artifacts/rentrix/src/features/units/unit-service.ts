@@ -40,12 +40,13 @@ export async function createUnit(propertyId: string, payload: UnitPayload): Prom
   return data;
 }
 
-export async function updateUnit(unitId: string, payload: UnitPayload): Promise<Unit> {
+export async function updateUnit(propertyId: string, unitId: string, payload: UnitPayload): Promise<Unit> {
   const updatePayload: UnitUpdate = payload;
   const { data, error } = await supabase
     .from('units')
     .update(updatePayload)
     .eq('id', unitId)
+    .eq('property_id', propertyId)
     .is('deleted_at', null)
     .select(unitListColumns)
     .single()
@@ -54,8 +55,13 @@ export async function updateUnit(unitId: string, payload: UnitPayload): Promise<
   return data;
 }
 
-export async function softDeleteUnit(unitId: string): Promise<void> {
+export async function softDeleteUnit(propertyId: string, unitId: string): Promise<void> {
   const updatePayload: UnitUpdate = { deleted_at: new Date().toISOString() };
-  const { error } = await supabase.from('units').update(updatePayload).eq('id', unitId).is('deleted_at', null);
+  const { error } = await supabase
+    .from('units')
+    .update(updatePayload)
+    .eq('id', unitId)
+    .eq('property_id', propertyId)
+    .is('deleted_at', null);
   if (error) throw error;
 }

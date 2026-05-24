@@ -9,8 +9,8 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { defaultCompanyLocalSettings } from '@/lib/companySettings';
+import { documentEngine } from '@/services/documents/documentEngine';
 import { formatCompanyMoney } from '@lib/format';
-import { downloadCsv, type CsvRow } from '@/utils/helpers';
 import type { Unit } from '@/types/domain';
 import { unitStatusLabels } from './unit-schema';
 import { UnitFormModal } from './unit-form-modal';
@@ -36,6 +36,7 @@ export function UnitsList({ propertyId, unitsQuery }: Readonly<{ propertyId: str
   const [editingUnit, setEditingUnit] = useState<Unit | null>(null);
   const [archiveCandidate, setArchiveCandidate] = useState<Unit | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
 
   const openForCreate = () => {
     setEditingUnit(null);
@@ -54,18 +55,25 @@ export function UnitsList({ propertyId, unitsQuery }: Readonly<{ propertyId: str
   };
 
   const exportUnits = async () => {
+    if (isExporting) return;
+    setIsExporting(true);
     try {
       const rows = await listUnitsForExport(propertyId);
-      const csvRows: CsvRow[] = rows.map((unit) => ({
+      documentEngine.exportCsv('properties-report', {
+        fileName: 'units-export',
+        rows: rows.map((unit) => ({
         unitNumber: unit.unit_number,
         status: unitStatusLabels[unit.status],
         floor: unit.floor ?? '',
         amount: unit.rent_amount ?? '',
         notes: unit.notes ?? '',
-      }));
-      downloadCsv('units-export', csvRows, ['unitNumber', 'status', 'floor', 'amount', 'notes']);
+      })),
+        headers: ['unitNumber', 'status', 'floor', 'amount', 'notes'],
+      });
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'تعذر تصدير بيانات الوحدات');
+    } finally {
+      setIsExporting(false);
     }
   };
 
@@ -77,6 +85,16 @@ export function UnitsList({ propertyId, unitsQuery }: Readonly<{ propertyId: str
         <div className="space-y-3">
           {Array.from({ length: 4 }, (_, index) => <Skeleton key={index} className="h-14" />)}
         </div>
+      );
+    }
+
+    if (unitsQuery.isError) {
+      return (
+        <EmptyState
+          title="تعذر تحميل الوحدات"
+          description="حدث خطأ أثناء تحميل وحدات هذا العقار. إعادة المحاولة آمنة ولن تؤثر على البيانات."
+          action={<Button onClick={() => { void unitsQuery.refetch(); }}>إعادة المحاولة</Button>}
+        />
       );
     }
 
@@ -134,8 +152,8 @@ export function UnitsList({ propertyId, unitsQuery }: Readonly<{ propertyId: str
           <CardDescription>إدارة وحدات العقار الحالي فقط.</CardDescription>
         </div>
         <div className="flex flex-wrap gap-2">
-          <Button variant="secondary" onClick={() => void exportUnits()} disabled={unitRows.length === 0}><Download className="ms-2 size-4" />تصدير الوحدات</Button>
-          <Button onClick={openForCreate}><Plus className="ms-2 size-4" />إضافة وحدة</Button>
+          <Button variant="secondary" onClick={() => void exportUnits()} disabled={unitRows.length === 0 || isExporting}><Download className="ms-2 size-4" />{isExporting ? 'جار التصدير...' : 'تصدير الوحدات'}</Button>
+          <Button onClick={openForCreate} disabled={deleteMutation.isPending}><Plus className="ms-2 size-4" />إضافة وحدة</Button>
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
