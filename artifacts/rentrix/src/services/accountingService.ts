@@ -66,7 +66,13 @@ export async function createJournalEntry(
   if (entryError) throw entryError;
   const rows = lines.map((line) => ({ ...line, journal_entry_id: entry.id }));
   const { error: lineError } = await supabase.from('accounting_journal_lines').insert(rows);
-  if (lineError) throw lineError;
+  if (lineError) {
+    const { error: rollbackError } = await supabase.from('accounting_journal_entries').delete().eq('id', entry.id);
+    if (rollbackError) {
+      throw new Error(`فشل إنشاء القيود اليومية وتعذر التراجع عن قيد الرأس: ${rollbackError.message}`);
+    }
+    throw lineError;
+  }
   return entry as EntryRow;
 }
 

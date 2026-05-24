@@ -1,17 +1,26 @@
 // deno-lint-ignore-file no-explicit-any
 import { serve } from 'https://deno.land/std@0.224.0/http/server.ts';
 
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+};
+
 serve(async (req) => {
+  if (req.method === 'OPTIONS') {
+    return new Response('ok', { headers: corsHeaders });
+  }
   const apiKey = Deno.env.get('OPENAI_API_KEY');
   if (!apiKey) {
-    return new Response(JSON.stringify({ ok: false, error: 'إعدادات الذكاء الاصطناعي غير مكتملة', missing: ['OPENAI_API_KEY'] }), { status: 400 });
+    return new Response(JSON.stringify({ ok: false, error: 'إعدادات الذكاء الاصطناعي غير مكتملة', missing: ['OPENAI_API_KEY'] }), { status: 400, headers: corsHeaders });
   }
 
   const payload = await req.json();
   const prompt = payload?.prompt as string;
   const context = payload?.context ?? {};
   if (!prompt?.trim()) {
-    return new Response(JSON.stringify({ ok: false, error: 'النص المطلوب غير متوفر' }), { status: 400 });
+    return new Response(JSON.stringify({ ok: false, error: 'النص المطلوب غير متوفر' }), { status: 400, headers: corsHeaders });
   }
 
   const response = await fetch('https://api.openai.com/v1/responses', {
@@ -37,8 +46,8 @@ serve(async (req) => {
   });
 
   const result = await response.json();
-  if (!response.ok) return new Response(JSON.stringify({ ok: false, error: result?.error?.message ?? 'AI provider error', provider: result }), { status: response.status });
+  if (!response.ok) return new Response(JSON.stringify({ ok: false, error: result?.error?.message ?? 'AI provider error', provider: result }), { status: response.status, headers: corsHeaders });
 
   const text = result?.output_text ?? result?.output?.[0]?.content?.[0]?.text ?? '';
-  return new Response(JSON.stringify({ ok: true, answer: text, provider: { id: result?.id } }), { status: 200 });
+  return new Response(JSON.stringify({ ok: true, answer: text, provider: { id: result?.id } }), { status: 200, headers: corsHeaders });
 });
