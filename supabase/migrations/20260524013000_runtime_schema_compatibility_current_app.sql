@@ -61,6 +61,35 @@ create table if not exists public.people (
   deleted_at timestamptz
 );
 
+alter table public.people add column if not exists full_name text;
+alter table public.people add column if not exists phone text;
+alter table public.people add column if not exists email text;
+alter table public.people add column if not exists national_id text;
+alter table public.people add column if not exists type text;
+alter table public.people add column if not exists address text;
+alter table public.people add column if not exists notes text;
+alter table public.people add column if not exists created_at timestamptz default now();
+alter table public.people add column if not exists updated_at timestamptz default now();
+alter table public.people add column if not exists deleted_at timestamptz;
+
+update public.people
+set
+  full_name = coalesce(nullif(full_name, ''), 'Contact'),
+  type = coalesce(type, 'contact'),
+  created_at = coalesce(created_at, now()),
+  updated_at = coalesce(updated_at, now())
+where full_name is null or type is null or created_at is null or updated_at is null;
+
+alter table public.people alter column full_name set not null;
+alter table public.people alter column type set default 'contact';
+alter table public.people alter column type set not null;
+
+do $$
+begin
+  alter table public.people add constraint people_type_check check (type in ('tenant','owner','contact'));
+exception when duplicate_object then null;
+end $$;
+
 alter table public.people enable row level security;
 alter table public.people force row level security;
 
