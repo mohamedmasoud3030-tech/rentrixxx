@@ -11,6 +11,10 @@ type AssistantRequest = {
   prompt: string;
 };
 
+type AssistantResult =
+  | { ok: true; message: string }
+  | { ok: false; error: string; details?: string };
+
 const actionPrompts: Record<AssistantAction, string> = {
   summarize_overdue_invoices: 'قم بتلخيص الفواتير المتأخرة بناءً على البيانات النصية المرفقة.',
   summarize_contract_renewals: 'قم بتلخيص العقود القابلة للتجديد حسب المعطيات المرسلة.',
@@ -18,30 +22,34 @@ const actionPrompts: Record<AssistantAction, string> = {
   explain_property_financial_snapshot: 'اشرح اللقطة المالية للعقار بلغة عربية واضحة مع نقاط عملية.',
 };
 
-const json = (payload: unknown, status = 200) =>
+const json = (payload: AssistantResult, status = 200) =>
   new Response(JSON.stringify(payload), { status, headers: { 'Content-Type': 'application/json; charset=utf-8' } });
+
+function isAssistantAction(value: unknown): value is AssistantAction {
+  return typeof value === 'string' && Object.prototype.hasOwnProperty.call(actionPrompts, value);
+}
 
 serve(async (req) => {
   const apiKey = Deno.env.get('AI_PROVIDER_API_KEY')?.trim();
   const model = Deno.env.get('AI_PROVIDER_MODEL')?.trim() || 'gpt-4o-mini';
 
   if (!apiKey) {
-    return json({ error: 'إعدادات الذكاء الاصطناعي غير مكتملة' }, 400);
+    return json({ ok: false, error: 'إعدادات الذكاء الاصطناعي غير مكتملة' });
   }
 
-  let body: AssistantRequest;
+  let body: Partial<AssistantRequest>;
 
   try {
-    body = (await req.json()) as AssistantRequest;
+    body = (await req.json()) as Partial<AssistantRequest>;
   } catch {
-    return json({ error: 'صيغة الطلب غير صالحة' }, 400);
+    return json({ ok: false, error: 'صيغة الطلب غير صالحة' });
   }
 
-  if (!body?.action || !body?.prompt?.trim() || !(body.action in actionPrompts)) {
-    return json({ error: 'المدخلات المطلوبة غير مكتملة' }, 400);
+  if (!isAssistantAction(body.action) || !body.prompt?.trim()) {
+    return json({ ok: false, error: 'المدخلات المطلوبة غير مكتملة' });
   }
 
-  const systemInstruction = `${actionPrompts[body.action]} لا تنفذ أي أوامر تعديل، ولا تستخدم SQL، وتعامل مع الرد كناتج قراءة فقط.`;
+  const systemInstruction = `${actionPrompts[body.action]} لا تنفذ أي أوامر تعديل، ولا تستخدم SQL، وتعامل مع الرد كناتج قراءة فقط. إذا كان السياق غير كافٍ، وضّح ما ينقص بدلاً من اختلاق بيانات.`;
 
   const providerResponse = await fetch('https://api.openai.com/v1/responses', {
     method: 'POST',
@@ -60,7 +68,7 @@ serve(async (req) => {
 
   if (!providerResponse.ok) {
     const errorPayload = await providerResponse.text();
-    return json({ error: 'تعذر الحصول على استجابة من مزود الذكاء الاصطناعي', details: errorPayload }, 502);
+    return json({ ok: false, error: 'تعذر الحصول على استجابة من مزود الذكاء الاصطناعي', details: errorPayload });
   }
 
   const responsePayload = (await providerResponse.json()) as {
@@ -70,8 +78,8 @@ serve(async (req) => {
   const message = responsePayload.output_text?.trim();
 
   if (!message) {
-    return json({ error: 'تعذر توليد رد من مزود الذكاء الاصطناعي' }, 502);
+    return json({ ok: false, error: 'تعذر توليد رد من مزود الذكاء الاصطناعي' });
   }
 
-  return json({ message });
+  return json({ ok: true, message });
 });
