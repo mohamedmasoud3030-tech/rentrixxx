@@ -1,0 +1,3 @@
+import type { DocumentRenderModel } from '../documentTypes';
+export type GenericInput = Readonly<{ title?: string; generatedAt: string; companyName: string; summaryItems?: readonly { label: string; value: string }[]; table?: { title: string; columns: readonly string[]; rows: ReadonlyArray<readonly string[]> } }>;
+export const buildPropertiesTemplate = (input: GenericInput): DocumentRenderModel => ({ title: input.title ?? 'تقرير العقارات', fileName: 'properties-report', generatedAt: input.generatedAt, direction: 'rtl', orientation: 'portrait', branding: { companyName: input.companyName }, summaryItems: input.summaryItems, tables: input.table ? [input.table] : [] });
