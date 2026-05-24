@@ -344,3 +344,9 @@ When implemented in later phases, the following areas are affected:
 ### ⏭️ Phase 4 — Deferred (not implemented)
 - الترحيل المحاسبي.
 - Journal entries, posting/reversal/reconciliation rules.
+
+### ✅ Phase 1.1 — Service/hooks/UI wiring (implemented)
+- تم ربط خدمة اتفاقيات الإدارة مع جداول Supabase الفعلية في مرحلة 1.
+- تم تفعيل hooks للاستعلام/الإنشاء/التعديل/الإنهاء مع invalidation مناسب.
+- تم تفعيل واجهة داخلية لإدارة الاتفاقيات في شاشة الملاك (عرض + إنشاء + تعديل + إنهاء).
+- لا تزال الحسابات (مستحق المالك/عمولة المكتب/ربح المكتب) وكشوف الحساب والترحيل المحاسبي خارج النطاق.
