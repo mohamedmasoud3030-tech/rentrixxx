@@ -6,7 +6,7 @@
     <title>Rentrix — نظام إدارة العقارات الذكي</title>
     <meta name="description" content="Rentrix نظام إدارة العقارات الذكي — إدارة شاملة للعقود والمستأجرين والمالية والتقارير." />
     <meta name="robots" content="index, follow" />
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob:; connect-src 'self' https: wss:; base-uri 'self'; form-action 'self'" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src 'self' data: blob:; connect-src 'self' https: wss:; base-uri 'self'; form-action 'self'" />
 
     <!-- Favicon & Icons -->
     <link rel="icon" href="/icon-rentrix.png" type="image/png" />
@@ -44,11 +44,6 @@
       "inLanguage": "ar"
     }
     </script>
-
-    <!-- Google Fonts (Security Hotspot review): external stylesheet only, no script execution; accepted risk for now. Prefer local bundled fonts in future. -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;900&display=swap" rel="stylesheet">
 
     <style>
       :root {
@@ -88,7 +83,7 @@
       }
 
       html { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; scroll-behavior: smooth; }
-      body { font-family: 'Cairo', 'Noto Sans Arabic', 'Tajawal', sans-serif; background-color: hsl(var(--color-bg)); color: hsl(var(--color-text-primary)); line-height: 1.6; }
+      body { font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Tahoma, Arial, sans-serif; background-color: hsl(var(--color-bg)); color: hsl(var(--color-text-primary)); line-height: 1.6; }
       * { transition: background-color 0.2s ease, border-color 0.2s ease, color 0.15s ease; }
       *, *::before, *::after { box-sizing: border-box; }
       .safe-bottom { padding-bottom: env(safe-area-inset-bottom, 0px); }
