@@ -1,6 +1,7 @@
 import type { TemplateEngine, TemplateModel, TemplateSummaryItem, TemplateTable } from './templateTypes';
 
 const popupBlockedMessage = 'تعذر فتح معاينة المستند. يرجى السماح بالنوافذ المنبثقة ثم إعادة المحاولة.';
+const defaultAccentColor = '#1d4ed8';
 
 const escapeHtml = (value: string) => value
   .replaceAll('&', '&amp;')
@@ -9,8 +10,7 @@ const escapeHtml = (value: string) => value
   .replaceAll('"', '&quot;')
   .replaceAll("'", '&#39;');
 
-const documentStyles = `
-@page{size:A4;margin:10mm}
+const baseDocumentStyles = `
 *{box-sizing:border-box}
 body{margin:0;background:#eef2f7;color:#111827;font-family:"Tahoma","Segoe UI","Noto Naskh Arabic","Arial",sans-serif;font-size:12px;line-height:1.55;word-break:break-word;overflow-wrap:anywhere}
 .sheet{width:min(100%,210mm);min-height:297mm;margin:0 auto;background:#fff;padding:12mm;box-shadow:0 18px 60px rgba(15,23,42,.14)}
@@ -21,6 +21,11 @@ body{margin:0;background:#eef2f7;color:#111827;font-family:"Tahoma","Segoe UI","
 @media screen and (max-width:768px){body{background:#fff;font-size:13px}.sheet{width:100%;min-height:auto;padding:12px;box-shadow:none}.header{display:block}.title{text-align:start;margin-top:10px}.grid{grid-template-columns:1fr}table{min-width:560px}.actions{position:static}}
 @media print{body{background:#fff;font-size:10px;line-height:1.45}.sheet{width:auto;min-height:auto;padding:0;box-shadow:none}.section{border-radius:8px;padding:8px;margin-bottom:6px}.grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:5px}.item{padding:5px}.item span{font-size:9px}.table-wrap{overflow:visible}table{min-width:0;table-layout:fixed}td,th{padding:3px 4px}.actions{display:none}}
 `;
+
+function buildPageStyle(model: TemplateModel): string {
+  const pageOrientation = model.orientation === 'landscape' ? 'landscape' : 'portrait';
+  return `@page{size:A4 ${pageOrientation};margin:10mm}`;
+}
 
 function renderSummary(items: ReadonlyArray<TemplateSummaryItem> | undefined, title: string): string {
   if (!items?.length) return '';
@@ -35,14 +40,30 @@ function renderTable(table: TemplateTable): string {
   return `<section class="section"><h3>${escapeHtml(table.title ?? 'البيانات')}</h3><div class="table-wrap"><table><thead><tr>${columns}</tr></thead><tbody>${rows}</tbody>${totals}</table></div></section>`;
 }
 
-export function buildTemplateHtml(model: TemplateModel): string {
-  const direction = model.direction;
-  const accent = model.branding.primaryColor ?? '#1d4ed8';
+function renderNotes(notes: readonly string[] | undefined): string {
+  if (!notes?.length) return '';
+  const noteItems = notes.map((note) => `<li>${escapeHtml(note)}</li>`).join('');
+  return `<section class="section"><h3>ملاحظات</h3><ul class="notes">${noteItems}</ul></section>`;
+}
+
+function renderBrand(model: TemplateModel): string {
+  const address = model.branding.companyAddress ? `<p>${escapeHtml(model.branding.companyAddress)}</p>` : '';
+  const phone = model.branding.companyPhone ? `<p dir="ltr">${escapeHtml(model.branding.companyPhone)}</p>` : '';
+  return `<div class="brand"><h2>${escapeHtml(model.branding.companyName)}</h2>${address}${phone}</div>`;
+}
+
+function renderDocumentBody(model: TemplateModel): string {
   const metadata = renderSummary(model.metadata, 'بيانات المستند');
   const summary = renderSummary(model.summaryItems, 'الملخص التشغيلي');
   const tables = (model.tables ?? []).map(renderTable).join('');
-  const notes = model.notes?.length ? `<section class="section"><h3>ملاحظات</h3><ul class="notes">${model.notes.map((note) => `<li>${escapeHtml(note)}</li>`).join('')}</ul></section>` : '';
-  return `<!doctype html><html lang="ar" dir="${direction}"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/><title>${escapeHtml(model.title)}</title><style>:root{--accent:${escapeHtml(accent)}}${documentStyles}</style></head><body><main class="sheet"><header class="header"><div class="brand"><h2>${escapeHtml(model.branding.companyName)}</h2>${model.branding.companyAddress ? `<p>${escapeHtml(model.branding.companyAddress)}</p>` : ''}${model.branding.companyPhone ? `<p dir="ltr">${escapeHtml(model.branding.companyPhone)}</p>` : ''}</div><div class="title"><h1>${escapeHtml(model.title)}</h1><p>${escapeHtml(model.generatedAt)}</p></div></header>${metadata}${summary}${tables}${notes}<div class="actions"><button type="button" onclick="window.print()">طباعة</button><button type="button" class="secondary" onclick="window.close()">إغلاق</button></div></main></body></html>`;
+  const notes = renderNotes(model.notes);
+  return `${metadata}${summary}${tables}${notes}`;
+}
+
+export function buildTemplateHtml(model: TemplateModel): string {
+  const accent = model.branding.primaryColor ?? defaultAccentColor;
+  const title = escapeHtml(model.title);
+  return `<!doctype html><html lang="ar" dir="${model.direction}"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/><title>${title}</title><style>:root{--accent:${escapeHtml(accent)}}${buildPageStyle(model)}${baseDocumentStyles}</style></head><body><main class="sheet"><header class="header">${renderBrand(model)}<div class="title"><h1>${title}</h1><p>${escapeHtml(model.generatedAt)}</p></div></header>${renderDocumentBody(model)}<div class="actions"><button type="button" onclick="window.print()">طباعة</button><button type="button" class="secondary" onclick="window.close()">إغلاق</button></div></main></body></html>`;
 }
 
 function openTemplateWindow(html: string): void {
@@ -63,11 +84,24 @@ function openTemplateWindow(html: string): void {
   popup.location.replace(url);
 }
 
+function downloadTemplateHtml(model: TemplateModel): void {
+  const blob = new Blob([buildTemplateHtml(model)], { type: 'text/html;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement('a');
+  anchor.href = url;
+  anchor.download = `${model.fileName}.html`;
+  anchor.rel = 'noopener';
+  document.body.append(anchor);
+  anchor.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, view: globalThis }));
+  anchor.remove();
+  URL.revokeObjectURL(url);
+}
+
 export const htmlTemplateEngine: TemplateEngine = {
   preview(model) {
     openTemplateWindow(buildTemplateHtml(model));
   },
   download(model) {
-    openTemplateWindow(buildTemplateHtml(model));
+    downloadTemplateHtml(model);
   },
 };
