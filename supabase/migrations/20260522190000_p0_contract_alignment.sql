@@ -138,9 +138,11 @@ begin
     end if;
   else
     if new.rent_amount is distinct from old.rent_amount and new.monthly_rent is not distinct from old.monthly_rent then
-      new.monthly_rent = new.rent_amount;
+      new.monthly_rent = coalesce(new.rent_amount, old.monthly_rent);
+      new.rent_amount = coalesce(new.rent_amount, old.rent_amount);
     elsif new.monthly_rent is distinct from old.monthly_rent and new.rent_amount is not distinct from old.rent_amount then
-      new.rent_amount = new.monthly_rent;
+      new.rent_amount = coalesce(new.monthly_rent, old.rent_amount);
+      new.monthly_rent = coalesce(new.monthly_rent, old.monthly_rent);
     elsif new.rent_amount is null and new.monthly_rent is not null then
       new.rent_amount = new.monthly_rent;
     elsif new.monthly_rent is null and new.rent_amount is not null then
@@ -171,6 +173,21 @@ exception when duplicate_object then null; end $$;
 
 create index if not exists payments_invoice_date_idx on public.payments(invoice_id, payment_date desc);
 create index if not exists invoices_due_status_idx on public.invoices(due_date, status);
+
+with ranked_invoices as (
+  select id,
+         row_number() over (
+           partition by contract_id, date_trunc('month', issue_date)
+           order by created_at asc nulls last, id asc
+         ) as rn
+  from public.invoices
+  where deleted_at is null
+)
+update public.invoices i
+set deleted_at = now()
+from ranked_invoices r
+where i.id = r.id
+  and r.rn > 1;
 
 create unique index if not exists invoices_contract_month_unq_idx
   on public.invoices (contract_id, date_trunc('month', issue_date))
