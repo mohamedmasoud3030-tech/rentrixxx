@@ -150,6 +150,26 @@ export type Database = {
         Relationships: [];
       };
 
+
+
+      lands: {
+        Row: { id: string; title: string; address: string | null; city: string | null; area: number | null; area_unit: string; ownership_status: 'owned' | 'leased' | 'disputed' | 'other'; zoning_type: string | null; value_amount: number | null; latitude: number | null; longitude: number | null; notes: string | null; status: 'active' | 'inactive' | 'archived'; created_by: string | null; created_at: string; updated_at: string; deleted_at: string | null; };
+        Insert: Partial<Database['public']['Tables']['lands']['Row']> & Pick<Database['public']['Tables']['lands']['Row'], 'title'>;
+        Update: Partial<Database['public']['Tables']['lands']['Row']>;
+        Relationships: [];
+      };
+      commission_rules: {
+        Row: { id: string; name: string; basis: 'contract' | 'invoice' | 'payment' | 'property' | 'manual'; calc_type: 'percentage' | 'fixed'; percentage: number | null; fixed_amount: number | null; recipient_person_id: string | null; is_active: boolean; created_by: string | null; created_at: string; updated_at: string; deleted_at: string | null; };
+        Insert: Partial<Database['public']['Tables']['commission_rules']['Row']> & Pick<Database['public']['Tables']['commission_rules']['Row'], 'name' | 'basis' | 'calc_type'>;
+        Update: Partial<Database['public']['Tables']['commission_rules']['Row']>;
+        Relationships: [];
+      };
+      commissions: {
+        Row: { id: string; rule_id: string | null; recipient_person_id: string | null; source_type: 'contract' | 'invoice' | 'payment' | 'property' | 'manual'; source_id: string | null; amount: number; status: 'pending' | 'approved' | 'paid' | 'cancelled'; due_date: string | null; paid_date: string | null; notes: string | null; created_by: string | null; created_at: string; updated_at: string; deleted_at: string | null; };
+        Insert: Partial<Database['public']['Tables']['commissions']['Row']> & Pick<Database['public']['Tables']['commissions']['Row'], 'source_type' | 'amount'>;
+        Update: Partial<Database['public']['Tables']['commissions']['Row']>;
+        Relationships: [];
+      };
       accounting_accounts: {
         Row: { id: string; code: string; name_ar: string; name_en: string | null; account_type: 'asset' | 'liability' | 'equity' | 'revenue' | 'expense'; is_active: boolean; created_by: string | null; created_at: string; updated_at: string; deleted_at: string | null; };
         Insert: Partial<Database['public']['Tables']['accounting_accounts']['Row']> & Pick<Database['public']['Tables']['accounting_accounts']['Row'], 'code' | 'name_ar' | 'account_type'>;
