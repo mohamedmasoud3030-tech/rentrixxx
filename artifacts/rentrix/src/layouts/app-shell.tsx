@@ -25,16 +25,17 @@ const navigation = [
   { to: '/invoices',    labelKey: 'invoices',    icon: ReceiptText },
   { to: '/arrears',     labelKey: 'arrears',     icon: ClipboardList },
   { to: '/reports',     labelKey: 'reports',     icon: Home },
-  { to: '/maintenance', labelKey: 'maintenance', icon: Wrench },
-  { to: '/leads',       labelKey: 'leads',       icon: Users },
-  { to: '/property-map', labelKey: 'propertyMap', icon: Map },
-  { to: '/settings',   labelKey: 'settings',    icon: Settings },
+  { to: '/settings',    labelKey: 'settings',    icon: Settings },
 ] as const;
 
 const recoveryModules = [
+  { to: '/accounting', labelKey: 'accounting', icon: WalletCards },
+  { to: '/maintenance', labelKey: 'maintenance', icon: Wrench },
   { to: '/communication', labelKey: 'communications', icon: MessageCircle },
   { to: '/audit-log', labelKey: 'auditLog', icon: ClipboardList },
   { to: '/assistant', labelKey: 'aiAssistant', icon: Bot },
+  { to: '/leads', labelKey: 'leads', icon: Users },
+  { to: '/property-map', labelKey: 'propertyMap', icon: Map },
   { to: '/lands', labelKey: 'lands', icon: Landmark },
   { to: '/commissions', labelKey: 'commissions', icon: WalletCards },
 ] as const;
