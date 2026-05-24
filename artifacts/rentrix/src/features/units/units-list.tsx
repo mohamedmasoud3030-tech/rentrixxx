@@ -1,6 +1,7 @@
-import { Archive, Edit, Plus } from 'lucide-react';
+import { Archive, Download, Edit, Plus } from 'lucide-react';
 import { useState } from 'react';
 import type { UseQueryResult } from '@tanstack/react-query';
+import { toast } from 'sonner';
 import { EmptyState } from '@/components/empty-state';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -9,10 +10,12 @@ import { StatusBadge } from '@/components/ui/status-badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { defaultCompanyLocalSettings } from '@/lib/companySettings';
 import { formatCompanyMoney } from '@lib/format';
+import { downloadCsv, type CsvRow } from '@/utils/helpers';
 import type { Unit } from '@/types/domain';
 import { unitStatusLabels } from './unit-schema';
 import { UnitFormModal } from './unit-form-modal';
 import { useSoftDeleteUnit } from './use-units';
+import { listUnitsForExport } from './unit-export-service';
 
 const unitStatusTone = { available: 'green', occupied: 'blue', maintenance: 'gold', reserved: 'gray' } as const;
 
@@ -48,6 +51,22 @@ export function UnitsList({ propertyId, unitsQuery }: Readonly<{ propertyId: str
 
   const requestArchiveUnit = (unit: Unit) => {
     setArchiveCandidate(unit);
+  };
+
+  const exportUnits = async () => {
+    try {
+      const rows = await listUnitsForExport(propertyId);
+      const csvRows: CsvRow[] = rows.map((unit) => ({
+        unitNumber: unit.unit_number,
+        status: unitStatusLabels[unit.status],
+        floor: unit.floor ?? '',
+        amount: unit.rent_amount ?? '',
+        notes: unit.notes ?? '',
+      }));
+      downloadCsv('units-export', csvRows, ['unitNumber', 'status', 'floor', 'amount', 'notes']);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'تعذر تصدير بيانات الوحدات');
+    }
   };
 
   const tableState = getUnitsTableState(unitsQuery.isLoading, unitRows.length);
@@ -114,7 +133,10 @@ export function UnitsList({ propertyId, unitsQuery }: Readonly<{ propertyId: str
           <CardTitle>الوحدات</CardTitle>
           <CardDescription>إدارة وحدات العقار الحالي فقط.</CardDescription>
         </div>
-        <Button onClick={openForCreate}><Plus className="ms-2 size-4" />إضافة وحدة</Button>
+        <div className="flex flex-wrap gap-2">
+          <Button variant="secondary" onClick={() => void exportUnits()} disabled={unitRows.length === 0}><Download className="ms-2 size-4" />تصدير الوحدات</Button>
+          <Button onClick={openForCreate}><Plus className="ms-2 size-4" />إضافة وحدة</Button>
+        </div>
       </CardHeader>
       <CardContent className="space-y-4">
         {archiveCandidate ? (
