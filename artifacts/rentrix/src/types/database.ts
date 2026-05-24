@@ -149,6 +149,58 @@ export type Database = {
         Update: Partial<Database['public']['Tables']['units']['Row']>;
         Relationships: [];
       };
+
+
+
+
+      communication_templates: {
+        Row: { id: string; name: string; channel: 'note'|'whatsapp'|'email'|'sms'; subject: string | null; body: string; active: boolean; created_at: string; updated_at: string; };
+        Insert: Partial<Database['public']['Tables']['communication_templates']['Row']> & Pick<Database['public']['Tables']['communication_templates']['Row'], 'name'|'channel'|'body'>;
+        Update: Partial<Database['public']['Tables']['communication_templates']['Row']>;
+        Relationships: [];
+      };
+      communication_messages: {
+        Row: { id: string; channel: 'note'|'whatsapp'|'email'|'sms'; recipient_type: string; person_id: string | null; lead_id: string | null; owner_id: string | null; tenant_id: string | null; recipient_name: string | null; recipient_phone: string | null; recipient_email: string | null; subject: string | null; body: string; status: 'draft'|'queued'|'sent'|'failed'; provider_name: string | null; provider_message_id: string | null; provider_response: Json | null; error_message: string | null; sent_at: string | null; created_by: string | null; created_at: string; updated_at: string; };
+        Insert: Partial<Database['public']['Tables']['communication_messages']['Row']> & Pick<Database['public']['Tables']['communication_messages']['Row'], 'channel'|'recipient_type'|'body'>;
+        Update: Partial<Database['public']['Tables']['communication_messages']['Row']>;
+        Relationships: [];
+      };
+      lands: {
+        Row: { id: string; title: string; address: string | null; city: string | null; area: number | null; area_unit: string; ownership_status: 'owned' | 'leased' | 'disputed' | 'other'; zoning_type: string | null; value_amount: number | null; latitude: number | null; longitude: number | null; notes: string | null; status: 'active' | 'inactive' | 'archived'; created_by: string | null; created_at: string; updated_at: string; deleted_at: string | null; };
+        Insert: Partial<Database['public']['Tables']['lands']['Row']> & Pick<Database['public']['Tables']['lands']['Row'], 'title'>;
+        Update: Partial<Database['public']['Tables']['lands']['Row']>;
+        Relationships: [];
+      };
+      commission_rules: {
+        Row: { id: string; name: string; basis: 'contract' | 'invoice' | 'payment' | 'property' | 'manual'; calc_type: 'percentage' | 'fixed'; percentage: number | null; fixed_amount: number | null; recipient_person_id: string | null; is_active: boolean; created_by: string | null; created_at: string; updated_at: string; deleted_at: string | null; };
+        Insert: Partial<Database['public']['Tables']['commission_rules']['Row']> & Pick<Database['public']['Tables']['commission_rules']['Row'], 'name' | 'basis' | 'calc_type'>;
+        Update: Partial<Database['public']['Tables']['commission_rules']['Row']>;
+        Relationships: [];
+      };
+      commissions: {
+        Row: { id: string; rule_id: string | null; recipient_person_id: string | null; source_type: 'contract' | 'invoice' | 'payment' | 'property' | 'manual'; source_id: string | null; amount: number; status: 'pending' | 'approved' | 'paid' | 'cancelled'; due_date: string | null; paid_date: string | null; notes: string | null; created_by: string | null; created_at: string; updated_at: string; deleted_at: string | null; };
+        Insert: Partial<Database['public']['Tables']['commissions']['Row']> & Pick<Database['public']['Tables']['commissions']['Row'], 'source_type' | 'amount'>;
+        Update: Partial<Database['public']['Tables']['commissions']['Row']>;
+        Relationships: [];
+      };
+      accounting_accounts: {
+        Row: { id: string; code: string; name_ar: string; name_en: string | null; account_type: 'asset' | 'liability' | 'equity' | 'revenue' | 'expense'; is_active: boolean; created_by: string | null; created_at: string; updated_at: string; deleted_at: string | null; };
+        Insert: Partial<Database['public']['Tables']['accounting_accounts']['Row']> & Pick<Database['public']['Tables']['accounting_accounts']['Row'], 'code' | 'name_ar' | 'account_type'>;
+        Update: Partial<Database['public']['Tables']['accounting_accounts']['Row']>;
+        Relationships: [];
+      };
+      accounting_journal_entries: {
+        Row: { id: string; entry_date: string; reference: string | null; description: string | null; source_module: 'manual' | 'invoice' | 'receipt' | 'expense' | 'commission' | 'owner_payout'; source_id: string | null; status: 'draft' | 'posted'; created_by: string | null; created_at: string; updated_at: string; deleted_at: string | null; };
+        Insert: Partial<Database['public']['Tables']['accounting_journal_entries']['Row']> & Pick<Database['public']['Tables']['accounting_journal_entries']['Row'], 'entry_date' | 'source_module'>;
+        Update: Partial<Database['public']['Tables']['accounting_journal_entries']['Row']>;
+        Relationships: [];
+      };
+      accounting_journal_lines: {
+        Row: { id: string; journal_entry_id: string; account_id: string; line_description: string | null; debit: number; credit: number; property_id: string | null; unit_id: string | null; owner_id: string | null; tenant_id: string | null; contract_id: string | null; invoice_id: string | null; receipt_id: string | null; created_at: string; updated_at: string; deleted_at: string | null; };
+        Insert: Partial<Database['public']['Tables']['accounting_journal_lines']['Row']> & Pick<Database['public']['Tables']['accounting_journal_lines']['Row'], 'journal_entry_id' | 'account_id'>;
+        Update: Partial<Database['public']['Tables']['accounting_journal_lines']['Row']>;
+        Relationships: [];
+      };
       people: {
         Row: {
           id: string;
