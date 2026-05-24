@@ -149,6 +149,25 @@ export type Database = {
         Update: Partial<Database['public']['Tables']['units']['Row']>;
         Relationships: [];
       };
+
+      accounting_accounts: {
+        Row: { id: string; code: string; name_ar: string; name_en: string | null; account_type: 'asset' | 'liability' | 'equity' | 'revenue' | 'expense'; is_active: boolean; created_by: string | null; created_at: string; updated_at: string; deleted_at: string | null; };
+        Insert: Partial<Database['public']['Tables']['accounting_accounts']['Row']> & Pick<Database['public']['Tables']['accounting_accounts']['Row'], 'code' | 'name_ar' | 'account_type'>;
+        Update: Partial<Database['public']['Tables']['accounting_accounts']['Row']>;
+        Relationships: [];
+      };
+      accounting_journal_entries: {
+        Row: { id: string; entry_date: string; reference: string | null; description: string | null; source_module: 'manual' | 'invoice' | 'receipt' | 'expense' | 'commission' | 'owner_payout'; source_id: string | null; status: 'draft' | 'posted'; created_by: string | null; created_at: string; updated_at: string; deleted_at: string | null; };
+        Insert: Partial<Database['public']['Tables']['accounting_journal_entries']['Row']> & Pick<Database['public']['Tables']['accounting_journal_entries']['Row'], 'entry_date' | 'source_module'>;
+        Update: Partial<Database['public']['Tables']['accounting_journal_entries']['Row']>;
+        Relationships: [];
+      };
+      accounting_journal_lines: {
+        Row: { id: string; journal_entry_id: string; account_id: string; line_description: string | null; debit: number; credit: number; property_id: string | null; unit_id: string | null; owner_id: string | null; tenant_id: string | null; contract_id: string | null; invoice_id: string | null; receipt_id: string | null; created_at: string; updated_at: string; deleted_at: string | null; };
+        Insert: Partial<Database['public']['Tables']['accounting_journal_lines']['Row']> & Pick<Database['public']['Tables']['accounting_journal_lines']['Row'], 'journal_entry_id' | 'account_id'>;
+        Update: Partial<Database['public']['Tables']['accounting_journal_lines']['Row']>;
+        Relationships: [];
+      };
       people: {
         Row: {
           id: string;
