@@ -14,6 +14,11 @@ describe('csv helpers', () => {
     expect(escapeCsvCell('@SUM(A1:A2)')).toBe("'@SUM(A1:A2)");
   });
 
+  it('keeps negative numeric cells numeric', () => {
+    expect(escapeCsvCell(-12.5)).toBe('-12.5');
+    expect(escapeCsvCell('-12.5')).toBe('-12.5');
+  });
+
   it('builds csv with headers and rows', () => {
     const csv = buildCsv(
       [

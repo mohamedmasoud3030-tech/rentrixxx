@@ -1,3 +1,5 @@
+import { escapeCsvCell } from '../lib/csv';
+
 export type CsvRow = Record<string, string | number | boolean | null | undefined | Date>;
 
 const arabicHeaderMap: Record<string, string> = {
@@ -26,9 +28,8 @@ const arabicHeaderMap: Record<string, string> = {
 
 function escapeCsvValue(value: CsvRow[string]): string {
   if (value === null || value === undefined) return '';
-  const normalized = value instanceof Date ? value.toISOString() : String(value);
-  const escaped = normalized.replaceAll('"', '""');
-  return /[",\n]/.test(escaped) ? `"${escaped}"` : escaped;
+  const normalized = value instanceof Date ? value.toISOString() : value;
+  return escapeCsvCell(normalized);
 }
 
 export function mapCsvHeader(header: string): string {
