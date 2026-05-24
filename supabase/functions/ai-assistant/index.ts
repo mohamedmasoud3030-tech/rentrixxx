@@ -22,14 +22,34 @@ const actionPrompts: Record<AssistantAction, string> = {
   explain_property_financial_snapshot: 'اشرح اللقطة المالية للعقار بلغة عربية واضحة مع نقاط عملية.',
 };
 
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+};
+
 const json = (payload: AssistantResult, status = 200) =>
-  new Response(JSON.stringify(payload), { status, headers: { 'Content-Type': 'application/json; charset=utf-8' } });
+  new Response(JSON.stringify(payload), {
+    status,
+    headers: {
+      ...corsHeaders,
+      'Content-Type': 'application/json; charset=utf-8',
+    },
+  });
 
 function isAssistantAction(value: unknown): value is AssistantAction {
   return typeof value === 'string' && Object.prototype.hasOwnProperty.call(actionPrompts, value);
 }
 
 serve(async (req) => {
+  if (req.method === 'OPTIONS') {
+    return new Response('ok', { headers: corsHeaders });
+  }
+
+  if (req.method !== 'POST') {
+    return json({ ok: false, error: 'الطريقة غير مدعومة' }, 405);
+  }
+
   const apiKey = Deno.env.get('AI_PROVIDER_API_KEY')?.trim();
   const model = Deno.env.get('AI_PROVIDER_MODEL')?.trim() || 'gpt-4o-mini';
 
@@ -72,10 +92,20 @@ serve(async (req) => {
   }
 
   const responsePayload = (await providerResponse.json()) as {
+    output?: Array<{
+      content?: Array<{
+        text?: string;
+      }>;
+    }>;
     output_text?: string;
   };
 
-  const message = responsePayload.output_text?.trim();
+  const message =
+    responsePayload.output
+      ?.flatMap((outputItem) => outputItem.content ?? [])
+      .map((contentItem) => contentItem.text?.trim() ?? '')
+      .filter((text) => text.length > 0)
+      .join('\n') || responsePayload.output_text?.trim();
 
   if (!message) {
     return json({ ok: false, error: 'تعذر توليد رد من مزود الذكاء الاصطناعي' });
