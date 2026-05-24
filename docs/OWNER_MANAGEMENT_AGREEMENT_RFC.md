@@ -321,3 +321,26 @@ When implemented in later phases, the following areas are affected:
 - No owner statement runtime implementation.
 - No payout posting logic.
 - No accounting ledger model implementation.
+
+## 12) Phase implementation status update (2026-05-24)
+
+### ✅ Phase 1 — Implemented in this branch
+- Supabase schema foundation migration for owner management agreements and terms/rules tables.
+- RLS + policies + grants for new agreement tables.
+- TypeScript domain contracts for agreement data and future phase interfaces.
+- Input validation helpers for draft agreement and terms.
+- Minimal internal Owners UI section "اتفاقيات الإدارة" (foundation-only notice, no financial calculations).
+
+### ⏭️ Phase 2 — Deferred (not implemented)
+- حساب مستحق المالك.
+- حساب عمولة المكتب.
+- حساب ربح المكتب.
+- Calculation engine only (no posting yet).
+
+### ⏭️ Phase 3 — Deferred (not implemented)
+- كشف حساب المالك النهائي.
+- Statement review/freeze/export.
+
+### ⏭️ Phase 4 — Deferred (not implemented)
+- الترحيل المحاسبي.
+- Journal entries, posting/reversal/reconciliation rules.
