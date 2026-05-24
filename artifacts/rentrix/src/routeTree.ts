@@ -32,6 +32,8 @@ import { AssistantRouteComponent } from '@/routes/_protected.assistant';
 import { CommunicationRouteComponent } from '@/routes/_protected.communication';
 import { LeadsRouteComponent } from '@/routes/_protected.leads';
 import { PropertyMapRouteComponent } from '@/routes/_protected.property-map';
+import { LandsRouteComponent } from '@/routes/_protected.lands';
+import { CommissionsRouteComponent } from '@/routes/_protected.commissions';
 import { supabase } from '@/integrations/supabase/client';
 
 const rootRoute = createRootRoute({
@@ -90,6 +92,8 @@ const assistantRoute = createRoute({ getParentRoute: () => protectedRoute, path:
 const communicationRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/communication', component: CommunicationRouteComponent, staticData: { title: 'التواصل' } });
 const leadsRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/leads', component: LeadsRouteComponent, staticData: { title: 'العملاء المحتملون' } });
 const propertyMapRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/property-map', component: PropertyMapRouteComponent, staticData: { title: 'خريطة العقارات' } });
+const landsRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/lands', component: LandsRouteComponent, staticData: { title: 'الأراضي' } });
+const commissionsRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/commissions', component: CommissionsRouteComponent, staticData: { title: 'العمولات' } });
 
 export const routeTree = rootRoute.addChildren([
   authRoute.addChildren([loginRoute]),
@@ -120,6 +124,8 @@ export const routeTree = rootRoute.addChildren([
     communicationRoute,
     leadsRoute,
     propertyMapRoute,
+    landsRoute,
+    commissionsRoute,
     settingsRoute,
   ]),
 ]);
