@@ -23,7 +23,7 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm typecheck
-      - run: pnpm lint
+      - run: pnpm --package=eslint@10.0.1 dlx eslint artifacts/rentrix --max-warnings=0
       - run: pnpm build
       - run: pnpm --filter ./artifacts/rentrix test
       - run: pnpm --filter ./artifacts/rentrix run test:financials
