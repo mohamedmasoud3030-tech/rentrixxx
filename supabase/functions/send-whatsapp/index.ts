@@ -7,12 +7,18 @@ serve(async (req) => {
   const apiVersion = Deno.env.get('WHATSAPP_API_VERSION') ?? 'v20.0';
 
   if (!token || !phoneNumberId) {
-    return new Response(JSON.stringify({ ok: false, error: 'الإعدادات غير مكتملة', missing: ['WHATSAPP_ACCESS_TOKEN', 'WHATSAPP_PHONE_NUMBER_ID'].filter((k) => !Deno.env.get(k)) }), { status: 400 });
+    return new Response(JSON.stringify({ ok: false, error: 'الإعدادات غير مكتملة', missing: ['WHATSAPP_ACCESS_TOKEN', 'WHATSAPP_PHONE_NUMBER_ID'].filter((k) => !Deno.env.get(k)) }), {
+      status: 400,
+      headers: { 'Content-Type': 'application/json; charset=utf-8' },
+    });
   }
 
   const body = await req.json();
   if (!body?.to || !body?.message) {
-    return new Response(JSON.stringify({ ok: false, error: 'رقم الهاتف أو نص الرسالة غير متوفر' }), { status: 400 });
+    return new Response(JSON.stringify({ ok: false, error: 'رقم الهاتف أو نص الرسالة غير متوفر' }), {
+      status: 400,
+      headers: { 'Content-Type': 'application/json; charset=utf-8' },
+    });
   }
 
   const response = await fetch(`https://graph.facebook.com/${apiVersion}/${phoneNumberId}/messages`, {
@@ -23,8 +29,14 @@ serve(async (req) => {
   const payload = await response.json();
 
   if (!response.ok) {
-    return new Response(JSON.stringify({ ok: false, error: payload?.error?.message ?? 'WhatsApp provider error', payload }), { status: response.status });
+    return new Response(JSON.stringify({ ok: false, error: payload?.error?.message ?? 'WhatsApp provider error', payload }), {
+      status: response.status,
+      headers: { 'Content-Type': 'application/json; charset=utf-8' },
+    });
   }
 
-  return new Response(JSON.stringify({ ok: true, payload }), { status: 200 });
+  return new Response(JSON.stringify({ ok: true, payload }), {
+    status: 200,
+    headers: { 'Content-Type': 'application/json; charset=utf-8' },
+  });
 });
