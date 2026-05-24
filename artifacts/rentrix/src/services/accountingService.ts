@@ -66,15 +66,21 @@ export async function createJournalEntry(
   if (entryError) throw entryError;
   const rows = lines.map((line) => ({ ...line, journal_entry_id: entry.id }));
   const { error: lineError } = await supabase.from('accounting_journal_lines').insert(rows);
-  if (lineError) throw lineError;
+
+  if (lineError) {
+    await supabase.from('accounting_journal_entries').delete().eq('id', entry.id);
+    throw lineError;
+  }
+
   return entry as EntryRow;
 }
 
 export async function getTrialBalance(supabase: SupabaseClient) {
   const { data, error } = await supabase
     .from('accounting_journal_lines')
-    .select('account_id,debit,credit,accounting_accounts(code,name_ar)')
-    .is('deleted_at', null);
+    .select('account_id,debit,credit,accounting_accounts(code,name_ar),accounting_journal_entries!inner(status)')
+    .is('deleted_at', null)
+    .eq('accounting_journal_entries.status', 'posted');
   if (error) throw error;
   const map = new Map<string, { account_id: string; code: string; name_ar: string; debit: number; credit: number }>();
   for (const row of data ?? []) {
