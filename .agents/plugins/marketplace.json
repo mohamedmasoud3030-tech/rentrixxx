@@ -1,0 +1,20 @@
+{
+  "name": "Rentrix Local Plugins",
+  "interface": {
+    "displayName": "Rentrix Plugin Marketplace"
+  },
+  "plugins": [
+    {
+      "name": "understand-anything",
+      "source": {
+        "source": "local",
+        "path": "./plugins/understand-anything"
+      },
+      "policy": {
+        "installation": "INSTALLED_BY_DEFAULT",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Productivity"
+    }
+  ]
+}
