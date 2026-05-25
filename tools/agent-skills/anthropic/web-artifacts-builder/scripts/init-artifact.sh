@@ -46,11 +46,11 @@ PROJECT_NAME="$1"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 COMPONENTS_TARBALL="$SCRIPT_DIR/shadcn-components.tar.gz"
 
-# Check if components tarball exists
+# Optional local components bundle
 if [ ! -f "$COMPONENTS_TARBALL" ]; then
-  echo "❌ Error: shadcn-components.tar.gz not found in script directory"
-  echo "   Expected location: $COMPONENTS_TARBALL"
-  exit 1
+  echo "⚠️  Optional file not found: shadcn-components.tar.gz"
+  echo "   Continuing without local components bundle."
+  echo "   You can still scaffold and add components via shadcn CLI later."
 fi
 
 echo "🚀 Creating new React + Vite project: $PROJECT_NAME"
