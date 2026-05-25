@@ -1,14 +1,14 @@
 {
-  "name": "Rentrix Local Plugins",
+  "name": "[TODO: marketplace-name]",
   "interface": {
-    "displayName": "Rentrix Plugin Marketplace"
+    "displayName": "[TODO: Marketplace Display Name]"
   },
   "plugins": [
     {
       "name": "understand-anything",
       "source": {
-        "source": "local",
-        "path": "./plugins/understand-anything"
+        "source": "github",
+        "path": "Lum1104/Understand-Anything"
       },
       "policy": {
         "installation": "INSTALLED_BY_DEFAULT",
