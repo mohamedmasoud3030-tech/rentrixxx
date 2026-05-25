@@ -5,6 +5,10 @@ export type CsvColumn<T> = Readonly<{
   value: (row: T) => CsvCell;
 }>;
 
+const FORMULA_TRIGGER_PATTERN = /^[\t\r\n]*[=+@]/;
+const LEADING_MINUS_PATTERN = /^[\t\r\n]*-/;
+const NUMERIC_PATTERN = /^-?\d+(?:\.\d+)?$/;
+
 const normalizeCsvCell = (value: CsvCell): string => {
   if (value === null || value === undefined) return '';
   return String(value);
@@ -12,7 +16,10 @@ const normalizeCsvCell = (value: CsvCell): string => {
 
 export const escapeCsvCell = (value: CsvCell): string => {
   const cell = normalizeCsvCell(value);
-  const escaped = cell.replaceAll('"', '""');
+  const shouldNeutralize =
+    FORMULA_TRIGGER_PATTERN.test(cell) || (LEADING_MINUS_PATTERN.test(cell) && !NUMERIC_PATTERN.test(cell));
+  const neutralized = shouldNeutralize ? `'${cell}` : cell;
+  const escaped = neutralized.replaceAll('"', '""');
   if (/[",\n\r]/.test(escaped)) return `"${escaped}"`;
   return escaped;
 };
