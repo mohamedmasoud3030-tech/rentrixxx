@@ -3,7 +3,8 @@ import { Eye, Printer } from 'lucide-react';
 import { useState } from 'react';
 import { DocumentController } from '@/services/documents/DocumentController';
 import { Button } from '@/components/ui/button';
-import type { Payment } from '@/types/domain';
+import { supabase } from '@/integrations/supabase/client';
+import type { Contract, Payment, Property, Unit, Person } from '@/types/domain';
 import type { InvoiceDetail } from '../invoices/invoiceService';
 import { formatDate, formatMoney, getErrorMessage } from '@lib/format';
 import { QuickPaymentForm } from './quick-payment-form';
@@ -54,6 +55,30 @@ export function InvoiceDetailSection({
   const [isPagePrintLoading, setPagePrintLoading] = useState(false);
   const canPrintInvoice = Boolean(invoiceDetail);
 
+  const loadInvoiceDbContext = async (invoiceContractId: string | null) => {
+    if (!invoiceContractId) return { contracts: [], tenants: [], units: [], properties: [] };
+
+    const { data: contract, error: contractError } = await supabase.from('contracts').select('*').eq('id', invoiceContractId).single<Contract>();
+    if (contractError || !contract) throw contractError ?? new Error('تعذر تحميل بيانات العقد المرتبطة بالفاتورة.');
+
+    if (!contract.tenant_id || !contract.unit_id) {
+      throw new Error('بيانات العقد المرتبط بالفاتورة غير مكتملة.');
+    }
+
+    const [{ data: tenant, error: tenantError }, { data: unit, error: unitError }] = await Promise.all([
+      supabase.from('people').select('*').eq('id', contract.tenant_id).single<Person>(),
+      supabase.from('units').select('*').eq('id', contract.unit_id).single<Unit>(),
+    ]);
+
+    if (tenantError || !tenant) throw tenantError ?? new Error('تعذر تحميل بيانات المستأجر المرتبطة بالفاتورة.');
+    if (unitError || !unit) throw unitError ?? new Error('تعذر تحميل بيانات الوحدة المرتبطة بالفاتورة.');
+
+    const { data: property, error: propertyError } = await supabase.from('properties').select('*').eq('id', unit.property_id).single<Property>();
+    if (propertyError || !property) throw propertyError ?? new Error('تعذر تحميل بيانات العقار المرتبطة بالفاتورة.');
+
+    return { contracts: [contract], tenants: [tenant], units: [unit], properties: [property] };
+  };
+
   const handleInvoicePreview = async () => {
     if (!invoiceDetail) {
       setDocumentError('لا يمكن معاينة الفاتورة قبل تحميل بيانات الفاتورة الحالية.');
@@ -63,16 +88,14 @@ export function InvoiceDetailSection({
     setDocumentError(null);
     setPreviewLoading(true);
     try {
+      const dbContext = await loadInvoiceDbContext(invoiceDetail.contract_id);
       await DocumentController.renderToPDF({
         type: 'invoice',
         payload: {
           invoice: invoiceDetail,
           db: {
             settings: {},
-            contracts: [],
-            tenants: [],
-            units: [],
-            properties: [],
+            ...dbContext,
           },
         },
       });
