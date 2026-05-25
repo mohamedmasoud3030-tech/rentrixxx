@@ -54,7 +54,8 @@ export async function listInvoices(supabase: SupabaseClient, params: InvoiceStat
   if (search) {
     const escaped = search.replaceAll('%', String.raw`\%`).replaceAll('_', String.raw`\_`);
     const term = `"%${escaped}%"`;
-    query = query.or(`id.ilike.${term},status.ilike.${term}`);
+    query = query.or(`id.ilike.${term},status.ilike.${term},contract_id.ilike.${term}`);
+    query = query.or(`id.ilike.${term},tenant_id.ilike.${term},property_id.ilike.${term}`, { foreignTable: 'contracts' });
   }
 
   const { data, error } = await query.returns<InvoiceListItem[]>();
