@@ -72,6 +72,22 @@ alter table public.people add column if not exists created_at timestamptz defaul
 alter table public.people add column if not exists updated_at timestamptz default now();
 alter table public.people add column if not exists deleted_at timestamptz;
 
+update public.people
+set full_name = coalesce(nullif(btrim(full_name), ''), id, 'Unknown Person')
+where full_name is null or btrim(full_name) = '';
+
+update public.people
+set type = case
+  when type is null then 'contact'
+  when btrim(type) = '' then 'contact'
+  when lower(btrim(type)) in ('tenant','owner','contact') then lower(btrim(type))
+  else 'contact'
+end
+where type is null
+   or btrim(type) = ''
+   or lower(btrim(type)) not in ('tenant','owner','contact')
+   or type <> lower(btrim(type));
+
 alter table public.people alter column full_name set not null;
 alter table public.people alter column type set default 'contact';
 
