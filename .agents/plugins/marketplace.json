@@ -7,8 +7,8 @@
     {
       "name": "understand-anything",
       "source": {
-        "source": "local",
-        "path": "./understand-anything"
+        "source": "github",
+        "path": "Lum1104/Understand-Anything"
       },
       "policy": {
         "installation": "AVAILABLE",
