@@ -1,0 +1,20 @@
+{
+  "name": "[TODO: marketplace-name]",
+  "interface": {
+    "displayName": "[TODO: Marketplace Display Name]"
+  },
+  "plugins": [
+    {
+      "name": "understand-anything",
+      "source": {
+        "source": "github",
+        "path": "Lum1104/Understand-Anything"
+      },
+      "policy": {
+        "installation": "INSTALLED_BY_DEFAULT",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Productivity"
+    }
+  ]
+}
