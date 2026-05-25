@@ -45,12 +45,14 @@ fi
 PROJECT_NAME="$1"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 COMPONENTS_TARBALL="$SCRIPT_DIR/shadcn-components.tar.gz"
+USE_BUNDLED_COMPONENTS=false
 
-# Optional local components bundle
-if [ ! -f "$COMPONENTS_TARBALL" ]; then
-  echo "⚠️  Optional file not found: shadcn-components.tar.gz"
-  echo "   Continuing without local components bundle."
-  echo "   You can still scaffold and add components via shadcn CLI later."
+if [ -f "$COMPONENTS_TARBALL" ]; then
+  USE_BUNDLED_COMPONENTS=true
+  echo "✅ Using bundled shadcn-components.tar.gz"
+else
+  echo "⚠️ Bundled shadcn-components.tar.gz not found; continuing with fallback setup"
+  echo "   Fallback will initialize shadcn/ui via CLI and install starter components from registry."
 fi
 
 echo "🚀 Creating new React + Vite project: $PROJECT_NAME"
@@ -79,17 +81,17 @@ pnpm install -D tailwindcss@3.4.1 postcss autoprefixer @types/node tailwindcss-a
 pnpm install class-variance-authority clsx tailwind-merge lucide-react next-themes
 
 echo "⚙️  Creating Tailwind and PostCSS configuration..."
-cat > postcss.config.js << 'EOF'
+cat > postcss.config.js << 'EOF2'
 export default {
   plugins: {
     tailwindcss: {},
     autoprefixer: {},
   },
 }
-EOF
+EOF2
 
 echo "📝 Configuring Tailwind with shadcn theme..."
-cat > tailwind.config.js << 'EOF'
+cat > tailwind.config.js << 'EOF2'
 /** @type {import('tailwindcss').Config} */
 module.exports = {
   darkMode: ["class"],
@@ -157,11 +159,10 @@ module.exports = {
   },
   plugins: [require("tailwindcss-animate")],
 }
-EOF
+EOF2
 
-# Add Tailwind directives and CSS variables to index.css
 echo "🎨 Adding Tailwind directives and CSS variables..."
-cat > src/index.css << 'EOF'
+cat > src/index.css << 'EOF2'
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -221,9 +222,8 @@ cat > src/index.css << 'EOF'
     @apply bg-background text-foreground;
   }
 }
-EOF
+EOF2
 
-# Add path aliases to tsconfig.json
 echo "🔧 Adding path aliases to tsconfig.json..."
 node -e "
 const fs = require('fs');
@@ -234,13 +234,11 @@ config.compilerOptions.paths = { '@/*': ['./src/*'] };
 fs.writeFileSync('tsconfig.json', JSON.stringify(config, null, 2));
 "
 
-# Add path aliases to tsconfig.app.json
 echo "🔧 Adding path aliases to tsconfig.app.json..."
 node -e "
 const fs = require('fs');
 const path = 'tsconfig.app.json';
 const content = fs.readFileSync(path, 'utf8');
-// Remove comments manually
 const lines = content.split('\n').filter(line => !line.trim().startsWith('//'));
 const jsonContent = lines.join('\n');
 const config = JSON.parse(jsonContent.replace(/\/\*[\s\S]*?\*\//g, '').replace(/,(\s*[}\]])/g, '\$1'));
@@ -250,9 +248,8 @@ config.compilerOptions.paths = { '@/*': ['./src/*'] };
 fs.writeFileSync(path, JSON.stringify(config, null, 2));
 "
 
-# Update vite.config.ts
 echo "⚙️  Updating Vite configuration..."
-cat > vite.config.ts << 'EOF'
+cat > vite.config.ts << 'EOF2'
 import path from "path";
 import react from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
@@ -265,20 +262,14 @@ export default defineConfig({
     },
   },
 });
-EOF
+EOF2
 
-# Install all shadcn/ui dependencies
 echo "📦 Installing shadcn/ui dependencies..."
 pnpm install @radix-ui/react-accordion @radix-ui/react-aspect-ratio @radix-ui/react-avatar @radix-ui/react-checkbox @radix-ui/react-collapsible @radix-ui/react-context-menu @radix-ui/react-dialog @radix-ui/react-dropdown-menu @radix-ui/react-hover-card @radix-ui/react-label @radix-ui/react-menubar @radix-ui/react-navigation-menu @radix-ui/react-popover @radix-ui/react-progress @radix-ui/react-radio-group @radix-ui/react-scroll-area @radix-ui/react-select @radix-ui/react-separator @radix-ui/react-slider @radix-ui/react-slot @radix-ui/react-switch @radix-ui/react-tabs @radix-ui/react-toast @radix-ui/react-toggle @radix-ui/react-toggle-group @radix-ui/react-tooltip
 pnpm install sonner cmdk vaul embla-carousel-react react-day-picker react-resizable-panels date-fns react-hook-form @hookform/resolvers zod
 
-# Extract shadcn components from tarball
-echo "📦 Extracting shadcn/ui components..."
-tar -xzf "$COMPONENTS_TARBALL" -C src/
-
-# Create components.json for reference
 echo "📝 Creating components.json config..."
-cat > components.json << 'EOF'
+cat > components.json << 'EOF2'
 {
   "$schema": "https://ui.shadcn.com/schema.json",
   "style": "default",
@@ -299,18 +290,27 @@ cat > components.json << 'EOF'
     "hooks": "@/hooks"
   }
 }
-EOF
+EOF2
+
+if [ "$USE_BUNDLED_COMPONENTS" = true ]; then
+  echo "📦 Extracting shadcn/ui components from bundled tarball..."
+  tar -xzf "$COMPONENTS_TARBALL" -C src/
+  COMPONENTS_STATUS="bundled"
+else
+  echo "🛠️  Running shadcn CLI fallback setup..."
+  pnpm dlx shadcn@latest init -d
+  pnpm dlx shadcn@latest add button card input label textarea dialog dropdown-menu select tabs table toast sonner
+  COMPONENTS_STATUS="fallback"
+fi
 
 echo "✅ Setup complete! You can now use Tailwind CSS and shadcn/ui in your project."
 echo ""
-echo "📦 Included components (40+ total):"
-echo "  - accordion, alert, aspect-ratio, avatar, badge, breadcrumb"
-echo "  - button, calendar, card, carousel, checkbox, collapsible"
-echo "  - command, context-menu, dialog, drawer, dropdown-menu"
-echo "  - form, hover-card, input, label, menubar, navigation-menu"
-echo "  - popover, progress, radio-group, resizable, scroll-area"
-echo "  - select, separator, sheet, skeleton, slider, sonner"
-echo "  - switch, table, tabs, textarea, toast, toggle, toggle-group, tooltip"
+if [ "$COMPONENTS_STATUS" = "bundled" ]; then
+  echo "📦 Included components: bundled shadcn/ui pack (40+ components)"
+else
+  echo "📦 Included components: CLI-generated starter set"
+  echo "   Add more as needed, e.g.: pnpm dlx shadcn@latest add accordion popover tooltip form calendar"
+fi
 echo ""
 echo "To start developing:"
 echo "  cd $PROJECT_NAME"

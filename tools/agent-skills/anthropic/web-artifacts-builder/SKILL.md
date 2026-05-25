@@ -33,7 +33,7 @@ This creates a fully configured project with:
 - ✅ React + TypeScript (via Vite)
 - ✅ Tailwind CSS 3.4.1 with shadcn/ui theming system
 - ✅ Path aliases (`@/`) configured
-- ✅ 40+ shadcn/ui components pre-installed
+- ✅ shadcn/ui components pre-installed (bundled pack when available, CLI fallback otherwise)
 - ✅ All Radix UI dependencies included
 - ✅ Parcel configured for bundling (via .parcelrc)
 - ✅ Node 18+ compatibility (auto-detects and pins Vite version)
