@@ -1,13 +1,18 @@
 import { Link } from '@tanstack/react-router';
-import { FileText, Mail, Phone, ReceiptText, Search, ShieldCheck, TriangleAlert, Users } from 'lucide-react';
+import { Download, FileText, Mail, Phone, Printer, ReceiptText, Search, ShieldCheck, TriangleAlert, Users } from 'lucide-react';
 import type { ChangeEvent } from 'react';
 import { useCallback, useMemo, useState } from 'react';
+import { toast } from 'sonner';
+import { BulkActionsBar } from '@/components/BulkActionsBar';
 import { EmptyState } from '@/components/empty-state';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { canPrintOperationalReport, runOperationalPrint } from '@/lib/operationalPrint';
+import { useBulkSelection } from '@/hooks/useBulkSelection';
+import { downloadCsv, type CsvRow } from '@/utils/helpers';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
-import type { TenantWorkspaceRow } from './tenantWorkspaceService';
+import { listTenantWorkspaceByIds, listTenantWorkspaceForExport, type TenantWorkspaceRow } from './tenantWorkspaceService';
 import { useTenantWorkspace } from './useTenantWorkspace';
 
 const pageSize = 10;
@@ -49,6 +54,7 @@ function InfoPill({ icon: Icon, label, value, dir }: Readonly<{ icon: typeof Pho
       <p className="mt-1 text-sm font-black" dir={dir}>{valueOrDash(value)}</p>
     </div>
   );
+
 }
 
 function TenantLocation({ tenant }: Readonly<{ tenant: TenantWorkspaceRow }>) {
@@ -60,28 +66,33 @@ function TenantLocation({ tenant }: Readonly<{ tenant: TenantWorkspaceRow }>) {
       {location.hasLocation ? <p className="text-xs text-muted-foreground">{location.unitLabel}</p> : null}
     </div>
   );
+
 }
 
 function TenantSafeLinks({ tenant }: Readonly<{ tenant: TenantWorkspaceRow }>) {
   const hasLinks = tenant.primaryContractId !== null || tenant.hasInvoices || tenant.hasArrears;
-  if (hasLinks === false) {
-    return <p className="text-sm text-muted-foreground">لا توجد روابط متاحة حتى الآن</p>;
+  if (hasLinks) {
+    return (
+      <div className="flex flex-wrap gap-2">
+        {tenant.primaryContractId === null ? null : (
+          <Button variant="secondary" className="min-h-9 px-3" asChild>
+            <Link to="/contracts/$contractId" params={{ contractId: tenant.primaryContractId }}><FileText className="ms-1 size-4" />العقد</Link>
+          </Button>
+        )}
+        {tenant.hasInvoices ? <Button variant="secondary" className="min-h-9 px-3" asChild><Link to="/invoices"><ReceiptText className="ms-1 size-4" />الفواتير</Link></Button> : null}
+        {tenant.hasArrears ? <Button variant="secondary" className="min-h-9 px-3 text-amber-700" asChild><Link to="/arrears"><TriangleAlert className="ms-1 size-4" />المتأخرات</Link></Button> : null}
+      </div>
+    );
   }
 
-  return (
-    <div className="flex flex-wrap gap-2">
-      {tenant.primaryContractId !== null ? (
-        <Button variant="secondary" className="min-h-9 px-3" asChild>
-          <Link to="/contracts/$contractId" params={{ contractId: tenant.primaryContractId }}><FileText className="ml-1 size-4" />العقد</Link>
-        </Button>
-      ) : null}
-      {tenant.hasInvoices ? <Button variant="secondary" className="min-h-9 px-3" asChild><Link to="/invoices"><ReceiptText className="ml-1 size-4" />الفواتير</Link></Button> : null}
-      {tenant.hasArrears ? <Button variant="secondary" className="min-h-9 px-3 text-amber-700" asChild><Link to="/arrears"><TriangleAlert className="ml-1 size-4" />المتأخرات</Link></Button> : null}
-    </div>
-  );
+  return <p className="text-sm text-muted-foreground">لا توجد روابط متاحة حتى الآن</p>;
 }
 
-function TenantCard({ tenant }: Readonly<{ tenant: TenantWorkspaceRow }>) {
+function TenantCard({
+  tenant,
+  selected,
+  onToggleSelection,
+}: Readonly<{ tenant: TenantWorkspaceRow; selected: boolean; onToggleSelection: () => void }>) {
   return (
     <Card className="overflow-hidden">
       <CardContent className="space-y-4 p-5">
@@ -90,8 +101,11 @@ function TenantCard({ tenant }: Readonly<{ tenant: TenantWorkspaceRow }>) {
             <p className="text-xs font-black text-primary">مستأجر</p>
             <h3 className="mt-1 text-xl font-black">{tenant.person.full_name}</h3>
           </div>
-          <div className="rounded-full border bg-card px-3 py-1 text-xs font-black text-muted-foreground">
-            عقود نشطة: <span className="text-foreground">{tenant.activeContractCount}</span>
+          <div className="flex items-center gap-2">
+            <div className="rounded-full border bg-card px-3 py-1 text-xs font-black text-muted-foreground">
+              عقود نشطة: <span className="text-foreground">{tenant.activeContractCount}</span>
+            </div>
+            <input type="checkbox" checked={selected} onChange={onToggleSelection} aria-label={`تحديد ${tenant.person.full_name}`} className="size-4 accent-primary" />
           </div>
         </div>
 
@@ -112,17 +126,26 @@ function TenantCard({ tenant }: Readonly<{ tenant: TenantWorkspaceRow }>) {
   );
 }
 
-function TenantsList({ rows }: Readonly<{ rows: TenantWorkspaceRow[] }>) {
-  return <div className="grid gap-4">{rows.map((tenant) => <TenantCard key={tenant.person.id} tenant={tenant} />)}</div>;
+function TenantsList({
+  rows,
+  isSelected,
+  onToggleSelection,
+}: Readonly<{ rows: TenantWorkspaceRow[]; isSelected: (id: string) => boolean; onToggleSelection: (id: string) => void }>) {
+  return <div className="grid gap-4">{rows.map((tenant) => <TenantCard key={tenant.person.id} tenant={tenant} selected={isSelected(tenant.person.id)} onToggleSelection={() => onToggleSelection(tenant.person.id)} />)}</div>;
 }
 
-function TenantWorkspaceContent({ isLoading, rows }: Readonly<{ isLoading: boolean; rows: TenantWorkspaceRow[] }>) {
+function TenantWorkspaceContent({
+  isLoading,
+  rows,
+  isSelected,
+  onToggleSelection,
+}: Readonly<{ isLoading: boolean; rows: TenantWorkspaceRow[]; isSelected: (id: string) => boolean; onToggleSelection: (id: string) => void }>) {
   if (isLoading) {
     return <div className="space-y-3">{tenantSkeletonKeys.map((key) => <Skeleton key={key} className="h-48" />)}</div>;
   }
 
   if (rows.length > 0) {
-    return <TenantsList rows={rows} />;
+    return <TenantsList rows={rows} isSelected={isSelected} onToggleSelection={onToggleSelection} />;
   }
 
   return <Card><CardContent className="p-6"><EmptyState title="لا توجد سجلات مستأجرين" description="سيظهر هنا أي شخص مصنف كمستأجر من نموذج الأشخاص الحالي." /></CardContent></Card>;
@@ -138,7 +161,31 @@ export function TenantsPage() {
   }, []);
   const tenantsQuery = useTenantWorkspace(params);
   const rows = tenantsQuery.data?.rows ?? [];
+  const bulkSelection = useBulkSelection(rows.map((tenant) => tenant.person.id));
   const totalPages = Math.max(1, Math.ceil((tenantsQuery.data?.count ?? 0) / pageSize));
+  const exportTenants = async (mode: 'selected' | 'filtered') => {
+    try {
+      const targetRows = mode === 'selected'
+        ? await listTenantWorkspaceByIds([...bulkSelection.selectedIds])
+        : await listTenantWorkspaceForExport(search);
+      if (mode === 'selected' && targetRows.length !== bulkSelection.selectedCount) {
+        throw new Error('تعذر تصدير كل السجلات المحددة. ربما تم حذف بعض المستأجرين أو تغيّر الوصول إليهم.');
+      }
+      const csvRows: CsvRow[] = targetRows.map((tenant) => ({
+      fullName: tenant.person.full_name ?? '',
+      phone: tenant.person.phone ?? '',
+      email: tenant.person.email ?? '',
+      nationalId: tenant.person.national_id ?? '',
+      propertyTitle: tenant.propertyTitle ?? '',
+      unitNumber: tenant.unitNumber ?? '',
+      activeContractCount: tenant.activeContractCount,
+      safeLinks: tenant.primaryContractId || tenant.hasInvoices || tenant.hasArrears ? 'متاحة' : 'غير متاحة',
+      }));
+      downloadCsv('tenants-export', csvRows, ['fullName', 'phone', 'email', 'nationalId', 'propertyTitle', 'unitNumber', 'activeContractCount', 'safeLinks']);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'تعذر تصدير بيانات المستأجرين');
+    }
+  };
 
   return (
     <div className="space-y-6" dir="rtl">
@@ -151,8 +198,13 @@ export function TenantsPage() {
               <p className="text-sm text-muted-foreground">عرض مستقل للمستأجرين مبني بأمان على بيانات الأشخاص والعقود والفواتير الحالية.</p>
             </div>
           </div>
-          <div className="rounded-2xl border border-border bg-card px-4 py-3 text-sm font-bold text-muted-foreground">
+          <div className="flex items-center gap-2">
+            <Button variant="secondary" onClick={() => { const err = runOperationalPrint(rows.length > 0, tenantsQuery.isLoading, tenantsQuery.isError, { title: 'قائمة المستأجرين', generatedAt: new Date().toLocaleDateString('ar-OM'), tables: [{ title: 'المستأجرون', columns: ['الاسم', 'الهاتف', 'العقار', 'الوحدة'], rows: rows.slice(0, 40).map((row) => [row.person.full_name, row.person.phone ?? '—', row.propertyTitle ?? '—', row.unitNumber ?? '—']) }] }); if (err) globalThis.alert(err); }} disabled={!canPrintOperationalReport(rows.length > 0, tenantsQuery.isLoading, tenantsQuery.isError)}><Printer className="ms-2 size-4" />طباعة قائمة المستأجرين</Button>
+            <Button variant="secondary" onClick={() => void exportTenants('filtered')} disabled={(tenantsQuery.data?.count ?? 0) === 0}><Download className="ms-2 size-4" />تصدير النتائج</Button>
+            <input type="checkbox" checked={bulkSelection.allSelected} onChange={() => bulkSelection.toggleAll()} aria-label="تحديد كل المستأجرين الحاليين" className="size-4 accent-primary" />
+            <div className="rounded-2xl border border-border bg-card px-4 py-3 text-sm font-bold text-muted-foreground">
             إجمالي النتائج: <span className="text-foreground">{tenantsQuery.data?.count ?? 0}</span>
+            </div>
           </div>
         </CardContent>
       </Card>
@@ -166,7 +218,13 @@ export function TenantsPage() {
         </CardContent>
       </Card>
 
-      <TenantWorkspaceContent isLoading={tenantsQuery.isLoading} rows={rows} />
+      <TenantWorkspaceContent isLoading={tenantsQuery.isLoading} rows={rows} isSelected={bulkSelection.isSelected} onToggleSelection={bulkSelection.toggleOne} />
+      <BulkActionsBar
+        selectedCount={bulkSelection.selectedCount}
+        selectionLabel={`تم تحديد ${bulkSelection.selectedCount.toLocaleString('ar')} مستأجر`}
+        onClear={bulkSelection.clear}
+        actions={<Button variant="secondary" onClick={() => void exportTenants('selected')}><Download className="ms-2 size-4" />تصدير المحدد</Button>}
+      />
 
       <div className="flex items-center justify-between text-sm text-muted-foreground">
         <span>الصفحة {page} من {totalPages}</span>

@@ -1,7 +1,10 @@
 import { zodResolver } from '@hookform/resolvers/zod';
+import { Printer } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
+import { Button } from '@/components/ui/button';
+import { runOperationalPrint } from '@/lib/operationalPrint';
 import { useProperties } from '@/features/properties/use-properties';
 import { ArrearsWorkspaceSection } from './components/arrears-workspace-section';
 import { ExpensesSection, type ExpenseFormValues } from './components/expenses-section';
@@ -38,6 +41,7 @@ export function FinancialsPage() {
   const collectionReport = useCollectionSummaryReport(reportFilters);
   const createExpense = useCreateExpense();
   const propertyRows = properties?.rows ?? [];
+  const hasFinancialPrintData = Boolean(collectionReport.data);
 
   const expenseForm = useForm<ExpenseFormValues>({
     resolver: zodResolver(expenseSchema),
@@ -75,6 +79,9 @@ export function FinancialsPage() {
 
   return (
     <div className="space-y-6" dir="rtl">
+      <div className="flex justify-end">
+        <Button variant="secondary" disabled={!hasFinancialPrintData || collectionReport.isLoading || collectionReport.isError} onClick={() => { const err = runOperationalPrint(hasFinancialPrintData, collectionReport.isLoading, collectionReport.isError, { title: 'الملخص المالي التشغيلي', generatedAt: new Date().toLocaleDateString('ar-OM'), summaryItems: collectionReport.data ? [{ label: 'إجمالي الفواتير', value: String(collectionReport.data.invoicesCount) }, { label: 'إجمالي التحصيل', value: String(collectionReport.data.paid) }] : [] }); if (err) globalThis.alert(err); }}><Printer className="ms-2 size-4" />طباعة الملخص المالي التشغيلي</Button>
+      </div>
       <FinancialReportsPreviewSection
         reportFilters={reportFilters}
         collectionSummary={collectionReport.data}

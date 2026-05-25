@@ -78,10 +78,13 @@ function countOverdueInvoices() {
 }
 
 export async function getDashboardOverview(date = new Date()): Promise<DashboardOverview> {
+  const monthStart = new Date(date.getFullYear(), date.getMonth(), 1);
+  const monthEnd = new Date(date.getFullYear(), date.getMonth() + 1, 0);
+
   const [financialResp, properties, units, activeContracts, expiringContracts30Days, vacantUnits, overdueInvoices] = await Promise.all([
     supabase.rpc('rpt_financial_summary', {
-      month: date.getMonth() + 1,
-      year: date.getFullYear(),
+      p_from: getTodayLocalDateString(monthStart),
+      p_to: getTodayLocalDateString(monthEnd),
     }),
     countProperties(),
     countUnits(),

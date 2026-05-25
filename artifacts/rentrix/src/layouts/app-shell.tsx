@@ -1,7 +1,7 @@
 import { Link, Outlet, useMatches, useRouter } from '@tanstack/react-router';
 import { useEffect, useState } from 'react';
 import {
-  Bot, Building2, ChevronLeft, ClipboardList, FileText, Home,
+  Bot, Building2, ChevronLeft, ChevronRight, ClipboardList, FileText, Home,
   Landmark, LayoutDashboard, LogOut, Map, Menu, MessageCircle,
   Moon, ReceiptText, Settings, Sun, UserRoundCog, Users,
   WalletCards, Wrench, X,
@@ -12,40 +12,32 @@ import { useAuth } from '@/hooks/use-auth';
 import { getAppLanguageState, translateSharedLabel } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
 import { useUiStore } from '@/store/ui-store';
+import { BottomNav } from '@/components/layout/BottomNav';
 
 const navigation = [
   { to: '/',            labelKey: 'dashboard',   icon: LayoutDashboard },
   { to: '/properties',  labelKey: 'properties',  icon: Building2 },
-  { to: '/people',      labelKey: 'people',      icon: Users },
   { to: '/tenants',     labelKey: 'tenants',      icon: Users },
   { to: '/owners',      labelKey: 'owners',      icon: UserRoundCog },
+  { to: '/people',      labelKey: 'people',      icon: Users },
   { to: '/contracts',   labelKey: 'contracts',   icon: FileText },
   { to: '/financials',  labelKey: 'financials',  icon: WalletCards },
   { to: '/invoices',    labelKey: 'invoices',    icon: ReceiptText },
   { to: '/arrears',     labelKey: 'arrears',     icon: ClipboardList },
-  { to: '/accounting',  labelKey: 'accounting',  icon: ReceiptText },
   { to: '/reports',     labelKey: 'reports',     icon: Home },
-  { to: '/maintenance', labelKey: 'maintenance', icon: Wrench },
-  { to: '/settings',   labelKey: 'settings',    icon: Settings },
-] as const;
-
-// Bottom nav shows the 5 most-used routes on mobile
-const bottomNavItems = [
-  { to: '/',           labelKey: 'dashboard',  icon: LayoutDashboard },
-  { to: '/contracts',  labelKey: 'contracts',  icon: FileText },
-  { to: '/financials', labelKey: 'financials', icon: WalletCards },
-  { to: '/invoices',   labelKey: 'invoices',   icon: ReceiptText },
-  { to: '/arrears',    labelKey: 'arrears',    icon: ClipboardList },
+  { to: '/settings',    labelKey: 'settings',    icon: Settings },
 ] as const;
 
 const recoveryModules = [
-  { labelKey: 'communications', icon: MessageCircle },
-  { labelKey: 'propertyMap',    icon: Map },
-  { labelKey: 'lands',          icon: Landmark },
-  { labelKey: 'prospects',      icon: Users },
-  { labelKey: 'commissions',    icon: WalletCards },
-  { labelKey: 'auditLog',       icon: ClipboardList },
-  { labelKey: 'aiAssistant',    icon: Bot },
+  { to: '/accounting', labelKey: 'accounting', icon: WalletCards },
+  { to: '/maintenance', labelKey: 'maintenance', icon: Wrench },
+  { to: '/communication', labelKey: 'communications', icon: MessageCircle },
+  { to: '/audit-log', labelKey: 'auditLog', icon: ClipboardList },
+  { to: '/assistant', labelKey: 'aiAssistant', icon: Bot },
+  { to: '/leads', labelKey: 'leads', icon: Users },
+  { to: '/property-map', labelKey: 'propertyMap', icon: Map },
+  { to: '/lands', labelKey: 'lands', icon: Landmark },
+  { to: '/commissions', labelKey: 'commissions', icon: WalletCards },
 ] as const;
 
 type SharedLabel = (key: string) => string;
@@ -79,7 +71,9 @@ function NavigationLinks({
 function RecoveryLinks({
   expanded,
   sharedLabel,
-}: Readonly<{ expanded: boolean; sharedLabel: SharedLabel }>) {
+  recoveryTitle,
+  onNavigate,
+}: Readonly<{ expanded: boolean; sharedLabel: SharedLabel; recoveryTitle: string; onNavigate?: () => void }>) {
   return (
     <>
       {expanded ? (
@@ -92,14 +86,16 @@ function RecoveryLinks({
       {recoveryModules.map((item) => {
         const Icon = item.icon;
         return (
-          <div
+          <Link
             key={item.labelKey}
-            className="flex min-h-11 cursor-not-allowed items-center gap-3 rounded-2xl px-3 py-3 text-sm font-black text-sidebar-foreground/55"
-            title={sharedLabel('recoveryTooltip')}
+            to={item.to}
+            onClick={onNavigate}
+            title={recoveryTitle}
+            className="flex min-h-11 items-center gap-3 rounded-2xl px-3 py-3 text-sm font-black text-sidebar-foreground transition hover:bg-sidebar-accent hover:text-white [&.active]:bg-primary [&.active]:text-primary-foreground"
           >
             <Icon className="size-5 shrink-0" />
             {expanded ? <span>{sharedLabel(item.labelKey)}</span> : null}
-          </div>
+          </Link>
         );
       })}
     </>
@@ -156,7 +152,7 @@ function MobileNavigationDrawer({
         </div>
         <nav className="flex-1 space-y-1 overflow-y-auto p-3">
           <NavigationLinks expanded sharedLabel={sharedLabel} onNavigate={onClose} />
-          <RecoveryLinks expanded sharedLabel={sharedLabel} />
+          <RecoveryLinks expanded sharedLabel={sharedLabel} recoveryTitle={sharedLabel('recoveryTooltip')} onNavigate={onClose} />
         </nav>
         <div className="border-t border-white/10 p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
           <Button
@@ -170,37 +166,6 @@ function MobileNavigationDrawer({
         </div>
       </aside>
     </dialog>
-  );
-}
-
-/** Mobile bottom navigation bar — only the 5 primary routes */
-function MobileBottomNav({
-  sharedLabel,
-}: Readonly<{ sharedLabel: SharedLabel }>) {
-  return (
-    <nav
-      className="fixed bottom-0 inset-x-0 z-40 border-t border-border bg-background/95 backdrop-blur-xl lg:hidden"
-      style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
-    >
-      <div className="grid h-16 grid-cols-5">
-        {bottomNavItems.map((item) => {
-          const Icon = item.icon;
-          return (
-            <Link
-              key={item.to}
-              to={item.to}
-              activeOptions={{ exact: item.to === '/' }}
-              className="flex flex-col items-center justify-center gap-1 text-muted-foreground transition-colors [&.active]:text-primary"
-            >
-              <Icon className="size-5" />
-              <span className="text-[10px] font-bold leading-none">
-                {sharedLabel(item.labelKey)}
-              </span>
-            </Link>
-          );
-        })}
-      </div>
-    </nav>
   );
 }
 
@@ -233,15 +198,35 @@ export function AppShell() {
     const onKey = (event: KeyboardEvent) => {
       if (event.ctrlKey && event.key.toLowerCase() === 'n') {
         event.preventDefault();
-        const current = window.location.pathname;
-        if (current.endsWith('/properties')) void router.navigate({ to: '/properties/new' });
-        if (current.endsWith('/people')) void router.navigate({ to: '/people/new' });
-        if (current.endsWith('/contracts')) void router.navigate({ to: '/contracts/new' });
+        const current = globalThis.window.location.pathname;
+        if (current.endsWith('/properties')) router.navigate({ to: '/properties/new' }).catch(console.error);
+        if (current.endsWith('/people')) router.navigate({ to: '/people/new' }).catch(console.error);
+        if (current.endsWith('/contracts')) router.navigate({ to: '/contracts/new' }).catch(console.error);
       }
     };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
+    globalThis.window.addEventListener('keydown', onKey);
+    return () => globalThis.window.removeEventListener('keydown', onKey);
   }, [router]);
+
+  useEffect(() => {
+    if (!mobileNavOpen) return;
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setMobileNavOpen(false);
+      }
+    };
+    globalThis.window.addEventListener('keydown', onKey);
+    return () => globalThis.window.removeEventListener('keydown', onKey);
+  }, [mobileNavOpen]);
+
+  useEffect(() => {
+    if (!mobileNavOpen) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [mobileNavOpen]);
 
   const closeMobileNav = () => setMobileNavOpen(false);
 
@@ -257,7 +242,6 @@ export function AppShell() {
       className="min-h-screen overflow-x-hidden bg-background text-foreground"
       dir={appLanguage.direction}
     >
-      {/* Mobile drawer */}
       {mobileNavOpen ? (
         <MobileNavigationDrawer
           appName={appName}
@@ -268,7 +252,6 @@ export function AppShell() {
         />
       ) : null}
 
-      {/* Desktop sidebar */}
       <aside
         className={cn(
           'fixed inset-y-0 right-0 z-30 hidden overflow-hidden border-l border-sidebar-border bg-sidebar text-sidebar-foreground shadow-sidebar transition-all lg:flex lg:flex-col',
@@ -291,7 +274,7 @@ export function AppShell() {
         </div>
         <nav className="flex-1 space-y-2 overflow-y-auto p-4">
           <NavigationLinks expanded={isSidebarExpanded} sharedLabel={sharedLabel} />
-          <RecoveryLinks expanded={isSidebarExpanded} sharedLabel={sharedLabel} />
+          <RecoveryLinks expanded={isSidebarExpanded} sharedLabel={sharedLabel} recoveryTitle={sharedLabel('recoveryTooltip')} />
         </nav>
         <div className="border-t border-white/10 p-4">
           <Button
@@ -305,12 +288,9 @@ export function AppShell() {
         </div>
       </aside>
 
-      {/* Content area */}
       <div className={cn('w-full transition-all lg:pr-72', sidebarCollapsed && 'lg:pr-20')}>
-        {/* Header */}
         <header className="sticky top-0 z-20 border-b border-border bg-background/90 backdrop-blur-xl">
           <div className="flex h-16 items-center gap-2 px-3 sm:h-20 sm:gap-3 sm:px-5">
-            {/* Mobile: hamburger */}
             <Button
               variant="ghost"
               className="size-10 shrink-0 px-0 lg:hidden"
@@ -319,7 +299,6 @@ export function AppShell() {
             >
               <Menu className="size-5" />
             </Button>
-            {/* Desktop: collapse toggle */}
             <Button
               variant="ghost"
               className="hidden size-10 shrink-0 px-0 lg:inline-flex"
@@ -329,11 +308,10 @@ export function AppShell() {
               <Menu className="size-5" />
             </Button>
 
-            {/* Title */}
             <div className="min-w-0 flex-1">
               <div className="flex min-w-0 items-center gap-1 truncate text-xs text-muted-foreground">
                 <span className="hidden sm:inline">{sharedLabel('home')}</span>
-                <ChevronLeft className="hidden size-3 sm:inline" />
+                {appLanguage.direction === 'rtl' ? <ChevronRight className="hidden size-3 sm:inline" /> : <ChevronLeft className="hidden size-3 sm:inline" />}
                 <span className="font-bold">{pageTitle}</span>
               </div>
               <h1 className="mt-0.5 truncate text-lg font-black tracking-tight sm:text-2xl lg:text-3xl">
@@ -341,9 +319,7 @@ export function AppShell() {
               </h1>
             </div>
 
-            {/* Right actions */}
             <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
-              {/* Sync status — hidden on very small screens */}
               <div className="hidden min-w-0 max-w-[140px] truncate rounded-xl border border-border bg-card px-2 py-1.5 text-xs text-muted-foreground sm:block sm:px-3">
                 <span className="font-bold text-foreground">{syncStatus}</span>
                 {lastSyncedAt
@@ -365,14 +341,12 @@ export function AppShell() {
           </div>
         </header>
 
-        {/* Page content — extra bottom padding on mobile for bottom nav */}
         <main className="animate-route-in overflow-x-hidden p-3 pb-24 sm:p-4 sm:pb-28 lg:p-6 lg:pb-6">
           <Outlet />
         </main>
       </div>
 
-      {/* Mobile bottom navigation */}
-      <MobileBottomNav sharedLabel={sharedLabel} />
+      <BottomNav labelFor={sharedLabel} />
     </div>
   );
 }

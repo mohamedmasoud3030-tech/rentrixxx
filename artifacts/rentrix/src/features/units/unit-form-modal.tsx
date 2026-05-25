@@ -21,7 +21,7 @@ function fieldError(message?: string) {
   return message ? <p className="text-xs font-bold text-destructive">{message}</p> : null;
 }
 
-export function UnitFormModal({ propertyId, unit, open, onOpenChange }: UnitFormModalProps) {
+export function UnitFormModal({ propertyId, unit, open, onOpenChange }: Readonly<UnitFormModalProps>) {
   const createMutation = useCreateUnit(propertyId);
   const updateMutation = useUpdateUnit(propertyId);
   const form = useForm<UnitFormValues>({
@@ -93,7 +93,7 @@ export function UnitFormModal({ propertyId, unit, open, onOpenChange }: UnitForm
             <Textarea {...form.register('notes')} />
           </label>
           <div className="flex justify-end gap-3 md:col-span-2">
-            <Button variant="secondary" onClick={() => onOpenChange(false)} disabled={isSubmitting}>إلغاء</Button>
+            <Button type="button" variant="secondary" onClick={() => onOpenChange(false)} disabled={isSubmitting}>إلغاء</Button>
             <Button type="submit" disabled={isSubmitting}>{isSubmitting ? 'جار الحفظ...' : 'حفظ الوحدة'}</Button>
           </div>
         </form>

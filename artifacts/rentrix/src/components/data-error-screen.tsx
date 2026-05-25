@@ -8,7 +8,7 @@ type DataErrorScreenProps = {
   error?: unknown;
 };
 
-export function DataErrorScreen({ title, fallbackMessage, error }: DataErrorScreenProps) {
+export function DataErrorScreen({ title, fallbackMessage, error }: Readonly<DataErrorScreenProps>) {
   const diagnostics = [...getEnvDiagnostics(), ...parseSupabaseDiagnostics(error)];
 
   return (

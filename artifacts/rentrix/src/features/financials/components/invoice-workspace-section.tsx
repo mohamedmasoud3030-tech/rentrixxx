@@ -25,7 +25,7 @@ function getAmountValidationMessage({
   rawAmountValue: number;
   selectedInvoiceId: string;
 }>) {
-  if (!selectedInvoiceId || !invoiceDetail || invoiceDetail.id !== selectedInvoiceId) return 'اختر فاتورة صالحة أولاً';
+  if (!selectedInvoiceId || invoiceDetail?.id !== selectedInvoiceId) return 'اختر فاتورة صالحة أولاً';
   if (!amount.trim()) return 'المبلغ مطلوب';
   if (!Number.isFinite(rawAmountValue)) return 'المبلغ يجب أن يكون رقماً صالحاً';
   if (amountValue <= 0) return 'المبلغ يجب أن يكون أكبر من صفر';
@@ -71,7 +71,7 @@ export function InvoiceWorkspaceSection() {
 
   const onPostPayment = () => {
     if (quickPaySubmitRef.current || postPayment.isPending) return;
-    if (!selectedInvoiceId || !invoiceDetail || invoiceDetail.id !== selectedInvoiceId) return;
+    if (!selectedInvoiceId || invoiceDetail?.id !== selectedInvoiceId) return;
 
     const currentRemaining = getSafeRemainingAmount(invoiceDetail.amount, invoiceDetail.paid_amount);
     const currentRawAmount = Number(amount);

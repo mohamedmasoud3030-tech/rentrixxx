@@ -27,6 +27,13 @@ import { AccountingRouteComponent } from '@/routes/_protected.accounting';
 import { ReportsRouteComponent } from '@/routes/_protected.reports';
 import { SettingsRouteComponent } from '@/routes/_protected.settings';
 import { MaintenanceRouteComponent } from '@/routes/_protected.maintenance';
+import { AuditLogRouteComponent } from '@/routes/_protected.audit-log';
+import { AssistantRouteComponent } from '@/routes/_protected.assistant';
+import { CommunicationRouteComponent } from '@/routes/_protected.communication';
+import { LeadsRouteComponent } from '@/routes/_protected.leads';
+import { PropertyMapRouteComponent } from '@/routes/_protected.property-map';
+import { LandsRouteComponent } from '@/routes/_protected.lands';
+import { CommissionsRouteComponent } from '@/routes/_protected.commissions';
 import { supabase } from '@/integrations/supabase/client';
 
 const rootRoute = createRootRoute({
@@ -80,6 +87,13 @@ const accountingRoute = createRoute({ getParentRoute: () => protectedRoute, path
 const reportsRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/reports', component: ReportsRouteComponent, staticData: { title: 'التقارير' } });
 const settingsRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/settings', component: SettingsRouteComponent, staticData: { title: 'الإعدادات' } });
 const maintenanceRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/maintenance', component: MaintenanceRouteComponent, staticData: { title: 'الصيانة' } });
+const auditLogRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/audit-log', component: AuditLogRouteComponent, staticData: { title: 'سجل التدقيق' } });
+const assistantRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/assistant', component: AssistantRouteComponent, staticData: { title: 'المساعد الذكي' } });
+const communicationRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/communication', component: CommunicationRouteComponent, staticData: { title: 'التواصل' } });
+const leadsRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/leads', component: LeadsRouteComponent, staticData: { title: 'العملاء المحتملون' } });
+const propertyMapRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/property-map', component: PropertyMapRouteComponent, staticData: { title: 'خريطة العقارات' } });
+const landsRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/lands', component: LandsRouteComponent, staticData: { title: 'الأراضي' } });
+const commissionsRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/commissions', component: CommissionsRouteComponent, staticData: { title: 'العمولات' } });
 
 export const routeTree = rootRoute.addChildren([
   authRoute.addChildren([loginRoute]),
@@ -105,6 +119,13 @@ export const routeTree = rootRoute.addChildren([
     accountingRoute,
     reportsRoute,
     maintenanceRoute,
+    auditLogRoute,
+    assistantRoute,
+    communicationRoute,
+    leadsRoute,
+    propertyMapRoute,
+    landsRoute,
+    commissionsRoute,
     settingsRoute,
   ]),
 ]);

@@ -1,6 +1,7 @@
 import { supabase } from '@/integrations/supabase/client';
 import { getTodayLocalDateString } from '@/features/financials/financials-date-utils';
 import type { Contract, Invoice, Person, Property, Unit } from '@/types/domain';
+import { chunkItems } from '@/lib/chunk';
 
 export type TenantWorkspaceParams = {
   search: string;
@@ -167,4 +168,73 @@ export async function listTenantWorkspace(params: TenantWorkspaceParams): Promis
     rows: tenantPeople.map((person) => buildTenantRow(person, contractsByTenant[person.id] ?? [], invoicesByTenant[person.id] ?? [], today)),
     count: count ?? 0,
   };
+}
+
+async function listTenantPeopleByIds(ids: string[]): Promise<TenantPerson[]> {
+  if (ids.length === 0) return [];
+
+  const rows: TenantPerson[] = [];
+  for (const chunk of chunkItems(ids, 250)) {
+    const { data, error } = await supabase
+      .from('people')
+      .select('id,full_name,phone,email,national_id')
+      .in('id', chunk)
+      .eq('type', 'tenant')
+      .is('deleted_at', null)
+      .returns<TenantPerson[]>();
+    if (error) throw error;
+    rows.push(...(data ?? []));
+  }
+
+  return rows;
+}
+
+function buildTenantWorkspaceRows(tenantPeople: TenantPerson[], contracts: TenantContract[], invoices: TenantInvoice[]): TenantWorkspaceRow[] {
+  const contractsByTenant = groupBy(contracts, (contract) => contract.tenant_id);
+  const invoicesByContract = groupBy(invoices, (invoice) => invoice.contract_id);
+  const invoicesByTenant = getInvoicesByTenant(contractsByTenant, invoicesByContract);
+  const today = getTodayLocalDateString();
+  return tenantPeople.map((person) => buildTenantRow(person, contractsByTenant[person.id] ?? [], invoicesByTenant[person.id] ?? [], today));
+}
+
+export async function listTenantWorkspaceForExport(search: string): Promise<TenantWorkspaceRow[]> {
+  const pageSize = 1000;
+  const tenantPeople: TenantPerson[] = [];
+  let page = 0;
+
+  while (true) {
+    const from = page * pageSize;
+    const to = from + pageSize - 1;
+    let query = supabase
+      .from('people')
+      .select('id,full_name,phone,email,national_id')
+      .eq('type', 'tenant')
+      .is('deleted_at', null)
+      .order('created_at', { ascending: false })
+      .range(from, to);
+
+    query = applyTenantSearch(query, search);
+
+    const { data, error } = await query.returns<TenantPerson[]>();
+    if (error) throw error;
+
+    const batch = data ?? [];
+    tenantPeople.push(...batch);
+
+    if (batch.length < pageSize) {
+      break;
+    }
+
+    page += 1;
+  }
+  const contracts = await listTenantContracts(tenantPeople.map((person) => person.id));
+  const invoices = await listTenantInvoices(contracts.map((contract) => contract.id));
+  return buildTenantWorkspaceRows(tenantPeople, contracts, invoices);
+}
+
+export async function listTenantWorkspaceByIds(ids: string[]): Promise<TenantWorkspaceRow[]> {
+  const tenantPeople = await listTenantPeopleByIds(ids);
+  const contracts = await listTenantContracts(tenantPeople.map((person) => person.id));
+  const invoices = await listTenantInvoices(contracts.map((contract) => contract.id));
+  return buildTenantWorkspaceRows(tenantPeople, contracts, invoices);
 }

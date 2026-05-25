@@ -2,9 +2,15 @@ import { useMemo, useState } from 'react';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { Printer } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/empty-state';
+import { Input } from '@/components/ui/input';
+import { canPrintOperationalReport, runOperationalPrint } from '@/lib/operationalPrint';
+import { Select } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
+import { StatusBadge } from '@/components/ui/status-badge';
+import { Textarea } from '@/components/ui/textarea';
 import { DataTable } from '@/components/shared/DataTable';
 import { useProperties } from '@/features/properties/use-properties';
 import { useAllUnits, useUnits } from '@/features/units/use-units';
@@ -26,6 +32,7 @@ const schema = z.object({
 });
 
 type FormValues = z.infer<typeof schema>;
+type MaintenanceTone = 'blue' | 'green' | 'red' | 'gray' | 'gold';
 
 const maintenanceStatusLabels = {
   open: 'مفتوح',
@@ -40,6 +47,20 @@ const maintenancePriorityLabels = {
   high: 'عالية',
   urgent: 'عاجلة',
 } as const;
+
+const maintenanceStatusTone: Record<keyof typeof maintenanceStatusLabels, MaintenanceTone> = {
+  open: 'gold',
+  in_progress: 'blue',
+  resolved: 'green',
+  closed: 'green',
+};
+
+const maintenancePriorityTone: Record<keyof typeof maintenancePriorityLabels, MaintenanceTone> = {
+  low: 'gray',
+  medium: 'blue',
+  high: 'gold',
+  urgent: 'red',
+};
 
 function getLoadErrorMessage(error: unknown, fallback: string): string {
   return error instanceof Error ? error.message : fallback;
@@ -97,6 +118,7 @@ export function MaintenancePage() {
   const maintenanceSummary = useMemo(() => summarizeMaintenanceRequests(filteredMaintenanceRows), [filteredMaintenanceRows]);
   const loadError = maintenanceQuery.error ?? propertiesQuery.error;
   const hasLoadError = maintenanceQuery.isError || propertiesQuery.isError;
+  const isWorkspaceLoading = maintenanceQuery.isLoading || propertiesQuery.isLoading;
   const retryMaintenanceWorkspace = async () => {
     await Promise.all([maintenanceQuery.refetch(), propertiesQuery.refetch()]);
   };
@@ -126,27 +148,50 @@ export function MaintenancePage() {
     );
   };
 
+  const printSummary = () => {
+    const errorMessage = runOperationalPrint(filteredMaintenanceRows.length > 0, isWorkspaceLoading, hasLoadError, {
+      title: 'ملخص الصيانة',
+      generatedAt: new Date().toLocaleDateString('ar-OM'),
+      tables: [{
+        title: 'طلبات الصيانة',
+        columns: ['العنوان', 'العقار', 'الحالة', 'الأولوية'],
+        rows: filteredMaintenanceRows.slice(0, 40).map((row) => [
+          row.title,
+          buildMaintenanceLocationLabel(row, properties, allUnits),
+          maintenanceStatusLabels[row.status],
+          maintenancePriorityLabels[row.priority],
+        ]),
+      }],
+    });
+    if (errorMessage) globalThis.alert(errorMessage);
+  };
+
   return (
     <div className="space-y-6" dir="rtl">
-      <div className="grid gap-2 md:grid-cols-3">
-        <select className="rounded border px-2 py-2" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value as MaintenanceStatusFilter)}>
+      <div className="flex justify-end">
+        <Button variant="secondary" onClick={printSummary} disabled={!canPrintOperationalReport(filteredMaintenanceRows.length > 0, isWorkspaceLoading, hasLoadError)}>
+          <Printer className="ms-2 size-4" />طباعة ملخص الصيانة
+        </Button>
+      </div>
+      <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+        <Select aria-label="تصفية طلبات الصيانة حسب الحالة" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value as MaintenanceStatusFilter)}>
           <option value="all">كل الحالات</option>
           <option value="open">مفتوح</option>
           <option value="in_progress">قيد التنفيذ</option>
           <option value="resolved">تم الحل</option>
           <option value="closed">مغلق</option>
-        </select>
-        <select className="rounded border px-2 py-2" value={priorityFilter} onChange={(e) => setPriorityFilter(e.target.value as MaintenancePriorityFilter)}>
+        </Select>
+        <Select aria-label="تصفية طلبات الصيانة حسب الأولوية" value={priorityFilter} onChange={(e) => setPriorityFilter(e.target.value as MaintenancePriorityFilter)}>
           <option value="all">كل الأولويات</option>
           <option value="low">منخفضة</option>
           <option value="medium">متوسطة</option>
           <option value="high">عالية</option>
           <option value="urgent">عاجلة</option>
-        </select>
-        <select className="rounded border px-2 py-2" value={propertyFilterId} onChange={(e) => setPropertyFilterId(e.target.value)}>
+        </Select>
+        <Select aria-label="تصفية طلبات الصيانة حسب العقار" value={propertyFilterId} onChange={(e) => setPropertyFilterId(e.target.value)}>
           <option value="">كل العقارات</option>
           {propertyOptions}
-        </select>
+        </Select>
       </div>
 
       <div className="grid gap-3 md:grid-cols-4">
@@ -158,54 +203,54 @@ export function MaintenancePage() {
         ))}
       </div>
 
-      <form className="grid gap-3 rounded border p-4" onSubmit={form.handleSubmit(onSubmit)}>
-        <select className="rounded border px-2 py-2" {...form.register('property_id')}>
+      <form className="grid gap-3 rounded border p-4 sm:grid-cols-2" onSubmit={form.handleSubmit(onSubmit)}>
+        <Select aria-label="اختيار العقار" className="sm:col-span-2" {...form.register('property_id')}>
           <option value="">اختر العقار</option>
           {propertyOptions}
-        </select>
+        </Select>
         {form.formState.errors.property_id ? <p className="text-sm text-red-600">{form.formState.errors.property_id.message}</p> : null}
 
-        <select className="rounded border px-2 py-2" {...form.register('unit_id')}>
+        <Select aria-label="اختيار الوحدة" {...form.register('unit_id')}>
           <option value="">بدون وحدة</option>
           {units.map((unit) => (
             <option key={unit.id} value={unit.id}>{unit.unit_number}</option>
           ))}
-        </select>
+        </Select>
 
-        <input className="rounded border px-2 py-2" placeholder="عنوان الطلب" {...form.register('title')} />
+        <Input aria-label="عنوان طلب الصيانة" placeholder="عنوان الطلب" {...form.register('title')} />
         {form.formState.errors.title ? <p className="text-sm text-red-600">{form.formState.errors.title.message}</p> : null}
 
-        <textarea className="rounded border px-2 py-2" placeholder="الوصف (اختياري)" {...form.register('description')} />
+        <Textarea aria-label="وصف طلب الصيانة (اختياري)" className="sm:col-span-2" placeholder="الوصف (اختياري)" {...form.register('description')} />
 
-        <select className="rounded border px-2 py-2" {...form.register('priority')}>
+        <Select aria-label="أولوية طلب الصيانة" {...form.register('priority')}>
           <option value="low">منخفضة</option>
           <option value="medium">متوسطة</option>
           <option value="high">عالية</option>
           <option value="urgent">عاجلة</option>
-        </select>
+        </Select>
 
-        <Button type="submit" disabled={createMutation.isPending}>{createMutation.isPending ? 'جارٍ الحفظ...' : 'إضافة طلب صيانة'}</Button>
+        <Button className="sm:col-span-2" type="submit" disabled={createMutation.isPending}>{createMutation.isPending ? 'جارٍ الحفظ...' : 'إضافة طلب صيانة'}</Button>
       </form>
 
-      {maintenanceQuery.isLoading || propertiesQuery.isLoading ? (
+      {isWorkspaceLoading ? (
         <div className="space-y-3">{Array.from({ length: 4 }, (_, index) => <Skeleton key={index} className="h-12" />)}</div>
       ) : null}
-      {!maintenanceQuery.isLoading && !propertiesQuery.isLoading && hasLoadError ? (
+      {!isWorkspaceLoading && hasLoadError ? (
         <EmptyState
           title="تعذر تحميل طلبات الصيانة"
           description={getLoadErrorMessage(loadError, 'حدث خطأ غير متوقع أثناء تحميل طلبات الصيانة.')}
           action={<Button type="button" onClick={retryMaintenanceWorkspace}>إعادة المحاولة</Button>}
         />
       ) : null}
-      {!maintenanceQuery.isLoading && !propertiesQuery.isLoading && !hasLoadError ? (
+      {!isWorkspaceLoading && !hasLoadError ? (
         <DataTable
           rows={filteredMaintenanceRows}
           keyOf={(row) => row.id}
           columns={[
             { key: 'title', header: 'العنوان', render: (row) => row.title },
             { key: 'location', header: 'العقار / الوحدة', render: (row) => buildMaintenanceLocationLabel(row, properties, allUnits) },
-            { key: 'status', header: 'الحالة', render: (row) => maintenanceStatusLabels[row.status] },
-            { key: 'priority', header: 'الأولوية', render: (row) => maintenancePriorityLabels[row.priority] },
+            { key: 'status', header: 'الحالة', render: (row) => <StatusBadge tone={maintenanceStatusTone[row.status]}>{maintenanceStatusLabels[row.status]}</StatusBadge> },
+            { key: 'priority', header: 'الأولوية', render: (row) => <StatusBadge tone={maintenancePriorityTone[row.priority]}>{maintenancePriorityLabels[row.priority]}</StatusBadge> },
             {
               key: 'actions',
               header: 'الإجراء التالي',

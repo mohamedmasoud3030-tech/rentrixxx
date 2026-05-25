@@ -31,9 +31,40 @@ export type Database = {
         Update: Partial<Database['public']['Tables']['company_settings']['Row']>;
         Relationships: [];
       };
+      users: {
+        Row: {
+          id: string;
+          email: string;
+          full_name: string;
+          role: 'ADMIN' | 'MANAGER' | 'USER' | 'TENANT';
+          status: string;
+          is_active: boolean;
+          created_at: string;
+          updated_at: string;
+          deleted_at: string | null;
+        };
+        Insert: Partial<Database['public']['Tables']['users']['Row']>;
+        Update: Partial<Database['public']['Tables']['users']['Row']>;
+        Relationships: [];
+      };
+      audit_log: {
+        Row: {
+          id: string;
+          actor_user_id: string | null;
+          action: string;
+          entity_type: string | null;
+          entity_id: string | null;
+          details: Json;
+          created_at: string;
+        };
+        Insert: Partial<Database['public']['Tables']['audit_log']['Row']> & Pick<Database['public']['Tables']['audit_log']['Row'], 'action'>;
+        Update: Partial<Database['public']['Tables']['audit_log']['Row']>;
+        Relationships: [];
+      };
       owners: {
         Row: {
           id: string;
+          person_id: string | null;
           full_name: string;
           display_name: string | null;
           phone: string | null;
@@ -45,6 +76,7 @@ export type Database = {
           is_active: boolean;
           created_at: string;
           updated_at: string;
+          deleted_at: string | null;
         };
         Insert: Partial<Database['public']['Tables']['owners']['Row']> & Pick<Database['public']['Tables']['owners']['Row'], 'full_name'>;
         Update: Partial<Database['public']['Tables']['owners']['Row']>;
@@ -90,6 +122,8 @@ export type Database = {
           current_value: number | null;
           status: 'active' | 'inactive' | 'maintenance' | 'sold';
           notes: string | null;
+          latitude: number | null;
+          longitude: number | null;
           created_at: string;
           updated_at: string;
           deleted_at: string | null;
@@ -115,6 +149,58 @@ export type Database = {
         Update: Partial<Database['public']['Tables']['units']['Row']>;
         Relationships: [];
       };
+
+
+
+
+      communication_templates: {
+        Row: { id: string; name: string; channel: 'note'|'whatsapp'|'email'|'sms'; subject: string | null; body: string; active: boolean; created_at: string; updated_at: string; };
+        Insert: Partial<Database['public']['Tables']['communication_templates']['Row']> & Pick<Database['public']['Tables']['communication_templates']['Row'], 'name'|'channel'|'body'>;
+        Update: Partial<Database['public']['Tables']['communication_templates']['Row']>;
+        Relationships: [];
+      };
+      communication_messages: {
+        Row: { id: string; channel: 'note'|'whatsapp'|'email'|'sms'; recipient_type: string; person_id: string | null; lead_id: string | null; owner_id: string | null; tenant_id: string | null; recipient_name: string | null; recipient_phone: string | null; recipient_email: string | null; subject: string | null; body: string; status: 'draft'|'queued'|'sent'|'failed'; provider_name: string | null; provider_message_id: string | null; provider_response: Json | null; error_message: string | null; sent_at: string | null; created_by: string | null; created_at: string; updated_at: string; };
+        Insert: Partial<Database['public']['Tables']['communication_messages']['Row']> & Pick<Database['public']['Tables']['communication_messages']['Row'], 'channel'|'recipient_type'|'body'>;
+        Update: Partial<Database['public']['Tables']['communication_messages']['Row']>;
+        Relationships: [];
+      };
+      lands: {
+        Row: { id: string; title: string; address: string | null; city: string | null; area: number | null; area_unit: string; ownership_status: 'owned' | 'leased' | 'disputed' | 'other'; zoning_type: string | null; value_amount: number | null; latitude: number | null; longitude: number | null; notes: string | null; status: 'active' | 'inactive' | 'archived'; created_by: string | null; created_at: string; updated_at: string; deleted_at: string | null; };
+        Insert: Partial<Database['public']['Tables']['lands']['Row']> & Pick<Database['public']['Tables']['lands']['Row'], 'title'>;
+        Update: Partial<Database['public']['Tables']['lands']['Row']>;
+        Relationships: [];
+      };
+      commission_rules: {
+        Row: { id: string; name: string; basis: 'contract' | 'invoice' | 'payment' | 'property' | 'manual'; calc_type: 'percentage' | 'fixed'; percentage: number | null; fixed_amount: number | null; recipient_person_id: string | null; is_active: boolean; created_by: string | null; created_at: string; updated_at: string; deleted_at: string | null; };
+        Insert: Partial<Database['public']['Tables']['commission_rules']['Row']> & Pick<Database['public']['Tables']['commission_rules']['Row'], 'name' | 'basis' | 'calc_type'>;
+        Update: Partial<Database['public']['Tables']['commission_rules']['Row']>;
+        Relationships: [];
+      };
+      commissions: {
+        Row: { id: string; rule_id: string | null; recipient_person_id: string | null; source_type: 'contract' | 'invoice' | 'payment' | 'property' | 'manual'; source_id: string | null; amount: number; status: 'pending' | 'approved' | 'paid' | 'cancelled'; due_date: string | null; paid_date: string | null; notes: string | null; created_by: string | null; created_at: string; updated_at: string; deleted_at: string | null; };
+        Insert: Partial<Database['public']['Tables']['commissions']['Row']> & Pick<Database['public']['Tables']['commissions']['Row'], 'source_type' | 'amount'>;
+        Update: Partial<Database['public']['Tables']['commissions']['Row']>;
+        Relationships: [];
+      };
+      accounting_accounts: {
+        Row: { id: string; code: string; name_ar: string; name_en: string | null; account_type: 'asset' | 'liability' | 'equity' | 'revenue' | 'expense'; is_active: boolean; created_by: string | null; created_at: string; updated_at: string; deleted_at: string | null; };
+        Insert: Partial<Database['public']['Tables']['accounting_accounts']['Row']> & Pick<Database['public']['Tables']['accounting_accounts']['Row'], 'code' | 'name_ar' | 'account_type'>;
+        Update: Partial<Database['public']['Tables']['accounting_accounts']['Row']>;
+        Relationships: [];
+      };
+      accounting_journal_entries: {
+        Row: { id: string; entry_date: string; reference: string | null; description: string | null; source_module: 'manual' | 'invoice' | 'receipt' | 'expense' | 'commission' | 'owner_payout'; source_id: string | null; status: 'draft' | 'posted'; created_by: string | null; created_at: string; updated_at: string; deleted_at: string | null; };
+        Insert: Partial<Database['public']['Tables']['accounting_journal_entries']['Row']> & Pick<Database['public']['Tables']['accounting_journal_entries']['Row'], 'entry_date' | 'source_module'>;
+        Update: Partial<Database['public']['Tables']['accounting_journal_entries']['Row']>;
+        Relationships: [];
+      };
+      accounting_journal_lines: {
+        Row: { id: string; journal_entry_id: string; account_id: string; line_description: string | null; debit: number; credit: number; property_id: string | null; unit_id: string | null; owner_id: string | null; tenant_id: string | null; contract_id: string | null; invoice_id: string | null; receipt_id: string | null; created_at: string; updated_at: string; deleted_at: string | null; };
+        Insert: Partial<Database['public']['Tables']['accounting_journal_lines']['Row']> & Pick<Database['public']['Tables']['accounting_journal_lines']['Row'], 'journal_entry_id' | 'account_id'>;
+        Update: Partial<Database['public']['Tables']['accounting_journal_lines']['Row']>;
+        Relationships: [];
+      };
       people: {
         Row: {
           id: string;
@@ -133,6 +219,45 @@ export type Database = {
         Update: Partial<Database['public']['Tables']['people']['Row']>;
         Relationships: [];
       };
+
+      leads: {
+        Row: {
+          id: string;
+          full_name: string;
+          phone: string | null;
+          email: string | null;
+          source: string | null;
+          status: 'new' | 'contacted' | 'qualified' | 'won' | 'lost';
+          notes: string | null;
+          assigned_to: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: Partial<Database['public']['Tables']['leads']['Row']> & Pick<Database['public']['Tables']['leads']['Row'], 'full_name'>;
+        Update: Partial<Database['public']['Tables']['leads']['Row']>;
+        Relationships: [];
+      };
+
+
+      tenants: {
+        Row: { id: string; person_id: string; created_at: string; updated_at: string; deleted_at: string | null; };
+        Insert: Partial<Database['public']['Tables']['tenants']['Row']> & Pick<Database['public']['Tables']['tenants']['Row'], 'person_id'>;
+        Update: Partial<Database['public']['Tables']['tenants']['Row']>;
+        Relationships: [];
+      };
+      receipts: {
+        Row: { id: string; receipt_no: number; receipt_date: string; payer_tenant_id: string | null; amount_total: number; method: 'cash' | 'bank_transfer' | 'card' | 'check' | 'other'; reference: string | null; status: 'posted' | 'void'; voided_at: string | null; created_by: string | null; created_at: string; updated_at: string; deleted_at: string | null; };
+        Insert: Partial<Database['public']['Tables']['receipts']['Row']>;
+        Update: Partial<Database['public']['Tables']['receipts']['Row']>;
+        Relationships: [];
+      };
+      receipt_allocations: {
+        Row: { id: string; receipt_id: string; invoice_id: string; amount: number; created_at: string; deleted_at: string | null; };
+        Insert: Partial<Database['public']['Tables']['receipt_allocations']['Row']> & Pick<Database['public']['Tables']['receipt_allocations']['Row'], 'receipt_id' | 'invoice_id' | 'amount'>;
+        Update: Partial<Database['public']['Tables']['receipt_allocations']['Row']>;
+        Relationships: [];
+      };
+
       contracts: {
         Row: {
           id: string;
@@ -142,6 +267,7 @@ export type Database = {
           start_date: string;
           end_date: string;
           rent_amount: number;
+          monthly_rent: number;
           payment_cycle: 'monthly' | 'quarterly' | 'semi_annual' | 'annual';
           status: 'draft' | 'active' | 'expired' | 'terminated';
           cancellation_reason: string | null;
@@ -181,6 +307,11 @@ export type Database = {
           payment_method: 'cash' | 'bank_transfer' | 'card' | 'check' | 'other';
           payment_date: string;
           reference_number: string | null;
+          contract_id: string | null;
+          receipt_id: string | null;
+          status: 'posted' | 'void';
+          voided_at: string | null;
+          created_by: string | null;
           created_at: string;
           updated_at: string;
           deleted_at: string | null;
@@ -231,15 +362,15 @@ export type Database = {
     Views: Record<string, never>;
     Functions: {
       renew_contract_atomic: {
-        Args: { contract_id: string; new_start: string; new_end: string; new_amount: number };
+        Args: { old_contract_id: string; new_contract_data: Json };
         Returns: string;
       };
       post_receipt_atomic: {
-        Args: { invoice_id: string; amount: number; method: 'cash' | 'bank_transfer' | 'card' | 'check' | 'other'; date: string; reference: string | null };
+        Args: { payload: Json };
         Returns: string;
       };
       generate_invoices_from_active_contracts: { Args: Record<string, never>; Returns: number };
-      rpt_financial_summary: { Args: { month: number; year: number }; Returns: { total_collected: number; total_overdue_invoices: number; total_expenses: number; net_revenue: number } };
+      rpt_financial_summary: { Args: { p_from: string; p_to: string }; Returns: { total_collected: number; total_overdue_invoices: number; total_expenses: number; net_revenue: number } };
     };
     Enums: Record<string, never>;
     CompositeTypes: Record<string, never>;

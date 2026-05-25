@@ -1,2 +1,2 @@
-export * from './types';
-export { DocumentController } from './DocumentController';
+export * from './documentTypes';
+export { documentEngine } from './documentEngine';

@@ -16,7 +16,7 @@ export function FinancialReportsPreviewSection({
   isLoading,
   isError,
   error,
-}: FinancialReportsPreviewSectionProps) {
+}: Readonly<FinancialReportsPreviewSectionProps>) {
   return (
     <Card>
       <CardHeader>

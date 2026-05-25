@@ -1,16 +1,25 @@
 import type { HTMLAttributes } from 'react';
 import { cn } from '@/lib/utils';
 
-export function Card({ className, ...props }: HTMLAttributes<HTMLDivElement>) {
-  return <div className={cn('hover-card rounded-2xl border border-border bg-card text-card-foreground shadow-sm', className)} {...props} />;
+type CardVariant = 'default' | 'kpi' | 'luxury';
+
+const variantStyles: Record<CardVariant, string> = {
+  default: 'shadow-sm',
+  kpi: 'surface-card shadow-[var(--shadow-soft)]',
+  luxury: 'surface-card border-[hsl(var(--accent)/0.45)] shadow-[var(--shadow-card)]',
+};
+
+export function Card({ className, variant = 'default', ...props }: HTMLAttributes<HTMLDivElement> & { variant?: CardVariant }) {
+  return <div className={cn('hover-card rounded-2xl border border-border bg-card text-card-foreground', variantStyles[variant], className)} {...props} />;
 }
 
 export function CardHeader({ className, ...props }: HTMLAttributes<HTMLDivElement>) {
   return <div className={cn('space-y-1.5 p-6', className)} {...props} />;
 }
 
-export function CardTitle({ className, ...props }: HTMLAttributes<HTMLHeadingElement>) {
-  return <h3 className={cn('text-lg font-black tracking-tight', className)} {...props} />;
+export function CardTitle({ className, children, ...props }: HTMLAttributes<HTMLHeadingElement>) {
+  if (!children) return null;
+  return <h3 className={cn('text-lg font-black tracking-tight', className)} {...props}>{children}</h3>;
 }
 
 export function CardDescription({ className, ...props }: HTMLAttributes<HTMLParagraphElement>) {

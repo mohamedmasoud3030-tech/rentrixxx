@@ -1,4 +1,8 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Eye, Printer } from 'lucide-react';
+import { useState } from 'react';
+import { DocumentController } from '@/services/documents/DocumentController';
+import { Button } from '@/components/ui/button';
 import type { Payment } from '@/types/domain';
 import type { InvoiceDetail } from '../invoices/invoiceService';
 import { formatDate, formatMoney, getErrorMessage } from '@lib/format';
@@ -44,14 +48,67 @@ export function InvoiceDetailSection({
   onPaymentDateChange,
   onReferenceChange,
   onPostPayment,
-}: InvoiceDetailSectionProps) {
+}: Readonly<InvoiceDetailSectionProps>) {
+  const [documentError, setDocumentError] = useState<string | null>(null);
+  const [isPreviewLoading, setPreviewLoading] = useState(false);
+  const [isPagePrintLoading, setPagePrintLoading] = useState(false);
+  const canPrintInvoice = Boolean(invoiceDetail);
+
+  const handleInvoicePreview = async () => {
+    if (!invoiceDetail) {
+      setDocumentError('لا يمكن معاينة الفاتورة قبل تحميل بيانات الفاتورة الحالية.');
+      return;
+    }
+
+    setDocumentError('معاينة PDF للفواتير متوقفة مؤقتاً حتى تتوفر بيانات الشركة والعقد والمستأجر والعقار كاملة.');
+    if (invoiceDetail.id !== '') return;
+
+    setDocumentError(null);
+    setPreviewLoading(true);
+    try {
+      await DocumentController.renderToPDF({
+        type: 'invoice',
+        payload: {
+          invoice: invoiceDetail,
+          db: {
+            settings: {},
+            contracts: [],
+            tenants: [],
+            units: [],
+            properties: [],
+          },
+        },
+      });
+    } catch (error) {
+      setDocumentError(getErrorMessage(error, 'تعذر إنشاء معاينة الفاتورة. تحقق من بيانات الفاتورة ثم أعد المحاولة.'));
+    } finally {
+      setPreviewLoading(false);
+    }
+  };
+
+  const handlePagePrint = () => {
+    if (!invoiceDetail) {
+      setDocumentError('لا يمكن طباعة الصفحة قبل تحميل بيانات الفاتورة الحالية.');
+      return;
+    }
+    setDocumentError(null);
+    setPagePrintLoading(true);
+    try {
+      globalThis.print();
+    } catch (error) {
+      setDocumentError(getErrorMessage(error, 'تعذر طباعة الصفحة. حاول مرة أخرى بعد التأكد من إعدادات المتصفح.'));
+    } finally {
+      setPagePrintLoading(false);
+    }
+  };
+
   return (
     <Card>
       <CardHeader>
         <CardTitle>تفاصيل الفاتورة وسجل المدفوعات</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        {!selectedInvoiceId ? <div className="rounded-2xl border border-dashed p-6 text-center text-muted-foreground">اختر فاتورة لعرض التفاصيل وتسجيل دفعة</div> : null}
+        {selectedInvoiceId ? null : <div className="rounded-2xl border border-dashed p-6 text-center text-muted-foreground">اختر فاتورة لعرض التفاصيل وتسجيل دفعة</div>}
         {selectedInvoiceId && isLoading ? <div className="rounded-2xl border border-dashed p-6 text-center text-muted-foreground">جارٍ تحميل تفاصيل الفاتورة...</div> : null}
         {selectedInvoiceId && isError ? <div className="rounded-2xl border border-destructive/40 bg-destructive/10 p-6 text-center text-destructive">{getErrorMessage(error, 'تعذر تحميل تفاصيل الفاتورة')}</div> : null}
         {invoiceDetail ? <>
@@ -79,6 +136,17 @@ export function InvoiceDetailSection({
           </div>
 
           <div className="rounded-2xl border p-4">
+            <div className="mb-3 flex flex-wrap gap-2">
+              <Button type="button" variant="secondary" onClick={handlePagePrint} disabled={!canPrintInvoice || isPagePrintLoading}>
+                <Printer className="ms-2 size-4" />
+                {isPagePrintLoading ? 'جارٍ فتح الطباعة...' : 'طباعة الصفحة'}
+              </Button>
+              <Button type="button" variant="secondary" onClick={handleInvoicePreview} disabled={!canPrintInvoice || isPreviewLoading}>
+                <Eye className="ms-2 size-4" />
+                {isPreviewLoading ? 'جارٍ إنشاء المعاينة...' : 'معاينة الفاتورة'}
+              </Button>
+            </div>
+            {documentError ? <p className="mb-3 rounded-xl border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive">{documentError}</p> : null}
             <h4 className="font-black">سجل المدفوعات</h4>
             <div className="mt-3 space-y-2">
               {invoiceDetail.payments.length === 0 ? <p className="text-sm text-muted-foreground">لا توجد مدفوعات مسجلة لهذه الفاتورة</p> : null}

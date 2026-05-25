@@ -25,8 +25,18 @@ let _authTokenGetter: AuthTokenGetter | null = null;
  * Useful for Expo bundles that need to call a remote API server.
  * Pass `null` to clear the base URL.
  */
+function trimTrailingSlashes(value: string): string {
+  let end = value.length;
+
+  while (end > 0 && value.codePointAt(end - 1) === 47) {
+    end -= 1;
+  }
+
+  return value.slice(0, end);
+}
+
 export function setBaseUrl(url: string | null): void {
-  _baseUrl = url ? url.replace(/\/+$/, "") : null;
+  _baseUrl = url ? trimTrailingSlashes(url) : null;
 }
 
 /**
@@ -69,7 +79,7 @@ function applyBaseUrl(input: RequestInfo | URL): RequestInfo | URL {
   const absolute = `${_baseUrl}${url}`;
   if (typeof input === "string") return absolute;
   if (isUrl(input)) return new URL(absolute);
-  return new Request(absolute, input as Request);
+  return new Request(absolute, input);
 }
 
 function resolveUrl(input: RequestInfo | URL): string {
@@ -126,7 +136,7 @@ function hasNoBody(response: Response, method: string): boolean {
 }
 
 function stripBom(text: string): string {
-  return text.charCodeAt(0) === 0xfeff ? text.slice(1) : text;
+  return (text.codePointAt(0) ?? 0) === 0xfeff ? text.slice(1) : text;
 }
 
 function looksLikeJson(text: string): boolean {

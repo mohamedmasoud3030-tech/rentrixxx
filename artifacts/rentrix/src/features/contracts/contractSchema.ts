@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
 const money = z.preprocess(
-  (value) => (value === '' || value === null || value === undefined ? NaN : Number(value)),
+  (value) => (value === '' || value === null || value === undefined ? Number.NaN : Number(value)),
   z.number({ invalid_type_error: 'قيمة الإيجار مطلوبة' }).positive('قيمة الإيجار يجب أن تكون أكبر من صفر'),
 );
 

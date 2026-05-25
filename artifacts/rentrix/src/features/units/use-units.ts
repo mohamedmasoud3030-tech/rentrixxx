@@ -30,7 +30,7 @@ export function useCreateUnit(propertyId: string) {
   return useMutation({
     mutationFn: (payload: UnitPayload) => createUnit(propertyId, payload),
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: unitKeys.all });
+      await queryClient.invalidateQueries({ queryKey: unitKeys.property(propertyId) });
       toast.success('تم إنشاء الوحدة بنجاح');
     },
     onError: (error) => toast.error(error instanceof Error ? error.message : 'تعذر إنشاء الوحدة'),
@@ -40,9 +40,9 @@ export function useCreateUnit(propertyId: string) {
 export function useUpdateUnit(propertyId: string) {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ unitId, payload }: { unitId: string; payload: UnitPayload }) => updateUnit(unitId, payload),
+    mutationFn: ({ unitId, payload }: { unitId: string; payload: UnitPayload }) => updateUnit(propertyId, unitId, payload),
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: unitKeys.all });
+      await queryClient.invalidateQueries({ queryKey: unitKeys.property(propertyId) });
       toast.success('تم تحديث الوحدة بنجاح');
     },
     onError: (error) => toast.error(error instanceof Error ? error.message : 'تعذر تحديث الوحدة'),
@@ -52,7 +52,7 @@ export function useUpdateUnit(propertyId: string) {
 export function useSoftDeleteUnit(propertyId: string) {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (unitId: string) => softDeleteUnit(unitId),
+    mutationFn: (unitId: string) => softDeleteUnit(propertyId, unitId),
     onMutate: async (unitId) => {
       await queryClient.cancelQueries({ queryKey: unitKeys.property(propertyId) });
       const previousUnits = queryClient.getQueryData<Unit[]>(unitKeys.property(propertyId));
@@ -65,7 +65,7 @@ export function useSoftDeleteUnit(propertyId: string) {
     },
     onSuccess: () => toast.success('تمت أرشفة الوحدة بنجاح'),
     onSettled: async () => {
-      await queryClient.invalidateQueries({ queryKey: unitKeys.all });
+      await queryClient.invalidateQueries({ queryKey: unitKeys.property(propertyId) });
     },
   });
 }
