@@ -12,6 +12,7 @@ export type AiAssistantAction = (typeof AI_ACTIONS)[number];
 export type AiAssistantResponse = {
   message: string;
 };
+const MAX_PROMPT_LENGTH = 4_000;
 
 type AiAssistantFunctionResponse = {
   ok: boolean;
@@ -23,6 +24,9 @@ export async function requestAiAssistant(action: AiAssistantAction, prompt: stri
   const trimmedPrompt = prompt.trim();
   if (!trimmedPrompt) {
     throw new Error('اكتب السؤال أو السياق المطلوب أولاً');
+  }
+  if (trimmedPrompt.length > MAX_PROMPT_LENGTH) {
+    throw new Error(`نص الطلب طويل جداً. الحد الأقصى هو ${MAX_PROMPT_LENGTH} حرفاً.`);
   }
 
   const { data, error } = await supabase.functions.invoke<AiAssistantFunctionResponse>('ai-assistant', {
