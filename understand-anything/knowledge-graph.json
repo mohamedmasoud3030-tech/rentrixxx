@@ -12,6 +12,21 @@
       "id": "entrypoint",
       "type": "command",
       "label": "/understand"
+    },
+    {
+      "id": "workspace-root",
+      "type": "workspace",
+      "label": "/workspace/rentrixxx"
+    },
+    {
+      "id": "app-module",
+      "type": "package",
+      "label": "artifacts/rentrix"
+    },
+    {
+      "id": "validation",
+      "type": "workflow",
+      "label": "typecheck + build + lint"
     }
   ],
   "edges": [
@@ -19,6 +34,21 @@
       "from": "understand-anything",
       "to": "entrypoint",
       "type": "exposes"
+    },
+    {
+      "from": "entrypoint",
+      "to": "workspace-root",
+      "type": "analyzes"
+    },
+    {
+      "from": "workspace-root",
+      "to": "app-module",
+      "type": "contains"
+    },
+    {
+      "from": "app-module",
+      "to": "validation",
+      "type": "verified_by"
     }
   ]
 }
