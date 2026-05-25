@@ -92,7 +92,7 @@ function downloadTemplateHtml(model: TemplateModel): void {
   anchor.download = `${model.fileName}.html`;
   anchor.rel = 'noopener';
   document.body.append(anchor);
-  anchor.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+  anchor.click();
   anchor.remove();
   URL.revokeObjectURL(url);
 }
