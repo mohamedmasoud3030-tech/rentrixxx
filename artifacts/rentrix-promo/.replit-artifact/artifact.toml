@@ -8,7 +8,7 @@ router = "path"
 [[integratedSkills]]
 name = "video-js"
 version = "1.0.0"
-ا
+
 [[services]]
 name = "web"
 paths = [ "/rentrix-promo/" ]
