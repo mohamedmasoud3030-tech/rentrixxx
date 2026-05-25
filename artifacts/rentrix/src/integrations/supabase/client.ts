@@ -21,10 +21,20 @@ const unconfiguredSupabaseClient = {
     getSession: createThrowingMethod<[], Promise<never>>('auth.getSession'),
     onAuthStateChange: createThrowingMethod<[(_event: string, _session: unknown) => void], { data: { subscription: { unsubscribe: () => void } } }>('auth.onAuthStateChange'),
     signInWithPassword: createThrowingMethod<[unknown], Promise<never>>('auth.signInWithPassword'),
+    signUp: createThrowingMethod<[unknown], Promise<never>>('auth.signUp'),
     signOut: createThrowingMethod<[], Promise<never>>('auth.signOut'),
   },
   from: createThrowingMethod<[string], ReturnType<ReturnType<typeof createClient<Database>>['from']>>('from'),
   rpc: createThrowingMethod<[string, unknown?], ReturnType<ReturnType<typeof createClient<Database>>['rpc']>>('rpc'),
+  channel: createThrowingMethod<[string], ReturnType<ReturnType<typeof createClient<Database>>['channel']>>('channel'),
+  removeChannel: createThrowingMethod<[unknown], Promise<never>>('removeChannel'),
+  removeAllChannels: createThrowingMethod<[], Promise<never>>('removeAllChannels'),
+  storage: {
+    from: createThrowingMethod<[string], never>('storage.from'),
+  },
+  functions: {
+    invoke: createThrowingMethod<[string, unknown?], Promise<never>>('functions.invoke'),
+  },
 } as unknown as ReturnType<typeof createClient<Database>>;
 
 export const supabase = env.isConfigured
