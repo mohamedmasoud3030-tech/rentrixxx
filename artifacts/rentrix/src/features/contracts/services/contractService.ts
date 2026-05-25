@@ -18,32 +18,49 @@ export type ContractListParams = { status: ContractStatusFilter; page?: number; 
 type ContractInsert = Database['public']['Tables']['contracts']['Insert'];
 type ContractUpdate = Database['public']['Tables']['contracts']['Update'];
 
-const contractSelect =
-  '*, properties:property_id(id,title,address,latitude,longitude), units:unit_id(id,unit_number,floor,status,rent_amount), people:people!contracts_tenant_id_people_app_fkey(id,full_name,phone,email,national_id)';
-const contractDetailSelect =
-  '*, properties:property_id(id,title,address,latitude,longitude), units:unit_id(id,unit_number,floor,status,rent_amount), people:people!contracts_tenant_id_people_app_fkey(id,full_name,phone,email,national_id), renewed_from:renewed_from_id(id,start_date,end_date,rent_amount,status)';
+const tenantRelationHints = ['contracts_tenant_id_fkey', 'contracts_tenant_id_people_app_fkey'] as const;
+
+const getContractSelect = (tenantRelationHint: (typeof tenantRelationHints)[number]) =>
+  `*, properties:property_id(id,title,address,latitude,longitude), units:unit_id(id,unit_number,floor,status,rent_amount), people:people!${tenantRelationHint}(id,full_name,phone,email,national_id)`;
+
+const getContractDetailSelect = (tenantRelationHint: (typeof tenantRelationHints)[number]) =>
+  `${getContractSelect(tenantRelationHint)}, renewed_from:renewed_from_id(id,start_date,end_date,rent_amount,status)`;
 
 export async function listContracts(params: ContractListParams): Promise<ContractListItem[]> {
   const page = params.page ?? 1;
   const pageSize = params.pageSize ?? 20;
   const { from, to } = getPaginationRange(page, pageSize);
 
-  let query = supabase
-    .from('contracts')
-    .select(contractSelect, { count: 'exact' })
-    .is('deleted_at', null)
-    .order('created_at', { ascending: false })
-    .range(from, to);
-  if (params.status !== 'all') query = query.eq('status', params.status);
-  const { data, error } = await query.returns<ContractListItem[]>();
-  if (error) throw error;
-  return data ?? [];
+  let lastError: unknown = null;
+  for (const tenantRelationHint of tenantRelationHints) {
+    let query = supabase
+      .from('contracts')
+      .select(getContractSelect(tenantRelationHint), { count: 'exact' })
+      .is('deleted_at', null)
+      .order('created_at', { ascending: false })
+      .range(from, to);
+    if (params.status !== 'all') query = query.eq('status', params.status);
+    const { data, error } = await query.returns<ContractListItem[]>();
+    if (!error) return data ?? [];
+    lastError = error;
+  }
+  throw lastError;
 }
 
 export async function getContract(contractId: string): Promise<ContractDetail> {
-  const { data, error } = await supabase.from('contracts').select(contractDetailSelect).eq('id', contractId).is('deleted_at', null).single().returns<ContractDetail>();
-  if (error) throw error;
-  return data;
+  let lastError: unknown = null;
+  for (const tenantRelationHint of tenantRelationHints) {
+    const { data, error } = await supabase
+      .from('contracts')
+      .select(getContractDetailSelect(tenantRelationHint))
+      .eq('id', contractId)
+      .is('deleted_at', null)
+      .single()
+      .returns<ContractDetail>();
+    if (!error) return data;
+    lastError = error;
+  }
+  throw lastError;
 }
 
 export async function createContract(payload: ContractPayload): Promise<Contract> {
