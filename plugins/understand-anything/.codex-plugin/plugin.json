@@ -1,0 +1,8 @@
+{
+  "name": "understand-anything",
+  "version": "0.1.0",
+  "description": "Install and manage Understand-Anything skills across supported agent platforms.",
+  "interface": {
+    "displayName": "Understand Anything"
+  }
+}
