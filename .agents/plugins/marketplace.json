@@ -5,18 +5,6 @@
   },
   "plugins": [
     {
-      "name": "project-scanner",
-      "source": {
-        "source": "local",
-        "path": "./project-scanner"
-      },
-      "policy": {
-        "installation": "AVAILABLE",
-        "authentication": "ON_INSTALL"
-      },
-      "category": "Productivity"
-    },
-    {
       "name": "understand-anything",
       "source": {
         "source": "local",
