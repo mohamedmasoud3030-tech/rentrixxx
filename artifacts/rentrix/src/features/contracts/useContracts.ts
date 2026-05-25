@@ -22,7 +22,7 @@ export function useCreateContract() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (payload: ContractPayload) => createContract(payload),
-    onSuccess: async () => { await queryClient.invalidateQueries({ queryKey: contractKeys.lists() }); toast.success('تم إنشاء العقد بنجاح'); },
+    onSuccess: async () => { await queryClient.invalidateQueries({ queryKey: contractKeys.all }); toast.success('تم إنشاء العقد بنجاح'); },
     onError: (error) => toast.error(error instanceof Error ? error.message : 'تعذر إنشاء العقد'),
   });
 }
@@ -31,7 +31,7 @@ export function useUpdateContract(contractId: string) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (payload: ContractPayload) => updateContract(contractId, payload),
-    onSuccess: async () => { await Promise.all([queryClient.invalidateQueries({ queryKey: contractKeys.lists() }), queryClient.invalidateQueries({ queryKey: contractKeys.detail(contractId) })]); toast.success('تم تحديث العقد بنجاح'); },
+    onSuccess: async () => { await Promise.all([queryClient.invalidateQueries({ queryKey: contractKeys.all }), queryClient.invalidateQueries({ queryKey: contractKeys.detail(contractId) })]); toast.success('تم تحديث العقد بنجاح'); },
     onError: (error) => toast.error(error instanceof Error ? error.message : 'تعذر تحديث العقد'),
   });
 }
