@@ -1,4 +1,4 @@
-# /understand Snapshot
+# /understand-anything Snapshot
 
 Date: 2026-05-25 (UTC)
 
@@ -30,4 +30,4 @@ Date: 2026-05-25 (UTC)
 
 ## Notes
 
-This snapshot was generated locally to satisfy `/understand` by summarizing repository topology and command entrypoints currently available in this environment.
+This snapshot was generated locally to satisfy `/understand-anything` by summarizing repository topology and command entrypoints currently available in this environment.
