@@ -1,0 +1,6 @@
+{
+  "name": "project-scanner",
+  "version": "0.1.0",
+  "description": "Scans a project and builds a concise structural understanding graph.",
+  "entrypoint": "/project-scanner"
+}

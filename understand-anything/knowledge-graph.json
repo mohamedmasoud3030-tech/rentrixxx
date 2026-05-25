@@ -1,0 +1,24 @@
+{
+  "version": "1.0.0",
+  "plugin": "understand-anything",
+  "description": "Local knowledge graph seed for the Understand Anything plugin.",
+  "nodes": [
+    {
+      "id": "understand-anything",
+      "type": "plugin",
+      "label": "Understand Anything"
+    },
+    {
+      "id": "entrypoint",
+      "type": "command",
+      "label": "/understand"
+    }
+  ],
+  "edges": [
+    {
+      "from": "understand-anything",
+      "to": "entrypoint",
+      "type": "exposes"
+    }
+  ]
+}

@@ -1,0 +1,6 @@
+{
+  "name": "understand-anything",
+  "version": "0.1.0",
+  "description": "Understands arbitrary inputs and maps key entities and relationships.",
+  "entrypoint": "/understand"
+}
