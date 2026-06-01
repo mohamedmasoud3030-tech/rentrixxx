@@ -17,7 +17,11 @@ const copy = {
 vi.mock('@/lib/runtime-diagnostics', () => ({
   getEnvDiagnostics: vi.fn(() => []),
   parseSupabaseDiagnostics: vi.fn((error: unknown) => error instanceof Error
-    ? [{ code: 'SUPABASE_TEST', messageAr: copy.diagnostic, technical: error.message }]
+    ? [{
+        code: 'SUPABASE_TEST',
+        messageAr: '\u062a\u0639\u0630\u0631 \u062a\u062d\u0645\u064a\u0644 \u0627\u0644\u0628\u064a\u0627\u0646\u0627\u062a \u0645\u0646 \u0627\u0644\u0645\u0635\u062f\u0631',
+        technical: error.message,
+      }]
     : []),
 }));
 
