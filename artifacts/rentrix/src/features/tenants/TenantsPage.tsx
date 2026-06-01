@@ -71,12 +71,12 @@ function TenantSafeLinks({ tenant }: Readonly<{ tenant: TenantWorkspaceRow }>) {
   return (
     <div className="flex flex-wrap gap-2">
       {tenant.primaryContractId !== null ? (
-        <Button variant="secondary" className="min-h-9 px-3" asChild>
+        <Button variant="secondary" className="min-h-11 px-3" asChild>
           <Link to="/contracts/$contractId" params={{ contractId: tenant.primaryContractId }}><FileText className="ml-1 size-4" />العقد</Link>
         </Button>
       ) : null}
-      {tenant.hasInvoices ? <Button variant="secondary" className="min-h-9 px-3" asChild><Link to="/invoices"><ReceiptText className="ml-1 size-4" />الفواتير</Link></Button> : null}
-      {tenant.hasArrears ? <Button variant="secondary" className="min-h-9 px-3 text-amber-700" asChild><Link to="/arrears"><TriangleAlert className="ml-1 size-4" />المتأخرات</Link></Button> : null}
+      {tenant.hasInvoices ? <Button variant="secondary" className="min-h-11 px-3" asChild><Link to="/invoices"><ReceiptText className="ml-1 size-4" />الفواتير</Link></Button> : null}
+      {tenant.hasArrears ? <Button variant="secondary" className="min-h-11 px-3 text-amber-700" asChild><Link to="/arrears"><TriangleAlert className="ml-1 size-4" />المتأخرات</Link></Button> : null}
     </div>
   );
 }
@@ -116,9 +116,18 @@ function TenantsList({ rows }: Readonly<{ rows: TenantWorkspaceRow[] }>) {
   return <div className="grid gap-4">{rows.map((tenant) => <TenantCard key={tenant.person.id} tenant={tenant} />)}</div>;
 }
 
-function TenantWorkspaceContent({ isLoading, rows }: Readonly<{ isLoading: boolean; rows: TenantWorkspaceRow[] }>) {
+function TenantWorkspaceContent({
+  isError,
+  isLoading,
+  onRetry,
+  rows,
+}: Readonly<{ isError: boolean; isLoading: boolean; onRetry: () => void; rows: TenantWorkspaceRow[] }>) {
   if (isLoading) {
     return <div className="space-y-3">{tenantSkeletonKeys.map((key) => <Skeleton key={key} className="h-48" />)}</div>;
+  }
+
+  if (isError) {
+    return <Card><CardContent className="p-6"><EmptyState title="تعذر تحميل المستأجرين" description="حدث خطأ أثناء تحميل بيانات المستأجرين من Supabase. إعادة المحاولة آمنة ولا تغير البيانات." role="alert" ariaLive="assertive" action={<Button onClick={onRetry}>إعادة المحاولة</Button>} /></CardContent></Card>;
   }
 
   if (rows.length > 0) {
@@ -161,12 +170,12 @@ export function TenantsPage() {
         <CardContent className="pt-6">
           <div className="relative">
             <Search className="pointer-events-none absolute right-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-            <Input className="pr-10" value={search} onChange={handleSearchChange} placeholder="بحث باسم المستأجر أو الهاتف أو الإيميل أو رقم الهوية" />
+            <Input aria-label="بحث المستأجرين" className="pr-10" value={search} onChange={handleSearchChange} placeholder="بحث باسم المستأجر أو الهاتف أو الإيميل أو رقم الهوية" />
           </div>
         </CardContent>
       </Card>
 
-      <TenantWorkspaceContent isLoading={tenantsQuery.isLoading} rows={rows} />
+      <TenantWorkspaceContent isError={tenantsQuery.isError} isLoading={tenantsQuery.isLoading} onRetry={() => { tenantsQuery.refetch(); }} rows={rows} />
 
       <div className="flex items-center justify-between text-sm text-muted-foreground">
         <span>الصفحة {page} من {totalPages}</span>

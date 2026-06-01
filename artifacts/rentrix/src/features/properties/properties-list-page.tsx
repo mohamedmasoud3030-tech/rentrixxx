@@ -53,8 +53,8 @@ export function PropertiesListPage() {
 
       <Card>
         <CardContent className="grid gap-3 pt-6 md:grid-cols-[1fr_14rem]">
-          <Input value={search} onChange={(event) => { setSearch(event.target.value); setPage(1); }} placeholder="بحث بالاسم أو العنوان أو اسم المالك للعرض" />
-          <Select value={status} onChange={(event) => { setStatus(event.target.value as PropertyStatusFilter); setPage(1); }}>
+          <Input aria-label="بحث العقارات" value={search} onChange={(event) => { setSearch(event.target.value); setPage(1); }} placeholder="بحث بالاسم أو العنوان أو اسم المالك للعرض" />
+          <Select aria-label="تصفية العقارات حسب الحالة" value={status} onChange={(event) => { setStatus(event.target.value as PropertyStatusFilter); setPage(1); }}>
             <option value="all">كل الحالات</option>
             {propertyStatusValues.map((item) => <option key={item} value={item}>{propertyStatusLabels[item]}</option>)}
           </Select>
@@ -73,6 +73,8 @@ export function PropertiesListPage() {
             <EmptyState
               title="تعذر تحميل قائمة العقارات"
               description="حدث خطأ أثناء تحميل البيانات. تحديث الصفحة أو إعادة المحاولة آمن ولن يؤثر على البيانات المسجلة."
+              role="alert"
+              ariaLive="assertive"
               action={<Button onClick={() => { propertiesQuery.refetch(); }}>إعادة المحاولة</Button>}
             />
           </div>
@@ -104,9 +106,9 @@ export function PropertiesListPage() {
                     <TableCell dir="ltr" className="font-bold">{money(property.current_value)}</TableCell>
                     <TableCell>
                       <div className="flex flex-wrap gap-2">
-                        <Button variant="secondary" className="min-h-9 px-3" asChild><Link to="/properties/$propertyId" params={{ propertyId: property.id }}><Eye className="size-4" /></Link></Button>
-                        <Button variant="secondary" className="min-h-9 px-3" asChild><Link to="/properties/$propertyId/edit" params={{ propertyId: property.id }}><Edit className="size-4" /></Link></Button>
-                        <Button variant="danger" className="min-h-9 px-3" onClick={async () => { await handleArchiveProperty(property.id, property.title); }} disabled={deleteMutation.isPending}><Trash2 className="size-4" /></Button>
+                        <Button variant="secondary" className="min-h-11 px-3" asChild><Link to="/properties/$propertyId" params={{ propertyId: property.id }} aria-label={`عرض تفاصيل ${property.title}`}><Eye className="size-4" /></Link></Button>
+                        <Button variant="secondary" className="min-h-11 px-3" asChild><Link to="/properties/$propertyId/edit" params={{ propertyId: property.id }} aria-label={`تعديل ${property.title}`}><Edit className="size-4" /></Link></Button>
+                        <Button variant="danger" className="min-h-11 px-3" aria-label={`أرشفة ${property.title}`} onClick={async () => { await handleArchiveProperty(property.id, property.title); }} disabled={deleteMutation.isPending}><Trash2 className="size-4" /></Button>
                       </div>
                     </TableCell>
                   </TableRow>
