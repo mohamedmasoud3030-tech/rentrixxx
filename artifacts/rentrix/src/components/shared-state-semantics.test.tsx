@@ -2,6 +2,8 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it, vi } from 'vitest';
 import { DataErrorScreen } from './data-error-screen';
 import { EmptyState } from './empty-state';
+import { RouteErrorFallback } from './error-boundary';
+import { RouteLoadingState } from './loading-state';
 
 const copy = {
   dataErrorTitle: '\u062a\u0639\u0630\u0631 \u062a\u062d\u0645\u064a\u0644 \u0627\u0644\u0628\u064a\u0627\u0646\u0627\u062a',
@@ -12,6 +14,9 @@ const copy = {
   emptyDescription: '\u0627\u0628\u062f\u0623 \u0628\u0625\u0636\u0627\u0641\u0629 \u0623\u0648\u0644 \u0633\u062c\u0644.',
   alertTitle: '\u062a\u0639\u0630\u0631 \u0639\u0631\u0636 \u0627\u0644\u0646\u062a\u0627\u0626\u062c',
   alertDescription: '\u0623\u0639\u062f \u0627\u0644\u0645\u062d\u0627\u0648\u0644\u0629 \u0644\u0627\u062d\u0642\u064b\u0627.',
+  routeLoading: '\u062c\u0627\u0631 \u0627\u0644\u062a\u062d\u0645\u064a\u0644',
+  routeErrorTitle: '\u062a\u0639\u0630\u0631 \u062a\u062d\u0645\u064a\u0644 \u0647\u0630\u0647 \u0627\u0644\u0635\u0641\u062d\u0629',
+  retry: '\u0625\u0639\u0627\u062f\u0629 \u0627\u0644\u0645\u062d\u0627\u0648\u0644\u0629',
 };
 
 vi.mock('@/lib/runtime-diagnostics', () => ({
@@ -74,5 +79,25 @@ describe('shared recovery-state semantics', () => {
 
     expect(html).toContain('role="alert"');
     expect(html).toContain('aria-live="assertive"');
+  });
+
+  it('announces route loading politely with an Arabic accessible label', () => {
+    const html = renderToStaticMarkup(<RouteLoadingState />);
+
+    expect(html).toContain('role="status"');
+    expect(html).toContain('aria-live="polite"');
+    expect(html).toContain(`aria-label="${copy.routeLoading}"`);
+  });
+
+  it('announces route errors assertively and keeps the retry action visible', () => {
+    const html = renderToStaticMarkup(
+      <RouteErrorFallback error={new Error('route load failed')} reset={vi.fn()} />,
+    );
+
+    expect(html).toContain('role="alert"');
+    expect(html).toContain('aria-live="assertive"');
+    expect(html).toContain(copy.routeErrorTitle);
+    expect(html).toContain(copy.retry);
+    expect(html).toContain('route load failed');
   });
 });
