@@ -7,7 +7,7 @@ import { translateSharedLabel } from '@/lib/i18n';
 export function RouteErrorFallback({ error, reset }: ErrorComponentProps) {
   return (
     <div className="flex min-h-[60vh] items-center justify-center p-6">
-      <Card className="max-w-2xl border-destructive/30">
+      <Card className="max-w-2xl border-destructive/30" role="alert" aria-live="assertive">
         <CardHeader>
           <CardTitle>{translateSharedLabel('pageLoadErrorTitle')}</CardTitle>
           <CardDescription>{translateSharedLabel('pageLoadErrorDescription')}</CardDescription>

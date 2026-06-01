@@ -240,17 +240,17 @@ export function ContractsListPage() {
                         </TableCell>
                         <TableCell onClick={(event) => event.stopPropagation()}>
                           <div className="flex flex-wrap gap-2">
-                            <Button variant="secondary" className="min-h-9 px-3" asChild>
-                              <Link to="/contracts/$contractId" params={{ contractId: contract.id }}>
+                            <Button variant="secondary" className="min-h-11 px-3" asChild>
+                              <Link to="/contracts/$contractId" params={{ contractId: contract.id }} aria-label={`عرض تفاصيل العقد ${getContractNumber(contract)}`}>
                                 <Eye className="size-4" />
                               </Link>
                             </Button>
-                            <Button variant="secondary" className="min-h-9 px-3" asChild>
-                              <Link to="/contracts/$contractId/edit" params={{ contractId: contract.id }}>
+                            <Button variant="secondary" className="min-h-11 px-3" asChild>
+                              <Link to="/contracts/$contractId/edit" params={{ contractId: contract.id }} aria-label={`تعديل العقد ${getContractNumber(contract)}`}>
                                 <Edit className="size-4" />
                               </Link>
                             </Button>
-                            <Button variant="danger" className="min-h-9 px-3" onClick={() => deleteMutation.mutate(contract.id)} disabled={deleteMutation.isPending}>
+                            <Button variant="danger" className="min-h-11 px-3" aria-label={`حذف العقد ${getContractNumber(contract)}`} onClick={() => deleteMutation.mutate(contract.id)} disabled={deleteMutation.isPending}>
                               <Trash2 className="size-4" />
                             </Button>
                           </div>

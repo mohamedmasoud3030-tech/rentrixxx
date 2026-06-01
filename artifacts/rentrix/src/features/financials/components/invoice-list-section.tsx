@@ -57,8 +57,8 @@ export function InvoiceListSection({
         />
 
         <div className="space-y-2">
-          {isLoading ? <div className="rounded-2xl border border-dashed p-6 text-center text-muted-foreground">جارٍ تحميل الفواتير...</div> : null}
-          {isError ? <div className="rounded-2xl border border-destructive/40 bg-destructive/10 p-6 text-center text-destructive">{getErrorMessage(error, 'تعذر تحميل الفواتير')}</div> : null}
+          {isLoading ? <div className="rounded-2xl border border-dashed p-6 text-center text-muted-foreground" role="status" aria-live="polite">جارٍ تحميل الفواتير...</div> : null}
+          {isError ? <div className="rounded-2xl border border-destructive/40 bg-destructive/10 p-6 text-center text-destructive" role="alert" aria-live="assertive">{getErrorMessage(error, 'تعذر تحميل الفواتير')}</div> : null}
           {!isLoading && !isError && invoices.length === 0 ? (
             <div className="rounded-2xl border border-dashed p-6 text-center text-muted-foreground">
               {hasInvoiceFilter ? 'لا توجد فواتير مطابقة للبحث أو الفلتر الحالي' : 'لا توجد فواتير حتى الآن'}
@@ -75,6 +75,8 @@ export function InvoiceListSection({
                   isSelected ? 'border-primary bg-primary/5 ring-2 ring-primary/20' : 'bg-background',
                 )}
                 onClick={() => onSelectInvoice(invoice.id)}
+                aria-pressed={isSelected}
+                aria-label={`عرض تفاصيل الفاتورة ${invoice.id.slice(0, 8)}`}
               >
                 <span>
                   <span className="block text-xs text-muted-foreground">رقم الفاتورة</span>

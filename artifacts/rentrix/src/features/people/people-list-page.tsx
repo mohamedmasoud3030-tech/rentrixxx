@@ -35,8 +35,8 @@ export function PeopleListPage() {
 
       <Card>
         <CardContent className="grid gap-3 pt-6 md:grid-cols-[1fr_14rem]">
-          <Input value={search} onChange={(event) => { setSearch(event.target.value); setPage(1); }} placeholder="بحث بالاسم أو الهاتف أو الهوية" />
-          <Select value={type} onChange={(event) => { setType(event.target.value as PersonTypeFilter); setPage(1); }}>
+          <Input aria-label="بحث الأشخاص" value={search} onChange={(event) => { setSearch(event.target.value); setPage(1); }} placeholder="بحث بالاسم أو الهاتف أو الهوية" />
+          <Select aria-label="تصفية الأشخاص حسب النوع" value={type} onChange={(event) => { setType(event.target.value as PersonTypeFilter); setPage(1); }}>
             <option value="all">كل الأنواع</option>
             {personTypeValues.map((item) => <option key={item} value={item}>{personTypeLabels[item]}</option>)}
           </Select>
@@ -47,6 +47,16 @@ export function PeopleListPage() {
         {peopleQuery.isLoading ? (
           <div className="space-y-3 p-6">
             {Array.from({ length: 6 }, (_, index) => <Skeleton key={index} className="h-14" />)}
+          </div>
+        ) : peopleQuery.isError ? (
+          <div className="p-6">
+            <EmptyState
+              title="تعذر تحميل الأشخاص"
+              description="حدث خطأ أثناء تحميل البيانات من Supabase. يمكنك إعادة المحاولة بدون تغيير البيانات."
+              role="alert"
+              ariaLive="assertive"
+              action={<Button onClick={() => { peopleQuery.refetch(); }}>إعادة المحاولة</Button>}
+            />
           </div>
         ) : peopleQuery.data?.rows.length ? (
           <div className="overflow-x-auto">
@@ -74,8 +84,8 @@ export function PeopleListPage() {
                     <TableCell>{person.national_id ?? '—'}</TableCell>
                     <TableCell>
                       <div className="flex gap-2">
-                        <Button variant="secondary" className="min-h-9 px-3" asChild><Link to="/people/$personId/edit" params={{ personId: person.id }}><Edit className="size-4" /></Link></Button>
-                        <Button variant="danger" className="min-h-9 px-3" onClick={() => void deleteMutation.mutate(person.id)} disabled={deleteMutation.isPending}><Trash2 className="size-4" /></Button>
+                        <Button variant="secondary" className="min-h-11 px-3" asChild><Link to="/people/$personId/edit" params={{ personId: person.id }} aria-label={`تعديل ${person.full_name}`}><Edit className="size-4" /></Link></Button>
+                        <Button variant="danger" className="min-h-11 px-3" aria-label={`أرشفة ${person.full_name}`} onClick={() => void deleteMutation.mutate(person.id)} disabled={deleteMutation.isPending}><Trash2 className="size-4" /></Button>
                       </div>
                     </TableCell>
                   </TableRow>

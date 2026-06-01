@@ -64,6 +64,8 @@ function NavigationLinks({
             key={item.to}
             to={item.to}
             onClick={onNavigate}
+            aria-label={sharedLabel(item.labelKey)}
+            title={expanded ? undefined : sharedLabel(item.labelKey)}
             className="flex min-h-11 items-center gap-3 rounded-2xl px-3 py-3 text-sm font-black text-sidebar-foreground transition hover:bg-sidebar-accent hover:text-white [&.active]:bg-primary [&.active]:text-primary-foreground [&.active]:shadow-[0_10px_28px_-14px_hsl(var(--primary))]"
             activeOptions={{ exact: item.to === '/' }}
           >
@@ -119,11 +121,24 @@ function MobileNavigationDrawer({
   onClose: () => void;
   onLogout: () => void;
 }>) {
+  useEffect(() => {
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        onClose();
+      }
+    };
+
+    document.addEventListener('keydown', handleEscape);
+    return () => document.removeEventListener('keydown', handleEscape);
+  }, [onClose]);
+
   return (
     <dialog
       open
       className="fixed inset-0 z-[90] m-0 h-dvh w-screen max-w-none overflow-hidden border-0 bg-transparent p-0 lg:hidden"
       aria-label={closeMenuLabel}
+      aria-modal="true"
+      role="dialog"
     >
       <button
         type="button"
@@ -146,6 +161,7 @@ function MobileNavigationDrawer({
             </div>
           </div>
           <Button
+            autoFocus
             variant="ghost"
             className="size-10 shrink-0 px-0 text-sidebar-foreground hover:bg-sidebar-accent hover:text-white"
             onClick={onClose}
@@ -181,6 +197,7 @@ function MobileBottomNav({
     <nav
       className="fixed bottom-0 inset-x-0 z-40 border-t border-border bg-background/95 backdrop-blur-xl lg:hidden"
       style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
+      aria-label="التنقل الرئيسي المختصر"
     >
       <div className="grid h-16 grid-cols-5">
         {bottomNavItems.map((item) => {
@@ -190,7 +207,8 @@ function MobileBottomNav({
               key={item.to}
               to={item.to}
               activeOptions={{ exact: item.to === '/' }}
-              className="flex flex-col items-center justify-center gap-1 text-muted-foreground transition-colors [&.active]:text-primary"
+              aria-label={sharedLabel(item.labelKey)}
+              className="flex min-h-14 flex-col items-center justify-center gap-1 text-muted-foreground transition-colors [&.active]:text-primary"
             >
               <Icon className="size-5" />
               <span className="text-[10px] font-bold leading-none">
@@ -257,6 +275,12 @@ export function AppShell() {
       className="min-h-screen overflow-x-hidden bg-background text-foreground"
       dir={appLanguage.direction}
     >
+      <a
+        href="#main-content"
+        className="sr-only z-[100] rounded-xl bg-primary px-4 py-2 font-bold text-primary-foreground focus:not-sr-only focus:fixed focus:right-4 focus:top-4 focus:outline-none focus:ring-4 focus:ring-primary/20"
+      >
+        تخطي إلى المحتوى الرئيسي
+      </a>
       {/* Mobile drawer */}
       {mobileNavOpen ? (
         <MobileNavigationDrawer
@@ -366,7 +390,7 @@ export function AppShell() {
         </header>
 
         {/* Page content — extra bottom padding on mobile for bottom nav */}
-        <main className="animate-route-in overflow-x-hidden p-3 pb-24 sm:p-4 sm:pb-28 lg:p-6 lg:pb-6">
+        <main id="main-content" tabIndex={-1} className="animate-route-in overflow-x-hidden p-3 pb-24 outline-none sm:p-4 sm:pb-28 lg:p-6 lg:pb-6">
           <Outlet />
         </main>
       </div>

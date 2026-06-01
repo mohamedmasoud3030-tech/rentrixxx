@@ -3,7 +3,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 
 export function RouteLoadingState() {
   return (
-    <div className="space-y-6 p-6" aria-label={translateSharedLabel('routeLoadingAria')}>
+    <div className="space-y-6 p-6" role="status" aria-live="polite" aria-label={translateSharedLabel('routeLoadingAria')}>
       <Skeleton className="h-10 w-64" />
       <div className="grid gap-4 md:grid-cols-3">
         <Skeleton className="h-32" />
