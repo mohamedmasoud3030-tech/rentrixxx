@@ -6,13 +6,24 @@ const optionalRent = z.preprocess(
 );
 
 export const unitStatusValues = ['available', 'occupied', 'maintenance', 'reserved'] as const;
+export type UnitStatus = (typeof unitStatusValues)[number];
 
-export const unitStatusLabels: Record<(typeof unitStatusValues)[number], string> = {
+export const unitStatusLabels: Record<UnitStatus, string> = {
   available: 'متاحة',
   occupied: 'مشغولة',
   maintenance: 'صيانة',
   reserved: 'محجوزة',
 };
+
+export function normalizeUnitStatus(status: string): UnitStatus {
+  const normalized = status.trim().toLowerCase();
+
+  if (unitStatusValues.includes(normalized as UnitStatus)) {
+    return normalized as UnitStatus;
+  }
+
+  throw new Error(`Unsupported unit status: ${status}`);
+}
 
 export const unitSchema = z.object({
   unit_number: z.string().trim().min(1, 'رقم الوحدة مطلوب'),
