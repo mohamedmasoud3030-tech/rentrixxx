@@ -70,7 +70,7 @@ function countExpiringContracts30Days(date: Date) {
 }
 
 function countVacantUnits() {
-  return countRows('units', (query) => query.eq('status', 'available'));
+  return countRows('units', (query) => query.ilike('status', 'available'));
 }
 
 function countOverdueInvoices() {
