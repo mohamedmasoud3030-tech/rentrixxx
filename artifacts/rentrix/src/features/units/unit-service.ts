@@ -1,11 +1,17 @@
 import { supabase } from '@/integrations/supabase/client';
 import type { Database } from '@/types/database';
 import type { Unit } from '@/types/domain';
-import type { UnitPayload } from './unit-schema';
+import { normalizeUnitStatus, type UnitPayload } from './unit-schema';
 
 type UnitInsert = Database['public']['Tables']['units']['Insert'];
 type UnitUpdate = Database['public']['Tables']['units']['Update'];
 
+function normalizeUnit(unit: Unit): Unit {
+  return {
+    ...unit,
+    status: normalizeUnitStatus(String(unit.status)),
+  };
+}
 
 export async function listUnits(): Promise<Unit[]> {
   const { data, error } = await supabase
@@ -16,7 +22,7 @@ export async function listUnits(): Promise<Unit[]> {
     .order('unit_number', { ascending: true })
     .returns<Unit[]>();
   if (error) throw error;
-  return data ?? [];
+  return (data ?? []).map(normalizeUnit);
 }
 
 export async function listUnitsByProperty(propertyId: string): Promise<Unit[]> {
@@ -28,14 +34,14 @@ export async function listUnitsByProperty(propertyId: string): Promise<Unit[]> {
     .order('unit_number', { ascending: true })
     .returns<Unit[]>();
   if (error) throw error;
-  return data ?? [];
+  return (data ?? []).map(normalizeUnit);
 }
 
 export async function createUnit(propertyId: string, payload: UnitPayload): Promise<Unit> {
   const insertPayload: UnitInsert = { ...payload, property_id: propertyId };
   const { data, error } = await supabase.from('units').insert(insertPayload).select('*').single().returns<Unit>();
   if (error) throw error;
-  return data;
+  return normalizeUnit(data);
 }
 
 export async function updateUnit(unitId: string, payload: UnitPayload): Promise<Unit> {
@@ -49,7 +55,7 @@ export async function updateUnit(unitId: string, payload: UnitPayload): Promise<
     .single()
     .returns<Unit>();
   if (error) throw error;
-  return data;
+  return normalizeUnit(data);
 }
 
 export async function softDeleteUnit(unitId: string): Promise<void> {
