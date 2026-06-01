@@ -30,4 +30,11 @@ jobs:
       - run: pnpm build
       - run: pnpm --filter ./artifacts/rentrix run typecheck:test
       - run: pnpm --filter ./artifacts/rentrix test
-      - run: pnpm --filter ./artifacts/rentrix run test:financials
+      - name: Run financial tests
+        shell: bash
+        run: |
+          set +e
+          pnpm --filter ./artifacts/rentrix run test:financials > /tmp/rentrix-financial-tests.log 2>&1
+          status=$?
+          tail -n 160 /tmp/rentrix-financial-tests.log
+          exit "$status"
