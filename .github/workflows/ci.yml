@@ -31,10 +31,21 @@ jobs:
       - run: pnpm --filter ./artifacts/rentrix run typecheck:test
       - run: pnpm --filter ./artifacts/rentrix test
       - name: Run financial tests
+        id: financial-tests
         shell: bash
         run: |
           set +e
           pnpm --filter ./artifacts/rentrix run test:financials > /tmp/rentrix-financial-tests.log 2>&1
           status=$?
+          echo "status=$status" >> "$GITHUB_OUTPUT"
           tail -n 160 /tmp/rentrix-financial-tests.log
-          exit "$status"
+          exit 0
+      - name: Upload financial test diagnostics
+        if: steps.financial-tests.outputs.status != '0'
+        uses: actions/upload-artifact@v4
+        with:
+          name: rentrix-financial-test-diagnostics
+          path: /tmp/rentrix-financial-tests.log
+      - name: Fail on financial test errors
+        if: steps.financial-tests.outputs.status != '0'
+        run: exit 1
