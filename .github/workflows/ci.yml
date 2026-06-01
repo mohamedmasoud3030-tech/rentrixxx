@@ -6,9 +6,13 @@ on:
   pull_request:
     branches: [main]
 
+permissions:
+  contents: read
+
 jobs:
   build:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     env:
       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
       VITE_SUPABASE_URL: https://example.supabase.co
@@ -24,5 +28,24 @@ jobs:
       - run: pnpm typecheck
       - run: pnpm lint
       - run: pnpm build
+      - run: pnpm --filter ./artifacts/rentrix run typecheck:test
       - run: pnpm --filter ./artifacts/rentrix test
-      - run: pnpm --filter ./artifacts/rentrix run test:financials
+      - name: Run financial tests
+        id: financial-tests
+        shell: bash
+        run: |
+          set +e
+          pnpm --filter ./artifacts/rentrix run test:financials > /tmp/rentrix-financial-tests.log 2>&1
+          status=$?
+          echo "status=$status" >> "$GITHUB_OUTPUT"
+          tail -n 160 /tmp/rentrix-financial-tests.log
+          exit 0
+      - name: Upload financial test diagnostics
+        if: steps.financial-tests.outputs.status != '0'
+        uses: actions/upload-artifact@v4
+        with:
+          name: rentrix-financial-test-diagnostics
+          path: /tmp/rentrix-financial-tests.log
+      - name: Fail on financial test errors
+        if: steps.financial-tests.outputs.status != '0'
+        run: exit 1
