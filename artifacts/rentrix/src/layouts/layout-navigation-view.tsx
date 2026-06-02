@@ -47,10 +47,9 @@ export function NavigationLinks({
 }
 
 export function WorkspaceCard({
-  sharedLabel,
   onQuickLink,
   compact = false,
-}: Readonly<{ sharedLabel: SharedLabel; onQuickLink: (to: QuickLinkRoute) => void; compact?: boolean }>) {
+}: Readonly<{ onQuickLink: (to: QuickLinkRoute) => void; compact?: boolean }>) {
   return (
     <section className={cn('rounded-2xl border border-white/10 bg-white/[0.06] p-3', compact ? 'mt-3' : 'mt-5')}>
       <div className="mb-2 flex items-center justify-between gap-2">
