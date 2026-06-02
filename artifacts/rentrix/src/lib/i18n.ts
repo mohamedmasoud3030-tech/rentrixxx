@@ -14,7 +14,7 @@ type SharedTranslationEntry = readonly [key: string, arabicLabel: string, englis
 
 const sharedTranslationEntries = [
   ['appName', 'Rentrix', 'Rentrix'],
-  ['realEstateManagement', 'إدارة العقارات', 'Real estate management'],
+  ['realEstateManagement', 'إدارة عقارية بوضوح وسرعة', 'Real estate operations with clarity'],
   ['home', 'الرئيسية', 'Home'],
   ['loading', 'جارٍ التحميل...', 'Loading...'],
   ['error', 'حدث خطأ غير متوقع', 'An unexpected error occurred'],
@@ -23,8 +23,8 @@ const sharedTranslationEntries = [
   ['pageLoadErrorTitle', 'تعذر تحميل هذه الصفحة', 'This page could not be loaded'],
   [
     'pageLoadErrorDescription',
-    'حدث خطأ غير متوقع. راجع الإعدادات أو اتصال Supabase ثم حاول مرة أخرى.',
-    'An unexpected error occurred. Check settings or the Supabase connection, then try again.',
+    'حدث خطأ غير متوقع. أعد المحاولة أو راجع الإعدادات ثم جرّب مرة أخرى.',
+    'An unexpected error occurred. Retry or review settings, then try again.',
   ],
   ['retry', 'إعادة المحاولة', 'Retry'],
   ['routeLoadingAria', 'جار التحميل', 'Loading'],
@@ -43,19 +43,6 @@ const sharedTranslationEntries = [
   ['settings', 'الإعدادات', 'Settings'],
   ['collapseMenu', 'طي القائمة', 'Collapse menu'],
   ['toggleTheme', 'تبديل الوضع', 'Toggle theme'],
-  ['recoverySection', 'قيد الاسترجاع', 'Under recovery'],
-  [
-    'recoveryTooltip',
-    'سيتم استرجاع هذه الوحدة تدريجيًا من الكود القديم',
-    'This module will be restored gradually from the legacy code',
-  ],
-  ['communications', 'التواصل', 'Communications'],
-  ['propertyMap', 'خريطة العقارات', 'Property map'],
-  ['lands', 'الأراضي', 'Lands'],
-  ['prospects', 'العملاء المحتملون', 'Prospects'],
-  ['commissions', 'العمولات', 'Commissions'],
-  ['auditLog', 'سجل التدقيق', 'Audit log'],
-  ['aiAssistant', 'المساعد الذكي', 'AI assistant'],
 ] as const satisfies ReadonlyArray<SharedTranslationEntry>;
 
 function getEntryLabel(entry: SharedTranslationEntry, language: SupportedLanguage): string {
@@ -72,7 +59,6 @@ export const i18nResources = {
   ar: { common: buildSharedTranslationResources('ar') },
   en: { common: buildSharedTranslationResources('en') },
 } as const satisfies Record<SupportedLanguage, Readonly<Record<typeof I18N_NAMESPACE, SharedTranslationResources>>>;
-
 
 export type AppLanguageState = Readonly<{
   language: SupportedLanguage;
