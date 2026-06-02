@@ -1,185 +1,81 @@
-import { Link, Outlet, useMatches, useRouter } from '@tanstack/react-router';
+import { Outlet, useMatches, useRouter } from '@tanstack/react-router';
 import { useEffect, useState } from 'react';
-import {
-  Bot, Building2, ChevronLeft, ClipboardList, FileText, Home,
-  Landmark, LayoutDashboard, LogOut, Map, Menu, MessageCircle,
-  Moon, ReceiptText, Settings, Sun, UserRoundCog, Users,
-  WalletCards, Wrench, X,
-} from 'lucide-react';
+import { Bell, ChevronLeft, LogOut, Menu, Moon, Search, ShieldCheck, Sun, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/use-auth';
 import { getAppLanguageState, translateSharedLabel } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
 import { useUiStore } from '@/store/ui-store';
+import type { SyncStatus } from '@/types/domain';
+import { MobileBottomNav, NavigationLinks, WorkspaceCard, type SharedLabel } from './layout-navigation-view';
+import type { QuickLinkRoute } from './app-nav-items';
 
-const navigation = [
-  { to: '/',            labelKey: 'dashboard',   icon: LayoutDashboard },
-  { to: '/properties',  labelKey: 'properties',  icon: Building2 },
-  { to: '/people',      labelKey: 'people',      icon: Users },
-  { to: '/tenants',     labelKey: 'tenants',      icon: Users },
-  { to: '/owners',      labelKey: 'owners',      icon: UserRoundCog },
-  { to: '/contracts',   labelKey: 'contracts',   icon: FileText },
-  { to: '/financials',  labelKey: 'financials',  icon: WalletCards },
-  { to: '/invoices',    labelKey: 'invoices',    icon: ReceiptText },
-  { to: '/arrears',     labelKey: 'arrears',     icon: ClipboardList },
-  { to: '/accounting',  labelKey: 'accounting',  icon: ReceiptText },
-  { to: '/reports',     labelKey: 'reports',     icon: Home },
-  { to: '/maintenance', labelKey: 'maintenance', icon: Wrench },
-  { to: '/settings',   labelKey: 'settings',    icon: Settings },
-] as const;
-
-// Bottom nav shows the 5 most-used routes on mobile
-const bottomNavItems = [
-  { to: '/',           labelKey: 'dashboard',  icon: LayoutDashboard },
-  { to: '/contracts',  labelKey: 'contracts',  icon: FileText },
-  { to: '/financials', labelKey: 'financials', icon: WalletCards },
-  { to: '/invoices',   labelKey: 'invoices',   icon: ReceiptText },
-  { to: '/arrears',    labelKey: 'arrears',    icon: ClipboardList },
-] as const;
-
-const recoveryModules = [
-  { labelKey: 'communications', icon: MessageCircle },
-  { labelKey: 'propertyMap',    icon: Map },
-  { labelKey: 'lands',          icon: Landmark },
-  { labelKey: 'prospects',      icon: Users },
-  { labelKey: 'commissions',    icon: WalletCards },
-  { labelKey: 'auditLog',       icon: ClipboardList },
-  { labelKey: 'aiAssistant',    icon: Bot },
-] as const;
-
-type SharedLabel = (key: string) => string;
-
-function NavigationLinks({
-  expanded,
-  sharedLabel,
-  onNavigate,
-}: Readonly<{ expanded: boolean; sharedLabel: SharedLabel; onNavigate?: () => void }>) {
-  return (
-    <>
-      {navigation.map((item) => {
-        const Icon = item.icon;
-        return (
-          <Link
-            key={item.to}
-            to={item.to}
-            onClick={onNavigate}
-            aria-label={sharedLabel(item.labelKey)}
-            title={expanded ? undefined : sharedLabel(item.labelKey)}
-            className="flex min-h-11 items-center gap-3 rounded-2xl px-3 py-3 text-sm font-black text-sidebar-foreground transition hover:bg-sidebar-accent hover:text-white [&.active]:bg-primary [&.active]:text-primary-foreground [&.active]:shadow-[0_10px_28px_-14px_hsl(var(--primary))]"
-            activeOptions={{ exact: item.to === '/' }}
-          >
-            <Icon className="size-5 shrink-0" />
-            {expanded ? <span>{sharedLabel(item.labelKey)}</span> : null}
-          </Link>
-        );
-      })}
-    </>
-  );
+function statusLabel(status: SyncStatus) {
+  if (status === 'syncing') return 'جارٍ التحديث';
+  if (status === 'offline') return 'وضع دون اتصال';
+  if (status === 'error') return 'تحتاج المزامنة إلى مراجعة';
+  return 'جاهز للعمل';
 }
 
-function RecoveryLinks({
-  expanded,
-  sharedLabel,
-}: Readonly<{ expanded: boolean; sharedLabel: SharedLabel }>) {
+function Brand({ expanded, sharedLabel }: Readonly<{ expanded: boolean; sharedLabel: SharedLabel }>) {
   return (
-    <>
+    <div className={cn('flex min-w-0 items-center gap-3', !expanded && 'justify-center')}>
+      <div className="relative grid size-11 shrink-0 place-items-center rounded-2xl bg-white text-lg font-black text-slate-950 shadow-lg">
+        R
+        <span className="absolute -bottom-1 -left-1 size-3 rounded-full border-2 border-sidebar bg-emerald-400" />
+      </div>
       {expanded ? (
-        <div className="pt-3">
-          <p className="px-3 text-[11px] font-black uppercase tracking-wide text-sidebar-foreground/60">
-            {sharedLabel('recoverySection')}
+        <div className="min-w-0">
+          <p className="truncate text-xl font-black text-white">Rentrix</p>
+          <p className="truncate text-xs font-bold text-sidebar-foreground/65">إدارة عقارية بوضوح وسرعة</p>
+          <p className="mt-1 flex items-center gap-1 text-[10px] font-bold text-emerald-300">
+            <ShieldCheck className="size-3" />
+            مساحة عمل آمنة
           </p>
         </div>
       ) : null}
-      {recoveryModules.map((item) => {
-        const Icon = item.icon;
-        return (
-          <div
-            key={item.labelKey}
-            className="flex min-h-11 cursor-not-allowed items-center gap-3 rounded-2xl px-3 py-3 text-sm font-black text-sidebar-foreground/55"
-            title={sharedLabel('recoveryTooltip')}
-          >
-            <Icon className="size-5 shrink-0" />
-            {expanded ? <span>{sharedLabel(item.labelKey)}</span> : null}
-          </div>
-        );
-      })}
-    </>
+    </div>
   );
 }
 
 function MobileNavigationDrawer({
-  appName,
-  closeMenuLabel,
   sharedLabel,
   onClose,
   onLogout,
+  onQuickLink,
 }: Readonly<{
-  appName: string;
-  closeMenuLabel: string;
   sharedLabel: SharedLabel;
   onClose: () => void;
   onLogout: () => void;
+  onQuickLink: (to: QuickLinkRoute) => void;
 }>) {
   useEffect(() => {
-    const handleEscape = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
-        onClose();
-      }
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') onClose();
     };
 
-    document.addEventListener('keydown', handleEscape);
-    return () => document.removeEventListener('keydown', handleEscape);
+    document.addEventListener('keydown', closeOnEscape);
+    return () => document.removeEventListener('keydown', closeOnEscape);
   }, [onClose]);
 
   return (
-    <dialog
-      open
-      className="fixed inset-0 z-[90] m-0 h-dvh w-screen max-w-none overflow-hidden border-0 bg-transparent p-0 lg:hidden"
-      aria-label={closeMenuLabel}
-      aria-modal="true"
-      role="dialog"
-    >
-      <button
-        type="button"
-        className="absolute inset-0 bg-slate-950/55"
-        aria-label={closeMenuLabel}
-        onClick={onClose}
-      />
-      <aside className="absolute inset-y-0 right-0 flex w-[min(20rem,85vw)] flex-col overflow-hidden border-l border-sidebar-border bg-sidebar text-sidebar-foreground shadow-sidebar">
+    <dialog open aria-modal="true" aria-label="القائمة الرئيسية" className="fixed inset-0 z-[90] m-0 h-dvh w-screen max-w-none overflow-hidden border-0 bg-transparent p-0 lg:hidden">
+      <button type="button" className="absolute inset-0 bg-slate-950/60 backdrop-blur-[2px]" aria-label="إغلاق القائمة" onClick={onClose} />
+      <aside className="animate-panel-in absolute inset-y-0 right-0 flex w-[min(22rem,90vw)] flex-col overflow-hidden border-l border-sidebar-border bg-sidebar text-sidebar-foreground shadow-sidebar">
         <div className="h-[3px] w-full bg-accent" />
-        <div className="flex h-20 items-center justify-between gap-3 border-b border-white/10 px-4">
-          <div className="flex min-w-0 items-center gap-3">
-            <div className="grid size-10 shrink-0 place-items-center rounded-2xl bg-white text-base font-black text-slate-950 shadow-lg shadow-blue-500/10">
-              R
-            </div>
-            <div className="min-w-0">
-              <p className="truncate text-lg font-black text-white">{appName}</p>
-              <p className="truncate text-xs font-bold text-sidebar-foreground/70">
-                {sharedLabel('realEstateManagement')}
-              </p>
-            </div>
-          </div>
-          <Button
-            autoFocus
-            variant="ghost"
-            className="size-10 shrink-0 px-0 text-sidebar-foreground hover:bg-sidebar-accent hover:text-white"
-            onClick={onClose}
-            aria-label={closeMenuLabel}
-          >
+        <div className="flex min-h-24 items-center justify-between gap-3 border-b border-white/10 px-4 py-4">
+          <Brand expanded sharedLabel={sharedLabel} />
+          <Button autoFocus variant="ghost" className="size-10 shrink-0 px-0 text-sidebar-foreground hover:bg-sidebar-accent hover:text-white" onClick={onClose} aria-label="إغلاق القائمة">
             <X className="size-5" />
           </Button>
         </div>
-        <nav className="flex-1 space-y-1 overflow-y-auto p-3">
+        <nav className="sidebar-scroll flex-1 overflow-y-auto p-3">
           <NavigationLinks expanded sharedLabel={sharedLabel} onNavigate={onClose} />
-          <RecoveryLinks expanded sharedLabel={sharedLabel} />
+          <WorkspaceCard compact sharedLabel={sharedLabel} onQuickLink={onQuickLink} />
         </nav>
         <div className="border-t border-white/10 p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
-          <Button
-            variant="ghost"
-            className="min-h-11 w-full justify-start gap-3 text-sidebar-foreground hover:bg-sidebar-accent hover:text-white"
-            onClick={onLogout}
-          >
+          <Button variant="ghost" className="min-h-11 w-full justify-start gap-3 text-sidebar-foreground hover:bg-sidebar-accent hover:text-white" onClick={onLogout}>
             <LogOut className="size-5" />
             <span>{sharedLabel('logout')}</span>
           </Button>
@@ -189,213 +85,105 @@ function MobileNavigationDrawer({
   );
 }
 
-/** Mobile bottom navigation bar — only the 5 primary routes */
-function MobileBottomNav({
-  sharedLabel,
-}: Readonly<{ sharedLabel: SharedLabel }>) {
-  return (
-    <nav
-      className="fixed bottom-0 inset-x-0 z-40 border-t border-border bg-background/95 backdrop-blur-xl lg:hidden"
-      style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
-      aria-label="التنقل الرئيسي المختصر"
-    >
-      <div className="grid h-16 grid-cols-5">
-        {bottomNavItems.map((item) => {
-          const Icon = item.icon;
-          return (
-            <Link
-              key={item.to}
-              to={item.to}
-              activeOptions={{ exact: item.to === '/' }}
-              aria-label={sharedLabel(item.labelKey)}
-              className="flex min-h-14 flex-col items-center justify-center gap-1 text-muted-foreground transition-colors [&.active]:text-primary"
-            >
-              <Icon className="size-5" />
-              <span className="text-[10px] font-bold leading-none">
-                {sharedLabel(item.labelKey)}
-              </span>
-            </Link>
-          );
-        })}
-      </div>
-    </nav>
-  );
-}
-
 export function AppShell() {
   const router = useRouter();
   const matches = useMatches();
   const { logout, user } = useAuth();
-  const { sidebarCollapsed, theme, toggleSidebar, setTheme, syncStatus, lastSyncedAt } =
-    useUiStore();
+  const { sidebarCollapsed, theme, toggleSidebar, setTheme, syncStatus, lastSyncedAt } = useUiStore();
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const [quickActionsOpen, setQuickActionsOpen] = useState(false);
   const appLanguage = getAppLanguageState();
   const isSidebarExpanded = sidebarCollapsed === false;
-
+  const sharedLabel = (key: string) => translateSharedLabel(key, appLanguage.language);
   const pageTitle =
     ([...matches]
       .reverse()
-      .find((m) => (m.staticData as { title?: string } | undefined)?.title)
+      .find((match) => (match.staticData as { title?: string } | undefined)?.title)
       ?.staticData as { title?: string } | undefined)?.title ?? 'Rentrix';
 
-  const sharedLabel = (key: string) => translateSharedLabel(key, appLanguage.language);
-  const appName = sharedLabel('appName');
-  const openMenuLabel = appLanguage.language === 'ar' ? 'فتح القائمة' : 'Open menu';
-  const closeMenuLabel = appLanguage.language === 'ar' ? 'إغلاق القائمة' : 'Close menu';
-
   useEffect(() => {
-    document.title = `${pageTitle} | ${appName}`;
-  }, [appName, pageTitle]);
+    document.title = `${pageTitle} | Rentrix`;
+  }, [pageTitle]);
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
-      if (event.ctrlKey && event.key.toLowerCase() === 'n') {
+      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k') {
         event.preventDefault();
-        const current = window.location.pathname;
-        if (current.endsWith('/properties')) void router.navigate({ to: '/properties/new' });
-        if (current.endsWith('/people')) void router.navigate({ to: '/people/new' });
-        if (current.endsWith('/contracts')) void router.navigate({ to: '/contracts/new' });
+        setQuickActionsOpen((isOpen) => !isOpen);
       }
+      if (event.key === 'Escape') setQuickActionsOpen(false);
     };
+
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [router]);
+  }, []);
 
-  const closeMobileNav = () => setMobileNavOpen(false);
+  const navigateToQuickLink = async (to: QuickLinkRoute) => {
+    setQuickActionsOpen(false);
+    setMobileNavOpen(false);
+    await router.navigate({ to });
+  };
 
   const handleLogout = async () => {
     await logout();
-    closeMobileNav();
+    setMobileNavOpen(false);
     toast.success(sharedLabel('logoutSuccess'));
     await router.navigate({ to: '/login' });
   };
 
+  const showNotifications = () => {
+    toast.success('لا توجد إشعارات جديدة', { description: 'مساحة العمل جاهزة ومحدثة.' });
+  };
+
   return (
-    <div
-      className="min-h-screen overflow-x-hidden bg-background text-foreground"
-      dir={appLanguage.direction}
-    >
-      <a
-        href="#main-content"
-        className="sr-only z-[100] rounded-xl bg-primary px-4 py-2 font-bold text-primary-foreground focus:not-sr-only focus:fixed focus:right-4 focus:top-4 focus:outline-none focus:ring-4 focus:ring-primary/20"
-      >
+    <div className="min-h-screen overflow-x-hidden bg-[radial-gradient(circle_at_top_left,hsl(var(--primary)/0.055),transparent_28%),hsl(var(--background))] text-foreground" dir={appLanguage.direction}>
+      <a href="#main-content" className="sr-only z-[100] rounded-xl bg-primary px-4 py-2 font-bold text-primary-foreground focus:not-sr-only focus:fixed focus:right-4 focus:top-4">
         تخطي إلى المحتوى الرئيسي
       </a>
-      {/* Mobile drawer */}
+
       {mobileNavOpen ? (
-        <MobileNavigationDrawer
-          appName={appName}
-          closeMenuLabel={closeMenuLabel}
-          sharedLabel={sharedLabel}
-          onClose={closeMobileNav}
-          onLogout={handleLogout}
-        />
+        <MobileNavigationDrawer sharedLabel={sharedLabel} onClose={() => setMobileNavOpen(false)} onLogout={handleLogout} onQuickLink={navigateToQuickLink} />
       ) : null}
 
-      {/* Desktop sidebar */}
-      <aside
-        className={cn(
-          'fixed inset-y-0 right-0 z-30 hidden overflow-hidden border-l border-sidebar-border bg-sidebar text-sidebar-foreground shadow-sidebar transition-all lg:flex lg:flex-col',
-          sidebarCollapsed ? 'w-20' : 'w-72',
-        )}
-      >
+      <aside className={cn('fixed inset-y-0 right-0 z-30 hidden overflow-hidden border-l border-sidebar-border bg-sidebar text-sidebar-foreground shadow-sidebar transition-all duration-300 lg:flex lg:flex-col', sidebarCollapsed ? 'w-20' : 'w-80')}>
         <div className="h-[3px] w-full bg-accent" />
-        <div className="flex h-24 items-center gap-3 border-b border-white/10 px-5">
-          <div className="grid size-11 place-items-center rounded-2xl bg-white text-lg font-black text-slate-950 shadow-lg shadow-blue-500/10">
-            R
-          </div>
-          {isSidebarExpanded ? (
-            <div>
-              <p className="text-xl font-black text-white">{appName}</p>
-              <p className="text-xs font-bold text-sidebar-foreground/70">
-                {sharedLabel('realEstateManagement')}
-              </p>
-            </div>
-          ) : null}
-        </div>
-        <nav className="flex-1 space-y-2 overflow-y-auto p-4">
+        <div className="min-h-24 border-b border-white/10 px-5 py-5"><Brand expanded={isSidebarExpanded} sharedLabel={sharedLabel} /></div>
+        <nav className="sidebar-scroll flex-1 overflow-y-auto p-4">
           <NavigationLinks expanded={isSidebarExpanded} sharedLabel={sharedLabel} />
-          <RecoveryLinks expanded={isSidebarExpanded} sharedLabel={sharedLabel} />
+          {isSidebarExpanded ? <WorkspaceCard sharedLabel={sharedLabel} onQuickLink={navigateToQuickLink} /> : null}
         </nav>
-        <div className="border-t border-white/10 p-4">
-          <Button
-            variant="ghost"
-            className="w-full justify-start gap-3 text-sidebar-foreground hover:bg-sidebar-accent hover:text-white"
-            onClick={handleLogout}
-          >
+        <div className="border-t border-white/10 p-3">
+          <Button variant="ghost" className={cn('w-full gap-3 text-sidebar-foreground hover:bg-sidebar-accent hover:text-white', sidebarCollapsed ? 'justify-center px-0' : 'justify-start')} onClick={handleLogout}>
             <LogOut className="size-5" />
-            {isSidebarExpanded ? <span>{sharedLabel('logout')}</span> : null}
+            {sidebarCollapsed ? null : <span>{sharedLabel('logout')}</span>}
           </Button>
         </div>
       </aside>
 
-      {/* Content area */}
-      <div className={cn('w-full transition-all lg:pr-72', sidebarCollapsed && 'lg:pr-20')}>
-        {/* Header */}
-        <header className="sticky top-0 z-20 border-b border-border bg-background/90 backdrop-blur-xl">
-          <div className="flex h-16 items-center gap-2 px-3 sm:h-20 sm:gap-3 sm:px-5">
-            {/* Mobile: hamburger */}
-            <Button
-              variant="ghost"
-              className="size-10 shrink-0 px-0 lg:hidden"
-              onClick={() => setMobileNavOpen(true)}
-              aria-label={openMenuLabel}
-            >
-              <Menu className="size-5" />
-            </Button>
-            {/* Desktop: collapse toggle */}
-            <Button
-              variant="ghost"
-              className="hidden size-10 shrink-0 px-0 lg:inline-flex"
-              onClick={toggleSidebar}
-              aria-label={sharedLabel('collapseMenu')}
-            >
-              <Menu className="size-5" />
-            </Button>
-
-            {/* Title */}
+      <div className={cn('w-full transition-all duration-300 lg:pr-80', sidebarCollapsed && 'lg:pr-20')}>
+        <header className="sticky top-0 z-20 border-b border-border bg-background/82 backdrop-blur-2xl">
+          <div className="flex min-h-16 items-center gap-2 px-3 py-2 sm:min-h-20 sm:px-5">
+            <Button variant="ghost" className="size-10 shrink-0 px-0 lg:hidden" onClick={() => setMobileNavOpen(true)} aria-label="فتح القائمة"><Menu className="size-5" /></Button>
+            <Button variant="ghost" className="hidden size-10 shrink-0 px-0 lg:inline-flex" onClick={toggleSidebar} aria-label={sharedLabel('collapseMenu')}><Menu className="size-5" /></Button>
             <div className="min-w-0 flex-1">
-              <div className="flex min-w-0 items-center gap-1 truncate text-xs text-muted-foreground">
-                <span className="hidden sm:inline">{sharedLabel('home')}</span>
-                <ChevronLeft className="hidden size-3 sm:inline" />
-                <span className="font-bold">{pageTitle}</span>
-              </div>
-              <h1 className="mt-0.5 truncate text-lg font-black tracking-tight sm:text-2xl lg:text-3xl">
-                {pageTitle}
-              </h1>
+              <div className="flex items-center gap-1 truncate text-[11px] font-bold text-muted-foreground"><span>{sharedLabel('home')}</span><ChevronLeft className="size-3" /><span>{pageTitle}</span></div>
+              <h1 className="truncate text-lg font-black tracking-tight sm:text-2xl">{pageTitle}</h1>
             </div>
-
-            {/* Right actions */}
-            <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
-              {/* Sync status — hidden on very small screens */}
-              <div className="hidden min-w-0 max-w-[140px] truncate rounded-xl border border-border bg-card px-2 py-1.5 text-xs text-muted-foreground sm:block sm:px-3">
-                <span className="font-bold text-foreground">{syncStatus}</span>
-                {lastSyncedAt
-                  ? ` · ${new Date(lastSyncedAt).toLocaleTimeString(appLanguage.locale)}`
-                  : ''}
+            <div className="flex items-center gap-1.5">
+              <span className="hidden rounded-2xl border border-border bg-card px-3 py-2 text-[11px] font-bold text-muted-foreground sm:inline-flex">{statusLabel(syncStatus)}{lastSyncedAt ? ` · ${new Date(lastSyncedAt).toLocaleTimeString(appLanguage.locale)}` : ''}</span>
+              <div className="relative">
+                <Button variant="secondary" className="size-10 px-0" onClick={() => setQuickActionsOpen((isOpen) => !isOpen)} aria-label="فتح الإجراءات السريعة"><Search className="size-4" /></Button>
+                {quickActionsOpen ? <div className="animate-panel-in absolute left-0 top-[calc(100%+0.65rem)] z-50 w-72 rounded-2xl border border-border bg-sidebar p-3 text-sidebar-foreground shadow-2xl"><WorkspaceCard compact sharedLabel={sharedLabel} onQuickLink={navigateToQuickLink} /></div> : null}
               </div>
-              <Button
-                variant="secondary"
-                className="size-9 px-0 sm:size-10"
-                onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-                aria-label={sharedLabel('toggleTheme')}
-              >
-                {theme === 'dark' ? <Sun className="size-4 sm:size-5" /> : <Moon className="size-4 sm:size-5" />}
-              </Button>
-              <div className="hidden text-left text-xs text-muted-foreground xl:block" dir="ltr">
-                {user?.email}
-              </div>
+              <Button variant="secondary" className="size-10 px-0" onClick={showNotifications} aria-label="الإشعارات"><Bell className="size-4" /></Button>
+              <Button variant="secondary" className="size-10 px-0" onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')} aria-label={sharedLabel('toggleTheme')}>{theme === 'dark' ? <Sun className="size-4" /> : <Moon className="size-4" />}</Button>
+              <span className="hidden size-9 place-items-center rounded-xl bg-primary text-xs font-black text-primary-foreground xl:grid" title={user?.email}>{user?.email?.charAt(0).toUpperCase() || 'R'}</span>
             </div>
           </div>
         </header>
-
-        {/* Page content — extra bottom padding on mobile for bottom nav */}
-        <main id="main-content" tabIndex={-1} className="animate-route-in overflow-x-hidden p-3 pb-24 outline-none sm:p-4 sm:pb-28 lg:p-6 lg:pb-6">
-          <Outlet />
-        </main>
+        <main id="main-content" tabIndex={-1} className="animate-route-in overflow-x-hidden p-3 pb-24 outline-none sm:p-4 sm:pb-28 lg:p-6 lg:pb-6"><Outlet /></main>
       </div>
 
-      {/* Mobile bottom navigation */}
       <MobileBottomNav sharedLabel={sharedLabel} />
     </div>
   );
