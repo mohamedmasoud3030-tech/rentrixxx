@@ -18,7 +18,7 @@ function statusLabel(status: SyncStatus) {
   return 'جاهز للعمل';
 }
 
-function Brand({ expanded, sharedLabel }: Readonly<{ expanded: boolean; sharedLabel: SharedLabel }>) {
+function Brand({ expanded }: Readonly<{ expanded: boolean }>) {
   return (
     <div className={cn('flex min-w-0 items-center gap-3', !expanded && 'justify-center')}>
       <div className="relative grid size-11 shrink-0 place-items-center rounded-2xl bg-white text-lg font-black text-slate-950 shadow-lg">
@@ -65,14 +65,14 @@ function MobileNavigationDrawer({
       <aside className="animate-panel-in absolute inset-y-0 right-0 flex w-[min(22rem,90vw)] flex-col overflow-hidden border-l border-sidebar-border bg-sidebar text-sidebar-foreground shadow-sidebar">
         <div className="h-[3px] w-full bg-accent" />
         <div className="flex min-h-24 items-center justify-between gap-3 border-b border-white/10 px-4 py-4">
-          <Brand expanded sharedLabel={sharedLabel} />
+          <Brand expanded />
           <Button autoFocus variant="ghost" className="size-10 shrink-0 px-0 text-sidebar-foreground hover:bg-sidebar-accent hover:text-white" onClick={onClose} aria-label="إغلاق القائمة">
             <X className="size-5" />
           </Button>
         </div>
         <nav className="sidebar-scroll flex-1 overflow-y-auto p-3">
           <NavigationLinks expanded sharedLabel={sharedLabel} onNavigate={onClose} />
-          <WorkspaceCard compact sharedLabel={sharedLabel} onQuickLink={onQuickLink} />
+          <WorkspaceCard compact onQuickLink={onQuickLink} />
         </nav>
         <div className="border-t border-white/10 p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
           <Button variant="ghost" className="min-h-11 w-full justify-start gap-3 text-sidebar-foreground hover:bg-sidebar-accent hover:text-white" onClick={onLogout}>
@@ -147,10 +147,10 @@ export function AppShell() {
 
       <aside className={cn('fixed inset-y-0 right-0 z-30 hidden overflow-hidden border-l border-sidebar-border bg-sidebar text-sidebar-foreground shadow-sidebar transition-all duration-300 lg:flex lg:flex-col', sidebarCollapsed ? 'w-20' : 'w-80')}>
         <div className="h-[3px] w-full bg-accent" />
-        <div className="min-h-24 border-b border-white/10 px-5 py-5"><Brand expanded={isSidebarExpanded} sharedLabel={sharedLabel} /></div>
+        <div className="min-h-24 border-b border-white/10 px-5 py-5"><Brand expanded={isSidebarExpanded} /></div>
         <nav className="sidebar-scroll flex-1 overflow-y-auto p-4">
           <NavigationLinks expanded={isSidebarExpanded} sharedLabel={sharedLabel} />
-          {isSidebarExpanded ? <WorkspaceCard sharedLabel={sharedLabel} onQuickLink={navigateToQuickLink} /> : null}
+          {isSidebarExpanded ? <WorkspaceCard onQuickLink={navigateToQuickLink} /> : null}
         </nav>
         <div className="border-t border-white/10 p-3">
           <Button variant="ghost" className={cn('w-full gap-3 text-sidebar-foreground hover:bg-sidebar-accent hover:text-white', sidebarCollapsed ? 'justify-center px-0' : 'justify-start')} onClick={handleLogout}>
@@ -173,7 +173,7 @@ export function AppShell() {
               <span className="hidden rounded-2xl border border-border bg-card px-3 py-2 text-[11px] font-bold text-muted-foreground sm:inline-flex">{statusLabel(syncStatus)}{lastSyncedAt ? ` · ${new Date(lastSyncedAt).toLocaleTimeString(appLanguage.locale)}` : ''}</span>
               <div className="relative">
                 <Button variant="secondary" className="size-10 px-0" onClick={() => setQuickActionsOpen((isOpen) => !isOpen)} aria-label="فتح الإجراءات السريعة"><Search className="size-4" /></Button>
-                {quickActionsOpen ? <div className="animate-panel-in absolute left-0 top-[calc(100%+0.65rem)] z-50 w-72 rounded-2xl border border-border bg-sidebar p-3 text-sidebar-foreground shadow-2xl"><WorkspaceCard compact sharedLabel={sharedLabel} onQuickLink={navigateToQuickLink} /></div> : null}
+                {quickActionsOpen ? <div className="animate-panel-in absolute left-0 top-[calc(100%+0.65rem)] z-50 w-72 rounded-2xl border border-border bg-sidebar p-3 text-sidebar-foreground shadow-2xl"><WorkspaceCard compact onQuickLink={navigateToQuickLink} /></div> : null}
               </div>
               <Button variant="secondary" className="size-10 px-0" onClick={showNotifications} aria-label="الإشعارات"><Bell className="size-4" /></Button>
               <Button variant="secondary" className="size-10 px-0" onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')} aria-label={sharedLabel('toggleTheme')}>{theme === 'dark' ? <Sun className="size-4" /> : <Moon className="size-4" />}</Button>
