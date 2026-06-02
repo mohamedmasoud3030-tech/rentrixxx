@@ -8,6 +8,14 @@ export function throwIfError(error: { message: string } | null): void {
   if (error) throw new Error(error.message);
 }
 
+export function createOperationId(): string {
+  return globalThis.crypto.randomUUID();
+}
+
+export function nowIso(): string {
+  return new Date().toISOString();
+}
+
 export function normalizeStatus(value: unknown): string {
-  return String(value ?? '').trim().toLowerCase();
+  return String(value ?? '').trim().toUpperCase();
 }
