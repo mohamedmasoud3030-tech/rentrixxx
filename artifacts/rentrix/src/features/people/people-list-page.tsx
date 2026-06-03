@@ -52,7 +52,7 @@ export function PeopleListPage() {
           <div className="p-6">
             <EmptyState
               title="تعذر تحميل الأشخاص"
-              description="حدث خطأ أثناء تحميل البيانات من Supabase. يمكنك إعادة المحاولة بدون تغيير البيانات."
+              description="حدث خطأ أثناء تحميل البيانات. يمكنك إعادة المحاولة بدون تغيير البيانات."
               role="alert"
               ariaLive="assertive"
               action={<Button onClick={() => { peopleQuery.refetch(); }}>إعادة المحاولة</Button>}

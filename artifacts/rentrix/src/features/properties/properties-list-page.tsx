@@ -46,7 +46,7 @@ export function PropertiesListPage() {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h2 className="text-xl font-black">العقارات</h2>
-          <p className="text-sm text-muted-foreground">إدارة العقارات كمصدر بيانات أساسي في Supabase.</p>
+          <p className="text-sm text-muted-foreground">إدارة العقارات والوحدات المرتبطة بها من سجل الأصول التشغيلي.</p>
         </div>
         <Button asChild><Link to="/properties/new"><Plus className="ml-2 size-4" />إضافة عقار</Link></Button>
       </div>
