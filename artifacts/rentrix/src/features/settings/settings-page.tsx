@@ -89,46 +89,6 @@ function SelectField({ label, field, draft, errors, disabled, options, onChange 
   );
 }
 
-type UserAccount = { email: string; active: boolean };
-
-type UserManagementCardProps = Readonly<{
-  users: UserAccount[];
-  inviteEmail: string;
-  onInviteEmailChange: (value: string) => void;
-  onInviteUser: () => void;
-  onToggleUser: (email: string) => void;
-}>;
-
-function UserManagementCard({ users, inviteEmail, onInviteEmailChange, onInviteUser, onToggleUser }: UserManagementCardProps) {
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle>إدارة المستخدمين</CardTitle>
-        <CardDescription>دعوة عبر البريد أو تعطيل مستخدم.</CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-2">
-        <div className="flex gap-2">
-          <Input
-            className="flex-1"
-            placeholder="email@example.com"
-            value={inviteEmail}
-            onChange={(event) => onInviteEmailChange(event.target.value)}
-          />
-          <Button onClick={onInviteUser}>دعوة</Button>
-        </div>
-        {users.map((user) => (
-          <div key={user.email} className="flex items-center justify-between rounded border p-2">
-            <span>{user.email}</span>
-            <Button variant="secondary" onClick={() => onToggleUser(user.email)}>
-              {user.active ? 'تعطيل' : 'تفعيل'}
-            </Button>
-          </div>
-        ))}
-      </CardContent>
-    </Card>
-  );
-}
-
 type AppPreferencesCardProps = Readonly<{
   lang: SupportedLanguage;
   theme: string;
@@ -141,7 +101,7 @@ function AppPreferencesCard({ lang, theme, onLanguageChange, onToggleTheme }: Ap
     <Card>
       <CardHeader>
         <CardTitle>تفضيلات التطبيق</CardTitle>
-        <CardDescription>تستخدم أزرار اللغة المحلية المحفوظة كإعداد افتراضي للشركة.</CardDescription>
+        <CardDescription>اختر اللغة الافتراضية وسمة العرض المناسبة لفريق العمل.</CardDescription>
       </CardHeader>
       <CardContent className="space-y-3">
         <div className="flex gap-2">
@@ -153,7 +113,6 @@ function AppPreferencesCard({ lang, theme, onLanguageChange, onToggleTheme }: Ap
     </Card>
   );
 }
-
 
 type PreviewFieldProps = Readonly<{
   label: string;
@@ -240,10 +199,6 @@ function CompanySettingsPreviewCard({ draft, formattedPreviewDate, formattedPrev
   );
 }
 
-function toggleUserStatus(users: UserAccount[], email: string): UserAccount[] {
-  return users.map((user) => user.email === email ? { ...user, active: !user.active } : user);
-}
-
 export function SettingsPage() {
   const { theme, setTheme } = useUiStore();
   const companySettingsQuery = useCompanySettings();
@@ -253,8 +208,6 @@ export function SettingsPage() {
   const baseDraftRef = useRef<CompanySettingsDraft | null>(null);
   const draftRef = useRef<CompanySettingsDraft | null>(null);
   const [errors, setErrors] = useState<CompanySettingsValidationErrors>({});
-  const [users, setUsers] = useState<UserAccount[]>([{ email: 'admin@rentrix.app', active: true }]);
-  const [inviteEmail, setInviteEmail] = useState('');
 
   const isDirty = !areCompanySettingsDraftsEqual(draft, baseDraft);
   const isSaving = updateCompanySettingsMutation.isPending;
@@ -301,19 +254,6 @@ export function SettingsPage() {
 
   const handleRetryLoad = async () => {
     await companySettingsQuery.refetch();
-  };
-
-  const handleInviteUser = () => {
-    if (!inviteEmail) {
-      return;
-    }
-
-    setUsers((currentUsers) => [{ email: inviteEmail, active: true }, ...currentUsers]);
-    setInviteEmail('');
-  };
-
-  const handleToggleUser = (email: string) => {
-    setUsers((currentUsers) => toggleUserStatus(currentUsers, email));
   };
 
   const handleToggleTheme = () => {
@@ -380,8 +320,8 @@ export function SettingsPage() {
     );
   }
 
-  return <div className="grid gap-4 lg:grid-cols-2" dir={pageLanguage.direction} lang={pageLanguage.locale}>
-    <Card className="lg:col-span-2">
+  return <div className="grid gap-4" dir={pageLanguage.direction} lang={pageLanguage.locale}>
+    <Card>
       <CardHeader>
         <CardTitle>ملف الشركة</CardTitle>
         <CardDescription>هذه الإعدادات محفوظة ومستمرة في قاعدة البيانات وتُستخدم كمرجع لتنسيق بيانات الشركة.</CardDescription>
@@ -430,13 +370,6 @@ export function SettingsPage() {
       </CardContent>
     </Card>
 
-    <UserManagementCard
-      users={users}
-      inviteEmail={inviteEmail}
-      onInviteEmailChange={setInviteEmail}
-      onInviteUser={handleInviteUser}
-      onToggleUser={handleToggleUser}
-    />
     <AppPreferencesCard lang={pageLanguage.language} theme={theme} onLanguageChange={handleDefaultLanguageChange} onToggleTheme={handleToggleTheme} />
   </div>;
 }
