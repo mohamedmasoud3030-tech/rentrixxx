@@ -9,7 +9,6 @@ const copy = {
   dataErrorTitle: '\u062a\u0639\u0630\u0631 \u062a\u062d\u0645\u064a\u0644 \u0627\u0644\u0628\u064a\u0627\u0646\u0627\u062a',
   fallback: '\u062d\u062f\u062b \u062e\u0637\u0623 \u063a\u064a\u0631 \u0645\u062a\u0648\u0642\u0639',
   diagnostic: '\u062a\u0639\u0630\u0631 \u062a\u062d\u0645\u064a\u0644 \u0627\u0644\u0628\u064a\u0627\u0646\u0627\u062a \u0645\u0646 \u0627\u0644\u0645\u0635\u062f\u0631',
-  diagnosticDetails: '\u062a\u0641\u0627\u0635\u064a\u0644 \u062a\u0634\u062e\u064a\u0635\u064a\u0629 \u062a\u0642\u0646\u064a\u0629',
   emptyTitle: '\u0644\u0627 \u062a\u0648\u062c\u062f \u0628\u064a\u0627\u0646\u0627\u062a',
   emptyDescription: '\u0627\u0628\u062f\u0623 \u0628\u0625\u0636\u0627\u0641\u0629 \u0623\u0648\u0644 \u0633\u062c\u0644.',
   alertTitle: '\u062a\u0639\u0630\u0631 \u0639\u0631\u0636 \u0627\u0644\u0646\u062a\u0627\u0626\u062c',
@@ -42,7 +41,7 @@ describe('shared recovery-state semantics', () => {
     expect(html).toContain(copy.fallback);
   });
 
-  it('renders the first diagnostic message and technical details when diagnostics exist', () => {
+  it('renders the first diagnostic message without exposing technical details', () => {
     const html = renderToStaticMarkup(
       <DataErrorScreen
         title={copy.dataErrorTitle}
@@ -52,8 +51,7 @@ describe('shared recovery-state semantics', () => {
     );
 
     expect(html).toContain(copy.diagnostic);
-    expect(html).toContain(copy.diagnosticDetails);
-    expect(html).toContain('test supabase failure');
+    expect(html).not.toContain('test supabase failure');
   });
 
   it('announces an empty state politely by default', () => {

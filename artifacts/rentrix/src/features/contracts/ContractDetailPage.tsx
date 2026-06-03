@@ -338,7 +338,7 @@ export function ContractDetailPage() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>تجديد العقد</DialogTitle>
-            <DialogDescription>سيتم إنشاء عقد جديد مرتبط بالعقد الحالي عبر RPC آمن.</DialogDescription>
+            <DialogDescription>سيتم إنشاء عقد جديد مرتبط بالعقد الحالي مع حفظ سلسلة التجديد.</DialogDescription>
           </DialogHeader>
           <form className="grid gap-4" onSubmit={form.handleSubmit(submitRenewal)}>
             <label className="grid gap-2 text-sm font-bold">
@@ -377,7 +377,7 @@ function LifecycleActionsCard({ contract, companySettings, renewalAllowed, onRen
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
             <CardTitle className="flex items-center gap-2"><RefreshCw className="size-5 text-primary" />إجراءات التجديد والإنهاء</CardTitle>
-            <CardDescription>توضيح دورة حياة العقد اعتمادًا على خدمات وحقول Phase 2 الموجودة فقط.</CardDescription>
+            <CardDescription>توضيح دورة حياة العقد وخيارات التجديد أو إغلاق الحالة من صفحة واحدة.</CardDescription>
           </div>
           <StatusBadge tone={contractStatusTone[contract.status]}>{contractStatusLabels[contract.status]}</StatusBadge>
         </div>
@@ -395,7 +395,7 @@ function LifecycleActionsCard({ contract, companySettings, renewalAllowed, onRen
         <div className="rounded-2xl border border-border bg-background p-4">
           <p className="flex items-center gap-2 font-black"><ShieldAlert className="size-4 text-amber-600" />إنهاء العقد</p>
           <p className="mt-2 text-sm leading-6 text-muted-foreground">
-            يدعم النموذج الحالي تغيير الحالة إلى ملغي وتسجيل سبب الإلغاء فقط. لم تتم إضافة إجراء إنهاء مستقل لأنه يحتاج خدمة ذرية واضحة لتحديث العقد والوحدة معًا دون مخطط أو RPC جديد.
+            يمكنك تعديل حالة العقد وتسجيل سبب الإلغاء مع الحفاظ على سجل العقد واضحاً للمراجعة والمتابعة.
           </p>
           <Button className="mt-4" variant="secondary" asChild>
             <Link to="/contracts/$contractId/edit" params={{ contractId: contract.id }}>تعديل الحالة وسبب الإلغاء</Link>

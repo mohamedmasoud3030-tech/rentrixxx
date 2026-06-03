@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { Link } from '@tanstack/react-router';
 import { Bar, BarChart, CartesianGrid, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
-import { ArrowUpLeft, CalendarDays, FileClock, ReceiptText, RefreshCcw } from 'lucide-react';
+import { ArrowUpLeft, CalendarDays, ReceiptText, RefreshCcw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -29,7 +29,6 @@ type CsvValue = string | number | boolean | null | undefined;
 type CsvRow = Record<string, CsvValue>;
 type FilterState = Readonly<{ from: string; to: string; asOf: string }>;
 type ReportCardProps = Readonly<{ title: string; description: string; children: React.ReactNode; action?: React.ReactNode }>;
-type DeferredReportCardProps = Readonly<{ title: string; reason: string }>;
 type MetricCardProps = Readonly<{ label: string; value: string; helper: string; tone?: 'blue' | 'green' | 'red' | 'gray' | 'gold' }>;
 
 type RentRollRow = ReturnType<typeof buildRentRollRows>[number];
@@ -46,13 +45,6 @@ const supportedReportNames = [
   'الفواتير المتأخرة',
   'تقادم الذمم',
   'التحصيل اليومي',
-];
-const deferredReports = [
-  { title: 'Owner Statement', reason: 'مؤجل حتى تتوفر خدمة owner settlements/statement آمنة في الطبقة الحالية بدون تصنيع أرصدة.' },
-  { title: 'Tenant Statement', reason: 'مؤجل حتى تتوفر خدمة tenant ledger/statement آمنة في الطبقة الحالية بدون تصنيع كشوف حساب.' },
-  { title: 'Trial Balance', reason: 'مؤجل لأن ميزان المراجعة يحتاج Ledger/Chart of Accounts مدعومين بخدمة حالية آمنة.' },
-  { title: 'Income Statement', reason: 'مؤجل لأن قائمة الدخل المحاسبية غير مدعومة حاليًا بخدمة reports آمنة مكتملة.' },
-  { title: 'Balance Sheet', reason: 'مؤجل لأن الميزانية العمومية تحتاج أرصدة دفتر أستاذ مؤكدة وليست متاحة بأمان الآن.' },
 ];
 const agingBucketKeys: Array<AgedReceivablesBucket['key']> = ['current', 'days_1_30', 'days_31_60', 'days_61_90', 'days_90_plus'];
 const contractStatusLabels: Record<ContractListItem['status'], string> = {
@@ -153,20 +145,6 @@ function ReportCard({ title, description, action, children }: ReportCardProps) {
   );
 }
 
-function DeferredReportCard({ title, reason }: DeferredReportCardProps) {
-  return (
-    <Card className="border-dashed border-muted-foreground/30 bg-muted/20">
-      <CardHeader>
-        <div className="flex items-center justify-between gap-3">
-          <CardTitle className="flex items-center gap-2 text-base"><FileClock className="size-4" />{title}</CardTitle>
-          <StatusBadge tone="gray">مؤجل</StatusBadge>
-        </div>
-        <CardDescription>{reason}</CardDescription>
-      </CardHeader>
-    </Card>
-  );
-}
-
 function MetricCard({ label, value, helper, tone = 'blue' }: MetricCardProps) {
   return (
     <div className="rounded-2xl border border-border bg-background/80 p-4">
@@ -192,7 +170,7 @@ function FiltersPanel({ filters, onChange, onResetCurrentMonth }: Readonly<{
           <div>
             <p className="text-sm font-black text-primary">مركز التقارير التشغيلية</p>
             <h2 className="text-3xl font-black tracking-tight">مركز التقارير</h2>
-            <CardDescription>معاينة تشغيلية للقراءة فقط من hooks/services الحالية فقط، بدون إنشاء قيود أو تعديل بيانات مالية.</CardDescription>
+            <CardDescription>تقارير تشغيلية للقراءة والتصدير تساعدك على متابعة التحصيل، العقود، والمتأخرات من مكان واحد.</CardDescription>
           </div>
           <div className="flex flex-wrap gap-2">
             <Button variant="secondary" asChild><Link to="/invoices">الفواتير</Link></Button>
@@ -233,7 +211,7 @@ function FinancialSummarySection({ summary, cashflowRows }: Readonly<{
   return (
     <ReportCard
       title="1. ملخص التحصيل للفترة"
-      description="عرض تشغيلي للقراءة فقط للفترة المحددة اعتمادًا على الفواتير والمدفوعات والمصروفات."
+      description="ملخص للفترة المحددة يجمع الفواتير والتحصيل والمصروفات المسجلة."
       action={<Button variant="secondary" onClick={() => downloadCsv('financial-summary.csv', toFinancialSummaryCsv(report))}>تصدير CSV</Button>}
     >
       <div className="grid gap-3 p-4 md:grid-cols-5">
@@ -393,7 +371,7 @@ function DailyCollectionSection({ rows, receiptRows }: Readonly<{
   return (
     <ReportCard
       title="5. التحصيل اليومي"
-      description="تحصيل يومي من خدمة payments الحالية، وروابط الإيصالات تستخدم /receipts?receiptId=<id> فقط."
+      description="ملخص يومي للتحصيل مع روابط مباشرة لفتح إيصالات الدفع وطباعتها."
       action={<Button variant="secondary" onClick={() => downloadCsv('daily-collection.csv', toDailyCollectionCsv(rows))}>تصدير CSV</Button>}
     >
       <div className="overflow-x-auto">
@@ -429,7 +407,7 @@ function DailyCollectionSection({ rows, receiptRows }: Readonly<{
         <div className="mb-3 flex items-center justify-between gap-3">
           <div>
             <p className="font-black">روابط الإيصالات المتاحة</p>
-            <p className="text-xs text-muted-foreground">من أحدث {latestReceiptLimit} إيصال عبر خدمة الإيصالات الحالية؛ الرابط يستخدم query string فقط.</p>
+            <p className="text-xs text-muted-foreground">أحدث {latestReceiptLimit} إيصال قابل للفتح والطباعة من السجل.</p>
           </div>
           <ReceiptText className="size-5 text-primary" />
         </div>
@@ -510,10 +488,6 @@ export function ReportsPage() {
       <OverdueInvoicesSection rows={overdueInvoicesQuery.data?.rows ?? []} />
       <AgedReceivablesSection report={agedReceivablesQuery.data} />
       <DailyCollectionSection rows={dailyCollectionQuery.data?.rows ?? []} receiptRows={receiptRows} />
-
-      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-3" aria-label="Deferred reports">
-        {deferredReports.map((report) => <DeferredReportCard key={report.title} title={report.title} reason={report.reason} />)}
-      </section>
     </div>
   );
 }

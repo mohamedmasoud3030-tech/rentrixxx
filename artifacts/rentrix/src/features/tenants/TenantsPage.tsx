@@ -127,7 +127,7 @@ function TenantWorkspaceContent({
   }
 
   if (isError) {
-    return <Card><CardContent className="p-6"><EmptyState title="تعذر تحميل المستأجرين" description="حدث خطأ أثناء تحميل بيانات المستأجرين من Supabase. إعادة المحاولة آمنة ولا تغير البيانات." role="alert" ariaLive="assertive" action={<Button onClick={onRetry}>إعادة المحاولة</Button>} /></CardContent></Card>;
+    return <Card><CardContent className="p-6"><EmptyState title="تعذر تحميل المستأجرين" description="حدث خطأ أثناء تحميل بيانات المستأجرين. إعادة المحاولة آمنة ولا تغير البيانات." role="alert" ariaLive="assertive" action={<Button onClick={onRetry}>إعادة المحاولة</Button>} /></CardContent></Card>;
   }
 
   if (rows.length > 0) {

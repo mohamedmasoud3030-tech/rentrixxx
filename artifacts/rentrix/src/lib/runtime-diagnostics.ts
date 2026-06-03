@@ -18,7 +18,7 @@ export function getEnvDiagnostics(): RuntimeDiagnostic[] {
   if (!import.meta.env.VITE_SUPABASE_URL) {
     diagnostics.push({
       code: 'missing_supabase_url',
-      messageAr: 'متغير الاتصال بقاعدة البيانات (VITE_SUPABASE_URL) غير مضبوط.',
+      messageAr: 'إعداد الاتصال بقاعدة البيانات غير مكتمل.',
       technical: 'Missing VITE_SUPABASE_URL in current Vite runtime environment.',
     });
   }
@@ -26,7 +26,7 @@ export function getEnvDiagnostics(): RuntimeDiagnostic[] {
   if (!import.meta.env.VITE_SUPABASE_ANON_KEY) {
     diagnostics.push({
       code: 'missing_supabase_anon_key',
-      messageAr: 'مفتاح الوصول العام (VITE_SUPABASE_ANON_KEY) غير مضبوط.',
+      messageAr: 'إعداد الوصول إلى قاعدة البيانات غير مكتمل.',
       technical: 'Missing VITE_SUPABASE_ANON_KEY in current Vite runtime environment.',
     });
   }
@@ -43,7 +43,7 @@ export function parseSupabaseDiagnostics(error: unknown): RuntimeDiagnostic[] {
   if (text.includes('failed to fetch') || text.includes('network') || maybe.code === 'ECONNREFUSED') {
     diagnostics.push({
       code: 'supabase_connection_failure',
-      messageAr: 'فشل الاتصال بخدمة Supabase. تحقق من الشبكة وصحة رابط المشروع.',
+      messageAr: 'تعذر الاتصال بقاعدة البيانات. تحقق من الشبكة ثم أعد المحاولة.',
       technical: `Supabase connectivity error: ${maybe.message ?? 'Unknown error'}`,
     });
   }
@@ -59,7 +59,7 @@ export function parseSupabaseDiagnostics(error: unknown): RuntimeDiagnostic[] {
   if (text.includes('function') && text.includes('does not exist')) {
     diagnostics.push({
       code: 'missing_required_rpc',
-      messageAr: 'يوجد إجراء RPC مطلوب غير موجود في قاعدة البيانات الحالية.',
+      messageAr: 'تعذر إكمال العملية لأن إعداداً مطلوباً غير متاح حالياً.',
       technical: `Missing RPC function detected: ${maybe.message ?? 'Unknown RPC error'}`,
     });
   }
@@ -67,7 +67,7 @@ export function parseSupabaseDiagnostics(error: unknown): RuntimeDiagnostic[] {
   if (diagnostics.length === 0) {
     diagnostics.push({
       code: 'supabase_connection_failure',
-      messageAr: 'حدث خطأ أثناء تحميل البيانات من Supabase.',
+      messageAr: 'حدث خطأ أثناء تحميل البيانات.',
       technical: `Unhandled Supabase error: ${maybe.message ?? 'Unknown error'}`,
     });
   }

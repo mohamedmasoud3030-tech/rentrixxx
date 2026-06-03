@@ -79,9 +79,9 @@ export function MobileBottomNav({ sharedLabel }: Readonly<{ sharedLabel: SharedL
   const mobileItems = [
     ['/', 'dashboard', navGroups[0][1][0][3]],
     ['/properties', 'properties', navGroups[1][1][0][3]],
-    ['/contracts', 'contracts', navGroups[1][1][4][3]],
+    ['/contracts', 'contracts', navGroups[1][1][5][3]],
     ['/financials', 'financials', navGroups[2][1][0][3]],
-    ['/arrears', 'arrears', navGroups[2][1][2][3]],
+    ['/arrears', 'arrears', navGroups[2][1][4][3]],
   ] as const;
 
   return (

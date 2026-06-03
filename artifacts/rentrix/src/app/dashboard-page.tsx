@@ -463,7 +463,7 @@ function MonthlyFinancialPanel({ snapshot, isLoading, settings }: Readonly<{
 function DashboardErrorCard({ onRetry, error }: Readonly<{ onRetry: () => void; error: unknown }>) {
   return (
     <div className="space-y-3">
-      <DataErrorScreen title="تعذر تحميل بيانات لوحة التحكم" fallbackMessage="راجع اتصال Supabase أو صلاحيات التقارير الحالية ثم أعد المحاولة." error={error} />
+      <DataErrorScreen title="تعذر تحميل بيانات لوحة التحكم" fallbackMessage="راجع الاتصال وصلاحيات الوصول ثم أعد المحاولة." error={error} />
       <Button type="button" variant="secondary" onClick={onRetry}>إعادة المحاولة</Button>
     </div>
   );
@@ -503,7 +503,7 @@ export function DashboardPage() {
             <p className="text-sm font-bold text-primary">لوحة تحكم Rentrix التشغيلية</p>
             <h2 className="mt-3 max-w-3xl text-3xl font-black leading-tight">مركز متابعة العقارات والعقود والتحصيل من البيانات الحالية.</h2>
             <p className="mt-3 max-w-2xl leading-7 text-muted-foreground">
-              تعرض اللوحة مؤشرات تشغيلية حقيقية من خدمات Supabase والتقارير الحالية بدون إضافة SQL أو RPCs أو مصادر legacy.
+              تعرض اللوحة مؤشرات تشغيلية حقيقية من بيانات العقارات والعقود والتحصيل المسجلة في النظام.
             </p>
           </div>
           <div className="rounded-3xl bg-primary/10 p-5 text-primary">

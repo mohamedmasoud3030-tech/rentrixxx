@@ -10,6 +10,7 @@ import { PropertiesRouteComponent } from '@/routes/_protected.properties';
 import { PropertyNewRouteComponent } from '@/routes/_protected.properties.new';
 import { PropertyDetailRouteComponent } from '@/routes/_protected.properties.$propertyId';
 import { PropertyEditRouteComponent } from '@/routes/_protected.properties.$propertyId.edit';
+import { UnitsRouteComponent } from '@/routes/_protected.units';
 import { PeopleRouteComponent } from '@/routes/_protected.people';
 import { TenantsRouteComponent } from '@/routes/_protected.tenants';
 import { OwnersRouteComponent } from '@/routes/_protected.owners';
@@ -20,10 +21,10 @@ import { ContractNewRouteComponent } from '@/routes/_protected.contracts.new';
 import { ContractDetailRouteComponent } from '@/routes/_protected.contracts.$contractId';
 import { ContractEditRouteComponent } from '@/routes/_protected.contracts.$contractId.edit';
 import { FinancialsRouteComponent } from '@/routes/_protected.financials';
-import { ReceiptDetailPage as ReceiptsRouteComponent } from '@/features/financials/receipts/receipt-detail-page';
+import { ReceiptsPage as ReceiptsRouteComponent } from '@/features/financials/receipts/receipts-page';
+import { ExpensesRouteComponent } from '@/routes/_protected.expenses';
 import { InvoicesRouteComponent } from '@/routes/_protected.invoices';
 import { ArrearsRouteComponent } from '@/routes/_protected.arrears';
-import { AccountingRouteComponent } from '@/routes/_protected.accounting';
 import { ReportsRouteComponent } from '@/routes/_protected.reports';
 import { SettingsRouteComponent } from '@/routes/_protected.settings';
 import { MaintenanceRouteComponent } from '@/routes/_protected.maintenance';
@@ -63,6 +64,7 @@ const propertiesRoute = createRoute({ getParentRoute: () => protectedRoute, path
 const propertyNewRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/properties/new', component: PropertyNewRouteComponent, staticData: { title: 'إضافة عقار' } });
 const propertyDetailRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/properties/$propertyId', component: PropertyDetailRouteComponent, staticData: { title: 'تفاصيل العقار' } });
 const propertyEditRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/properties/$propertyId/edit', component: PropertyEditRouteComponent, staticData: { title: 'تعديل عقار' } });
+const unitsRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/units', component: UnitsRouteComponent, staticData: { title: 'الوحدات' } });
 const peopleRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/people', component: PeopleRouteComponent, staticData: { title: 'الأشخاص' } });
 const tenantsRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/tenants', component: TenantsRouteComponent, staticData: { title: 'المستأجرين' } });
 const ownersRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/owners', component: OwnersRouteComponent, staticData: { title: 'الملاك' } });
@@ -74,9 +76,10 @@ const contractDetailRoute = createRoute({ getParentRoute: () => protectedRoute, 
 const contractEditRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/contracts/$contractId/edit', component: ContractEditRouteComponent, staticData: { title: 'تعديل عقد' } });
 const financialsRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/financials', component: FinancialsRouteComponent, staticData: { title: 'المالية' } });
 const receiptsRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/receipts', component: ReceiptsRouteComponent, staticData: { title: 'إيصال الدفع' } });
+const expensesRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/expenses', component: ExpensesRouteComponent, staticData: { title: 'المصاريف' } });
 const invoicesRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/invoices', component: InvoicesRouteComponent, staticData: { title: 'الفواتير' } });
 const arrearsRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/arrears', component: ArrearsRouteComponent, staticData: { title: 'المتأخرات' } });
-const accountingRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/accounting', component: AccountingRouteComponent, staticData: { title: 'المحاسبة' } });
+const accountingRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/accounting', beforeLoad: () => { throw redirect({ to: '/financials' }); }, staticData: { title: 'المالية' } });
 const reportsRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/reports', component: ReportsRouteComponent, staticData: { title: 'التقارير' } });
 const settingsRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/settings', component: SettingsRouteComponent, staticData: { title: 'الإعدادات' } });
 const maintenanceRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/maintenance', component: MaintenanceRouteComponent, staticData: { title: 'الصيانة' } });
@@ -89,6 +92,7 @@ export const routeTree = rootRoute.addChildren([
     propertyNewRoute,
     propertyDetailRoute,
     propertyEditRoute,
+    unitsRoute,
     peopleRoute,
     tenantsRoute,
     ownersRoute,
@@ -100,6 +104,7 @@ export const routeTree = rootRoute.addChildren([
     contractEditRoute,
     financialsRoute,
     receiptsRoute,
+    expensesRoute,
     invoicesRoute,
     arrearsRoute,
     accountingRoute,

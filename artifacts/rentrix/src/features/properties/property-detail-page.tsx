@@ -63,7 +63,7 @@ export function PropertyDetailPage() {
       <Card>
         <CardHeader>
           <CardTitle>معلومات العقار</CardTitle>
-          <CardDescription>كل الحقول الأساسية المخزنة في Supabase، مع إبقاء اسم المالك كحقل عرض نصي خفيف.</CardDescription>
+          <CardDescription>البيانات الأساسية للعقار مع معلومات المالك وقيم الشراء والتقييم.</CardDescription>
         </CardHeader>
         <CardContent className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
           <InfoItem label="النوع" value={property.type} />
