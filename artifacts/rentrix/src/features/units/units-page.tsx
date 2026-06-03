@@ -14,7 +14,7 @@ import { useProperties } from '@/features/properties/use-properties';
 import { defaultCompanyLocalSettings } from '@/lib/companySettings';
 import { formatCompanyMoney, getCompanyLocale } from '@/lib/companyFormatters';
 import type { Property, Unit } from '@/types/domain';
-import { unitStatusLabels, unitStatusValues, type UnitStatus } from './unit-schema';
+import { normalizeUnitStatus, unitStatusLabels, unitStatusValues, type UnitStatus } from './unit-schema';
 import { useAllUnits } from './use-units';
 
 type OccupancyFilter = 'all' | 'occupied' | 'open';
@@ -30,8 +30,16 @@ function money(value: number | null) {
   return value === null ? '—' : formatCompanyMoney(defaultCompanyLocalSettings, value);
 }
 
-function normalizedUnitStatus(unit: Unit): UnitStatus {
-  return unitStatusValues.includes(unit.status as UnitStatus) ? (unit.status as UnitStatus) : 'available';
+export function getUnitPageStatus(unit: Pick<Unit, 'status'>): UnitStatus {
+  return normalizeUnitStatus(String(unit.status));
+}
+
+export function summarizeUnitsForUnitsPage(units: Unit[]) {
+  return {
+    occupiedCount: units.filter((unit) => getUnitPageStatus(unit) === 'occupied').length,
+    availableCount: units.filter((unit) => getUnitPageStatus(unit) === 'available').length,
+    expectedRent: units.reduce((total, unit) => total + (unit.rent_amount ?? 0), 0),
+  };
 }
 
 function buildPropertyMap(properties: Property[]) {
@@ -70,7 +78,7 @@ export function UnitsPage() {
   const locale = getCompanyLocale(defaultCompanyLocalSettings);
 
   const filteredUnits = useMemo(() => units.filter((unit) => {
-    const unitStatus = normalizedUnitStatus(unit);
+    const unitStatus = getUnitPageStatus(unit);
     const property = propertyById.get(unit.property_id);
     const haystack = `${unit.unit_number} ${unit.floor ?? ''} ${unit.notes ?? ''} ${property?.title ?? ''}`.toLowerCase();
     const matchesSearch = deferredSearch.length === 0 || haystack.includes(deferredSearch);
@@ -82,9 +90,7 @@ export function UnitsPage() {
 
   if (unitsQuery.isLoading && propertiesQuery.isLoading) return <RouteLoadingState />;
 
-  const occupiedCount = units.filter((unit) => normalizedUnitStatus(unit) === 'occupied').length;
-  const availableCount = units.filter((unit) => normalizedUnitStatus(unit) === 'available').length;
-  const expectedRent = units.reduce((total, unit) => total + (unit.rent_amount ?? 0), 0);
+  const { occupiedCount, availableCount, expectedRent } = summarizeUnitsForUnitsPage(units);
 
   return (
     <div className="space-y-6" dir="rtl">
@@ -171,7 +177,7 @@ export function UnitsPage() {
                 </TableHeader>
                 <TableBody>
                   {filteredUnits.map((unit) => {
-                    const unitStatus = normalizedUnitStatus(unit);
+                    const unitStatus = getUnitPageStatus(unit);
                     const property = propertyById.get(unit.property_id);
                     return (
                       <TableRow key={unit.id}>

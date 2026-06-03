@@ -37,8 +37,12 @@ function ExpenseMetric({ label, value, helper, icon: Icon }: Readonly<{ label: s
   );
 }
 
-function todayDate() {
-  return new Date().toISOString().slice(0, 10);
+export function toLocalDateInputValue(date: Date = new Date()) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+
+  return `${year}-${month}-${day}`;
 }
 
 export function ExpensesPage() {
@@ -53,7 +57,7 @@ export function ExpensesPage() {
 
   const expenseForm = useForm<ExpenseFormValues>({
     resolver: zodResolver(expenseSchema),
-    defaultValues: { property_id: '', category: 'صيانة', amount: 0, expense_date: todayDate(), description: '' },
+    defaultValues: { property_id: '', category: 'صيانة', amount: 0, expense_date: toLocalDateInputValue(), description: '' },
   });
 
   const onCreateExpense = (values: ExpenseFormValues) => {
@@ -65,7 +69,7 @@ export function ExpensesPage() {
         expense_date: values.expense_date,
         description: values.description?.trim() ? values.description.trim() : null,
       },
-      { onSuccess: () => expenseForm.reset({ property_id: '', category: 'صيانة', amount: 0, expense_date: todayDate(), description: '' }) },
+      { onSuccess: () => expenseForm.reset({ property_id: '', category: 'صيانة', amount: 0, expense_date: toLocalDateInputValue(), description: '' }) },
     );
   };
 
