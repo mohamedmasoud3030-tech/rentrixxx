@@ -1,4 +1,4 @@
-import { BarChart3, Building2, ClipboardList, DoorOpen, FileText, LayoutDashboard, ReceiptText, Settings, UserRoundCog, Users, WalletCards, Wrench } from 'lucide-react';
+import { BarChart3, Building2, ClipboardList, DoorOpen, FileText, KeyRound, LayoutDashboard, ListChecks, ReceiptText, SearchCheck, Settings, ShieldCheck, UserRoundCog, Users, WalletCards, Wrench } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import type { AppPermission } from '@/features/auth/permissions';
 
@@ -26,6 +26,10 @@ export const navGroups = [
   ]],
   ['التشغيل والنظام', [
     ['/maintenance', 'maintenance', 'الطلبات وحالة التنفيذ', Wrench],
+    ['/system', 'system', 'مركز الحوكمة النظامية', ShieldCheck, 'system.view'],
+    ['/audit-log', 'auditLog', 'أحداث الحوكمة قراءة فقط', ListChecks, 'audit.view'],
+    ['/data-integrity', 'dataIntegrity', 'فحوصات سلامة البيانات', SearchCheck, 'integrity.view'],
+    ['/change-password', 'changePassword', 'تحديث كلمة مرورك', KeyRound, 'auth.password.change'],
     ['/settings', 'settings', 'تخصيص تجربة النظام', Settings, 'settings.manage'],
   ]],
 ] as const satisfies readonly NavGroup[];

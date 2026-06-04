@@ -28,7 +28,12 @@ import { ArrearsRouteComponent } from '@/routes/_protected.arrears';
 import { ReportsRouteComponent } from '@/routes/_protected.reports';
 import { SettingsRouteComponent } from '@/routes/_protected.settings';
 import { MaintenanceRouteComponent } from '@/routes/_protected.maintenance';
-import { canAccess, getAuthorizationContextFromSession } from '@/features/auth/permissions';
+import { SystemRouteComponent } from '@/routes/_protected.system';
+import { AuditLogRouteComponent } from '@/routes/_protected.audit-log';
+import { DataIntegrityRouteComponent } from '@/routes/_protected.data-integrity';
+import { ChangePasswordRouteComponent } from '@/routes/_protected.change-password';
+import type { AppPermission } from '@/features/auth/permissions';
+import { assertSessionPermission } from '@/features/auth/route-guards';
 import { supabase } from '@/integrations/supabase/client';
 
 const rootRoute = createRootRoute({
@@ -59,6 +64,12 @@ const protectedRoute = createRoute({
   component: ProtectedRouteComponent,
 });
 
+const requirePermission = (permission: AppPermission) => async () => {
+  const { data, error } = await supabase.auth.getSession();
+  if (error) throw error;
+  assertSessionPermission(data.session, permission);
+};
+
 const loginRoute = createRoute({ getParentRoute: () => authRoute, path: '/login', component: LoginRouteComponent, staticData: { title: 'تسجيل الدخول' } });
 const dashboardRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/', component: DashboardRouteComponent, staticData: { title: 'لوحة التحكم' } });
 const propertiesRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/properties', component: PropertiesRouteComponent, staticData: { title: 'العقارات' } });
@@ -82,14 +93,38 @@ const invoicesRoute = createRoute({ getParentRoute: () => protectedRoute, path: 
 const arrearsRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/arrears', component: ArrearsRouteComponent, staticData: { title: 'المتأخرات' } });
 const accountingRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/accounting', beforeLoad: () => { throw redirect({ to: '/financials' }); }, staticData: { title: 'المالية' } });
 const reportsRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/reports', component: ReportsRouteComponent, staticData: { title: 'التقارير' } });
+const systemRoute = createRoute({
+  getParentRoute: () => protectedRoute,
+  path: '/system',
+  beforeLoad: requirePermission('system.view'),
+  component: SystemRouteComponent,
+  staticData: { title: 'النظام والحوكمة' },
+});
+const auditLogRoute = createRoute({
+  getParentRoute: () => protectedRoute,
+  path: '/audit-log',
+  beforeLoad: requirePermission('audit.view'),
+  component: AuditLogRouteComponent,
+  staticData: { title: 'سجل التدقيق' },
+});
+const dataIntegrityRoute = createRoute({
+  getParentRoute: () => protectedRoute,
+  path: '/data-integrity',
+  beforeLoad: requirePermission('integrity.view'),
+  component: DataIntegrityRouteComponent,
+  staticData: { title: 'سلامة البيانات' },
+});
+const changePasswordRoute = createRoute({
+  getParentRoute: () => protectedRoute,
+  path: '/change-password',
+  beforeLoad: requirePermission('auth.password.change'),
+  component: ChangePasswordRouteComponent,
+  staticData: { title: 'تغيير كلمة المرور' },
+});
 const settingsRoute = createRoute({
   getParentRoute: () => protectedRoute,
   path: '/settings',
-  beforeLoad: async () => {
-    const { data, error } = await supabase.auth.getSession();
-    if (error) throw error;
-    if (!canAccess(getAuthorizationContextFromSession(data.session), 'settings.manage')) throw redirect({ to: '/' });
-  },
+  beforeLoad: requirePermission('settings.manage'),
   component: SettingsRouteComponent,
   staticData: { title: 'الإعدادات' },
 });
@@ -120,6 +155,10 @@ export const routeTree = rootRoute.addChildren([
     arrearsRoute,
     accountingRoute,
     reportsRoute,
+    systemRoute,
+    auditLogRoute,
+    dataIntegrityRoute,
+    changePasswordRoute,
     maintenanceRoute,
     settingsRoute,
   ]),

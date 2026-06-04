@@ -6,6 +6,10 @@ export type AuthorizationRole = (typeof authorizationRoles)[number];
 
 export const appPermissions = [
   'app.dashboard.view',
+  'audit.view',
+  'integrity.view',
+  'system.view',
+  'auth.password.change',
   'settings.manage',
 ] as const;
 
@@ -22,9 +26,22 @@ type AuthorizationUserLike = Pick<User, 'id' | 'email' | 'app_metadata'>;
 const knownRoles = new Set<string>(authorizationRoles);
 
 const rolePermissions = {
-  ADMIN: new Set<AppPermission>(['app.dashboard.view', 'settings.manage']),
-  MANAGER: new Set<AppPermission>(['app.dashboard.view', 'settings.manage']),
-  USER: new Set<AppPermission>(['app.dashboard.view']),
+  ADMIN: new Set<AppPermission>([
+    'app.dashboard.view',
+    'audit.view',
+    'integrity.view',
+    'system.view',
+    'auth.password.change',
+    'settings.manage',
+  ]),
+  MANAGER: new Set<AppPermission>([
+    'app.dashboard.view',
+    'integrity.view',
+    'system.view',
+    'auth.password.change',
+    'settings.manage',
+  ]),
+  USER: new Set<AppPermission>(['app.dashboard.view', 'auth.password.change']),
 } satisfies Record<AuthorizationRole, ReadonlySet<AppPermission>>;
 
 export function normalizeRole(role: unknown): AuthorizationRole | null {
