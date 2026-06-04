@@ -28,6 +28,7 @@ import { ArrearsRouteComponent } from '@/routes/_protected.arrears';
 import { ReportsRouteComponent } from '@/routes/_protected.reports';
 import { SettingsRouteComponent } from '@/routes/_protected.settings';
 import { MaintenanceRouteComponent } from '@/routes/_protected.maintenance';
+import { canAccess, getAuthorizationContextFromSession } from '@/features/auth/permissions';
 import { supabase } from '@/integrations/supabase/client';
 
 const rootRoute = createRootRoute({
@@ -81,7 +82,17 @@ const invoicesRoute = createRoute({ getParentRoute: () => protectedRoute, path: 
 const arrearsRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/arrears', component: ArrearsRouteComponent, staticData: { title: 'المتأخرات' } });
 const accountingRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/accounting', beforeLoad: () => { throw redirect({ to: '/financials' }); }, staticData: { title: 'المالية' } });
 const reportsRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/reports', component: ReportsRouteComponent, staticData: { title: 'التقارير' } });
-const settingsRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/settings', component: SettingsRouteComponent, staticData: { title: 'الإعدادات' } });
+const settingsRoute = createRoute({
+  getParentRoute: () => protectedRoute,
+  path: '/settings',
+  beforeLoad: async () => {
+    const { data, error } = await supabase.auth.getSession();
+    if (error) throw error;
+    if (!canAccess(getAuthorizationContextFromSession(data.session), 'settings.manage')) throw redirect({ to: '/' });
+  },
+  component: SettingsRouteComponent,
+  staticData: { title: 'الإعدادات' },
+});
 const maintenanceRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/maintenance', component: MaintenanceRouteComponent, staticData: { title: 'الصيانة' } });
 
 export const routeTree = rootRoute.addChildren([

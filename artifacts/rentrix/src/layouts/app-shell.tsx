@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { Bell, ChevronLeft, LogOut, Menu, Moon, Search, ShieldCheck, Sun, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
+import type { AuthorizationContext } from '@/features/auth/permissions';
 import { useAuth } from '@/hooks/use-auth';
 import { getAppLanguageState, translateSharedLabel } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
@@ -40,11 +41,13 @@ function Brand({ expanded }: Readonly<{ expanded: boolean }>) {
 }
 
 function MobileNavigationDrawer({
+  authorization,
   sharedLabel,
   onClose,
   onLogout,
   onQuickLink,
 }: Readonly<{
+  authorization: AuthorizationContext | null;
   sharedLabel: SharedLabel;
   onClose: () => void;
   onLogout: () => void;
@@ -71,7 +74,7 @@ function MobileNavigationDrawer({
           </Button>
         </div>
         <nav className="sidebar-scroll flex-1 overflow-y-auto p-3">
-          <NavigationLinks expanded sharedLabel={sharedLabel} onNavigate={onClose} />
+          <NavigationLinks authorization={authorization} expanded sharedLabel={sharedLabel} onNavigate={onClose} />
           <WorkspaceCard compact onQuickLink={onQuickLink} />
         </nav>
         <div className="border-t border-white/10 p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
@@ -88,7 +91,7 @@ function MobileNavigationDrawer({
 export function AppShell() {
   const router = useRouter();
   const matches = useMatches();
-  const { logout, user } = useAuth();
+  const { authorization, logout, user } = useAuth();
   const { sidebarCollapsed, theme, toggleSidebar, setTheme, syncStatus, lastSyncedAt } = useUiStore();
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [quickActionsOpen, setQuickActionsOpen] = useState(false);
@@ -142,14 +145,14 @@ export function AppShell() {
       </a>
 
       {mobileNavOpen ? (
-        <MobileNavigationDrawer sharedLabel={sharedLabel} onClose={() => setMobileNavOpen(false)} onLogout={handleLogout} onQuickLink={navigateToQuickLink} />
+        <MobileNavigationDrawer authorization={authorization} sharedLabel={sharedLabel} onClose={() => setMobileNavOpen(false)} onLogout={handleLogout} onQuickLink={navigateToQuickLink} />
       ) : null}
 
       <aside className={cn('fixed inset-y-0 right-0 z-30 hidden overflow-hidden border-l border-sidebar-border bg-sidebar text-sidebar-foreground shadow-sidebar transition-all duration-300 lg:flex lg:flex-col', sidebarCollapsed ? 'w-20' : 'w-80')}>
         <div className="h-[3px] w-full bg-accent" />
         <div className="min-h-24 border-b border-white/10 px-5 py-5"><Brand expanded={isSidebarExpanded} /></div>
         <nav className="sidebar-scroll flex-1 overflow-y-auto p-4">
-          <NavigationLinks expanded={isSidebarExpanded} sharedLabel={sharedLabel} />
+          <NavigationLinks authorization={authorization} expanded={isSidebarExpanded} sharedLabel={sharedLabel} />
           {isSidebarExpanded ? <WorkspaceCard onQuickLink={navigateToQuickLink} /> : null}
         </nav>
         <div className="border-t border-white/10 p-3">
@@ -184,7 +187,7 @@ export function AppShell() {
         <main id="main-content" tabIndex={-1} className="animate-route-in overflow-x-hidden p-3 pb-24 outline-none sm:p-4 sm:pb-28 lg:p-6 lg:pb-6"><Outlet /></main>
       </div>
 
-      <MobileBottomNav sharedLabel={sharedLabel} />
+      <MobileBottomNav authorization={authorization} sharedLabel={sharedLabel} />
     </div>
   );
 }
