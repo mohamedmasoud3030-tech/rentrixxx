@@ -24,7 +24,7 @@ vi.mock('sonner', () => ({
 }));
 
 vi.mock('./paymentService', () => ({
-  postReceiptAtomic: vi.fn(),
+  recordInvoicePaymentAtomic: vi.fn(),
 }));
 
 describe('usePostPayment', () => {

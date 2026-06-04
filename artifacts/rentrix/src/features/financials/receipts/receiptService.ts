@@ -26,6 +26,18 @@ type ReceiptContractContext = Pick<Contract, 'id' | 'property_id' | 'unit_id' | 
 type ReceiptUnitContext = Pick<Unit, 'id' | 'unit_number'>;
 type ReceiptPropertyContext = Pick<Property, 'id' | 'title'>;
 type ReceiptTenantContext = Pick<Person, 'id' | 'full_name'>;
+type LedgerReceiptRow = {
+  id: string;
+  no: string | null;
+  contract_id: string | null;
+  date_time: string;
+  channel: Payment['payment_method'] | string | null;
+  amount: number;
+  ref: string | null;
+  created_at: string;
+  status: string | null;
+};
+type ReceiptAllocationRow = { invoice_id: string | null };
 
 const DEFAULT_RECEIPT_LIMIT = 25;
 
@@ -145,8 +157,67 @@ export async function getReceiptDetail(receiptOrPaymentId: string): Promise<Rece
     .is('deleted_at', null)
     .single()
     .returns<Payment>();
-  if (error || !payment) throw error ?? new Error('Receipt not found');
-  const [receipt] = await loadReceiptRecords([payment]);
-  if (!receipt) throw new Error('Receipt not found');
-  return receipt;
+  if (!error && payment) {
+    const [receipt] = await loadReceiptRecords([payment]);
+    if (!receipt) throw new Error('Receipt not found');
+    return receipt;
+  }
+
+  const { data: ledgerReceipt, error: receiptError } = await supabase
+    .from('receipts')
+    .select('id, no, contract_id, date_time, channel, amount, ref, created_at, status')
+    .eq('id', receiptOrPaymentId)
+    .single()
+    .returns<LedgerReceiptRow>();
+  if (receiptError || !ledgerReceipt) throw receiptError ?? error ?? new Error('Receipt not found');
+
+  const { data: allocations, error: allocationsError } = await supabase
+    .from('receipt_allocations')
+    .select('invoice_id')
+    .eq('receipt_id', ledgerReceipt.id)
+    .limit(1)
+    .returns<ReceiptAllocationRow[]>();
+  if (allocationsError) throw allocationsError;
+
+  const invoiceId = allocations?.[0]?.invoice_id ?? null;
+  const { data: invoices, error: invoicesError } = invoiceId
+    ? await supabase.from('invoices').select('id, contract_id, status').eq('id', invoiceId).returns<ReceiptInvoiceContext[]>()
+    : { data: [], error: null };
+  if (invoicesError) throw invoicesError;
+
+  const invoice = invoices?.[0] ?? null;
+  const contractId = ledgerReceipt.contract_id ?? invoice?.contract_id ?? null;
+  const { data: contracts, error: contractsError } = contractId
+    ? await supabase.from('contracts').select('id, property_id, unit_id, tenant_id').eq('id', contractId).returns<ReceiptContractContext[]>()
+    : { data: [], error: null };
+  if (contractsError) throw contractsError;
+
+  const contract = contracts?.[0] ?? null;
+  const [unitsResult, propertiesResult, tenantsResult] = await Promise.all([
+    contract?.unit_id ? supabase.from('units').select('id, unit_number').eq('id', contract.unit_id).returns<ReceiptUnitContext[]>() : Promise.resolve({ data: [], error: null }),
+    contract?.property_id ? supabase.from('properties').select('id, title').eq('id', contract.property_id).returns<ReceiptPropertyContext[]>() : Promise.resolve({ data: [], error: null }),
+    contract?.tenant_id ? supabase.from('people').select('id, full_name').eq('id', contract.tenant_id).returns<ReceiptTenantContext[]>() : Promise.resolve({ data: [], error: null }),
+  ]);
+
+  if (unitsResult.error) throw unitsResult.error;
+  if (propertiesResult.error) throw propertiesResult.error;
+  if (tenantsResult.error) throw tenantsResult.error;
+
+  return {
+    id: ledgerReceipt.id,
+    receipt_number: ledgerReceipt.no ?? formatReceiptNumber(ledgerReceipt.id),
+    payment_id: ledgerReceipt.id,
+    invoice_id: invoiceId,
+    invoice_status: invoice?.status ?? null,
+    contract_id: contractId,
+    payment_date: ledgerReceipt.date_time.slice(0, 10),
+    amount: ledgerReceipt.amount,
+    payment_method: (ledgerReceipt.channel ?? 'other') as Payment['payment_method'],
+    reference_number: ledgerReceipt.ref,
+    created_at: ledgerReceipt.created_at,
+    status: 'posted',
+    tenant_name: tenantsResult.data?.[0]?.full_name ?? null,
+    unit_number: unitsResult.data?.[0]?.unit_number ?? null,
+    property_title: propertiesResult.data?.[0]?.title ?? null,
+  };
 }

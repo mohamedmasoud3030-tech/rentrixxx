@@ -214,9 +214,9 @@ export function ContractDetailPage() {
   };
 
   const submitRenewal = async (values: RenewalPayload) => {
-    const newId = await renewMutation.mutateAsync(values);
+    const result = await renewMutation.mutateAsync(values);
     setOpen(false);
-    await navigate({ to: '/contracts/$contractId', params: { contractId: newId } });
+    await navigate({ to: '/contracts/$contractId', params: { contractId: result.new_contract_id } });
   };
 
   const openRenewalDialog = (contract: ContractDetail) => {

@@ -16,6 +16,7 @@ export type ContractDetail = ContractListItem & {
 export type ContractListParams = { status: ContractStatusFilter };
 type ContractInsert = Database['public']['Tables']['contracts']['Insert'];
 type ContractUpdate = Database['public']['Tables']['contracts']['Update'];
+export type RenewalResult = { status: 'renewed'; old_contract_id: string; new_contract_id: string };
 
 const contractSelect =
   '*, properties:property_id(id,title,address), units:unit_id(id,unit_number,floor,status,rent_amount), people:tenant_id(id,full_name,phone,email,national_id)';
@@ -56,8 +57,24 @@ export async function softDeleteContract(contractId: string): Promise<void> {
   if (error) throw error;
 }
 
-export async function renewContract(contractId: string, payload: RenewalPayload): Promise<string> {
-  const { data, error } = await supabase.rpc('renew_contract_atomic', { contract_id: contractId, ...payload }).returns<string>();
+function parseRenewalResult(data: unknown): RenewalResult {
+  if (!data || typeof data !== 'object') throw new Error('Renewal RPC returned an invalid response');
+  const result = data as Partial<RenewalResult>;
+  if (result.status !== 'renewed' || !result.old_contract_id || !result.new_contract_id) {
+    throw new Error('Renewal RPC response is missing the new contract id');
+  }
+  return result as RenewalResult;
+}
+
+export async function renewContract(contractId: string, payload: RenewalPayload): Promise<RenewalResult> {
+  const { data, error } = await supabase.rpc('renew_contract_atomic', {
+    old_contract_id: contractId,
+    new_contract_data: {
+      new_start: payload.new_start,
+      new_end: payload.new_end,
+      new_amount: payload.new_amount,
+    },
+  });
   if (error) throw error;
-  return data;
+  return parseRenewalResult(data);
 }
