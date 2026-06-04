@@ -1,4 +1,4 @@
-import type { Owner, PropertyOwner, PropertyWithOwners } from './ownerService';
+import type { Owner, PropertyOwner, PropertyOwnerUpdatePayload, PropertyWithOwners } from './ownerService';
 
 export type OwnerFormValues = {
   full_name: string;
@@ -52,9 +52,7 @@ export function propertyOwnerLinkToFormValues(link: PropertyOwnerFormFields): Pr
   };
 }
 
-export type PropertyOwnershipLinkReadFields = Pick<PropertyOwner, 'ownership_percentage' | 'is_primary' | 'starts_on' | 'ends_on'>;
-
-export function propertyOwnershipLinkFormToPayload(values: PropertyOwnershipLinkFormValues): PropertyOwnershipLinkReadFields {
+export function propertyOwnershipLinkFormToPayload(values: PropertyOwnershipLinkFormValues): PropertyOwnerUpdatePayload {
   return {
     ownership_percentage: Number(values.ownership_percentage),
     is_primary: values.is_primary,
