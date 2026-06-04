@@ -4,6 +4,7 @@ import { getTodayLocalDateString, isValidDateInput } from '../financials-date-ut
 import { getSafeRemainingAmount, toFinancialNumber } from '../financialMath';
 import { summarizeInvoices, type InvoiceDetail, type InvoiceStatusFilter } from '../invoices/invoiceService';
 import { useGenerateInvoices, useInvoice, useInvoices } from '../invoices/useInvoices';
+import { getOrCreatePaymentRequestId, resetPaymentRequestId } from '../payments/paymentService';
 import { usePostPayment } from '../payments/usePayments';
 import { useReceipt, useReceipts } from '../receipts/useReceipts';
 import { InvoiceDetailSection } from './invoice-detail-section';
@@ -45,6 +46,7 @@ export function InvoiceWorkspaceSection() {
   const [paymentDate, setPaymentDate] = useState(() => getTodayLocalDateString());
   const [paymentReference, setPaymentReference] = useState('');
   const quickPaySubmitRef = useRef(false);
+  const quickPayRequestIdRef = useRef<string | null>(null);
 
   const invoicesQuery = useInvoices({ status, search: invoiceSearch });
   const invoiceQuery = useInvoice(selectedInvoiceId);
@@ -80,6 +82,7 @@ export function InvoiceWorkspaceSection() {
     if (!amount.trim() || !Number.isFinite(currentRawAmount) || currentAmount <= 0 || currentAmount > currentRemaining || !isValidDateInput(paymentDate)) return;
 
     quickPaySubmitRef.current = true;
+    const requestId = getOrCreatePaymentRequestId(quickPayRequestIdRef);
     postPayment.mutate(
       {
         invoice_id: invoiceDetail.id,
@@ -87,11 +90,14 @@ export function InvoiceWorkspaceSection() {
         method: paymentMethod,
         date: paymentDate,
         reference: paymentReference.trim() ? paymentReference.trim() : null,
+        request_id: requestId,
       },
       {
-        onSuccess: () => {
+        onSuccess: (result) => {
+          setSelectedReceiptId(result.receipt_id);
           setAmount('');
           setPaymentReference('');
+          resetPaymentRequestId(quickPayRequestIdRef);
         },
         onSettled: () => {
           quickPaySubmitRef.current = false;

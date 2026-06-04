@@ -181,12 +181,47 @@ export type Database = {
           payment_method: 'cash' | 'bank_transfer' | 'card' | 'check' | 'other';
           payment_date: string;
           reference_number: string | null;
+          payment_reference: string | null;
           created_at: string;
           updated_at: string;
           deleted_at: string | null;
         };
         Insert: Partial<Database['public']['Tables']['payments']['Row']> & Pick<Database['public']['Tables']['payments']['Row'], 'invoice_id' | 'amount' | 'payment_method' | 'payment_date'>;
         Update: Partial<Database['public']['Tables']['payments']['Row']>;
+        Relationships: [];
+      };
+
+      receipts: {
+        Row: {
+          id: string;
+          no: string | null;
+          contract_id: string | null;
+          date_time: string;
+          channel: string | null;
+          amount: number;
+          ref: string | null;
+          notes: string | null;
+          status: string | null;
+          created_at: string;
+          request_id: string | null;
+          tenant_id: string | null;
+        };
+        Insert: Partial<Database['public']['Tables']['receipts']['Row']> & Pick<Database['public']['Tables']['receipts']['Row'], 'contract_id' | 'date_time' | 'amount'>;
+        Update: Partial<Database['public']['Tables']['receipts']['Row']>;
+        Relationships: [];
+      };
+
+      receipt_allocations: {
+        Row: {
+          id: string;
+          receipt_id: string;
+          invoice_id: string | null;
+          amount: number;
+          created_at: string;
+          tenant_id: string | null;
+        };
+        Insert: Partial<Database['public']['Tables']['receipt_allocations']['Row']> & Pick<Database['public']['Tables']['receipt_allocations']['Row'], 'receipt_id' | 'amount'>;
+        Update: Partial<Database['public']['Tables']['receipt_allocations']['Row']>;
         Relationships: [];
       };
 
@@ -231,12 +266,16 @@ export type Database = {
     Views: Record<string, never>;
     Functions: {
       renew_contract_atomic: {
-        Args: { contract_id: string; new_start: string; new_end: string; new_amount: number };
-        Returns: string;
+        Args: { old_contract_id: string; new_contract_data: Json };
+        Returns: { status: 'renewed'; old_contract_id: string; new_contract_id: string };
+      };
+      record_invoice_payment_atomic: {
+        Args: { payload: Json };
+        Returns: { status: 'recorded'; request_id: string; invoice_id: string; payment_id: string; receipt_id: string; receipt_no?: string; success?: boolean; idempotent?: boolean };
       };
       post_receipt_atomic: {
-        Args: { invoice_id: string; amount: number; method: 'cash' | 'bank_transfer' | 'card' | 'check' | 'other'; date: string; reference: string | null };
-        Returns: string;
+        Args: { payload: Json };
+        Returns: Json;
       };
       generate_invoices_from_active_contracts: { Args: Record<string, never>; Returns: number };
       rpt_financial_summary: { Args: { month: number; year: number }; Returns: { total_collected: number; total_overdue_invoices: number; total_expenses: number; net_revenue: number } };

@@ -16,6 +16,7 @@ const basePayment: Payment = {
   amount: 1250.5,
   payment_method: 'cash',
   reference_number: 'REF-1',
+  payment_reference: 'REF-1',
   payment_date: '2026-05-14',
   created_at: '2026-05-14T10:30:00Z',
   updated_at: '2026-05-14T10:30:00Z',
