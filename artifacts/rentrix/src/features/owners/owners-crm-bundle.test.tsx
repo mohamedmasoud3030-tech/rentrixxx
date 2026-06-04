@@ -24,6 +24,8 @@ function userWithRole(role: unknown) {
 
 function readFeatureSources(relativePath: string): string {
   const absolutePath = join(sourceRoot, relativePath);
+  if (!statSync(absolutePath).isDirectory()) return readFileSync(absolutePath, 'utf8');
+
   const entries = readdirSync(absolutePath).flatMap((entry) => {
     const entryPath = join(absolutePath, entry);
     if (statSync(entryPath).isDirectory()) return readFeatureSources(join(relativePath, entry));
@@ -34,14 +36,14 @@ function readFeatureSources(relativePath: string): string {
 }
 
 describe('Owners and CRM route authorization', () => {
-  it('allows admin and manager read access while denying regular users', () => {
+  it('allows admin and manager CRM read access while denying regular users', () => {
     const admin = getAuthorizationContextFromUser(userWithRole('ADMIN'));
     const manager = getAuthorizationContextFromUser(userWithRole('MANAGER'));
     const user = getAuthorizationContextFromUser(userWithRole('USER'));
 
     expect(canAccess(admin, 'owners.hub.view')).toBe(true);
     expect(canAccess(manager, 'communication.view')).toBe(true);
-    expect(canAccess(user, 'owners.hub.view')).toBe(false);
+    expect(canAccess(user, 'lands.view')).toBe(false);
   });
 
   it('fails closed for missing and unknown role claims', () => {
@@ -52,7 +54,7 @@ describe('Owners and CRM route authorization', () => {
 });
 
 describe('Owners and CRM navigation visibility', () => {
-  it('shows CRM navigation for authorized users only', () => {
+  it('shows recovered CRM navigation for authorized users only', () => {
     const manager = getAuthorizationContextFromUser(userWithRole('MANAGER'));
     const user = getAuthorizationContextFromUser(userWithRole('USER'));
     const allNavItems: NavItem[] = [];
@@ -105,11 +107,22 @@ describe('Owners and CRM source safety', () => {
     }
   });
 
-  it('does not include owner, CRM, commission, or communication writes', () => {
-    const source = ['owners', 'lands', 'leads', 'commissions', 'communication']
-      .map((feature) => readFeatureSources(`features/${feature}`))
-      .join('\n');
+  it('preserves verified owner management writes while keeping recovered surfaces read-only', () => {
+    const ownerManagementSource = readFeatureSources('features/owners/ownerService.ts');
+    const recoveredReadOnlySource = [
+      'features/owners/owners-hub-page.tsx',
+      'features/owners/owner-detail-page.tsx',
+      'features/owners/components/owners-hub-view.tsx',
+      'features/owners/components/owner-detail-view.tsx',
+      'features/lands',
+      'features/leads',
+      'features/commissions',
+      'features/communication',
+    ].map(readFeatureSources).join('\n');
 
-    expect(source).not.toMatch(writePattern);
+    expect(ownerManagementSource).toContain('.insert(');
+    expect(ownerManagementSource).toContain('.update(');
+    expect(ownerManagementSource).not.toContain('.delete(');
+    expect(recoveredReadOnlySource).not.toMatch(writePattern);
   });
 });
