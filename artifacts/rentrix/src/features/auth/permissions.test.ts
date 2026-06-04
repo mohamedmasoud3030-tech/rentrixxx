@@ -53,10 +53,20 @@ describe('canonical authorization permissions', () => {
 
   it('checks explicit permissions without granting unrelated permissions', () => {
     const adminContext = getAuthorizationContextFromUser(userWithRole('ADMIN'));
+    const managerContext = getAuthorizationContextFromUser(userWithRole('MANAGER'));
     const userContext = getAuthorizationContextFromUser(userWithRole('USER'));
 
     expect(canAccess(adminContext, 'app.dashboard.view')).toBe(true);
+    expect(canAccess(adminContext, 'audit.view')).toBe(true);
+    expect(canAccess(adminContext, 'integrity.view')).toBe(true);
+    expect(canAccess(adminContext, 'system.view')).toBe(true);
+    expect(canAccess(adminContext, 'auth.password.change')).toBe(true);
+    expect(canAccess(managerContext, 'system.view')).toBe(true);
+    expect(canAccess(managerContext, 'integrity.view')).toBe(true);
+    expect(canAccess(managerContext, 'audit.view')).toBe(false);
     expect(canAccess(userContext, 'app.dashboard.view')).toBe(true);
+    expect(canAccess(userContext, 'auth.password.change')).toBe(true);
+    expect(canAccess(userContext, 'system.view')).toBe(false);
     expect(canAccess(userContext, 'settings.manage')).toBe(false);
   });
 
