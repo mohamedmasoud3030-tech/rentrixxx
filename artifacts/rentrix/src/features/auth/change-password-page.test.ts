@@ -23,5 +23,11 @@ describe('change password governance flow', () => {
 
     await expect(updateCurrentUserPassword(client, 'long-enough')).resolves.toEqual({ ok: false, error });
   });
-});
 
+  it('reports failure when Supabase throws during the password update', async () => {
+    const error = new Error('network unavailable');
+    const client: PasswordUpdateClient = { auth: { updateUser: vi.fn(() => Promise.reject(error)) } };
+
+    await expect(updateCurrentUserPassword(client, 'long-enough')).resolves.toEqual({ ok: false, error });
+  });
+});
