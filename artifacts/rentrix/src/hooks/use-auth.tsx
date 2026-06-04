@@ -1,11 +1,13 @@
 import { createContext, useContext, useEffect, useMemo, useState, type PropsWithChildren } from 'react';
 import type { Session, User } from '@supabase/supabase-js';
+import { getAuthorizationContextFromSession, type AuthorizationContext } from '@/features/auth/permissions';
 import { supabase } from '@/integrations/supabase/client';
 import { getCurrentSession, signInWithEmail, signOut } from '@/services/auth-service';
 
 type AuthContextValue = {
   session: Session | null;
   user: User | null;
+  authorization: AuthorizationContext | null;
   isLoading: boolean;
   isAuthenticated: boolean;
   login: (email: string, password: string) => Promise<void>;
@@ -78,6 +80,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
     () => ({
       session,
       user: session?.user ?? null,
+      authorization: getAuthorizationContextFromSession(session),
       isLoading,
       isAuthenticated: Boolean(session),
       login: async (email, password) => {

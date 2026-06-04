@@ -1,4 +1,10 @@
 import { BarChart3, Building2, ClipboardList, DoorOpen, FileText, LayoutDashboard, ReceiptText, Settings, UserRoundCog, Users, WalletCards, Wrench } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
+import type { AppPermission } from '@/features/auth/permissions';
+
+export type NavItem = readonly [to: string, labelKey: string, description: string, Icon: LucideIcon, permission?: AppPermission];
+
+export type NavGroup = readonly [sectionTitle: string, items: readonly NavItem[]];
 
 export const navGroups = [
   ['نظرة عامة', [['/', 'dashboard', 'ملخص الأداء اليومي', LayoutDashboard]]],
@@ -20,9 +26,9 @@ export const navGroups = [
   ]],
   ['التشغيل والنظام', [
     ['/maintenance', 'maintenance', 'الطلبات وحالة التنفيذ', Wrench],
-    ['/settings', 'settings', 'تخصيص تجربة النظام', Settings],
+    ['/settings', 'settings', 'تخصيص تجربة النظام', Settings, 'settings.manage'],
   ]],
-] as const;
+] as const satisfies readonly NavGroup[];
 
 export const quickLinks = [
   ['/properties/new', 'إضافة عقار', Building2],

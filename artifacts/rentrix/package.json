@@ -9,7 +9,7 @@
     "serve": "vite preview --config vite.config.ts --host 0.0.0.0",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "typecheck:test": "tsc -p tsconfig.test.json --noEmit",
-    "test": "vitest run --config vite.config.ts src/components/shared-state-semantics.test.tsx src/features/financials/receipts/receiptService.test.ts src/features/financials/payments/paymentService.test.ts src/features/financials/payments/usePayments.test.ts src/features/contracts/services/contractService.test.ts src/features/units/units-page.test.ts src/features/financials/expenses/expenses-page.test.ts",
+    "test": "vitest run --config vite.config.ts src/components/shared-state-semantics.test.tsx src/features/auth/permissions.test.ts src/features/financials/receipts/receiptService.test.ts src/features/financials/payments/paymentService.test.ts src/features/financials/payments/usePayments.test.ts src/features/contracts/services/contractService.test.ts src/features/units/units-page.test.ts src/features/financials/expenses/expenses-page.test.ts",
     "lint": "tsc -p tsconfig.json --noEmit",
     "test:financials": "vitest run --config vite.config.ts --dir src/features/financials"
   },
