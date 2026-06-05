@@ -25,7 +25,7 @@ import {
 } from '@/features/financials/reports/useFinancialReports';
 import { buildRentRollRows, createReceiptPrintHref } from './reports-page.helpers';
 
-type CsvValue = string | number | boolean | null | undefined;
+export type CsvValue = string | number | boolean | null | undefined;
 type CsvRow = Record<string, CsvValue>;
 type FilterState = Readonly<{ from: string; to: string; asOf: string }>;
 type ReportCardProps = Readonly<{ title: string; description: string; children: React.ReactNode; action?: React.ReactNode }>;
@@ -70,7 +70,7 @@ function getCurrentMonthFilters(): FilterState {
   };
 }
 
-function escapeCsvValue(value: CsvValue) {
+export function escapeCsvValue(value: CsvValue) {
   if (value === null || value === undefined) {
     return '';
   }
@@ -79,7 +79,9 @@ function escapeCsvValue(value: CsvValue) {
     return JSON.stringify(value);
   }
 
-  return JSON.stringify(value);
+  const trimmedStart = value.trimStart();
+  const safeValue = /^[=+\-@]/.test(trimmedStart) ? `'${value}` : value;
+  return JSON.stringify(safeValue);
 }
 
 function downloadCsv(filename: string, rows: CsvRow[]) {
