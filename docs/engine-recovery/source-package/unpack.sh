@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
-# The curated ZIP archive must be uploaded separately before extraction.
-# See README.md in this folder.
+# Upload erpnext-engine-recovery-curated.zip to this folder first.
+# Verify its SHA-256 against README.md, then extract it for reference review.
+echo "Curated ZIP archive is not committed yet. See README.md." >&2
 exit 1
