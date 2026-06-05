@@ -143,7 +143,7 @@ describe('receiptService', () => {
   });
 
   it('projects receipt detail from a single payment id', async () => {
-    mockSupabaseTables({
+    const log = mockSupabaseTables({
       payments: [basePayment],
       invoices: [{ id: 'inv_1', contract_id: null, status: 'partial' }],
     });
@@ -163,6 +163,26 @@ describe('receiptService', () => {
       property_title: null,
       status: 'posted',
     });
+    expect(log.filter((entry) => entry.table === 'payments' && entry.method === 'eq')).toEqual([
+      { table: 'payments', method: 'eq', args: ['id', 'pay_1234567890abcdef'] },
+    ]);
+  });
+
+  it('loads receipt detail with the payment-backed identifier returned after posting a payment', async () => {
+    const log = mockSupabaseTables({
+      payments: [createPaymentFixture({ id: 'payment_123', invoice_id: 'inv_1' })],
+      invoices: [{ id: 'inv_1', contract_id: null, status: 'paid' }],
+    });
+    const { getReceiptDetail } = await import('./receiptService');
+
+    const receipt = await getReceiptDetail('payment_123');
+
+    expect(receipt.id).toBe('payment_123');
+    expect(receipt.payment_id).toBe('payment_123');
+    expect(receipt.receipt_number).toBe('REC-payment_');
+    expect(log.filter((entry) => entry.table === 'payments' && entry.method === 'eq')).toEqual([
+      { table: 'payments', method: 'eq', args: ['id', 'payment_123'] },
+    ]);
   });
 
   it('uses posted payment amounts as receipt truth without deriving balances', async () => {

@@ -46,4 +46,64 @@ describe('usePostPayment', () => {
     expect(mutationMock.invalidateQueries).toHaveBeenCalledTimes(3);
     expect(mutationMock.toastSuccess).toHaveBeenCalledWith('تم تسجيل الدفعة بنجاح');
   });
+
+  it('maps the RPC ledger receipt id to a payment-backed UI receipt id without mutating the RPC result', async () => {
+    const rpcResult = {
+      status: 'recorded' as const,
+      request_id: 'request-1',
+      invoice_id: 'inv_1',
+      payment_id: 'payment_123',
+      receipt_id: 'ledger_receipt_123',
+      receipt_no: 'REC-2026-0001',
+    };
+    const originalResult = { ...rpcResult };
+    const { toPaymentBackedReceiptResult } = await import('./usePayments');
+
+    const uiResult = toPaymentBackedReceiptResult(rpcResult);
+
+    expect(uiResult).toEqual({
+      status: 'recorded',
+      request_id: 'request-1',
+      invoice_id: 'inv_1',
+      payment_id: 'payment_123',
+      receipt_id: 'payment_123',
+      ledger_receipt_id: 'ledger_receipt_123',
+      receipt_no: 'REC-2026-0001',
+    });
+    expect(rpcResult).toEqual(originalResult);
+    expect(uiResult.invoice_id).toBe(rpcResult.invoice_id);
+    expect(uiResult.request_id).toBe(rpcResult.request_id);
+    expect(uiResult.receipt_no).toBe(rpcResult.receipt_no);
+  });
+
+  it('returns the payment-backed receipt id from the mutation result', async () => {
+    const { recordInvoicePaymentAtomic } = await import('./paymentService');
+    vi.mocked(recordInvoicePaymentAtomic).mockResolvedValue({
+      status: 'recorded',
+      request_id: 'request-1',
+      invoice_id: 'inv_1',
+      payment_id: 'payment_123',
+      receipt_id: 'ledger_receipt_123',
+      receipt_no: 'REC-2026-0001',
+    });
+    const { usePostPayment } = await import('./usePayments');
+
+    const mutationOptions = usePostPayment() as unknown as {
+      mutationFn: (payload: Parameters<typeof recordInvoicePaymentAtomic>[0]) => Promise<Awaited<ReturnType<typeof recordInvoicePaymentAtomic>> & { ledger_receipt_id: string }>;
+    };
+    const result = await mutationOptions.mutationFn({
+      invoice_id: 'inv_1',
+      amount: 50,
+      method: 'cash',
+      date: '2026-05-14',
+      reference: null,
+      request_id: 'request-1',
+    });
+
+    expect(result.receipt_id).toBe('payment_123');
+    expect(result.ledger_receipt_id).toBe('ledger_receipt_123');
+    expect(result.invoice_id).toBe('inv_1');
+    expect(result.request_id).toBe('request-1');
+    expect(result.receipt_no).toBe('REC-2026-0001');
+  });
 });
