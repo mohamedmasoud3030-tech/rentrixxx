@@ -13,7 +13,10 @@ export const navGroups = [
     ['/units', 'units', 'كل الوحدات وحالات الإشغال', DoorOpen],
     ['/people', 'people', 'دليل جهات التعامل', Users],
     ['/tenants', 'tenants', 'بيانات المستأجرين', Users],
-['/owners', 'owners', 'إدارة ملفات الملاك وعلاقات الملكية', UserRoundCog, 'owners.hub.view'],
+    ['/owners', 'owners', 'إدارة ملفات الملاك وعلاقات الملكية', UserRoundCog, 'owners.hub.view'],
+    ['/owners-hub', 'ownersHub', 'مركز قراءة موحد للملاك', UserRoundCog, 'owners.hub.view'],
+    ['/lands', 'lands', 'حالة استرداد الأراضي', MapPinned, 'lands.view'],
+    ['/leads', 'leads', 'حالة استرداد العملاء المحتملين', ContactRound, 'leads.view'],
     ['/contracts', 'contracts', 'العقود والتجديدات', FileText],
   ]],
   ['التحصيل والتقارير', [
