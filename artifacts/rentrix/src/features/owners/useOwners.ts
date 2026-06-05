@@ -4,6 +4,8 @@ import { toast } from 'sonner';
 import { propertyKeys } from '@/features/properties/use-properties';
 import {
   createOwner,
+  fetchOwnerDetailSnapshot,
+  fetchOwnerHubSnapshot,
   getOwner,
   linkOwnerToProperty,
   listActiveContractsForProperties,
@@ -22,7 +24,9 @@ import {
 export const ownerKeys = {
   all: ['owners'] as const,
   lists: () => [...ownerKeys.all, 'list'] as const,
+  hub: () => [...ownerKeys.all, 'hub'] as const,
   detail: (ownerId: string) => [...ownerKeys.all, 'detail', ownerId] as const,
+  detailSnapshot: (ownerId: string) => [...ownerKeys.all, 'detail-snapshot', ownerId] as const,
   propertyOwners: (propertyId: string) => [...ownerKeys.all, 'property-owners', propertyId] as const,
   propertiesWithOwners: () => [...ownerKeys.all, 'properties-with-owners'] as const,
   activeContracts: (propertyIdsKey: string) => [...ownerKeys.all, 'active-contracts', propertyIdsKey] as const,
@@ -68,6 +72,18 @@ export function useOwnerActiveContracts(propertyIds: string[]) {
     queryKey: ownerKeys.activeContracts(propertyIdsKey),
     queryFn: () => listActiveContractsForProperties(sortedPropertyIds),
     enabled: sortedPropertyIds.length > 0,
+  });
+}
+
+export function useOwnerHubSnapshot() {
+  return useQuery({ queryKey: ownerKeys.hub(), queryFn: fetchOwnerHubSnapshot });
+}
+
+export function useOwnerDetailSnapshot(ownerId: string) {
+  return useQuery({
+    queryKey: ownerKeys.detailSnapshot(ownerId),
+    queryFn: () => fetchOwnerDetailSnapshot(ownerId),
+    enabled: Boolean(ownerId),
   });
 }
 

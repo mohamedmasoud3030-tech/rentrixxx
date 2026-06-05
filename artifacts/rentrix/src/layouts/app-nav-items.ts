@@ -1,4 +1,4 @@
-import { BarChart3, Building2, ClipboardList, DoorOpen, FileText, KeyRound, LayoutDashboard, ListChecks, ReceiptText, SearchCheck, Settings, ShieldCheck, UserRoundCog, Users, WalletCards, Wrench } from 'lucide-react';
+import { BadgeDollarSign, BarChart3, Building2, ClipboardList, ContactRound, DoorOpen, FileText, KeyRound, LayoutDashboard, ListChecks, MapPinned, MessageSquareText, ReceiptText, SearchCheck, Settings, ShieldCheck, UserRoundCog, Users, WalletCards, Wrench } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import type { AppPermission } from '@/features/auth/permissions';
 
@@ -18,6 +18,7 @@ export const navGroups = [
   ]],
   ['التحصيل والتقارير', [
     ['/financials', 'financials', 'التحصيل والمصروفات', WalletCards],
+    ['/commissions', 'commissions', 'قراءة آمنة للعمولات', BadgeDollarSign, 'commissions.view'],
     ['/invoices', 'invoices', 'الفواتير المستحقة', ReceiptText],
     ['/receipts', 'receipts', 'سجل الإيصالات والطباعة', ReceiptText],
     ['/expenses', 'expenses', 'مصاريف العقارات التشغيلية', WalletCards],
@@ -26,6 +27,7 @@ export const navGroups = [
   ]],
   ['التشغيل والنظام', [
     ['/maintenance', 'maintenance', 'الطلبات وحالة التنفيذ', Wrench],
+    ['/communication', 'communication', 'مركز التواصل قراءة فقط', MessageSquareText, 'communication.view'],
     ['/system', 'system', 'مركز الحوكمة النظامية', ShieldCheck, 'system.view'],
     ['/audit-log', 'auditLog', 'أحداث الحوكمة قراءة فقط', ListChecks, 'audit.view'],
     ['/data-integrity', 'dataIntegrity', 'فحوصات سلامة البيانات', SearchCheck, 'integrity.view'],

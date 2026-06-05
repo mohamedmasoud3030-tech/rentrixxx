@@ -61,12 +61,26 @@ describe('canonical authorization permissions', () => {
     expect(canAccess(adminContext, 'integrity.view')).toBe(true);
     expect(canAccess(adminContext, 'system.view')).toBe(true);
     expect(canAccess(adminContext, 'auth.password.change')).toBe(true);
+    expect(canAccess(adminContext, 'owners.hub.view')).toBe(true);
+    expect(canAccess(adminContext, 'owners.detail.view')).toBe(true);
+    expect(canAccess(adminContext, 'lands.view')).toBe(true);
+    expect(canAccess(adminContext, 'leads.view')).toBe(true);
+    expect(canAccess(adminContext, 'commissions.view')).toBe(true);
+    expect(canAccess(adminContext, 'communication.view')).toBe(true);
     expect(canAccess(managerContext, 'system.view')).toBe(true);
     expect(canAccess(managerContext, 'integrity.view')).toBe(true);
+    expect(canAccess(managerContext, 'owners.hub.view')).toBe(true);
+    expect(canAccess(managerContext, 'owners.detail.view')).toBe(true);
+    expect(canAccess(managerContext, 'lands.view')).toBe(true);
+    expect(canAccess(managerContext, 'leads.view')).toBe(true);
+    expect(canAccess(managerContext, 'commissions.view')).toBe(true);
+    expect(canAccess(managerContext, 'communication.view')).toBe(true);
     expect(canAccess(managerContext, 'audit.view')).toBe(false);
     expect(canAccess(userContext, 'app.dashboard.view')).toBe(true);
     expect(canAccess(userContext, 'auth.password.change')).toBe(true);
     expect(canAccess(userContext, 'system.view')).toBe(false);
+    expect(canAccess(userContext, 'owners.hub.view')).toBe(false);
+    expect(canAccess(userContext, 'leads.view')).toBe(false);
     expect(canAccess(userContext, 'settings.manage')).toBe(false);
   });
 
