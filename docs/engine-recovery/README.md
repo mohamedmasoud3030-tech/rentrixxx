@@ -1,17 +1,18 @@
 # Native Engine Recovery Handoff
 
-This folder prepares a plan-first Codex task for selectively rebuilding strong engine concepts from an uploaded ERPNext/Frappe source archive inside Rentrix.
+This folder records the selected upstream ERP reference areas for planning native Rentrix recovery work.
 
-## Run Codex with this task
+## Read first
 
-Use:
+- `SOURCE_SELECTION.md`
+- `P0_REFERENCE_NOTES.md`
+- `P1_REFERENCE_NOTES.md`
+- `P2_DEFERRED_NOTES.md`
+- `source-package/SELECTED_SOURCE_PATHS.txt`
+- `source-package/SOURCE_MANIFEST.tsv`
 
-```text
-docs/engine-recovery/CODEX_NATIVE_ENGINE_RECOVERY_PLAN_FIRST_TASK.md
-```
+## Boundary
 
-The first Codex task is intentionally docs-only. It must inspect the current runtime and write `docs/engine-recovery/NATIVE_ENGINE_RECOVERY_PLAN.md` before any implementation begins.
+The upstream package is reference material only. This handoff does not introduce an ERP runtime dependency, an ERP API bridge, application code changes, or database changes.
 
-## Why plan-first
-
-The uploaded archive contains valuable domain behavior but also large amounts of framework-specific and out-of-scope ERP code. Direct imports or bulk restoration would violate the current Rentrix architecture and expand product scope unsafely.
+The first Codex task should inspect the current Rentrix runtime and produce `docs/engine-recovery/NATIVE_ENGINE_RECOVERY_PLAN.md` before implementation begins.
