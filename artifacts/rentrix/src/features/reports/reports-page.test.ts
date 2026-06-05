@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { ContractListItem } from '@/features/contracts/services/contractService';
 import { buildOccupancyRows, buildPaymentsTrendRows, buildRentRollRows, createReceiptPrintHref } from './reports-page.helpers';
+import { escapeCsvValue } from './reports-page';
 
 function createContract(overrides: Partial<ContractListItem>): ContractListItem {
   return {
@@ -89,5 +90,12 @@ describe('ReportsPage shaping helpers', () => {
 
   it('creates receipt print links with the merged query-string route only', () => {
     expect(createReceiptPrintHref('receipt id/42')).toBe('/receipts?receiptId=receipt%20id%2F42');
+  });
+
+  it('neutralizes spreadsheet formulas in exported CSV string values', () => {
+    expect(escapeCsvValue('=HYPERLINK("https://example.test")')).toBe('"\'=HYPERLINK(\\"https://example.test\\")"');
+    expect(escapeCsvValue(' +SUM(1,2)')).toBe('"\' +SUM(1,2)"');
+    expect(escapeCsvValue('@tenant')).toBe('"\'@tenant"');
+    expect(escapeCsvValue('safe tenant')).toBe('"safe tenant"');
   });
 });
