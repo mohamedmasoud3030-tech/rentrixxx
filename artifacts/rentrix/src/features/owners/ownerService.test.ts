@@ -1,5 +1,15 @@
+import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import { getActiveOwnerLinks, getOwnerActivePropertyCount, getOwnerDisplayName, getPropertyOwnerDisplayName } from './ownerService';
+import {
+  getActiveOwnerLinks,
+  getOwnerActivePropertyCount,
+  getOwnerDisplayName,
+  getPropertyOwnerDisplayName,
+  normalizeOwnerPayload,
+  normalizeOwnerUpdatePayload,
+  normalizeOwnershipPercentage,
+  normalizePropertyOwnerPayload,
+} from './ownerService';
 import type { Owner, PropertyWithOwners } from './ownerService';
 
 const owner: Owner = {
@@ -46,6 +56,94 @@ function propertyWithOwner(ownerId: string, endsOn: string | null = null): Prope
   };
 }
 
+describe('owner service normalization helpers', () => {
+  it('trims owner strings and converts blank optional strings to null', () => {
+    expect(normalizeOwnerPayload({
+      full_name: '  شركة المالك  ',
+      display_name: '  المالك  ',
+      phone: '   ',
+      email: ' owner@example.com ',
+      is_active: false,
+    })).toMatchObject({
+      full_name: 'شركة المالك',
+      display_name: 'المالك',
+      phone: null,
+      email: 'owner@example.com',
+      is_active: false,
+    });
+  });
+
+  it('rejects blank owner names for create and update payloads', () => {
+    expect(() => normalizeOwnerPayload({ full_name: '   ' })).toThrow('اسم المالك مطلوب');
+    expect(() => normalizeOwnerUpdatePayload({ full_name: '' })).toThrow('اسم المالك مطلوب');
+  });
+
+  it('normalizes safe ownership percentages and rejects invalid values', () => {
+    expect(normalizeOwnershipPercentage(undefined)).toBe(100);
+    expect(normalizeOwnershipPercentage(null)).toBe(100);
+    expect(normalizeOwnershipPercentage('')).toBe(100);
+    expect(normalizeOwnershipPercentage('33.333')).toBe(33.33);
+    expect(() => normalizeOwnershipPercentage(0)).toThrow('نسبة الملكية');
+    expect(() => normalizeOwnershipPercentage(101)).toThrow('نسبة الملكية');
+    expect(() => normalizeOwnershipPercentage('not-a-number')).toThrow('نسبة الملكية');
+  });
+
+  it('rounds ownership percentages before enforcing database constraint boundaries', () => {
+    expect(normalizeOwnershipPercentage(0.005)).toBe(0.01);
+    expect(normalizeOwnershipPercentage('0.005')).toBe(0.01);
+    expect(normalizeOwnershipPercentage(100.004)).toBe(100);
+    expect(normalizeOwnershipPercentage('100.004')).toBe(100);
+    expect(() => normalizeOwnershipPercentage(0.004)).toThrow('نسبة الملكية');
+    expect(() => normalizeOwnershipPercentage('0.004')).toThrow('نسبة الملكية');
+    expect(() => normalizeOwnershipPercentage(100.005)).toThrow('نسبة الملكية');
+    expect(() => normalizeOwnershipPercentage('100.005')).toThrow('نسبة الملكية');
+  });
+
+  it('normalizes property owner links with primary flags and optional dates', () => {
+    expect(normalizePropertyOwnerPayload({
+      property_id: ' property-1 ',
+      owner_id: ' owner-1 ',
+      ownership_percentage: 25.5,
+      is_primary: false,
+      starts_on: ' 2026-05-01 ',
+      ends_on: ' 2026-06-01 ',
+    })).toEqual({
+      property_id: 'property-1',
+      owner_id: 'owner-1',
+      ownership_percentage: 25.5,
+      is_primary: false,
+      starts_on: '2026-05-01',
+      ends_on: '2026-06-01',
+    });
+
+    expect(normalizePropertyOwnerPayload({
+      property_id: 'property-1',
+      owner_id: 'owner-1',
+      ends_on: ' ',
+    })).toMatchObject({
+      ownership_percentage: 100,
+      is_primary: true,
+      starts_on: null,
+      ends_on: null,
+    });
+  });
+
+  it('rejects rounded-zero ownership percentages before database writes', () => {
+    expect(() => normalizePropertyOwnerPayload({
+      property_id: 'property-1',
+      owner_id: 'owner-1',
+      ownership_percentage: 0.004,
+    })).toThrow('نسبة الملكية');
+  });
+
+  it('soft-ends owner-property relationships instead of hard deleting them', () => {
+    const ownerServiceSource = readFileSync(new URL('./ownerService.ts', import.meta.url), 'utf8');
+
+    expect(ownerServiceSource).toContain('.update({ ends_on:');
+    expect(ownerServiceSource).not.toContain('.delete()');
+  });
+});
+
 describe('owner read helpers', () => {
   it('uses display names safely', () => {
     expect(getOwnerDisplayName({ ...owner, display_name: '  اسم مختصر  ' })).toBe('اسم مختصر');
@@ -64,5 +162,24 @@ describe('owner read helpers', () => {
     expect(getActiveOwnerLinks(activeProperty)).toHaveLength(1);
     expect(getActiveOwnerLinks(endedProperty)).toHaveLength(0);
     expect(getOwnerActivePropertyCount('owner-1', [activeProperty, endedProperty])).toBe(1);
+  });
+});
+
+describe('owner relationship migration protections', () => {
+  const ownerMigrationSql = readFileSync(
+    new URL('../../../../../supabase/migrations/20260515130000_owner_relationship_foundation.sql', import.meta.url),
+    'utf8',
+  );
+
+  it('protects against multiple active primary owners per property', () => {
+    expect(ownerMigrationSql).toContain('property_owners_active_primary_unique_idx');
+    expect(ownerMigrationSql).toContain('Only one active primary owner is allowed per property.');
+    expect(ownerMigrationSql).toContain('where ends_on is null and is_primary');
+  });
+
+  it('protects active ownership percentage totals from exceeding 100 percent', () => {
+    expect(ownerMigrationSql).toContain('validate_property_owner_active_totals');
+    expect(ownerMigrationSql).toContain('v_other_active_percentage_total + new.ownership_percentage > 100');
+    expect(ownerMigrationSql).toContain('Active ownership percentages for a property cannot exceed 100.');
   });
 });
