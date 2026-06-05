@@ -49,13 +49,16 @@ for (const group of navGroups) {
   navItems.push(...group[1]);
 }
 
-function escapeRegExp(value: string) {
-  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-}
-
 function getRouteDefinition(path: string) {
-  const pattern = new RegExp(`createRoute\\(\\{[^}]*path: '${escapeRegExp(path)}'[^}]*\\}`);
-  return routeTreeSource.match(pattern)?.[0] ?? '';
+  const pathToken = `path: '${path}'`;
+  const pathIndex = routeTreeSource.indexOf(pathToken);
+  if (pathIndex === -1) return '';
+
+  const routeStart = routeTreeSource.lastIndexOf('createRoute({', pathIndex);
+  const routeEnd = routeTreeSource.indexOf('});', pathIndex);
+  if (routeStart === -1 || routeEnd === -1) return '';
+
+  return routeTreeSource.slice(routeStart, routeEnd + 3);
 }
 
 describe('app route and navigation parity', () => {
