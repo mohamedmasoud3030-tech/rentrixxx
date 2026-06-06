@@ -5,10 +5,11 @@ This directory is the durable project context for coding agents. `AGENTS.md` is 
 ## Required reading order
 
 1. `product-scope.md`
-2. `engineering-policy.md`
-3. `release-checklist.md`
-4. `../decisions/README.md`
-5. `../../.ai/workflows/README.md`
+2. `domain-rules.md`
+3. `engineering-policy.md`
+4. `release-policy.md`
+5. `../decisions/README.md`
+6. `../../.ai/workflows/README.md`
 
 ## Documentation rules
 
