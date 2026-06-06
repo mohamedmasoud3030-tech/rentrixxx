@@ -4,10 +4,11 @@
 
 1. `docs/ai/README.md`
 2. `docs/ai/product-scope.md`
-3. `docs/ai/engineering-policy.md`
-4. `docs/ai/release-checklist.md`
-5. `docs/decisions/README.md`
-6. `.ai/workflows/README.md`
+3. `docs/ai/domain-rules.md`
+4. `docs/ai/engineering-policy.md`
+5. `docs/ai/release-policy.md`
+6. `docs/decisions/README.md`
+7. `.ai/workflows/README.md`
 
 Inspect the repository root and the active app under `artifacts/rentrix/` before changing code. Use actual code as the source of truth. Prefer `rg` and `rg --files` for search.
 
