@@ -7,7 +7,7 @@ Then read, in order:
 1. `docs/ai/README.md`
 2. `docs/ai/product-scope.md`
 3. `docs/ai/engineering-policy.md`
-4. `docs/ai/release-checklist.md`
+4. `docs/ai/release-policy.md`
 5. `docs/decisions/README.md`
 6. `.ai/workflows/README.md`
 
