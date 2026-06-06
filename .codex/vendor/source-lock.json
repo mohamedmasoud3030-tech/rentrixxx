@@ -15,6 +15,14 @@
       "upstreamPath": "skills",
       "localPath": ".codex/vendor/anthropic-skills/skills",
       "policy": "mirror upstream files without editing; preserve upstream marketplace grouping and licenses"
+    },
+    {
+      "name": "addy-agent-skills",
+      "repository": "https://github.com/addyosmani/agent-skills",
+      "commit": "5b4c6dade5e6b5a48067d08861a11732d8e3a2bf",
+      "upstreamPath": ".",
+      "localPath": ".codex/vendor/addy-agent-skills",
+      "policy": "mirror upstream files without editing; start with skills/using-agent-skills/SKILL.md and load only task-relevant workflows"
     }
   ]
 }
