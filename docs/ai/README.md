@@ -7,9 +7,11 @@ This directory is the durable project context for coding agents. `AGENTS.md` is 
 1. `product-scope.md`
 2. `domain-rules.md`
 3. `engineering-policy.md`
-4. `release-policy.md`
-5. `../decisions/README.md`
-6. `../../.ai/workflows/README.md`
+4. `security-policy.md`
+5. `testing-guide.md`
+6. `release-policy.md`
+7. `../decisions/README.md`
+8. `../../.ai/workflows/README.md`
 
 ## Documentation rules
 
