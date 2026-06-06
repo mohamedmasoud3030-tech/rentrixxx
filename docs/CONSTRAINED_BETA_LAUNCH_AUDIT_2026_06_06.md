@@ -1,14 +1,29 @@
 # Constrained Beta Launch Audit - 2026-06-06
 
-Scope: read-only launch audit against the intended Rentrix Vercel and Supabase environments. No production or staging data was mutated. No migrations, RLS, auth, RPC, runtime, or deployment settings were changed.
+Scope: access-bound read-only launch audit against the intended Rentrix Vercel and Supabase environments. No production or staging data was mutated. No migrations, RLS, auth, RPC, runtime, deployment settings, or environment variables were changed. No full secrets, tokens, passwords, connection strings, or anon keys were printed or recorded.
 
 Workflow: Repository audit from `.ai/workflows/README.md`.
 
 ## Executive result
 
-Recommendation: **NO-GO** for constrained beta until the intended live Vercel and Supabase targets are authenticated and verified.
+Recommendation: **NO-GO** for constrained beta.
 
-Reason: the repository contains important launch configuration and schema/RPC evidence, but this checkout has no `.vercel/project.json`, no local `.env*`, no `supabase/config.toml`, no relevant `VERCEL_*`, `SUPABASE_*`, `VITE_SUPABASE_*`, `DATABASE_URL`, or `PG*` shell variables, and no authenticated Vercel/Supabase CLI session. Live platform state, live schema inventory, auth settings, advisors, logs, backups, and beta account availability are therefore **BLOCKED**, not verified.
+Reason: the access-bound verification could not authenticate to Vercel or Supabase with credentials already available in the execution environment. The repository provides important expected configuration, migration, RPC, auth, RLS, and navigation evidence, but live platform state remains **BLOCKED**. The Supabase project ref `nnggcnpcuomwfuupupwg` was recovered only as a candidate from `supabase/.temp/pooler-url`; it could not be confirmed as the intended constrained-beta source of truth without Supabase management or database access.
+
+## Required return summary
+
+| Required item | Result |
+| --- | --- |
+| Exact verified Vercel project | **BLOCKED** - no `.vercel/project.json`, no relevant `VERCEL_*` shell variables, and no authenticated Vercel CLI session. |
+| Exact verified Supabase project ref | **BLOCKED** - candidate `nnggcnpcuomwfuupupwg` was recovered from local Supabase pooler metadata, but was not confirmed as the intended beta target. |
+| Active production commit SHA | **BLOCKED** - no live Vercel deployment metadata was accessible. Repository HEAD during this audit was `f0b601dfb36d7af354995a35f96e71f266419d9e`, but that is not proof of the active production deployment. |
+| Migration drift summary | **BLOCKED** - repository has 43 migration files; live `supabase_migrations.schema_migrations` was not accessible, so applied/missing/extra migration drift could not be determined. |
+| Schema drift summary | **BLOCKED** - repository schema/types/migrations define expected tables, constraints, indexes, triggers, and RLS, but live catalog queries were unavailable. |
+| RPC security summary | **BLOCKED live**; repository expects guarded authenticated RPCs with `SECURITY DEFINER`, fixed `search_path`, and public/anon execute revocation for the requested functions. Live owners, grants, definitions, helper dependencies, and RLS interaction could not be inspected. |
+| Auth/RLS summary | **BLOCKED live**; repository expects `ADMIN`, `MANAGER`, and `USER` roles from `app_metadata.user_role`, plus a custom access-token hook backed by `public.profiles.role`. Live login methods, hook registration, token issuance, beta accounts, anonymous denial, and table RLS posture could not be verified. |
+| Beta navigation classification | **NO-GO**; optional/recovered surfaces should be hidden or deferred until live schema and auth evidence exists. |
+| Remaining blockers | P0 live Vercel access, P0 live Supabase access, P0 confirmation of intended beta targets, P0 live migration/schema/RPC/auth/RLS/log/advisor/backup evidence. |
+| Final recommendation | **NO-GO**. |
 
 ## Redacted environment evidence
 
@@ -16,191 +31,189 @@ Reason: the repository contains important launch configuration and schema/RPC ev
 | --- | --- | --- |
 | Local Vercel project link | BLOCKED | `rg --files --hidden ... -g '.vercel/**'` found no `.vercel/project.json`. |
 | Local environment files | BLOCKED | `rg --files --hidden ... -g '.env*'` found no active `.env*` files in the checkout. |
-| Shell deployment/database variables | BLOCKED | The redacted environment-variable scan for Vercel, Supabase, Vite Supabase, database, and Postgres variables returned no matches. |
-| Vercel CLI authentication | BLOCKED | `CI=1 pnpm dlx vercel@latest whoami` reported no existing credentials, then failed during login discovery/network reachability. No deployment data was available. |
-| Supabase CLI authentication | BLOCKED | `CI=1 pnpm dlx supabase@latest projects list` failed with missing `SUPABASE_ACCESS_TOKEN` or login session. |
-| Supabase local config | BLOCKED | No `supabase/config.toml` was present in `rg --files --hidden`; only migrations and `.temp` metadata were present. |
+| Shell deployment/database variables | BLOCKED | A name-only scan for Vercel, Supabase, Vite Supabase, database, and Postgres variables returned no matches. |
+| Vercel CLI authentication | BLOCKED | `CI=1 pnpm dlx vercel@latest whoami` reported no existing credentials and then failed during login discovery/network reachability; no project, deployment URL, project ID, production commit, environment variables, or target classification was available. |
+| Supabase CLI authentication | BLOCKED | `CI=1 pnpm dlx supabase@latest projects list` failed because no `SUPABASE_ACCESS_TOKEN` or login session was available. |
+| Supabase local config | BLOCKED | No `supabase/config.toml` was present. Only migrations and `.temp` metadata were present. |
+| Supabase candidate metadata | PARTIAL | `supabase/.temp/pooler-url` yielded candidate project ref `nnggcnpcuomwfuupupwg` and host fragment `aws-1-ap-southeast-1.pooler.supabase.com`; the full connection string was not printed and the ref remains unverified. |
+| Supabase local version hints | PARTIAL | `.temp` files indicate Postgres `17.6.1.084`, GoTrue `v2.189.0`, and Supabase CLI latest `v2.95.4`; these are not proof of the intended beta target. |
+
+## Vercel target
+
+| Required verification | Result | Evidence |
+| --- | --- | --- |
+| Project name and project ID | BLOCKED | No authenticated Vercel project metadata was available. |
+| Preview deployment URL | BLOCKED | No authenticated Vercel deployment metadata was available. |
+| Production deployment URL | BLOCKED | No authenticated Vercel deployment metadata was available. |
+| Active production commit SHA | BLOCKED | No authenticated Vercel deployment metadata was available. |
+| Environment classification | BLOCKED | No live Vercel project or deployment metadata was available. |
+| Build command | PASS repository expectation | Root `vercel.json` declares `pnpm run build`; root `package.json` delegates to recursive workspace builds; `artifacts/rentrix/package.json` builds with `vite build --config vite.config.ts`. |
+| Install command | PASS repository expectation | Root `vercel.json` declares `pnpm install --frozen-lockfile`. |
+| Output directory | PASS repository expectation | Root `vercel.json` declares `artifacts/rentrix/dist/public`; app-local `artifacts/rentrix/vercel.json` declares `dist/public` if the project root is `artifacts/rentrix`. |
+| SPA rewrite | PASS repository expectation | Root and app-local Vercel configs rewrite `/(.*)` to `/index.html`. |
+| Security headers | PASS repository expectation | Root `vercel.json` declares CSP, `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`, and `Referrer-Policy: strict-origin-when-cross-origin`. |
+| `VITE_SUPABASE_URL` targeting | BLOCKED | Runtime code requires it through the env layer, but no local/deployment env source or Vercel env access was available. Full values were not exposed. |
+| `VITE_SUPABASE_ANON_KEY` targeting | BLOCKED | Runtime code requires it through the env layer, but no local/deployment env source or Vercel env access was available. Full values were not exposed. |
+
+## Supabase target
+
+| Required verification | Result | Evidence |
+| --- | --- | --- |
+| Project ref and environment classification | BLOCKED | Candidate `nnggcnpcuomwfuupupwg` is not confirmed as the intended constrained-beta target. No Supabase project metadata was accessible. |
+| Migration history versus repository | BLOCKED | Repository has 43 migration files. Live migration history was not accessible. |
+| Required live tables, columns, constraints, indexes, triggers, and RLS state | BLOCKED | Repository migrations/types define expected surfaces; live catalog could not be queried. |
+| Live distinct `units.status` values | BLOCKED | Requires read-only SQL access to the intended target database. |
+| Canonical `units.status` constraint definition | PASS repository expectation, BLOCKED live | `20260603094500_normalize_units_status_contract.sql` defines `units_status_canonical_check` as `check (status::text in ('available', 'occupied', 'maintenance', 'reserved'))` and validates it. Live presence/definition could not be confirmed. |
+
+## Contract integrity
+
+| Required verification | Result | Evidence |
+| --- | --- | --- |
+| Live overlap guard exists | BLOCKED | Repository migration `20260514062000_contract_overlap_guard.sql` defines `public.prevent_active_contract_overlap()` and trigger `contracts_prevent_active_overlap`; live trigger/function presence could not be confirmed. |
+| Create path cannot overlap active contracts | PASS repository expectation, BLOCKED live | The repository trigger runs before insert or update on `unit_id`, `start_date`, `end_date`, `status`, and `deleted_at` and raises on overlapping active date ranges for the same unit. Live behavior was not exercised. |
+| Update path cannot overlap active contracts | PASS repository expectation, BLOCKED live | Same trigger covers updates to the guarded columns. Live behavior was not exercised. |
+| Renewal path cannot overlap active contracts | PASS repository expectation, BLOCKED live | `renew_contract_atomic(uuid, jsonb)` inserts into `public.contracts`, so the repository overlap trigger should protect renewals; live function and trigger behavior could not be tested. |
+| `renew_contract_atomic` cannot bypass occupancy protection | PASS repository expectation, BLOCKED live | The repository RPC copies `property_id`, `unit_id`, and `tenant_id` server-side from the original contract and inserts a new contract, relying on trigger-level overlap protection. Live trigger execution under SECURITY DEFINER could not be confirmed. |
+
+## RPC catalog
+
+| RPC | Repository expectation | Live result |
+| --- | --- | --- |
+| `record_invoice_payment_atomic` | `20260604020300_add_record_invoice_payment_atomic_facade.sql` defines `record_invoice_payment_atomic(payload jsonb)` as `SECURITY DEFINER` with `set search_path = public, pg_temp`, validates authenticated user/payment payload, builds receipt/allocation/journal payloads, delegates to `post_receipt_atomic(jsonb)`, and revokes public/anon execution while granting authenticated execution. | BLOCKED - live signature, owner, grants, definition, helper dependencies, SECURITY DEFINER state, fixed search_path, and RLS interaction could not be inspected. |
+| `post_receipt_atomic` | Repository migrations define guarded versions, including `post_receipt_atomic(uuid, numeric, public.payment_method, date, text)` with auth checks, amount validation, invoice locking, payment insert, invoice status update, public/anon revoke, and authenticated grant; later hardening also references `post_receipt_atomic(jsonb)`. | BLOCKED - live overloaded signatures, owners, grants, definitions, helper dependencies, SECURITY DEFINER state, fixed search_path, and RLS interaction could not be inspected. |
+| `renew_contract_atomic` | `20260604020400_reconcile_renew_contract_atomic.sql` defines `renew_contract_atomic(old_contract_id uuid, new_contract_data jsonb)` as `SECURITY DEFINER` with `set search_path = public, pg_temp`, requires `auth.uid()`, validates dates/amount, locks the old contract, copies stable relational fields server-side, inserts a new contract, updates the old contract to a terminal status, revokes public/anon execution, and grants authenticated execution. | BLOCKED - live signature, owner, grants, definition, helper dependencies, SECURITY DEFINER state, fixed search_path, and trigger/RLS interaction could not be inspected. |
+| `rpt_financial_summary` | Repository migrations/types expect a financial summary RPC. Hardening migrations reference `rpt_financial_summary(integer, integer)` and `rpt_financial_summary(date, date)` for execute grant cleanup. Frontend generated types currently expose `{ month: number; year: number }` returning collected/overdue/expense/net revenue fields. | BLOCKED - live signature drift between repository migrations and generated types could not be resolved without live function catalog access. |
+
+Live diff against repository expectations: **BLOCKED**. No live `pg_proc`, `pg_get_functiondef`, `pg_roles`, `information_schema.routine_privileges`, `pg_depend`, policy, or RLS interaction evidence was accessible.
+
+## Authentication and authorization
+
+| Required verification | Result | Evidence |
+| --- | --- | --- |
+| Enabled login methods | BLOCKED | Requires Supabase project auth config access. |
+| Custom access-token-hook registration | BLOCKED | Migration creates `public.custom_access_token_hook(event jsonb)` and documents required dashboard/API registration, but live project-level enablement and URI could not be verified. |
+| Authoritative role source | PASS repository expectation, BLOCKED live | Repository hook reads `public.profiles.role`; frontend authorization reads `user.app_metadata.user_role`. Live profile contents and token claims could not be inspected. |
+| `app_metadata.user_role` issuance | BLOCKED | Requires live token/account inspection. |
+| Approved beta-safe ADMIN account | BLOCKED | Requires approved Supabase auth/admin access or beta test credentials already available in environment; none were available. |
+| Approved beta-safe MANAGER account | BLOCKED | Same blocker. |
+| Approved beta-safe USER account | BLOCKED | Same blocker. |
+| Anonymous denial behavior | BLOCKED | Requires live anonymous API/RLS checks against the intended target. |
+| RLS posture for beta-facing tables | BLOCKED | Repository migrations enable RLS on core surfaces and later harden policies, but live `pg_class.relrowsecurity`, `pg_policy`, grants, and anonymous/authenticated behavior were not accessible. |
+
+## Operational evidence
+
+| Required verification | Result | Evidence |
+| --- | --- | --- |
+| Supabase logs | BLOCKED | Requires Supabase dashboard/API access. |
+| Security advisors | BLOCKED | Requires Supabase dashboard/API access. |
+| Performance advisors | BLOCKED | Requires Supabase dashboard/API access. |
+| Backup posture | BLOCKED | Requires Supabase dashboard/API access. |
+| Repeated Auth/API/Postgres/RLS/RPC errors | BLOCKED | No live logs were accessible. |
+
+## Optional and recovered surfaces
+
+| Surface | Classification | Evidence |
+| --- | --- | --- |
+| maintenance | HIDE_FROM_BETA_NAV | Repository contains a mutating maintenance workspace, but live schema/RLS was not verified and the surface is not constrained to read-only. |
+| audit log | HIDE_FROM_BETA_NAV | Route exists, but the repository service returns an unavailable state because the live audit schema is unverified. |
+| lands | HIDE_FROM_BETA_NAV | Route exists, but the repository service returns an unavailable state because no safe lands table is documented in the current verified schema. |
+| leads | HIDE_FROM_BETA_NAV | Route exists, but the repository service returns an unavailable state because no safe leads/CRM table is documented in the current verified schema. |
+| commissions | HIDE_FROM_BETA_NAV | Route exists, but the repository service returns an unavailable state because no separate commissions table is documented. |
+| communication | HIDE_FROM_BETA_NAV | Route exists, but the repository service returns an unavailable state and intentionally sends no messages or provider calls. |
+| system/governance | HIDE_FROM_BETA_NAV | Route exists and is role-gated in the frontend, but live auth/RLS and governance source support were not verified. |
+| data integrity | HIDE_FROM_BETA_NAV | Route exists and reads core tables, but live schema/RLS and beta account authorization were not verified. |
+
+## Required fixes ranking
+
+| Priority | Fix | Scope |
+| --- | --- | --- |
+| P0 launch blocker | Provide authenticated read-only Vercel access for the intended beta project | Confirm project name, project ID, preview/production URLs, active production commit SHA, environment classification, redacted Supabase env targeting, build/install/output settings, rewrite, and headers. |
+| P0 launch blocker | Provide authenticated read-only Supabase project/database access for the intended beta target | Confirm whether `nnggcnpcuomwfuupupwg` is the target; inspect migration history, schema/catalog, live `units.status` values, canonical status constraint, overlap trigger, RPC catalog, auth config, RLS posture, logs, advisors, and backups. |
+| P0 launch blocker | Resolve any live drift discovered by the access-bound audit | Do not implement in this docs PR; split schema/RPC/RLS/auth/runtime fixes into separate narrow PRs after live evidence exists. |
+| P1 constrained-beta improvement | Record canonical environment ownership in a secure operator runbook | Store project IDs/refs and environment classification in a redacted, access-controlled place rather than relying on `.temp` metadata. |
+| P1 constrained-beta improvement | Hide optional/recovered nav surfaces for beta until verified | Maintenance, audit log, lands, leads, commissions, communication, system/governance, and data integrity should not be exposed to beta users until live support and authorization are verified. |
+| Deferred | Feature expansion | Do not add new features before live launch evidence passes and single-office/non-ledger product boundaries remain intact. |
 
 ## PASS / FAIL / BLOCKED matrix
 
 | Area | Result | Finding |
 | --- | --- | --- |
-| Vercel intended project | BLOCKED | No local Vercel link or authenticated Vercel access was available. |
-| Vercel deployment URL | BLOCKED | No live deployment metadata was accessible. |
-| Vercel active commit SHA | BLOCKED | No live deployment metadata was accessible. |
-| Vercel build command | PASS | Root `vercel.json` declares `pnpm run build`. |
-| Vercel install command | PASS | Root `vercel.json` declares `pnpm install --frozen-lockfile`. |
-| Vercel output directory | PASS | Root `vercel.json` declares `artifacts/rentrix/dist/public`; app-local `vercel.json` declares `dist/public` only if the project root is `artifacts/rentrix`. |
-| SPA rewrite | PASS | Root and app-local Vercel configs both rewrite `/(.*)` to `/index.html`. |
-| Security headers | PASS | Root `vercel.json` declares CSP, `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`, and `Referrer-Policy: strict-origin-when-cross-origin`. |
-| `VITE_SUPABASE_URL` presence and targeting | BLOCKED | Runtime code requires it, but no local/deployment env source or Vercel env access was available. Full values were not exposed. |
-| `VITE_SUPABASE_ANON_KEY` presence and targeting | BLOCKED | Runtime code requires it, but no local/deployment env source or Vercel env access was available. Full values were not exposed. |
-| Supabase project ref | BLOCKED | No `supabase/config.toml`, project link, access token, or database URL was available. |
-| Supabase environment classification | BLOCKED | Cannot classify production/staging without project metadata. |
-| Applied migration history versus repository | BLOCKED | Repository migration list is known; live `supabase_migrations.schema_migrations` was not accessible. |
-| Required live tables and columns | BLOCKED | Repository types/migrations define expected surfaces; live schema could not be queried. |
-| Live `units.status` distinct values | BLOCKED | Requires read-only SQL access to the target database. |
-| Canonical unit-status constraint presence | BLOCKED | Repository migration exists; live constraint could not be verified. |
-| Required RPC existence/signatures | BLOCKED | Repository migrations/types define expected RPCs; live function catalog could not be queried. |
-| RPC grants, owners, `SECURITY DEFINER`, `search_path`, RLS interaction | BLOCKED | Repository migrations show intended posture; live catalog/policy metadata could not be queried. |
-| Auth method configuration | BLOCKED | Requires Supabase project auth config access. |
-| Access-token hook status | BLOCKED | Migration defines a hook function and manual registration requirement; project-level hook enablement could not be verified. |
-| `app_metadata.user_role` claims | BLOCKED | Code expects this claim; live token/account inspection was unavailable. |
-| ADMIN, MANAGER, USER beta accounts | BLOCKED | Requires Supabase auth/admin access or approved test credentials. |
-| Supabase logs | BLOCKED | Requires Supabase dashboard/API access. |
-| Supabase advisors | BLOCKED | Requires Supabase dashboard/API access. |
-| Supabase backup posture | BLOCKED | Requires Supabase dashboard/API access. |
-| Maintenance/audit/lands/leads/commissions/communication/system/data-integrity live support | BLOCKED | Routes and some migrations exist; live schemas were not accessible. |
-| Proven launch-blocking failure | FAIL | Live environment access was unavailable, so required launch evidence could not be produced. |
-
-## Repository configuration evidence
-
-| Surface | Repository evidence | Result |
-| --- | --- | --- |
-| Active app | `AGENTS.md` and package evidence identify `artifacts/rentrix/` as the active app. | PASS |
-| Build | Root Vercel build delegates to root `pnpm run build`; root package recursively builds workspace packages; `@workspace/rentrix` uses `vite build --config vite.config.ts`. | PASS |
-| Install | Root Vercel install command is frozen pnpm install. | PASS |
-| Output | Root Vercel output is `artifacts/rentrix/dist/public`; app Vite output is `dist/public` under `artifacts/rentrix`. | PASS |
-| SPA hosting | Root and app-local Vercel configs include the catch-all rewrite. | PASS |
-| Headers | Root Vercel config includes CSP and basic anti-clickjacking/content/referrer headers. | PASS |
-| Supabase env names | `artifacts/rentrix/src/lib/env.ts` reads `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY`; `artifacts/rentrix/src/integrations/supabase/client.ts` creates the browser client from those values. | PASS for code, BLOCKED for deployed values. |
-
-## Expected schema inventory from repository evidence
-
-This is **not** a live schema inventory. It is the repository-side expected inventory used to scope the blocked live check.
-
-| Table/surface | Expected columns or support | Repository evidence result | Live result |
-| --- | --- | --- | --- |
-| `properties` | `id`, `title`, `type`, `address`, `owner_name`, `purchase_value`, `current_value`, `status`, `notes`, timestamps, `deleted_at` | PASS | BLOCKED |
-| `units` | `id`, `property_id`, `unit_number`, `floor`, `status`, `rent_amount`, `notes`, timestamps, `deleted_at`; unique property/unit number | PASS | BLOCKED |
-| `people` | `id`, `full_name`, `phone`, `email`, `national_id`, `type`, `address`, `notes`, timestamps, `deleted_at` | PASS | BLOCKED |
-| `owners` | `id`, `full_name`, display/contact/tax/address/notes fields, `is_active`, timestamps | PASS | BLOCKED |
-| `property_owners` | `property_id`, `owner_id`, ownership percentage, primary flag, effective dates | PASS | BLOCKED |
-| `contracts` | `property_id`, `unit_id`, `tenant_id`, dates, `rent_amount`, `payment_cycle`, `status`, renewal/cancellation support, timestamps, `deleted_at` | PASS | BLOCKED |
-| `invoices` | `contract_id`, issue/due dates, `amount`, `paid_amount`, `status`, notes, timestamps, `deleted_at` | PASS | BLOCKED |
-| `payments` | `invoice_id`, `amount`, `payment_method`, `payment_date`, `reference_number`, `payment_reference`, timestamps, `deleted_at` | PASS | BLOCKED |
-| `receipts` | `id`, `no`, `contract_id`, `date_time`, `channel`, `amount`, `ref`, `notes`, `status`, `created_at`, `request_id`, `tenant_id` | PASS | BLOCKED |
-| `receipt_allocations` | `receipt_id`, `invoice_id`, `amount`, `created_at`, `tenant_id` | PASS | BLOCKED |
-| `expenses` | `property_id`, `category`, `amount`, `expense_date`, `description`, timestamps, `deleted_at` | PASS | BLOCKED |
-| `maintenance_requests` | `property_id`, `unit_id`, `title`, `description`, `priority`, `status`, `assigned_to`, `cost`, `resolved_at`, timestamps, `deleted_at` | PASS | BLOCKED |
-| `company_settings` | singleton company/legal/tax/contact/address/currency/locale/timezone/logo/prefix fields | PASS | BLOCKED |
-| `profiles` | Access-token hook migration expects `public.profiles.role`; generated runtime types do not include `profiles`. | PARTIAL / RISK | BLOCKED |
-| Audit-related tables | `financial_audit_log` is referenced by receipt RPC migrations; `audit_log` policies are referenced in RLS hardening; generated runtime types do not model them. | PARTIAL / RISK | BLOCKED |
-| Idempotency tables | `financial_operation_idempotency` exists in migrations and is used by `post_receipt_atomic` and `record_invoice_payment_atomic`. | PASS | BLOCKED |
-| `serials` | Contract serial helper migration creates `serials` and `increment_serial`. | PASS | BLOCKED |
-| `lands` | RLS hardening references `lands`; active route/permission exists; no generated runtime table type. | PARTIAL / RISK | BLOCKED |
-| `leads` | RLS hardening references `leads`; active route/permission exists; no generated runtime table type. | PARTIAL / RISK | BLOCKED |
-| `commissions` | RLS hardening references `commissions`; active route/permission exists; no generated runtime table type. | PARTIAL / RISK | BLOCKED |
-| Communication | Active route/permission exists; RLS hardening references notification/communication-adjacent tables, but generated runtime types do not model a canonical communication schema. | PARTIAL / RISK | BLOCKED |
-| System/governance | Active system/audit/integrity routes exist; RLS hardening references governance/system-adjacent tables; generated runtime types do not model all surfaces. | PARTIAL / RISK | BLOCKED |
-| Data integrity | Active read-only audit service exists; live support cannot be verified without database access. | PARTIAL / RISK | BLOCKED |
-
-## Unit status contract
-
-Repository result: PASS. `supabase/migrations/20260603094500_normalize_units_status_contract.sql` defines canonical stored values `available`, `occupied`, `maintenance`, and `reserved`, maps historical incoming `rented` to `occupied`, and adds a canonical check constraint when `units.status` is text-backed.
-
-Live result: BLOCKED. The required live queries were not possible:
-
-```sql
-select status, count(*) from public.units group by status order by status;
-select conname, pg_get_constraintdef(oid) from pg_constraint where conrelid = 'public.units'::regclass and conname ilike '%status%';
-```
-
-## Required RPC inventory
-
-| RPC | Repository signature/posture | Helpers called or related | Repository result | Live result |
-| --- | --- | --- | --- | --- |
-| `record_invoice_payment_atomic` | `public.record_invoice_payment_atomic(payload jsonb) returns jsonb`, `SECURITY DEFINER`, `set search_path = public, pg_temp`, grants to `authenticated`. | `find_payment_account_id`, `post_receipt_atomic`, `financial_operation_idempotency`. | PASS | BLOCKED |
-| `post_receipt_atomic` | Current repository history contains legacy and JSONB signatures; latest receipt serial migration defines `public.post_receipt_atomic(jsonb) returns jsonb`, revokes public, grants authenticated/service_role. | `financial_operation_idempotency`, `financial_audit_log`, receipt/allocations writes. | PASS / NEED_LIVE_DIFF | BLOCKED |
-| `renew_contract_atomic` | Latest migration defines `public.renew_contract_atomic(old_contract_id uuid, new_contract_data jsonb) returns jsonb`, `SECURITY DEFINER`, `set search_path = public, pg_temp`, grants authenticated. | `contract_status_label`. | PASS | BLOCKED |
-| `rpt_financial_summary` | Repository type expects `{ month: number; year: number }`; security hardening migrations grant authenticated and revoke public/anon. | None identified in current generated type. | PASS / NEED_LIVE_DIFF | BLOCKED |
-| Helpers | `contract_status_label`, `find_payment_account_id`, `increment_serial`, `assign_contract_number_from_serials`, `sync_payment_reference_columns`, `normalize_unit_status_contract`, `is_app_user`, `is_admin_or_manager`. | Various triggers/RPCs. | PASS | BLOCKED |
-
-Live catalog checks still required:
-
-```sql
-select n.nspname, p.proname, pg_get_function_identity_arguments(p.oid), pg_get_function_result(p.oid), p.prosecdef, p.proowner::regrole, p.proconfig
-from pg_proc p join pg_namespace n on n.oid = p.pronamespace
-where n.nspname = 'public' and p.proname in ('record_invoice_payment_atomic','post_receipt_atomic','renew_contract_atomic','rpt_financial_summary');
-```
-
-## Migration application matrix
-
-Repository contains these migrations. Live application status is **BLOCKED** for every row because the target database migration history could not be queried.
-
-| Migration | In repo | Applied live |
-| --- | --- | --- |
-| `20260427102326_rentrix_complete_production_setup.sql` | PASS | BLOCKED |
-| `20260427102343_rentrix_complete_production_setup.sql` | PASS | BLOCKED |
-| `20260503120000_consolidate_schema_integrity.sql` | PASS | BLOCKED |
-| `20260503140000_custom_access_token_hook.sql` | PASS | BLOCKED |
-| `20260503160000_atomic_receipt_serial.sql` | PASS | BLOCKED |
-| `20260509080848_fix_contracts_rls_policy.sql` | PASS | BLOCKED |
-| `20260509080930_fix_views_security_invoker.sql` | PASS | BLOCKED |
-| `20260510055726_fix_owner_settlements_status_column.sql` | PASS | BLOCKED |
-| `20260510055736_fix_duplicate_rls_policies.sql` | PASS | BLOCKED |
-| `20260510055756_fix_recalculate_all_balances_function.sql` | PASS | BLOCKED |
-| `20260510055826_fix_contract_balances_updated_at_trigger.sql` | PASS | BLOCKED |
-| `20260510055847_fix_get_financial_summary_function.sql` | PASS | BLOCKED |
-| `20260510055859_fix_contracts_no_auto_generate.sql` | PASS | BLOCKED |
-| `20260510055912_fix_unit_status_trigger_function.sql` | PASS | BLOCKED |
-| `20260510060659_fix_missing_columns_and_views.sql` | PASS | BLOCKED |
-| `20260510060714_fix_api_routes_404.sql` | PASS | BLOCKED |
-| `20260510061147_fix_audit_log_generated_columns.sql` | PASS | BLOCKED |
-| `20260513120000_core_real_estate_schema.sql` | PASS | BLOCKED |
-| `20260513150000_phase_2b_contract_renewal.sql` | PASS | BLOCKED |
-| `20260513190000_phase_3_financial_engine.sql` | PASS | BLOCKED |
-| `20260513210000_phase_4_reports_maintenance.sql` | PASS | BLOCKED |
-| `20260514011230_fix_all_security_advisors.sql` | PASS | BLOCKED |
-| `20260514060000_fix_post_receipt_rpc_args.sql` | PASS | BLOCKED |
-| `20260514061000_contract_integrity_guards.sql` | PASS | BLOCKED |
-| `20260514062000_contract_overlap_guard.sql` | PASS | BLOCKED |
-| `20260514063000_payment_immutability_guard.sql` | PASS | BLOCKED |
-| `20260514110000_security_rls_hardening.sql` | PASS | BLOCKED |
-| `20260515120000_company_settings.sql` | PASS | BLOCKED |
-| `20260515130000_owner_relationship_foundation.sql` | PASS | BLOCKED |
-| `20260515200000_validate_contract_integrity_constraints.sql` | PASS | BLOCKED |
-| `20260516110000_harden_post_receipt_authorization.sql` | PASS | BLOCKED |
-| `20260518102000_harden_rpc_execution_and_advisor_indexes.sql` | PASS | BLOCKED |
-| `20260518105500_harden_rpc_execution_retry.sql` | PASS | BLOCKED |
-| `20260518134500_harden_remaining_function_advisors.sql` | PASS | BLOCKED |
-| `20260519023157_remote_history_placeholder.sql` | PASS | BLOCKED |
-| `20260519120000_p0_harden_rls_user_scoped.sql` | PASS | BLOCKED |
-| `20260603094500_normalize_units_status_contract.sql` | PASS | BLOCKED |
-| `20260604012000_sync_live_operational_contracts.sql` | PASS | BLOCKED |
-| `20260604020000_reconcile_demo_entity_id_defaults.sql` | PASS | BLOCKED |
-| `20260604020100_reconcile_payment_reference_compatibility.sql` | PASS | BLOCKED |
-| `20260604020200_reconcile_contract_serial_helper.sql` | PASS | BLOCKED |
-| `20260604020300_add_record_invoice_payment_atomic_facade.sql` | PASS | BLOCKED |
-| `20260604020400_reconcile_renew_contract_atomic.sql` | PASS | BLOCKED |
-
-## Auth and beta account status
-
-Repository result: PARTIAL. The frontend authorization layer recognizes only `ADMIN`, `MANAGER`, and `USER` from `user.app_metadata.user_role`. The custom access-token hook migration creates `public.custom_access_token_hook(event jsonb)`, reads `public.profiles.role`, injects `app_metadata.user_role`, grants execution to `supabase_auth_admin` when present, and states that the hook must also be registered in the Supabase project auth configuration.
-
-Live result: BLOCKED. Auth providers, email/password state, hook enablement URI, role-claim issuance, and ADMIN/MANAGER/USER beta account availability require Supabase project/auth access.
-
-## Logs, advisors, and backups
-
-Result: BLOCKED. No Supabase management access was available to inspect logs, security/performance advisors, PITR, scheduled backups, backup retention, or restore test posture.
-
-## Required follow-up PRs
-
-| Priority | Follow-up | Scope |
-| --- | --- | --- |
-| P0 | Add an access-bound read-only launch evidence PR | Provide intended Vercel project metadata, deployment URL, active commit SHA, redacted production/preview env targeting, Supabase project ref/classification, migration history, live schema inventory, RPC catalog/grants, RLS posture, auth settings, logs/advisors/backups, and beta account verification. No mutations. |
-| P0 | Resolve any live drift found by the access-bound audit | Only after evidence exists; split schema/RPC/RLS/auth/runtime fixes into narrow PRs. |
-| P1 | Reconcile generated database types with live-supported governance/commercial surfaces | Ensure `profiles`, audit tables, lands, leads, commissions, communication, system/governance, and data-integrity support are intentionally typed or explicitly documented as unavailable. |
-| P1 | Harden documentation for environment ownership | Record the canonical Vercel project, Supabase project ref, and environment classification in a redacted operator-only launch note or approved secure runbook. |
-| Deferred | Feature expansion | Defer new features until live beta launch evidence passes and product boundaries remain single-office, Arabic-first, and non-ledger. |
+| Repository active app boundary | PASS | `artifacts/rentrix/` is the active app per repository instructions and active package/config files. |
+| Repository Vercel build/install/output/rewrite/header expectations | PASS | Root and app-local Vercel configuration provide expected static SPA deployment settings. |
+| Repository migration inventory | PASS | 43 migration files are present under `supabase/migrations/`. |
+| Repository unit-status canonical expectation | PASS | Repository migration defines canonical stored values `available`, `occupied`, `maintenance`, and `reserved`. |
+| Repository contract overlap expectation | PASS | Repository migration defines a trigger-level active contract overlap guard. |
+| Repository auth role expectation | PASS | Frontend recognizes only `ADMIN`, `MANAGER`, and `USER`, sourced from `app_metadata.user_role`. |
+| Live Vercel target | BLOCKED | No authenticated Vercel metadata was available. |
+| Live Supabase target | BLOCKED | Candidate ref was recovered but not confirmed; no authenticated Supabase metadata or SQL access was available. |
+| Live migration/schema/RPC/auth/RLS/log/advisor/backup evidence | BLOCKED | Required live evidence could not be queried safely with available credentials. |
+| Launch readiness | FAIL | Required launch verification could not be completed; constrained beta remains NO-GO. |
 
 ## Verification commands run
 
 ```bash
-rg --files --hidden -g '!node_modules' -g '!artifacts/rentrix/node_modules' -g '!.git' -g '.env*' -g '.vercel/**' -g 'supabase/config.toml' -g 'supabase/.temp/**' -g 'CLAUDE.md' -g 'docs/**'
-env | sort | rg -n '^(VERCEL|SUPABASE|VITE_SUPABASE|DATABASE_URL|PG|POSTGRES|REACT_APP|NEXT_PUBLIC)' | sed -E 's/(=).*/=<redacted>/'
+pwd
+rg --files -g 'AGENTS.md' -g 'docs/CONSTRAINED_BETA_LAUNCH_AUDIT_2026_06_06.md' -g 'docs/ai/README.md' -g 'docs/ai/product-scope.md' -g 'docs/ai/domain-rules.md' -g 'docs/ai/engineering-policy.md' -g 'docs/ai/release-policy.md' -g 'docs/decisions/README.md' -g '.ai/workflows/README.md'
+sed -n '1,240p' AGENTS.md
+sed -n '1,260p' docs/CONSTRAINED_BETA_LAUNCH_AUDIT_2026_06_06.md
+sed -n '1,220p' docs/ai/README.md
+sed -n '1,220p' docs/ai/product-scope.md
+sed -n '1,260p' docs/ai/domain-rules.md
+sed -n '1,260p' docs/ai/engineering-policy.md
+sed -n '1,220p' docs/ai/release-policy.md
+sed -n '1,220p' docs/decisions/README.md
+sed -n '1,220p' .ai/workflows/README.md
+rg --files -g '!node_modules' -g '!artifacts/rentrix/node_modules'
+rg --files artifacts/rentrix -g '!node_modules'
+rg --files --hidden -g '!node_modules' -g '!artifacts/rentrix/node_modules' -g '.vercel/**' -g '.env*' -g 'supabase/**' -g '**/.temp/**' -g 'vercel.json' -g 'package.json' -g 'pnpm-workspace.yaml'
+find . -name AGENTS.md -print
+find artifacts/rentrix -maxdepth 2 -type f | sort
+find supabase/.temp -maxdepth 1 -type f -print
+python3 - <<'PY'
+import os, re, pathlib
+patterns = re.compile(r'(VERCEL|SUPABASE|VITE_SUPABASE|DATABASE_URL|PGHOST|PGUSER|PGPASSWORD|PGDATABASE|PGPORT|POSTGRES)', re.I)
+print('matching environment variable names:')
+for k in sorted(os.environ):
+    if patterns.search(k):
+        print(k)
+print('supabase temp derived identifiers:')
+p=pathlib.Path('supabase/.temp/pooler-url')
+if p.exists():
+    s=p.read_text().strip()
+    refs=sorted(set(re.findall(r'([a-z0-9]{20})', s)))
+    hosts=sorted(set(re.findall(r'([a-z0-9.-]*supabase[a-z0-9.-]*)', s)))
+    print('project-ref-like values:', ', '.join(refs) if refs else 'none')
+    print('supabase host-like fragments:', ', '.join(hosts) if hosts else 'none')
+for f in ['supabase/.temp/postgres-version','supabase/.temp/gotrue-version','supabase/.temp/cli-latest']:
+    p=pathlib.Path(f)
+    if p.exists():
+        print(f + ': ' + p.read_text().strip()[:80])
+PY
 CI=1 pnpm dlx vercel@latest whoami
 CI=1 pnpm dlx supabase@latest projects list
-rg --files supabase/migrations | sort
-rg -n 'create table|create or replace function|security definer|grant execute|revoke execute|record_invoice_payment_atomic|post_receipt_atomic|renew_contract_atomic|rpt_financial_summary' supabase/migrations artifacts/rentrix/src/types/database.ts artifacts/rentrix/src
+sed -n '1,220p' vercel.json
+sed -n '1,220p' artifacts/rentrix/vercel.json
+sed -n '1,220p' package.json
+sed -n '1,220p' artifacts/rentrix/package.json
+sed -n '1,100p' artifacts/rentrix/src/integrations/supabase/client.ts
+sed -n '1,80p' artifacts/rentrix/src/features/auth/permissions.ts
+rg -n 'units_status|status.*vacant|status.*occupied|no_overlap|overlap|prevent.*overlap|renew_contract_atomic|record_invoice_payment_atomic|post_receipt_atomic|rpt_financial_summary|custom_access_token_hook|security definer|set search_path|grant execute|revoke execute|enable row level security|force row level security|create policy|drop policy' supabase/migrations artifacts/rentrix/src/types/database.ts artifacts/rentrix/src -g '!node_modules'
+sed -n '1,160p' supabase/migrations/20260603094500_normalize_units_status_contract.sql
+sed -n '1,180p' supabase/migrations/20260514062000_contract_overlap_guard.sql
+sed -n '40,220p' supabase/migrations/20260604020400_reconcile_renew_contract_atomic.sql
+sed -n '1,220p' supabase/migrations/20260604020300_add_record_invoice_payment_atomic_facade.sql
+sed -n '1,120p' supabase/migrations/20260516110000_harden_post_receipt_authorization.sql
+sed -n '1,120p' supabase/migrations/20260510055847_fix_get_financial_summary_function.sql
+sed -n '1,120p' supabase/migrations/20260503140000_custom_access_token_hook.sql
+sed -n '1,120p' artifacts/rentrix/src/layouts/app-nav-items.ts
+sed -n '1,140p' artifacts/rentrix/src/features/lands/services/lands-service.ts
+sed -n '1,140p' artifacts/rentrix/src/features/leads/services/leads-service.ts
+sed -n '1,140p' artifacts/rentrix/src/features/commissions/services/commissions-service.ts
+sed -n '1,140p' artifacts/rentrix/src/features/communication/services/communication-service.ts
+sed -n '1,140p' artifacts/rentrix/src/features/maintenance/maintenance-page.tsx
+sed -n '1,140p' artifacts/rentrix/src/features/audit/services/audit-log-service.ts
+rg --files supabase/migrations | sort | wc -l
+git status --short
+git branch --show-current
+git rev-parse HEAD
 ```
