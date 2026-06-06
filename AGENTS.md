@@ -60,6 +60,7 @@ Available sources:
 - Record durable product or architecture decisions under `docs/decisions/`.
 - Select a workflow from `.ai/workflows/README.md` before implementation.
 - For non-trivial engineering tasks, consult `.codex/vendor/addy-agent-skills/skills/using-agent-skills/SKILL.md`, then load only task-relevant workflows.
+- If a referenced Addy workflow is missing locally, run `scripts/sync-codex-vendor-skills.sh` once. If GitHub access is unavailable, stop and report the exact blocker instead of guessing or retrying alternate routes.
 - Report exact blockers instead of guessing or hiding failed checks.
 
 ## Required verification
