@@ -51,6 +51,7 @@ Available sources:
 
 - OpenAI Build Web Apps plugin: `.codex/vendor/openai-build-web-apps/`
 - Anthropic Agent Skills manifest: `.codex/vendor/anthropic-skills/`
+- Addy Osmani Agent Skills: `.codex/vendor/addy-agent-skills/` (start with `skills/using-agent-skills/SKILL.md`)
 
 ## Working rules
 
@@ -58,6 +59,7 @@ Available sources:
 - Keep changes bounded and reviewable.
 - Record durable product or architecture decisions under `docs/decisions/`.
 - Select a workflow from `.ai/workflows/README.md` before implementation.
+- For non-trivial engineering tasks, consult `.codex/vendor/addy-agent-skills/skills/using-agent-skills/SKILL.md`, then load only task-relevant workflows.
 - Report exact blockers instead of guessing or hiding failed checks.
 
 ## Required verification
