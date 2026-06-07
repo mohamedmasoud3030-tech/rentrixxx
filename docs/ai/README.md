@@ -17,6 +17,7 @@ This directory is the durable project context for coding agents. `AGENTS.md` is 
 
 - `AGENT_CAPABILITIES.md` — project skills, installed additions, and task-to-skill matrix.
 - `GIT_TOOLING_POLICY.md` — Git and GitHub usage rules.
+- `SECURE_OPERATOR_RUNBOOK.md` — redacted Vercel/Supabase ownership evidence and connector-safe blocker reporting.
 - `product-scope.md` — approved product and constrained-beta scope.
 - `domain-rules.md` — business invariants.
 - `engineering-policy.md` — source-first implementation discipline.
