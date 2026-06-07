@@ -10,6 +10,21 @@ create table if not exists public.financial_operation_idempotency (
   primary key (operation_name, request_id)
 );
 
+alter table public.financial_operation_idempotency enable row level security;
+
+alter table if exists public.receipts
+  add column if not exists request_id text;
+
+do $$
+begin
+  if to_regclass('public.receipts') is not null then
+    create unique index if not exists receipts_request_id_uidx
+      on public.receipts(request_id)
+      where request_id is not null;
+  end if;
+end;
+$$;
+
 create or replace function public.find_payment_account_id(account_role text)
 returns uuid
 language plpgsql
@@ -89,6 +104,8 @@ begin
   if v_request_id is null then
     raise exception 'request_id is required for idempotent payment recording';
   end if;
+
+  perform pg_advisory_xact_lock(hashtextextended('record_invoice_payment_atomic:' || v_request_id, 0));
 
   select response_payload
     into v_existing_result
@@ -247,8 +264,7 @@ begin
 end;
 $$;
 
-revoke all on function public.find_payment_account_id(text) from public, anon;
-grant execute on function public.find_payment_account_id(text) to authenticated;
+revoke all on function public.find_payment_account_id(text) from public, anon, authenticated;
 
 revoke all on function public.record_invoice_payment_atomic(jsonb) from public, anon;
 grant execute on function public.record_invoice_payment_atomic(jsonb) to authenticated;
