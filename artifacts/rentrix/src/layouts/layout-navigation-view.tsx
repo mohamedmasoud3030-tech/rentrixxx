@@ -2,7 +2,7 @@ import { Link } from '@tanstack/react-router';
 import { Plus, Sparkles } from 'lucide-react';
 import { canShowNavigationItem, type AuthorizationContext } from '@/features/auth/permissions';
 import { cn } from '@/lib/utils';
-import { navGroups, quickLinks, type QuickLinkRoute } from './app-nav-items';
+import { mobileNavItems, navGroups, quickLinks, type QuickLinkRoute } from './app-nav-items';
 
 export type SharedLabel = (key: string) => string;
 
@@ -82,19 +82,11 @@ export function WorkspaceCard({
 }
 
 export function MobileBottomNav({ authorization, sharedLabel }: Readonly<{ authorization: AuthorizationContext | null; sharedLabel: SharedLabel }>) {
-  const mobileItems = [
-    ['/', 'dashboard', navGroups[0][1][0][3], undefined],
-    ['/properties', 'properties', navGroups[1][1][0][3], undefined],
-    ['/contracts', 'contracts', navGroups[1][1][5][3], undefined],
-    ['/financials', 'financials', navGroups[2][1][0][3], undefined],
-    ['/arrears', 'arrears', navGroups[2][1][4][3], undefined],
-  ] as const;
-
   return (
     <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-background/95 backdrop-blur-xl lg:hidden">
       <div className="grid h-16 grid-cols-5">
-        {mobileItems.map(([to, labelKey, Icon, permission]) => {
-          if (!canShowNavigationItem(authorization, permission)) return null;
+        {mobileNavItems.map(([to, labelKey, Icon]) => {
+          if (!canShowNavigationItem(authorization, undefined)) return null;
 
           return (
             <Link
