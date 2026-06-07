@@ -8,7 +8,7 @@ import { canShowNavigationItem } from '@/features/auth/permissions';
 import { assertSessionPermission } from '@/features/auth/route-guards';
 import { DataIntegrityView } from './components/data-integrity-view';
 import { DATA_INTEGRITY_MAX_PAGES, DATA_INTEGRITY_PAGE_SIZE, buildDataIntegritySnapshot, fetchPaginatedRows } from './services/data-integrity-service';
-import { navGroups } from '@/layouts/app-nav-items';
+import { navGroups, type NavItem } from '@/layouts/app-nav-items';
 
 vi.mock('@/lib/runtime-diagnostics', () => ({
   getEnvDiagnostics: vi.fn(() => []),
@@ -61,15 +61,18 @@ describe('system and governance route authorization', () => {
     expect(() => assertSessionPermission(unknownRoleSession, 'system.view')).toThrow();
   });
 
-  it('keeps navigation visibility permission-based', () => {
-    const systemItems = navGroups
-      .find(([sectionTitle]) => sectionTitle === 'التشغيل والنظام')?.[1]
-      .filter(([to]) => ['/system', '/audit-log', '/data-integrity', '/change-password'].includes(to)) ?? [];
+  it('hides deferred governance surfaces from beta navigation while keeping account actions permission-based', () => {
+    const systemItems: readonly NavItem[] = navGroups
+      .find(([sectionTitle]) => sectionTitle === 'التشغيل والنظام')?.[1] ?? [];
     const adminContext = { userId: 'user-1', email: 'admin@example.com', role: 'ADMIN' as const };
     const userContext = { userId: 'user-2', email: 'user@example.com', role: 'USER' as const };
+    const systemRoutes = systemItems.map(([to]) => to);
 
-    expect(systemItems.map(([to]) => to)).toEqual(['/system', '/audit-log', '/data-integrity', '/change-password']);
-    expect(systemItems.filter(([, , , , permission]) => canShowNavigationItem(adminContext, permission)).map(([to]) => to)).toEqual(['/system', '/audit-log', '/data-integrity', '/change-password']);
+    expect(systemRoutes).toEqual(['/change-password', '/settings']);
+    expect(systemRoutes).not.toContain('/system');
+    expect(systemRoutes).not.toContain('/audit-log');
+    expect(systemRoutes).not.toContain('/data-integrity');
+    expect(systemItems.filter(([, , , , permission]) => canShowNavigationItem(adminContext, permission)).map(([to]) => to)).toEqual(['/change-password', '/settings']);
     expect(systemItems.filter(([, , , , permission]) => canShowNavigationItem(userContext, permission)).map(([to]) => to)).toEqual(['/change-password']);
   });
 });
