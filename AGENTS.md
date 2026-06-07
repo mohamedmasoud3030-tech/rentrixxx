@@ -75,3 +75,8 @@ pnpm --filter ./artifacts/rentrix run test
 ```
 
 For schema or RLS changes, also run the repository-approved database validation flow when the local Supabase environment is available.
+
+## Optional selected references
+
+- Bundle guide: `docs/codex/SELECTED_AGENT_SKILLS.md`
+- Connector operations reference: `.agents/skills/connector-operator/SKILL.md`
