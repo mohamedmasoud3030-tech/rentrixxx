@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { renderToStaticMarkup } from 'react-dom/server';
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, vi, beforeAll } from 'vitest';
 import { AuditLogView } from '@/features/audit/components/audit-log-view';
 import { fetchAuditLog, normalizeAuditRecords } from '@/features/audit/services/audit-log-service';
 import { canShowNavigationItem } from '@/features/auth/permissions';
@@ -94,7 +94,7 @@ describe('audit log recovery states', () => {
   });
 
   it('renders audit success rows when a verified source supplies records', () => {
-    const records = normalizeAuditRecords([{ id: 'a-1', created_at: '2026-06-04T00:00:00.000Z', actor_email: 'admin@example.com', action: 'VIEW', entity_type: 'settings', entity_id: 's-1', note: 'opened settings' }]);
+    const records = normalizeAuditRecords([{ id: 'a-1', created_at: '2026-06-04T00:00:00.000Z', actor_email: 'admin@example.com', action: 'VIEW', entity_type: 'settings', entity_id: 's-1', note: '[...]' }]);
     const html = renderToStaticMarkup(<AuditLogView state={{ status: 'ready', result: { status: 'available', records } }} />);
     expect(html).toContain('admin@example.com');
     expect(html).toContain('VIEW');
