@@ -18,7 +18,7 @@ Date: 2026-05-25 (UTC)
 ## High-Signal Structure
 
 - `artifacts/rentrix/`: active application package.
-- `artifacts/rentrix/legacy-src/`: legacy implementation kept in-tree.
+- `archive/recovery-reference/`: concise reference-only recovery notes.
 - `.agents/plugins/marketplace.json`: plugin marketplace registry.
 - `understand-anything/knowledge-graph.json`: plugin knowledge graph seed.
 

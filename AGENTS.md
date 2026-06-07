@@ -14,8 +14,8 @@ Use actual code and migrations as the source of truth. Prefer `rg` and `rg --fil
 ## Root boundary
 
 - Treat `artifacts/rentrix/`, `lib/`, and `supabase/` as the canonical runtime boundary.
-- Treat `artifacts/mockup-sandbox/` and `artifacts/rentrix-promo/` as optional support artifacts only.
-- Treat `.migration-backup/` and `artifacts/rentrix/legacy-src/` as historical recovery sources only.
+- Treat `artifacts/rentrix-promo/` as the retained optional promotional artifact.
+- Treat `archive/recovery-reference/` as reference-only cleanup notes, not runtime code.
 - Treat `.agents/`, `.agent-skills/`, `.ai/`, and `.codex/vendor/` as agent-tooling layers, not runtime code.
 - Read `docs/ROOT_LAYOUT.md` before creating a new top-level folder or moving files between root categories.
 
@@ -43,7 +43,7 @@ The current visible constrained-beta navigation and the registered-but-hidden de
 - The active application is `artifacts/rentrix/`.
 - Keep the current TanStack Router, React Query, Supabase, PWA, RTL, and i18n direction.
 - Do not restore legacy `useApp`, `AppContext`, `dataService`, local database flows, or `react-router-dom` into the active app.
-- Reuse legacy code only after comparing it against current architecture and adapting it deliberately.
+- Reuse archived recovery notes only after comparing them against current architecture and adapting deliberately.
 - Treat migrations, RLS policies, auth boundaries, environment handling, and financial posting behavior as sensitive surfaces.
 
 ## Skills and workflows

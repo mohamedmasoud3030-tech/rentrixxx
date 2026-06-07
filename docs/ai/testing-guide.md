@@ -40,7 +40,7 @@ When a local checkout exists, also run:
 
 ```bash
 git diff --check
-rg "legacy-src|useApp|AppContext|dataService|react-router-dom" artifacts/rentrix/src -n || true
+rg "useApp|AppContext|dataService|react-router-dom" artifacts/rentrix/src -n || true
 ```
 
 ## Documentation-only and agent-guidance pull requests

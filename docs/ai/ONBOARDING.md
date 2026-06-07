@@ -29,10 +29,8 @@ supabase/           # canonical migrations and backend assets
 Other important categories:
 
 ```text
-artifacts/mockup-sandbox/       # optional visual support only
 artifacts/rentrix-promo/        # optional promotional support only
-.migration-backup/              # historical recovery source only
-artifacts/rentrix/legacy-src/   # historical recovery source only
+archive/recovery-reference/     # concise reference-only recovery notes
 .ai/                            # Rentrix-specific agent workflows
 .agent-skills/                  # Rentrix-owned reusable skills
 .agents/                        # installed or shared agent tooling

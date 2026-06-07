@@ -67,23 +67,20 @@ The first cleanup PR after onboarding should:
 
 | Path | Classification | Evidence | Action |
 | --- | --- | --- | --- |
-| `.migration-backup/` | `retain-recovery-source` | Broad historical app snapshot with legacy router, contexts, services, schema assets, scripts, and old package files. Repository reconciliation identified remaining selective recovery value and incompatible architecture coupling. | Keep for now. Do not import wholesale. Review for archive only after recovery work is exhausted. |
-| `artifacts/rentrix/legacy-src/` | `retain-recovery-source` | Historical source mirror nested under the active package. Repository reconciliation found useful selective recovery evidence plus deprecated architecture patterns. | Keep for now. Do not include in runtime imports. Consider moving outside the active package in a later archive PR after proving no build or import effect. |
+| `archive/recovery-reference/` | `retain-reference-notes` | Broad recovery trees were deleted after selective extraction. The archive keeps only concise financial posting verification notes. | Keep reference-only. Do not import into runtime or expand with executable legacy source. |
 
-Before moving or deleting either recovery tree:
+Before adding any recovery note:
 
-- prove active runtime imports do not reference it;
-- prove build inputs and TypeScript configs do not include it;
-- confirm no current roadmap item still needs selective recovery from it;
-- retain a tagged archive or documented external archive location when product history matters;
-- run full verification after any move.
+- prove the value is unique and still relevant;
+- connect it to current runtime code, migrations, tests, or docs;
+- keep it concise and non-executable;
+- run appropriate verification after any related runtime change.
 
 ## 5. Optional support artifacts
 
 | Path | Classification | Evidence | Action |
 | --- | --- | --- | --- |
-| `artifacts/mockup-sandbox/` | `review-before-delete` | Optional visual exploration package outside root pnpm workspace. | Decide whether UI exploration still uses it. Archive or remove only through a dedicated cleanup PR. |
-| `artifacts/rentrix-promo/` | `review-before-delete` | Optional promotional package outside root pnpm workspace. | Decide whether promotional use still exists. Archive or remove only through a dedicated cleanup PR. |
+| `artifacts/rentrix-promo/` | `retain-promotional-support` | Optional promotional package outside root pnpm workspace. | Preserve unless promotional use is intentionally retired through a dedicated cleanup PR. |
 
 ## 6. Generated analysis support
 
@@ -111,8 +108,7 @@ Before moving or deleting either recovery tree:
 
 Do not:
 
-- delete recovery trees because they look unused;
-- import historical barrels into runtime while attempting cleanup;
+- import archived recovery notes or historical barrels into runtime while attempting cleanup;
 - remove app-local deployment config before deployment-root verification;
 - move historical docs without updating inbound links;
 - delete vendored skills or source-lock files while onboarding references them;
@@ -123,9 +119,9 @@ Do not:
 Execute cleanup only in this order:
 
 1. **Safe generated metadata cleanup** — remove tracked `supabase/.temp/*`, add ignore rule, verify.
-2. **Deployment-root verification** — decide whether `artifacts/rentrix/vercel.json` remains necessary.
-3. **Optional artifact decision** — archive or remove mockup and promo packages only if no owner workflow uses them.
-4. **Historical documentation organization** — move old loose reports only after link inventory.
-5. **Recovery-source archive decision** — move or archive recovery trees only after selective recovery work is demonstrably exhausted.
+2. **Recovery-source archive decision** — keep only concise, proven-unique notes under `archive/recovery-reference/`.
+3. **Optional artifact decision** — preserve promo support and remove obsolete sandbox artifacts only after proving no active owner workflow uses them.
+4. **Deployment-root verification** — decide whether `artifacts/rentrix/vercel.json` remains necessary.
+5. **Historical documentation organization** — move old loose reports only after link inventory.
 
 Each step must be a separate narrow reviewed PR.
