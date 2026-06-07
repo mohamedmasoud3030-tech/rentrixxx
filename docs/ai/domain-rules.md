@@ -18,6 +18,7 @@ Owner → Property or Owner Agreement
 - A unit cannot have overlapping active contracts.
 - A unit must belong to a property before it can be contracted.
 - Contract state transitions must remain explicit and auditable.
+- The overlap guard exists at the database level (`contracts_prevent_active_overlap` trigger, migration `20260514062000`).
 
 ## Payment and receipt rules
 
@@ -27,6 +28,7 @@ Owner → Property or Owner Agreement
 - Posted payments are immutable.
 - A correction uses reversal and replacement; it does not silently edit history.
 - Allocation behavior must be deterministic and covered by business-rule tests.
+- The payment immutability guard exists at the database level (migration `20260514063000`).
 
 ## Balance rules
 
@@ -42,6 +44,12 @@ Owner → Property or Owner Agreement
 - No orphan payments without contracts.
 - No property expenses without properties.
 - Destructive actions must be blocked or explicitly handled when dependent records exist.
+
+## Authorization separation
+
+- Frontend route visibility and permission checks improve UX.
+- They do not replace backend RLS, grants, and RPC authorization.
+- Both layers must be present and consistent.
 
 ## Release requirement
 

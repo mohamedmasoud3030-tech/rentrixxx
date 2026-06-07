@@ -18,6 +18,7 @@ Use actual code and migrations as the source of truth. Prefer `rg` and `rg --fil
 - Treat `archive/recovery-reference/` as reference-only cleanup notes, not runtime code.
 - Treat `.agents/`, `.agent-skills/`, `.ai/`, and `.codex/vendor/` as agent-tooling layers, not runtime code.
 - Read `docs/ROOT_LAYOUT.md` before creating a new top-level folder or moving files between root categories.
+- **`.migration-backup/` and `artifacts/rentrix/legacy-src/` no longer exist** (removed in PR #805). Do not reference them.
 
 ## Product boundary
 
@@ -45,6 +46,12 @@ The current visible constrained-beta navigation and the registered-but-hidden de
 - Do not restore legacy `useApp`, `AppContext`, `dataService`, local database flows, or `react-router-dom` into the active app.
 - Reuse archived recovery notes only after comparing them against current architecture and adapting deliberately.
 - Treat migrations, RLS policies, auth boundaries, environment handling, and financial posting behavior as sensitive surfaces.
+
+## Known tech debt (acknowledge, do not fix casually)
+
+- `useProperties.ts` / `use-properties.ts` and `useUnits.ts` / `use-units.ts` are duplicate hook pairs — consolidate in v0.2.
+- `database.ts` types do not include `public.audit_log` — the audit service uses a local cast workaround; refresh in v0.3.
+- Live Supabase reports `MIGRATIONS_FAILED` — blocked pending direct connector access.
 
 ## Skills and workflows
 

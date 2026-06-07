@@ -19,7 +19,7 @@ Use this page to navigate repository documentation without treating every histor
 4. `ai/security-policy.md` — sensitive boundaries.
 5. `ai/testing-guide.md` — current verification expectations.
 6. `ai/release-policy.md` — merge and release-readiness gate.
-7. `decisions/README.md` — durable product and architecture decisions.
+7. `decisions/README.md` — durable product and architecture decisions, plus open decisions required.
 8. `../.ai/workflows/README.md` — execution workflows, including roadmap continuation and safe root cleanup.
 9. `codex/VENDOR_SKILLS.md` — source-locked workflow references.
 10. `codex/SELECTED_AGENT_SKILLS.md` — optional additive references.
@@ -39,8 +39,6 @@ reconciliation/01-repository-inventory.md
 reconciliation/02-root-cleanup-candidates.md
 ```
 
-The first file maps runtime, recovery sources, and duplication risks. The second classifies paths to retain, review, archive, or remove safely in later narrow PRs.
-
 Use the Wave 1 documents before any live Supabase or Vercel rollout work:
 
 ```text
@@ -48,6 +46,8 @@ wave1/1A_CONTRACT_INTEGRITY_RECONCILIATION.md
 wave1/1B_FINANCIAL_POSTING_DESIGN_RECONCILIATION.md
 wave1/1C_AUTH_AND_RLS_HARDENING_PLAN.md
 ```
+
+Also see `CONSTRAINED_BETA_LAUNCH_AUDIT_2026_06_06.md` for the most recent NO-GO live-environment audit.
 
 ## Historical reports
 

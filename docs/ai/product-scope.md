@@ -64,6 +64,17 @@ Do not delete a deferred route merely because it is hidden. Do not re-expose a d
 
 `/accounting` is registered only as a redirect to `/financials`. Do not expand it into a general ledger during stabilization.
 
+## Conditional modules (require explicit product decision)
+
+The following modules exist in code but require an explicit product decision before re-exposure:
+
+- `/lands` — page and service exist; awaiting product decision on lifecycle and scope.
+- `/leads` — page exists; service returns `unavailable`; no confirmed schema table.
+- `/commissions` — page exists; service returns `unavailable`; no confirmed schema table.
+- `/communication` — page exists; service returns `unavailable`; no confirmed schema table.
+
+See `docs/decisions/README.md` for the list of open product decisions.
+
 ## Hard boundaries
 
 - Keep the product single-office. Do not reintroduce organizations, memberships, invitations, subscriptions, or per-organization scoping.
