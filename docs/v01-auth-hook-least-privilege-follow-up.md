@@ -1,6 +1,6 @@
 # v0.1 Auth Hook Least-Privilege Follow-Up
 
-**Status:** REVIEW REQUIRED — repository fix prepared, not applied to Supabase  
+**Status:** PREVIEW BLOCKED — repository fix prepared, not applied to production  
 **Date:** 2026-06-07  
 **Roadmap:** v0.1 Item 4 — Auth, RLS, and RPC least-privilege reconciliation  
 **Target verified read-only:** `RENTRIX EGY (live)` / `nnggcnpcuomwfuupupwg`  
@@ -76,11 +76,37 @@ This matches the Supabase Custom Access Token Hook guidance for Postgres hooks: 
 
 ---
 
+## Automatic Preview Branch status
+
+Opening PR #814 triggered the configured Supabase GitHub integration and automatically created an isolated Preview Branch:
+
+```text
+Git branch:   fix/v01-auth-hook-least-privilege
+Project ref:  atvunstmszfpzgkfzuvf
+Parent ref:   nnggcnpcuomwfuupupwg
+```
+
+The latest Supabase bot update reported:
+
+```text
+Database:       ✅
+Services:       ✅
+APIs:           ✅
+Configurations: ⚠️ Service health check failed
+Migrations:     ⏸️ paused
+Seeding:        ⏸️ paused
+Edge Functions: ⏸️ paused
+```
+
+The new lockdown migration has therefore **not yet been validated on preview**. Do not treat repository presence or Preview Branch creation as proof that the migration applied successfully.
+
+---
+
 ## Rollout boundary
 
 Do **not** apply this migration directly to production from this PR.
 
-The repository release policy remains preview-first for migrations, auth boundaries, RLS, and RPC changes. A Supabase Preview Branch requires a separate cost confirmation and explicit operator approval before creation.
+The repository release policy remains preview-first for migrations, auth boundaries, RLS, and RPC changes. Production mutation still requires an explicitly reviewed rollout step after preview evidence exists.
 
 ---
 
@@ -88,8 +114,10 @@ The repository release policy remains preview-first for migrations, auth boundar
 
 Before any production rollout request:
 
-- [ ] Create an approved Supabase Preview Branch after operator cost confirmation.
-- [ ] Replay the canonical migration chain and capture the exact failed migration behind `MIGRATIONS_FAILED`.
+- [x] Create an isolated Supabase Preview Branch through the configured GitHub integration.
+- [ ] Inspect the Preview Branch workflow logs through an approved path.
+- [ ] Resolve the `Service health check failed` configuration blocker.
+- [ ] Resume Preview Branch migration execution.
 - [ ] Apply `20260607190000_lock_down_custom_access_token_hook_execute.sql` on preview.
 - [ ] Re-run Security Advisor and verify the hook is no longer callable by `anon` or `authenticated`.
 - [ ] Verify `supabase_auth_admin` can invoke the hook.
@@ -125,15 +153,15 @@ Next action: approved branch-action log access or Preview Branch replay evidence
 ```
 
 ```text
-Integration: Supabase
-Operation: Preview Branch creation
-Category: approval and cost confirmation required
-Repeated call: no
-Next action: operator explicitly approves the quoted branch cost before creation
+Integration: Supabase GitHub integration
+Operation: Preview Branch configuration stage for atvunstmszfpzgkfzuvf
+Category: unresolved service-health verification failure
+Repeated call: integration reruns automatically on branch commits
+Next action: inspect approved Preview Branch workflow logs and isolate the configuration health failure
 ```
 
 ---
 
 ## Next recommended item
 
-Review this narrow PR. After review, obtain explicit Preview Branch cost approval and perform preview replay before requesting any production migration apply.
+Keep PR #814 in draft state. Inspect the Preview Branch workflow logs for `atvunstmszfpzgkfzuvf`, resolve the configuration health blocker, then collect fresh Preview Branch migration and Security Advisor evidence before requesting any production rollout.
