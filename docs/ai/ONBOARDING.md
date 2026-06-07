@@ -183,7 +183,7 @@ docs/wave1/1C_AUTH_AND_RLS_HARDENING_PLAN.md
 The latest recorded Supabase boundary is:
 
 ```text
-intended live project: RENRTRIX EGY (live) / nnggcnpcuomwfuupupwg
+intended live project: RENTRIX EGY (live) / nnggcnpcuomwfuupupwg
 prohibited project:    rentrix (V2) / ktmizdznbdwvalmmfvfc
 ```
 
