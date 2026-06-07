@@ -8,17 +8,52 @@ No runtime code was changed. No Supabase migration was applied. No production da
 
 ## Environment boundary
 
-The intended live Supabase project is operator-confirmed as:
+The Supabase connector was discovered and used read-only against the intended live project only:
 
 - project name: `RENTRIX EGY (live)`
 - project ref: `nnggcnpcuomwfuupupwg`
+- region: `ap-southeast-1`
+- project status: `ACTIVE_HEALTHY`
 
 Do not use:
 
 - project name: `rentrix (V2)`
 - project ref: `ktmizdznbdwvalmmfvfc`
 
-The current execution session exposes the GitHub connector only. Supabase and Vercel connector namespaces are not available in-session. Live auth configuration, hook registration, SQL catalog state, RLS policies, table grants, routine grants, logs, advisors, and backup posture remain blocked. This plan does not claim live verification.
+The default Supabase `main` branch was returned with `preview_project_status = ACTIVE_HEALTHY` and branch status `MIGRATIONS_FAILED`. This is a release risk. It does not prove that the current runtime is broken, but it prevents a clean rollout claim until the exact failed migration state is identified and replayed safely outside production.
+
+The Vercel connector listed:
+
+- team: `m7mdms3d`
+- project name: `rentrix`
+- project ID: `prj_O97BqIkagZFLqyUvuoeUbgOQYu6F`
+
+Vercel project-detail and deployment-list reads were blocked by the connector safety layer. Production deployment SHA and redacted environment targeting remain unverified.
+
+## Live Security Advisor warnings
+
+The read-only Supabase Security Advisor returned these warnings:
+
+- `public.sync_payment_reference_fields` has a mutable function search path.
+- `public.increment_serial(serial_column text)` is a signed-in callable `SECURITY DEFINER` function.
+- `public.is_admin_or_manager()` is a signed-in callable `SECURITY DEFINER` function.
+- `public.is_app_user()` is a signed-in callable `SECURITY DEFINER` function.
+- Auth leaked-password protection is disabled.
+
+The callable helper findings require least-privilege review. They are not proof that a helper is exploitable, and Wave 1C does not mutate grants or live settings.
+
+## Live Performance Advisor observations
+
+The read-only Supabase Performance Advisor returned observations including:
+
+- unindexed FKs `contracts_property_id_app_fkey` and `contracts_renewed_from_id_app_fkey`;
+- historical unused-index signals including `idx_properties_organization_id` and `idx_units_organization_id`.
+
+Do not drop indexes based only on advisor output. Index removal requires workload evidence and a separate reviewed PR.
+
+## Remaining blocked reads
+
+The documented connector actions for Supabase migration list, table inventory, SQL catalog, auth logs, and Postgres logs were blocked by the connector safety layer. No undocumented alternate write or access path was used.
 
 ## Repository evidence reviewed
 
@@ -111,8 +146,9 @@ Run these checks only against `RENTRIX EGY (live)` / `nnggcnpcuomwfuupupwg` with
 
 | Priority | Area | Required evidence |
 | --- | --- | --- |
+| P0 | Failed migration state | Identify the exact failed branch migration, capture replay evidence, and prove a safe Preview Branch replay. |
 | P0 | Project identity | Supabase project metadata confirms ref `nnggcnpcuomwfuupupwg`; operator verifies Vercel production env targets the same ref. |
-| P0 | Auth methods | Enabled login methods, email/password posture, signup policy, password-reset behavior, and any provider configuration. |
+| P0 | Auth methods | Enabled login methods, email/password posture, signup policy, password-reset behavior, leaked-password protection, and any provider configuration. |
 | P0 | Access-token hook | Hook enabled state, exact hook URI, function owner, grants, `SECURITY DEFINER`, fixed `search_path`, and invocation behavior. |
 | P0 | Role source | `public.profiles.role` column type, allowed values, nullability, defaults, write policies, and whether ordinary users can modify their own role. |
 | P0 | JWT issuance | Fresh login tokens for approved beta-safe ADMIN, MANAGER, and USER test accounts contain the expected `app_metadata.user_role`; unknown or missing roles fail closed. |
@@ -135,16 +171,18 @@ Before any live rollout, prove at minimum:
 | Auth hook caller | `supabase_auth_admin` can execute the custom hook; browser roles cannot execute it. |
 | Payment browser client | Can execute the approved payment facade only; direct payment mutation and internal-helper execution are denied. |
 
-## Planned Wave 2 implementation slices
+## Required Wave 2 order
 
-After authenticated read-only evidence exists, split changes into narrow reviewed PRs:
+After authenticated read-only evidence exists, split changes into narrow reviewed PRs in this order:
 
-1. **Hook registration verification and role-source lockdown** — ensure the live hook is enabled and profile roles cannot be self-escalated.
-2. **Core-table RLS reconciliation** — align repository policies with actual live tables and operations.
-3. **RPC least-privilege cleanup** — revoke browser execution from internal helpers and retain only approved facades.
-4. **Financial immutability enforcement** — deny silent update/delete of posted payments and document reversal-and-replacement handling.
-5. **Beta-account verification pack** — approved ADMIN, MANAGER, and USER smoke tests with fresh JWTs.
-6. **Post-rollout observation** — inspect logs and advisors after the reviewed rollout window.
+1. **Migration replay reconciliation** — identify the exact failed branch migration and prove Preview Branch replay.
+2. **Mutable search-path hardening** — pin `search_path` for `sync_payment_reference_fields` and review adjacent helpers.
+3. **RPC least-privilege cleanup** — remove signed-in execution from internal `SECURITY DEFINER` helpers unless an explicit API contract proves it is required.
+4. **Hook registration verification and role-source lockdown** — verify the access-token hook and ensure `public.profiles.role` cannot be self-escalated.
+5. **Core-table RLS reconciliation** — align repository policies and grants with actual live tables and operations.
+6. **Financial immutability enforcement** — deny silent update/delete of posted payments and document reversal-and-replacement handling.
+7. **Leaked-password protection** — enable the auth setting through an explicitly reviewed live-settings change.
+8. **Beta-account verification and observation** — run ADMIN, MANAGER, and USER smoke tests with fresh JWTs, then inspect logs and advisors after rollout.
 
 ## Explicit non-goals
 
@@ -157,4 +195,11 @@ After authenticated read-only evidence exists, split changes into narrow reviewe
 
 ## Verification performed
 
-Documentation-only source review. No live command was executed against Supabase or Vercel because those connector namespaces are unavailable in this session.
+- Repository source review.
+- Supabase project-list read.
+- Supabase branch-inventory read.
+- Supabase security-advisor read.
+- Supabase performance-advisor read.
+- Vercel team and project-list reads.
+
+Blocked reads were recorded exactly and were not retried through undocumented alternatives.
