@@ -1,397 +1,464 @@
 # Rentrix Master Execution Plan
 
-This document is the mandatory execution plan for Rentrix development.
+This is the single authoritative roadmap for Rentrix development. It defines the final product shape, the verified current baseline, the ordered release sequence, the acceptance gate for every release, and the continuation protocol for coding agents.
 
-Rentrix is not being rebuilt from scratch. The existing codebase remains the source of truth. All future work must stabilize, recover, refine, and commercialize the current application into a sellable property and rent management system.
-
-## 1. Product Direction
-
-Rentrix is a professional property and rent management platform for property owners, property managers, and small or medium real estate operators in Oman and the GCC.
-
-The product must feel like an Arabic-first property finance dashboard:
-
-- Clear and modern
-- Fast for daily operations
-- Financially strict
-- RTL-ready and LTR-ready
-- Suitable for Oman/GCC rental workflows
-- Focused on properties, units, tenants, contracts, payments, receipts, expenses, and reports
-
-Rentrix should use the existing large codebase and organize it into a commercial product. Do not shrink the product into a new MVP, and do not create a parallel application.
-
-## 2. Deployment and Data Isolation Architecture
-
-Rentrix v1 uses this architecture:
+Use together with:
 
 ```text
-Single Rentrix application codebase
-Dedicated Supabase project/environment per company/customer
-Dedicated deployment/environment variables per customer when needed
+AGENTS.md
+docs/ai/ONBOARDING.md
+docs/ai/AGENT_CAPABILITIES.md
+docs/ai/domain-rules.md
+docs/ai/release-policy.md
+.ai/workflows/README.md
 ```
 
-Each company/customer can receive an isolated backend:
+The active codebase remains the source of truth. Historical reports, legacy folders, backup trees, generated analysis, and old pull requests are evidence sources only.
+
+## 1. Final Product Shape
+
+Rentrix is an Arabic-first, single-office property operations system for a real-estate office. English/LTR support remains functional. The product is not a shared-database SaaS platform and does not use organization-scoped multi-tenancy.
+
+The commercial target is a focused operational system with one canonical business chain:
 
 ```text
-Customer A -> Rentrix app -> Supabase Project A
-Customer B -> Rentrix app -> Supabase Project B
-Customer C -> Rentrix app -> Supabase Project C
+Property → Unit → Contract → Invoice → Posted Payment → Receipt
+             └──────────── Tenant
+Owner → Property or Owner Agreement
+Property → Expense
+Property → Maintenance Record
 ```
 
-### Mandatory architecture rules
-
-1. Rentrix v1 must not be treated as one shared Supabase multi-tenant database for all companies.
-2. Do not require a mandatory `company_id` column on every business table as the primary v1 isolation mechanism.
-3. Customer isolation is physical/project-level through a dedicated Supabase project or environment.
-4. The app must read Supabase configuration from environment variables:
-   - `VITE_SUPABASE_URL`
-   - `VITE_SUPABASE_ANON_KEY`
-5. The same schema and migrations must be applicable to each customer Supabase project.
-6. Do not build cross-company dashboards or global shared datasets for v1.
-7. Do not introduce a central tenant registry unless explicitly requested later.
-8. For local development, use the current configured Supabase environment.
-9. For production/customer delivery, use per-customer Vercel/Supabase environment variables.
-
-## 3. Company Settings
-
-Even though each company has its own Supabase project, the database should still contain local company settings for branding, localization, and document output.
-
-A customer-local settings model should support:
-
-- Company name
-- Logo URL
-- Default language
-- Default currency
-- Country
-- Timezone
-- Receipt prefix
-- Invoice/receipt settings
-- Contact details if needed
-
-Recommended defaults:
+The final approved operational product should provide:
 
 ```text
-default_language: ar
-default_currency: OMR
-country: OM
-timezone: Asia/Muscat
+Dashboard
+Properties
+Units
+People
+Tenants
+Owners
+Owners Hub
+Contracts
+Invoices
+Payments / Financials
+Receipts
+Expenses
+Arrears
+Reports
+Maintenance
+Authorized System Governance
+Authorized Audit Visibility
+Authorized Data-Integrity Visibility
+Settings
+Change Password
 ```
 
-## 4. Language and Direction Requirements
-
-Rentrix must support Arabic and English.
-
-Required languages:
-
-- Arabic (`ar`)
-- English (`en`)
-
-Required direction behavior:
-
-- Arabic UI must support RTL.
-- English UI must support LTR.
-- Layout code should prefer logical positioning and spacing where practical.
-- Avoid hardcoded `left` and `right` when `start` and `end` patterns can be used.
-- Do not add large amounts of new Arabic-only labels in commercial screens if an i18n layer exists.
-- If no i18n layer exists, add a lightweight translation structure before large UI expansion.
-
-Arabic is the default language for the first commercial version, but new work must not make English support harder.
-
-## 5. Currency Requirements
-
-Rentrix must support multiple currencies.
-
-Default currency:
-
-- `OMR`
-
-Supported currencies at minimum:
-
-- `OMR` - Omani Rial
-- `AED` - UAE Dirham
-- `SAR` - Saudi Riyal
-- `QAR` - Qatari Riyal
-- `KWD` - Kuwaiti Dinar
-- `BHD` - Bahraini Dinar
-- `USD` - US Dollar
-- `EGP` - Egyptian Pound
-
-### Currency rules
-
-1. Do not hardcode OMR directly inside UI components.
-2. Do not display money as plain numbers without currency context.
-3. Use a centralized money formatting helper.
-4. Every displayed monetary value must use amount, currency, and locale.
-5. CSV exports that include monetary values must include currency.
-6. Do not implement exchange-rate conversion in v1 unless explicitly requested later.
-7. Contract/payment currency should default from company settings unless a future schema supports per-contract currency.
-
-## 6. Core Entity Integrity
-
-These rules are non-negotiable.
-
-### Properties and units
-
-1. A unit must belong to one property.
-2. A unit cannot have overlapping active contract periods.
-3. At most one active contract may exist for a unit at any instant.
-
-### Contracts
-
-1. A contract must reference exactly one unit.
-2. A contract must reference exactly one tenant/person.
-3. A contract must not exist without a valid unit and tenant.
-4. Contract lifecycle must be explicit: draft, active, expired, terminated/cancelled, or equivalent existing statuses.
-
-### Payments
-
-1. A payment must belong to exactly one contract.
-2. No standalone payment records.
-3. Posted payments are immutable.
-4. No direct update/delete of posted payment amount, date, or contract linkage.
-5. Corrections must use reversal/replacement style flows.
-6. Outstanding balance is derived, not manually edited.
-
-### Receipts
-
-1. A receipt must be generated from a posted payment only.
-2. A receipt cannot be created independently from a payment.
-3. Receipt output may be printable, downloadable, or sent through WhatsApp later, but its source must remain the posted payment.
-
-## 7. Financial Reporting Rules
-
-1. There must be one canonical path for calculating balances and outstanding amounts.
-2. Reports, dashboards, and details pages must not calculate balances using separate conflicting logic.
-3. Do not silently mutate monetary values.
-4. Any future correction workflow must leave an audit trail.
-5. Reports should prioritize clarity over quantity.
-
-Core reports to build or refine:
-
-- Rent collection report
-- Outstanding balances report
-- Profit and expense report
-- Occupancy report
-- Expiring contracts report
-- Tenant statement
-- Property statement
-
-## 8. Current Architecture Rules
-
-Preserve the current accepted architecture.
-
-Do not reintroduce removed or legacy patterns unless explicitly approved.
-
-Forbidden unless explicitly requested:
-
-- Legacy `useApp`
-- Legacy `dataService`
-- `react-router-dom` if the current app uses TanStack Router
-- Parallel global state architecture
-- New app shell that bypasses the current codebase
-- Mock financial flows when real Supabase services exist
-
-Expected current direction:
-
-- TanStack Router for routing where already established
-- React Query for async data flow where already established
-- Supabase service modules for data access where already established
-- Existing UI components before creating duplicates
-
-## 9. UI/UX Direction
-
-Rentrix should visually behave like a modern SaaS dashboard for property finance operations.
-
-Global UI direction:
-
-- Clean sidebar/topbar layout
-- Clear cards and tables
-- Status badges for important states
-- Quick actions on operational screens
-- Strong empty/loading/error states
-- Details pages built with summary cards and tabs
-- Responsive enough for desktop and mobile usage
-- Arabic-first without blocking English LTR support
-
-Important dashboard questions:
-
-- How much rent is due this month?
-- How much has been collected?
-- Who is overdue?
-- Which units are vacant?
-- Which contracts are expiring soon?
-- What are this month expenses?
-- What is the net position?
-
-## 10. Screen Priorities
-
-Follow this order unless a blocking bug requires a stabilization PR first.
-
-### Phase 0 - Rules and stabilization
-
-- Contract overlap guard
-- Payment immutability
-- Legacy recovery mapping
-- Master plan documentation
-- CI/build/lint/typecheck discipline
-
-### Phase 1 - Contracts
-
-- Contract list search/export/expanded rows
-- Contract detail page
-- Contract financial timeline
-- Contract payments tab
-- Contract documents tab
-- Renewal/termination UX
-- Consistent statuses and badges
-
-### Phase 2 - Money and currency foundation
-
-- Central `formatMoney` helper
-- Supported currency list
-- Default OMR behavior
-- Currency-aware CSV exports
-- Replace plain money numbers in commercial screens
-
-### Phase 3 - i18n and direction foundation
-
-- Determine existing i18n state
-- Add lightweight translation structure if missing
-- Prepare Arabic and English resources
-- Add locale/direction handling
-- Avoid hardcoded strings in newly refactored commercial screens
-
-### Phase 4 - Company settings
-
-- Customer-local settings storage
-- Company branding
-- Default language
-- Default currency
-- Country and timezone
-- Receipt/invoice settings foundation
-- PR 4 safe downstream consumption: normalized company settings hook may feed display-only consumers; generated documents, numbering, reports, and calculations remain deferred.
-
-### Phase 5 - Dashboard
-
-- Rent due
-- Collected rent
-- Outstanding rent
-- Expenses
-- Net profit/loss
-- Occupancy
-- Expiring contracts
-- Recent payments
-- Overdue tenants
-
-### Phase 6 - Properties and Units
-
-- Property cards and table views
-- Unit status badges
-- Occupancy indicators
-- Current tenant and contract information
-- Rent amount with currency
-- Quick actions
-
-### Phase 7 - Tenants / People
-
-- Tenant profile
-- Tenant contracts
-- Tenant payments
-- Tenant outstanding balance
-- Documents and notes
-- WhatsApp action points
-
-### Phase 8 - Payments and Receipts
-
-- Contract-scoped payment creation
-- Posted payment immutability UX
-- Reversal/replacement workflow
-- Receipt generation from posted payment
-- Receipt print/download/send actions
-
-### Phase 9 - Reports
-
-- Collection report
-- Outstanding report
-- Profit/expense report
-- Occupancy report
-- Expiring contracts report
-- Tenant statement
-- Property statement
-
-## 11. Pull Request Rules
-
-Every PR must be small enough to review and must map to the plan.
-
-Every PR description must include:
-
-- Summary
-- Changed files
-- Testing results
-- Risks/notes
-- Next step according to this plan
-
-Every code PR must run and report:
-
-```bash
-pnpm typecheck
-pnpm lint
-pnpm build
+Conditional modules may enter the commercial product only after an explicit product decision and verified schema, RLS, and UX work:
+
+```text
+Lands
+Leads
+Commissions
+Communication
+Owner settlements
+External provider sends
 ```
 
-If dependencies changed, also run:
+Explicitly out of scope during this roadmap unless a later reviewed decision changes the boundary:
+
+```text
+Shared-database SaaS multi-tenancy
+Organizations / memberships / invitations / subscriptions
+General accounting-grade ledger
+Balance sheet
+Accounting-grade P&L
+Journal-entry UI expansion
+Property map
+Smart assistant expansion
+Blind restoration of legacy modules
+```
+
+`/accounting` remains a redirect to `/financials`. It is not an authorization to build a general ledger.
+
+## 2. Non-Negotiable Domain Rules
+
+Preserve these invariants across UI, services, migrations, RPCs, RLS, imports, exports, and tests:
+
+- A unit belongs to exactly one property.
+- A contract references exactly one unit and one tenant.
+- A unit cannot have overlapping active contracts.
+- A payment belongs to exactly one contract.
+- Standalone payments are not allowed.
+- A receipt is generated only from a posted payment.
+- Posted payments are immutable.
+- Corrections use reversal and replacement, never silent historical edits.
+- Outstanding balance is derived through one canonical calculation path.
+- Orphan chains are not allowed.
+- Frontend route visibility does not replace backend authorization, grants, or RLS.
+
+Read `docs/ai/domain-rules.md` before touching contracts, invoices, payments, receipts, arrears, expenses, reports, migrations, or RLS.
+
+## 3. Verified Current Baseline
+
+Baseline source: `main@ea6b79e6eeb9e5168e73c20ccc990efbc862e85b`, after the merged Wave 1 navigation cut.
+
+### 3.1 Recently merged reconciliation work
+
+| Original request | Final merged result | Purpose |
+| --- | --- | --- |
+| PR #795 | squash commit `a585a118f5a28ba3bbcb277c89dbc9eb74277e2b` | Contract ISO-calendar-date validation and regression coverage. |
+| PR #796 | replacement PR #801, squash commit `0c16f382` | Financial-posting design reconciliation document. |
+| PR #797 | squash commit `b98f50149c1424d1f2f7171fb58b6dc986dd8b9b` | Auth/RLS hardening plan updated with actual read-only connector evidence. |
+| PR #799 | replacement PR #802, squash commit `ea6b79e6eeb9e5168e73c20ccc990efbc862e85b` | Constrained-beta navigation cut, stale-test fixes, mobile-nav decoupling, and route-parity CI coverage. |
+
+### 3.2 Visible constrained-beta navigation
+
+Desktop navigation currently exposes only the verified operational core:
+
+```text
+Dashboard
+Properties
+Units
+People
+Tenants
+Owners
+Owners Hub
+Contracts
+Financials
+Invoices
+Receipts
+Expenses
+Arrears
+Reports
+Change Password
+Settings
+```
+
+Mobile bottom navigation is intentionally narrower:
+
+```text
+Dashboard
+Properties
+Contracts
+Financials
+Arrears
+```
+
+### 3.3 Registered but intentionally hidden routes
+
+These routes remain registered for controlled recovery and verification, but are hidden from visible constrained-beta navigation:
+
+```text
+/lands
+/leads
+/maintenance
+/commissions
+/communication
+/system
+/audit-log
+/data-integrity
+```
+
+Do not delete them merely because they are hidden. Do not re-expose them merely because their route modules exist.
+
+### 3.4 Current authorization shape
+
+- Active router: TanStack Router.
+- Protected routes require a Supabase session.
+- Permissioned routes use `requirePermission(...)`.
+- Recognized roles are exactly `ADMIN`, `MANAGER`, and `USER`.
+- Frontend role source is `session.user.app_metadata.user_role`.
+- Missing or unknown claims fail closed.
+
+### 3.5 Current verification gate
+
+GitHub Actions currently runs:
 
 ```bash
 pnpm install --frozen-lockfile
+pnpm typecheck
+pnpm lint
+pnpm build
+pnpm --filter ./artifacts/rentrix run typecheck:test
+pnpm --filter ./artifacts/rentrix test
+pnpm --filter ./artifacts/rentrix run test:financials
 ```
 
-Do not merge PRs with failing required checks.
+The latest merged navigation PR passed the full gate.
 
-If Vercel is pending, wait for the deployment result before merging.
+### 3.6 Current live-environment evidence boundary
 
-If SonarQube or Codacy report blocking issues, fix them before merge unless there is an explicit documented reason.
+The committed Wave 1 reconciliation documents record read-only connector evidence against the intended Supabase project:
 
-## 12. Codex Task Discipline
+```text
+intended live project: RENTRIX EGY (live) / nnggcnpcuomwfuupupwg
+prohibited project:    rentrix (V2) / ktmizdznbdwvalmmfvfc
+```
 
-Codex tasks must be constrained.
+Current known release risk:
 
-A good Codex task should include:
+```text
+Supabase default main branch status: MIGRATIONS_FAILED
+```
 
-1. The exact phase from this plan.
-2. The exact files or module area to inspect first.
-3. Forbidden legacy patterns.
-4. Required testing commands.
-5. Required PR response format.
+Read-only connector evidence exists for project identity, branch inventory, Supabase security advisors, Supabase performance advisors, and Vercel project listing. Detailed migration-list, table-inventory, SQL catalog, log, Vercel deployment-detail, and environment-target reads remain blocked by the connector safety boundary or unavailable credentials.
 
-Codex must not randomly improve unrelated screens in the same PR.
+Repository documentation is not authorization to mutate production.
 
-Codex must not add a new architecture when the existing architecture supports the requested work.
+## 4. Release Status Model
 
-Codex must not remove large-codebase capabilities simply because they are not part of the immediate visible workflow. If a feature is not ready, hide it from navigation rather than deleting it, unless deletion is explicitly requested.
+Each roadmap item uses one status:
 
-## 13. Immediate Next Tasks
+| Status | Meaning |
+| --- | --- |
+| `DONE` | Merged and verified. |
+| `READY` | Can be executed now without a new product decision or live-mutation approval. |
+| `BLOCKED` | Requires access, approval, environment capability, or a product decision. |
+| `DEFERRED` | Intentionally belongs to a later release. |
+| `OPTIONAL` | Execute only when explicitly approved or when the roadmap gate requires it. |
 
-After this master plan is merged:
+Agents must update the evidence row when a roadmap item changes status through a reviewed PR or a completed read-only verification task.
 
-1. Finish and merge the Contracts list recovery PR after all checks pass.
-2. Add a centralized money/currency formatting foundation.
-3. Add or inspect i18n foundations and document the current state.
-4. Fix dashboard PR duplication before merging dashboard changes.
-5. Continue contracts detail/timeline work before expanding payments and reports.
+## 5. Continuation Protocol
+
+A continuation request is based on intent, not on a literal keyword. Examples include Arabic or English messages equivalent to “continue”, “resume”, “proceed”, “finish the next step”, or “keep going”.
+
+When the user expresses continuation intent, the agent must:
+
+1. read `AGENTS.md`, `docs/ai/ONBOARDING.md`, this master plan, `docs/ai/AGENT_CAPABILITIES.md`, and `.ai/workflows/README.md`;
+2. inspect current `main`, open roadmap PRs, and the latest verification evidence;
+3. find the earliest release that is not closed;
+4. select the first `READY` item in that release;
+5. load `.codex/vendor/addy-agent-skills/skills/using-agent-skills/SKILL.md` and only the task-relevant local or vendored skills from `docs/ai/AGENT_CAPABILITIES.md`;
+6. implement one narrow, reviewable PR slice;
+7. run fresh verification appropriate to the slice;
+8. review the final diff for unrelated changes;
+9. update roadmap evidence and the next recommended item;
+10. continue to the next `READY` item when the current item is complete and the environment permits it.
+
+When every item in a release passes its acceptance gate, mark the release closed and start the first `READY` item in the next release automatically on the next continuation cycle.
+
+Do not ask the user to restate the roadmap. Ask only when a real stop condition exists.
+
+### Stop conditions
+
+Stop and report the exact blocker when any of these apply:
+
+- a product decision is required;
+- a production or live-environment mutation requires explicit approval;
+- authentication, permission, connector safety, or network access blocks the documented operation;
+- verification fails and the cause is not yet safely isolated;
+- a migration, RLS, RPC, or data repair would exceed the approved narrow slice;
+- a requested action would violate the single-office or non-ledger boundary.
+
+## 6. Active Release — v0.1 Constrained Beta Closure
+
+**Status:** `IN PROGRESS`
+
+**Goal:** close the verified operational core for a constrained beta without adding unrelated features.
+
+### 6.1 Completed repository-side work
+
+| Item | Status | Evidence |
+| --- | --- | --- |
+| Contract-integrity frontend date validation | `DONE` | Merged PR #795. |
+| Financial-posting design reconciliation | `DONE` | Merged replacement PR #801. |
+| Auth/RLS hardening plan based on connector evidence | `DONE` | Merged PR #797. |
+| Hide deferred surfaces from constrained-beta navigation | `DONE` | Merged replacement PR #802. |
+| Explicit mobile bottom-nav destinations | `DONE` | Merged replacement PR #802. |
+| Route-parity regression coverage included in CI | `DONE` | Merged replacement PR #802. |
+| Full CI gate after navigation cut | `DONE` | GitHub Actions passed on #802. |
+
+### 6.2 Remaining ordered work to close v0.1
+
+| Order | Item | Status | Required result |
+| --- | --- | --- | --- |
+| 1 | Agent onboarding and repository-governance cleanup | `READY` | Merge the docs-only onboarding PR: current snapshot, version roadmap, skill matrix, root architecture, and cleanup-candidate inventory. |
+| 2 | Safe root-cleanup PR | `READY` after item 1 | Remove tracked generated `supabase/.temp/*` metadata, add an ignore rule, and verify no runtime or migration dependency. Do not combine risky archive moves. |
+| 3 | Secure operator runbook | `READY` after item 1 | Record redacted environment ownership and the intended/prohibited Supabase refs without committing secrets. Include Vercel project identity evidence where available. |
+| 4 | Read-only live migration-state reconciliation | `BLOCKED` by detailed connector access | Identify the exact failed migration state behind `MIGRATIONS_FAILED`; capture migration list, failure evidence, and safe replay plan. No production mutation. |
+| 5 | Preview-branch migration replay | `BLOCKED` by item 4 and preview access | Prove replay outside production; split any repair into a narrow reviewed migration PR. |
+| 6 | Auth, RLS, and RPC least-privilege reconciliation | `BLOCKED` by detailed catalog access | Verify live hook registration, JWT claims, grants, policies, helper execution, idempotency posture, and posted-payment immutability. Split fixes into narrow PRs. |
+| 7 | Browser/manual operational QA | `BLOCKED` until preview or staging is reachable | Verify RTL desktop, RTL mobile, LTR sanity, protected-route refresh, forms, tables, dialogs, receipt lookup/print, CSV export, PWA install/offline/update, and invalid-route fallback. |
+| 8 | Final constrained-beta release check | `BLOCKED` until items 2–7 close | Run the full CI gate, review live evidence, record residual risks, and decide GO / NO-GO. |
+
+### 6.3 v0.1 acceptance gate
+
+Close `v0.1` only when:
+
+- full GitHub Actions gate passes on the release candidate;
+- tracked generated temp metadata is removed from Git history going forward;
+- intended live environment ownership is recorded redacted and verified;
+- `MIGRATIONS_FAILED` is reconciled safely through preview evidence;
+- required auth, RLS, and RPC behavior is verified or fixed through reviewed PRs;
+- constrained-beta navigation remains bounded;
+- browser/manual QA is recorded for RTL, mobile, receipt printing, direct refresh, and PWA behavior;
+- no production mutation occurred without explicit approval;
+- final result is explicitly recorded as GO or NO-GO.
+
+## 7. v0.2 — Operational UX Completion
+
+**Status:** `DEFERRED until v0.1 closes`
+
+**Goal:** make every visible operational-core surface commercially coherent without expanding hidden modules.
+
+### Scope
+
+| Order | Item | Status |
+| --- | --- | --- |
+| 1 | Audit every visible route for loading, empty, error, retry, null-relation, and permission states | `DEFERRED` |
+| 2 | Complete Arabic-first RTL consistency and English/LTR sanity across visible routes | `DEFERRED` |
+| 3 | Complete mobile usability for visible forms, tables, drawers, dialogs, and quick actions | `DEFERRED` |
+| 4 | Normalize money formatting, currency context, and CSV output across visible commercial screens | `DEFERRED` |
+| 5 | Complete receipt output, print behavior, and operator-facing document polish | `DEFERRED` |
+| 6 | Complete active reports for collection, arrears, expenses, occupancy, and expiring contracts | `DEFERRED` |
+| 7 | Implement or explicitly defer the posted-payment correction UX using reversal and replacement only | `DEFERRED` |
+| 8 | Run UI/UX and React-performance review using the required skills | `DEFERRED` |
+
+### Acceptance gate
+
+- every visible route passes the commercial screen checklist;
+- Arabic RTL, English LTR, and mobile evidence is recorded;
+- money values use one formatting path;
+- no hidden module is re-exposed accidentally;
+- receipt and report behavior is verified;
+- full CI gate passes.
+
+## 8. v0.3 — Controlled Operations Recovery
+
+**Status:** `DEFERRED until v0.2 closes`
+
+**Goal:** re-enable only verified operational and governance modules.
+
+### Scope
+
+| Order | Item | Status |
+| --- | --- | --- |
+| 1 | Verify maintenance schema, statuses, indexes, and RLS; then decide whether to re-expose `/maintenance` | `DEFERRED` |
+| 2 | Verify audit source schema and permissions; then decide whether to re-expose `/audit-log` | `DEFERRED` |
+| 3 | Verify data-integrity read model and permissions; then decide whether to re-expose `/data-integrity` | `DEFERRED` |
+| 4 | Verify system-governance source support and permissions; then decide whether to re-expose `/system` | `DEFERRED` |
+| 5 | Add route, permission, UX, and regression-test evidence for each re-exposed module separately | `DEFERRED` |
+
+### Acceptance gate
+
+- every re-exposed module has verified schema and RLS support;
+- unauthorized users remain denied;
+- safe-unavailable states remain available where needed;
+- navigation changes are narrow and tested;
+- full CI and browser QA pass.
+
+## 9. v0.4 — Optional CRM and Relationship Modules
+
+**Status:** `DEFERRED until product decisions exist`
+
+**Goal:** decide whether optional recovered CRM surfaces belong in the commercial product.
+
+### Scope
+
+| Order | Item | Status |
+| --- | --- | --- |
+| 1 | Decide lands lifecycle, ownership, and reporting scope | `BLOCKED` by product decision |
+| 2 | Decide lead stages, ownership, source, and conversion rules | `BLOCKED` by product decision |
+| 3 | Decide read-only commissions visibility before any settlement workflow | `BLOCKED` by product decision |
+| 4 | Decide communication provider, templates, consent, audit, retries, and failure model | `BLOCKED` by product decision |
+| 5 | Recover approved modules read-only first, one module per narrow PR | `DEFERRED` |
+| 6 | Add writes or external sends only through separate security-reviewed PRs | `DEFERRED` |
+
+### Acceptance gate
+
+- each included module has a documented product decision;
+- schema, RLS, UX, and test evidence exist;
+- read-only recovery precedes writes;
+- external sends remain disabled until compliance and audit behavior are approved.
+
+## 10. v0.5 — Commercial Delivery Hardening
+
+**Status:** `DEFERRED until approved v0.4 scope closes`
+
+**Goal:** prepare a repeatable single-office commercial delivery package.
+
+### Scope
+
+| Order | Item | Status |
+| --- | --- | --- |
+| 1 | Finalize company-local branding, language, currency, timezone, and document-output settings | `DEFERRED` |
+| 2 | Finalize deployment runbook for isolated per-customer Vercel and Supabase environments | `DEFERRED` |
+| 3 | Finalize backup, restore, monitoring, and rollback checklist | `DEFERRED` |
+| 4 | Finalize operator onboarding and release notes | `DEFERRED` |
+| 5 | Decide whether approved owner-settlement or outbound-communication work belongs before v1.0 | `BLOCKED` by product decision |
+
+### Acceptance gate
+
+- delivery runbook is reproducible without secrets in Git;
+- environment isolation remains physical/project-level per customer;
+- backup and rollback posture is documented;
+- all approved visible features pass CI and manual QA.
+
+## 11. v1.0 — Commercial Single-Office Release
+
+**Status:** `DEFERRED until v0.5 closes`
+
+**Goal:** deliver a stable Arabic-first property operations product with an explicitly approved module set.
+
+### Required outcome
+
+- operational core is complete and verified;
+- every visible route has commercial UX readiness;
+- approved recovered modules are verified and tested;
+- deployment and rollback runbooks are complete;
+- no shared-database SaaS multi-tenancy exists;
+- no general accounting ledger was added accidentally;
+- residual risks and intentionally deferred modules are documented.
+
+## 12. Required Skill Usage
+
+Before executing roadmap work, read `docs/ai/AGENT_CAPABILITIES.md`.
+
+Minimum rules:
+
+- start non-trivial work with Addy `using-agent-skills`;
+- use `.agent-skills/rentrix-build-web-apps/SKILL.md` for Rentrix UI or app surfaces;
+- use `.agents/skills/ui-ux-pro-max/SKILL.md` for any visual or interaction work;
+- use `.agents/skills/vercel-react-best-practices/SKILL.md` for React implementation or refactoring;
+- use `.agents/skills/connector-operator/SKILL.md` for GitHub, Supabase, Vercel, or MCP work;
+- use Superpowers `verification-before-completion` before any completion claim;
+- use Superpowers `finishing-a-development-branch` before PR handoff or merge;
+- use Matt `diagnose` for defects and Matt `zoom-out` for architecture review;
+- load only task-relevant vendor skills; do not inject every workflow into every task.
+
+## 13. Pull Request Discipline
+
+Every roadmap PR must:
+
+- map to exactly one roadmap item or one tightly coupled safe slice;
+- remain narrow and reversible;
+- state exact files changed;
+- state behavior changed;
+- state what was intentionally not changed;
+- state migration, RLS, RPC, Supabase, and Vercel impact;
+- run fresh verification appropriate to scope;
+- report blockers honestly;
+- update roadmap evidence when merged.
+
+Do not merge required-check failures. Do not claim browser, preview, Vercel, or Supabase verification unless it was actually performed.
 
 ## 14. Product Definition of Done
 
-A screen is not considered commercially ready until it has:
+A visible screen is not commercially ready until it has:
 
-- Loading state
-- Empty state
-- Error state
-- Null relation handling
-- RTL-ready layout
-- LTR-safe layout where applicable
-- Currency-aware money display
-- Status badges where state matters
-- Clear primary action
-- Clear secondary actions
-- No orphan financial flows
-- No legacy architecture regression
-- Passing typecheck, lint, and build
+- loading state;
+- empty state;
+- error state;
+- retry action where appropriate;
+- null-relation handling;
+- clear status badges where state matters;
+- clear primary and secondary actions;
+- responsive layout;
+- Arabic-first RTL readiness;
+- English/LTR sanity;
+- currency-aware money display where relevant;
+- no orphan financial flows;
+- no legacy architecture regression;
+- passing relevant tests and the full release gate before handoff.

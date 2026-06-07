@@ -2,16 +2,15 @@
 
 Read `AGENTS.md` first. It is the canonical operating policy for this repository.
 
-Then read, in order:
+Then read:
 
-1. `README.md`
-2. `docs/ROOT_LAYOUT.md`
-3. `docs/README.md`
-4. `docs/ai/README.md`
-5. `docs/ai/product-scope.md`
-6. `docs/ai/engineering-policy.md`
-7. `docs/ai/release-policy.md`
-8. `docs/decisions/README.md`
-9. `.ai/workflows/README.md`
+```text
+docs/ai/ONBOARDING.md
+docs/RENTRIX_MASTER_PLAN.md
+docs/ai/AGENT_CAPABILITIES.md
+docs/ai/GIT_TOOLING_POLICY.md
+```
 
-Do not duplicate or override those rules in this file. Keep Rentrix single-office, Arabic-first, and bounded to the approved release scope.
+These files define the current application snapshot, ordered releases, skill selection, and Git or GitHub workflow rules.
+
+Do not duplicate or override those rules in this file. Keep Rentrix single-office, Arabic-first, and bounded to the approved roadmap scope.
