@@ -1,32 +1,30 @@
 # Rentrix AI Operating Guide
 
-This directory is the durable project context for coding agents. `AGENTS.md` is the canonical entry point. Keep this directory concise, current, and based on the active codebase.
+This directory is the durable project context for coding agents. `AGENTS.md` is the canonical repository policy. `ONBOARDING.md` is the canonical current application snapshot and reading sequence.
 
-## Before feature policy
+## Start here
 
-Read:
+1. Read `../../AGENTS.md`.
+2. Read `ONBOARDING.md`.
+3. Follow the full reading order listed in `ONBOARDING.md` before non-trivial edits.
 
-1. `../../README.md`
-2. `../ROOT_LAYOUT.md`
-3. `../README.md`
+`ONBOARDING.md` records the active runtime boundary, visible constrained-beta navigation, registered-but-hidden routes, authorization shape, domain invariants, and current CI verification gate.
 
-These files distinguish runtime code, optional artifacts, agent tooling, external references, and historical recovery sources.
+## Durable policy files
 
-## Required reading order
-
-1. `product-scope.md`
-2. `domain-rules.md`
-3. `engineering-policy.md`
-4. `security-policy.md`
-5. `testing-guide.md`
-6. `release-policy.md`
-7. `../decisions/README.md`
-8. `../../.ai/workflows/README.md`
+- `product-scope.md` — approved product and constrained-beta scope.
+- `domain-rules.md` — business invariants.
+- `engineering-policy.md` — source-first implementation discipline.
+- `security-policy.md` — sensitive surfaces and review rules.
+- `testing-guide.md` — verification expectations.
+- `release-policy.md` — merge-readiness requirements.
+- `../decisions/README.md` — durable product and architecture decisions.
+- `../../.ai/workflows/README.md` — narrow task workflows.
 
 ## Documentation rules
 
-- Record stable product boundaries and business invariants here.
+- Keep `ONBOARDING.md` current when approved changes alter visible navigation, registered deferred routes, runtime boundaries, authorization roles, the CI gate, or release-critical connector cautions.
+- Record stable product boundaries and business invariants under `docs/ai/`.
 - Record durable architecture decisions under `docs/decisions/`.
 - Put task-specific execution steps in `.ai/workflows/`.
-- Do not duplicate long instructions across `AGENTS.md`, `CLAUDE.md`, and these files.
-- Update these documents when an approved decision changes.
+- Keep entry-point files short. Do not duplicate long reading lists or current-state snapshots across `AGENTS.md`, `CLAUDE.md`, `README.md`, and this file.
