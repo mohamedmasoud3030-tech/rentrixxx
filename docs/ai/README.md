@@ -2,6 +2,16 @@
 
 This directory is the durable project context for coding agents. `AGENTS.md` is the canonical entry point. Keep this directory concise, current, and based on the active codebase.
 
+## Before feature policy
+
+Read:
+
+1. `../../README.md`
+2. `../ROOT_LAYOUT.md`
+3. `../README.md`
+
+These files distinguish runtime code, optional artifacts, agent tooling, external references, and historical recovery sources.
+
 ## Required reading order
 
 1. `product-scope.md`
