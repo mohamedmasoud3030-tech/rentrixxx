@@ -1,9 +1,9 @@
-import { BadgeDollarSign, BarChart3, Building2, ClipboardList, ContactRound, DoorOpen, FileText, KeyRound, LayoutDashboard, ListChecks, MapPinned, MessageSquareText, ReceiptText, SearchCheck, Settings, ShieldCheck, UserRoundCog, Users, WalletCards, Wrench } from 'lucide-react';
+import { BarChart3, Building2, ClipboardList, DoorOpen, FileText, KeyRound, LayoutDashboard, ReceiptText, Settings, UserRoundCog, Users, WalletCards } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import type { AppPermission } from '@/features/auth/permissions';
 
 export type NavItem = readonly [to: string, labelKey: string, description: string, Icon: LucideIcon, permission?: AppPermission];
-
+export type MobileNavItem = readonly [to: string, labelKey: string, Icon: LucideIcon, permission?: AppPermission];
 export type NavGroup = readonly [sectionTitle: string, items: readonly NavItem[]];
 
 export const navGroups = [
@@ -15,13 +15,10 @@ export const navGroups = [
     ['/tenants', 'tenants', 'بيانات المستأجرين', Users],
     ['/owners', 'owners', 'إدارة ملفات الملاك وعلاقات الملكية', UserRoundCog, 'owners.hub.view'],
     ['/owners-hub', 'ownersHub', 'مركز قراءة موحد للملاك', UserRoundCog, 'owners.hub.view'],
-    ['/lands', 'lands', 'حالة استرداد الأراضي', MapPinned, 'lands.view'],
-    ['/leads', 'leads', 'حالة استرداد العملاء المحتملين', ContactRound, 'leads.view'],
     ['/contracts', 'contracts', 'العقود والتجديدات', FileText],
   ]],
   ['التحصيل والتقارير', [
     ['/financials', 'financials', 'التحصيل والمصروفات', WalletCards],
-    ['/commissions', 'commissions', 'قراءة آمنة للعمولات', BadgeDollarSign, 'commissions.view'],
     ['/invoices', 'invoices', 'الفواتير المستحقة', ReceiptText],
     ['/receipts', 'receipts', 'سجل الإيصالات والطباعة', ReceiptText],
     ['/expenses', 'expenses', 'مصاريف العقارات التشغيلية', WalletCards],
@@ -29,15 +26,18 @@ export const navGroups = [
     ['/reports', 'reports', 'مؤشرات وتقارير الإدارة', BarChart3],
   ]],
   ['التشغيل والنظام', [
-    ['/maintenance', 'maintenance', 'الطلبات وحالة التنفيذ', Wrench],
-    ['/communication', 'communication', 'مركز التواصل قراءة فقط', MessageSquareText, 'communication.view'],
-    ['/system', 'system', 'مركز الحوكمة النظامية', ShieldCheck, 'system.view'],
-    ['/audit-log', 'auditLog', 'أحداث الحوكمة قراءة فقط', ListChecks, 'audit.view'],
-    ['/data-integrity', 'dataIntegrity', 'فحوصات سلامة البيانات', SearchCheck, 'integrity.view'],
     ['/change-password', 'changePassword', 'تحديث كلمة مرورك', KeyRound, 'auth.password.change'],
     ['/settings', 'settings', 'تخصيص تجربة النظام', Settings, 'settings.manage'],
   ]],
 ] as const satisfies readonly NavGroup[];
+
+export const mobileNavItems = [
+  ['/', 'dashboard', LayoutDashboard],
+  ['/properties', 'properties', Building2],
+  ['/contracts', 'contracts', FileText],
+  ['/financials', 'financials', WalletCards],
+  ['/arrears', 'arrears', ClipboardList],
+] as const satisfies readonly MobileNavItem[];
 
 export const quickLinks = [
   ['/properties/new', 'إضافة عقار', Building2],
