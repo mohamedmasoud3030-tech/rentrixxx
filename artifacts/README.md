@@ -13,24 +13,23 @@ This is the deployed Rentrix web application. Treat its TanStack Router, React Q
 ## Optional support artifacts
 
 ```text
-artifacts/mockup-sandbox/
 artifacts/rentrix-promo/
 ```
 
-These packages support preview, visual exploration, or promotional work. They are not part of the canonical production runtime and remain outside the root pnpm workspace.
+The promo project supports promotional work. It is not part of the canonical production runtime and remains outside the root pnpm workspace.
 
 Rules:
 
-- Do not add them to production builds without a reviewed decision.
-- Do not treat their routing, state, or dependencies as authoritative for the main app.
-- Port useful UI selectively and verify accessibility, RTL, mobile behavior, and runtime compatibility.
+- Do not add it to production builds without a reviewed decision.
+- Do not treat its routing, state, or dependencies as authoritative for the main app.
+- Port useful UI selectively only after verifying accessibility, RTL, mobile behavior, and runtime compatibility.
 
-## Historical recovery code
+## Recovery references
 
 ```text
-artifacts/rentrix/legacy-src/
+archive/recovery-reference/
 ```
 
-This is retained as a recovery source only. It is not deployed code.
+Broad historical recovery code was removed. Only concise recovery notes are retained outside `artifacts/` for reference-only maintenance.
 
-Do not restore legacy `react-router-dom`, `AppContext`, `useApp`, `dataService`, local database flows, or broad legacy barrels into the active application. Adapt only the smallest useful implementation after verifying current schema and architecture boundaries.
+Do not restore legacy `react-router-dom`, `AppContext`, `useApp`, `dataService`, local database flows, or broad legacy barrels into the active application. Adapt only the smallest useful note after verifying current schema and architecture boundaries.

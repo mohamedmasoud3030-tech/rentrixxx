@@ -11,8 +11,7 @@
     "dist",
     "src/**/*.test.ts",
     "src/**/*.test.tsx",
-    "src/test/**",
-    "legacy-src/**"
+    "src/test/**"
   ],
   "compilerOptions": {
     "noEmit": true,

@@ -15,6 +15,7 @@ out/
 pnpm-debug.log*
 artifacts/**/dist/
 artifacts/**/.vite/
+supabase/.temp/
 
 # TypeScript incremental build info
 *.tsbuildinfo

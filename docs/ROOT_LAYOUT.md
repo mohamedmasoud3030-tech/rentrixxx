@@ -37,7 +37,6 @@ artifacts/rentrix/
 ├── src/
 │   ├── app/                    # App-level composition and auth shell
 │   ├── components/             # Shared presentational components and UI primitives
-│   ├── db/                     # Active local-cache support only where intentionally used
 │   ├── features/               # Feature-local pages, services, hooks, tests, and schemas
 │   ├── hooks/                  # Shared hooks
 │   ├── integrations/           # Supabase client and external integration boundaries
@@ -61,7 +60,7 @@ artifacts/rentrix/
 - Keep service modules and hooks close to the feature unless they are genuinely shared.
 - Keep route registration in TanStack Router files and `routeTree.ts`.
 - Put shared UI primitives under `src/components/` only when multiple features reuse them.
-- Do not place new runtime code in `legacy-src/`, `.migration-backup/`, agent-tooling folders, or generated-analysis folders.
+- Do not place new runtime code in `archive/recovery-reference/`, agent-tooling folders, or generated-analysis folders.
 
 ## 3. Canonical Backend Assets
 
@@ -147,28 +146,26 @@ sonar-project.properties        # Static-analysis scope
 ## 7. Optional Support Artifacts
 
 ```text
-artifacts/mockup-sandbox/       # Optional visual exploration support
 artifacts/rentrix-promo/        # Optional promotional support
 ```
 
-These folders are not production runtime. Retain, archive, or remove them only through a reviewed cleanup PR after confirming their current use.
+The promo project is not production runtime. Retain, archive, or remove it only through a reviewed cleanup PR after confirming current use.
 
-## 8. Historical Recovery Sources
+## 8. Recovery Reference Archive
 
 ```text
-.migration-backup/              # Broad historical application snapshot
-artifacts/rentrix/legacy-src/   # Historical source mirror nested under app package
+archive/recovery-reference/     # Concise reference-only recovery notes
 ```
 
-These paths are recovery sources only. They are not deployed runtime and must not be imported wholesale.
+Broad historical recovery trees were removed after selective extraction. The archive path is not deployed runtime and must not be imported.
 
 ### Recovery rules
 
-- Compare a recovery candidate against the active architecture before reuse.
+- Compare a recovery note against the active architecture before reuse.
 - Port only the narrow behavior required by the current roadmap item.
 - Adapt legacy code to TanStack Router, React Query, current auth, feature services, and current Supabase boundaries.
 - Never restore legacy `react-router-dom`, `useApp`, `AppContext`, `dataService`, local DB flows, or historical barrels into active runtime.
-- Do not delete recovery trees until their remaining recovery value is reviewed explicitly.
+- Do not expand the archive with executable legacy source; keep only concise, proven-unique notes.
 
 ## 9. Generated Analysis Support
 
@@ -183,8 +180,7 @@ Use generated analysis only as orientation support. Verify every conclusion agai
 The following dependency directions are prohibited:
 
 ```text
-active runtime → legacy-src
-active runtime → .migration-backup
+active runtime → archive/recovery-reference
 active runtime → .agent-skills
 active runtime → .agents
 active runtime → .codex/vendor

@@ -24,7 +24,7 @@ artifacts/rentrix/
 
 Shared workspace libraries live under `lib/`, and canonical database assets live under `supabase/`.
 
-Do not treat recovery folders, preview sandboxes, promotional artifacts, generated analysis, or agent-tooling folders as active application code.
+Do not treat recovery notes, promotional artifacts, generated analysis, or agent-tooling folders as active application code.
 
 ## Root map
 
@@ -40,7 +40,7 @@ rentrixxx/
 ├── .agent-skills/              # Rentrix-owned reusable agent skills
 ├── .agents/                    # Installed/shared agent tooling and plugin metadata
 ├── .codex/vendor/              # Source-locked upstream skills and plugins
-├── .migration-backup/          # Historical recovery source only
+├── archive/recovery-reference/ # Minimal reference-only recovery notes
 └── understand-anything/        # Generated repository-understanding artifacts
 ```
 
@@ -49,11 +49,10 @@ See `docs/ROOT_LAYOUT.md` for retention rules, dependency direction, and root-fo
 ## Optional support artifacts
 
 ```text
-artifacts/mockup-sandbox/
 artifacts/rentrix-promo/
 ```
 
-These support preview, visual exploration, or promotional work. They are not part of the production runtime.
+The promo project is retained but is not part of the production runtime.
 
 ## Current constrained-beta boundary
 
@@ -106,6 +105,6 @@ For schema or RLS changes, also run the repository-approved Supabase validation 
 - Do not wire a general accounting ledger during stabilization.
 - Reuse historical code only after deliberate adaptation to the active TanStack Router, React Query, and Supabase architecture.
 
-## Historical sources
+## Recovery references
 
-`.migration-backup/` and `artifacts/rentrix/legacy-src/` are retained for selective recovery only. They are not runtime code and must not be imported wholesale into the active application.
+Broad historical recovery trees were removed. Only concise notes under `archive/recovery-reference/` remain for selective maintenance reference, and they must not be imported into the active application.
