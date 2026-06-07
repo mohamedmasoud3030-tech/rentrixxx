@@ -12,7 +12,8 @@
     "install:clean": "pnpm install --frozen-lockfile",
     "build": "pnpm -r --if-present run build",
     "typecheck": "tsc -b && pnpm -r --filter ./artifacts/rentrix --if-present run typecheck",
-    "lint": "pnpm -r --filter ./artifacts/rentrix --if-present run lint"
+    "lint": "pnpm -r --filter ./artifacts/rentrix --if-present run lint",
+    "supabase:migration-evidence": "bash scripts/collect-supabase-migration-evidence.sh"
   },
   "devDependencies": {
     "prettier": "^3.8.1",

@@ -64,11 +64,20 @@ enough stable characters for operators to distinguish environments.
    printing secret environment values.
 3. Confirm the intended Supabase project ref through authenticated management or
    database read-only access.
-4. Query migration history, schema/catalog, RPC definitions/grants, auth hook
+4. Run the repository-side migration evidence preflight:
+
+   ```bash
+   pnpm supabase:migration-evidence
+   ```
+
+   This captures the local canonical migration chain, redacts secret values, and
+   reports the exact authenticated Supabase access blocker when live read-only
+   migration-state evidence is unavailable.
+5. Query migration history, schema/catalog, RPC definitions/grants, auth hook
    registration, RLS policies, logs, advisors, and backup posture read-only.
-5. If `MIGRATIONS_FAILED` is confirmed, write a safe replay plan against a
+6. If `MIGRATIONS_FAILED` is confirmed, write a safe replay plan against a
    preview branch before any production migration repair.
-6. Keep deferred routes hidden from constrained-beta navigation until live schema
+7. Keep deferred routes hidden from constrained-beta navigation until live schema
    and authorization support is verified.
 
 ## Connector blocker report template
