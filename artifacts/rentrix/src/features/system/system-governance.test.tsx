@@ -15,6 +15,14 @@ vi.mock('@/lib/runtime-diagnostics', () => ({
   parseSupabaseDiagnostics: vi.fn(() => []),
 }));
 
+vi.mock('@/lib/env', () => ({
+  env: {
+    supabaseUrl: 'https://invalid.supabase.local',
+    supabaseAnonKey: 'invalid-anon-key',
+    isConfigured: false,
+  },
+}));
+
 type IntegritySnapshotInput = Parameters<typeof buildDataIntegritySnapshot>[0];
 
 const makeSession = (role: string) => ({

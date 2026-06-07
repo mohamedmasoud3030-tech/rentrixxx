@@ -9,11 +9,11 @@ const PLACEHOLDER_URLS = [
 const PLACEHOLDER_KEYS = ['test-anon-key', 'invalid-anon-key'];
 
 function isValidUrl(url: string): boolean {
-  return url && !PLACEHOLDER_URLS.includes(url);
+  return url.length > 0 && !PLACEHOLDER_URLS.includes(url);
 }
 
 function isValidKey(key: string): boolean {
-  return key && !PLACEHOLDER_KEYS.includes(key);
+  return key.length > 0 && !PLACEHOLDER_KEYS.includes(key);
 }
 
 const isConfigured = isValidUrl(supabaseUrl) && isValidKey(supabaseAnonKey);
