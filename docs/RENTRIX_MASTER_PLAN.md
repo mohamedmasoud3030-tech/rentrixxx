@@ -301,12 +301,14 @@ Stop and report the exact blocker when any of these apply:
 
 | Order | Item | Status | Required result |
 | --- | --- | --- | --- |
-| 1 | Secure operator runbook | `READY` | Record redacted environment ownership, intended/prohibited Supabase refs, and available Vercel identity evidence without committing secrets. |
+| 1 | Secure operator runbook | `DONE` | Added `docs/ai/SECURE_OPERATOR_RUNBOOK.md` with redacted environment ownership, intended/prohibited Supabase ref classifications, available Vercel identity evidence, and connector blocker reporting. |
 | 2 | Read-only live migration-state reconciliation | `BLOCKED` by detailed connector access | Identify the exact failed migration state behind `MIGRATIONS_FAILED`; capture migration list, failure evidence, and safe replay plan. No production mutation. |
 | 3 | Preview-branch migration replay | `BLOCKED` by item 2 and preview access | Prove replay outside production; split any repair into a narrow reviewed migration PR. |
 | 4 | Auth, RLS, and RPC least-privilege reconciliation | `BLOCKED` by detailed catalog access | Verify live hook registration, JWT claims, grants, policies, helper execution, idempotency posture, and posted-payment immutability. Split fixes into narrow PRs. |
 | 5 | Browser/manual operational QA | `BLOCKED` until preview or staging is reachable | Verify RTL desktop, RTL mobile, LTR sanity, protected-route refresh, forms, tables, dialogs, receipt lookup/print, CSV export, PWA install/offline/update, and invalid-route fallback. |
 | 6 | Final constrained-beta release check | `BLOCKED` until items 1–5 close | Run the full CI gate, review live evidence, record residual risks, and decide GO / NO-GO. |
+
+Next continuation item: order 2 remains blocked until approved read-only Supabase access can identify the exact failed migration state behind `MIGRATIONS_FAILED`. No production mutation is authorized by the secure operator runbook.
 
 ### 6.3 v0.1 acceptance gate
 

@@ -10,6 +10,7 @@ Use this page to navigate repository documentation without treating every histor
 4. `ai/AGENT_CAPABILITIES.md` — project skills, installed additions, and task-to-skill matrix.
 5. `ai/GIT_TOOLING_POLICY.md` — Git and GitHub usage rules.
 6. `ROOT_LAYOUT.md` — architectural tree, ownership, dependency direction, and retention rules.
+7. `ai/SECURE_OPERATOR_RUNBOOK.md` — redacted constrained-beta environment ownership and connector-safe blocker reporting.
 
 ## Canonical guidance
 
@@ -48,6 +49,7 @@ wave1/1C_AUTH_AND_RLS_HARDENING_PLAN.md
 ```
 
 Also see `CONSTRAINED_BETA_LAUNCH_AUDIT_2026_06_06.md` for the most recent NO-GO live-environment audit.
+Use `ai/SECURE_OPERATOR_RUNBOOK.md` for the current redacted Vercel/Supabase ownership registry and the connector blocker report template.
 
 ## Historical reports
 
