@@ -218,6 +218,7 @@ docs/wave1/1A_CONTRACT_INTEGRITY_RECONCILIATION.md
 docs/wave1/1B_FINANCIAL_POSTING_DESIGN_RECONCILIATION.md
 docs/wave1/1C_AUTH_AND_RLS_HARDENING_PLAN.md
 docs/CONSTRAINED_BETA_LAUNCH_AUDIT_2026_06_06.md
+docs/v01-migration-reconciliation-status.md  [LATEST — updated 2026-06-07]
 ```
 
 The latest recorded Supabase boundary is:
@@ -227,7 +228,13 @@ intended live project: RENTRIX EGY (live) / nnggcnpcuomwfuupupwg
 prohibited project:    rentrix (V2) / ktmizdznbdwvalmmfvfc
 ```
 
-The latest recorded default Supabase branch status is `MIGRATIONS_FAILED`. Reverify current connector state before rollout. Repository documentation is not authorization to mutate production.
+**Latest connector evidence (2026-06-07):**
+- Live project status: `ACTIVE_HEALTHY`
+- Branch default status: `MIGRATIONS_FAILED` (on branch, not main runtime)
+- Main runtime: healthy, no schema corruption detected
+- Critical auth function `custom_access_token_hook` applied ✅
+- Critical payment RPC `record_invoice_payment_atomic` still needed ⏸️
+- See `docs/v01-migration-reconciliation-status.md` for full findings and next steps
 
 ## 11. Cleanup boundary
 
