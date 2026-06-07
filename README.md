@@ -1,19 +1,17 @@
 # Rentrix
 
-Rentrix is an Arabic-first, single-office property operations system for managing properties, units, people, contracts, invoices, payments, receipts, arrears, expenses, maintenance, and reports.
+Rentrix is an Arabic-first, single-office property operations system for managing the verified property workflow: properties, units, people, tenants, owners, contracts, invoices, payments, receipts, arrears, expenses, and reports.
 
-The active application is intentionally focused. SaaS multi-tenancy and accounting-grade ledger work are outside the current stabilization scope.
+The active application is intentionally focused. SaaS multi-tenancy and accounting-grade ledger work are outside the current stabilization scope. Some recovered routes remain registered for controlled verification but are intentionally hidden from constrained-beta navigation.
 
 ## Start here
 
 Read in this order:
 
 1. `AGENTS.md`
-2. `docs/ROOT_LAYOUT.md`
-3. `docs/README.md`
-4. `docs/ai/README.md`
-5. `docs/decisions/README.md`
-6. `.ai/workflows/README.md`
+2. `docs/ai/ONBOARDING.md`
+
+`docs/ai/ONBOARDING.md` contains the current application snapshot, the full reading order, the visible constrained-beta navigation, registered-but-hidden routes, and the current CI gate.
 
 ## Canonical runtime
 
@@ -23,7 +21,7 @@ artifacts/rentrix/
 
 Shared workspace libraries live under `lib/`, and canonical database assets live under `supabase/`.
 
-Do not treat recovery folders, preview sandboxes, or promotional artifacts as active application code.
+Do not treat recovery folders, preview sandboxes, promotional artifacts, generated analysis, or agent-tooling folders as active application code.
 
 ## Root map
 
@@ -54,6 +52,12 @@ artifacts/rentrix-promo/
 
 These support preview, visual exploration, or promotional work. They are not part of the production runtime.
 
+## Current constrained-beta boundary
+
+Visible navigation is intentionally limited to the verified operational flow. Routes such as lands, leads, maintenance, commissions, communication, system governance, audit log, and data integrity remain registered for controlled recovery but are hidden from visible navigation. `/accounting` redirects to `/financials` and must not be expanded into a general ledger during stabilization.
+
+Use `docs/ai/ONBOARDING.md` as the current source for the exact route snapshot.
+
 ## Root configuration
 
 - `package.json` and `pnpm-workspace.yaml` define the workspace boundary.
@@ -77,16 +81,19 @@ pnpm --filter ./artifacts/rentrix run dev
 
 ## Verification
 
-For runtime changes:
+For runtime pull requests, use the current GitHub Actions gate from `.github/workflows/ci.yml`:
 
 ```bash
-pnpm --filter ./artifacts/rentrix run typecheck
-pnpm --filter ./artifacts/rentrix run lint
-pnpm --filter ./artifacts/rentrix run test
-pnpm --filter ./artifacts/rentrix run build
+pnpm install --frozen-lockfile
+pnpm typecheck
+pnpm lint
+pnpm build
+pnpm --filter ./artifacts/rentrix run typecheck:test
+pnpm --filter ./artifacts/rentrix test
+pnpm --filter ./artifacts/rentrix run test:financials
 ```
 
-For schema or RLS changes, also run the repository-approved Supabase validation flow when a local Supabase environment is available.
+For schema or RLS changes, also run the repository-approved Supabase validation flow when a required local or preview Supabase environment is available.
 
 ## Product boundaries
 
