@@ -6,24 +6,30 @@ This directory is the durable project context for coding agents. `AGENTS.md` is 
 
 1. Read `../../AGENTS.md`.
 2. Read `ONBOARDING.md`.
-3. Follow the full reading order listed in `ONBOARDING.md` before non-trivial edits.
+3. Read `../RENTRIX_MASTER_PLAN.md` for the active release and next ready item.
+4. Read `AGENT_CAPABILITIES.md` for the skill and tooling map.
+5. Read `GIT_TOOLING_POLICY.md` before branch, PR, CI, or merge work.
+6. Follow the full reading order listed in `ONBOARDING.md` before non-trivial edits.
 
-`ONBOARDING.md` records the active runtime boundary, visible constrained-beta navigation, registered-but-hidden routes, authorization shape, domain invariants, and current CI verification gate.
+`ONBOARDING.md` records the active runtime boundary, visible constrained-beta navigation, registered-but-hidden routes, authorization shape, domain invariants, and current CI gate.
 
 ## Durable policy files
 
+- `AGENT_CAPABILITIES.md` — project skills, installed additions, and task-to-skill matrix.
+- `GIT_TOOLING_POLICY.md` — Git and GitHub usage rules.
 - `product-scope.md` — approved product and constrained-beta scope.
 - `domain-rules.md` — business invariants.
 - `engineering-policy.md` — source-first implementation discipline.
 - `security-policy.md` — sensitive surfaces and review rules.
 - `testing-guide.md` — verification expectations.
-- `release-policy.md` — merge-readiness requirements.
+- `release-policy.md` — merge and release-readiness requirements.
 - `../decisions/README.md` — durable product and architecture decisions.
-- `../../.ai/workflows/README.md` — narrow task workflows.
+- `../../.ai/workflows/README.md` — execution workflows.
 
 ## Documentation rules
 
 - Keep `ONBOARDING.md` current when approved changes alter visible navigation, registered deferred routes, runtime boundaries, authorization roles, the CI gate, or release-critical connector cautions.
+- Keep the ordered roadmap only in `../RENTRIX_MASTER_PLAN.md`.
 - Record stable product boundaries and business invariants under `docs/ai/`.
 - Record durable architecture decisions under `docs/decisions/`.
 - Put task-specific execution steps in `.ai/workflows/`.
