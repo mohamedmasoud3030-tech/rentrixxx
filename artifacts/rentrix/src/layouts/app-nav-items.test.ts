@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import { navGroups, quickLinks, type NavItem } from './app-nav-items';
+import { mobileNavItems, navGroups, quickLinks, type NavItem } from './app-nav-items';
 
 const routeTreeSource = readFileSync(new URL('../routeTree.ts', import.meta.url), 'utf8');
 const routePaths = new Set(Array.from(routeTreeSource.matchAll(/path: '([^']+)'/g), (match) => match[1]));
@@ -43,6 +43,17 @@ const requiredOperationalRoutes = [
   '/accounting',
 ] as const;
 
+const deferredBetaRoutes = [
+  '/lands',
+  '/leads',
+  '/maintenance',
+  '/commissions',
+  '/communication',
+  '/system',
+  '/audit-log',
+  '/data-integrity',
+] as const;
+
 const routePathList = Array.from(routePaths);
 const navItems: NavItem[] = [];
 for (const group of navGroups) {
@@ -67,12 +78,14 @@ describe('app route and navigation parity', () => {
     expect(routeTreeSource).toContain('notFoundComponent: NotFoundPage');
   });
 
-  it('maps every navigation and quick link to a registered route without duplicates', () => {
+  it('maps every visible navigation, mobile navigation, and quick link to registered routes without duplicates', () => {
     const navPaths = navItems.map(([to]) => to);
+    const mobileNavPaths = mobileNavItems.map(([to]) => to);
     const quickLinkPaths = quickLinks.map(([to]) => to);
 
     expect(new Set(navPaths).size).toBe(navPaths.length);
-    expect(routePathList).toEqual(expect.arrayContaining([...navPaths, ...quickLinkPaths]));
+    expect(new Set(mobileNavPaths).size).toBe(mobileNavPaths.length);
+    expect(routePathList).toEqual(expect.arrayContaining([...navPaths, ...mobileNavPaths, ...quickLinkPaths]));
   });
 
   it('keeps permissioned navigation links aligned with route guards', () => {
@@ -83,8 +96,14 @@ describe('app route and navigation parity', () => {
     }
   });
 
-  it('keeps intentionally unavailable modules explicit and linked', () => {
-    expect(routePathList).toEqual(expect.arrayContaining(['/lands', '/leads', '/commissions', '/communication']));
-    expect(navItems.map(([to]) => to)).toEqual(expect.arrayContaining(['/lands', '/leads', '/commissions', '/communication']));
+  it('keeps deferred beta modules registered but hidden from visible navigation', () => {
+    const navPaths = navItems.map(([to]) => to);
+    const mobileNavPaths = mobileNavItems.map(([to]) => to);
+
+    expect(routePathList).toEqual(expect.arrayContaining([...deferredBetaRoutes]));
+    for (const route of deferredBetaRoutes) {
+      expect(navPaths).not.toContain(route);
+      expect(mobileNavPaths).not.toContain(route);
+    }
   });
 });
