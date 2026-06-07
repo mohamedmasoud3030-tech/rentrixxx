@@ -308,6 +308,8 @@ Stop and report the exact blocker when any of these apply:
 | 5 | Browser/manual operational QA | `BLOCKED` until preview or staging is reachable | Verify RTL desktop, RTL mobile, LTR sanity, protected-route refresh, forms, tables, dialogs, receipt lookup/print, CSV export, PWA install/offline/update, and invalid-route fallback. |
 | 6 | Final constrained-beta release check | `BLOCKED` until items 1–5 close | Run the full CI gate, review live evidence, record residual risks, and decide GO / NO-GO. |
 
+Repository-side migration evidence preflight now runs in CI after dependency installation. This keeps the local canonical migration chain guarded while live migration-state reconciliation remains blocked by approved read-only Supabase access.
+
 Next continuation item: order 2 remains blocked until approved read-only Supabase access can identify the exact failed migration state behind `MIGRATIONS_FAILED`. No production mutation is authorized by the secure operator runbook.
 
 ### 6.3 v0.1 acceptance gate
