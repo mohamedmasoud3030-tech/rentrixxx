@@ -16,8 +16,10 @@ function isValidKey(key: string): boolean {
   return key && !PLACEHOLDER_KEYS.includes(key);
 }
 
+const isConfigured = isValidUrl(supabaseUrl) && isValidKey(supabaseAnonKey);
+
 export const env = {
-  supabaseUrl: supabaseUrl || 'https://invalid.supabase.local',
-  supabaseAnonKey: supabaseAnonKey || 'invalid-anon-key',
-  isConfigured: isValidUrl(supabaseUrl) && isValidKey(supabaseAnonKey),
+  supabaseUrl: isConfigured ? supabaseUrl : 'https://invalid.supabase.local',
+  supabaseAnonKey: isConfigured ? supabaseAnonKey : 'invalid-anon-key',
+  isConfigured,
 } as const;
