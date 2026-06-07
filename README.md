@@ -10,8 +10,11 @@ Read in this order:
 
 1. `AGENTS.md`
 2. `docs/ai/ONBOARDING.md`
+3. `docs/RENTRIX_MASTER_PLAN.md`
+4. `docs/ai/AGENT_CAPABILITIES.md`
+5. `docs/ai/GIT_TOOLING_POLICY.md`
 
-`docs/ai/ONBOARDING.md` contains the current application snapshot, the full reading order, the visible constrained-beta navigation, registered-but-hidden routes, and the current CI gate.
+`docs/ai/ONBOARDING.md` contains the current application snapshot and the full reading sequence. `docs/RENTRIX_MASTER_PLAN.md` defines the final product shape, current release, ordered releases, and next ready item. `docs/ai/AGENT_CAPABILITIES.md` maps tasks to skills and project additions. `docs/ai/GIT_TOOLING_POLICY.md` defines how branch, diff, PR, CI, and merge tools must be used.
 
 ## Canonical runtime
 
@@ -41,7 +44,7 @@ rentrixxx/
 └── understand-anything/        # Generated repository-understanding artifacts
 ```
 
-See `docs/ROOT_LAYOUT.md` for retention rules and root-folder ownership.
+See `docs/ROOT_LAYOUT.md` for retention rules, dependency direction, and root-folder ownership.
 
 ## Optional support artifacts
 
