@@ -1,6 +1,8 @@
--- Stable browser-safe payment façade. The browser sends one invoice payment;
--- this function validates it, creates receipt/allocation/journal payloads on the
--- server, and delegates transaction posting to post_receipt_atomic(jsonb).
+-- Harden the browser-facing invoice payment idempotency rollout without editing
+-- already-versioned migrations. This migration is safe for databases that have
+-- already recorded 20260604020300 and for clean preview replays.
+
+begin;
 
 create table if not exists public.financial_operation_idempotency (
   operation_name text not null,
@@ -10,6 +12,89 @@ create table if not exists public.financial_operation_idempotency (
   primary key (operation_name, request_id)
 );
 
+alter table public.financial_operation_idempotency
+  add column if not exists operation_name text,
+  add column if not exists request_id text,
+  add column if not exists response_payload jsonb,
+  add column if not exists created_at timestamptz not null default timezone('utc', now());
+
+do $$
+begin
+  if exists (
+    select 1
+    from public.financial_operation_idempotency
+    where operation_name is null
+       or request_id is null
+       or response_payload is null
+       or created_at is null
+  ) then
+    raise exception 'financial_operation_idempotency contains null key or payload values; migration cannot proceed safely';
+  end if;
+
+  if exists (
+    select 1
+    from public.financial_operation_idempotency
+    group by operation_name, request_id
+    having count(*) > 1
+  ) then
+    raise exception 'financial_operation_idempotency contains duplicate operation/request pairs; migration cannot proceed safely';
+  end if;
+
+  if not exists (
+    select 1
+    from pg_constraint
+    where conrelid = 'public.financial_operation_idempotency'::regclass
+      and contype = 'p'
+  ) then
+    alter table public.financial_operation_idempotency
+      add constraint financial_operation_idempotency_pkey
+      primary key (operation_name, request_id);
+  end if;
+end;
+$$;
+
+alter table public.financial_operation_idempotency
+  alter column operation_name set not null,
+  alter column request_id set not null,
+  alter column response_payload set not null,
+  alter column created_at set default timezone('utc', now()),
+  alter column created_at set not null;
+
+alter table public.financial_operation_idempotency enable row level security;
+revoke all on table public.financial_operation_idempotency from public, anon, authenticated;
+
+alter table if exists public.receipts
+  add column if not exists request_id text;
+
+do $$
+declare
+  duplicate_request_id text;
+  duplicate_count bigint;
+begin
+  if to_regclass('public.receipts') is null then
+    raise notice 'Skipping receipts.request_id index because public.receipts does not exist';
+    return;
+  end if;
+
+  select request_id, count(*)
+    into duplicate_request_id, duplicate_count
+  from public.receipts
+  where request_id is not null
+  group by request_id
+  having count(*) > 1
+  order by count(*) desc, request_id
+  limit 1;
+
+  if duplicate_request_id is not null then
+    raise exception 'Duplicate receipts.request_id value % appears % times; migration cannot create receipts_request_id_uidx safely', duplicate_request_id, duplicate_count;
+  end if;
+
+  create unique index if not exists receipts_request_id_uidx
+    on public.receipts(request_id)
+    where request_id is not null;
+end;
+$$;
+
 create or replace function public.find_payment_account_id(account_role text)
 returns uuid
 language plpgsql
@@ -18,9 +103,21 @@ set search_path = public, pg_temp
 as $$
 declare
   searchable_expression text;
-  account_id uuid;
+  account_match_sql text;
+  matched_count bigint;
+  matched_account_id uuid;
 begin
   if to_regclass('public.accounts') is null then
+    return null;
+  end if;
+
+  if not exists (
+    select 1
+    from information_schema.columns
+    where table_schema = 'public'
+      and table_name = 'accounts'
+      and column_name = 'id'
+  ) then
     return null;
   end if;
 
@@ -35,16 +132,26 @@ begin
     searchable_expression := '''''';
   end if;
 
-  execute format(
-    'select id::uuid from public.accounts where %s limit 1',
-    case account_role
-      when 'cash' then format('lower(%s) ~ %L', searchable_expression, '(cash|bank|bank_transfer|receivable_cash|asset|نقد|بنك)')
-      when 'receivable' then format('lower(%s) ~ %L', searchable_expression, '(receivable|accounts receivable|tenant|contract|ذمم|مدين)')
-      else 'false'
-    end
-  ) into account_id;
+  account_match_sql := case account_role
+    when 'cash' then format('lower(%s) ~ %L', searchable_expression, '(cash|bank|bank_transfer|receivable_cash|asset|نقد|بنك)')
+    when 'receivable' then format('lower(%s) ~ %L', searchable_expression, '(receivable|accounts receivable|tenant|contract|ذمم|مدين)')
+    else 'false'
+  end;
 
-  return account_id;
+  execute format(
+    'select count(*)::bigint, min(id::text)::uuid from public.accounts where %s',
+    account_match_sql
+  ) into matched_count, matched_account_id;
+
+  if coalesce(matched_count, 0) = 0 then
+    return null;
+  end if;
+
+  if matched_count > 1 then
+    raise exception 'Multiple % payment accounts matched; configure accounting accounts unambiguously', account_role;
+  end if;
+
+  return matched_account_id;
 end;
 $$;
 
@@ -85,10 +192,22 @@ begin
     raise exception 'Authentication is required to record invoice payments';
   end if;
 
+  if not coalesce(public.is_admin_or_manager(), false) then
+    raise exception 'ADMIN or MANAGER role is required to record invoice payments'
+      using errcode = '42501';
+  end if;
+
   v_request_id := nullif(payload->>'request_id', '');
   if v_request_id is null then
     raise exception 'request_id is required for idempotent payment recording';
   end if;
+
+  perform pg_advisory_xact_lock(
+    hashtextextended(
+      'record_invoice_payment_atomic:' || v_request_id,
+      0
+    )
+  );
 
   select response_payload
     into v_existing_result
@@ -247,8 +366,17 @@ begin
 end;
 $$;
 
-revoke all on function public.find_payment_account_id(text) from public, anon;
-grant execute on function public.find_payment_account_id(text) to authenticated;
-
+revoke all on function public.find_payment_account_id(text) from public, anon, authenticated;
 revoke all on function public.record_invoice_payment_atomic(jsonb) from public, anon;
 grant execute on function public.record_invoice_payment_atomic(jsonb) to authenticated;
+
+do $$
+begin
+  if to_regprocedure('public.post_receipt_atomic(jsonb)') is not null then
+    execute 'revoke all on function public.post_receipt_atomic(jsonb) from public, anon, authenticated';
+    execute 'grant execute on function public.post_receipt_atomic(jsonb) to service_role';
+  end if;
+end;
+$$;
+
+commit;

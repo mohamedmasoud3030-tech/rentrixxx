@@ -18,16 +18,13 @@
 
 DO $$
 BEGIN
-  IF NOT EXISTS (
-    SELECT 1 FROM pg_proc
-    WHERE proname = 'sync_payment_reference_fields'
-      AND pronamespace = 'public'::regnamespace
-  ) THEN
-    RAISE EXCEPTION
-      'sync_payment_reference_fields not found — migration cannot proceed safely';
+  IF to_regprocedure('public.sync_payment_reference_fields()') IS NULL THEN
+    RAISE NOTICE
+      'Skipping search_path hardening because public.sync_payment_reference_fields() does not exist in this schema';
+    RETURN;
   END IF;
+
+  ALTER FUNCTION public.sync_payment_reference_fields()
+    SET search_path = public, pg_temp;
 END;
 $$;
-
-ALTER FUNCTION public.sync_payment_reference_fields()
-  SET search_path = public, pg_temp;
