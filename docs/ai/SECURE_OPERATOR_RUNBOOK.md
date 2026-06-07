@@ -94,6 +94,23 @@ Next action: <specific access, approval, or identifier required>
 
 ## Current next blocker
 
-The next v0.1 roadmap item remains blocked until approved read-only Supabase
-access can identify the exact failed migration state behind `MIGRATIONS_FAILED`.
-No production mutation is authorized by this runbook.
+As of 2026-06-07, the next v0.1 roadmap item is partially unblocked:
+
+**Cleared:**
+- ✅ Live Supabase project confirmed `ACTIVE_HEALTHY`
+- ✅ Migration list retrieved successfully
+- ✅ Database schema and RLS verified
+- ✅ Auth and RPC catalogs inspected
+- ✅ Security advisor findings documented
+- ✅ `custom_access_token_hook` applied via connector
+
+**Still blocked:**
+- ⏸️ Manual Supabase Dashboard registration of custom auth hook (required for JWT role injection)
+- ⏸️ Remaining RPC migrations to apply (3 critical ones needed)
+- ⏸️ Vercel deployment verification (connector read-only access blocked)
+
+**For next continuation:** Read `docs/v01-migration-reconciliation-status.md`. It contains:
+- Complete drift inventory
+- RPC inventory (what exists vs what's missing)
+- Exact next steps (4 ordered actions)
+- Test verification checklist

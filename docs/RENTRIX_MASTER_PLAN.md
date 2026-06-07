@@ -494,3 +494,24 @@ A visible screen is not commercially ready until it has:
 - no orphan financial flows;
 - no legacy architecture regression;
 - passing relevant tests and the full release gate before handoff.
+
+---
+
+## [ADDENDUM] v0.1 Item 4 Migration Reconciliation Status
+
+As of 2026-06-07, a detailed live-connector audit was performed against the intended Supabase project. Results are documented in:
+
+```
+docs/v01-migration-reconciliation-status.md
+```
+
+**Summary:**
+- Live project is ACTIVE_HEALTHY (not broken)
+- 28 local migrations missing from live
+- 11 foreign migrations in live (not in local repo)
+- `custom_access_token_hook` applied via connector ✅
+- `record_invoice_payment_atomic` still needed ⏸️
+- Auth hook registration (manual Dashboard step) still needed ⏸️
+
+**Next agent:** Start there to continue v0.1 item 4.
+
