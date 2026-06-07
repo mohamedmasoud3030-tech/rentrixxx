@@ -3,8 +3,11 @@
 ## Start here
 
 1. Read `README.md`.
-2. Read `docs/ai/ONBOARDING.md` for the canonical reading order and the current constrained-beta application snapshot.
-3. Inspect the repository root and the active app under `artifacts/rentrix/` before changing code.
+2. Read `docs/ai/ONBOARDING.md` for the current application snapshot and canonical reading order.
+3. Read `docs/RENTRIX_MASTER_PLAN.md` for the active release, the next ready item, and the ordered path to `v1.0`.
+4. Read `docs/ai/AGENT_CAPABILITIES.md` and load only the skills relevant to the task.
+5. Read `docs/ai/GIT_TOOLING_POLICY.md` before branch, pull-request, CI, or merge work.
+6. Inspect the repository root and the active app under `artifacts/rentrix/` before changing code.
 
 Use actual code and migrations as the source of truth. Prefer `rg` and `rg --files` for search. Do not infer active behavior from historical reports, recovery folders, or old pull requests.
 
@@ -43,31 +46,25 @@ The current visible constrained-beta navigation and the registered-but-hidden de
 - Reuse legacy code only after comparing it against current architecture and adapting it deliberately.
 - Treat migrations, RLS policies, auth boundaries, environment handling, and financial posting behavior as sensitive surfaces.
 
-## Codex vendor skills
+## Skills and workflows
 
-Codex may use upstream agent or plugin skills vendored or source-locked under `.codex/vendor/`.
-
+- Select one primary workflow from `.ai/workflows/README.md` before implementation.
+- For continuation requests, use the roadmap-continuation workflow and select the first ready item automatically.
+- For non-trivial tasks, consult `.codex/vendor/addy-agent-skills/skills/using-agent-skills/SKILL.md`, then load only task-relevant skills.
+- Use `docs/ai/AGENT_CAPABILITIES.md` as the task-to-skill map.
 - Do not edit upstream skill or plugin files directly.
-- Do not rewrite upstream skill text to make it Rentrix-specific.
-- Put Rentrix-specific instructions in this file, project docs, or task prompts.
-- Do not import vendor skill files from the production bundle.
-- Treat `.codex/vendor/source-lock.json` as the source of truth for upstream repository, commit, and path.
+- Do not import agent-tooling files into the production bundle.
+- If a referenced vendored skill is missing locally, run the documented sync script once when network access is available. Otherwise report the exact blocker.
 
-Available sources:
+## Git working rules
 
-- OpenAI Build Web Apps plugin: `.codex/vendor/openai-build-web-apps/`
-- Anthropic Agent Skills manifest: `.codex/vendor/anthropic-skills/`
-- Addy Osmani Agent Skills: `.codex/vendor/addy-agent-skills/` (start with `skills/using-agent-skills/SKILL.md`)
+Follow `docs/ai/GIT_TOOLING_POLICY.md`.
 
-## Working rules
-
-- Preserve dirty worktrees and avoid destructive Git operations.
-- Keep changes bounded and reviewable.
-- Record durable product or architecture decisions under `docs/decisions/`.
-- Select a workflow from `.ai/workflows/README.md` before implementation.
-- For non-trivial engineering tasks, consult `.codex/vendor/addy-agent-skills/skills/using-agent-skills/SKILL.md`, then load only task-relevant workflows.
-- If a referenced Addy workflow is missing locally, run `scripts/sync-codex-vendor-skills.sh` once. If GitHub access is unavailable, stop and report the exact blocker instead of guessing or retrying alternate routes.
-- Report exact blockers instead of guessing or hiding failed checks.
+- Preserve dirty worktrees.
+- Keep branches, commits, and pull requests narrow.
+- Read branch state, diff, patches, and fresh CI evidence before merging.
+- Avoid destructive Git operations unless a documented branch refresh is required.
+- Report exact blockers instead of guessing or retrying undocumented connector paths.
 
 ## Required verification
 
@@ -85,8 +82,11 @@ pnpm --filter ./artifacts/rentrix run test:financials
 
 For schema or RLS changes, also run the repository-approved database validation flow when the required local or preview Supabase environment is available.
 
-## Optional selected references
+## Selected references
 
-- Current onboarding snapshot: `docs/ai/ONBOARDING.md`
-- Bundle guide: `docs/codex/SELECTED_AGENT_SKILLS.md`
+- Current snapshot: `docs/ai/ONBOARDING.md`
+- Ordered roadmap: `docs/RENTRIX_MASTER_PLAN.md`
+- Skill inventory: `docs/ai/AGENT_CAPABILITIES.md`
+- Git policy: `docs/ai/GIT_TOOLING_POLICY.md`
+- Root cleanup inventory: `docs/reconciliation/02-root-cleanup-candidates.md`
 - Connector operations reference: `.agents/skills/connector-operator/SKILL.md`
