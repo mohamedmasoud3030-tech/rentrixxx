@@ -101,18 +101,31 @@ Read `docs/ai/domain-rules.md` before touching contracts, invoices, payments, re
 
 ## 3. Verified Current Baseline
 
-Baseline source: `main@ea6b79e6eeb9e5168e73c20ccc990efbc862e85b`, after the merged Wave 1 navigation cut.
+Baseline source: `main@5d6d43bbe7a58ec271559f5986be784bcbd04290` (HEAD at foundational review, 2026-06-07).
 
-### 3.1 Recently merged reconciliation work
+### 3.1 Merged work since last recorded baseline (ea6b79e)
 
-| Original request | Final merged result | Purpose |
+| PR | Commit | Purpose |
 | --- | --- | --- |
-| PR #795 | squash commit `a585a118f5a28ba3bbcb277c89dbc9eb74277e2b` | Contract ISO-calendar-date validation and regression coverage. |
-| PR #796 | replacement PR #801, squash commit `0c16f382` | Financial-posting design reconciliation document. |
-| PR #797 | squash commit `b98f50149c1424d1f2f7171fb58b6dc986dd8b9b` | Auth/RLS hardening plan updated with actual read-only connector evidence. |
-| PR #799 | replacement PR #802, squash commit `ea6b79e6eeb9e5168e73c20ccc990efbc862e85b` | Constrained-beta navigation cut, stale-test fixes, mobile-nav decoupling, and route-parity CI coverage. |
+| #803 | `e20f8c0` | Docs: roadmap-driven onboarding, master plan, skill matrix, root architecture, cleanup candidates. |
+| #805 | `6a8af49` | Hygiene: remove tracked Supabase temp metadata, archive recovery notes, prune legacy/support trees. |
+| #806 | `52c2d9a` | feat(audit): implement read-only Audit Log pilot — connect `fetchAuditLog` to `public.audit_log`. |
+| #807 | `5d6d43b` | chore(codex): materialize selected agent skills. |
+| #808 | `6055a07` | fix(audit): fail closed without Supabase env — guard `fetchAuditLog` with `env.isConfigured`. |
 
-### 3.2 Visible constrained-beta navigation
+### 3.2 Current repository state facts (verified from code)
+
+**Supabase temp files:** removed from Git and added to `.gitignore` — v0.1 item 2 (safe root cleanup) is `DONE`.
+
+**Legacy trees removed:** `.migration-backup/`, `artifacts/rentrix/legacy-src/`, `artifacts/mockup-sandbox/` were deleted in PR #805. Recovery knowledge extracted to `archive/recovery-reference/`.
+
+**Audit Log pilot:** `public.audit_log` is being queried read-only in `features/audit/services/audit-log-service.ts`. The Supabase database type file has not been refreshed to include `audit_log`; the service uses a local type cast workaround. Route `/audit-log` remains registered but hidden from navigation.
+
+**Duplicate hooks:** `useProperties.ts` / `use-properties.ts`, `useUnits.ts` / `use-units.ts`, and `useMaintenance.ts` (re-export facade) / `use-maintenance.ts` (real implementation) remain. These are known tech debt. `useMaintenance.ts` is a re-export facade so it is benign; the property and unit pairs need consolidation in v0.2.
+
+**Agent skills materialized:** `.codex/vendor/selected-agent-skills/` materialized in #807.
+
+### 3.3 Visible constrained-beta navigation
 
 Desktop navigation currently exposes only the verified operational core:
 
@@ -145,7 +158,7 @@ Financials
 Arrears
 ```
 
-### 3.3 Registered but intentionally hidden routes
+### 3.4 Registered but intentionally hidden routes
 
 These routes remain registered for controlled recovery and verification, but are hidden from visible constrained-beta navigation:
 
@@ -162,7 +175,17 @@ These routes remain registered for controlled recovery and verification, but are
 
 Do not delete them merely because they are hidden. Do not re-expose them merely because their route modules exist.
 
-### 3.4 Current authorization shape
+Status of deferred feature pages (verified from code):
+- `/maintenance` — service, hook, and page exist; schema backed by migrations; ready for v0.3 review.
+- `/audit-log` — read-only pilot wired to `public.audit_log`; env-guard added; ready for v0.3 decision.
+- `/data-integrity` — page exists under `features/system/`; service present but minimal.
+- `/system` — page and components exist under `features/system/`.
+- `/commissions` — page and service return `status: unavailable` (no schema table confirmed).
+- `/leads` — page and service return `status: unavailable` (no schema table confirmed).
+- `/communication` — page and service return `status: unavailable` (no schema table confirmed).
+- `/lands` — page and service exist under `features/lands/`.
+
+### 3.5 Current authorization shape
 
 - Active router: TanStack Router.
 - Protected routes require a Supabase session.
@@ -171,7 +194,7 @@ Do not delete them merely because they are hidden. Do not re-expose them merely 
 - Frontend role source is `session.user.app_metadata.user_role`.
 - Missing or unknown claims fail closed.
 
-### 3.5 Current verification gate
+### 3.6 Current verification gate
 
 GitHub Actions currently runs:
 
@@ -185,9 +208,9 @@ pnpm --filter ./artifacts/rentrix test
 pnpm --filter ./artifacts/rentrix run test:financials
 ```
 
-The latest merged navigation PR passed the full gate.
+The latest merged PR (#808) passed the full gate.
 
-### 3.6 Current live-environment evidence boundary
+### 3.7 Current live-environment evidence boundary
 
 The committed Wave 1 reconciliation documents record read-only connector evidence against the intended Supabase project:
 
@@ -199,10 +222,10 @@ prohibited project:    rentrix (V2) / ktmizdznbdwvalmmfvfc
 Current known release risk:
 
 ```text
-Supabase default main branch status: MIGRATIONS_FAILED
+Supabase default main branch status: MIGRATIONS_FAILED (last verified June 2026)
 ```
 
-Read-only connector evidence exists for project identity, branch inventory, Supabase security advisors, Supabase performance advisors, and Vercel project listing. Detailed migration-list, table-inventory, SQL catalog, log, Vercel deployment-detail, and environment-target reads remain blocked by the connector safety boundary or unavailable credentials.
+The 2026-06-06 constrained-beta audit returned **NO-GO** due to inability to authenticate to Vercel or Supabase in the execution environment. Repository evidence only. See `docs/CONSTRAINED_BETA_LAUNCH_AUDIT_2026_06_06.md`.
 
 Repository documentation is not authorization to mutate production.
 
@@ -222,7 +245,7 @@ Agents must update the evidence row when a roadmap item changes status through a
 
 ## 5. Continuation Protocol
 
-A continuation request is based on intent, not on a literal keyword. Examples include Arabic or English messages equivalent to “continue”, “resume”, “proceed”, “finish the next step”, or “keep going”.
+A continuation request is based on intent, not on a literal keyword. Examples include Arabic or English messages equivalent to "continue", "resume", "proceed", "finish the next step", or "keep going".
 
 When the user expresses continuation intent, the agent must:
 
@@ -258,7 +281,7 @@ Stop and report the exact blocker when any of these apply:
 
 **Goal:** close the verified operational core for a constrained beta without adding unrelated features.
 
-### 6.1 Completed repository-side work
+### 6.1 Completed work
 
 | Item | Status | Evidence |
 | --- | --- | --- |
@@ -269,26 +292,28 @@ Stop and report the exact blocker when any of these apply:
 | Explicit mobile bottom-nav destinations | `DONE` | Merged replacement PR #802. |
 | Route-parity regression coverage included in CI | `DONE` | Merged replacement PR #802. |
 | Full CI gate after navigation cut | `DONE` | GitHub Actions passed on #802. |
+| Agent onboarding and repository-governance cleanup | `DONE` | Merged PR #803. |
+| Safe root-cleanup PR (temp metadata + legacy trees) | `DONE` | Merged PR #805. `.gitignore` updated. |
+| Audit Log read-only pilot wired | `DONE` | Merged PR #806 + #808. Env-guard added. |
+| Agent skills materialized | `DONE` | Merged PR #807. |
 
 ### 6.2 Remaining ordered work to close v0.1
 
 | Order | Item | Status | Required result |
 | --- | --- | --- | --- |
-| 1 | Agent onboarding and repository-governance cleanup | `READY` | Merge the docs-only onboarding PR: current snapshot, version roadmap, skill matrix, root architecture, and cleanup-candidate inventory. |
-| 2 | Safe root-cleanup PR | `READY` after item 1 | Remove tracked generated `supabase/.temp/*` metadata, add an ignore rule, and verify no runtime or migration dependency. Do not combine risky archive moves. |
-| 3 | Secure operator runbook | `READY` after item 1 | Record redacted environment ownership and the intended/prohibited Supabase refs without committing secrets. Include Vercel project identity evidence where available. |
-| 4 | Read-only live migration-state reconciliation | `BLOCKED` by detailed connector access | Identify the exact failed migration state behind `MIGRATIONS_FAILED`; capture migration list, failure evidence, and safe replay plan. No production mutation. |
-| 5 | Preview-branch migration replay | `BLOCKED` by item 4 and preview access | Prove replay outside production; split any repair into a narrow reviewed migration PR. |
-| 6 | Auth, RLS, and RPC least-privilege reconciliation | `BLOCKED` by detailed catalog access | Verify live hook registration, JWT claims, grants, policies, helper execution, idempotency posture, and posted-payment immutability. Split fixes into narrow PRs. |
-| 7 | Browser/manual operational QA | `BLOCKED` until preview or staging is reachable | Verify RTL desktop, RTL mobile, LTR sanity, protected-route refresh, forms, tables, dialogs, receipt lookup/print, CSV export, PWA install/offline/update, and invalid-route fallback. |
-| 8 | Final constrained-beta release check | `BLOCKED` until items 2–7 close | Run the full CI gate, review live evidence, record residual risks, and decide GO / NO-GO. |
+| 1 | Secure operator runbook | `READY` | Record redacted environment ownership, intended/prohibited Supabase refs, and available Vercel identity evidence without committing secrets. |
+| 2 | Read-only live migration-state reconciliation | `BLOCKED` by detailed connector access | Identify the exact failed migration state behind `MIGRATIONS_FAILED`; capture migration list, failure evidence, and safe replay plan. No production mutation. |
+| 3 | Preview-branch migration replay | `BLOCKED` by item 2 and preview access | Prove replay outside production; split any repair into a narrow reviewed migration PR. |
+| 4 | Auth, RLS, and RPC least-privilege reconciliation | `BLOCKED` by detailed catalog access | Verify live hook registration, JWT claims, grants, policies, helper execution, idempotency posture, and posted-payment immutability. Split fixes into narrow PRs. |
+| 5 | Browser/manual operational QA | `BLOCKED` until preview or staging is reachable | Verify RTL desktop, RTL mobile, LTR sanity, protected-route refresh, forms, tables, dialogs, receipt lookup/print, CSV export, PWA install/offline/update, and invalid-route fallback. |
+| 6 | Final constrained-beta release check | `BLOCKED` until items 1–5 close | Run the full CI gate, review live evidence, record residual risks, and decide GO / NO-GO. |
 
 ### 6.3 v0.1 acceptance gate
 
 Close `v0.1` only when:
 
 - full GitHub Actions gate passes on the release candidate;
-- tracked generated temp metadata is removed from Git history going forward;
+- tracked generated temp metadata is removed from Git history going forward (done in #805);
 - intended live environment ownership is recorded redacted and verified;
 - `MIGRATIONS_FAILED` is reconciled safely through preview evidence;
 - required auth, RLS, and RPC behavior is verified or fixed through reviewed PRs;
@@ -314,7 +339,8 @@ Close `v0.1` only when:
 | 5 | Complete receipt output, print behavior, and operator-facing document polish | `DEFERRED` |
 | 6 | Complete active reports for collection, arrears, expenses, occupancy, and expiring contracts | `DEFERRED` |
 | 7 | Implement or explicitly defer the posted-payment correction UX using reversal and replacement only | `DEFERRED` |
-| 8 | Run UI/UX and React-performance review using the required skills | `DEFERRED` |
+| 8 | Consolidate duplicate hook pairs: `useProperties`/`use-properties`, `useUnits`/`use-units` | `DEFERRED` |
+| 9 | Run UI/UX and React-performance review using the required skills | `DEFERRED` |
 
 ### Acceptance gate
 
@@ -323,6 +349,7 @@ Close `v0.1` only when:
 - money values use one formatting path;
 - no hidden module is re-exposed accidentally;
 - receipt and report behavior is verified;
+- duplicate hook pairs resolved;
 - full CI gate passes.
 
 ## 8. v0.3 — Controlled Operations Recovery
@@ -333,13 +360,14 @@ Close `v0.1` only when:
 
 ### Scope
 
-| Order | Item | Status |
-| --- | --- | --- |
-| 1 | Verify maintenance schema, statuses, indexes, and RLS; then decide whether to re-expose `/maintenance` | `DEFERRED` |
-| 2 | Verify audit source schema and permissions; then decide whether to re-expose `/audit-log` | `DEFERRED` |
-| 3 | Verify data-integrity read model and permissions; then decide whether to re-expose `/data-integrity` | `DEFERRED` |
-| 4 | Verify system-governance source support and permissions; then decide whether to re-expose `/system` | `DEFERRED` |
-| 5 | Add route, permission, UX, and regression-test evidence for each re-exposed module separately | `DEFERRED` |
+| Order | Item | Status | Notes |
+| --- | --- | --- | --- |
+| 1 | Verify maintenance schema, statuses, indexes, and RLS; then decide whether to re-expose `/maintenance` | `DEFERRED` | Service, hook, page, and tests exist. Schema backed by migrations. Likely ready. |
+| 2 | Decide and verify `/audit-log` re-exposure | `DEFERRED` | Read-only pilot wired (#806). `public.audit_log` queried. `database.ts` not refreshed yet. Env-guard in place. |
+| 3 | Verify data-integrity read model and permissions; then decide whether to re-expose `/data-integrity` | `DEFERRED` | Page exists; service minimal. |
+| 4 | Verify system-governance source support and permissions; then decide whether to re-expose `/system` | `DEFERRED` | Page and components exist. |
+| 5 | Refresh `database.ts` types to include `audit_log` and other untracked tables | `DEFERRED` | Currently the audit service uses a local type cast. |
+| 6 | Add route, permission, UX, and regression-test evidence for each re-exposed module separately | `DEFERRED` | |
 
 ### Acceptance gate
 
@@ -357,14 +385,14 @@ Close `v0.1` only when:
 
 ### Scope
 
-| Order | Item | Status |
-| --- | --- | --- |
-| 1 | Decide lands lifecycle, ownership, and reporting scope | `BLOCKED` by product decision |
-| 2 | Decide lead stages, ownership, source, and conversion rules | `BLOCKED` by product decision |
-| 3 | Decide read-only commissions visibility before any settlement workflow | `BLOCKED` by product decision |
-| 4 | Decide communication provider, templates, consent, audit, retries, and failure model | `BLOCKED` by product decision |
-| 5 | Recover approved modules read-only first, one module per narrow PR | `DEFERRED` |
-| 6 | Add writes or external sends only through separate security-reviewed PRs | `DEFERRED` |
+| Order | Item | Status | Notes |
+| --- | --- | --- | --- |
+| 1 | Decide lands lifecycle, ownership, and reporting scope | `BLOCKED` by product decision | Page and service exist under `features/lands/`. |
+| 2 | Decide lead stages, ownership, source, and conversion rules | `BLOCKED` by product decision | Page and service return `unavailable` (no schema table). |
+| 3 | Decide read-only commissions visibility before any settlement workflow | `BLOCKED` by product decision | Page and service return `unavailable` (no schema table). |
+| 4 | Decide communication provider, templates, consent, audit, retries, and failure model | `BLOCKED` by product decision | Page and service return `unavailable` (no schema table). |
+| 5 | Recover approved modules read-only first, one module per narrow PR | `DEFERRED` | |
+| 6 | Add writes or external sends only through separate security-reviewed PRs | `DEFERRED` | |
 
 ### Acceptance gate
 

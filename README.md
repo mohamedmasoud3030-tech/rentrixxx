@@ -107,4 +107,4 @@ For schema or RLS changes, also run the repository-approved Supabase validation 
 
 ## Recovery references
 
-Broad historical recovery trees were removed. Only concise notes under `archive/recovery-reference/` remain for selective maintenance reference, and they must not be imported into the active application.
+Only concise notes under `archive/recovery-reference/` remain for selective maintenance reference, and they must not be imported into the active application. `.migration-backup/` and `artifacts/rentrix/legacy-src/` were removed in PR #805.

@@ -40,6 +40,8 @@ understand-anything/            # generated analysis support only
 
 Do not import agent-tooling files, generated analysis artifacts, or historical recovery modules into the production bundle.
 
+**Removed in PR #805:** `.migration-backup/`, `artifacts/rentrix/legacy-src/`, `artifacts/mockup-sandbox/`. These no longer exist. Do not reference them as if they are available.
+
 ## 3. Current constrained-beta application snapshot
 
 The active application is under `artifacts/rentrix/`. The visible desktop navigation currently exposes the verified operational flow only.
@@ -92,6 +94,19 @@ The following routes remain registered in `artifacts/rentrix/src/routeTree.ts`, 
 
 Do not delete these routes merely because they are hidden. Do not re-expose them in navigation merely because they remain registered.
 
+Current deferred page status (verified June 2026):
+
+| Route | Backend support | Page ready | Service status |
+| --- | --- | --- | --- |
+| `/maintenance` | Schema in migrations | Yes — full service + tests | Ready for v0.3 review |
+| `/audit-log` | `public.audit_log` queried (pilot, PR #806) | Yes — read-only view | Pilot active; `database.ts` not refreshed |
+| `/data-integrity` | Minimal | Yes — page exists | Service minimal |
+| `/system` | Minimal | Yes — page + components | Service minimal |
+| `/lands` | In migrations | Yes — page + service | Needs v0.4 product decision |
+| `/leads` | No confirmed schema table | Yes — page returns unavailable | Needs v0.4 product decision |
+| `/commissions` | No confirmed schema table | Yes — page returns unavailable | Needs v0.4 product decision |
+| `/communication` | No confirmed schema table | Yes — page returns unavailable | Needs v0.4 product decision |
+
 `/accounting` remains registered only as a redirect to `/financials`. Do not wire a general ledger while stabilization is active.
 
 ### Current routing and authorization shape
@@ -121,7 +136,13 @@ Preserve at minimum:
 - outstanding balance is derived through one canonical calculation path;
 - orphan chains are not allowed.
 
-## 5. Required reading order
+## 5. Known tech debt (do not fix during docs-only or audit PRs)
+
+- **Duplicate hook pairs:** `useProperties.ts` / `use-properties.ts` and `useUnits.ts` / `use-units.ts` both exist. `useMaintenance.ts` is a re-export facade over `use-maintenance.ts` (benign). The property/unit pairs need consolidation in v0.2.
+- **`database.ts` type gap:** `public.audit_log` is being queried in the audit pilot but is not in the generated `database.ts` types. A local type cast workaround is in place. Refresh `database.ts` in v0.3.
+- **Supabase MIGRATIONS_FAILED:** the live Supabase project reports a failed migration state. Reconciliation is blocked pending direct connector access. See v0.1 item 2.
+
+## 6. Required reading order
 
 After `AGENTS.md`, read in this order before non-trivial edits:
 
@@ -142,7 +163,7 @@ After `AGENTS.md`, read in this order before non-trivial edits:
 
 Then load only the task-specific references needed for the requested change.
 
-## 6. Source-first execution rules
+## 7. Source-first execution rules
 
 Before editing:
 
@@ -158,7 +179,7 @@ Before editing:
 
 Prefer `rg --files` and `rg` when available. Avoid destructive Git operations. Preserve dirty worktrees. Report exact blockers rather than guessing.
 
-## 7. Continuation behavior
+## 8. Continuation behavior
 
 A continuation request is based on intent, not one exact keyword. When the user asks to continue, resume, proceed, finish the next step, or uses similar wording:
 
@@ -172,7 +193,7 @@ A continuation request is based on intent, not one exact keyword. When the user 
 
 Ask the user only when a real product decision, environment approval, access boundary, or unresolved verification failure blocks safe progress.
 
-## 8. Current CI verification gate
+## 9. Current CI verification gate
 
 For runtime pull requests, GitHub Actions currently runs:
 
@@ -188,14 +209,15 @@ pnpm --filter ./artifacts/rentrix run test:financials
 
 Use targeted tests during implementation, then run the relevant full gate before handoff. For schema or RLS changes, also run the repository-approved Supabase validation flow when the required local or preview environment is available.
 
-## 9. Current release and connector caution
+## 10. Current release and connector caution
 
-The latest committed Wave 1 reconciliation documents record read-only connector evidence and unresolved rollout risk. Before any live Supabase or Vercel action, read:
+Before any live Supabase or Vercel action, read:
 
 ```text
 docs/wave1/1A_CONTRACT_INTEGRITY_RECONCILIATION.md
 docs/wave1/1B_FINANCIAL_POSTING_DESIGN_RECONCILIATION.md
 docs/wave1/1C_AUTH_AND_RLS_HARDENING_PLAN.md
+docs/CONSTRAINED_BETA_LAUNCH_AUDIT_2026_06_06.md
 ```
 
 The latest recorded Supabase boundary is:
@@ -207,11 +229,11 @@ prohibited project:    rentrix (V2) / ktmizdznbdwvalmmfvfc
 
 The latest recorded default Supabase branch status is `MIGRATIONS_FAILED`. Reverify current connector state before rollout. Repository documentation is not authorization to mutate production.
 
-## 10. Cleanup boundary
+## 11. Cleanup boundary
 
 Read `docs/reconciliation/02-root-cleanup-candidates.md` before removing or moving files. Remove only items classified as `safe-delete-proven` in a narrow cleanup PR. Keep archive moves, recovery-source review, optional artifact decisions, and runtime changes separate.
 
-## 11. Documentation maintenance rule
+## 12. Documentation maintenance rule
 
 Update this file when an approved change alters:
 
@@ -221,6 +243,7 @@ Update this file when an approved change alters:
 - authorization roles or role source;
 - the CI verification gate;
 - release-critical connector targeting or rollout cautions;
-- roadmap sequencing or continuation behavior.
+- roadmap sequencing or continuation behavior;
+- known tech debt items.
 
 Keep `README.md`, `AGENTS.md`, `CLAUDE.md`, `docs/README.md`, and `docs/ai/README.md` as short entry points that link here instead of duplicating the full onboarding sequence.
