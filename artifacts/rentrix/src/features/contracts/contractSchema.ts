@@ -5,6 +5,14 @@ const money = z.preprocess(
   z.number({ invalid_type_error: 'قيمة الإيجار مطلوبة' }).positive('قيمة الإيجار يجب أن تكون أكبر من صفر'),
 );
 
+const isoDate = z
+  .string()
+  .regex(/^\d{4}-\d{2}-\d{2}$/, 'التاريخ يجب أن يكون بصيغة YYYY-MM-DD')
+  .refine((value) => {
+    const parsedDate = new Date(`${value}T00:00:00Z`);
+    return !Number.isNaN(parsedDate.getTime()) && parsedDate.toISOString().slice(0, 10) === value;
+  }, 'أدخل تاريخًا صحيحًا');
+
 export const contractStatusValues = ['draft', 'active', 'expired', 'terminated'] as const;
 export const paymentCycleValues = ['monthly', 'quarterly', 'semi_annual', 'annual'] as const;
 
@@ -35,8 +43,8 @@ export const contractSchema = z.object({
   property_id: z.string().uuid('اختر العقار'),
   unit_id: z.string().uuid('اختر الوحدة'),
   tenant_id: z.string().uuid('اختر المستأجر'),
-  start_date: z.string().min(1, 'تاريخ البداية مطلوب'),
-  end_date: z.string().min(1, 'تاريخ النهاية مطلوب'),
+  start_date: isoDate,
+  end_date: isoDate,
   rent_amount: money,
   payment_cycle: z.enum(paymentCycleValues, { required_error: 'دورة السداد مطلوبة' }),
   status: z.enum(contractStatusValues, { required_error: 'الحالة مطلوبة' }),
@@ -45,8 +53,8 @@ export const contractSchema = z.object({
 }).refine((value) => value.end_date >= value.start_date, { path: ['end_date'], message: 'تاريخ النهاية يجب أن يكون بعد تاريخ البداية' });
 
 export const renewalSchema = z.object({
-  new_start: z.string().min(1, 'تاريخ البداية مطلوب'),
-  new_end: z.string().min(1, 'تاريخ النهاية مطلوب'),
+  new_start: isoDate,
+  new_end: isoDate,
   new_amount: money,
 }).refine((value) => value.new_end >= value.new_start, { path: ['new_end'], message: 'تاريخ النهاية يجب أن يكون بعد البداية' });
 
