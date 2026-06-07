@@ -2,15 +2,26 @@
 
 ## Read before editing
 
-1. `docs/ai/README.md`
-2. `docs/ai/product-scope.md`
-3. `docs/ai/domain-rules.md`
-4. `docs/ai/engineering-policy.md`
-5. `docs/ai/release-policy.md`
-6. `docs/decisions/README.md`
-7. `.ai/workflows/README.md`
+1. `README.md`
+2. `docs/ROOT_LAYOUT.md`
+3. `docs/README.md`
+4. `docs/ai/README.md`
+5. `docs/ai/product-scope.md`
+6. `docs/ai/domain-rules.md`
+7. `docs/ai/engineering-policy.md`
+8. `docs/ai/release-policy.md`
+9. `docs/decisions/README.md`
+10. `.ai/workflows/README.md`
 
 Inspect the repository root and the active app under `artifacts/rentrix/` before changing code. Use actual code as the source of truth. Prefer `rg` and `rg --files` for search.
+
+## Root boundary
+
+- Treat `artifacts/rentrix/`, `lib/`, and `supabase/` as the canonical runtime boundary.
+- Treat `artifacts/mockup-sandbox/` and `artifacts/rentrix-promo/` as optional support artifacts only.
+- Treat `.migration-backup/` and `artifacts/rentrix/legacy-src/` as historical recovery sources only.
+- Treat `.agents/`, `.agent-skills/`, `.ai/`, and `.codex/vendor/` as agent-tooling layers, not runtime code.
+- Read `docs/ROOT_LAYOUT.md` before creating a new top-level folder or moving files between root categories.
 
 ## Product boundary
 
