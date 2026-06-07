@@ -128,16 +128,19 @@ Preserve at minimum:
 After `AGENTS.md`, read in this order before non-trivial edits:
 
 1. `README.md`
-2. `docs/ROOT_LAYOUT.md`
-3. `docs/README.md`
-4. `docs/ai/product-scope.md`
-5. `docs/ai/domain-rules.md`
-6. `docs/ai/engineering-policy.md`
-7. `docs/ai/security-policy.md`
-8. `docs/ai/testing-guide.md`
-9. `docs/ai/release-policy.md`
-10. `docs/decisions/README.md`
-11. `.ai/workflows/README.md`
+2. `docs/RENTRIX_MASTER_PLAN.md`
+3. `docs/ai/AGENT_CAPABILITIES.md`
+4. `docs/ai/GIT_TOOLING_POLICY.md`
+5. `docs/ROOT_LAYOUT.md`
+6. `docs/README.md`
+7. `docs/ai/product-scope.md`
+8. `docs/ai/domain-rules.md`
+9. `docs/ai/engineering-policy.md`
+10. `docs/ai/security-policy.md`
+11. `docs/ai/testing-guide.md`
+12. `docs/ai/release-policy.md`
+13. `docs/decisions/README.md`
+14. `.ai/workflows/README.md`
 
 Then load only the task-specific references needed for the requested change.
 
@@ -147,14 +150,31 @@ Before editing:
 
 1. inspect the repository root;
 2. inspect `artifacts/rentrix/`;
-3. confirm the active route, service, schema, migration, and test paths from code;
-4. classify legacy, backup, archive, generated, and vendor files before using them;
-5. choose the applicable workflow from `.ai/workflows/README.md`;
-6. keep the final diff narrow and reviewable.
+3. identify the active roadmap release and first ready item;
+4. confirm the active route, service, schema, migration, and test paths from code;
+5. classify legacy, backup, archive, generated, and vendor files before using them;
+6. choose the applicable workflow from `.ai/workflows/README.md`;
+7. choose the smallest relevant skill set from `AGENT_CAPABILITIES.md`;
+8. follow `GIT_TOOLING_POLICY.md` for branch, diff, PR, CI, and merge work;
+9. keep the final diff narrow and reviewable.
 
 Prefer `rg --files` and `rg` when available. Avoid destructive Git operations. Preserve dirty worktrees. Report exact blockers rather than guessing.
 
-## 7. Current CI verification gate
+## 7. Continuation behavior
+
+A continuation request is based on intent, not one exact keyword. When the user asks to continue, resume, proceed, finish the next step, or uses similar wording:
+
+1. inspect current `main`, open roadmap PRs, and the latest evidence;
+2. select the earliest release that is not closed;
+3. select the first `READY` roadmap item;
+4. load only the relevant skills;
+5. execute one narrow PR slice;
+6. verify it with fresh evidence;
+7. update roadmap evidence and identify the next item.
+
+Ask the user only when a real product decision, environment approval, access boundary, or unresolved verification failure blocks safe progress.
+
+## 8. Current CI verification gate
 
 For runtime pull requests, GitHub Actions currently runs:
 
@@ -170,7 +190,7 @@ pnpm --filter ./artifacts/rentrix run test:financials
 
 Use targeted tests during implementation, then run the relevant full gate before handoff. For schema or RLS changes, also run the repository-approved Supabase validation flow when the required local or preview environment is available.
 
-## 8. Current release and connector caution
+## 9. Current release and connector caution
 
 The latest committed Wave 1 reconciliation documents record read-only connector evidence and unresolved rollout risk. Before any live Supabase or Vercel action, read:
 
@@ -189,7 +209,11 @@ prohibited project:    rentrix (V2) / ktmizdznbdwvalmmfvfc
 
 The latest recorded default Supabase branch status is `MIGRATIONS_FAILED`. Reverify current connector state before rollout. Repository documentation is not authorization to mutate production.
 
-## 9. Documentation maintenance rule
+## 10. Cleanup boundary
+
+Read `docs/reconciliation/02-root-cleanup-candidates.md` before removing or moving files. Remove only items classified as `safe-delete-proven` in a narrow cleanup PR. Keep archive moves, recovery-source review, optional artifact decisions, and runtime changes separate.
+
+## 11. Documentation maintenance rule
 
 Update this file when an approved change alters:
 
@@ -198,6 +222,7 @@ Update this file when an approved change alters:
 - active runtime boundaries;
 - authorization roles or role source;
 - the CI verification gate;
-- release-critical connector targeting or rollout cautions.
+- release-critical connector targeting or rollout cautions;
+- roadmap sequencing or continuation behavior.
 
 Keep `README.md`, `AGENTS.md`, `CLAUDE.md`, `docs/README.md`, and `docs/ai/README.md` as short entry points that link here instead of duplicating the full onboarding sequence.
