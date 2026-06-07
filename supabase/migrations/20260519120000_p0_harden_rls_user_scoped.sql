@@ -12,7 +12,8 @@
 --   1. Create a STABLE SECURITY DEFINER helper is_app_user() that returns TRUE
 --      iff auth.uid() maps to a non-disabled row in public.users.
 --      Using SECURITY DEFINER avoids infinite RLS recursion when querying users.
---   2. Replace every _all_auth policy on all business tables.
+--   2. Replace every _all_auth policy on business tables that exist in the
+--      current schema. Fresh preview replay may not contain legacy tables.
 --   3. Tighten users table to let ADMIN read all user rows (needed for admin UI).
 --   4. Keep write guards for sensitive tables (users: only own row; profiles: own).
 --
@@ -37,6 +38,8 @@ create table if not exists public.users (
 alter table public.users
   add column if not exists role text,
   add column if not exists status text;
+
+alter table public.users enable row level security;
 
 -- ---------------------------------------------------------------------------
 -- 1. Helper: is_app_user()
@@ -92,6 +95,8 @@ grant  execute on function public.is_admin_or_manager() to authenticated;
 
 -- Tables that get a simple "registered app user can do everything" policy.
 -- Write-sensitive tables (users, profiles) are handled separately below.
+-- Some legacy tables are intentionally absent from clean canonical previews, so
+-- harden only relations that exist instead of aborting the migration replay.
 do $$
 declare
   t text;
@@ -109,6 +114,11 @@ declare
   ];
 begin
   foreach t in array core_tables loop
+    if to_regclass(format('public.%I', t)) is null then
+      raise notice 'Skipping app-user RLS hardening for missing table public.%', t;
+      continue;
+    end if;
+
     -- Drop the old flat policy (handles both naming conventions used historically)
     execute format('drop policy if exists %I on public.%I', t || '_all_auth', t);
     execute format('drop policy if exists %I on public.%I', 'authenticated_manage_' || t, t);
@@ -127,16 +137,23 @@ end $$;
 -- ---------------------------------------------------------------------------
 -- 4. audit_log — keep existing split policies, just harden the check
 -- ---------------------------------------------------------------------------
-drop policy if exists audit_log_select on public.audit_log;
-drop policy if exists audit_log_insert on public.audit_log;
+do $$
+begin
+  if to_regclass('public.audit_log') is null then
+    raise notice 'Skipping audit_log RLS hardening because public.audit_log is missing';
+  else
+    execute 'drop policy if exists audit_log_select on public.audit_log';
+    execute 'drop policy if exists audit_log_insert on public.audit_log';
 
-create policy audit_log_select
-on public.audit_log for select to authenticated
-using (public.is_app_user());
+    execute 'create policy audit_log_select
+      on public.audit_log for select to authenticated
+      using (public.is_app_user())';
 
-create policy audit_log_insert
-on public.audit_log for insert to authenticated
-with check (public.is_app_user());
+    execute 'create policy audit_log_insert
+      on public.audit_log for insert to authenticated
+      with check (public.is_app_user())';
+  end if;
+end $$;
 
 -- ---------------------------------------------------------------------------
 -- 5. users table — split into read/write with role awareness
@@ -181,51 +198,68 @@ using (public.is_admin_or_manager());
 -- profiles_update_own) are already correct — no changes needed.
 
 -- ---------------------------------------------------------------------------
--- 7. sessions table — already uses auth.uid() IS NOT NULL; tighten to is_app_user
+-- 7. sessions table — tighten to is_app_user when the legacy table exists
 -- ---------------------------------------------------------------------------
-drop policy if exists sessions_auth_policy on public.sessions;
+do $$
+begin
+  if to_regclass('public.sessions') is null then
+    raise notice 'Skipping sessions RLS hardening because public.sessions is missing';
+  else
+    execute 'drop policy if exists sessions_auth_policy on public.sessions';
 
-create policy sessions_select_own
-on public.sessions for select to authenticated
-using ((select auth.uid()) = id or public.is_admin_or_manager());
+    execute 'create policy sessions_select_own
+      on public.sessions for select to authenticated
+      using ((select auth.uid()) = id or public.is_admin_or_manager())';
 
-create policy sessions_insert_own
-on public.sessions for insert to authenticated
-with check ((select auth.uid()) = id and public.is_app_user());
+    execute 'create policy sessions_insert_own
+      on public.sessions for insert to authenticated
+      with check ((select auth.uid()) = id and public.is_app_user())';
 
-create policy sessions_delete_own
-on public.sessions for delete to authenticated
-using ((select auth.uid()) = id or public.is_admin_or_manager());
+    execute 'create policy sessions_delete_own
+      on public.sessions for delete to authenticated
+      using ((select auth.uid()) = id or public.is_admin_or_manager())';
+  end if;
+end $$;
 
 -- ---------------------------------------------------------------------------
 -- 8. contracts table — drop the legacy contracts_auth_policy and replace
 -- ---------------------------------------------------------------------------
-drop policy if exists contracts_auth_policy on public.contracts;
-drop policy if exists app_user_contracts    on public.contracts;
+do $$
+begin
+  if to_regclass('public.contracts') is null then
+    raise notice 'Skipping contracts RLS hardening because public.contracts is missing';
+  else
+    execute 'drop policy if exists contracts_auth_policy on public.contracts';
+    execute 'drop policy if exists app_user_contracts on public.contracts';
 
-create policy app_user_contracts
-on public.contracts for all to authenticated
-using  (public.is_app_user())
-with check (public.is_app_user());
+    execute 'create policy app_user_contracts
+      on public.contracts for all to authenticated
+      using  (public.is_app_user())
+      with check (public.is_app_user())';
+  end if;
+end $$;
 
 -- ---------------------------------------------------------------------------
--- 9. Ensure FORCE ROW LEVEL SECURITY on all tables that store business data
+-- 9. Ensure FORCE ROW LEVEL SECURITY on all existing business-data tables
 --    (prevents table owners / service role bypasses from going unnoticed)
 -- ---------------------------------------------------------------------------
-alter table public.properties            force row level security;
-alter table public.units                 force row level security;
-alter table public.tenants               force row level security;
-alter table public.owners                force row level security;
-alter table public.contracts             force row level security;
-alter table public.invoices              force row level security;
-alter table public.receipts              force row level security;
-alter table public.receipt_allocations   force row level security;
-alter table public.expenses              force row level security;
-alter table public.maintenance_records   force row level security;
-alter table public.payments              force row level security;
-alter table public.journal_entries       force row level security;
-alter table public.deposit_txs           force row level security;
-alter table public.accounts              force row level security;
-alter table public.owner_settlements     force row level security;
+do $$
+declare
+  t text;
+  force_rls_tables text[] := array[
+    'properties','units','tenants','owners','contracts','invoices','receipts',
+    'receipt_allocations','expenses','maintenance_records','payments',
+    'journal_entries','deposit_txs','accounts','owner_settlements'
+  ];
+begin
+  foreach t in array force_rls_tables loop
+    if to_regclass(format('public.%I', t)) is null then
+      raise notice 'Skipping FORCE ROW LEVEL SECURITY for missing table public.%', t;
+      continue;
+    end if;
+
+    execute format('alter table public.%I force row level security', t);
+  end loop;
+end $$;
 
 commit;
