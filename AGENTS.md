@@ -1,19 +1,12 @@
 # Rentrix Agent Instructions
 
-## Read before editing
+## Start here
 
-1. `README.md`
-2. `docs/ROOT_LAYOUT.md`
-3. `docs/README.md`
-4. `docs/ai/README.md`
-5. `docs/ai/product-scope.md`
-6. `docs/ai/domain-rules.md`
-7. `docs/ai/engineering-policy.md`
-8. `docs/ai/release-policy.md`
-9. `docs/decisions/README.md`
-10. `.ai/workflows/README.md`
+1. Read `README.md`.
+2. Read `docs/ai/ONBOARDING.md` for the canonical reading order and the current constrained-beta application snapshot.
+3. Inspect the repository root and the active app under `artifacts/rentrix/` before changing code.
 
-Inspect the repository root and the active app under `artifacts/rentrix/` before changing code. Use actual code as the source of truth. Prefer `rg` and `rg --files` for search.
+Use actual code and migrations as the source of truth. Prefer `rg` and `rg --files` for search. Do not infer active behavior from historical reports, recovery folders, or old pull requests.
 
 ## Root boundary
 
@@ -28,6 +21,8 @@ Inspect the repository root and the active app under `artifacts/rentrix/` before
 Rentrix is a focused single-office property operations system. It is Arabic-first with RTL support and must remain safe for English/LTR usage.
 
 Do not reintroduce SaaS multi-tenancy. Do not wire a general accounting ledger during stabilization. Do not expand scope while performing audits, repairs, or release-readiness work.
+
+The current visible constrained-beta navigation and the registered-but-hidden deferred routes are documented in `docs/ai/ONBOARDING.md`. Do not re-expose or delete deferred routes casually.
 
 ## Domain invariants
 
@@ -46,7 +41,7 @@ Do not reintroduce SaaS multi-tenancy. Do not wire a general accounting ledger d
 - Keep the current TanStack Router, React Query, Supabase, PWA, RTL, and i18n direction.
 - Do not restore legacy `useApp`, `AppContext`, `dataService`, local database flows, or `react-router-dom` into the active app.
 - Reuse legacy code only after comparing it against current architecture and adapting it deliberately.
-- Treat migrations, RLS policies, and environment handling as sensitive boundaries.
+- Treat migrations, RLS policies, auth boundaries, environment handling, and financial posting behavior as sensitive surfaces.
 
 ## Codex vendor skills
 
@@ -76,18 +71,22 @@ Available sources:
 
 ## Required verification
 
-For runtime changes:
+For runtime pull requests, use the current GitHub Actions gate defined in `.github/workflows/ci.yml`:
 
 ```bash
-pnpm --filter ./artifacts/rentrix run typecheck
-pnpm --filter ./artifacts/rentrix run build
-pnpm --filter ./artifacts/rentrix run lint
-pnpm --filter ./artifacts/rentrix run test
+pnpm install --frozen-lockfile
+pnpm typecheck
+pnpm lint
+pnpm build
+pnpm --filter ./artifacts/rentrix run typecheck:test
+pnpm --filter ./artifacts/rentrix test
+pnpm --filter ./artifacts/rentrix run test:financials
 ```
 
-For schema or RLS changes, also run the repository-approved database validation flow when the local Supabase environment is available.
+For schema or RLS changes, also run the repository-approved database validation flow when the required local or preview Supabase environment is available.
 
 ## Optional selected references
 
+- Current onboarding snapshot: `docs/ai/ONBOARDING.md`
 - Bundle guide: `docs/codex/SELECTED_AGENT_SKILLS.md`
 - Connector operations reference: `.agents/skills/connector-operator/SKILL.md`
