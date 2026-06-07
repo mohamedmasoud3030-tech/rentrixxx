@@ -37,6 +37,7 @@ Decision: `BLOCKED BY PREVIEW AUTH`
 ## 5. Forward Migration Added
 
 - Added `20260608000100_harden_invoice_payment_idempotency_rollout.sql`.
+- Added `20260608000200_ensure_financial_operation_idempotency_operation_request_unique.sql` so `ON CONFLICT (operation_name, request_id)` remains valid even on drifted schemas with an unrelated existing primary key.
 - Ensures `public.financial_operation_idempotency` exists with required columns, primary key, RLS enabled, and no direct table grants to `public`, `anon`, or `authenticated`.
 - Adds `receipts.request_id` when `receipts` exists.
 - Aborts clearly before creating `receipts_request_id_uidx` if duplicate non-null `receipts.request_id` values already exist.
@@ -128,7 +129,8 @@ drop index if exists public.receipts_request_id_uidx;
 -- alter table if exists public.receipts drop column if exists request_id;
 
 -- Only drop this table if no operation has stored idempotency records that must be retained.
--- drop table if exists public.financial_operation_idempotency;
+-- drop index if exists public.financial_operation_idempotency_operation_request_uidx;
+drop table if exists public.financial_operation_idempotency;
 
 commit;
 ```
