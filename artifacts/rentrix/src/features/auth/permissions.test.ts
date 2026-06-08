@@ -36,11 +36,12 @@ describe('canonical authorization permissions', () => {
     expect(canAccessRoute(context, 'settings.manage')).toBe(false);
   });
 
-  it('denies access when the user context is missing', () => {
+  it('keeps unrestricted navigation visible while permission checks fail closed without a role claim', () => {
     expect(getAuthorizationContextFromUser(null)).toBeNull();
     expect(canAccess(null, 'app.dashboard.view')).toBe(false);
     expect(canAccessRoute(null, 'app.dashboard.view')).toBe(false);
-    expect(canShowNavigationItem(null, undefined)).toBe(false);
+    expect(canShowNavigationItem(null, undefined)).toBe(true);
+    expect(canShowNavigationItem(null, 'settings.manage')).toBe(false);
   });
 
   it('denies access when the role is unknown', () => {
