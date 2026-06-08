@@ -107,5 +107,5 @@ export function canAccessRoute(context: AuthorizationContext | null | undefined,
 }
 
 export function canShowNavigationItem(context: AuthorizationContext | null | undefined, permission: AppPermission | null | undefined): boolean {
-  return canAccessRoute(context, permission);
+  return permission ? canAccess(context, permission) : true;
 }
