@@ -85,6 +85,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
       isAuthenticated: Boolean(session),
       login: async (email, password) => {
         await signInWithEmail(email, password);
+        globalThis.location.replace('/');
       },
       logout: async () => {
         await signOut();
