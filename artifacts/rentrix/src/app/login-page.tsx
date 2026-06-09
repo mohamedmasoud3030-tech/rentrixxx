@@ -1,6 +1,7 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import { useRouter } from '@tanstack/react-router';
 import {
+  AlertTriangle,
   ArrowLeft,
   BarChart3,
   Building2,
@@ -15,9 +16,11 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
+import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { useAuth } from '@/hooks/use-auth';
 import { supabase } from '@/integrations/supabase/client';
+import { getEnvDiagnostics } from '@/lib/runtime-diagnostics';
 
 const highlights = [
   { icon: Building2, title: 'إدارة واضحة للأصول', description: 'العقارات والوحدات والعقود في مساحة عمل واحدة.' },
@@ -28,6 +31,7 @@ const highlights = [
 export function LoginPage() {
   const router = useRouter();
   const { login } = useAuth();
+  const envDiagnostics = getEnvDiagnostics();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
@@ -140,6 +144,23 @@ export function LoginPage() {
               سجل الدخول للمتابعة من حيث توقفت وإدارة يومك من لوحة واحدة.
             </p>
           </div>
+
+          {envDiagnostics.length > 0 ? (
+            <Card className="mb-5 border-destructive/40 bg-destructive/5" role="alert" aria-live="assertive">
+              <CardHeader className="p-4">
+                <CardTitle className="flex items-center gap-2 text-base text-destructive">
+                  <AlertTriangle className="size-4" />
+                  يتعذر إكمال تسجيل الدخول بسبب إعدادات تشغيل ناقصة
+                </CardTitle>
+                <CardDescription className="text-sm leading-6 text-destructive/90">
+                  {envDiagnostics[0]?.messageAr}
+                </CardDescription>
+                <CardDescription className="text-xs leading-5 text-destructive/80">
+                  يلزم ضبط إعدادات Supabase في بيئة النشر ثم إعادة تحميل الصفحة.
+                </CardDescription>
+              </CardHeader>
+            </Card>
+          ) : null}
 
           <form className="space-y-5" onSubmit={handleSubmit}>
             <label className="grid gap-2 text-sm font-black text-foreground">
