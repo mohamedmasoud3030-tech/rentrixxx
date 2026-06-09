@@ -305,12 +305,14 @@ Stop and report the exact blocker when any of these apply:
 | 2 | Read-only live migration-state reconciliation | `BLOCKED` by detailed connector access | Identify the exact failed migration state behind `MIGRATIONS_FAILED`; capture migration list, failure evidence, and safe replay plan. No production mutation. |
 | 3 | Preview-branch migration replay | `BLOCKED` by item 2 and preview access | Prove replay outside production; split any repair into a narrow reviewed migration PR. |
 | 4 | Auth, RLS, and RPC least-privilege reconciliation | `IN PROGRESS` — security hardening applied; idempotency stack deferred | Applied: search_path fix on sync_payment_reference_fields; revoked authenticated EXECUTE on is_app_user and is_admin_or_manager. Security Advisor: 3/4 warnings cleared; 1 dashboard-only residual. Idempotency: financial_operation_idempotency, receipts.request_id, and record_invoice_payment_atomic missing on live — separate PR required. See docs/v01-security-reconciliation-final.md. |
-| 5 | Browser/manual operational QA | `BLOCKED` until preview or staging is reachable | Verify RTL desktop, RTL mobile, LTR sanity, protected-route refresh, forms, tables, dialogs, receipt lookup/print, CSV export, PWA install/offline/update, and invalid-route fallback. |
+| 5 | Browser/manual operational QA | `BLOCKED` by deployment auth/env setup | Deployment is reachable at `rentrix-alpha.vercel.app`, but authenticated QA remains blocked until valid Vercel Supabase env values are present, the Custom Access Token hook is registered, and approved ADMIN credentials are available. Verify RTL desktop, RTL mobile, LTR sanity, protected-route refresh, forms, tables, dialogs, receipt lookup/print, CSV export, PWA install/offline/update, and invalid-route fallback. |
 | 6 | Final constrained-beta release check | `BLOCKED` until items 1–5 close | Run the full CI gate, review live evidence, record residual risks, and decide GO / NO-GO. |
 
 Repository-side migration evidence preflight now runs in CI after dependency installation. This keeps the local canonical migration chain guarded while live migration-state reconciliation remains blocked by approved read-only Supabase access.
 
-Next continuation item: order 2 remains blocked until approved read-only Supabase access can identify the exact failed migration state behind `MIGRATIONS_FAILED`. No production mutation is authorized by the secure operator runbook.
+Latest execution note: `docs/v01-migration-reconciliation-status.md` is the active status source for the current v0.1 continuation. On 2026-06-09, browser execution reached `rentrix-alpha.vercel.app/login`, but the deployed app reported incomplete Supabase runtime environment, so item 5 remains blocked by deployment configuration and manual auth-hook setup rather than deployment reachability alone.
+
+Next continuation item: complete the deployment prerequisites for item 5 by setting valid Vercel Supabase environment values, registering the Custom Access Token hook in the Supabase Dashboard, then rerun authenticated browser/manual operational QA. No production mutation is authorized by the secure operator runbook.
 
 ### 6.3 v0.1 acceptance gate
 
@@ -514,4 +516,3 @@ docs/v01-migration-reconciliation-status.md
 - Auth hook registration (manual Dashboard step) still needed ⏸️
 
 **Next agent:** Start there to continue v0.1 item 4.
-
