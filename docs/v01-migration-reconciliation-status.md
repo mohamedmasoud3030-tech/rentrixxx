@@ -147,6 +147,20 @@ Checklist:
 - [ ] Change password flow works
 - [ ] Sign out and sign in again
 
+#### 2026-06-09 execution attempt
+- Reached `https://rentrix-alpha.vercel.app/login` successfully in browser.
+- Login page renders in Arabic RTL with email/password fields and submit action visible.
+- Browser console reports: `Supabase environment is incomplete. Runtime diagnostics will be shown in UI.`
+- This matches repository runtime behavior in `artifacts/rentrix/src/lib/env.ts` and `artifacts/rentrix/src/integrations/supabase/client.ts`: when `VITE_SUPABASE_URL` or `VITE_SUPABASE_ANON_KEY` is missing or placeholder-valued, the app falls back to invalid Supabase settings.
+- Result: authenticated operational QA is currently blocked by deployment configuration before route-level validation can begin.
+- Additional blocker: the required manual Custom Access Token hook registration above is still not verified from repository-side evidence.
+
+#### Updated next action for Item 5
+1. Set valid `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` on the deployed Vercel environment serving `rentrix-alpha.vercel.app`.
+2. Redeploy and confirm the browser console no longer reports incomplete Supabase environment.
+3. Register `pg-functions://postgres/public/custom_access_token_hook` in Supabase Dashboard.
+4. Re-run the full authenticated browser/manual QA checklist with approved ADMIN credentials.
+
 ### v0.1 Item 6: Final Constrained-Beta Release Check
 After browser QA passes:
 - Run full CI gate
@@ -163,4 +177,3 @@ After browser QA passes:
 | `3165efa` | PR #815 merge — security reconciliation |
 | `9dc398d` | PR #816 merge — idempotency rollout |
 | `86d7665` | PR #817 merge — dashboard RPC fix |
-
