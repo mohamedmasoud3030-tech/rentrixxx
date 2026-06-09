@@ -74,3 +74,40 @@ BEGIN
     END LOOP;
   END LOOP;
 END $$;
+
+-- =============================================================================
+-- SECTION 7 PREP: account_balances legacy totals for reconciliation view replay
+-- =============================================================================
+DO $$
+BEGIN
+  IF to_regclass('public.account_balances') IS NULL THEN
+    RAISE NOTICE 'Skipping account_balances reconciliation totals because public.account_balances does not exist yet.';
+    RETURN;
+  END IF;
+
+  ALTER TABLE public.account_balances
+    ADD COLUMN IF NOT EXISTS debit_total numeric NOT NULL DEFAULT 0,
+    ADD COLUMN IF NOT EXISTS credit_total numeric NOT NULL DEFAULT 0;
+
+  IF EXISTS (
+    SELECT 1
+    FROM information_schema.columns
+    WHERE table_schema = 'public'
+      AND table_name = 'account_balances'
+      AND column_name = 'balance'
+  ) THEN
+    EXECUTE $sql$
+      UPDATE public.account_balances
+      SET debit_total = CASE
+            WHEN COALESCE(balance, 0::numeric) >= 0 THEN COALESCE(balance, 0::numeric)
+            ELSE 0::numeric
+          END,
+          credit_total = CASE
+            WHEN COALESCE(balance, 0::numeric) < 0 THEN ABS(COALESCE(balance, 0::numeric))
+            ELSE 0::numeric
+          END
+      WHERE COALESCE(debit_total, 0::numeric) = 0::numeric
+        AND COALESCE(credit_total, 0::numeric) = 0::numeric
+    $sql$;
+  END IF;
+END $$;
