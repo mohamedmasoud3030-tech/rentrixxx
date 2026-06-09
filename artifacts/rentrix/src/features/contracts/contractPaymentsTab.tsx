@@ -26,14 +26,19 @@ import { useContractPayments } from './useContractPayments';
 const arabicDateFormatter = new Intl.DateTimeFormat('ar', {
   dateStyle: 'medium',
 });
-const invoiceStatusTone = {
+const invoiceStatusTone: Record<string, string> = {
   draft: 'gray',
   issued: 'blue',
+  UNPAID: 'blue',
   partial: 'gold',
+  PARTIALLY_PAID: 'gold',
   paid: 'green',
+  PAID: 'green',
   overdue: 'red',
+  OVERDUE: 'red',
   void: 'gray',
-} as const;
+  VOID: 'gray',
+};
 
 function formatDate(value: string): string {
   return arabicDateFormatter.format(new Date(value));
@@ -119,7 +124,7 @@ function ContractInvoicesTable({
               </TableCell>
               <TableCell>{formatDate(invoice.due_date)}</TableCell>
               <TableCell>
-                <StatusBadge tone={invoiceStatusTone[invoice.status]}>
+                <StatusBadge tone={(invoiceStatusTone[invoice.status ?? ''] ?? 'gray') as 'gray' | 'blue' | 'gold' | 'green' | 'red'}>
                   {invoiceStatusLabels[invoice.status]}
                 </StatusBadge>
               </TableCell>

@@ -38,7 +38,7 @@ export async function listUnitsByProperty(propertyId: string): Promise<Unit[]> {
 }
 
 export async function createUnit(propertyId: string, payload: UnitPayload): Promise<Unit> {
-  const insertPayload: UnitInsert = { ...payload, property_id: propertyId, name: payload.unit_number ?? payload.name ?? '' };
+  const insertPayload: UnitInsert = { ...payload, property_id: propertyId };
   const { data, error } = await supabase.from('units').insert(insertPayload).select('*').single().returns<Unit>();
   if (error) throw error;
   return normalizeUnit(data);

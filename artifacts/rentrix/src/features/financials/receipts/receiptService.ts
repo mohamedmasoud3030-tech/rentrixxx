@@ -45,7 +45,7 @@ function toReceiptRecord(
   propertyById: Map<string, ReceiptPropertyContext>,
   tenantById: Map<string, ReceiptTenantContext>,
 ): ReceiptRecord {
-  const invoice = invoiceById.get(payment.invoice_id) ?? null;
+  const invoice = payment.invoice_id ? (invoiceById.get(payment.invoice_id) ?? null) : null;
   const contract = invoice?.contract_id ? contractById.get(invoice.contract_id) ?? null : null;
   const unit = contract?.unit_id ? unitById.get(contract.unit_id) ?? null : null;
   const property = contract?.property_id ? propertyById.get(contract.property_id) ?? null : null;
@@ -55,12 +55,12 @@ function toReceiptRecord(
     id: payment.id,
     receipt_number: formatReceiptNumber(payment.id),
     payment_id: payment.id,
-    invoice_id: payment.invoice_id,
+    invoice_id: payment.invoice_id ?? null,
     invoice_status: invoice?.status ?? null,
     contract_id: invoice?.contract_id ?? null,
-    payment_date: payment.payment_date,
-    amount: payment.amount,
-    payment_method: payment.payment_method,
+    payment_date: payment.payment_date ?? '',
+    amount: payment.amount ?? 0,
+    payment_method: payment.payment_method ?? '',
     reference_number: payment.reference_number,
     created_at: payment.created_at,
     status: 'posted',

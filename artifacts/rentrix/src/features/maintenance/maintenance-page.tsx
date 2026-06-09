@@ -129,14 +129,14 @@ export function MaintenancePage() {
   return (
     <div className="space-y-6" dir="rtl">
       <div className="grid gap-2 md:grid-cols-3">
-        <select className="rounded border px-2 py-2" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value as MaintenanceStatusFilter)}>
+        <select className="rounded border px-2 py-2" value={String(statusFilter)} onChange={(e) => setStatusFilter(e.target.value as MaintenanceStatusFilter)}>
           <option value="all">كل الحالات</option>
           <option value="open">مفتوح</option>
           <option value="in_progress">قيد التنفيذ</option>
           <option value="resolved">تم الحل</option>
           <option value="closed">مغلق</option>
         </select>
-        <select className="rounded border px-2 py-2" value={priorityFilter} onChange={(e) => setPriorityFilter(e.target.value as MaintenancePriorityFilter)}>
+        <select className="rounded border px-2 py-2" value={String(priorityFilter)} onChange={(e) => setPriorityFilter(e.target.value as MaintenancePriorityFilter)}>
           <option value="all">كل الأولويات</option>
           <option value="low">منخفضة</option>
           <option value="medium">متوسطة</option>
@@ -204,13 +204,13 @@ export function MaintenancePage() {
           columns={[
             { key: 'title', header: 'العنوان', render: (row) => row.title },
             { key: 'location', header: 'العقار / الوحدة', render: (row) => buildMaintenanceLocationLabel(row, properties, allUnits) },
-            { key: 'status', header: 'الحالة', render: (row) => maintenanceStatusLabels[row.status] },
-            { key: 'priority', header: 'الأولوية', render: (row) => maintenancePriorityLabels[row.priority] },
+            { key: 'status', header: 'الحالة', render: (row) => maintenanceStatusLabels[row.status as keyof typeof maintenanceStatusLabels] ?? row.status ?? '—' },
+            { key: 'priority', header: 'الأولوية', render: (row) => maintenancePriorityLabels[row.priority as keyof typeof maintenancePriorityLabels] ?? row.priority ?? '—' },
             {
               key: 'actions',
               header: 'الإجراء التالي',
               render: (row) => {
-                const actions = getMaintenanceStatusActions(row.status);
+                const actions = getMaintenanceStatusActions((row.status ?? '') as keyof typeof maintenanceStatusLabels);
                 if (!actions.length) {
                   return '—';
                 }

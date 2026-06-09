@@ -101,6 +101,7 @@ export type Database = {
       units: {
         Row: {
           id: string;
+          name: string | null;
           property_id: string;
           unit_number: string;
           floor: string | null;
@@ -163,7 +164,7 @@ export type Database = {
           due_date: string;
           amount: number;
           paid_amount: number;
-          status: 'draft' | 'issued' | 'partial' | 'paid' | 'overdue' | 'void';
+          status: 'UNPAID' | 'PARTIALLY_PAID' | 'PAID' | 'OVERDUE' | 'VOID' | 'draft' | 'issued' | 'partial' | 'paid' | 'overdue' | 'void' | string;
           notes: string | null;
           created_at: string;
           updated_at: string;
@@ -177,9 +178,9 @@ export type Database = {
         Row: {
           id: string;
           invoice_id: string | null;
-          amount: number | null;
-          payment_method: string | null;
-          payment_date: string | null;
+          amount: number;
+          payment_method: 'cash' | 'bank_transfer' | 'card' | 'check' | 'other' | string;
+          payment_date: string;
           reference_number: string | null;
           reference_no: string | null;
           contract_id: string | null;
@@ -193,7 +194,7 @@ export type Database = {
           updated_at: string;
           deleted_at: string | null;
         };
-        Insert: Partial<Database['public']['Tables']['payments']['Row']> & Pick<Database['public']['Tables']['payments']['Row'], 'amount'>;
+        Insert: Partial<Database['public']['Tables']['payments']['Row']> & Pick<Database['public']['Tables']['payments']['Row'], 'amount' | 'payment_method' | 'payment_date'>;
         Update: Partial<Database['public']['Tables']['payments']['Row']>;
         Relationships: [];
       };
@@ -203,9 +204,9 @@ export type Database = {
           id: string;
           no: string | null;
           contract_id: string | null;
-          date_time: string | null;
+          date_time: string;
           channel: string | null;
-          amount: number | null;
+          amount: number;
           ref: string | null;
           notes: string | null;
           status: string | null;
@@ -216,11 +217,11 @@ export type Database = {
           voided_at: number | null;
           request_id: string | null;
           tenant_id: string | null;
-          created_at: string | null;
+          created_at: string;
           updated_at: string | null;
           deleted_at: number | null;
         };
-        Insert: Partial<Database['public']['Tables']['receipts']['Row']> & Pick<Database['public']['Tables']['receipts']['Row'], 'amount'>;
+        Insert: Partial<Database['public']['Tables']['receipts']['Row']> & Pick<Database['public']['Tables']['receipts']['Row'], 'contract_id' | 'date_time' | 'amount'>;
         Update: Partial<Database['public']['Tables']['receipts']['Row']>;
         Relationships: [];
       };
@@ -228,14 +229,14 @@ export type Database = {
       receipt_allocations: {
         Row: {
           id: string;
-          receipt_id: string | null;
+          receipt_id: string;
           invoice_id: string | null;
-          amount: number | null;
+          amount: number;
           tenant_id: string | null;
-          created_at: string | null;
+          created_at: string;
           updated_at: string | null;
         };
-        Insert: Partial<Database['public']['Tables']['receipt_allocations']['Row']> & Pick<Database['public']['Tables']['receipt_allocations']['Row'], 'amount'>;
+        Insert: Partial<Database['public']['Tables']['receipt_allocations']['Row']> & Pick<Database['public']['Tables']['receipt_allocations']['Row'], 'receipt_id' | 'amount'>;
         Update: Partial<Database['public']['Tables']['receipt_allocations']['Row']>;
         Relationships: [];
       };
@@ -248,8 +249,8 @@ export type Database = {
           unit_id: string | null;
           title: string | null;
           description: string | null;
-          priority: string | null;
-          status: string | null;
+          priority: 'low' | 'medium' | 'high' | 'urgent' | 'NORMAL' | string | null;
+          status: 'open' | 'in_progress' | 'resolved' | 'closed' | string | null;
           assigned_to: string | null;
           cost: number | null;
           charged_to: string | null;

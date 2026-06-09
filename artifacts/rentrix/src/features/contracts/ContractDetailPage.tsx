@@ -94,6 +94,7 @@ const toPdfUnit = (unit: ContractDetail['units'], propertyId: string): Unit | nu
   unit
     ? {
         ...unit,
+        name: null,
         property_id: propertyId,
         notes: null,
         created_at: new Date().toISOString(),
