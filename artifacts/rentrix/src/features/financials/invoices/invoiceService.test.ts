@@ -26,7 +26,7 @@ function createInvoiceFixture(overrides: Partial<InvoiceFixture> = {}): InvoiceF
     id: 'invoice_1',
     amount: 750,
     paid_amount: 250,
-    status: 'partial',
+    status: 'PARTIALLY_PAID',
     contracts: null,
     ...overrides,
   };
@@ -115,7 +115,7 @@ describe('invoiceService financial reconciliation', () => {
 
     expect(log).toEqual(expect.arrayContaining([
       { table: 'invoices', method: 'is', args: ['deleted_at', null] },
-      { table: 'invoices', method: 'eq', args: ['status', 'partial'] },
+      { table: 'invoices', method: 'eq', args: ['status', 'PARTIALLY_PAID'] },
       { table: 'invoices', method: 'or', args: ['id.ilike."%invoice\\_\\%%",status.ilike."%invoice\\_\\%%"'] },
     ]));
     expect(supabaseMock.rpc).not.toHaveBeenCalled();

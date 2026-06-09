@@ -5,6 +5,7 @@ import { getUnitPageStatus, summarizeUnitsForUnitsPage } from './units-page';
 function makeUnit(overrides: Partial<Unit> = {}): Unit {
   return {
     id: 'unit-1',
+    name: null,
     property_id: 'property-1',
     unit_number: '101',
     floor: null,
