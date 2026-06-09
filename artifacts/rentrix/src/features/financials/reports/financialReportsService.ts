@@ -701,7 +701,7 @@ async function loadPaymentContexts(payments: PaymentReportRow[]): Promise<Paymen
   const contractById = new Map((contracts ?? []).map((contract) => [contract.id, contract]));
 
   return payments.map((payment) => {
-    const invoice = invoiceById.get(payment.invoice_id) ?? null;
+    const invoice = payment.invoice_id ? (invoiceById.get(payment.invoice_id) ?? null) : null;
     return {
       ...payment,
       invoice,

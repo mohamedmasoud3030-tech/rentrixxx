@@ -70,12 +70,12 @@ function toPaymentRow(
 ): ContractInvoicePaymentRow {
   return {
     id: payment.id,
-    invoice_id: payment.invoice_id,
+    invoice_id: payment.invoice_id ?? invoice.id,
     invoice_status: invoice.status,
     invoice_due_date: invoice.due_date,
-    payment_date: payment.payment_date,
-    amount: payment.amount,
-    payment_method: payment.payment_method,
+    payment_date: payment.payment_date ?? '',
+    amount: payment.amount ?? 0,
+    payment_method: payment.payment_method ?? '',
     reference_number: payment.reference_number,
     receipt_reference: formatReceiptNumber(payment.id),
   };
@@ -137,14 +137,14 @@ export async function getContractPaymentsSnapshot(
   );
   const paymentsByInvoiceId = new Map<string, ContractInvoicePaymentRow[]>();
   const payments = (paymentRows ?? []).flatMap((payment) => {
-    const invoice = invoicesById.get(payment.invoice_id);
+    const invoice = payment.invoice_id ? invoicesById.get(payment.invoice_id) : undefined;
     if (!invoice) {
       return [];
     }
 
     const row = toPaymentRow(payment, invoice);
-    paymentsByInvoiceId.set(payment.invoice_id, [
-      ...(paymentsByInvoiceId.get(payment.invoice_id) ?? []),
+    paymentsByInvoiceId.set(payment.invoice_id ?? '', [
+      ...(paymentsByInvoiceId.get(payment.invoice_id ?? '') ?? []),
       row,
     ]);
     return [row];

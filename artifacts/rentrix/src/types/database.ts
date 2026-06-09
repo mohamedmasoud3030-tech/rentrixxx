@@ -101,6 +101,7 @@ export type Database = {
       units: {
         Row: {
           id: string;
+          name: string | null;
           property_id: string;
           unit_number: string;
           floor: string | null;
@@ -163,7 +164,7 @@ export type Database = {
           due_date: string;
           amount: number;
           paid_amount: number;
-          status: 'draft' | 'issued' | 'partial' | 'paid' | 'overdue' | 'void';
+          status: 'UNPAID' | 'PARTIALLY_PAID' | 'PAID' | 'OVERDUE' | 'VOID' | 'draft' | 'issued' | 'partial' | 'paid' | 'overdue' | 'void' | string;
           notes: string | null;
           created_at: string;
           updated_at: string;
@@ -176,17 +177,24 @@ export type Database = {
       payments: {
         Row: {
           id: string;
-          invoice_id: string;
+          invoice_id: string | null;
           amount: number;
-          payment_method: 'cash' | 'bank_transfer' | 'card' | 'check' | 'other';
+          payment_method: 'cash' | 'bank_transfer' | 'card' | 'check' | 'other' | string;
           payment_date: string;
           reference_number: string | null;
-          payment_reference: string | null;
+          reference_no: string | null;
+          contract_id: string | null;
+          date_time: string | null;
+          channel: string | null;
+          status: string | null;
+          notes: string | null;
+          receipt_id: string | null;
+          created_by: string | null;
           created_at: string;
           updated_at: string;
           deleted_at: string | null;
         };
-        Insert: Partial<Database['public']['Tables']['payments']['Row']> & Pick<Database['public']['Tables']['payments']['Row'], 'invoice_id' | 'amount' | 'payment_method' | 'payment_date'>;
+        Insert: Partial<Database['public']['Tables']['payments']['Row']> & Pick<Database['public']['Tables']['payments']['Row'], 'amount' | 'payment_method' | 'payment_date'>;
         Update: Partial<Database['public']['Tables']['payments']['Row']>;
         Relationships: [];
       };
@@ -202,9 +210,16 @@ export type Database = {
           ref: string | null;
           notes: string | null;
           status: string | null;
-          created_at: string;
+          check_number: string | null;
+          check_bank: string | null;
+          check_date: string | null;
+          check_status: string | null;
+          voided_at: number | null;
           request_id: string | null;
           tenant_id: string | null;
+          created_at: string;
+          updated_at: string | null;
+          deleted_at: number | null;
         };
         Insert: Partial<Database['public']['Tables']['receipts']['Row']> & Pick<Database['public']['Tables']['receipts']['Row'], 'contract_id' | 'date_time' | 'amount'>;
         Update: Partial<Database['public']['Tables']['receipts']['Row']>;
@@ -217,32 +232,45 @@ export type Database = {
           receipt_id: string;
           invoice_id: string | null;
           amount: number;
-          created_at: string;
           tenant_id: string | null;
+          created_at: string;
+          updated_at: string | null;
         };
         Insert: Partial<Database['public']['Tables']['receipt_allocations']['Row']> & Pick<Database['public']['Tables']['receipt_allocations']['Row'], 'receipt_id' | 'amount'>;
         Update: Partial<Database['public']['Tables']['receipt_allocations']['Row']>;
         Relationships: [];
       };
 
-      maintenance_requests: {
+      maintenance_records: {
         Row: {
           id: string;
-          property_id: string;
+          no: string | null;
+          property_id: string | null;
           unit_id: string | null;
-          title: string;
+          title: string | null;
           description: string | null;
-          priority: 'low' | 'medium' | 'high' | 'urgent';
-          status: 'open' | 'in_progress' | 'resolved' | 'closed';
+          priority: 'low' | 'medium' | 'high' | 'urgent' | 'NORMAL' | string | null;
+          status: 'open' | 'in_progress' | 'resolved' | 'closed' | string | null;
           assigned_to: string | null;
-          cost: number;
+          cost: number | null;
+          charged_to: string | null;
+          notes: string | null;
+          request_date: string | null;
+          scheduled_date: string | null;
+          work_description: string | null;
+          technician_name: string | null;
+          response_time_hours: number | null;
+          expense_id: string | null;
+          invoice_id: string | null;
+          reported_by: string | null;
+          completed_at: number | null;
           resolved_at: string | null;
-          created_at: string;
-          updated_at: string;
+          created_at: string | null;
+          updated_at: string | null;
           deleted_at: string | null;
         };
-        Insert: Partial<Database['public']['Tables']['maintenance_requests']['Row']> & Pick<Database['public']['Tables']['maintenance_requests']['Row'], 'property_id' | 'title' | 'priority' | 'status' | 'cost'>;
-        Update: Partial<Database['public']['Tables']['maintenance_requests']['Row']>;
+        Insert: Partial<Database['public']['Tables']['maintenance_records']['Row']> & Pick<Database['public']['Tables']['maintenance_records']['Row'], 'status'>;
+        Update: Partial<Database['public']['Tables']['maintenance_records']['Row']>;
         Relationships: [];
       };
 

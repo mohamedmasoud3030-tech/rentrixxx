@@ -11,10 +11,10 @@ export type InvoiceSummary = { totalAmount: number; totalPaid: number; totalRema
 const invoiceSelect = '*, contracts:contract_id(id,property_id,tenant_id)';
 
 function applyStatusFilter(query: ReturnType<typeof supabase.from>, status: InvoiceStatusFilter) {
-  if (status === 'unpaid') return query.eq('status', 'issued').eq('paid_amount', 0);
-  if (status === 'partial') return query.eq('status', 'partial');
-  if (status === 'paid') return query.eq('status', 'paid');
-  if (status === 'overdue') return query.eq('status', 'overdue');
+  if (status === 'unpaid') return query.eq('status', 'UNPAID');
+  if (status === 'partial') return query.eq('status', 'PARTIALLY_PAID');
+  if (status === 'paid') return query.eq('status', 'PAID');
+  if (status === 'overdue') return query.eq('status', 'OVERDUE');
   return query;
 }
 
