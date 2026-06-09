@@ -39,7 +39,7 @@ type TenantInvoiceSummary = {
 
 const tenantContractSelect = '*, properties:property_id(id,title), units:unit_id(id,unit_number)';
 const tenantInvoiceSelect = 'contract_id,status,amount,paid_amount,due_date';
-const receivableInvoiceStatuses = new Set<TenantInvoice['status']>(['issued', 'partial', 'overdue']);
+const receivableInvoiceStatuses = new Set<TenantInvoice['status']>(['UNPAID', 'PARTIALLY_PAID', 'OVERDUE']);
 
 function escapeSearchTerm(value: string) {
   return value.replaceAll('%', String.raw`\%`).replaceAll('_', String.raw`\_`);

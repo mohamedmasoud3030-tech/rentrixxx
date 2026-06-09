@@ -74,24 +74,24 @@ function countUnits() {
 }
 
 function countActiveContracts() {
-  return countRows('contracts', (query) => query.eq('status', 'active'));
+  return countRows('contracts', (query) => query.eq('status', 'ACTIVE'));
 }
 
 function countExpiringContracts30Days(date: Date) {
   return countRows('contracts', (query) =>
     query
-      .eq('status', 'active')
+      .eq('status', 'ACTIVE')
       .gte('end_date', toISODate(date))
       .lte('end_date', toISODate(addDays(date, dashboardWindowDays))),
   );
 }
 
 function countVacantUnits() {
-  return countRows('units', (query) => query.ilike('status', 'available'));
+  return countRows('units', (query) => query.eq('status', 'available'));
 }
 
 function countOverdueInvoices() {
-  return countRows('invoices', (query) => query.eq('status', 'overdue'));
+  return countRows('invoices', (query) => query.eq('status', 'OVERDUE'));
 }
 
 export async function getDashboardOverview(date = new Date()): Promise<DashboardOverview> {
