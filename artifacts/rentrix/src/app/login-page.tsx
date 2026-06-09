@@ -1,5 +1,4 @@
-import { useEffect, useState, type FormEvent } from 'react';
-import { useRouter } from '@tanstack/react-router';
+import { useState, type FormEvent } from 'react';
 import {
   AlertTriangle,
   ArrowLeft,
@@ -19,7 +18,6 @@ import { Button } from '@/components/ui/button';
 import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { useAuth } from '@/hooks/use-auth';
-import { supabase } from '@/integrations/supabase/client';
 import { getEnvDiagnostics } from '@/lib/runtime-diagnostics';
 
 const highlights = [
@@ -29,27 +27,12 @@ const highlights = [
 ] as const;
 
 export function LoginPage() {
-  const router = useRouter();
   const { login } = useAuth();
   const envDiagnostics = getEnvDiagnostics();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  useEffect(() => {
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((event, session) => {
-      if (event === 'SIGNED_IN' && session) {
-        router.navigate({ to: '/', replace: true });
-      }
-    });
-
-    return () => {
-      subscription.unsubscribe();
-    };
-  }, [router]);
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();

@@ -27,7 +27,7 @@ import { ContractEditRouteComponent } from '@/routes/_protected.contracts.$contr
 import { FinancialsRouteComponent } from '@/routes/_protected.financials';
 import { CommissionsRouteComponent } from '@/routes/_protected.commissions';
 import { CommunicationRouteComponent } from '@/routes/_protected.communication';
-import { ReceiptsPage as ReceiptsRouteComponent } from '@/features/financials/receipts/receipts-page';
+import { ReceiptsRouteComponent } from '@/routes/_protected.receipts';
 import { ExpensesRouteComponent } from '@/routes/_protected.expenses';
 import { InvoicesRouteComponent } from '@/routes/_protected.invoices';
 import { ArrearsRouteComponent } from '@/routes/_protected.arrears';
