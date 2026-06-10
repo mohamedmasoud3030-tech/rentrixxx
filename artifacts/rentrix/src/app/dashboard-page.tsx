@@ -116,10 +116,12 @@ function buildExpiringContracts(contracts: ContractListItem[] | undefined, today
 
 export function buildOverdueTenantRows(rows: OverdueInvoiceReportRow[] | undefined): OverdueTenantRow[] {
   return (rows ?? [])
+    .slice()
+    .sort((a, b) => b.daysOverdue - a.daysOverdue)
     .slice(0, maxOverdueTenantRows)
     .map((row) => ({
       invoiceId: row.invoiceId,
-      tenantName: row.tenantName ?? 'مستأجر',
+      tenantName: row.tenantName ?? 'مستأجر غير محدد',
       location: getInvoiceLocation(row),
       dueDate: row.dueDate,
       daysOverdue: row.daysOverdue,
@@ -513,6 +515,26 @@ export function DashboardPage() {
   );
 }
 
-export function buildDashboardSummaryCards(_snapshot: DashboardSnapshot | undefined, _settings: CompanySettingsContract, _hasError = false) {
-  return [];
+export type DashboardSummaryCard = {
+  title: string;
+  value: string | number;
+  isMoney: boolean;
+};
+
+export function buildDashboardSummaryCards(
+  snapshot: DashboardSnapshot | undefined,
+  settings: CompanySettingsContract,
+  _hasError = false,
+): DashboardSummaryCard[] {
+  const fin = snapshot?.financial;
+  const op = snapshot?.operational;
+  return [
+    { title: 'الإيجار المستحق',     value: money(settings, fin?.rentDue ?? 0),        isMoney: true  },
+    { title: 'المحصل هذا الشهر',    value: money(settings, fin?.collectedRent ?? 0),   isMoney: true  },
+    { title: 'الرصيد المتبقي',      value: money(settings, fin?.outstandingRent ?? 0), isMoney: true  },
+    { title: 'المصروفات',           value: money(settings, fin?.expenses ?? 0),        isMoney: true  },
+    { title: 'صافي المركز',         value: money(settings, fin?.netPosition ?? 0),     isMoney: true  },
+    { title: 'الإشغال',             value: `${op?.occupancyRate ?? 0}%`,               isMoney: false },
+    { title: 'تنتهي خلال 30 يوم',   value: op?.expiringContracts30Days ?? 0,           isMoney: false },
+  ];
 }
