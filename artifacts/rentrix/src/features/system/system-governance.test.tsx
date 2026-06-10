@@ -69,7 +69,7 @@ describe('system and governance route authorization', () => {
     expect(() => assertSessionPermission(unknownRoleSession, 'system.view')).toThrow();
   });
 
-  it('hides deferred governance surfaces from beta navigation while keeping account actions permission-based', () => {
+  it('exposes governance surfaces in navigation from v0.3 onwards', () => {
     const systemItems: readonly NavItem[] = navGroups
       .find(([sectionTitle]) => sectionTitle === 'التشغيل والنظام')?.[1] ?? [];
     const adminContext = { userId: 'user-1', email: 'admin@example.com', role: 'ADMIN' as const };
@@ -78,8 +78,8 @@ describe('system and governance route authorization', () => {
 
     expect(systemRoutes).toEqual(['/change-password', '/settings']);
     expect(systemRoutes).not.toContain('/system');
-    expect(systemRoutes).not.toContain('/audit-log');
-    expect(systemRoutes).not.toContain('/data-integrity');
+    expect(systemRoutes).toContain('/audit-log');
+    expect(systemRoutes).toContain('/data-integrity');
     expect(systemItems.filter(([, , , , permission]) => canShowNavigationItem(adminContext, permission)).map(([to]) => to)).toEqual(['/change-password', '/settings']);
     expect(systemItems.filter(([, , , , permission]) => canShowNavigationItem(userContext, permission)).map(([to]) => to)).toEqual(['/change-password']);
   });
