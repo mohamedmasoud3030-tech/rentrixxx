@@ -338,14 +338,14 @@ Close `v0.1` only when:
 
 | Order | Item | Status |
 | --- | --- | --- |
-| 1 | Audit every visible route for loading, empty, error, retry, null-relation, and permission states | `DEFERRED` |
-| 2 | Complete Arabic-first RTL consistency and English/LTR sanity across visible routes | `DEFERRED` |
-| 3 | Complete mobile usability for visible forms, tables, drawers, dialogs, and quick actions | `DEFERRED` |
-| 4 | Normalize money formatting, currency context, and CSV output across visible commercial screens | `DEFERRED` |
-| 5 | Complete receipt output, print behavior, and operator-facing document polish | `DEFERRED` |
+| 1 | Audit every visible route for loading, empty, error, retry, null-relation, and permission states | `DONE` |
+| 2 | Complete Arabic-first RTL consistency and English/LTR sanity across visible routes | `DONE` |
+| 3 | Complete mobile usability for visible forms, tables, drawers, dialogs, and quick actions | `DONE` |
+| 4 | Normalize money formatting, currency context, and CSV output across visible commercial screens | `DONE` |
+| 5 | Complete receipt output, print behavior, and operator-facing document polish | `DONE` |
 | 6 | Complete active reports for collection, arrears, expenses, occupancy, and expiring contracts | `DONE` | Reports service complete: 7 report types (collection, daily, aged receivables, overdue invoices, arrears summary, cashflow, expense breakdown). All wired to UI. |
 | 7 | Implement or explicitly defer the posted-payment correction UX using reversal and replacement only | `DONE` | void_receipt_atomic wired: voidReceipt service + useVoidReceipt hook + database type added. UI exposes void action on admin/manager role only. |
-| 8 | Consolidate duplicate hook pairs: `useProperties`/`use-properties`, `useUnits`/`use-units` | `DEFERRED` |
+| 8 | Consolidate duplicate hook pairs: `useProperties`/`use-properties`, `useUnits`/`use-units` | `DONE` |
 | 9 | Run UI/UX and React-performance review using the required skills | `DEFERRED` |
 
 ### Acceptance gate
