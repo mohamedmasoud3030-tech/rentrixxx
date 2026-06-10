@@ -405,11 +405,22 @@ BEGIN
       v_dtype := pg_temp.rentrix_column_data_type(v_tbl, v_col);
 
       IF v_dtype IN ('bigint', 'integer', 'int8', 'int4') THEN
+        -- Drop the default first; PostgreSQL cannot auto-cast a bigint default
+        -- (e.g. 0 or extract(epoch...)) to timestamptz when changing column type.
+        EXECUTE format(
+          'ALTER TABLE public.%I ALTER COLUMN %I DROP DEFAULT',
+          v_tbl, v_col
+        );
         EXECUTE format(
           'ALTER TABLE public.%I
              ALTER COLUMN %I TYPE timestamptz
              USING to_timestamp(%I::double precision / 1000.0)',
           v_tbl, v_col, v_col
+        );
+        -- Restore a sensible timestamptz default
+        EXECUTE format(
+          'ALTER TABLE public.%I ALTER COLUMN %I SET DEFAULT now()',
+          v_tbl, v_col
         );
         RAISE NOTICE 'Converted %.% bigint → timestamptz', v_tbl, v_col;
       END IF;
