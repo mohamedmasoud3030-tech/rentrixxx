@@ -46,12 +46,8 @@ const requiredOperationalRoutes = [
 const deferredBetaRoutes = [
   '/lands',
   '/leads',
-  '/maintenance',
   '/commissions',
   '/communication',
-  '/system',
-  '/audit-log',
-  '/data-integrity',
 ] as const;
 
 const routePathList = Array.from(routePaths);

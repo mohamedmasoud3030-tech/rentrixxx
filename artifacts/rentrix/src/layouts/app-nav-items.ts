@@ -1,4 +1,4 @@
-import { BarChart3, Building2, ClipboardList, DoorOpen, FileText, KeyRound, LayoutDashboard, ReceiptText, Settings, UserRoundCog, Users, WalletCards } from 'lucide-react';
+import { BarChart3, Building2, ClipboardList, DoorOpen, FileText, KeyRound, LayoutDashboard, ListChecks, ReceiptText, SearchCheck, Settings, ShieldCheck, UserRoundCog, Users, WalletCards, Wrench } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import type { AppPermission } from '@/features/auth/permissions';
 
@@ -26,6 +26,10 @@ export const navGroups = [
     ['/reports', 'reports', 'مؤشرات وتقارير الإدارة', BarChart3],
   ]],
   ['التشغيل والنظام', [
+    ['/maintenance', 'maintenance', 'طلبات الصيانة والمتابعة', Wrench],
+    ['/audit-log', 'auditLog', 'سجل أحداث الحوكمة قراءة فقط', ListChecks, 'audit.view'],
+    ['/data-integrity', 'dataIntegrity', 'فحوصات سلامة البيانات', SearchCheck, 'integrity.view'],
+    ['/system', 'system', 'إدارة حوكمة النظام', ShieldCheck, 'settings.manage'],
     ['/change-password', 'changePassword', 'تحديث كلمة مرورك', KeyRound, 'auth.password.change'],
     ['/settings', 'settings', 'تخصيص تجربة النظام', Settings, 'settings.manage'],
   ]],
