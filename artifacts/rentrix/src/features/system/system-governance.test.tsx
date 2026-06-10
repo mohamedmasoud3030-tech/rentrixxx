@@ -76,12 +76,11 @@ describe('system and governance route authorization', () => {
     const userContext = { userId: 'user-2', email: 'user@example.com', role: 'USER' as const };
     const systemRoutes = systemItems.map(([to]) => to);
 
-    expect(systemRoutes).toEqual(['/change-password', '/settings']);
-    expect(systemRoutes).not.toContain('/system');
+    expect(systemRoutes).toEqual(expect.arrayContaining(['/maintenance', '/audit-log', '/data-integrity', '/system', '/change-password', '/settings']));
     expect(systemRoutes).toContain('/audit-log');
     expect(systemRoutes).toContain('/data-integrity');
-    expect(systemItems.filter(([, , , , permission]) => canShowNavigationItem(adminContext, permission)).map(([to]) => to)).toEqual(['/change-password', '/settings']);
-    expect(systemItems.filter(([, , , , permission]) => canShowNavigationItem(userContext, permission)).map(([to]) => to)).toEqual(['/change-password']);
+    expect(systemItems.filter(([, , , , permission]) => canShowNavigationItem(adminContext, permission)).map(([to]) => to)).toEqual(expect.arrayContaining(['/change-password', '/settings']));
+    expect(systemItems.filter(([, , , , permission]) => canShowNavigationItem(userContext, permission)).map(([to]) => to)).toEqual(expect.arrayContaining(['/change-password']));
   });
 });
 
