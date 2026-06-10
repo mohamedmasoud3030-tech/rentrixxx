@@ -307,6 +307,10 @@ export type Database = {
       };
       generate_invoices_from_active_contracts: { Args: Record<string, never>; Returns: number };
       rpt_financial_summary: { Args: { p_from: string; p_to: string }; Returns: { collected: number; expenses: number; net: number; revenue: number; net_income: number; overdue_amount: number; overdue_count: number; active_contracts: number; total_units: number; occupied_units: number; occupancy_rate: number; pending_invoices: number; period_from: string; period_to: string } };
+      void_receipt_atomic: {
+        Args: { payload: Json };
+        Returns: { success: boolean; voided_at: string };
+      };
     };
     Enums: Record<string, never>;
     CompositeTypes: Record<string, never>;

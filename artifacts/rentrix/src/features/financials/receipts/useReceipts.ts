@@ -18,3 +18,21 @@ export function useReceipt(receiptOrPaymentId: string) {
     enabled: Boolean(receiptOrPaymentId),
   });
 }
+
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
+import { voidReceipt } from './receiptService';
+
+export function useVoidReceipt() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: voidReceipt,
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: receiptKeys.all });
+      toast.success('تم إلغاء الإيصال بنجاح');
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || 'تعذّر إلغاء الإيصال');
+    },
+  });
+}

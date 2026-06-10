@@ -150,3 +150,21 @@ export async function getReceiptDetail(receiptOrPaymentId: string): Promise<Rece
   if (!receipt) throw new Error('Receipt not found');
   return receipt;
 }
+
+export type VoidReceiptPayload = {
+  receipt_id: string;
+  reason: string;
+  request_id: string;
+};
+
+export type VoidReceiptResult = {
+  success: boolean;
+  voided_at: string;
+};
+
+export async function voidReceipt(payload: VoidReceiptPayload): Promise<VoidReceiptResult> {
+  const { data, error } = await supabase.rpc('void_receipt_atomic', { payload });
+  if (error) throw error;
+  if (!data) throw new Error('void_receipt_atomic returned no data');
+  return data as VoidReceiptResult;
+}
