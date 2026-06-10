@@ -1,6 +1,9 @@
 import type { UseFormReturn } from 'react-hook-form';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Select } from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
 import type { Expense, Property } from '@/types/domain';
 import { formatDate, formatMoney } from './financials-formatters';
 import {
@@ -34,65 +37,73 @@ export function ExpensesSection({ expenses, propertyRows, filters, onFiltersChan
   const summary = summarizeOperationalExpenses(expenses);
 
   return (
-    <Card>
+    <Card className="rounded-2xl">
       <CardHeader><CardTitle>المصاريف التشغيلية</CardTitle></CardHeader>
       <CardContent className="space-y-4">
         <p className="text-sm text-muted-foreground">تكلفة طلبات الصيانة في قسم الصيانة تبقى تقديرية ولا يتم تحويلها تلقائياً إلى مصروف.</p>
 
-        <div className="grid gap-2 rounded border p-3 text-sm md:grid-cols-2 lg:grid-cols-4">
-          <p>عدد المصاريف المعروضة: <strong>{summary.visibleCount}</strong></p>
-          <p>إجمالي المبلغ المعروض: <strong>{formatMoney(summary.visibleAmount)}</strong></p>
-          <p>عدد العقارات المعروضة: <strong>{summary.byPropertyCount}</strong></p>
-          <p>عدد التصنيفات المعروضة: <strong>{summary.byCategoryCount}</strong></p>
+        {/* Summary strip */}
+        <div className="grid gap-2 rounded-xl border border-border bg-muted/30 p-3 text-sm sm:grid-cols-2 lg:grid-cols-4">
+          <p>عدد المصاريف: <strong>{summary.visibleCount}</strong></p>
+          <p>الإجمالي: <strong>{formatMoney(summary.visibleAmount)}</strong></p>
+          <p>العقارات: <strong>{summary.byPropertyCount}</strong></p>
+          <p>التصنيفات: <strong>{summary.byCategoryCount}</strong></p>
         </div>
 
-        <div className="grid gap-2 rounded border p-3 md:grid-cols-2 lg:grid-cols-4">
-          <select
-            className="rounded border px-2 py-2"
+        {/* Filters */}
+        <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+          <Select
             value={filters.propertyId}
-            onChange={(event) => {
-              onFiltersChange({ ...filters, propertyId: event.target.value });
-            }}
+            onChange={(e) => onFiltersChange({ ...filters, propertyId: e.target.value })}
           >
             <option value="">كل العقارات</option>
-            {propertyRows.map((property) => <option key={property.id} value={property.id}>{property.title}</option>)}
-          </select>
-          <select
-            className="rounded border px-2 py-2"
+            {propertyRows.map((p) => <option key={p.id} value={p.id}>{p.title}</option>)}
+          </Select>
+          <Select
             value={filters.category}
-            onChange={(event) => {
-              onFiltersChange({ ...filters, category: event.target.value });
-            }}
+            onChange={(e) => onFiltersChange({ ...filters, category: e.target.value })}
           >
             <option value="">كل التصنيفات</option>
-            {OPERATIONAL_EXPENSE_CATEGORIES.map((category) => <option key={category} value={category}>{category}</option>)}
-          </select>
-          <input className="rounded border px-2 py-2" type="date" value={filters.from} onChange={(event) => { onFiltersChange({ ...filters, from: event.target.value }); }} />
-          <input className="rounded border px-2 py-2" type="date" value={filters.to} onChange={(event) => { onFiltersChange({ ...filters, to: event.target.value }); }} />
+            {OPERATIONAL_EXPENSE_CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
+          </Select>
+          <Input type="date" value={filters.from} onChange={(e) => onFiltersChange({ ...filters, from: e.target.value })} />
+          <Input type="date" value={filters.to} onChange={(e) => onFiltersChange({ ...filters, to: e.target.value })} />
         </div>
 
-        {expenses.length === 0 ? <p className="text-sm text-muted-foreground">لا توجد مصاريف مطابقة للفلاتر الحالية.</p> : null}
-        {expenses.map((expense) => (
-          <p key={expense.id} className="rounded border p-2 text-sm">
-            {formatDate(expense.expense_date)} — {buildExpensePropertyLabel(expense, propertyById)} — {expense.category} — {formatMoney(expense.amount)}
+        {/* Expense list */}
+        {expenses.length === 0 ? (
+          <p className="rounded-xl border border-dashed border-border py-6 text-center text-sm text-muted-foreground">
+            لا توجد مصاريف مطابقة للفلاتر الحالية.
           </p>
-        ))}
+        ) : (
+          <div className="divide-y divide-border rounded-xl border border-border">
+            {expenses.map((expense) => (
+              <div key={expense.id} className="flex items-center justify-between gap-3 px-4 py-3 text-sm">
+                <span className="text-muted-foreground">{formatDate(expense.expense_date)}</span>
+                <span className="flex-1 truncate">{buildExpensePropertyLabel(expense, propertyById)} — {expense.category}</span>
+                <span className="font-bold tabular-nums">{formatMoney(expense.amount)}</span>
+              </div>
+            ))}
+          </div>
+        )}
 
-        <form className="grid gap-3 rounded border p-4" onSubmit={expenseForm.handleSubmit(onCreateExpense)}>
-          <select className="rounded border px-2 py-2" {...expenseForm.register('property_id')}>
+        {/* Create form */}
+        <form className="grid gap-3 rounded-2xl border border-border p-4 sm:grid-cols-2" onSubmit={expenseForm.handleSubmit(onCreateExpense)}>
+          <Select {...expenseForm.register('property_id')}>
             <option value="">اختر العقار</option>
-            {propertyRows.map((property) => <option key={property.id} value={property.id}>{property.title}</option>)}
-          </select>
-
-          <select className="rounded border px-2 py-2" {...expenseForm.register('category')}>
-            {OPERATIONAL_EXPENSE_CATEGORIES.map((category) => <option key={category} value={category}>{category}</option>)}
-          </select>
-
-          <input className="rounded border px-2 py-2" type="number" min="0.01" step="0.01" placeholder="المبلغ" {...expenseForm.register('amount')} />
-          <input className="rounded border px-2 py-2" type="date" {...expenseForm.register('expense_date')} />
-          <textarea className="rounded border px-2 py-2" placeholder="الوصف (اختياري)" {...expenseForm.register('description')} />
-
-          <Button type="submit" disabled={isCreateExpensePending}>{isCreateExpensePending ? 'جارٍ الحفظ...' : 'إضافة مصروف'}</Button>
+            {propertyRows.map((p) => <option key={p.id} value={p.id}>{p.title}</option>)}
+          </Select>
+          <Select {...expenseForm.register('category')}>
+            {OPERATIONAL_EXPENSE_CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
+          </Select>
+          <Input type="number" min="0.01" step="0.01" placeholder="المبلغ" {...expenseForm.register('amount')} />
+          <Input type="date" {...expenseForm.register('expense_date')} />
+          <div className="sm:col-span-2">
+            <Textarea placeholder="الوصف (اختياري)" className="min-h-16" {...expenseForm.register('description')} />
+          </div>
+          <Button type="submit" disabled={isCreateExpensePending} className="sm:col-span-2">
+            {isCreateExpensePending ? 'جارٍ الحفظ...' : 'إضافة مصروف'}
+          </Button>
         </form>
       </CardContent>
     </Card>
