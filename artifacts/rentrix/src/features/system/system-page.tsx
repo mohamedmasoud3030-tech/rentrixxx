@@ -14,65 +14,80 @@ type GovernanceLink = Readonly<{
 }>;
 
 const governanceLinks: readonly GovernanceLink[] = [
-  { to: '/audit-log', title: 'سجل التدقيق', description: 'عرض أحداث الحوكمة المتاحة قراءة فقط.', permission: 'audit.view', icon: ListChecks },
-  { to: '/data-integrity', title: 'سلامة البيانات', description: 'تشغيل فحوصات قراءة فقط على العلاقات الأساسية.', permission: 'integrity.view', icon: SearchCheck },
-  { to: '/change-password', title: 'تغيير كلمة المرور', description: 'تحديث كلمة مرور المستخدم الحالي عبر Supabase.', permission: 'auth.password.change', icon: KeyRound },
-  { to: '/settings', title: 'إعدادات الشركة', description: 'إدارة إعدادات الشركة المدعومة حالياً.', permission: 'settings.manage', icon: Settings },
+  { to: '/audit-log', title: 'سجل التدقيق', description: 'عرض أحداث الحوكمة قراءة فقط — لا يُعدَّل أي سجل.', permission: 'audit.view', icon: ListChecks },
+  { to: '/data-integrity', title: 'سلامة البيانات', description: 'تشغيل فحوصات قراءة فقط على العلاقات الأساسية في المخطط.', permission: 'integrity.view', icon: SearchCheck },
+  { to: '/change-password', title: 'تغيير كلمة المرور', description: 'تحديث كلمة مرور حسابك الحالي بأمان.', permission: 'auth.password.change', icon: KeyRound },
+  { to: '/settings', title: 'إعدادات الشركة', description: 'إدارة إعدادات العملة واللغة والمعلومات التجارية.', permission: 'settings.manage', icon: Settings },
 ];
+
+const governancePrinciples = [
+  { label: 'نموذج الصلاحيات', value: 'يفشل مغلقاً', description: 'الوصول محجوب افتراضياً' },
+  { label: 'التدقيق', value: 'قراءة فقط', description: 'لا كتابة عبر الواجهة' },
+  { label: 'سلامة البيانات', value: 'بلا RPC', description: 'استعلامات SQL مباشرة' },
+  { label: 'المخطط', value: 'بلا تغيير', description: 'لا DDL من الواجهة' },
+] as const;
 
 export function SystemPage() {
   const { authorization } = useAuth();
   const visibleLinks = governanceLinks.filter((item) => canAccess(authorization, item.permission));
 
   return (
-    <section className="space-y-4">
+    <section className="space-y-6" dir="rtl">
+      {/* Governance principles banner */}
       <Card className="overflow-hidden">
-        <div className="h-1.5 bg-accent" />
+        <div className="h-1.5 bg-primary" />
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-2xl"><ShieldCheck className="size-6 text-primary" />النظام والحوكمة</CardTitle>
-          <CardDescription>مركز وصول آمن للوظائف النظامية المستردة في هذا المسار دون إضافة إعدادات غير مدعومة.</CardDescription>
+          <CardTitle className="flex items-center gap-2 text-xl">
+            <ShieldCheck className="size-5 text-primary" />
+            النظام والحوكمة
+          </CardTitle>
+          <CardDescription>
+            مركز وصول آمن للوظائف النظامية. جميع العمليات هنا قراءة فقط أو محدودة الصلاحية.
+          </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-            <div className="rounded-2xl border border-border bg-background p-4">
-              <p className="text-xs font-bold text-muted-foreground">نموذج الصلاحيات</p>
-              <p className="mt-1 text-lg font-black">يفشل مغلقاً</p>
-            </div>
-            <div className="rounded-2xl border border-border bg-background p-4">
-              <p className="text-xs font-bold text-muted-foreground">التدقيق</p>
-              <p className="mt-1 text-lg font-black">قراءة فقط</p>
-            </div>
-            <div className="rounded-2xl border border-border bg-background p-4">
-              <p className="text-xs font-bold text-muted-foreground">سلامة البيانات</p>
-              <p className="mt-1 text-lg font-black">بلا RPC</p>
-            </div>
-            <div className="rounded-2xl border border-border bg-background p-4">
-              <p className="text-xs font-bold text-muted-foreground">المخطط</p>
-              <p className="mt-1 text-lg font-black">دون تغييرات</p>
-            </div>
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            {governancePrinciples.map((p) => (
+              <div key={p.label} className="rounded-2xl border border-border bg-muted/30 p-4">
+                <p className="text-xs font-bold text-muted-foreground">{p.label}</p>
+                <p className="mt-1 text-lg font-black">{p.value}</p>
+                <p className="mt-0.5 text-xs text-muted-foreground">{p.description}</p>
+              </div>
+            ))}
           </div>
         </CardContent>
       </Card>
 
-      <div className="grid gap-4 md:grid-cols-2">
-        {visibleLinks.map((item) => {
-          const Icon = item.icon;
-          return (
-            <Card key={item.to}>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2"><Icon className="size-5 text-primary" />{item.title}</CardTitle>
-                <CardDescription>{item.description}</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Button asChild variant="secondary">
-                  <Link to={item.to}>فتح</Link>
-                </Button>
-              </CardContent>
-            </Card>
-          );
-        })}
-      </div>
+      {/* Navigation cards */}
+      {visibleLinks.length === 0 ? (
+        <div className="rounded-2xl border border-border bg-muted/20 px-6 py-10 text-center text-muted-foreground text-sm">
+          لا توجد وظائف نظامية متاحة لصلاحياتك الحالية.
+        </div>
+      ) : (
+        <div className="grid gap-4 md:grid-cols-2">
+          {visibleLinks.map((item) => {
+            const Icon = item.icon;
+            return (
+              <Card key={item.to} className="rounded-2xl transition-shadow hover:shadow-md">
+                <CardHeader className="pb-3">
+                  <CardTitle className="flex items-center gap-2 text-base">
+                    <span className="flex size-9 items-center justify-center rounded-xl bg-primary/10">
+                      <Icon className="size-5 text-primary" />
+                    </span>
+                    {item.title}
+                  </CardTitle>
+                  <CardDescription>{item.description}</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <Button asChild variant="secondary">
+                    <Link to={item.to}>فتح</Link>
+                  </Button>
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
+      )}
     </section>
   );
 }
-

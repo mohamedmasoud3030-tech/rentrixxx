@@ -27,9 +27,9 @@ export const navGroups = [
   ]],
   ['التشغيل والنظام', [
     ['/maintenance', 'maintenance', 'طلبات الصيانة والمتابعة', Wrench],
-    ['/audit-log', 'auditLog', 'سجل أحداث الحوكمة قراءة فقط', ListChecks, 'audit.view'],
-    ['/data-integrity', 'dataIntegrity', 'فحوصات سلامة البيانات', SearchCheck, 'integrity.view'],
-    ['/system', 'system', 'إدارة حوكمة النظام', ShieldCheck, 'settings.manage'],
+    ['/audit-log', 'auditLog', 'سجل أحداث الحوكمة قراءة فقط', ListChecks],
+    ['/data-integrity', 'dataIntegrity', 'فحوصات سلامة البيانات', SearchCheck],
+    ['/system', 'system', 'إدارة حوكمة النظام', ShieldCheck],
     ['/change-password', 'changePassword', 'تحديث كلمة مرورك', KeyRound, 'auth.password.change'],
     ['/settings', 'settings', 'تخصيص تجربة النظام', Settings, 'settings.manage'],
   ]],
