@@ -3,6 +3,7 @@ import type { Session, User } from '@supabase/supabase-js';
 import { getAuthorizationContextFromSession, type AuthorizationContext } from '@/features/auth/permissions';
 import { supabase } from '@/integrations/supabase/client';
 import { getCurrentSession, signInWithEmail, signOut } from '@/services/auth-service';
+import { router } from '@/app/router';
 
 type AuthContextValue = {
   session: Session | null;
@@ -18,13 +19,10 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 
 const LOGIN_PATH = '/login';
 
-function shouldRedirectToLogin(pathname: string): boolean {
-  return pathname !== LOGIN_PATH;
-}
-
 function redirectToLogin(): void {
-  if (shouldRedirectToLogin(globalThis.location.pathname)) {
-    globalThis.location.href = LOGIN_PATH;
+  const currentPath = router.state.location.pathname;
+  if (currentPath !== LOGIN_PATH) {
+    void router.navigate({ to: LOGIN_PATH, replace: true });
   }
 }
 
@@ -85,7 +83,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
       isAuthenticated: Boolean(session),
       login: async (email, password) => {
         await signInWithEmail(email, password);
-        globalThis.location.replace('/');
+        await router.navigate({ to: '/', replace: true });
       },
       logout: async () => {
         await signOut();
