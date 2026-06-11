@@ -290,7 +290,117 @@ export type Database = {
         Update: Partial<Database['public']['Tables']['expenses']['Row']>;
         Relationships: [];
       };
-    };
+      audit_log: {
+        Row: {
+          id: string;
+          ts: number | null;
+          user_id: string | null;
+          username: string | null;
+          action: string | null;
+          entity: string | null;
+          entity_id: string | null;
+          note: string | null;
+          table: string | null;
+          details: string | null;
+          created_at: string | null;
+          updated_at: string | null;
+        };
+        Insert: { id: string; ts?: number | null; user_id?: string | null; username?: string | null; action?: string | null; entity?: string | null; entity_id?: string | null; note?: string | null; table?: string | null; details?: string | null; created_at?: string | null; updated_at?: string | null };
+        Update: Partial<Database['public']['Tables']['audit_log']['Insert']>;
+        Relationships: [];
+      };
+      financial_operation_idempotency: {
+        Row: {
+          operation_name: string;
+          request_id: string;
+          response_payload: Json;
+          created_at: string;
+        };
+        Insert: { operation_name: string; request_id: string; response_payload: Json; created_at?: string };
+        Update: Partial<Database['public']['Tables']['financial_operation_idempotency']['Insert']>;
+        Relationships: [];
+      };
+      leads: {
+        Row: {
+          id: string;
+          no: string | null;
+          name: string | null;
+          phone: string | null;
+          email: string | null;
+          source: string | null;
+          status: string | null;
+          notes: string | null;
+          desired_unit_type: string | null;
+          min_budget: number | null;
+          max_budget: number | null;
+          created_at: string | null;
+          updated_at: string | null;
+        };
+        Insert: { id: string; no?: string | null; name?: string | null; phone?: string | null; email?: string | null; source?: string | null; status?: string | null; notes?: string | null; desired_unit_type?: string | null; min_budget?: number | null; max_budget?: number | null; created_at?: string | null; updated_at?: string | null };
+        Update: Partial<Database['public']['Tables']['leads']['Insert']>;
+        Relationships: [];
+      };
+      commissions: {
+        Row: {
+          id: string;
+          staff_id: string | null;
+          staff_name: string | null;
+          amount: number | null;
+          status: string | null;
+          source_id: string | null;
+          type: string | null;
+          deal_value: number | null;
+          percentage: number | null;
+          expense_id: string | null;
+          paid_at: number | null;
+          created_at: string | null;
+          updated_at: string | null;
+        };
+        Insert: { id: string; staff_id?: string | null; staff_name?: string | null; amount?: number | null; status?: string | null; source_id?: string | null; type?: string | null; deal_value?: number | null; percentage?: number | null; expense_id?: string | null; paid_at?: number | null; created_at?: string | null; updated_at?: string | null };
+        Update: Partial<Database['public']['Tables']['commissions']['Insert']>;
+        Relationships: [];
+      };
+      lands: {
+        Row: {
+          id: string;
+          plot_no: string | null;
+          location: string | null;
+          area: number | null;
+          owner_id: string | null;
+          purchase_price: number | null;
+          status: string | null;
+          notes: string | null;
+          name: string | null;
+          category: string | null;
+          owner_price: number | null;
+          commission: number | null;
+          created_at: string | null;
+          updated_at: string | null;
+        };
+        Insert: { id: string; plot_no?: string | null; location?: string | null; area?: number | null; owner_id?: string | null; purchase_price?: number | null; status?: string | null; notes?: string | null; name?: string | null; category?: string | null; owner_price?: number | null; commission?: number | null; created_at?: string | null; updated_at?: string | null };
+        Update: Partial<Database['public']['Tables']['lands']['Insert']>;
+        Relationships: [];
+      };
+      users: {
+        Row: {
+          id: string;
+          email: string;
+          name: string;
+          role: 'ADMIN' | 'MANAGER' | 'USER' | null;
+          status: 'ACTIVE' | 'INACTIVE' | 'BLACKLISTED' | null;
+          full_name: string | null;
+          is_active: boolean;
+          password_hash: string | null;
+          last_login: string | null;
+          deleted_at: string | null;
+          created_at: string | null;
+          updated_at: string | null;
+        };
+        Insert: { id: string; email: string; name: string; role?: 'ADMIN' | 'MANAGER' | 'USER' | null; status?: 'ACTIVE' | 'INACTIVE' | 'BLACKLISTED' | null; full_name?: string | null; is_active?: boolean; password_hash?: string | null; last_login?: string | null; deleted_at?: string | null; created_at?: string | null; updated_at?: string | null };
+        Update: Partial<Database['public']['Tables']['users']['Insert']>;
+        Relationships: [];
+      };
+      };
     Views: Record<string, never>;
     Functions: {
       renew_contract_atomic: {

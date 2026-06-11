@@ -101,7 +101,7 @@ describe('audit log recovery states', () => {
   });
 
   it('renders audit success rows when a verified source supplies records', () => {
-    const records = normalizeAuditRecords([{ id: 'a-1', created_at: '2026-06-04T00:00:00.000Z', actor_email: 'admin@example.com', action: 'VIEW', entity_type: 'settings', entity_id: 's-1', note: '[...]' }]);
+    const records = normalizeAuditRecords([{ id: 'a-1', created_at: '2026-06-04T00:00:00.000Z', username: 'admin@example.com', action: 'VIEW', entity: 'settings', entity_id: 's-1', note: '[...]', ts: null, user_id: null, table: null, details: null, updated_at: null }]);
     const html = renderToStaticMarkup(<AuditLogView state={{ status: 'ready', result: { status: 'available', records } }} />);
     expect(html).toContain('admin@example.com');
     expect(html).toContain('VIEW');
