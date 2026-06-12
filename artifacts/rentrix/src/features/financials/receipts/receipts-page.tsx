@@ -5,6 +5,7 @@ import { EmptyState } from '@/components/empty-state';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import { ReceiptCard } from '@/components/ui/receipt-card';
 import { Select } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
 import { StatusBadge } from '@/components/ui/status-badge';
@@ -116,37 +117,61 @@ function ReceiptsHistoryContent() {
           {receiptsQuery.isLoading ? <div className="space-y-3">{Array.from({ length: 5 }, (_, index) => <Skeleton key={index} className="h-14" />)}</div> : null}
           {receiptsQuery.isError ? <EmptyState title="تعذر تحميل الإيصالات" description={getErrorMessage(receiptsQuery.error, 'أعد المحاولة بعد لحظات.')} role="alert" ariaLive="assertive" /> : null}
           {!receiptsQuery.isLoading && !receiptsQuery.isError && filteredReceipts.length === 0 ? <EmptyState title="لا توجد إيصالات مطابقة" description="غيّر البحث أو الفلاتر لعرض إيصالات أخرى." /> : null}
+          
           {filteredReceipts.length > 0 ? (
-            <div className="overflow-x-auto rounded-2xl border border-border">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>رقم الإيصال</TableHead>
-                    <TableHead>تاريخ الدفع</TableHead>
-                    <TableHead>المبلغ</TableHead>
-                    <TableHead>طريقة الدفع</TableHead>
-                    <TableHead>الفاتورة</TableHead>
-                    <TableHead>السياق</TableHead>
-                    <TableHead>الحالة</TableHead>
-                    <TableHead>إجراء</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredReceipts.map((receipt) => (
-                    <TableRow key={receipt.id} className={selectedReceiptId === receipt.id ? 'bg-primary/5' : undefined}>
-                      <TableCell className="font-black">{receipt.receipt_number}</TableCell>
-                      <TableCell>{formatDate(receipt.payment_date)}</TableCell>
-                      <TableCell dir="ltr" className="font-bold">{formatMoney(receipt.amount)}</TableCell>
-                      <TableCell>{paymentMethodLabels[receipt.payment_method] ?? receipt.payment_method}</TableCell>
-                      <TableCell>{formatShortId(receipt.invoice_id)}</TableCell>
-                      <TableCell>{formatReceiptContext(receipt)}</TableCell>
-                      <TableCell><StatusBadge tone="green">{receiptStatusLabels[receipt.status] ?? receipt.status}</StatusBadge></TableCell>
-                      <TableCell><Button variant="secondary" onClick={() => setSelectedReceiptId(receipt.id)}>عرض</Button></TableCell>
+            <>
+              {/* Mobile cards */}
+              <div className="grid gap-3 sm:grid-cols-2 md:hidden">
+                {filteredReceipts.map((receipt) => (
+                  <ReceiptCard
+                    key={receipt.id}
+                    id={receipt.id}
+                    receiptNumber={receipt.receipt_number}
+                    paymentDate={receipt.payment_date}
+                    amount={receipt.amount}
+                    paymentMethod={paymentMethodLabels[receipt.payment_method] ?? receipt.payment_method}
+                    context={formatReceiptContext(receipt)}
+                    invoiceId={formatShortId(receipt.invoice_id)}
+                    status={receipt.status}
+                    onClick={() => setSelectedReceiptId(receipt.id)}
+                    formatDate={formatDate}
+                    formatMoney={formatMoney}
+                  />
+                ))}
+              </div>
+
+              {/* Desktop table */}
+              <div className="hidden overflow-x-auto rounded-2xl border border-border md:block">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>رقم الإيصال</TableHead>
+                      <TableHead>تاريخ الدفع</TableHead>
+                      <TableHead>المبلغ</TableHead>
+                      <TableHead>طريقة الدفع</TableHead>
+                      <TableHead>الفاتورة</TableHead>
+                      <TableHead>السياق</TableHead>
+                      <TableHead>الحالة</TableHead>
+                      <TableHead>إجراء</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredReceipts.map((receipt) => (
+                      <TableRow key={receipt.id} className={selectedReceiptId === receipt.id ? 'bg-primary/5' : undefined}>
+                        <TableCell className="font-black">{receipt.receipt_number}</TableCell>
+                        <TableCell>{formatDate(receipt.payment_date)}</TableCell>
+                        <TableCell dir="ltr" className="font-bold">{formatMoney(receipt.amount)}</TableCell>
+                        <TableCell>{paymentMethodLabels[receipt.payment_method] ?? receipt.payment_method}</TableCell>
+                        <TableCell>{formatShortId(receipt.invoice_id)}</TableCell>
+                        <TableCell>{formatReceiptContext(receipt)}</TableCell>
+                        <TableCell><StatusBadge tone="green">{receiptStatusLabels[receipt.status] ?? receipt.status}</StatusBadge></TableCell>
+                        <TableCell><Button variant="secondary" onClick={() => setSelectedReceiptId(receipt.id)}>عرض</Button></TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </>
           ) : null}
 
           <ReceiptDetailCard
