@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Skeleton } from '@/components/ui/skeleton';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { UnitCard } from '@/components/ui/unit-card';
 import { defaultCompanyLocalSettings } from '@/lib/companySettings';
 import { formatCompanyMoney } from '@/lib/companyFormatters';
 import type { Unit } from '@/types/domain';
@@ -76,37 +77,67 @@ export function UnitsList({ propertyId, unitsQuery }: Readonly<{ propertyId: str
             {Array.from({ length: 4 }, (_, index) => <Skeleton key={index} className="h-14" />)}
           </div>
         ) : unitsQuery.data?.length ? (
-          <div className="overflow-x-auto rounded-2xl border border-border">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>رقم الوحدة</TableHead>
-                  <TableHead>الدور</TableHead>
-                  <TableHead>الحالة</TableHead>
-                  <TableHead>الإيجار</TableHead>
-                  <TableHead>ملاحظات</TableHead>
-                  <TableHead>إجراءات</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {unitsQuery.data.map((unit) => (
-                  <TableRow key={unit.id}>
-                    <TableCell className="font-black">{unit.unit_number}</TableCell>
-                    <TableCell>{unit.floor ?? '—'}</TableCell>
-                    <TableCell><StatusBadge tone={unitStatusTone[unit.status]}>{unitStatusLabels[unit.status]}</StatusBadge></TableCell>
-                    <TableCell dir="ltr" className="font-bold">{money(unit.rent_amount)}</TableCell>
-                    <TableCell>{unit.notes ?? '—'}</TableCell>
-                    <TableCell>
-                      <div className="flex gap-2">
-                        <Button variant="secondary" className="min-h-9 px-3" onClick={() => openForEdit(unit)}><Edit className="size-4" /></Button>
-                        <Button variant="danger" className="min-h-9 px-3" aria-label="أرشفة الوحدة" onClick={() => requestArchiveUnit(unit)} disabled={deleteMutation.isPending}><Archive className="size-4" /></Button>
-                      </div>
-                    </TableCell>
+          <>
+            {/* Mobile cards */}
+            <div className="grid gap-3 sm:grid-cols-2 md:hidden">
+              {unitsQuery.data.map((unit) => (
+                <div key={unit.id} className="space-y-1.5">
+                  <UnitCard
+                    id={unit.id}
+                    unitNumber={unit.unit_number}
+                    floor={unit.floor}
+                    status={unit.status}
+                    rentAmount={unit.rent_amount}
+                    notes={unit.notes}
+                    onClick={() => openForEdit(unit)}
+                    formatMoney={(value) => formatCompanyMoney(defaultCompanyLocalSettings, value)}
+                  />
+                  <Button
+                    variant="danger"
+                    className="w-full h-9 rounded-xl text-xs gap-1.5"
+                    aria-label="أرشفة الوحدة"
+                    onClick={() => requestArchiveUnit(unit)}
+                    disabled={deleteMutation.isPending}
+                  >
+                    <Archive className="size-3.5" />أرشفة
+                  </Button>
+                </div>
+              ))}
+            </div>
+
+            {/* Desktop table */}
+            <div className="hidden overflow-x-auto rounded-2xl border border-border md:block">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>رقم الوحدة</TableHead>
+                    <TableHead>الدور</TableHead>
+                    <TableHead>الحالة</TableHead>
+                    <TableHead>الإيجار</TableHead>
+                    <TableHead>ملاحظات</TableHead>
+                    <TableHead>إجراءات</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
+                </TableHeader>
+                <TableBody>
+                  {unitsQuery.data.map((unit) => (
+                    <TableRow key={unit.id}>
+                      <TableCell className="font-black">{unit.unit_number}</TableCell>
+                      <TableCell>{unit.floor ?? '—'}</TableCell>
+                      <TableCell><StatusBadge tone={unitStatusTone[unit.status]}>{unitStatusLabels[unit.status]}</StatusBadge></TableCell>
+                      <TableCell dir="ltr" className="font-bold">{money(unit.rent_amount)}</TableCell>
+                      <TableCell>{unit.notes ?? '—'}</TableCell>
+                      <TableCell>
+                        <div className="flex gap-2">
+                          <Button variant="secondary" className="min-h-9 px-3" onClick={() => openForEdit(unit)}><Edit className="size-4" /></Button>
+                          <Button variant="danger" className="min-h-9 px-3" aria-label="أرشفة الوحدة" onClick={() => requestArchiveUnit(unit)} disabled={deleteMutation.isPending}><Archive className="size-4" /></Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          </>
         ) : (
           <EmptyState title="لا توجد وحدات" description="أضف الوحدات التابعة لهذا العقار من هنا." action={<Button onClick={openForCreate}>إضافة وحدة</Button>} />
         )}
