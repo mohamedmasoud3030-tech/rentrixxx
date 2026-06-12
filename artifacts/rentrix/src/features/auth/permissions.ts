@@ -70,7 +70,7 @@ export function normalizeRole(role: unknown): AuthorizationRole | null {
 }
 
 export function getRoleFromUser(user: AuthorizationUserLike | null | undefined): AuthorizationRole | null {
-  return normalizeRole(user?.app_metadata?.user_role);
+ return normalizeRole(user?.app_metadata?.user_role ?? user?.app_metadata?.role);
 }
 
 export function getAuthorizationContextFromUser(user: AuthorizationUserLike | null | undefined): AuthorizationContext | null {
