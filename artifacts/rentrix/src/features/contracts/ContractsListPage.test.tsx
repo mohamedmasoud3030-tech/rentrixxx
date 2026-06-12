@@ -13,6 +13,7 @@ vi.mock('@tanstack/react-router', () => ({
     const href = params?.contractId ? `/contracts/${params.contractId}` : to;
     return <a href={href}>{children}</a>;
   },
+  useNavigate: () => vi.fn(),
 }));
 
 const contractsMocks = vi.hoisted(() => ({

@@ -1,9 +1,10 @@
-import { Link } from '@tanstack/react-router';
+import { Link, useNavigate } from '@tanstack/react-router';
 import { AlertTriangle, CalendarClock, ChevronDown, ChevronUp, Download, Edit, Eye, FileText, Plus, Search, Trash2, WalletCards } from 'lucide-react';
 import { Fragment, useMemo, useState, type ReactNode } from 'react';
 import { EmptyState } from '@/components/empty-state';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { ContractCard } from '@/components/ui/contract-card';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
 import { StatusBadge } from '@/components/ui/status-badge';
@@ -95,6 +96,7 @@ function SummaryCard({ label, value, description, icon: Icon }: { label: string;
 }
 
 export function ContractsListPage() {
+  const navigate = useNavigate();
   const [status, setStatus] = useState<ContractStatusFilter>('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [expiringOnly, setExpiringOnly] = useState(false);
@@ -179,11 +181,14 @@ export function ContractsListPage() {
         </div>
       </div>
 
-      <Card className="overflow-hidden">
-        {contractsQuery.isLoading ? (
+      {contractsQuery.isLoading ? (
+        <Card className="overflow-hidden">
           <div className="space-y-3 p-6">{Array.from({ length: 6 }, (_, index) => <Skeleton key={index} className="h-14" />)}</div>
-        ) : null}
-        {!contractsQuery.isLoading && contractsQuery.isError ? (
+        </Card>
+      ) : null}
+
+      {!contractsQuery.isLoading && contractsQuery.isError ? (
+        <Card className="overflow-hidden">
           <div className="p-6">
             <EmptyState
               title="تعذر تحميل العقود"
@@ -191,10 +196,81 @@ export function ContractsListPage() {
               action={<Button type="button" onClick={retryContracts}>إعادة المحاولة</Button>}
             />
           </div>
-        ) : null}
-        {!contractsQuery.isLoading && !contractsQuery.isError && filteredContracts.length ? (
-          <div className="overflow-x-auto">
-            <Table>
+        </Card>
+      ) : null}
+
+      {!contractsQuery.isLoading && !contractsQuery.isError && !filteredContracts.length ? (
+        <Card className="overflow-hidden">
+          <div className="p-6">
+            {hasContracts ? (
+              <EmptyState title="لا توجد عقود مطابقة" description="جرّب تغيير عبارة البحث أو فلتر الحالة لعرض عقود أخرى." />
+            ) : (
+              <EmptyState
+                title="لا توجد عقود"
+                description="ابدأ بإنشاء أول عقد وربطه بالعقار والوحدة والمستأجر."
+                action={
+                  <Button asChild>
+                    <Link to="/contracts/new">
+                      <FileText className="me-2 size-4" />إنشاء عقد
+                    </Link>
+                  </Button>
+                }
+              />
+            )}
+          </div>
+        </Card>
+      ) : null}
+
+      {!contractsQuery.isLoading && !contractsQuery.isError && filteredContracts.length ? (
+        <>
+          {/* Mobile card view */}
+          <div className="grid gap-3 sm:grid-cols-2 md:hidden">
+            {filteredContracts.map((contract) => {
+              const expiringSoon = isExpiringSoon(contract);
+              const daysUntilEnd = getDaysUntilEnd(contract);
+              return (
+                <div key={contract.id} className="space-y-1.5">
+                  <ContractCard
+                    id={contract.id}
+                    contractNumber={getContractNumber(contract)}
+                    tenantName={contract.people?.full_name ?? '—'}
+                    location={contract.units?.unit_number ?? contract.properties?.title ?? '—'}
+                    endDate={contract.end_date}
+                    daysRemaining={daysUntilEnd ?? 0}
+                    monthlyRent={contract.rent_amount}
+                    status={contract.status.toUpperCase()}
+                    onClick={() => navigate({ to: '/contracts/$contractId', params: { contractId: contract.id } })}
+                    formatMoney={(value) => formatContractMoney(companySettings, value)}
+                    formatDate={(value) => formatContractDate(companySettings, value)}
+                  />
+                  {expiringSoon ? (
+                    <p className="px-1 text-xs font-bold text-amber-700">ينتهي خلال {daysUntilEnd} يوم</p>
+                  ) : null}
+                  <div className="flex items-center justify-end gap-2 px-1">
+                    <Button variant="secondary" className="h-9 rounded-xl px-3 text-xs gap-1.5" asChild>
+                      <Link to="/contracts/$contractId/edit" params={{ contractId: contract.id }} aria-label={`تعديل العقد ${getContractNumber(contract)}`}>
+                        <Edit className="size-3.5" />تعديل
+                      </Link>
+                    </Button>
+                    <Button
+                      variant="danger"
+                      className="h-9 rounded-xl px-3 text-xs gap-1.5"
+                      aria-label={`حذف العقد ${getContractNumber(contract)}`}
+                      onClick={() => deleteMutation.mutate(contract.id)}
+                      disabled={deleteMutation.isPending}
+                    >
+                      <Trash2 className="size-3.5" />حذف
+                    </Button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Desktop table view */}
+          <Card className="hidden overflow-hidden md:block">
+            <div className="overflow-x-auto">
+              <Table>
               <TableHeader>
                 <TableRow>
                   <TableHead className="w-12">تفاصيل</TableHead>
@@ -293,28 +369,10 @@ export function ContractsListPage() {
                 })}
               </TableBody>
             </Table>
-          </div>
-        ) : null}
-        {!contractsQuery.isLoading && !contractsQuery.isError && !filteredContracts.length ? (
-          <div className="p-6">
-            {hasContracts ? (
-              <EmptyState title="لا توجد عقود مطابقة" description="جرّب تغيير عبارة البحث أو فلتر الحالة لعرض عقود أخرى." />
-            ) : (
-              <EmptyState
-                title="لا توجد عقود"
-                description="ابدأ بإنشاء أول عقد وربطه بالعقار والوحدة والمستأجر."
-                action={
-                  <Button asChild>
-                    <Link to="/contracts/new">
-                      <FileText className="me-2 size-4" />إنشاء عقد
-                    </Link>
-                  </Button>
-                }
-              />
-            )}
-          </div>
-        ) : null}
-      </Card>
+            </div>
+          </Card>
+        </>
+      ) : null}
     </div>
   );
 }
