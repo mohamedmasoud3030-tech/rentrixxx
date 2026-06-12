@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { EmptyState } from '@/components/empty-state';
 import { Input } from '@/components/ui/input';
+import { OwnerCard } from '@/components/ui/owner-card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -180,12 +181,32 @@ function OwnerWorkspaceRowView({ row, selectedOwnerId, onEditOwner, onSelectOwne
 
 function OwnerTableContent({ rows, selectedOwner, onEditOwner, onSelectOwner }: Omit<OwnerWorkspaceTableProps, 'search' | 'onCreateOwner' | 'onSearchChange'>) {
   return (
-    <div className="overflow-x-auto">
-      <Table>
-        <TableHeader><TableRow><TableHead>اسم المالك</TableHead><TableHead>الهاتف والإيميل</TableHead><TableHead>عدد العقارات</TableHead><TableHead>أسماء العقارات</TableHead><TableHead>نسبة الملكية/الدور</TableHead><TableHead>العقود النشطة</TableHead><TableHead>روابط آمنة</TableHead></TableRow></TableHeader>
-        <TableBody>{rows.map((row) => <OwnerWorkspaceRowView key={row.owner.id} row={row} selectedOwnerId={selectedOwner?.id ?? null} onEditOwner={onEditOwner} onSelectOwner={onSelectOwner} />)}</TableBody>
-      </Table>
-    </div>
+    <>
+      {/* Mobile cards */}
+      <div className="grid gap-3 sm:grid-cols-2 md:hidden">
+        {rows.map((row) => (
+          <OwnerCard
+            key={row.owner.id}
+            id={row.owner.id}
+            displayName={getOwnerDisplayLabel(row.owner)}
+            fullName={row.owner.full_name}
+            phone={row.owner.phone}
+            email={row.owner.email}
+            propertyCount={row.propertyCount}
+            activeContractCount={row.activeContractCount}
+            onClick={() => onSelectOwner(row.owner.id)}
+          />
+        ))}
+      </div>
+
+      {/* Desktop table */}
+      <div className="hidden overflow-x-auto md:block">
+        <Table>
+          <TableHeader><TableRow><TableHead>اسم المالك</TableHead><TableHead>الهاتف والإيميل</TableHead><TableHead>عدد العقارات</TableHead><TableHead>أسماء العقارات</TableHead><TableHead>نسبة الملكية/الدور</TableHead><TableHead>العقود النشطة</TableHead><TableHead>روابط آمنة</TableHead></TableRow></TableHeader>
+          <TableBody>{rows.map((row) => <OwnerWorkspaceRowView key={row.owner.id} row={row} selectedOwnerId={selectedOwner?.id ?? null} onEditOwner={onEditOwner} onSelectOwner={onSelectOwner} />)}</TableBody>
+        </Table>
+      </div>
+    </>
   );
 }
 
