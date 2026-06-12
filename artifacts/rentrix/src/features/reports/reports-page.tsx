@@ -247,7 +247,27 @@ function RentRollSection({ rows }: Readonly<{ rows: RentRollRow[] }>) {
       description="قائمة الإيجارات من العقود الحالية فقط، مع روابط آمنة لتفاصيل العقود."
       action={<Button variant="secondary" onClick={() => downloadCsv('rent-roll.csv', rows)}>تصدير CSV</Button>}
     >
-      <div className="overflow-x-auto">
+      {/* Mobile cards */}
+      <div className="grid gap-3 p-4 md:hidden">
+        {rows.map((row) => (
+          <div key={row.contractId} className="rounded-2xl border bg-background p-4 space-y-2 text-sm">
+            <div className="flex items-center justify-between gap-2">
+              <SafeAnchor href={`/contracts/${encodeURIComponent(row.contractId)}`} label={formatShortId(row.contractId)} />
+              <StatusBadge tone="green">{row.statusLabel}</StatusBadge>
+            </div>
+            <p className="font-medium">{row.tenantName}</p>
+            <p className="text-muted-foreground">{row.propertyTitle} · {row.unitNumber}</p>
+            <div className="flex items-center justify-between gap-2">
+              <span className="font-black" dir="ltr">{formatMoney(row.rentAmount)}</span>
+              <span className="text-xs text-muted-foreground">{row.paymentCycle}</span>
+            </div>
+            <p className="text-xs text-muted-foreground">{formatDate(row.startDate)} — {formatDate(row.endDate)}</p>
+          </div>
+        ))}
+        {rows.length === 0 && <p className="text-sm text-muted-foreground">لا توجد عقود ضمن البيانات الحالية.</p>}
+      </div>
+      {/* Desktop table */}
+      <div className="hidden overflow-x-auto md:block">
         <Table>
           <TableHeader>
             <TableRow>
@@ -287,7 +307,25 @@ function OverdueInvoicesSection({ rows }: Readonly<{ rows: OverdueInvoiceReportR
       description="الفواتير المتأخرة المحسوبة من خدمة arrears الحالية حسب as-of date."
       action={<Button variant="secondary" onClick={() => downloadCsv('overdue-invoices.csv', rows)}>تصدير CSV</Button>}
     >
-      <div className="overflow-x-auto">
+      {/* Mobile cards */}
+      <div className="grid gap-3 p-4 md:hidden">
+        {rows.map((row) => (
+          <div key={row.invoiceId} className="rounded-2xl border bg-background p-4 space-y-2 text-sm">
+            <div className="flex items-center justify-between gap-2">
+              <SafeAnchor href="/invoices" label={row.shortInvoiceId} />
+              <span className="text-xs font-bold text-destructive">{row.daysOverdue.toLocaleString('ar')} يوم</span>
+            </div>
+            <p className="font-medium">{row.tenantName ?? '—'}</p>
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-muted-foreground">{formatDate(row.dueDate)}</span>
+              <span className="font-black text-destructive" dir="ltr">{formatMoney(row.remainingAmount)}</span>
+            </div>
+          </div>
+        ))}
+        {rows.length === 0 && <p className="text-sm text-muted-foreground">لا توجد فواتير متأخرة حسب تاريخ as-of.</p>}
+      </div>
+      {/* Desktop table */}
+      <div className="hidden overflow-x-auto md:block">
         <Table>
           <TableHeader>
             <TableRow>
@@ -335,7 +373,29 @@ function AgedReceivablesSection({ report }: Readonly<{ report: NonNullable<Retur
           return <MetricCard key={key} label={bucket?.label ?? key} value={formatMoney(bucket?.total ?? 0)} helper={`${bucket?.invoiceCount ?? 0} فواتير`} tone={key === 'current' ? 'green' : 'gold'} />;
         })}
       </div>
-      <div className="overflow-x-auto">
+      {/* Mobile cards */}
+      <div className="grid gap-3 p-4 md:hidden">
+        {rows.map((row) => (
+          <div key={row.contractId} className="rounded-2xl border bg-background p-4 space-y-2 text-sm">
+            <SafeAnchor href={`/contracts/${encodeURIComponent(row.contractId)}`} label={formatShortId(row.contractId)} />
+            <p className="font-medium">{row.tenantName ?? '—'}</p>
+            <p className="text-muted-foreground">{row.propertyTitle ?? '—'} · {row.unitNumber ?? '—'}</p>
+            <div className="flex items-center justify-between gap-2">
+              <div>
+                <p className="text-xs text-muted-foreground">الذمم</p>
+                <p className="font-black" dir="ltr">{formatMoney(row.totalOutstanding)}</p>
+              </div>
+              <div className="text-left">
+                <p className="text-xs text-muted-foreground">المتأخر</p>
+                <p className="font-black text-destructive" dir="ltr">{formatMoney(row.totalOverdue)}</p>
+              </div>
+            </div>
+          </div>
+        ))}
+        {rows.length === 0 && <p className="text-sm text-muted-foreground">لا توجد ذمم مستحقة حسب تاريخ as-of.</p>}
+      </div>
+      {/* Desktop table */}
+      <div className="hidden overflow-x-auto md:block">
         <Table>
           <TableHeader>
             <TableRow>
@@ -376,7 +436,26 @@ function DailyCollectionSection({ rows, receiptRows }: Readonly<{
       description="ملخص يومي للتحصيل مع روابط مباشرة لفتح إيصالات الدفع وطباعتها."
       action={<Button variant="secondary" onClick={() => downloadCsv('daily-collection.csv', toDailyCollectionCsv(rows))}>تصدير CSV</Button>}
     >
-      <div className="overflow-x-auto">
+      {/* Mobile cards */}
+      <div className="grid gap-3 p-4 md:hidden">
+        {rows.map((row) => (
+          <div key={row.paymentDate} className="rounded-2xl border bg-background p-4 space-y-2 text-sm">
+            <div className="flex items-center justify-between gap-2">
+              <span className="font-medium">{formatDate(row.paymentDate)}</span>
+              <span className="font-black" dir="ltr">{formatMoney(row.totalPaid)}</span>
+            </div>
+            <div className="grid grid-cols-2 gap-1 text-xs text-muted-foreground">
+              <span>نقداً: <span className="font-medium text-foreground" dir="ltr">{formatMoney(row.methodTotals.cash)}</span></span>
+              <span>تحويل: <span className="font-medium text-foreground" dir="ltr">{formatMoney(row.methodTotals.bank_transfer)}</span></span>
+              <span>بطاقة: <span className="font-medium text-foreground" dir="ltr">{formatMoney(row.methodTotals.card)}</span></span>
+              <span>شيك: <span className="font-medium text-foreground" dir="ltr">{formatMoney(row.methodTotals.check)}</span></span>
+            </div>
+          </div>
+        ))}
+        {rows.length === 0 && <p className="text-sm text-muted-foreground">لا توجد تحصيلات في الفترة المحددة.</p>}
+      </div>
+      {/* Desktop table */}
+      <div className="hidden overflow-x-auto md:block">
         <Table>
           <TableHeader>
             <TableRow>

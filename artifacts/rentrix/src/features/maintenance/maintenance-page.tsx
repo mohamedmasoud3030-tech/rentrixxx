@@ -10,8 +10,8 @@ import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
 import { StatusBadge } from '@/components/ui/status-badge';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Textarea } from '@/components/ui/textarea';
-import { DataTable } from '@/components/shared/DataTable';
 import { useProperties } from '@/features/properties/use-properties';
 import { useAllUnits, useUnits } from '@/features/units/use-units';
 import { useMaintenance, useCreateMaintenance, useUpdateMaintenanceStatus } from './use-maintenance';
@@ -242,7 +242,7 @@ export function MaintenancePage() {
         </Card>
       )}
 
-      {/* Table */}
+      {/* Requests list */}
       {isLoading ? (
         <div className="space-y-3">{Array.from({ length: 4 }, (_, i) => <Skeleton key={i} className="h-14 rounded-xl" />)}</div>
       ) : hasLoadError ? (
@@ -251,54 +251,112 @@ export function MaintenancePage() {
           description={getLoadErrorMessage(loadError, 'حدث خطأ غير متوقع.')}
           action={<Button type="button" onClick={retryMaintenanceWorkspace}>إعادة المحاولة</Button>}
         />
+      ) : filteredMaintenanceRows.length === 0 ? (
+        <EmptyState title="لا توجد طلبات صيانة" description="غيّر عوامل التصفية أو أضف طلب صيانة جديد للبدء." />
       ) : (
-        <DataTable
-          rows={filteredMaintenanceRows}
-          keyOf={(row) => row.id}
-          columns={[
-            { key: 'title', header: 'العنوان', render: (row) => <span className="font-medium">{row.title}</span> },
-            { key: 'location', header: 'الموقع', render: (row) => buildMaintenanceLocationLabel(row, properties, allUnits) },
-            {
-              key: 'status',
-              header: 'الحالة',
-              render: (row) => (
-                <StatusBadge tone={maintenanceStatusTone[row.status as keyof typeof maintenanceStatusTone] ?? 'gray'}>{maintenanceStatusLabels[row.status as keyof typeof maintenanceStatusLabels] ?? row.status ?? '—'}</StatusBadge>
-              ),
-            },
-            {
-              key: 'priority',
-              header: 'الأولوية',
-              render: (row) => (
-                <StatusBadge tone={maintenancePriorityTone[row.priority as keyof typeof maintenancePriorityTone] ?? 'gray'}>{maintenancePriorityLabels[row.priority as keyof typeof maintenancePriorityLabels] ?? row.priority ?? '—'}</StatusBadge>
-              ),
-            },
-            {
-              key: 'actions',
-              header: 'الإجراء',
-              render: (row) => {
-                const actions = getMaintenanceStatusActions((row.status ?? '') as keyof typeof maintenanceStatusLabels);
-                if (!actions.length) return <span className="flex items-center gap-1 text-muted-foreground text-xs"><CheckCircle2 className="size-3.5" />مكتمل</span>;
-                return (
-                  <div className="flex flex-wrap gap-2">
-                    {actions.map((action) => (
-                      <Button
-                        key={`${row.id}-${action.status}`}
-                        type="button"
-                        variant="secondary"
-                        className="min-h-8 px-3 text-xs"
-                        disabled={updateStatusMutation.isPending}
-                        onClick={() => updateStatusMutation.mutate({ requestId: row.id, status: action.status })}
-                      >
-                        {action.label}
-                      </Button>
-                    ))}
-                  </div>
-                );
-              },
-            },
-          ]}
-          empty={<EmptyState title="لا توجد طلبات صيانة" description="غيّر عوامل التصفية أو أضف طلب صيانة جديد للبدء." />}
-        />
+        <>
+          {/* Mobile cards */}
+          <div className="grid gap-3 md:hidden">
+            {filteredMaintenanceRows.map((row) => {
+              const actions = getMaintenanceStatusActions((row.status ?? '') as keyof typeof maintenanceStatusLabels);
+              return (
+                <Card key={row.id} className="rounded-2xl">
+                  <CardContent className="p-4 space-y-3">
+                    <div className="flex items-start justify-between gap-2">
+                      <p className="font-semibold leading-tight">{row.title}</p>
+                      <StatusBadge tone={maintenancePriorityTone[row.priority as keyof typeof maintenancePriorityTone] ?? 'gray'}>
+                        {maintenancePriorityLabels[row.priority as keyof typeof maintenancePriorityLabels] ?? row.priority ?? '—'}
+                      </StatusBadge>
+                    </div>
+                    <div className="flex items-center justify-between gap-2 text-sm">
+                      <span className="text-muted-foreground">{buildMaintenanceLocationLabel(row, properties, allUnits)}</span>
+                      <StatusBadge tone={maintenanceStatusTone[row.status as keyof typeof maintenanceStatusTone] ?? 'gray'}>
+                        {maintenanceStatusLabels[row.status as keyof typeof maintenanceStatusLabels] ?? row.status ?? '—'}
+                      </StatusBadge>
+                    </div>
+                    {actions.length > 0 && (
+                      <div className="flex flex-wrap gap-2 pt-1">
+                        {actions.map((action) => (
+                          <Button
+                            key={`${row.id}-${action.status}`}
+                            type="button"
+                            variant="secondary"
+                            className="min-h-8 px-3 text-xs"
+                            disabled={updateStatusMutation.isPending}
+                            onClick={() => updateStatusMutation.mutate({ requestId: row.id, status: action.status })}
+                          >
+                            {action.label}
+                          </Button>
+                        ))}
+                      </div>
+                    )}
+                    {!actions.length && (
+                      <span className="flex items-center gap-1 text-muted-foreground text-xs">
+                        <CheckCircle2 className="size-3.5" />مكتمل
+                      </span>
+                    )}
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+
+          {/* Desktop table */}
+          <div className="hidden overflow-hidden rounded-2xl border bg-background md:block">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>العنوان</TableHead>
+                  <TableHead>الموقع</TableHead>
+                  <TableHead>الحالة</TableHead>
+                  <TableHead>الأولوية</TableHead>
+                  <TableHead>الإجراء</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredMaintenanceRows.map((row) => {
+                  const actions = getMaintenanceStatusActions((row.status ?? '') as keyof typeof maintenanceStatusLabels);
+                  return (
+                    <TableRow key={row.id}>
+                      <TableCell><span className="font-medium">{row.title}</span></TableCell>
+                      <TableCell>{buildMaintenanceLocationLabel(row, properties, allUnits)}</TableCell>
+                      <TableCell>
+                        <StatusBadge tone={maintenanceStatusTone[row.status as keyof typeof maintenanceStatusTone] ?? 'gray'}>
+                          {maintenanceStatusLabels[row.status as keyof typeof maintenanceStatusLabels] ?? row.status ?? '—'}
+                        </StatusBadge>
+                      </TableCell>
+                      <TableCell>
+                        <StatusBadge tone={maintenancePriorityTone[row.priority as keyof typeof maintenancePriorityTone] ?? 'gray'}>
+                          {maintenancePriorityLabels[row.priority as keyof typeof maintenancePriorityLabels] ?? row.priority ?? '—'}
+                        </StatusBadge>
+                      </TableCell>
+                      <TableCell>
+                        {!actions.length ? (
+                          <span className="flex items-center gap-1 text-muted-foreground text-xs"><CheckCircle2 className="size-3.5" />مكتمل</span>
+                        ) : (
+                          <div className="flex flex-wrap gap-2">
+                            {actions.map((action) => (
+                              <Button
+                                key={`${row.id}-${action.status}`}
+                                type="button"
+                                variant="secondary"
+                                className="min-h-8 px-3 text-xs"
+                                disabled={updateStatusMutation.isPending}
+                                onClick={() => updateStatusMutation.mutate({ requestId: row.id, status: action.status })}
+                              >
+                                {action.label}
+                              </Button>
+                            ))}
+                          </div>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          </div>
+        </>
       )}
     </div>
   );

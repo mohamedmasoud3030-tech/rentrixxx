@@ -20,54 +20,115 @@ function getContextLabel(row: OverdueInvoiceReportRow) {
 
 export function OverdueInvoicesTable({ rows, selectedInvoiceId, onSelectInvoice }: OverdueInvoicesTableProps) {
   return (
-    <div className="overflow-hidden rounded-3xl border bg-background">
-      <div className="overflow-x-auto">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>الفاتورة</TableHead>
-              <TableHead>المستأجر</TableHead>
-              <TableHead>العقار / الوحدة</TableHead>
-              <TableHead>العقد</TableHead>
-              <TableHead>الاستحقاق</TableHead>
-              <TableHead>أيام التأخير</TableHead>
-              <TableHead>الإجمالي</TableHead>
-              <TableHead>المدفوع</TableHead>
-              <TableHead>المتبقي</TableHead>
-              <TableHead>الحالة</TableHead>
-              <TableHead>العمر</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {rows.map((row) => {
-              const isSelected = selectedInvoiceId === row.invoiceId;
-              const bucket = getOverdueRowBucketKey(row);
-              return (
-                <TableRow key={row.invoiceId} className={cn(isSelected ? 'bg-primary/5 ring-1 ring-inset ring-primary/20' : undefined)}>
-                  <TableCell>
-                    <button type="button" className="font-black text-primary underline-offset-4 hover:underline" onClick={() => onSelectInvoice(row.invoiceId)}>
-                      #{row.shortInvoiceId || row.invoiceId.slice(0, 8)}
-                    </button>
-                  </TableCell>
-                  <TableCell>{row.tenantName ?? EMPTY_FIELD_VALUE}</TableCell>
-                  <TableCell>{getContextLabel(row)}</TableCell>
-                  <TableCell>{formatShortId(row.contractId)}</TableCell>
-                  <TableCell>{formatDate(row.dueDate)}</TableCell>
-                  <TableCell>{row.daysOverdue.toLocaleString(ARABIC_LOCALE)}</TableCell>
-                  <TableCell>{formatMoney(row.amount)}</TableCell>
-                  <TableCell>{formatMoney(row.paidAmount)}</TableCell>
-                  <TableCell className="font-black text-destructive">{formatMoney(row.remainingAmount)}</TableCell>
-                  <TableCell>
-                    <span className="inline-flex rounded-full bg-secondary px-2.5 py-1 text-xs font-bold text-secondary-foreground">
-                      {formatInvoiceStatusLabel(row.status)}
-                    </span>
-                  </TableCell>
-                  <TableCell>{getArrearsBucketLabel(bucket)}</TableCell>
-                </TableRow>
-              );
-            })}
-          </TableBody>
-        </Table>
+    <div>
+      {/* Mobile cards — hidden on md+ */}
+      <div className="grid gap-3 md:hidden">
+        {rows.map((row) => {
+          const isSelected = selectedInvoiceId === row.invoiceId;
+          const bucket = getOverdueRowBucketKey(row);
+          return (
+            <div
+              key={row.invoiceId}
+              className={cn(
+                'rounded-2xl border bg-background p-4 space-y-3',
+                isSelected ? 'ring-2 ring-primary/40 bg-primary/5' : '',
+              )}
+            >
+              <div className="flex items-start justify-between gap-2">
+                <button
+                  type="button"
+                  className="font-black text-primary underline-offset-4 hover:underline text-base"
+                  onClick={() => onSelectInvoice(row.invoiceId)}
+                >
+                  #{row.shortInvoiceId || row.invoiceId.slice(0, 8)}
+                </button>
+                <span className="rounded-full bg-destructive/10 px-2.5 py-0.5 text-xs font-bold text-destructive">
+                  {getArrearsBucketLabel(bucket)}
+                </span>
+              </div>
+              <div className="grid grid-cols-2 gap-2 text-sm">
+                <div>
+                  <p className="text-xs text-muted-foreground">المستأجر</p>
+                  <p className="font-medium">{row.tenantName ?? EMPTY_FIELD_VALUE}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">الموقع</p>
+                  <p className="font-medium">{getContextLabel(row)}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">الاستحقاق</p>
+                  <p className="font-medium">{formatDate(row.dueDate)}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">أيام التأخير</p>
+                  <p className="font-bold text-destructive">{row.daysOverdue.toLocaleString(ARABIC_LOCALE)}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">المتبقي</p>
+                  <p className="font-black text-destructive">{formatMoney(row.remainingAmount)}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">الحالة</p>
+                  <span className="inline-flex rounded-full bg-secondary px-2 py-0.5 text-xs font-bold text-secondary-foreground">
+                    {formatInvoiceStatusLabel(row.status)}
+                  </span>
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Desktop table — hidden on mobile */}
+      <div className="hidden overflow-hidden rounded-3xl border bg-background md:block">
+        <div className="overflow-x-auto">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>الفاتورة</TableHead>
+                <TableHead>المستأجر</TableHead>
+                <TableHead>العقار / الوحدة</TableHead>
+                <TableHead>العقد</TableHead>
+                <TableHead>الاستحقاق</TableHead>
+                <TableHead>أيام التأخير</TableHead>
+                <TableHead>الإجمالي</TableHead>
+                <TableHead>المدفوع</TableHead>
+                <TableHead>المتبقي</TableHead>
+                <TableHead>الحالة</TableHead>
+                <TableHead>العمر</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {rows.map((row) => {
+                const isSelected = selectedInvoiceId === row.invoiceId;
+                const bucket = getOverdueRowBucketKey(row);
+                return (
+                  <TableRow key={row.invoiceId} className={cn(isSelected ? 'bg-primary/5 ring-1 ring-inset ring-primary/20' : undefined)}>
+                    <TableCell>
+                      <button type="button" className="font-black text-primary underline-offset-4 hover:underline" onClick={() => onSelectInvoice(row.invoiceId)}>
+                        #{row.shortInvoiceId || row.invoiceId.slice(0, 8)}
+                      </button>
+                    </TableCell>
+                    <TableCell>{row.tenantName ?? EMPTY_FIELD_VALUE}</TableCell>
+                    <TableCell>{getContextLabel(row)}</TableCell>
+                    <TableCell>{formatShortId(row.contractId)}</TableCell>
+                    <TableCell>{formatDate(row.dueDate)}</TableCell>
+                    <TableCell>{row.daysOverdue.toLocaleString(ARABIC_LOCALE)}</TableCell>
+                    <TableCell>{formatMoney(row.amount)}</TableCell>
+                    <TableCell>{formatMoney(row.paidAmount)}</TableCell>
+                    <TableCell className="font-black text-destructive">{formatMoney(row.remainingAmount)}</TableCell>
+                    <TableCell>
+                      <span className="inline-flex rounded-full bg-secondary px-2.5 py-1 text-xs font-bold text-secondary-foreground">
+                        {formatInvoiceStatusLabel(row.status)}
+                      </span>
+                    </TableCell>
+                    <TableCell>{getArrearsBucketLabel(bucket)}</TableCell>
+                  </TableRow>
+                );
+              })}
+            </TableBody>
+          </Table>
+        </div>
       </div>
     </div>
   );
@@ -82,7 +143,7 @@ export function SelectedOverdueInvoiceCard({ row, onShowInvoice }: SelectedOverd
   if (!row) {
     return (
       <div className="rounded-3xl border border-dashed bg-muted/20 p-5 text-sm text-muted-foreground">
-        اختر فاتورة متأخرة من الجدول لعرض تفاصيل التحصيل للقراءة فقط.
+        اختر فاتورة متأخرة من القائمة لعرض تفاصيل التحصيل للقراءة فقط.
       </div>
     );
   }
