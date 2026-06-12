@@ -330,7 +330,7 @@ Close `v0.1` only when:
 
 ## 7. v0.2 — Operational UX Completion
 
-**Status:** `DEFERRED until v0.1 closes`
+**Status:** `CLOSED`
 
 **Goal:** make every visible operational-core surface commercially coherent without expanding hidden modules.
 
@@ -360,7 +360,7 @@ Close `v0.1` only when:
 
 ## 8. v0.3 — Controlled Operations Recovery
 
-**Status:** `DEFERRED until v0.2 closes`
+**Status:** `IN PROGRESS`
 
 **Goal:** re-enable only verified operational and governance modules.
 
@@ -368,12 +368,12 @@ Close `v0.1` only when:
 
 | Order | Item | Status | Notes |
 | --- | --- | --- | --- |
-| 1 | Verify maintenance schema, statuses, indexes, and RLS; then decide whether to re-expose `/maintenance` | `DEFERRED` | Service, hook, page, and tests exist. Schema backed by migrations. Likely ready. |
-| 2 | Decide and verify `/audit-log` re-exposure | `DEFERRED` | Read-only pilot wired (#806). `public.audit_log` queried. `database.ts` not refreshed yet. Env-guard in place. |
-| 3 | Verify data-integrity read model and permissions; then decide whether to re-expose `/data-integrity` | `DEFERRED` | Page exists; service minimal. |
-| 4 | Verify system-governance source support and permissions; then decide whether to re-expose `/system` | `DEFERRED` | Page and components exist. |
-| 5 | Refresh `database.ts` types to include `audit_log` and other untracked tables | `DEFERRED` | Currently the audit service uses a local type cast. |
-| 6 | Add route, permission, UX, and regression-test evidence for each re-exposed module separately | `DEFERRED` | |
+| 1 | Verify maintenance schema, statuses, indexes, and RLS; then decide whether to re-expose `/maintenance` | `DONE` | Re-exposed in nav (#842). Page polished with shadcn components (#843). |
+| 2 | Decide and verify `/audit-log` re-exposure | `DONE` | Re-exposed in nav (#842). `database.ts` refreshed with real `audit_log` row type (#849). RLS hardened: read-only for app users, write restricted to ADMIN/MANAGER (#850). Table currently has 0 rows — nothing writes to it yet. |
+| 3 | Verify data-integrity read model and permissions; then decide whether to re-expose `/data-integrity` | `DONE` | Re-exposed in nav (#842). |
+| 4 | Verify system-governance source support and permissions; then decide whether to re-expose `/system` | `DONE` | Re-exposed in nav (#842). Page polished (#843). |
+| 5 | Refresh `database.ts` types to include `audit_log` and other untracked tables | `DONE` | Added `audit_log`, `financial_operation_idempotency`, `leads`, `commissions`, `lands`, `users` row types from live schema (#849). Removed local type-cast workaround in audit service. |
+| 6 | Add route, permission, UX, and regression-test evidence for each re-exposed module separately | `IN PROGRESS` | Route parity and 105 unit tests pass on CI. Browser/manual QA evidence for the four re-exposed pages still pending. |
 
 ### Acceptance gate
 
