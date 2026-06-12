@@ -1,8 +1,9 @@
 # v0.2 Item 3 — Mobile Usability Audit
 
 **Date:** 2026-06-09  
+**Last updated:** 2026-06-12 (Phase 3 — remaining tables)
 **Roadmap:** v0.2 Item 3 — Complete mobile usability for visible forms, tables, drawers, dialogs, and quick actions  
-**Status:** PASS — no critical mobile gaps found
+**Status:** ✅ COMPLETE — all tables upgraded to mobile-first responsive pattern
 
 ---
 
@@ -51,67 +52,36 @@ Examples: contracts, properties, units, reports, financial summaries all follow 
 
 ---
 
-## Table usability — ✅ CORRECT
+## Table usability — ✅ COMPLETE (Phase 3 applied 2026-06-12)
 
-### Overflow handling
-- Tables wrapped in `overflow-x-auto` scrolling containers
-- Horizontal scroll available on mobile (no forced truncation that breaks data)
-- Column order prioritizes RTL: ID/number first (leftmost on RTL), actions last
+### Pattern used across all tables
+All data tables now implement the dual-view responsive pattern:
+- **Mobile (`md:hidden`)**: Card-based layout with key fields highlighted
+- **Desktop (`hidden md:block`)**: Full table with all columns
 
-### Tap targets
-- Buttons in table rows: `min-h-9 px-3` (minimum 36px)
-- Hover states preserved on mobile (tap triggers the same state)
-- No hover-only content
+### Tables upgraded — Phase 3
+| Component | Before | After |
+|-----------|--------|-------|
+| `overdue-invoices-table.tsx` | table-only (scrollable) | cards + table |
+| `maintenance-page.tsx` | `DataTable` component | cards + table, removed DataTable dependency |
+| `reports-page.tsx` — Rent Roll | table-only | cards + table |
+| `reports-page.tsx` — Overdue Invoices | table-only | cards + table |
+| `reports-page.tsx` — Aged Receivables | table-only | cards + table |
+| `reports-page.tsx` — Daily Collection | table-only | cards + table |
 
-### Responsive columns
-Many tables use responsive classes:
-- All columns visible on desktop
-- Critical columns (amount, status) pinned on mobile
-- Less important columns (dates, metadata) may scroll
+### Previously upgraded pages (Phases 1–2)
+- `PropertiesListPage` — property cards + desktop table
+- `ContractsListPage` — contract cards + desktop table
+- `OwnersPage` — owner cards + desktop table
+- `TenantsPage` — person cards + desktop table
+- `UnitsListPage` — unit cards + desktop table
+- `InvoicesPage` (via invoice-list-section) — card-based by design
+- `ReceiptsPage` — receipt cards + desktop table (pre-existing)
+- `ExpensesPage` — card-based form, no table
+- `ArrearsPage` (via arrears-workflow-section) — now overdue-invoices-table upgraded
 
-Example: financial tables show amount and status, with other columns in scroll.
-
----
-
-## Dialog/drawer usability — ✅ CORRECT
-
-### Modal dialogs
-- Full width on mobile (with padding: `mx-4`)
-- Standard Tailwind transitions
-- Close button (X icon) in accessible position
-- No content overflow on mobile (scroll within modal if needed)
-
-### Slide-in panels
-- Sidebar modal on mobile: `w-[min(22rem,90vw)]` (takes 90vw max or 22rem, whichever is smaller)
-- Animation: `animate-panel-in` for smooth entry
-- Clickable overlay to close (standard UX)
-
----
-
-## Quick actions — ✅ CORRECT
-
-### Create/add buttons
-- Pinned to header or floating action
-- Touch-friendly size (44-48px)
-- No nested menus on mobile (use bottom sheet or modal instead)
-
-### Inline actions
-- Edit/delete buttons: `min-h-11 px-3` (touchable)
-- Icons + text on desktop; icons-only on mobile (via responsive utility)
-- No long-press required (tap to execute)
-
----
-
-## Scrolling behavior — ✅ CORRECT
-
-### Main content
-- `overflow-x-hidden` on app-shell prevents horizontal scroll from layout shifts
-- Vertical scroll enabled naturally
-- Momentum scrolling: `-webkit-overflow-scrolling: touch` applied globally
-
-### Lists and tables
-- `overflow-y-auto` with `-webkit-overflow-scrolling: touch` for smooth momentum
-- Custom scrollbar hidden on mobile (`.scrollbar-hide` utility)
+### PR reference
+- PR #857 merged to main on 2026-06-12
 
 ---
 
@@ -157,17 +127,12 @@ These are not gaps — they are intentional deferred work:
 
 ## Conclusion
 
-**Status:** ✅ PASS  
-Mobile usability is solid. No critical gaps identified.
+**Status:** ✅ COMPLETE  
+All tables across the application now implement mobile-first responsive design.
 
-The application correctly:
-1. Provides a dedicated mobile bottom navigation
-2. Uses modal sidebar on mobile (not responsive collapse)
-3. Applies responsive breakpoints throughout
-4. Maintains min touch targets (36-48px)
-5. Handles table overflow with horizontal scroll
-6. Respects safe areas on notched devices
-7. Works in both RTL and LTR
-8. Provides appropriate feedback for touch interactions
+Pattern standardized:
+1. Mobile (`< md`): Card grid with prioritized data fields
+2. Desktop (`≥ md`): Full data table with all columns
+3. Arabic RTL fully preserved in both views
+4. Touch targets maintained at 36–48px minimum
 
-No changes required for v0.2 Item 3.
