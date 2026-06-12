@@ -1,10 +1,11 @@
-import { Link } from '@tanstack/react-router';
+import { Link, useNavigate } from '@tanstack/react-router';
 import { Edit, Plus, Trash2 } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { EmptyState } from '@/components/empty-state';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import { PersonCard } from '@/components/ui/person-card';
 import { Select } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -15,6 +16,7 @@ import { usePeople, useSoftDeletePerson } from './use-people';
 const pageSize = 10;
 
 export function PeopleListPage() {
+  const navigate = useNavigate();
   const [search, setSearch] = useState('');
   const [type, setType] = useState<PersonTypeFilter>('all');
   const [page, setPage] = useState(1);
@@ -43,12 +45,14 @@ export function PeopleListPage() {
         </CardContent>
       </Card>
 
-      <Card className="overflow-hidden">
-        {peopleQuery.isLoading ? (
+      {peopleQuery.isLoading ? (
+        <Card className="overflow-hidden">
           <div className="space-y-3 p-6">
             {Array.from({ length: 6 }, (_, index) => <Skeleton key={index} className="h-14" />)}
           </div>
-        ) : peopleQuery.isError ? (
+        </Card>
+      ) : peopleQuery.isError ? (
+        <Card className="overflow-hidden">
           <div className="p-6">
             <EmptyState
               title="تعذر تحميل الأشخاص"
@@ -58,45 +62,86 @@ export function PeopleListPage() {
               action={<Button onClick={() => { peopleQuery.refetch(); }}>إعادة المحاولة</Button>}
             />
           </div>
-        ) : peopleQuery.data?.rows.length ? (
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>الاسم</TableHead>
-                  <TableHead>النوع</TableHead>
-                  <TableHead>الهاتف</TableHead>
-                  <TableHead>البريد</TableHead>
-                  <TableHead>رقم الهوية</TableHead>
-                  <TableHead className="w-40">إجراءات</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {peopleQuery.data.rows.map((person) => (
-                  <TableRow key={person.id}>
-                    <TableCell>
-                      <div className="font-black">{person.full_name}</div>
-                      <div className="text-xs text-muted-foreground">{person.address ?? '—'}</div>
-                    </TableCell>
-                    <TableCell>{personTypeLabels[person.type]}</TableCell>
-                    <TableCell>{person.phone ?? '—'}</TableCell>
-                    <TableCell dir="ltr" className="text-right">{person.email ?? '—'}</TableCell>
-                    <TableCell>{person.national_id ?? '—'}</TableCell>
-                    <TableCell>
-                      <div className="flex gap-2">
-                        <Button variant="secondary" className="min-h-11 px-3" asChild><Link to="/people/$personId/edit" params={{ personId: person.id }} aria-label={`تعديل ${person.full_name}`}><Edit className="size-4" /></Link></Button>
-                        <Button variant="danger" className="min-h-11 px-3" aria-label={`أرشفة ${person.full_name}`} onClick={() => void deleteMutation.mutate(person.id)} disabled={deleteMutation.isPending}><Trash2 className="size-4" /></Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+        </Card>
+      ) : peopleQuery.data?.rows.length ? (
+        <>
+          {/* Mobile card view */}
+          <div className="grid gap-3 sm:grid-cols-2 md:hidden">
+            {peopleQuery.data.rows.map((person) => (
+              <div key={person.id} className="space-y-1.5">
+                <PersonCard
+                  id={person.id}
+                  fullName={person.full_name}
+                  type={person.type}
+                  phone={person.phone}
+                  email={person.email}
+                  nationalId={person.national_id}
+                  address={person.address}
+                  onClick={() => navigate({ to: '/people/$personId/edit', params: { personId: person.id } })}
+                />
+                <div className="flex items-center justify-end gap-2 px-1">
+                  <Button variant="secondary" className="h-9 rounded-xl px-3 text-xs gap-1.5" asChild>
+                    <Link to="/people/$personId/edit" params={{ personId: person.id }} aria-label={`تعديل ${person.full_name}`}>
+                      <Edit className="size-3.5" />تعديل
+                    </Link>
+                  </Button>
+                  <Button
+                    variant="danger"
+                    className="h-9 rounded-xl px-3 text-xs gap-1.5"
+                    aria-label={`أرشفة ${person.full_name}`}
+                    onClick={() => void deleteMutation.mutate(person.id)}
+                    disabled={deleteMutation.isPending}
+                  >
+                    <Trash2 className="size-3.5" />أرشفة
+                  </Button>
+                </div>
+              </div>
+            ))}
           </div>
-        ) : (
+
+          {/* Desktop table view */}
+          <Card className="hidden overflow-hidden md:block">
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>الاسم</TableHead>
+                    <TableHead>النوع</TableHead>
+                    <TableHead>الهاتف</TableHead>
+                    <TableHead>البريد</TableHead>
+                    <TableHead>رقم الهوية</TableHead>
+                    <TableHead className="w-40">إجراءات</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {peopleQuery.data.rows.map((person) => (
+                    <TableRow key={person.id}>
+                      <TableCell>
+                        <div className="font-black">{person.full_name}</div>
+                        <div className="text-xs text-muted-foreground">{person.address ?? '—'}</div>
+                      </TableCell>
+                      <TableCell>{personTypeLabels[person.type]}</TableCell>
+                      <TableCell>{person.phone ?? '—'}</TableCell>
+                      <TableCell dir="ltr" className="text-right">{person.email ?? '—'}</TableCell>
+                      <TableCell>{person.national_id ?? '—'}</TableCell>
+                      <TableCell>
+                        <div className="flex gap-2">
+                          <Button variant="secondary" className="min-h-11 px-3" asChild><Link to="/people/$personId/edit" params={{ personId: person.id }} aria-label={`تعديل ${person.full_name}`}><Edit className="size-4" /></Link></Button>
+                          <Button variant="danger" className="min-h-11 px-3" aria-label={`أرشفة ${person.full_name}`} onClick={() => void deleteMutation.mutate(person.id)} disabled={deleteMutation.isPending}><Trash2 className="size-4" /></Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          </Card>
+        </>
+      ) : (
+        <Card className="overflow-hidden">
           <div className="p-6"><EmptyState title="لا توجد سجلات أشخاص" description="أضف مستأجراً أو مالكاً أو جهة اتصال." action={<Button asChild><Link to="/people/new">إضافة شخص</Link></Button>} /></div>
-        )}
-      </Card>
+        </Card>
+      )}
 
       <div className="flex items-center justify-between text-sm text-muted-foreground">
         <span>الصفحة {page} من {totalPages}</span>
