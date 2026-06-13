@@ -1,5 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { RouteLoadingState } from '@/components/loading-state';
 import { Button } from '@/components/ui/button';
@@ -26,6 +26,7 @@ export function PersonFormModal({ open, onClose, personId, defaultType = 'tenant
   const personQuery = usePerson(personId ?? '');
   const createMutation = useCreatePerson();
   const updateMutation = useUpdatePerson(personId ?? '');
+  const [submitError, setSubmitError] = useState<string | null>(null);
   const form = useForm<PersonFormValues>({
     resolver: zodResolver(personSchema),
     defaultValues: {
@@ -42,6 +43,7 @@ export function PersonFormModal({ open, onClose, personId, defaultType = 'tenant
   useEffect(() => {
     if (!open) {
       form.reset({ full_name: '', phone: '', email: '', national_id: '', type: defaultType, address: '', notes: '' });
+      setSubmitError(null);
       return;
     }
     if (personQuery.data) {
@@ -60,13 +62,18 @@ export function PersonFormModal({ open, onClose, personId, defaultType = 'tenant
   const isSubmitting = createMutation.isPending || updateMutation.isPending;
 
   const handleSubmit = form.handleSubmit(async (values) => {
+    setSubmitError(null);
     const payload = personSchema.parse(values);
-    if (isEdit && personId) {
-      await updateMutation.mutateAsync(payload);
-    } else {
-      await createMutation.mutateAsync(payload);
+    try {
+      if (isEdit && personId) {
+        await updateMutation.mutateAsync(payload);
+      } else {
+        await createMutation.mutateAsync(payload);
+      }
+      onClose();
+    } catch (error) {
+      setSubmitError(error instanceof Error ? error.message : 'تعذر حفظ بيانات الشخص. تحقق من الصلاحيات وحاول مرة أخرى.');
     }
-    onClose();
   });
 
   const title = isEdit ? 'تعديل شخص' : (defaultType === 'owner' ? 'إضافة مالك' : 'إضافة شخص');
@@ -82,6 +89,7 @@ export function PersonFormModal({ open, onClose, personId, defaultType = 'tenant
           <RouteLoadingState />
         ) : (
           <form className="grid gap-4 md:grid-cols-2" onSubmit={handleSubmit}>
+            {submitError ? <div className="rounded-2xl border border-destructive/20 bg-destructive/10 p-3 text-sm font-bold text-destructive md:col-span-2" role="alert">{submitError}</div> : null}
             <label className="grid gap-2 text-sm font-bold">
               الاسم الكامل
               <Input {...form.register('full_name')} autoFocus />

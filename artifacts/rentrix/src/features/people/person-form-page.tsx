@@ -1,7 +1,7 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Link, useParams, useRouter } from '@tanstack/react-router';
 import { ArrowRight } from 'lucide-react';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { RouteLoadingState } from '@/components/loading-state';
 import { Button } from '@/components/ui/button';
@@ -24,6 +24,7 @@ export function PersonFormPage() {
   const personQuery = usePerson(personId ?? '');
   const createMutation = useCreatePerson();
   const updateMutation = useUpdatePerson(personId ?? '');
+  const [submitError, setSubmitError] = useState<string | null>(null);
   const form = useForm<PersonFormValues>({
     resolver: zodResolver(personSchema),
     defaultValues: {
@@ -53,6 +54,15 @@ export function PersonFormPage() {
 
   if (isEdit && personQuery.isLoading) return <RouteLoadingState />;
 
+  if (isEdit && personQuery.isError) {
+    return (
+      <Card className="mx-auto max-w-3xl">
+        <CardHeader><CardTitle>تعذر تحميل بيانات الشخص</CardTitle><CardDescription>{personQuery.error instanceof Error ? personQuery.error.message : 'حدث خطأ أثناء التحميل.'}</CardDescription></CardHeader>
+        <CardContent className="flex flex-wrap gap-3"><Button type="button" onClick={() => { void personQuery.refetch(); }}>إعادة المحاولة</Button><Button variant="secondary" asChild><Link to="/people">العودة</Link></Button></CardContent>
+      </Card>
+    );
+  }
+
   const isSubmitting = createMutation.isPending || updateMutation.isPending;
 
   return (
@@ -68,15 +78,21 @@ export function PersonFormPage() {
         <form
           className="grid gap-5 md:grid-cols-2"
           onSubmit={form.handleSubmit(async (values) => {
+            setSubmitError(null);
             const payload = personSchema.parse(values);
-            if (isEdit && personId) {
-              await updateMutation.mutateAsync(payload);
-            } else {
-              await createMutation.mutateAsync(payload);
+            try {
+              if (isEdit && personId) {
+                await updateMutation.mutateAsync(payload);
+              } else {
+                await createMutation.mutateAsync(payload);
+              }
+              await router.navigate({ to: '/people' });
+            } catch (error) {
+              setSubmitError(error instanceof Error ? error.message : 'تعذر حفظ بيانات الشخص. تحقق من الصلاحيات وحاول مرة أخرى.');
             }
-            await router.navigate({ to: '/people' });
           })}
         >
+          {submitError ? <div className="rounded-2xl border border-destructive/20 bg-destructive/10 p-3 text-sm font-bold text-destructive md:col-span-2" role="alert">{submitError}</div> : null}
           <label className="grid gap-2 text-sm font-bold">
             الاسم الكامل
             <Input {...form.register('full_name')} />

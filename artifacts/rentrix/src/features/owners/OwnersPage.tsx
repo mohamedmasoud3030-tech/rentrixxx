@@ -87,6 +87,7 @@ function OwnerFormDialog({ owner, open, onOpenChange }: OwnerFormDialogProps) {
 
   const setField = <FieldName extends keyof OwnerFormValues>(field: FieldName, value: OwnerFormValues[FieldName]) => {
     setValues((current) => ({ ...current, [field]: value }));
+    setError(null);
   };
 
   const handleSubmit = async (event: FormEvent) => {
@@ -109,9 +110,13 @@ function OwnerFormDialog({ owner, open, onOpenChange }: OwnerFormDialogProps) {
       is_active: values.is_active,
     };
 
-    if (owner) await updateOwner.mutateAsync(payload);
-    else await createOwner.mutateAsync(payload);
-    onOpenChange(false);
+    try {
+      if (owner) await updateOwner.mutateAsync(payload);
+      else await createOwner.mutateAsync(payload);
+      onOpenChange(false);
+    } catch (mutationError) {
+      setError(mutationError instanceof Error ? mutationError.message : 'تعذر حفظ بيانات المالك. تحقق من الصلاحيات وحاول مرة أخرى.');
+    }
   };
 
   return (
@@ -303,15 +308,26 @@ export function OwnersPage() {
   const setLinkField = <FieldName extends keyof PropertyOwnershipLinkFormValues>(field: FieldName, value: PropertyOwnershipLinkFormValues[FieldName]) => { setLinkFormValues((current) => ({ ...current, [field]: value })); setLinkFormError(null); };
   const beginEditLink = (link: PropertyOwner) => { setEditingLink({ id: link.id, propertyId: link.property_id, ownerId: link.owner_id }); setLinkFormValues(propertyOwnerLinkToFormValues(link)); setLinkFormError(null); };
   const resetLinkForm = () => { setEditingLink(null); setLinkFormValues(emptyPropertyOwnershipLinkFormValues); setLinkFormError(null); };
-  const handleEndPropertyOwnership = async (link: PropertyOwner) => { await unlinkMutation.mutateAsync({ linkId: link.id, propertyId: link.property_id, ownerId: link.owner_id }); if (editingLink?.id === link.id) resetLinkForm(); };
+  const handleEndPropertyOwnership = async (link: PropertyOwner) => {
+    try {
+      await unlinkMutation.mutateAsync({ linkId: link.id, propertyId: link.property_id, ownerId: link.owner_id });
+      if (editingLink?.id === link.id) resetLinkForm();
+    } catch (error) {
+      setLinkFormError(error instanceof Error ? error.message : 'تعذر إنهاء علاقة الملكية. تحقق من الصلاحيات وحاول مرة أخرى.');
+    }
+  };
   const handleLinkProperty = async (event: FormEvent) => {
     event.preventDefault();
     if (!selectedOwner) return;
     const validationError = validatePropertyOwnershipLinkForm(linkFormValues);
     if (validationError) { setLinkFormError(validationError); return; }
-    if (editingLink) await updateLinkMutation.mutateAsync({ linkId: editingLink.id, payload: propertyOwnershipLinkFormToPayload(linkFormValues) });
-    else await linkMutation.mutateAsync({ owner_id: selectedOwner.id, property_id: linkFormValues.property_id, ...propertyOwnershipLinkFormToPayload(linkFormValues) });
-    resetLinkForm();
+    try {
+      if (editingLink) await updateLinkMutation.mutateAsync({ linkId: editingLink.id, payload: propertyOwnershipLinkFormToPayload(linkFormValues) });
+      else await linkMutation.mutateAsync({ owner_id: selectedOwner.id, property_id: linkFormValues.property_id, ...propertyOwnershipLinkFormToPayload(linkFormValues) });
+      resetLinkForm();
+    } catch (error) {
+      setLinkFormError(error instanceof Error ? error.message : 'تعذر حفظ علاقة الملكية. تحقق من الصلاحيات وحاول مرة أخرى.');
+    }
   };
 
   const firstLoadError = ownersQuery.error ?? propertiesQuery.error ?? activeContractsQuery.error;
