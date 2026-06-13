@@ -1,6 +1,7 @@
 import { Link, useNavigate } from '@tanstack/react-router';
 import { Edit, Plus, Trash2 } from 'lucide-react';
 import { useMemo, useState } from 'react';
+import { PersonFormModal } from './person-form-modal';
 import { EmptyState } from '@/components/empty-state';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -20,6 +21,8 @@ export function PeopleListPage() {
   const [search, setSearch] = useState('');
   const [type, setType] = useState<PersonTypeFilter>('all');
   const [page, setPage] = useState(1);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [editPersonId, setEditPersonId] = useState<string | undefined>();
   const params = useMemo(() => ({ search, type, page, pageSize }), [page, search, type]);
   const peopleQuery = usePeople(params);
   const deleteMutation = useSoftDeletePerson();
@@ -32,7 +35,7 @@ export function PeopleListPage() {
           <h2 className="text-xl font-black">الأشخاص</h2>
           <p className="text-sm text-muted-foreground">جدول موحد للمستأجرين والملاك وجهات الاتصال.</p>
         </div>
-        <Button asChild><Link to="/people/new"><Plus className="ml-2 size-4" />إضافة شخص</Link></Button>
+        <Button onClick={() => { setEditPersonId(undefined); setModalOpen(true); }}><Plus className="ml-2 size-4" />إضافة شخص</Button>
       </div>
 
       <Card>
@@ -77,14 +80,12 @@ export function PeopleListPage() {
                   email={person.email}
                   nationalId={person.national_id}
                   address={person.address}
-                  onClick={() => navigate({ to: '/people/$personId/edit', params: { personId: person.id } })}
+                  onClick={() => { setEditPersonId(person.id); setModalOpen(true); }}
                 />
                 <div className="flex items-center justify-end gap-2 px-1">
-                  <Button variant="secondary" className="h-9 rounded-xl px-3 text-xs gap-1.5" asChild>
-                    <Link to="/people/$personId/edit" params={{ personId: person.id }} aria-label={`تعديل ${person.full_name}`}>
-                      <Edit className="size-3.5" />تعديل
-                    </Link>
-                  </Button>
+                <Button variant="secondary" className="h-9 rounded-xl px-3 text-xs gap-1.5" onClick={() => { setEditPersonId(person.id); setModalOpen(true); }}>
+                  <Edit className="size-3.5" />تعديل
+                </Button>
                   <Button
                     variant="danger"
                     className="h-9 rounded-xl px-3 text-xs gap-1.5"
@@ -126,7 +127,7 @@ export function PeopleListPage() {
                       <TableCell>{person.national_id ?? '—'}</TableCell>
                       <TableCell>
                         <div className="flex gap-2">
-                          <Button variant="secondary" className="min-h-11 px-3" asChild><Link to="/people/$personId/edit" params={{ personId: person.id }} aria-label={`تعديل ${person.full_name}`}><Edit className="size-4" /></Link></Button>
+                          <Button variant="secondary" className="min-h-11 px-3" onClick={() => { setEditPersonId(person.id); setModalOpen(true); }}><Edit className="size-4" /></Button>
                           <Button variant="danger" className="min-h-11 px-3" aria-label={`أرشفة ${person.full_name}`} onClick={() => void deleteMutation.mutate(person.id)} disabled={deleteMutation.isPending}><Trash2 className="size-4" /></Button>
                         </div>
                       </TableCell>
@@ -139,7 +140,7 @@ export function PeopleListPage() {
         </>
       ) : (
         <Card className="overflow-hidden">
-          <div className="p-6"><EmptyState title="لا توجد سجلات أشخاص" description="أضف مستأجراً أو مالكاً أو جهة اتصال." action={<Button asChild><Link to="/people/new">إضافة شخص</Link></Button>} /></div>
+          <div className="p-6"><EmptyState title="لا توجد سجلات أشخاص" description="أضف مستأجراً أو مالكاً أو جهة اتصال." action={<Button onClick={() => { setEditPersonId(undefined); setModalOpen(true); }}>إضافة شخص</Button>} /></div>
         </Card>
       )}
 
@@ -151,5 +152,10 @@ export function PeopleListPage() {
         </div>
       </div>
     </div>
+    <PersonFormModal
+      open={modalOpen}
+      onClose={() => { setModalOpen(false); setEditPersonId(undefined); }}
+      personId={editPersonId}
+    />
   );
 }
