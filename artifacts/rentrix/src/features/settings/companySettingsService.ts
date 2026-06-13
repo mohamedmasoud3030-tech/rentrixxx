@@ -23,7 +23,11 @@ export type CompanySettingsUpdatePayload = Partial<Pick<CompanySettingsRecord,
   | 'number_format'
   | 'logo_url'
   | 'invoice_prefix'
+  | 'contract_prefix'
   | 'receipt_prefix'
+  | 'default_vat_rate'
+  | 'notification_email_enabled'
+  | 'notification_sms_enabled'
 >>;
 
 type CompanySettingsUpdate = Database['public']['Tables']['company_settings']['Update'];
@@ -53,7 +57,11 @@ const defaultCompanySettings: CompanySettingsRecord = {
   number_format: 'ar-OM',
   logo_url: null,
   invoice_prefix: 'INV',
+  contract_prefix: 'CON',
   receipt_prefix: 'REC',
+  default_vat_rate: 0,
+  notification_email_enabled: true,
+  notification_sms_enabled: false,
   created_at: defaultTimestamps,
   updated_at: defaultTimestamps,
 };
@@ -78,12 +86,19 @@ const requiredStringFields = [
   'date_format',
   'number_format',
   'invoice_prefix',
+  'contract_prefix',
   'receipt_prefix',
 ] as const;
+
+const numericFields = ['default_vat_rate'] as const;
+
+const booleanFields = ['notification_email_enabled', 'notification_sms_enabled'] as const;
 
 const updateableFields = new Set<keyof CompanySettingsUpdatePayload>([
   ...nullableStringFields,
   ...requiredStringFields,
+  ...numericFields,
+  ...booleanFields,
 ]);
 
 function stringifyPrimitive(value: unknown): string | null {
@@ -97,6 +112,23 @@ function stringifyPrimitive(value: unknown): string | null {
     default:
       return null;
   }
+}
+
+function normalizeVatRate(value: unknown): number {
+  const parsedValue = typeof value === 'number' ? value : Number.parseFloat(String(value ?? ''));
+
+  if (!Number.isFinite(parsedValue) || parsedValue < 0 || parsedValue > 100) return defaultCompanySettings.default_vat_rate;
+  return Math.round(parsedValue * 1000) / 1000;
+}
+
+function normalizeBoolean(value: unknown, fallback: boolean): boolean {
+  if (typeof value === 'boolean') return value;
+  if (typeof value === 'string') {
+    const normalizedValue = value.trim().toLowerCase();
+    if (normalizedValue === 'true') return true;
+    if (normalizedValue === 'false') return false;
+  }
+  return fallback;
 }
 
 function cleanNullableString(value: unknown): string | null {
@@ -146,6 +178,10 @@ export function normalizeCompanySettingsRecord(value: Partial<CompanySettingsRec
     normalized[field] = normalizeRequiredCompanySettingsField(field, normalized[field]);
   }
 
+  normalized.default_vat_rate = normalizeVatRate(normalized.default_vat_rate);
+  normalized.notification_email_enabled = normalizeBoolean(normalized.notification_email_enabled, defaultCompanySettings.notification_email_enabled);
+  normalized.notification_sms_enabled = normalizeBoolean(normalized.notification_sms_enabled, defaultCompanySettings.notification_sms_enabled);
+
   normalized.id = cleanRequiredString(normalized.id, defaultCompanySettings.id);
   normalized.created_at = cleanRequiredString(normalized.created_at, defaultCompanySettings.created_at);
   normalized.updated_at = cleanRequiredString(normalized.updated_at, defaultCompanySettings.updated_at);
@@ -166,7 +202,24 @@ export function normalizeCompanySettingsUpdatePayload(payload: CompanySettingsUp
     }
 
     const requiredKey = key as (typeof requiredStringFields)[number];
-    normalized[requiredKey] = normalizeRequiredCompanySettingsField(requiredKey, value);
+    if ((requiredStringFields as readonly string[]).includes(key)) {
+      normalized[requiredKey] = normalizeRequiredCompanySettingsField(requiredKey, value);
+      continue;
+    }
+
+    if (key === 'default_vat_rate') {
+      normalized.default_vat_rate = normalizeVatRate(value);
+      continue;
+    }
+
+    if (key === 'notification_email_enabled') {
+      normalized.notification_email_enabled = normalizeBoolean(value, defaultCompanySettings.notification_email_enabled);
+      continue;
+    }
+
+    if (key === 'notification_sms_enabled') {
+      normalized.notification_sms_enabled = normalizeBoolean(value, defaultCompanySettings.notification_sms_enabled);
+    }
   }
 
   return normalized;

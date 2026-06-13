@@ -23,7 +23,11 @@ export type Database = {
           number_format: string;
           logo_url: string | null;
           invoice_prefix: string;
+          contract_prefix: string;
           receipt_prefix: string;
+          default_vat_rate: number;
+          notification_email_enabled: boolean;
+          notification_sms_enabled: boolean;
           created_at: string;
           updated_at: string;
         };

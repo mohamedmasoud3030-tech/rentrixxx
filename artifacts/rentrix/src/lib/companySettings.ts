@@ -17,6 +17,7 @@ export const DEFAULT_COUNTRY: SupportedCountry = 'OM';
 export const DEFAULT_TIMEZONE: SupportedTimezone = 'Asia/Muscat';
 export const DEFAULT_RECEIPT_PREFIX = 'REC';
 export const DEFAULT_INVOICE_PREFIX = 'INV';
+export const DEFAULT_CONTRACT_PREFIX = 'CON';
 
 export type CompanyLocalSettings = {
   companyName: string;
@@ -27,6 +28,7 @@ export type CompanyLocalSettings = {
   timezone: SupportedTimezone;
   receiptPrefix: string;
   invoicePrefix: string;
+  contractPrefix: string;
 };
 
 export type CompanySettingsContract = CompanyLocalSettings & {
@@ -43,6 +45,7 @@ type CompanySettingsInput = Readonly<Partial<{
   timezone: unknown;
   receiptPrefix: unknown;
   invoicePrefix: unknown;
+  contractPrefix: unknown;
   locale: unknown;
 }>>;
 
@@ -75,6 +78,7 @@ export const defaultCompanyLocalSettings: CompanyLocalSettings = {
   timezone: DEFAULT_TIMEZONE,
   receiptPrefix: DEFAULT_RECEIPT_PREFIX,
   invoicePrefix: DEFAULT_INVOICE_PREFIX,
+  contractPrefix: DEFAULT_CONTRACT_PREFIX,
 };
 
 export const defaultCompanySettingsContract: CompanySettingsContract = {
@@ -159,7 +163,9 @@ export function normalizeCompanyLogoUrl(value: unknown): string | null {
 
   try {
     const url = new URL(trimmedUrl);
-    return ['http:', 'https:'].includes(url.protocol) ? url.href : null;
+    if (['http:', 'https:'].includes(url.protocol)) return url.href;
+    if (url.protocol === 'data:' && /^data:image\/(?:png|jpeg|webp|svg\+xml);base64,/i.test(trimmedUrl)) return trimmedUrl;
+    return null;
   } catch {
     return null;
   }
@@ -181,6 +187,7 @@ export function normalizeCompanySettingsContract(value: CompanySettingsInput | n
     timezone: normalizeTimezone(value?.timezone),
     receiptPrefix: normalizeOptionalString(value?.receiptPrefix) || defaultCompanySettingsContract.receiptPrefix,
     invoicePrefix: normalizeOptionalString(value?.invoicePrefix) || defaultCompanySettingsContract.invoicePrefix,
+    contractPrefix: normalizeOptionalString(value?.contractPrefix) || defaultCompanySettingsContract.contractPrefix,
     locale,
     direction: getLanguageDirection(normalizedLanguage),
   };
@@ -198,5 +205,6 @@ export function normalizeCompanyLocalSettings(value: Partial<CompanyLocalSetting
     timezone: contract.timezone,
     receiptPrefix: contract.receiptPrefix,
     invoicePrefix: contract.invoicePrefix,
+    contractPrefix: contract.contractPrefix,
   };
 }

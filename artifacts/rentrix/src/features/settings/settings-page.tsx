@@ -37,6 +37,11 @@ const numberFormatOptions = ['ar-OM', 'en-OM', 'ar', 'en-US'];
 const dateFormatOptions = ['dd/MM/yyyy', 'yyyy-MM-dd', 'MM/dd/yyyy'];
 const timezoneOptions = supportedTimezones;
 
+export function preventSettingsUnload(event: BeforeUnloadEvent) {
+  event.preventDefault();
+  event.returnValue = '';
+}
+
 type BaseFieldProps = Readonly<{
   label: string;
   field: CompanySettingsDraftField;
@@ -158,7 +163,10 @@ function CompanySettingsPreviewCard({ draft, formattedPreviewDate, formattedPrev
           <PreviewField label="الدولة" value={preview.country} />
           <PreviewField label="المنطقة الزمنية" value={preview.timezone} />
           <PreviewField label="بادئة الفواتير" value={preview.invoicePrefix} />
+          <PreviewField label="بادئة العقود" value={preview.contractPrefix} />
           <PreviewField label="بادئة الإيصالات" value={preview.receiptPrefix} />
+          <PreviewField label="ضريبة القيمة المضافة الافتراضية" value={preview.defaultVatRate} />
+          <PreviewField label="إشعارات التشغيل" value={preview.notificationSummary} />
           <PreviewField label="معاينة التاريخ" value={formattedPreviewDate} />
           <PreviewField label="معاينة المبلغ" value={formattedPreviewMoney} />
         </dl>
@@ -238,6 +246,13 @@ export function SettingsPage() {
   const formattedPreviewDate = previewSettings ? formatCompanyDate(previewSettings, new Date()) : '—';
   const formattedPreviewMoney = previewSettings ? formatCompanyMoney(previewSettings, 1234.56) : '—';
 
+  useEffect(() => {
+    if (!isDirty) return undefined;
+
+    window.addEventListener('beforeunload', preventSettingsUnload);
+    return () => window.removeEventListener('beforeunload', preventSettingsUnload);
+  }, [isDirty]);
+
   const handleDraftChange = (field: CompanySettingsDraftField, value: string) => {
     setDraft((currentDraft) => {
       const nextDraft = currentDraft ? { ...currentDraft, [field]: value } : currentDraft;
@@ -262,6 +277,32 @@ export function SettingsPage() {
 
   const handleDefaultLanguageChange = (language: SupportedLanguage) => {
     handleDraftChange('locale', normalizeCompanyLocale(undefined, language));
+  };
+
+  const handleLogoFileChange = (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    if (!['image/png', 'image/jpeg', 'image/webp', 'image/svg+xml'].includes(file.type)) {
+      toast.error('يرجى اختيار ملف شعار بصيغة PNG أو JPG أو WEBP أو SVG');
+      event.target.value = '';
+      return;
+    }
+
+    if (file.size > 256 * 1024) {
+      toast.error('حجم الشعار يجب ألا يتجاوز 256 كيلوبايت');
+      event.target.value = '';
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (typeof reader.result !== 'string') return;
+      handleDraftChange('logo_url', reader.result);
+      toast.success('تم تجهيز الشعار للمعاينة. اضغط حفظ لتثبيته.');
+    };
+    reader.onerror = () => toast.error('تعذر قراءة ملف الشعار');
+    reader.readAsDataURL(file);
   };
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
@@ -346,7 +387,39 @@ export function SettingsPage() {
             <SelectField label="صيغة الأرقام" field="number_format" draft={draft} errors={errors} disabled={isSaving} options={numberFormatOptions} onChange={handleDraftChange} />
             <FormField label="رابط الشعار" field="logo_url" draft={draft} errors={errors} disabled={isSaving} type="url" placeholder="https://example.com/logo.png" onChange={handleDraftChange} />
             <FormField label="بادئة الفواتير" field="invoice_prefix" draft={draft} errors={errors} disabled={isSaving} onChange={handleDraftChange} />
+            <FormField label="بادئة العقود" field="contract_prefix" draft={draft} errors={errors} disabled={isSaving} onChange={handleDraftChange} />
             <FormField label="بادئة الإيصالات" field="receipt_prefix" draft={draft} errors={errors} disabled={isSaving} onChange={handleDraftChange} />
+            <FormField label="ضريبة القيمة المضافة الافتراضية %" field="default_vat_rate" draft={draft} errors={errors} disabled={isSaving} type="number" onChange={handleDraftChange} />
+          </div>
+
+          <div className="grid gap-3 rounded-2xl border bg-muted/20 p-4 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+            <label className="space-y-2 text-sm font-medium text-foreground">
+              <span>رفع شعار الشركة</span>
+              <Input type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml" disabled={isSaving} onChange={handleLogoFileChange} />
+              <span className="block text-xs text-muted-foreground">سيتم حفظ الشعار كقيمة مضمنة صغيرة للحفاظ على المعاينة والمستندات بدون إعداد Storage إضافي.</span>
+            </label>
+
+            <div className="space-y-2 text-sm font-medium text-foreground">
+              <span>تفضيلات الإشعارات</span>
+              <label className="flex items-center gap-2 rounded-xl border bg-background/70 p-3">
+                <input
+                  type="checkbox"
+                  checked={draft.notification_email_enabled === 'true'}
+                  disabled={isSaving}
+                  onChange={(event) => handleDraftChange('notification_email_enabled', String(event.target.checked))}
+                />
+                <span>تفعيل إشعارات البريد الإلكتروني</span>
+              </label>
+              <label className="flex items-center gap-2 rounded-xl border bg-background/70 p-3">
+                <input
+                  type="checkbox"
+                  checked={draft.notification_sms_enabled === 'true'}
+                  disabled={isSaving}
+                  onChange={(event) => handleDraftChange('notification_sms_enabled', String(event.target.checked))}
+                />
+                <span>تفعيل إشعارات الرسائل النصية</span>
+              </label>
+            </div>
           </div>
 
           <label className="space-y-1 text-sm font-medium text-foreground">

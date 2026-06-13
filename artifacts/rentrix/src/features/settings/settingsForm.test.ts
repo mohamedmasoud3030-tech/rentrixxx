@@ -28,7 +28,11 @@ const validRecord = {
   number_format: 'ar-OM',
   logo_url: null,
   invoice_prefix: 'INV',
+  contract_prefix: 'CON',
   receipt_prefix: 'REC',
+  default_vat_rate: 5,
+  notification_email_enabled: true,
+  notification_sms_enabled: false,
   created_at: '2026-05-18T00:00:00.000Z',
   updated_at: '2026-05-18T00:00:00.000Z',
 } as const;
@@ -50,7 +54,11 @@ const validDraft: CompanySettingsDraft = {
   number_format: 'ar-OM',
   logo_url: '',
   invoice_prefix: 'INV',
+  contract_prefix: 'CON',
   receipt_prefix: 'REC',
+  default_vat_rate: '5',
+  notification_email_enabled: 'true',
+  notification_sms_enabled: 'false',
 };
 
 describe('settingsForm helpers', () => {
@@ -64,7 +72,9 @@ describe('settingsForm helpers', () => {
       date_format: '',
       number_format: '',
       invoice_prefix: '',
+      contract_prefix: '',
       receipt_prefix: '',
+      default_vat_rate: '-1',
       email: 'not-email',
       logo_url: 'ftp://example.test/logo.png',
     });
@@ -77,7 +87,9 @@ describe('settingsForm helpers', () => {
       date_format: 'صيغة التاريخ مطلوبة',
       number_format: 'صيغة الأرقام مطلوبة',
       invoice_prefix: 'بادئة الفواتير مطلوبة',
+      contract_prefix: 'بادئة العقود مطلوبة',
       receipt_prefix: 'بادئة الإيصالات مطلوبة',
+      default_vat_rate: 'نسبة ضريبة القيمة المضافة يجب أن تكون بين 0 و100',
       email: 'صيغة البريد الإلكتروني غير صحيحة',
       logo_url: 'رابط الشعار يجب أن يبدأ بـ http أو https',
     });
@@ -92,7 +104,7 @@ describe('settingsForm helpers', () => {
 
   it('detects dirty state by comparing every persisted draft field', () => {
     expect(areCompanySettingsDraftsEqual(validDraft, { ...validDraft })).toBe(true);
-    expect(areCompanySettingsDraftsEqual(validDraft, { ...validDraft, invoice_prefix: 'BILL' })).toBe(false);
+    expect(areCompanySettingsDraftsEqual(validDraft, { ...validDraft, contract_prefix: 'LEASE' })).toBe(false);
   });
 
   it('converts drafts to normalized local settings for formatter/runtime consumers', () => {
@@ -120,7 +132,11 @@ describe('settingsForm helpers', () => {
       timezone: 'Europe/Paris',
       logo_url: ' https://example.test/logo.png ',
       invoice_prefix: '',
+      contract_prefix: '',
       receipt_prefix: '',
+      default_vat_rate: -2,
+      notification_email_enabled: false,
+      notification_sms_enabled: true,
     })).toMatchObject({
       company_name: 'Rentrix',
       country: 'OM',
@@ -129,7 +145,11 @@ describe('settingsForm helpers', () => {
       timezone: 'Asia/Muscat',
       logo_url: 'https://example.test/logo.png',
       invoice_prefix: 'INV',
+      contract_prefix: 'CON',
       receipt_prefix: 'REC',
+      default_vat_rate: '0',
+      notification_email_enabled: 'false',
+      notification_sms_enabled: 'true',
     });
   });
 
@@ -143,7 +163,11 @@ describe('settingsForm helpers', () => {
       timezone: 'Europe/Paris',
       logo_url: ' https://example.test/logo.png ',
       invoice_prefix: '',
+      contract_prefix: '',
       receipt_prefix: '',
+      default_vat_rate: '101',
+      notification_email_enabled: 'false',
+      notification_sms_enabled: 'true',
     })).toMatchObject({
       company_name: 'Rentrix Oman',
       country: 'OM',
@@ -152,7 +176,11 @@ describe('settingsForm helpers', () => {
       timezone: 'Asia/Muscat',
       logo_url: 'https://example.test/logo.png',
       invoice_prefix: 'INV',
+      contract_prefix: 'CON',
       receipt_prefix: 'REC',
+      default_vat_rate: 0,
+      notification_email_enabled: false,
+      notification_sms_enabled: true,
     });
   });
 
@@ -168,7 +196,11 @@ describe('settingsForm helpers', () => {
       country: 'Oman',
       timezone: 'Europe/Paris',
       invoice_prefix: '',
+      contract_prefix: '',
       receipt_prefix: '   ',
+      default_vat_rate: '7.5',
+      notification_email_enabled: 'true',
+      notification_sms_enabled: 'false',
       phone: '',
       email: '',
       address: '  ',
@@ -185,7 +217,9 @@ describe('settingsForm helpers', () => {
       country: 'OM',
       timezone: 'Asia/Muscat',
       invoicePrefix: 'INV',
+      contractPrefix: 'CON',
       receiptPrefix: 'REC',
+      defaultVatRate: '7.5%',
     });
     expect(preview.contactDetails).toContainEqual({ label: 'الهاتف', value: 'لا يوجد هاتف', isFallback: true });
     expect(preview.contactDetails).toContainEqual({ label: 'العنوان', value: 'لا يوجد عنوان', isFallback: true });
@@ -216,7 +250,11 @@ describe('settingsForm helpers', () => {
       number_format: 'ar-OM',
       logo_url: '',
       invoice_prefix: 'INV',
+      contract_prefix: 'CON',
       receipt_prefix: 'REC',
+      default_vat_rate: 5,
+      notification_email_enabled: true,
+      notification_sms_enabled: false,
     });
   });
 });
