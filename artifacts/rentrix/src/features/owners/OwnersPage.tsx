@@ -3,10 +3,10 @@ import { Building2, Eye, LinkIcon, Pencil, Plus, Search, Users } from 'lucide-re
 import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { EmptyState } from '@/components/empty-state';
 import { Input } from '@/components/ui/input';
 import { OwnerCard } from '@/components/ui/owner-card';
+import { ResponsiveFormOverlay } from '@/components/ui/responsive-form-overlay';
 import { Skeleton } from '@/components/ui/skeleton';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -115,9 +115,13 @@ function OwnerFormDialog({ owner, open, onOpenChange }: OwnerFormDialogProps) {
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[88vh] overflow-y-auto">
-        <DialogHeader><DialogTitle>{isEditing ? 'تعديل بيانات المالك' : 'إضافة مالك'}</DialogTitle><DialogDescription>بيانات تعريفية خفيفة للملاك بدون إضافة أرصدة أو تسويات مالية.</DialogDescription></DialogHeader>
+    <ResponsiveFormOverlay
+      open={open}
+      onOpenChange={onOpenChange}
+      title={isEditing ? 'تعديل بيانات المالك' : 'إضافة مالك'}
+      description="بيانات تعريفية خفيفة للملاك بدون إضافة أرصدة أو تسويات مالية."
+      className="max-h-[88vh] overflow-y-auto"
+    >
         <form className="grid gap-4" onSubmit={handleSubmit}>
           {error ? <div className="rounded-2xl border border-destructive/20 bg-destructive/10 p-3 text-sm font-bold text-destructive">{error}</div> : null}
           <div className="grid gap-4 md:grid-cols-2">
@@ -133,8 +137,7 @@ function OwnerFormDialog({ owner, open, onOpenChange }: OwnerFormDialogProps) {
           <OwnerCheckbox checked={values.is_active} label="مالك نشط" onCheckedChange={(checked) => setField('is_active', checked)} />
           <div className="flex justify-end gap-2"><Button type="button" variant="secondary" onClick={() => onOpenChange(false)}>إلغاء</Button><Button type="submit" disabled={isPending}>{isEditing ? 'حفظ التعديلات' : 'إنشاء المالك'}</Button></div>
         </form>
-      </DialogContent>
-    </Dialog>
+    </ResponsiveFormOverlay>
   );
 }
 

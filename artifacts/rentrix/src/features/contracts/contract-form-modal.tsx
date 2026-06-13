@@ -2,12 +2,12 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useEffect } from 'react';
 import { useForm, useWatch } from 'react-hook-form';
 import { useQuery } from '@tanstack/react-query';
+import { RouteLoadingState } from '@/components/loading-state';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
+import { ResponsiveFormOverlay } from '@/components/ui/responsive-form-overlay';
 import { Select } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { RouteLoadingState } from '@/components/loading-state';
 import { listPeople } from '@/features/people/people-service';
 import { listProperties } from '@/features/properties/property-service';
 import { listUnitsByProperty } from '@/features/units/unit-service';
@@ -96,12 +96,12 @@ export function ContractFormModal({ open, onClose, contractId }: ContractFormMod
   });
 
   return (
-    <Dialog open={open} onOpenChange={(v) => { if (!v) onClose(); }}>
-      <DialogContent className="max-h-[90dvh] overflow-y-auto max-w-2xl">
-        <DialogHeader>
-          <DialogTitle>{isEdit ? 'تعديل عقد' : 'إنشاء عقد'}</DialogTitle>
-        </DialogHeader>
-
+    <ResponsiveFormOverlay
+      open={open}
+      onOpenChange={(v) => { if (!v) onClose(); }}
+      title={isEdit ? 'تعديل عقد' : 'إنشاء عقد'}
+      className="max-h-[90dvh] overflow-y-auto max-w-2xl"
+    >
         {isEdit && contractQuery.isLoading ? (
           <RouteLoadingState />
         ) : (
@@ -191,7 +191,6 @@ export function ContractFormModal({ open, onClose, contractId }: ContractFormMod
             </div>
           </form>
         )}
-      </DialogContent>
-    </Dialog>
+    </ResponsiveFormOverlay>
   );
 }

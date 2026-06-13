@@ -2,8 +2,8 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
+import { ResponsiveFormOverlay } from '@/components/ui/responsive-form-overlay';
 import { Select } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { RouteLoadingState } from '@/components/loading-state';
@@ -71,12 +71,12 @@ export function PropertyFormModal({ open, onClose, propertyId }: PropertyFormMod
   });
 
   return (
-    <Dialog open={open} onOpenChange={(v) => { if (!v) onClose(); }}>
-      <DialogContent className="max-h-[90dvh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>{isEdit ? 'تعديل عقار' : 'إضافة عقار جديد'}</DialogTitle>
-        </DialogHeader>
-
+    <ResponsiveFormOverlay
+      open={open}
+      onOpenChange={(v) => { if (!v) onClose(); }}
+      title={isEdit ? 'تعديل عقار' : 'إضافة عقار جديد'}
+      className="max-h-[90dvh] overflow-y-auto"
+    >
         {isEdit && propertyQuery.isLoading ? (
           <RouteLoadingState />
         ) : (
@@ -132,7 +132,6 @@ export function PropertyFormModal({ open, onClose, propertyId }: PropertyFormMod
             </div>
           </form>
         )}
-      </DialogContent>
-    </Dialog>
+    </ResponsiveFormOverlay>
   );
 }
