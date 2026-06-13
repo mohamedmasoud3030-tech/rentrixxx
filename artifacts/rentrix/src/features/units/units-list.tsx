@@ -22,6 +22,10 @@ function money(value: number | null) {
   return formatCompanyMoney(defaultCompanyLocalSettings, value);
 }
 
+function getErrorMessage(error: unknown) {
+  return error instanceof Error ? error.message : 'أعد المحاولة بعد لحظات.';
+}
+
 export function UnitsList({ propertyId, unitsQuery }: Readonly<{ propertyId: string; unitsQuery: UseQueryResult<Unit[]> }>) {
   const deleteMutation = useSoftDeleteUnit(propertyId);
   const [editingUnit, setEditingUnit] = useState<Unit | null>(null);
@@ -58,7 +62,7 @@ export function UnitsList({ propertyId, unitsQuery }: Readonly<{ propertyId: str
           <CardTitle>الوحدات</CardTitle>
           <CardDescription>إدارة وحدات العقار الحالي فقط.</CardDescription>
         </div>
-        <Button onClick={openForCreate}><Plus className="ml-2 size-4" />إضافة وحدة</Button>
+        {!unitsQuery.isError ? <Button onClick={openForCreate}><Plus className="ml-2 size-4" />إضافة وحدة</Button> : null}
       </CardHeader>
       <CardContent className="space-y-4">
         {archiveCandidate ? (
@@ -76,6 +80,14 @@ export function UnitsList({ propertyId, unitsQuery }: Readonly<{ propertyId: str
           <div className="space-y-3">
             {Array.from({ length: 4 }, (_, index) => <Skeleton key={index} className="h-14" />)}
           </div>
+        ) : unitsQuery.isError ? (
+          <EmptyState
+            title="تعذر تحميل وحدات العقار"
+            description={getErrorMessage(unitsQuery.error)}
+            role="alert"
+            ariaLive="assertive"
+            action={<Button onClick={() => unitsQuery.refetch()}>إعادة المحاولة</Button>}
+          />
         ) : unitsQuery.data?.length ? (
           <>
             {/* Mobile cards */}
