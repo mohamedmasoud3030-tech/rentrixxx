@@ -37,14 +37,14 @@ export function InvoiceFilters({
       </div>
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
         <input
-          className="min-h-11 rounded-xl border bg-background px-3 text-sm outline-none focus-visible:ring-4 focus-visible:ring-primary/20"
+          className="min-h-12 rounded-xl border bg-background px-3 text-sm outline-none focus-visible:ring-4 focus-visible:ring-primary/20"
           aria-label="بحث الفواتير"
           placeholder="ابحث برقم الفاتورة أو الحالة"
           value={invoiceSearch}
           onChange={(event) => onInvoiceSearchChange(event.target.value)}
         />
-        <Button onClick={onGenerateInvoices} disabled={isGenerating}>
-          {isGenerating ? 'جارٍ التوليد...' : 'توليد الفواتير من العقود النشطة'}
+        <Button className="min-h-12" onClick={onGenerateInvoices} disabled={isGenerating}>
+          {isGenerating ? 'جارٍ التوليد...' : 'توليد الفواتير'}
         </Button>
       </div>
     </div>
