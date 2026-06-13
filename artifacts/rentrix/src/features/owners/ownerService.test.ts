@@ -9,6 +9,7 @@ import {
   normalizeOwnerUpdatePayload,
   normalizeOwnershipPercentage,
   normalizePropertyOwnerPayload,
+  summarizeOwnerFinancials,
 } from './ownerService';
 import type { Owner, PropertyWithOwners } from './ownerService';
 
@@ -162,6 +163,18 @@ describe('owner read helpers', () => {
     expect(getActiveOwnerLinks(activeProperty)).toHaveLength(1);
     expect(getActiveOwnerLinks(endedProperty)).toHaveLength(0);
     expect(getOwnerActivePropertyCount('owner-1', [activeProperty, endedProperty])).toBe(1);
+  });
+
+  it('summarizes owner outstanding balance from non-deleted invoice remaining amounts', () => {
+    expect(summarizeOwnerFinancials([
+      { amount: 1000, paid_amount: 250, deleted_at: null },
+      { amount: 500, paid_amount: 500, deleted_at: null },
+      { amount: 300, paid_amount: 100, deleted_at: '2026-06-01T00:00:00.000Z' },
+      { amount: 100, paid_amount: 150, deleted_at: null },
+    ])).toEqual({
+      outstandingBalance: 750,
+      outstandingInvoicesCount: 1,
+    });
   });
 });
 

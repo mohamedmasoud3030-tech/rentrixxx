@@ -80,11 +80,27 @@ describe('Owner detail recovery states', () => {
   });
 
   it('renders the owner detail surface', () => {
-    const snapshot: OwnerDetailSnapshot = { owner, properties: [property], units: [], contracts: [] };
+    const snapshot: OwnerDetailSnapshot = {
+      owner,
+      properties: [property],
+      units: [{ id: 'unit-1', property_id: property.id, unit_number: '101', floor: null, status: 'occupied', rent_amount: 100 }],
+      contracts: [
+        { id: 'contract-1', property_id: property.id, unit_id: 'unit-1', start_date: '2026-01-01', end_date: '2026-12-31', status: 'active' },
+        { id: 'contract-2', property_id: property.id, unit_id: 'unit-1', start_date: '2025-01-01', end_date: '2025-12-31', status: 'expired' },
+      ],
+      invoices: [
+        { id: 'invoice-1', contract_id: 'contract-1', amount: 1000, paid_amount: 250, status: 'partial', deleted_at: null },
+      ],
+      financialSummary: { outstandingBalance: 750, outstandingInvoicesCount: 1 },
+    };
     const html = renderToStaticMarkup(<OwnerDetailView state={{ status: 'ready', snapshot }} />);
 
     expect(html).toContain('مالك موثق');
     expect(html).toContain('العقارات المرتبطة');
+    expect(html).toContain('العقود النشطة');
+    expect(html).toContain('الرصيد المستحق');
+    expect(html).toContain('OMR');
+    expect(html).toContain('٧٥٠');
   });
 
   it('renders the owner detail unavailable state', () => {

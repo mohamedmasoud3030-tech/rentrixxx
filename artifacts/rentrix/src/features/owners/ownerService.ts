@@ -1,7 +1,8 @@
 import { supabase } from '@/integrations/supabase/client';
+import { getSafeRemainingAmount, sumFinancialValues } from '@/features/financials/financialMath';
 import { handleSupabaseError } from '@/lib/supabase-error';
 import type { Database } from '@/types/database';
-import type { Contract, Property, Unit } from '@/types/domain';
+import type { Contract, Invoice, Property, Unit } from '@/types/domain';
 
 export type Owner = Database['public']['Tables']['owners']['Row'];
 export type OwnerInsert = Database['public']['Tables']['owners']['Insert'];
@@ -52,6 +53,12 @@ export type OwnerProperty = Property & {
 
 export type OwnerUnit = Pick<Unit, 'id' | 'property_id' | 'unit_number' | 'floor' | 'status' | 'rent_amount'>;
 export type OwnerContract = Pick<Contract, 'id' | 'property_id' | 'unit_id' | 'start_date' | 'end_date' | 'status'>;
+export type OwnerInvoice = Pick<Invoice, 'id' | 'contract_id' | 'amount' | 'paid_amount' | 'status' | 'deleted_at'>;
+
+export type OwnerFinancialSummary = Readonly<{
+  outstandingBalance: number;
+  outstandingInvoicesCount: number;
+}>;
 
 export type OwnerHubSnapshot = Readonly<{
   owners: Owner[];
@@ -63,6 +70,8 @@ export type OwnerDetailSnapshot = Readonly<{
   properties: OwnerProperty[];
   units: OwnerUnit[];
   contracts: OwnerContract[];
+  invoices: OwnerInvoice[];
+  financialSummary: OwnerFinancialSummary;
 }>;
 
 const nullableOwnerStringFields = [
@@ -199,6 +208,18 @@ export function getActiveOwnerLinks(property: Pick<PropertyWithOwners, 'property
 
 export function getOwnerActivePropertyCount(ownerId: string, properties: readonly PropertyWithOwners[]): number {
   return properties.filter((property) => property.property_owners.some((link) => link.owner_id === ownerId && !link.ends_on)).length;
+}
+
+export function summarizeOwnerFinancials(invoices: readonly Pick<OwnerInvoice, 'amount' | 'paid_amount' | 'deleted_at'>[]): OwnerFinancialSummary {
+  const outstandingAmounts = invoices
+    .filter((invoice) => !invoice.deleted_at)
+    .map((invoice) => getSafeRemainingAmount(invoice.amount, invoice.paid_amount))
+    .filter((remainingAmount) => remainingAmount > 0);
+
+  return {
+    outstandingBalance: sumFinancialValues(outstandingAmounts),
+    outstandingInvoicesCount: outstandingAmounts.length,
+  };
 }
 
 function getTodayIsoDate(): string {
@@ -375,6 +396,20 @@ export async function listContractsForProperties(propertyIds: readonly string[])
   return data ?? [];
 }
 
+export async function listInvoicesForContracts(contractIds: readonly string[]): Promise<OwnerInvoice[]> {
+  if (contractIds.length === 0) return [];
+
+  const { data, error } = await supabase
+    .from('invoices')
+    .select('id, contract_id, amount, paid_amount, status, deleted_at')
+    .in('contract_id', [...contractIds])
+    .is('deleted_at', null)
+    .returns<OwnerInvoice[]>();
+
+  if (error) handleSupabaseError(error, 'تعذر تحميل أرصدة فواتير المالك');
+  return data ?? [];
+}
+
 export async function fetchOwnerHubSnapshot(): Promise<OwnerHubSnapshot> {
   const [owners, properties] = await Promise.all([listOwners(), listPropertiesWithOwners()]);
   return { owners, properties };
@@ -385,6 +420,7 @@ export async function fetchOwnerDetailSnapshot(ownerId: string): Promise<OwnerDe
   const properties = await listOwnerProperties(ownerId);
   const propertyIds = properties.map((property) => property.id);
   const [units, contracts] = await Promise.all([listUnitsForProperties(propertyIds), listContractsForProperties(propertyIds)]);
+  const invoices = await listInvoicesForContracts(contracts.map((contract) => contract.id));
 
-  return { owner, properties, units, contracts };
+  return { owner, properties, units, contracts, invoices, financialSummary: summarizeOwnerFinancials(invoices) };
 }
