@@ -84,11 +84,14 @@ Remaining:
 - `InvoicesPage` (`/invoices`): add "Generate Invoice" modal polish
 
 ### 3.3 Reports page — complete content
-- Currently shows charts but some sections return empty arrays
-- Wire `useAgedReceivablesReport`, `useDailyCollectionReport`, `useFinancialCashflowReport` to real data
-- Add date-range picker that updates all reports simultaneously
-- Add "Export CSV" per report section
-- Add loading skeletons per section (not one global spinner)
+**Status:** `DONE`
+
+Completed:
+- `ReportsPage` wires `useAgedReceivablesReport`, `useDailyCollectionReport`, and `useFinancialCashflowReport` into chart/table sections.
+- Shared date controls update the financial period and as-of report queries.
+- Each report section has an "Export CSV" action.
+- Section-level loading skeletons replace a single global spinner.
+- Targeted helper coverage verifies payments trend and aging bucket chart shaping.
 
 ### 3.4 Owner pages — build missing content
 - `/owners` list: confirm `OwnersPage.tsx` loads; add search, summary cards (total owners, linked properties)

@@ -2,6 +2,7 @@ import type { ContractListItem } from '@/features/contracts/services/contractSer
 import type { DailyCollectionReportRow, OverdueInvoicesReport } from '@/features/financials/reports/financialReportsService';
 import type { Unit } from '@/types/domain';
 
+export type AgingBucketChartRow = { bucket: string; total: number; invoiceCount: number };
 export type OccupancyChartRow = { property: string; occupied: number; vacant: number };
 export type PaymentsTrendRow = { month: string; collections: number; overdue: number };
 export type RentRollReportRow = {
@@ -72,6 +73,20 @@ export function buildPaymentsTrendRows(params: {
   }
 
   return Array.from(rowsByMonth.values()).sort((a, b) => a.month.localeCompare(b.month));
+}
+
+export function buildAgingBucketChartRows(
+  buckets: Record<string, { label: string; total: number; invoiceCount: number }> | undefined,
+  bucketKeys: string[],
+): AgingBucketChartRow[] {
+  return bucketKeys.map((key) => {
+    const bucket = buckets?.[key];
+    return {
+      bucket: bucket?.label ?? key,
+      total: bucket?.total ?? 0,
+      invoiceCount: bucket?.invoiceCount ?? 0,
+    };
+  });
 }
 
 export function buildRentRollRows(

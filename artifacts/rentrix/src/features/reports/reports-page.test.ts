@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { ContractListItem } from '@/features/contracts/services/contractService';
-import { buildOccupancyRows, buildPaymentsTrendRows, buildRentRollRows, createReceiptPrintHref } from './reports-page.helpers';
+import { buildAgingBucketChartRows, buildOccupancyRows, buildPaymentsTrendRows, buildRentRollRows, createReceiptPrintHref } from './reports-page.helpers';
 import { escapeCsvValue } from './reports-page';
 
 function createContract(overrides: Partial<ContractListItem>): ContractListItem {
@@ -55,6 +55,17 @@ describe('ReportsPage shaping helpers', () => {
     ])).toEqual([
       { property: 'alpha_pr', occupied: 1, vacant: 2 },
       { property: 'beta_pro', occupied: 1, vacant: 0 },
+    ]);
+  });
+
+  it('builds aging bucket chart rows in the requested display order', () => {
+    expect(buildAgingBucketChartRows({
+      current: { label: 'Current', total: 20, invoiceCount: 2 },
+      days_90_plus: { label: '90+', total: 300, invoiceCount: 3 },
+    }, ['current', 'days_1_30', 'days_90_plus'])).toEqual([
+      { bucket: 'Current', total: 20, invoiceCount: 2 },
+      { bucket: 'days_1_30', total: 0, invoiceCount: 0 },
+      { bucket: '90+', total: 300, invoiceCount: 3 },
     ]);
   });
 
