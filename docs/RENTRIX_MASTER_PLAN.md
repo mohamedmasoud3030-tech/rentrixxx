@@ -516,3 +516,54 @@ docs/v01-migration-reconciliation-status.md
 - Auth hook registration (manual Dashboard step) still needed ⏸️
 
 **Next agent:** Start there to continue v0.1 item 4.
+
+
+---
+
+## [ADDENDUM v2] Product Owner Mobile QA Report — 13 June 2026
+
+The following issues were reported by the product owner after testing exclusively on mobile. All items are captured in `.agent-skills/rentrix-build-web-apps/SKILL.md` with implementation details.
+
+### Confirmed P0 bugs (block real use)
+
+| # | Issue | Status |
+|---|-------|--------|
+| P0-A | Cannot write/save/add/register anything from any page — all form submissions fail silently | `READY` — fix first |
+| P0-B | Owners page not found in sidebar navigation | `READY` |
+| P0-C | No input modals — forms navigate to new pages instead of opening overlay dialogs | `READY` |
+
+### P1 backlog (ordered)
+
+| # | Item | Notes |
+|---|------|-------|
+| P1-1 | Sidebar refactor — remove duplicate /owners-hub, fix mobile truncation, add governance pages | Mobile drawer shows incomplete list |
+| P1-2 | Financial pages polish — Financials/Invoices/Receipts/Expenses each need tabs, filters, empty states | Reported as hard to use |
+| P1-3 | Reports page — complete chart data, date-range picker, per-section CSV export | Charts show empty on mobile |
+| P1-4 | Owner detail page — linked properties, contracts count, outstanding balance | Page exists but incomplete |
+| P1-5 | Settings page — add logo upload, VAT default, contract serial prefix, unsaved-changes guard | Half-built |
+
+### P2 polish (in parallel with P1)
+
+| # | Item |
+|---|------|
+| P2-1 | Visual consistency — EmptyState, Skeleton, StatusBadge used uniformly across all pages |
+| P2-2 | Magic touches — sidebar hover tooltips, dashboard trend arrows, receipt expand animation |
+| P2-3 | Print support — receipt + invoice print view with `@media print` CSS |
+| P2-4 | File upload & attachments — maintenance photos, contract PDFs, expense receipts → Supabase Storage |
+| P2-5 | Mobile UX — bottom nav FAB, min-h-12 touch targets, table→card list below sm:, BottomSheet for forms |
+| P2-6 | RTL consistency — all spacing via gap-*, no ml-*/mr-* in flex containers |
+
+### Mobile-vs-desktop note
+
+All issues above were found on mobile. Some may not appear on desktop. Agents must test both viewports. Mobile breakpoint is `< 768px`. Use `sm:` prefix for desktop-only elements.
+
+### Execution order for next agent
+
+1. Fix P0-A (database writes) — highest impact
+2. Fix P0-B (owners sidebar) — quick win
+3. Fix P0-C (form modals) — affects all creation flows
+4. P1-1 (sidebar) — unlocks navigation
+5. P1-2 through P1-5 — page-by-page in order
+6. P2 items — can be batched per page
+
+Read `.agent-skills/rentrix-build-web-apps/SKILL.md` for implementation patterns before starting any item.
