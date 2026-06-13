@@ -14,7 +14,6 @@ export const navGroups = [
     ['/people', 'people', 'دليل جهات التعامل', Users],
     ['/tenants', 'tenants', 'بيانات المستأجرين', Users],
     ['/owners', 'owners', 'إدارة ملفات الملاك وعلاقات الملكية', UserRoundCog, 'owners.hub.view'],
-    ['/owners-hub', 'ownersHub', 'مركز قراءة موحد للملاك', UserRoundCog, 'owners.hub.view'],
     ['/contracts', 'contracts', 'العقود والتجديدات', FileText],
   ]],
   ['التحصيل والتقارير', [
