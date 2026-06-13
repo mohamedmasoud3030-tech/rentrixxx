@@ -59,14 +59,22 @@ export async function getProperty(propertyId: string): Promise<Property> {
 }
 
 export async function createProperty(payload: PropertyPayload): Promise<Property> {
-  const insertPayload: PropertyInsert = payload;
+  const insertPayload: any = {
+    ...payload,
+    // Database 'name' field maps from 'title'
+    name: payload.title || '',
+  };
   const { data, error } = await supabase.from('properties').insert(insertPayload).select('*').single().returns<Property>();
   if (error) throw error;
   return data;
 }
 
 export async function updateProperty(propertyId: string, payload: PropertyPayload): Promise<Property> {
-  const updatePayload: PropertyUpdate = payload;
+  const updatePayload: any = {
+    ...payload,
+    // Database 'name' field maps from 'title'
+    name: payload.title || '',
+  };
   const { data, error } = await supabase
     .from('properties')
     .update(updatePayload)
