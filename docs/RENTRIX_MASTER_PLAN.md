@@ -537,7 +537,7 @@ The following issues were reported by the product owner after testing exclusivel
 | # | Item | Notes |
 |---|------|-------|
 | P1-1 | Sidebar refactor — remove duplicate /owners-hub, fix mobile truncation, add governance pages | Mobile drawer shows incomplete list |
-| P1-2 | Financial pages polish — Financials/Invoices/Receipts/Expenses each need tabs, filters, empty states | Reported as hard to use |
+| P1-2 | Financial pages polish — Financials/Invoices/Receipts/Expenses each need tabs, filters, empty states | `IN PROGRESS` — financial hub tabs, direct page links, expenses filter labels, empty state, and CSV export added. Remaining: invoice generation modal and receipts void action polish. |
 | P1-3 | Reports page — complete chart data, date-range picker, per-section CSV export | Charts show empty on mobile |
 | P1-4 | Owner detail page — linked properties, contracts count, outstanding balance | Page exists but incomplete |
 | P1-5 | Settings page — add logo upload, VAT default, contract serial prefix, unsaved-changes guard | Half-built |

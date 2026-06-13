@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
+import { buildExpensesCsv } from '../components/expenses-section';
 import { toLocalDateInputValue } from './expenses-page';
+import type { Expense, Property } from '@/types/domain';
 
 describe('expenses page date defaults', () => {
   it('formats date inputs from local calendar parts instead of UTC ISO strings', () => {
@@ -12,5 +14,30 @@ describe('expenses page date defaults', () => {
 
     expect(utcDate.toISOString().slice(0, 10)).toBe('2026-01-01');
     expect(toLocalDateInputValue(localDate)).toBe('2025-12-31');
+  });
+});
+
+describe('buildExpensesCsv', () => {
+  it('exports the visible expenses with escaped property labels and descriptions', () => {
+    const property = {
+      id: 'property-1',
+      title: 'برج "النيل"',
+    } as Property;
+    const expense = {
+      id: 'expense-1',
+      property_id: 'property-1',
+      category: 'صيانة',
+      amount: 1250.5,
+      expense_date: '2026-06-13',
+      description: 'مصعد, دور 2',
+      created_at: '2026-06-13T00:00:00.000Z',
+      updated_at: '2026-06-13T00:00:00.000Z',
+      deleted_at: null,
+    } as Expense;
+
+    expect(buildExpensesCsv([expense], [property])).toBe([
+      'date,property,category,amount,description',
+      '2026-06-13,"برج ""النيل""",صيانة,1250.5,"مصعد, دور 2"',
+    ].join('\n'));
   });
 });
