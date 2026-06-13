@@ -12,6 +12,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { PropertyCard } from '@/components/ui/property-card';
 import { defaultCompanyLocalSettings } from '@/lib/companySettings';
 import { formatCompanyMoney } from '@/lib/companyFormatters';
+import type { Property } from '@/types/domain';
+import { PropertyFormModal } from './property-form-modal';
 import { propertyStatusLabels, propertyStatusValues } from './property-schema';
 import { useProperties, useSoftDeleteProperty } from './use-properties';
 import type { PropertyStatusFilter } from './property-service';
@@ -28,6 +30,7 @@ export function PropertiesListPage() {
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState<PropertyStatusFilter>('all');
   const [page, setPage] = useState(1);
+  const [formModal, setFormModal] = useState<{ open: boolean; property: Property | null }>({ open: false, property: null });
   const [viewMode, setViewMode] = useState<'cards' | 'table'>(() =>
     window.innerWidth < 768 ? 'cards' : 'table',
   );
@@ -54,8 +57,8 @@ export function PropertiesListPage() {
           <h2 className="text-xl font-black">العقارات</h2>
           <p className="text-sm text-muted-foreground">إدارة العقارات والوحدات المرتبطة</p>
         </div>
-        <Button asChild className="rounded-2xl gap-2">
-          <Link to="/properties/new"><Plus className="size-4" />إضافة عقار</Link>
+        <Button className="rounded-2xl gap-2" onClick={() => setFormModal({ open: true, property: null })}>
+          <Plus className="size-4" />إضافة عقار
         </Button>
       </div>
 
@@ -153,11 +156,13 @@ export function PropertiesListPage() {
                     <Eye className="size-3.5" />
                   </button>
                 </Link>
-                <Link to="/properties/$propertyId/edit" params={{ propertyId: p.id }}>
-                  <button type="button" className="grid size-7 place-items-center rounded-xl bg-background/90 shadow-sm border border-border text-muted-foreground hover:text-foreground transition-colors">
-                    <Edit className="size-3.5" />
-                  </button>
-                </Link>
+                <button
+                  type="button"
+                  onClick={() => setFormModal({ open: true, property: p })}
+                  className="grid size-7 place-items-center rounded-xl bg-background/90 shadow-sm border border-border text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  <Edit className="size-3.5" />
+                </button>
                 <button
                   type="button"
                   className="grid size-7 place-items-center rounded-xl bg-background/90 shadow-sm border border-border text-muted-foreground hover:text-rose-600 transition-colors"
@@ -200,8 +205,12 @@ export function PropertiesListPage() {
                       <Button asChild variant="secondary" className="h-8 rounded-xl px-3 text-xs gap-1">
                         <Link to="/properties/$propertyId" params={{ propertyId: p.id }}><Eye className="size-3" />عرض</Link>
                       </Button>
-                      <Button asChild variant="secondary" className="h-8 rounded-xl px-3 text-xs gap-1">
-                        <Link to="/properties/$propertyId/edit" params={{ propertyId: p.id }}><Edit className="size-3" />تعديل</Link>
+                      <Button
+                        variant="secondary"
+                        className="h-8 rounded-xl px-3 text-xs gap-1"
+                        onClick={() => setFormModal({ open: true, property: p })}
+                      >
+                        <Edit className="size-3" />تعديل
                       </Button>
                       <button
                         type="button"
@@ -241,6 +250,12 @@ export function PropertiesListPage() {
           </Button>
         </div>
       )}
+
+      <PropertyFormModal
+        property={formModal.property}
+        open={formModal.open}
+        onOpenChange={(open) => setFormModal((prev) => ({ ...prev, open }))}
+      />
     </div>
   );
 }
