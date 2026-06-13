@@ -1,6 +1,7 @@
 import { Link, useNavigate } from '@tanstack/react-router';
 import { AlertTriangle, CalendarClock, ChevronDown, ChevronUp, Download, Edit, Eye, FileText, Plus, Search, Trash2, WalletCards } from 'lucide-react';
 import { Fragment, useMemo, useState, type ReactNode } from 'react';
+import { ContractFormModal } from './contract-form-modal';
 import { EmptyState } from '@/components/empty-state';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -101,6 +102,8 @@ export function ContractsListPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [expiringOnly, setExpiringOnly] = useState(false);
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [editContractId, setEditContractId] = useState<string | undefined>();
   const params = useMemo(() => ({ status }), [status]);
   const contractsQuery = useContracts(params);
   const companySettings = useCompanySettingsContract();
@@ -141,10 +144,8 @@ export function ContractsListPage() {
             <Download className="me-2 size-4" />
             تصدير CSV
           </Button>
-          <Button asChild>
-            <Link to="/contracts/new">
-              <Plus className="me-2 size-4" />إنشاء عقد
-            </Link>
+          <Button onClick={() => { setEditContractId(undefined); setModalOpen(true); }}>
+            <Plus className="me-2 size-4" />إنشاء عقد
           </Button>
         </div>
       </div>
@@ -209,10 +210,8 @@ export function ContractsListPage() {
                 title="لا توجد عقود"
                 description="ابدأ بإنشاء أول عقد وربطه بالعقار والوحدة والمستأجر."
                 action={
-                  <Button asChild>
-                    <Link to="/contracts/new">
-                      <FileText className="me-2 size-4" />إنشاء عقد
-                    </Link>
+                  <Button onClick={() => { setEditContractId(undefined); setModalOpen(true); }}>
+                    <FileText className="me-2 size-4" />إنشاء عقد
                   </Button>
                 }
               />
@@ -247,10 +246,8 @@ export function ContractsListPage() {
                     <p className="px-1 text-xs font-bold text-amber-700">ينتهي خلال {daysUntilEnd} يوم</p>
                   ) : null}
                   <div className="flex items-center justify-end gap-2 px-1">
-                    <Button variant="secondary" className="h-9 rounded-xl px-3 text-xs gap-1.5" asChild>
-                      <Link to="/contracts/$contractId/edit" params={{ contractId: contract.id }} aria-label={`تعديل العقد ${getContractNumber(contract)}`}>
-                        <Edit className="size-3.5" />تعديل
-                      </Link>
+                    <Button variant="secondary" className="h-9 rounded-xl px-3 text-xs gap-1.5" onClick={() => { setEditContractId(contract.id); setModalOpen(true); }}>
+                      <Edit className="size-3.5" />تعديل
                     </Button>
                     <Button
                       variant="danger"
@@ -321,10 +318,8 @@ export function ContractsListPage() {
                                 <Eye className="size-4" />
                               </Link>
                             </Button>
-                            <Button variant="secondary" className="min-h-11 px-3" asChild>
-                              <Link to="/contracts/$contractId/edit" params={{ contractId: contract.id }} aria-label={`تعديل العقد ${getContractNumber(contract)}`}>
-                                <Edit className="size-4" />
-                              </Link>
+                            <Button variant="secondary" className="min-h-11 px-3" onClick={() => { setEditContractId(contract.id); setModalOpen(true); }}>
+                              <Edit className="size-4" />
                             </Button>
                             <Button variant="danger" className="min-h-11 px-3" aria-label={`حذف العقد ${getContractNumber(contract)}`} onClick={() => deleteMutation.mutate(contract.id)} disabled={deleteMutation.isPending}>
                               <Trash2 className="size-4" />
@@ -374,5 +369,10 @@ export function ContractsListPage() {
         </>
       ) : null}
     </div>
+    <ContractFormModal
+      open={modalOpen}
+      onClose={() => { setModalOpen(false); setEditContractId(undefined); }}
+      contractId={editContractId}
+    />
   );
 }

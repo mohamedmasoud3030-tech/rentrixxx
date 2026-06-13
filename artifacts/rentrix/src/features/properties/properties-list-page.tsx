@@ -1,6 +1,7 @@
 import { Link, useNavigate } from '@tanstack/react-router';
 import { Building2, Edit, Eye, Grid3x3, List, Plus, Trash2 } from 'lucide-react';
 import { useMemo, useState } from 'react';
+import { PropertyFormModal } from './property-form-modal';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { EmptyState } from '@/components/empty-state';
@@ -28,6 +29,8 @@ export function PropertiesListPage() {
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState<PropertyStatusFilter>('all');
   const [page, setPage] = useState(1);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [editPropertyId, setEditPropertyId] = useState<string | undefined>();
   const [viewMode, setViewMode] = useState<'cards' | 'table'>(() =>
     window.innerWidth < 768 ? 'cards' : 'table',
   );
@@ -54,8 +57,8 @@ export function PropertiesListPage() {
           <h2 className="text-xl font-black">العقارات</h2>
           <p className="text-sm text-muted-foreground">إدارة العقارات والوحدات المرتبطة</p>
         </div>
-        <Button asChild className="rounded-2xl gap-2">
-          <Link to="/properties/new"><Plus className="size-4" />إضافة عقار</Link>
+        <Button className="rounded-2xl gap-2" onClick={() => { setEditPropertyId(undefined); setModalOpen(true); }}>
+          <Plus className="size-4" />إضافة عقار
         </Button>
       </div>
 
@@ -126,8 +129,8 @@ export function PropertiesListPage() {
             {hasFilterValues ? 'لا توجد نتائج مطابقة للبحث' : 'لم تُضف عقارات بعد'}
           </p>
           {!hasFilterValues && (
-            <Button asChild className="mt-4 rounded-2xl">
-              <Link to="/properties/new">إضافة أول عقار</Link>
+            <Button className="mt-4 rounded-2xl" onClick={() => { setEditPropertyId(undefined); setModalOpen(true); }}>
+              إضافة أول عقار
             </Button>
           )}
         </div>
@@ -153,11 +156,13 @@ export function PropertiesListPage() {
                     <Eye className="size-3.5" />
                   </button>
                 </Link>
-                <Link to="/properties/$propertyId/edit" params={{ propertyId: p.id }}>
-                  <button type="button" className="grid size-7 place-items-center rounded-xl bg-background/90 shadow-sm border border-border text-muted-foreground hover:text-foreground transition-colors">
-                    <Edit className="size-3.5" />
-                  </button>
-                </Link>
+                <button
+                  type="button"
+                  className="grid size-7 place-items-center rounded-xl bg-background/90 shadow-sm border border-border text-muted-foreground hover:text-foreground transition-colors"
+                  onClick={() => { setEditPropertyId(p.id); setModalOpen(true); }}
+                >
+                  <Edit className="size-3.5" />
+                </button>
                 <button
                   type="button"
                   className="grid size-7 place-items-center rounded-xl bg-background/90 shadow-sm border border-border text-muted-foreground hover:text-rose-600 transition-colors"
@@ -200,8 +205,8 @@ export function PropertiesListPage() {
                       <Button asChild variant="secondary" className="h-8 rounded-xl px-3 text-xs gap-1">
                         <Link to="/properties/$propertyId" params={{ propertyId: p.id }}><Eye className="size-3" />عرض</Link>
                       </Button>
-                      <Button asChild variant="secondary" className="h-8 rounded-xl px-3 text-xs gap-1">
-                        <Link to="/properties/$propertyId/edit" params={{ propertyId: p.id }}><Edit className="size-3" />تعديل</Link>
+                      <Button variant="secondary" className="h-8 rounded-xl px-3 text-xs gap-1" onClick={() => { setEditPropertyId(p.id); setModalOpen(true); }}>
+                        <Edit className="size-3" />تعديل
                       </Button>
                       <button
                         type="button"
@@ -242,5 +247,10 @@ export function PropertiesListPage() {
         </div>
       )}
     </div>
+    <PropertyFormModal
+      open={modalOpen}
+      onClose={() => { setModalOpen(false); setEditPropertyId(undefined); }}
+      propertyId={editPropertyId}
+    />
   );
 }
