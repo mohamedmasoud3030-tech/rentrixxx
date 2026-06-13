@@ -528,9 +528,9 @@ The following issues were reported by the product owner after testing exclusivel
 
 | # | Issue | Status |
 |---|-------|--------|
-| P0-A | Cannot write/save/add/register anything from any page — all form submissions fail silently | `READY` — fix first |
-| P0-B | Owners page not found in sidebar navigation | `READY` |
-| P0-C | No input modals — forms navigate to new pages instead of opening overlay dialogs | `READY` |
+| P0-A | Cannot write/save/add/register anything from any page — all form submissions fail silently | `DONE` (PR #860) ✅ |
+| P0-B | Owners page not found in sidebar navigation | `DONE` (PR #861) ✅ |
+| P0-C | No input modals — forms navigate to new pages instead of opening overlay dialogs | `DONE` (PR #862) ✅ |
 
 ### P1 backlog (ordered)
 
