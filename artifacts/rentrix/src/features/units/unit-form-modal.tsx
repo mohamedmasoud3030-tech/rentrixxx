@@ -1,5 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -24,6 +24,7 @@ function fieldError(message?: string) {
 export function UnitFormModal({ propertyId, unit, open, onOpenChange }: UnitFormModalProps) {
   const createMutation = useCreateUnit(propertyId);
   const updateMutation = useUpdateUnit(propertyId);
+  const [submitError, setSubmitError] = useState<string | null>(null);
   const form = useForm<UnitFormValues>({
     resolver: zodResolver(unitSchema),
     defaultValues: {
@@ -37,6 +38,7 @@ export function UnitFormModal({ propertyId, unit, open, onOpenChange }: UnitForm
 
   useEffect(() => {
     if (open) {
+      setSubmitError(null);
       form.reset({
         unit_number: unit?.unit_number ?? '',
         floor: unit?.floor ?? '',
@@ -59,15 +61,23 @@ export function UnitFormModal({ propertyId, unit, open, onOpenChange }: UnitForm
         <form
           className="grid gap-4 md:grid-cols-2"
           onSubmit={form.handleSubmit(async (values) => {
+            setSubmitError(null);
             const payload = unitSchema.parse(values);
-            if (unit) {
-              await updateMutation.mutateAsync({ unitId: unit.id, payload });
-            } else {
-              await createMutation.mutateAsync(payload);
+            try {
+              if (unit) {
+                await updateMutation.mutateAsync({ unitId: unit.id, payload });
+              } else {
+                await createMutation.mutateAsync(payload);
+              }
+              onOpenChange(false);
+            } catch (error) {
+              setSubmitError(error instanceof Error ? error.message : 'تعذر حفظ الوحدة. تحقق من الصلاحيات ثم أعد المحاولة.');
             }
-            onOpenChange(false);
           })}
         >
+          {submitError ? (
+            <div className="rounded-2xl border border-destructive/30 bg-destructive/5 p-3 text-sm font-bold text-destructive md:col-span-2" role="alert">{submitError}</div>
+          ) : null}
           <label className="grid gap-2 text-sm font-bold">
             رقم الوحدة
             <Input {...form.register('unit_number')} />
@@ -93,7 +103,7 @@ export function UnitFormModal({ propertyId, unit, open, onOpenChange }: UnitForm
             <Textarea {...form.register('notes')} />
           </label>
           <div className="flex justify-end gap-3 md:col-span-2">
-            <Button variant="secondary" onClick={() => onOpenChange(false)} disabled={isSubmitting}>إلغاء</Button>
+            <Button type="button" variant="secondary" onClick={() => onOpenChange(false)} disabled={isSubmitting}>إلغاء</Button>
             <Button type="submit" disabled={isSubmitting}>{isSubmitting ? 'جار الحفظ...' : 'حفظ الوحدة'}</Button>
           </div>
         </form>

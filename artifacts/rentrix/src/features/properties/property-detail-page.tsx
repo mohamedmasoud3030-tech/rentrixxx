@@ -41,6 +41,17 @@ export function PropertyDetailPage() {
   const unitsQuery = useUnits(propertyId);
 
   if (propertyQuery.isLoading) return <RouteLoadingState />;
+  if (propertyQuery.isError) {
+    return (
+      <EmptyState
+        title="تعذر تحميل العقار"
+        description={propertyQuery.error instanceof Error ? propertyQuery.error.message : 'تحقق من الصلاحيات أو الاتصال ثم أعد المحاولة.'}
+        role="alert"
+        ariaLive="assertive"
+        action={<Button onClick={() => propertyQuery.refetch()}>إعادة المحاولة</Button>}
+      />
+    );
+  }
   if (!propertyQuery.data) return <EmptyState title="العقار غير موجود" description="ربما تم حذف العقار أو لا تملك صلاحية الوصول إليه." />;
 
   const property = propertyQuery.data;

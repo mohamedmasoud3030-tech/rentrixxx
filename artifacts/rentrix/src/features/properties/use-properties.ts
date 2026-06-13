@@ -29,7 +29,8 @@ export function useCreateProperty() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (payload: PropertyPayload) => createProperty(payload),
-    onSuccess: async () => {
+    onSuccess: async (property) => {
+      queryClient.setQueryData(propertyKeys.detail(property.id), property);
       await queryClient.invalidateQueries({ queryKey: propertyKeys.lists() });
       toast.success('تم إنشاء العقار بنجاح');
     },
@@ -41,7 +42,8 @@ export function useUpdateProperty(propertyId: string) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (payload: PropertyPayload) => updateProperty(propertyId, payload),
-    onSuccess: async () => {
+    onSuccess: async (property) => {
+      queryClient.setQueryData(propertyKeys.detail(propertyId), property);
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: propertyKeys.lists() }),
         queryClient.invalidateQueries({ queryKey: propertyKeys.detail(propertyId) }),

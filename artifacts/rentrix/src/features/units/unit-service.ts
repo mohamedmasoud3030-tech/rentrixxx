@@ -6,6 +6,23 @@ import { normalizeUnitStatus, type UnitPayload } from './unit-schema';
 type UnitInsert = Database['public']['Tables']['units']['Insert'];
 type UnitUpdate = Database['public']['Tables']['units']['Update'];
 
+function getWriteErrorMessage(action: 'create' | 'update' | 'archive', error: unknown) {
+  const fallback = action === 'create' ? 'تعذر إنشاء الوحدة' : action === 'update' ? 'تعذر تحديث الوحدة' : 'تعذر أرشفة الوحدة';
+  const message = error instanceof Error ? error.message : String(error ?? '');
+  const lower = message.toLowerCase();
+
+  if (lower.includes('permission denied') || lower.includes('rls') || lower.includes('row-level security') || lower.includes('not authorized')) {
+    return `${fallback}: لا تملك صلاحية الكتابة على الوحدات. تواصل مع المسؤول أو استخدم حساباً بصلاحيات أعلى.`;
+  }
+
+  if (message) return `${fallback}: ${message}`;
+  return fallback;
+}
+
+export function normalizeUnitPayload(propertyId: string, payload: UnitPayload): UnitInsert {
+  return { ...payload, property_id: propertyId };
+}
+
 function normalizeUnit(unit: Unit): Unit {
   return {
     ...unit,
@@ -38,9 +55,9 @@ export async function listUnitsByProperty(propertyId: string): Promise<Unit[]> {
 }
 
 export async function createUnit(propertyId: string, payload: UnitPayload): Promise<Unit> {
-  const insertPayload: UnitInsert = { ...payload, property_id: propertyId };
+  const insertPayload = normalizeUnitPayload(propertyId, payload);
   const { data, error } = await supabase.from('units').insert(insertPayload).select('*').single().returns<Unit>();
-  if (error) throw error;
+  if (error) throw new Error(getWriteErrorMessage('create', error));
   return normalizeUnit(data);
 }
 
@@ -54,12 +71,12 @@ export async function updateUnit(unitId: string, payload: UnitPayload): Promise<
     .select('*')
     .single()
     .returns<Unit>();
-  if (error) throw error;
+  if (error) throw new Error(getWriteErrorMessage('update', error));
   return normalizeUnit(data);
 }
 
 export async function softDeleteUnit(unitId: string): Promise<void> {
   const updatePayload: UnitUpdate = { deleted_at: new Date().toISOString() };
   const { error } = await supabase.from('units').update(updatePayload).eq('id', unitId).is('deleted_at', null);
-  if (error) throw error;
+  if (error) throw new Error(getWriteErrorMessage('archive', error));
 }
