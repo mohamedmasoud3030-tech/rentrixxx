@@ -124,3 +124,41 @@
     transition-duration: 0.01ms !important;
   }
 }
+
+/* ─── Print styles ──────────────────────────────────────────────────────────── */
+@media print {
+  /* Hide everything except the document */
+  body > *:not(#root) { display: none !important; }
+
+  /* Hide app shell chrome */
+  [data-sidebar], nav, header, aside,
+  .print\:hidden { display: none !important; }
+
+  /* Show only print-specific content */
+  .print\:block { display: block !important; }
+
+  /* Receipt / invoice document */
+  .print-document {
+    margin: 0;
+    padding: 1.5cm;
+    font-size: 12pt;
+    color: #000;
+    background: #fff;
+  }
+
+  /* Remove card shadows and borders for clean print */
+  .print-document .card,
+  .print-document [class*="rounded"] {
+    box-shadow: none !important;
+    border: 1px solid #ccc !important;
+  }
+
+  /* Force page breaks before major sections */
+  .print-page-break { page-break-before: always; }
+
+  /* Ensure tables don't split across pages mid-row */
+  tr { page-break-inside: avoid; }
+
+  /* Hide action buttons */
+  button, [role="button"] { display: none !important; }
+}
