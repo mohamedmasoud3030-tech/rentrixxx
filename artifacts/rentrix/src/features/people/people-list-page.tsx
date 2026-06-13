@@ -1,4 +1,3 @@
-import { Link, useNavigate } from '@tanstack/react-router';
 import { Edit, Plus, Trash2 } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { PersonFormModal } from './person-form-modal';
@@ -17,16 +16,25 @@ import { usePeople, useSoftDeletePerson } from './use-people';
 const pageSize = 10;
 
 export function PeopleListPage() {
-  const navigate = useNavigate();
   const [search, setSearch] = useState('');
   const [type, setType] = useState<PersonTypeFilter>('all');
   const [page, setPage] = useState(1);
   const [modalOpen, setModalOpen] = useState(false);
   const [editPersonId, setEditPersonId] = useState<string | undefined>();
+  const [archiveError, setArchiveError] = useState<string | null>(null);
   const params = useMemo(() => ({ search, type, page, pageSize }), [page, search, type]);
   const peopleQuery = usePeople(params);
   const deleteMutation = useSoftDeletePerson();
   const totalPages = Math.max(1, Math.ceil((peopleQuery.data?.count ?? 0) / pageSize));
+
+  const handleArchivePerson = async (personId: string) => {
+    setArchiveError(null);
+    try {
+      await deleteMutation.mutateAsync(personId);
+    } catch (error) {
+      setArchiveError(error instanceof Error ? error.message : 'تعذر أرشفة الشخص. تحقق من الصلاحيات وحاول مرة أخرى.');
+    }
+  };
 
   return (
     <>
@@ -48,6 +56,8 @@ export function PeopleListPage() {
           </Select>
         </CardContent>
       </Card>
+
+      {archiveError ? <div className="rounded-2xl border border-destructive/20 bg-destructive/10 p-4 text-sm font-bold text-destructive" role="alert">{archiveError}</div> : null}
 
       {peopleQuery.isLoading ? (
         <Card className="overflow-hidden">
@@ -91,7 +101,7 @@ export function PeopleListPage() {
                     variant="danger"
                     className="h-9 rounded-xl px-3 text-xs gap-1.5"
                     aria-label={`أرشفة ${person.full_name}`}
-                    onClick={() => void deleteMutation.mutate(person.id)}
+                    onClick={() => { void handleArchivePerson(person.id); }}
                     disabled={deleteMutation.isPending}
                   >
                     <Trash2 className="size-3.5" />أرشفة
@@ -129,7 +139,7 @@ export function PeopleListPage() {
                       <TableCell>
                         <div className="flex gap-2">
                           <Button variant="secondary" className="min-h-11 px-3" onClick={() => { setEditPersonId(person.id); setModalOpen(true); }}><Edit className="size-4" /></Button>
-                          <Button variant="danger" className="min-h-11 px-3" aria-label={`أرشفة ${person.full_name}`} onClick={() => void deleteMutation.mutate(person.id)} disabled={deleteMutation.isPending}><Trash2 className="size-4" /></Button>
+                          <Button variant="danger" className="min-h-11 px-3" aria-label={`أرشفة ${person.full_name}`} onClick={() => { void handleArchivePerson(person.id); }} disabled={deleteMutation.isPending}><Trash2 className="size-4" /></Button>
                         </div>
                       </TableCell>
                     </TableRow>

@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
+import { tenantWorkspaceKeys } from '@/features/tenants/useTenantWorkspace';
 import type { PersonPayload } from './person-schema';
 import { createPerson, getPerson, listPeople, softDeletePerson, updatePerson, type PeopleListParams } from './people-service';
 
@@ -25,12 +26,20 @@ export function usePerson(personId: string) {
   });
 }
 
+async function invalidatePeopleWorkflows(queryClient: ReturnType<typeof useQueryClient>, personId?: string) {
+  await Promise.all([
+    queryClient.invalidateQueries({ queryKey: peopleKeys.all }),
+    queryClient.invalidateQueries({ queryKey: tenantWorkspaceKeys.all }),
+    personId ? queryClient.invalidateQueries({ queryKey: peopleKeys.detail(personId) }) : Promise.resolve(),
+  ]);
+}
+
 export function useCreatePerson() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (payload: PersonPayload) => createPerson(payload),
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: peopleKeys.lists() });
+    onSuccess: async (person) => {
+      await invalidatePeopleWorkflows(queryClient, person.id);
       toast.success('تم إنشاء الشخص بنجاح');
     },
     onError: (error) => toast.error(error instanceof Error ? error.message : 'تعذر إنشاء الشخص'),
@@ -42,10 +51,7 @@ export function useUpdatePerson(personId: string) {
   return useMutation({
     mutationFn: (payload: PersonPayload) => updatePerson(personId, payload),
     onSuccess: async () => {
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: peopleKeys.lists() }),
-        queryClient.invalidateQueries({ queryKey: peopleKeys.detail(personId) }),
-      ]);
+      await invalidatePeopleWorkflows(queryClient, personId);
       toast.success('تم تحديث الشخص بنجاح');
     },
     onError: (error) => toast.error(error instanceof Error ? error.message : 'تعذر تحديث الشخص'),
@@ -56,8 +62,8 @@ export function useSoftDeletePerson() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (personId: string) => softDeletePerson(personId),
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: peopleKeys.all });
+    onSuccess: async (_data, personId) => {
+      await invalidatePeopleWorkflows(queryClient, personId);
       toast.success('تم حذف الشخص أرشيفياً');
     },
     onError: (error) => toast.error(error instanceof Error ? error.message : 'تعذر حذف الشخص'),
