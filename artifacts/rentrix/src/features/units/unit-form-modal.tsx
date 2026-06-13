@@ -2,8 +2,8 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
+import { ResponsiveFormOverlay } from '@/components/ui/responsive-form-overlay';
 import { Select } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import type { Unit } from '@/types/domain';
@@ -50,12 +50,12 @@ export function UnitFormModal({ propertyId, unit, open, onOpenChange }: UnitForm
   const isSubmitting = createMutation.isPending || updateMutation.isPending;
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>{unit ? 'تعديل وحدة' : 'إضافة وحدة'}</DialogTitle>
-          <DialogDescription>الوحدات مرتبطة بالعقار الحالي وتُحذف أرشيفياً عند الإزالة.</DialogDescription>
-        </DialogHeader>
+    <ResponsiveFormOverlay
+      open={open}
+      onOpenChange={onOpenChange}
+      title={unit ? 'تعديل وحدة' : 'إضافة وحدة'}
+      description="الوحدات مرتبطة بالعقار الحالي وتُحذف أرشيفياً عند الإزالة."
+    >
         <form
           className="grid gap-4 md:grid-cols-2"
           onSubmit={form.handleSubmit(async (values) => {
@@ -97,7 +97,6 @@ export function UnitFormModal({ propertyId, unit, open, onOpenChange }: UnitForm
             <Button type="submit" disabled={isSubmitting}>{isSubmitting ? 'جار الحفظ...' : 'حفظ الوحدة'}</Button>
           </div>
         </form>
-      </DialogContent>
-    </Dialog>
+    </ResponsiveFormOverlay>
   );
 }

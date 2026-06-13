@@ -3,8 +3,8 @@ import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { RouteLoadingState } from '@/components/loading-state';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
+import { ResponsiveFormOverlay } from '@/components/ui/responsive-form-overlay';
 import { Select } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { personSchema, personTypeLabels, personTypeValues, type PersonFormValues } from './person-schema';
@@ -72,12 +72,12 @@ export function PersonFormModal({ open, onClose, personId, defaultType = 'tenant
   const title = isEdit ? 'تعديل شخص' : (defaultType === 'owner' ? 'إضافة مالك' : 'إضافة شخص');
 
   return (
-    <Dialog open={open} onOpenChange={(v) => { if (!v) onClose(); }}>
-      <DialogContent className="max-h-[90dvh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>{title}</DialogTitle>
-        </DialogHeader>
-
+    <ResponsiveFormOverlay
+      open={open}
+      onOpenChange={(v) => { if (!v) onClose(); }}
+      title={title}
+      className="max-h-[90dvh] overflow-y-auto"
+    >
         {isEdit && personQuery.isLoading ? (
           <RouteLoadingState />
         ) : (
@@ -125,7 +125,6 @@ export function PersonFormModal({ open, onClose, personId, defaultType = 'tenant
             </div>
           </form>
         )}
-      </DialogContent>
-    </Dialog>
+    </ResponsiveFormOverlay>
   );
 }
