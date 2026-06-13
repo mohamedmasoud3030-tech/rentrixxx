@@ -247,12 +247,12 @@ export function ContractsListPage() {
                     <p className="px-1 text-xs font-bold text-amber-700">ينتهي خلال {daysUntilEnd} يوم</p>
                   ) : null}
                   <div className="flex items-center justify-end gap-2 px-1">
-                    <Button variant="secondary" className="h-9 rounded-xl px-3 text-xs gap-1.5" onClick={() => { setEditContractId(contract.id); setModalOpen(true); }}>
+                    <Button variant="secondary" className="min-h-11 rounded-xl px-3 text-xs gap-1.5" onClick={() => { setEditContractId(contract.id); setModalOpen(true); }}>
                       <Edit className="size-3.5" />تعديل
                     </Button>
                     <Button
                       variant="danger"
-                      className="h-9 rounded-xl px-3 text-xs gap-1.5"
+                      className="min-h-11 rounded-xl px-3 text-xs gap-1.5"
                       aria-label={`حذف العقد ${getContractNumber(contract)}`}
                       onClick={() => deleteMutation.mutate(contract.id)}
                       disabled={deleteMutation.isPending}

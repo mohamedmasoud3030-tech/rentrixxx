@@ -203,15 +203,15 @@ export function PropertiesListPage() {
                   <TableCell className="hidden sm:table-cell text-muted-foreground text-sm">{p.address ?? '—'}</TableCell>
                   <TableCell className="hidden lg:table-cell">
                     <div className="flex gap-2">
-                      <Button asChild variant="secondary" className="h-8 rounded-xl px-3 text-xs gap-1">
+                      <Button asChild variant="secondary" className="min-h-11 rounded-xl px-3 text-xs gap-1">
                         <Link to="/properties/$propertyId" params={{ propertyId: p.id }}><Eye className="size-3" />عرض</Link>
                       </Button>
-                      <Button variant="secondary" className="h-8 rounded-xl px-3 text-xs gap-1" onClick={() => { setEditPropertyId(p.id); setModalOpen(true); }}>
+                      <Button variant="secondary" className="min-h-11 rounded-xl px-3 text-xs gap-1" onClick={() => { setEditPropertyId(p.id); setModalOpen(true); }}>
                         <Edit className="size-3" />تعديل
                       </Button>
                       <button
                         type="button"
-                        className="h-8 rounded-xl px-2 text-xs border border-border text-muted-foreground hover:text-rose-600 hover:border-rose-300 transition-colors"
+                        className="min-h-11 rounded-xl px-2 text-xs border border-border text-muted-foreground hover:text-rose-600 hover:border-rose-300 transition-colors"
                         onClick={() => handleArchiveProperty(p.id, p.title ?? 'عقار')}
                       >
                         <Trash2 className="size-3" />

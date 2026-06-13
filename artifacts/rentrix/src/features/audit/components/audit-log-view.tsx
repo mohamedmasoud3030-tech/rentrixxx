@@ -37,8 +37,24 @@ export function AuditLogView({ state }: Readonly<{ state: AuditLogViewState }>) 
           <CardTitle className="flex items-center gap-2"><ShieldCheck className="size-5 text-primary" />سجل التدقيق</CardTitle>
           <CardDescription>عرض قراءة فقط لأحداث الحوكمة المتاحة من مصدر التدقيق الحالي.</CardDescription>
         </CardHeader>
-        <CardContent>
-          <div className="overflow-x-auto rounded-2xl border border-border">
+        <CardContent className="space-y-3">
+          {/* Mobile cards */}
+          <div className="grid gap-3 md:hidden">
+            {state.result.records.map((record) => (
+              <div key={record.id} className="rounded-2xl border border-border bg-background p-4 space-y-2">
+                <div className="flex items-start justify-between gap-2">
+                  <span className="rounded-full bg-primary/10 px-2.5 py-1 text-xs font-black text-primary">{record.action}</span>
+                  <span className="text-xs text-muted-foreground">{formatAuditDate(record.occurredAt)}</span>
+                </div>
+                <p className="text-sm font-bold">{record.actor}</p>
+                <p className="text-xs text-muted-foreground">{record.entityType}{record.entityId ? ` / ${record.entityId}` : ''}</p>
+                {record.description ? <p className="text-xs text-muted-foreground">{record.description}</p> : null}
+              </div>
+            ))}
+          </div>
+
+          {/* Desktop table */}
+          <div className="hidden overflow-x-auto rounded-2xl border border-border md:block">
             <table className="w-full min-w-[760px] text-sm">
               <thead className="bg-muted/70 text-xs text-muted-foreground">
                 <tr>
