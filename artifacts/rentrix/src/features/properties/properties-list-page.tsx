@@ -50,6 +50,7 @@ export function PropertiesListPage() {
   const properties = propertiesQuery.data?.rows ?? [];
 
   return (
+    <>
     <div className="space-y-5">
       {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -252,5 +253,6 @@ export function PropertiesListPage() {
       onClose={() => { setModalOpen(false); setEditPropertyId(undefined); }}
       propertyId={editPropertyId}
     />
+    </>
   );
 }

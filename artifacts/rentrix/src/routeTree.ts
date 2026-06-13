@@ -140,7 +140,13 @@ const settingsRoute = createRoute({
   component: SettingsRouteComponent,
   staticData: { title: 'الإعدادات' },
 });
-const maintenanceRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/maintenance', component: MaintenanceRouteComponent, staticData: { title: 'الصيانة' } });
+const maintenanceRoute = createRoute({
+  getParentRoute: () => protectedRoute,
+  path: '/maintenance',
+  beforeLoad: requirePermission('maintenance.view'),
+  component: MaintenanceRouteComponent,
+  staticData: { title: 'الصيانة' },
+});
 
 export const routeTree = rootRoute.addChildren([
   authRoute.addChildren([loginRoute]),
