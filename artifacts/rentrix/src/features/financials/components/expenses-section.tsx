@@ -1,6 +1,7 @@
 import type { UseFormReturn } from 'react-hook-form';
+import { EmptyState } from '@/components/empty-state';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
@@ -32,13 +33,53 @@ type ExpensesSectionProps = Readonly<{
   onCreateExpense: (values: ExpenseFormValues) => void;
 }>;
 
+function escapeCsvCell(value: string | number | null | undefined) {
+  const stringValue = String(value ?? '');
+  return /[",\n\r]/.test(stringValue) ? `"${stringValue.replaceAll('"', '""')}"` : stringValue;
+}
+
+export function buildExpensesCsv(expenses: readonly Expense[], propertyRows: readonly Property[]) {
+  const propertyById = new Map(propertyRows.map((property) => [property.id, property]));
+  const rows = expenses.map((expense) => [
+    expense.expense_date,
+    buildExpensePropertyLabel(expense, propertyById),
+    expense.category,
+    expense.amount,
+    expense.description ?? '',
+  ]);
+
+  return [
+    ['date', 'property', 'category', 'amount', 'description'],
+    ...rows,
+  ].map((row) => row.map(escapeCsvCell).join(',')).join('\n');
+}
+
+function downloadCsv(filename: string, csv: string) {
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement('a');
+  anchor.href = url;
+  anchor.download = filename;
+  anchor.click();
+  URL.revokeObjectURL(url);
+}
+
 export function ExpensesSection({ expenses, propertyRows, filters, onFiltersChange, expenseForm, isCreateExpensePending, onCreateExpense }: ExpensesSectionProps) {
   const propertyById = new Map(propertyRows.map((property) => [property.id, property]));
   const summary = summarizeOperationalExpenses(expenses);
+  const hasFilters = Boolean(filters.propertyId || filters.category || filters.from || filters.to);
+  const clearFilters = () => onFiltersChange({ propertyId: '', category: '', from: '', to: '' });
+  const exportVisibleExpenses = () => downloadCsv(`rentrix-expenses-${new Date().toISOString().slice(0, 10)}.csv`, buildExpensesCsv(expenses, propertyRows));
 
   return (
     <Card className="rounded-2xl">
-      <CardHeader><CardTitle>المصاريف التشغيلية</CardTitle></CardHeader>
+      <CardHeader className="gap-3 sm:flex sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <CardTitle>المصاريف التشغيلية</CardTitle>
+          <CardDescription>فلترة المصاريف وتصدير النتائج الظاهرة أو تسجيل مصروف جديد مرتبط بعقار.</CardDescription>
+        </div>
+        <Button variant="secondary" onClick={exportVisibleExpenses} disabled={expenses.length === 0}>تصدير CSV</Button>
+      </CardHeader>
       <CardContent className="space-y-4">
         <p className="text-sm text-muted-foreground">تكلفة طلبات الصيانة في قسم الصيانة تبقى تقديرية ولا يتم تحويلها تلقائياً إلى مصروف.</p>
 
@@ -51,36 +92,44 @@ export function ExpensesSection({ expenses, propertyRows, filters, onFiltersChan
         </div>
 
         {/* Filters */}
-        <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
-          <Select
-            value={filters.propertyId}
-            onChange={(e) => onFiltersChange({ ...filters, propertyId: e.target.value })}
-          >
-            <option value="">كل العقارات</option>
-            {propertyRows.map((p) => <option key={p.id} value={p.id}>{p.title}</option>)}
-          </Select>
-          <Select
-            value={filters.category}
-            onChange={(e) => onFiltersChange({ ...filters, category: e.target.value })}
-          >
-            <option value="">كل التصنيفات</option>
-            {OPERATIONAL_EXPENSE_CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
-          </Select>
-          <Input type="date" value={filters.from} onChange={(e) => onFiltersChange({ ...filters, from: e.target.value })} />
-          <Input type="date" value={filters.to} onChange={(e) => onFiltersChange({ ...filters, to: e.target.value })} />
+        <div className="grid gap-3 rounded-2xl border border-border bg-muted/20 p-3 sm:grid-cols-2 lg:grid-cols-4">
+          <label className="space-y-1 text-sm font-bold">
+            <span>العقار</span>
+            <Select
+              value={filters.propertyId}
+              onChange={(e) => onFiltersChange({ ...filters, propertyId: e.target.value })}
+            >
+              <option value="">كل العقارات</option>
+              {propertyRows.map((p) => <option key={p.id} value={p.id}>{p.title}</option>)}
+            </Select>
+          </label>
+          <label className="space-y-1 text-sm font-bold">
+            <span>التصنيف</span>
+            <Select
+              value={filters.category}
+              onChange={(e) => onFiltersChange({ ...filters, category: e.target.value })}
+            >
+              <option value="">كل التصنيفات</option>
+              {OPERATIONAL_EXPENSE_CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
+            </Select>
+          </label>
+          <label className="space-y-1 text-sm font-bold"><span>من تاريخ</span><Input type="date" value={filters.from} onChange={(e) => onFiltersChange({ ...filters, from: e.target.value })} /></label>
+          <label className="space-y-1 text-sm font-bold"><span>إلى تاريخ</span><Input type="date" value={filters.to} onChange={(e) => onFiltersChange({ ...filters, to: e.target.value })} /></label>
+          {hasFilters ? <Button variant="secondary" className="sm:col-span-2 lg:col-span-4" onClick={clearFilters}>مسح الفلاتر</Button> : null}
         </div>
 
         {/* Expense list */}
         {expenses.length === 0 ? (
-          <p className="rounded-xl border border-dashed border-border py-6 text-center text-sm text-muted-foreground">
-            لا توجد مصاريف مطابقة للفلاتر الحالية.
-          </p>
+          <EmptyState
+            title={hasFilters ? 'لا توجد مصاريف مطابقة' : 'لا توجد مصاريف بعد'}
+            description={hasFilters ? 'غيّر الفلاتر أو امسحها لعرض نتائج أخرى.' : 'سجّل أول مصروف تشغيلي من النموذج أدناه.'}
+          />
         ) : (
           <div className="divide-y divide-border rounded-xl border border-border">
             {expenses.map((expense) => (
-              <div key={expense.id} className="flex items-center justify-between gap-3 px-4 py-3 text-sm">
+              <div key={expense.id} className="grid gap-1 px-4 py-3 text-sm sm:grid-cols-[7rem_1fr_auto] sm:items-center sm:gap-3">
                 <span className="text-muted-foreground">{formatDate(expense.expense_date)}</span>
-                <span className="flex-1 truncate">{buildExpensePropertyLabel(expense, propertyById)} — {expense.category}</span>
+                <span className="min-w-0 truncate">{buildExpensePropertyLabel(expense, propertyById)} — {expense.category}</span>
                 <span className="font-bold tabular-nums">{formatMoney(expense.amount)}</span>
               </div>
             ))}
