@@ -73,10 +73,15 @@ Fix these before any new feature work.
 - Mobile drawer: ensure all groups render; currently truncates on small screens
 
 ### 3.2 Financial pages polish
-- `FinancialsPage` (`/financials`): hub with tabs — Invoices / Receipts / Expenses / Quick Actions. Currently shows everything stacked.
-- `InvoicesPage` (`/invoices`): add filter bar (status, date range, property), empty state, "Generate Invoice" modal
-- `ReceiptsPage` (`/receipts`): add void action (ADMIN/MANAGER only), receipt number search, print button per row
-- `ExpensesPage` (`/expenses`): add category filter, CSV export, empty state
+**Status:** `IN PROGRESS` after PR #864.
+
+Completed:
+- `FinancialsPage` (`/financials`): hub tabs and direct page links added
+- `ExpensesPage` (`/expenses`): category filter labels, empty state, and CSV export added
+
+Remaining:
+- `InvoicesPage` (`/invoices`): add "Generate Invoice" modal polish
+- `ReceiptsPage` (`/receipts`): polish void action (ADMIN/MANAGER only), receipt number search, and print button per row
 
 ### 3.3 Reports page — complete content
 - Currently shows charts but some sections return empty arrays

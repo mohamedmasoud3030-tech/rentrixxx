@@ -559,11 +559,10 @@ All issues above were found on mobile. Some may not appear on desktop. Agents mu
 
 ### Execution order for next agent
 
-1. Fix P0-A (database writes) — highest impact
-2. Fix P0-B (owners sidebar) — quick win
-3. Fix P0-C (form modals) — affects all creation flows
-4. P1-1 (sidebar) — unlocks navigation
-5. P1-2 through P1-5 — page-by-page in order
-6. P2 items — can be batched per page
+1. Continue P1-2 remaining financial polish — invoice generation modal and receipts void/search/print polish
+2. P1-3 Reports page — complete chart data, date-range picker, and per-section CSV export
+3. P1-4 Owner detail page — linked properties, contracts count, and outstanding balance
+4. P1-5 Settings page — logo upload, VAT default, contract serial prefix, and unsaved-changes guard
+5. P2 items — can be batched per page after P1 remains are stable
 
 Read `.agent-skills/rentrix-build-web-apps/SKILL.md` for implementation patterns before starting any item.
