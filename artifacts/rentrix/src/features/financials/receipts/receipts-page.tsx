@@ -1,5 +1,5 @@
 import { Link, useSearch } from '@tanstack/react-router';
-import { ArrowRight, CalendarDays, Printer, ReceiptText, Search, WalletCards } from 'lucide-react';
+import { ArrowRight, Ban, CalendarDays, Printer, ReceiptText, Search, WalletCards } from 'lucide-react';
 import { useDeferredValue, useMemo, useState } from 'react';
 import { EmptyState } from '@/components/empty-state';
 import { Button } from '@/components/ui/button';
@@ -10,12 +10,14 @@ import { Select } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import type { AuthorizationContext } from '@/features/auth/permissions';
+import { useAuth } from '@/hooks/use-auth';
 import { formatDate, formatMoney, formatShortId, getErrorMessage } from '../components/financials-formatters';
 import { ReceiptDetailCard } from '../components/receipt-detail-card';
 import { formatReceiptContext, paymentMethodLabels, receiptStatusLabels } from '../components/receipt-formatters';
 import type { ReceiptRecord } from './receiptService';
 import { ReceiptDetailPage } from './receipt-detail-page';
-import { useReceipt, useReceipts } from './useReceipts';
+import { useReceipt, useReceipts, useVoidReceipt } from './useReceipts';
 
 type MethodFilter = 'all' | ReceiptRecord['payment_method'];
 
@@ -25,6 +27,18 @@ function getReceiptIdFromSearch(search: Record<string, unknown>) {
 
 function isWithinDate(receipt: ReceiptRecord, from: string, to: string) {
   return (!from || receipt.payment_date >= from) && (!to || receipt.payment_date <= to);
+}
+
+export function canVoidReceipts(authorization: AuthorizationContext | null | undefined) {
+  return authorization?.role === 'ADMIN' || authorization?.role === 'MANAGER';
+}
+
+export function createReceiptPrintHref(receiptId: string) {
+  return `/receipts?receiptId=${encodeURIComponent(receiptId)}`;
+}
+
+function createVoidRequestId() {
+  return globalThis.crypto?.randomUUID?.() ?? `void-${Date.now()}`;
 }
 
 function ReceiptMetric({ label, value, helper, icon: Icon }: Readonly<{ label: string; value: string; helper: string; icon: typeof ReceiptText }>) {
@@ -43,6 +57,7 @@ function ReceiptMetric({ label, value, helper, icon: Icon }: Readonly<{ label: s
 }
 
 function ReceiptsHistoryContent() {
+  const { authorization } = useAuth();
   const [selectedReceiptId, setSelectedReceiptId] = useState('');
   const [query, setQuery] = useState('');
   const [method, setMethod] = useState<MethodFilter>('all');
@@ -51,6 +66,8 @@ function ReceiptsHistoryContent() {
   const deferredQuery = useDeferredValue(query.trim().toLowerCase());
   const receiptsQuery = useReceipts({ limit: 100 });
   const selectedDetailQuery = useReceipt(selectedReceiptId);
+  const voidReceiptMutation = useVoidReceipt();
+  const canVoidReceipt = canVoidReceipts(authorization);
 
   const receipts = receiptsQuery.data ?? [];
   const filteredReceipts = useMemo(() => receipts.filter((receipt) => {
@@ -61,6 +78,16 @@ function ReceiptsHistoryContent() {
   }), [deferredQuery, from, method, receipts, to]);
   const totalAmount = filteredReceipts.reduce((total, receipt) => total + receipt.amount, 0);
   const selectedReceipt = selectedDetailQuery.data;
+  const handleVoidReceipt = (receipt: ReceiptRecord) => {
+    const reason = globalThis.prompt?.(`سبب إلغاء الإيصال ${receipt.receipt_number}`)?.trim();
+    if (!reason) return;
+
+    voidReceiptMutation.mutate({
+      receipt_id: receipt.id,
+      reason,
+      request_id: createVoidRequestId(),
+    });
+  };
 
   return (
     <div className="space-y-6" dir="rtl">
@@ -72,7 +99,7 @@ function ReceiptsHistoryContent() {
         </div>
         <div className="flex flex-wrap gap-2">
           <Button variant="secondary" asChild><Link to="/financials"><ArrowRight className="ml-2 size-4" />المالية</Link></Button>
-          {selectedReceiptId ? <Button asChild><a href={`/receipts?receiptId=${encodeURIComponent(selectedReceiptId)}`}><Printer className="ml-2 size-4" />طباعة المحدد</a></Button> : null}
+          {selectedReceiptId ? <Button asChild><a href={createReceiptPrintHref(selectedReceiptId)}><Printer className="ml-2 size-4" />طباعة المحدد</a></Button> : null}
         </div>
       </div>
 
@@ -86,14 +113,14 @@ function ReceiptsHistoryContent() {
       <Card>
         <CardHeader>
           <CardTitle>فلاتر الإيصالات</CardTitle>
-          <CardDescription>ابحث برقم الإيصال أو المرجع أو اسم المستأجر أو العقار.</CardDescription>
+          <CardDescription>ابحث برقم الإيصال أو رقم المرجع أو اسم المستأجر أو العقار.</CardDescription>
         </CardHeader>
         <CardContent className="grid gap-3 md:grid-cols-2 xl:grid-cols-5">
           <label className="space-y-1 text-sm font-bold xl:col-span-2">
             <span>بحث</span>
             <div className="relative">
               <Search className="pointer-events-none absolute right-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-              <Input className="pr-9" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="رقم الإيصال، المستأجر، العقار" />
+              <Input className="pr-9" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="رقم الإيصال REC-، المرجع، المستأجر، العقار" />
             </div>
           </label>
           <label className="space-y-1 text-sm font-bold">
@@ -139,6 +166,15 @@ function ReceiptsHistoryContent() {
                   />
                 ))}
               </div>
+              <div className="grid gap-2 md:hidden">
+                {filteredReceipts.map((receipt) => (
+                  <div key={`${receipt.id}-actions`} className="flex flex-wrap gap-2 rounded-2xl border border-border/70 bg-muted/20 p-3">
+                    <Button variant="secondary" className="min-h-10 px-3" onClick={() => setSelectedReceiptId(receipt.id)}>عرض</Button>
+                    <Button variant="secondary" className="min-h-10 px-3" asChild><a href={createReceiptPrintHref(receipt.id)}><Printer className="ml-2 size-4" />طباعة</a></Button>
+                    {canVoidReceipt ? <Button variant="danger" className="min-h-10 px-3" onClick={() => handleVoidReceipt(receipt)} disabled={voidReceiptMutation.isPending}><Ban className="ml-2 size-4" />إلغاء</Button> : null}
+                  </div>
+                ))}
+              </div>
 
               {/* Desktop table */}
               <div className="hidden overflow-x-auto rounded-2xl border border-border md:block">
@@ -152,7 +188,7 @@ function ReceiptsHistoryContent() {
                       <TableHead>الفاتورة</TableHead>
                       <TableHead>السياق</TableHead>
                       <TableHead>الحالة</TableHead>
-                      <TableHead>إجراء</TableHead>
+                      <TableHead>الإجراءات</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -165,7 +201,13 @@ function ReceiptsHistoryContent() {
                         <TableCell>{formatShortId(receipt.invoice_id)}</TableCell>
                         <TableCell>{formatReceiptContext(receipt)}</TableCell>
                         <TableCell><StatusBadge tone="green">{receiptStatusLabels[receipt.status] ?? receipt.status}</StatusBadge></TableCell>
-                        <TableCell><Button variant="secondary" onClick={() => setSelectedReceiptId(receipt.id)}>عرض</Button></TableCell>
+                        <TableCell>
+                          <div className="flex flex-wrap gap-2">
+                            <Button variant="secondary" className="min-h-10 px-3" onClick={() => setSelectedReceiptId(receipt.id)}>عرض</Button>
+                            <Button variant="secondary" className="min-h-10 px-3" asChild><a href={createReceiptPrintHref(receipt.id)}><Printer className="ml-2 size-4" />طباعة</a></Button>
+                            {canVoidReceipt ? <Button variant="danger" className="min-h-10 px-3" onClick={() => handleVoidReceipt(receipt)} disabled={voidReceiptMutation.isPending}><Ban className="ml-2 size-4" />إلغاء</Button> : null}
+                          </div>
+                        </TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
