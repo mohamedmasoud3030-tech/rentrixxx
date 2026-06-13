@@ -81,6 +81,10 @@ Blind restoration of legacy modules
 
 `/accounting` remains a redirect to `/financials`. It is not an authorization to build a general ledger.
 
+### 1.1 Current repository metrics
+
+Repository-root SQL status is intentionally clean: `find . -maxdepth 1 -type f -name '*.sql'` returns zero files. Active canonical migration files live under `supabase/migrations/`; roadmap work must verify and document that migration chain rather than inventing a root-level SQL consolidation task.
+
 ## 2. Non-Negotiable Domain Rules
 
 Preserve these invariants across UI, services, migrations, RPCs, RLS, imports, exports, and tests:
@@ -112,6 +116,7 @@ Baseline source: `main@5d6d43bbe7a58ec271559f5986be784bcbd04290` (HEAD at founda
 | #806 | `52c2d9a` | feat(audit): implement read-only Audit Log pilot — connect `fetchAuditLog` to `public.audit_log`. |
 | #807 | `5d6d43b` | chore(codex): materialize selected agent skills. |
 | #808 | `6055a07` | fix(audit): fail closed without Supabase env — guard `fetchAuditLog` with `env.isConfigured`. |
+| Current root search | n/a | `find . -maxdepth 1 -type f -name '*.sql'` returns no files; active migration files are under `supabase/migrations/`. |
 
 ### 3.2 Current repository state facts (verified from code)
 
@@ -124,6 +129,8 @@ Baseline source: `main@5d6d43bbe7a58ec271559f5986be784bcbd04290` (HEAD at founda
 **Duplicate hooks:** `useProperties.ts` / `use-properties.ts`, `useUnits.ts` / `use-units.ts`, and `useMaintenance.ts` (re-export facade) / `use-maintenance.ts` (real implementation) remain. These are known tech debt. `useMaintenance.ts` is a re-export facade so it is benign; the property and unit pairs need consolidation in v0.2.
 
 **Agent skills materialized:** `.codex/vendor/selected-agent-skills/` materialized in #807.
+
+**Root-level SQL files:** zero repository-root `.sql` files are present; `find . -maxdepth 1 -type f -name '*.sql'` returns no files. Active migration files are in `supabase/migrations/`.
 
 ### 3.3 Visible constrained-beta navigation
 
@@ -302,7 +309,7 @@ Stop and report the exact blocker when any of these apply:
 | Order | Item | Status | Required result |
 | --- | --- | --- | --- |
 | 1 | Secure operator runbook | `DONE` | Added `docs/ai/SECURE_OPERATOR_RUNBOOK.md` with redacted environment ownership, intended/prohibited Supabase ref classifications, available Vercel identity evidence, and connector blocker reporting. |
-| 2 | Read-only live migration-state reconciliation | `BLOCKED` by detailed connector access | Identify the exact failed migration state behind `MIGRATIONS_FAILED`; capture migration list, failure evidence, and safe replay plan. No production mutation. |
+| 2 | Verify migration chain rebuild and document current Supabase reset blocker | `BLOCKED` by detailed connector access | Verify the canonical `supabase/migrations/` chain against the `MIGRATIONS_FAILED` live-state evidence; capture migration list, failure evidence, Supabase reset/replay blocker, and safe preview replay plan. No production mutation. Do not create a root-level SQL consolidation task because the repository root currently has zero `.sql` files. |
 | 3 | Preview-branch migration replay | `BLOCKED` by item 2 and preview access | Prove replay outside production; split any repair into a narrow reviewed migration PR. |
 | 4 | Auth, RLS, and RPC least-privilege reconciliation | `IN PROGRESS` — security hardening applied; idempotency stack deferred | Applied: search_path fix on sync_payment_reference_fields; revoked authenticated EXECUTE on is_app_user and is_admin_or_manager. Security Advisor: 3/4 warnings cleared; 1 dashboard-only residual. Idempotency: financial_operation_idempotency, receipts.request_id, and record_invoice_payment_atomic missing on live — separate PR required. See docs/v01-security-reconciliation-final.md. |
 | 5 | Browser/manual operational QA | `BLOCKED` by deployment auth/env setup | Deployment is reachable at `rentrix-alpha.vercel.app`, but authenticated QA remains blocked until valid Vercel Supabase env values are present, the Custom Access Token hook is registered, and approved ADMIN credentials are available. Verify RTL desktop, RTL mobile, LTR sanity, protected-route refresh, forms, tables, dialogs, receipt lookup/print, CSV export, PWA install/offline/update, and invalid-route fallback. |
@@ -321,7 +328,8 @@ Close `v0.1` only when:
 - full GitHub Actions gate passes on the release candidate;
 - tracked generated temp metadata is removed from Git history going forward (done in #805);
 - intended live environment ownership is recorded redacted and verified;
-- `MIGRATIONS_FAILED` is reconciled safely through preview evidence;
+- repository-root SQL remains at zero `.sql` files, with active migration files verified under `supabase/migrations/`;
+- `MIGRATIONS_FAILED` is reconciled safely through preview evidence, with the current Supabase reset/replay blocker documented;
 - required auth, RLS, and RPC behavior is verified or fixed through reviewed PRs;
 - constrained-beta navigation remains bounded;
 - browser/manual QA is recorded for RTL, mobile, receipt printing, direct refresh, and PWA behavior;
