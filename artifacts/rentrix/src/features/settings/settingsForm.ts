@@ -19,7 +19,11 @@ export type CompanySettingsDraft = {
   number_format: string;
   logo_url: string;
   invoice_prefix: string;
+  contract_prefix: string;
   receipt_prefix: string;
+  default_vat_rate: string;
+  notification_email_enabled: string;
+  notification_sms_enabled: string;
 };
 
 export type CompanySettingsDraftField = keyof CompanySettingsDraft;
@@ -42,7 +46,11 @@ const draftFields = [
   'number_format',
   'logo_url',
   'invoice_prefix',
+  'contract_prefix',
   'receipt_prefix',
+  'default_vat_rate',
+  'notification_email_enabled',
+  'notification_sms_enabled',
 ] as const satisfies readonly CompanySettingsDraftField[];
 
 const requiredFields = [
@@ -53,6 +61,7 @@ const requiredFields = [
   'date_format',
   'number_format',
   'invoice_prefix',
+  'contract_prefix',
   'receipt_prefix',
 ] as const satisfies readonly CompanySettingsDraftField[];
 
@@ -64,8 +73,18 @@ const requiredLabels: Record<(typeof requiredFields)[number], string> = {
   date_format: 'صيغة التاريخ مطلوبة',
   number_format: 'صيغة الأرقام مطلوبة',
   invoice_prefix: 'بادئة الفواتير مطلوبة',
+  contract_prefix: 'بادئة العقود مطلوبة',
   receipt_prefix: 'بادئة الإيصالات مطلوبة',
 };
+
+function normalizeVatRate(value: unknown): number {
+  const parsedValue = typeof value === 'number' ? value : Number.parseFloat(String(value ?? ''));
+  return Number.isFinite(parsedValue) && parsedValue >= 0 && parsedValue <= 100 ? Math.round(parsedValue * 1000) / 1000 : 0;
+}
+
+function stringifyBoolean(value: unknown): string {
+  return value === true || value === 'true' ? 'true' : 'false';
+}
 
 function hasWhitespace(value: string): boolean {
   return Array.from(value).some((character) => character.trim() === '');
@@ -110,7 +129,11 @@ export function companySettingsRecordToDraft(settings: CompanySettingsRecord): C
     number_format: settings.number_format,
     logo_url: normalizedSettings.logoUrl ?? '',
     invoice_prefix: normalizedSettings.invoicePrefix,
+    contract_prefix: normalizedSettings.contractPrefix,
     receipt_prefix: normalizedSettings.receiptPrefix,
+    default_vat_rate: String(normalizeVatRate(settings.default_vat_rate)),
+    notification_email_enabled: stringifyBoolean(settings.notification_email_enabled),
+    notification_sms_enabled: stringifyBoolean(settings.notification_sms_enabled),
   };
 }
 
@@ -124,6 +147,7 @@ export function companySettingsDraftToPayload(draft: CompanySettingsDraft): Comp
     timezone: draft.timezone,
     receiptPrefix: draft.receipt_prefix,
     invoicePrefix: draft.invoice_prefix,
+    contractPrefix: draft.contract_prefix,
   });
 
   return {
@@ -135,7 +159,11 @@ export function companySettingsDraftToPayload(draft: CompanySettingsDraft): Comp
     timezone: normalizedSettings.timezone,
     logo_url: normalizedSettings.logoUrl ?? '',
     invoice_prefix: normalizedSettings.invoicePrefix,
+    contract_prefix: normalizedSettings.contractPrefix,
     receipt_prefix: normalizedSettings.receiptPrefix,
+    default_vat_rate: normalizeVatRate(draft.default_vat_rate),
+    notification_email_enabled: draft.notification_email_enabled === 'true',
+    notification_sms_enabled: draft.notification_sms_enabled === 'true',
   };
 }
 
@@ -149,6 +177,7 @@ export function companySettingsDraftToLocalSettings(draft: CompanySettingsDraft)
     timezone: draft.timezone,
     receiptPrefix: draft.receipt_prefix,
     invoicePrefix: draft.invoice_prefix,
+    contractPrefix: draft.contract_prefix,
   });
 }
 
@@ -170,7 +199,10 @@ export type CompanySettingsPreviewModel = Readonly<{
   country: string;
   timezone: string;
   invoicePrefix: string;
+  contractPrefix: string;
   receiptPrefix: string;
+  defaultVatRate: string;
+  notificationSummary: string;
   contactDetails: readonly CompanySettingsPreviewValue[];
 }>;
 
@@ -202,7 +234,13 @@ export function getCompanySettingsPreviewModel(draft: CompanySettingsDraft): Com
     country: normalizedSettings.country,
     timezone: normalizedSettings.timezone,
     invoicePrefix: normalizedSettings.invoicePrefix,
+    contractPrefix: normalizedSettings.contractPrefix,
     receiptPrefix: normalizedSettings.receiptPrefix,
+    defaultVatRate: `${normalizeVatRate(draft.default_vat_rate)}%`,
+    notificationSummary: [
+      draft.notification_email_enabled === 'true' ? 'البريد الإلكتروني مفعل' : 'البريد الإلكتروني متوقف',
+      draft.notification_sms_enabled === 'true' ? 'الرسائل النصية مفعلة' : 'الرسائل النصية متوقفة',
+    ].join('، '),
     contactDetails: [
       buildPreviewValue('الهاتف', draft.phone, 'لا يوجد هاتف'),
       buildPreviewValue('البريد الإلكتروني', draft.email, 'لا يوجد بريد إلكتروني'),
@@ -233,12 +271,19 @@ export function validateCompanySettingsDraft(draft: CompanySettingsDraft): Compa
   if (draft.logo_url.trim()) {
     try {
       const url = new URL(draft.logo_url.trim());
-      if (!['http:', 'https:'].includes(url.protocol)) {
+      const isSafeRemoteLogo = ['http:', 'https:'].includes(url.protocol);
+      const isSafeEmbeddedLogo = url.protocol === 'data:' && /^data:image\/(?:png|jpeg|webp|svg\+xml);base64,/i.test(draft.logo_url.trim());
+      if (!isSafeRemoteLogo && !isSafeEmbeddedLogo) {
         errors.logo_url = 'رابط الشعار يجب أن يبدأ بـ http أو https';
       }
     } catch {
       errors.logo_url = 'رابط الشعار غير صحيح';
     }
+  }
+
+  const vatRate = Number.parseFloat(draft.default_vat_rate);
+  if (!Number.isFinite(vatRate) || vatRate < 0 || vatRate > 100) {
+    errors.default_vat_rate = 'نسبة ضريبة القيمة المضافة يجب أن تكون بين 0 و100';
   }
 
   return errors;

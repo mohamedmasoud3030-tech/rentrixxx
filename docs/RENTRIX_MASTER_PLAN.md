@@ -540,7 +540,7 @@ The following issues were reported by the product owner after testing exclusivel
 | P1-2 | Financial pages polish — Financials/Invoices/Receipts/Expenses each need tabs, filters, empty states | `DONE` — financial hub tabs, direct page links, expenses filter labels, empty state, CSV export, receipts role-gated void action, receipt-number search hint, per-row print links, and invoice generation modal polish added. |
 | P1-3 | Reports page — complete chart data, date-range picker, per-section CSV export | `DONE` — reports now use real daily collection, overdue invoice, aged receivable, rent-roll, and cashflow data with shared date controls, per-section CSV exports, chart visualizations, and section-level loading skeletons. |
 | P1-4 | Owner detail page — linked properties, contracts count, outstanding balance | `DONE` — owner detail snapshot now loads linked properties, units, contracts, and invoices; page shows linked property rows, active contract count, and derived outstanding balance. |
-| P1-5 | Settings page — add logo upload, VAT default, contract serial prefix, unsaved-changes guard | Half-built |
+| P1-5 | Settings page — add logo upload, VAT default, contract serial prefix, unsaved-changes guard | `DONE` — company settings now persist contract prefix, default VAT rate, notification preferences, upload-oriented logo data, preview coverage, and unsaved browser-refresh protection. |
 
 ### P2 polish (in parallel with P1)
 
@@ -559,8 +559,6 @@ All issues above were found on mobile. Some may not appear on desktop. Agents mu
 
 ### Execution order for next agent
 
-1. P1-4 Owner detail page — linked properties, contracts count, and outstanding balance
-2. P1-5 Settings page — logo upload, VAT default, contract serial prefix, and unsaved-changes guard
-3. P2 items — can be batched per page after P1 remains are stable
+1. P2 items — can be batched per page after P1 remains are stable
 
 Read `.agent-skills/rentrix-build-web-apps/SKILL.md` for implementation patterns before starting any item.

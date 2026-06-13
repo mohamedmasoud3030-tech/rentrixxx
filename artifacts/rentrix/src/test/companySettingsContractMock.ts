@@ -9,6 +9,7 @@ export const testCompanySettingsContract: CompanySettingsContract = {
   timezone: 'Asia/Muscat',
   receiptPrefix: 'REC',
   invoicePrefix: 'INV',
+  contractPrefix: 'CON',
   locale: 'ar-OM',
   direction: 'rtl',
 };
