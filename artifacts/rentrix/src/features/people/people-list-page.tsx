@@ -29,6 +29,7 @@ export function PeopleListPage() {
   const totalPages = Math.max(1, Math.ceil((peopleQuery.data?.count ?? 0) / pageSize));
 
   return (
+    <>
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
@@ -157,5 +158,6 @@ export function PeopleListPage() {
       onClose={() => { setModalOpen(false); setEditPersonId(undefined); }}
       personId={editPersonId}
     />
+    </>
   );
 }

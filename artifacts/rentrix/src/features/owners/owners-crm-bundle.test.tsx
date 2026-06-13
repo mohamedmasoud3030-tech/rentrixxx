@@ -54,17 +54,17 @@ describe('Owners and CRM route authorization', () => {
 });
 
 describe('Owners and CRM navigation visibility', () => {
-  it('keeps the owner hub visible while hiding deferred CRM surfaces from beta navigation', () => {
+  it('keeps owner management visible while hiding deferred CRM surfaces from beta navigation', () => {
     const manager = getAuthorizationContextFromUser(userWithRole('MANAGER'));
     const user = getAuthorizationContextFromUser(userWithRole('USER'));
     const allNavItems: NavItem[] = [];
     for (const [, items] of navGroups) {
       allNavItems.push(...items);
     }
-    const crmNavItems = allNavItems.filter(([, labelKey]) => ['ownersHub', 'lands', 'leads', 'commissions', 'communication'].includes(labelKey));
+    const crmNavItems = allNavItems.filter(([, labelKey]) => ['owners', 'ownersHub', 'lands', 'leads', 'commissions', 'communication'].includes(labelKey));
     const crmNavKeys = crmNavItems.map(([, labelKey]) => labelKey);
 
-    expect(crmNavKeys).toEqual(['ownersHub']);
+    expect(crmNavKeys).toEqual(['owners']);
     expect(crmNavKeys).not.toEqual(expect.arrayContaining(['lands', 'leads', 'commissions', 'communication']));
     expect(crmNavItems.every(([, , , , permission]) => canShowNavigationItem(manager, permission))).toBe(true);
     expect(crmNavItems.every(([, , , , permission]) => !canShowNavigationItem(user, permission))).toBe(true);
