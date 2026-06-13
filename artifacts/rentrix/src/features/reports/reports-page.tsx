@@ -5,6 +5,7 @@ import { ArrowUpLeft, CalendarDays, ReceiptText, RefreshCcw } from 'lucide-react
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import { Skeleton } from '@/components/ui/skeleton';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useContracts } from '@/features/contracts/useContracts';
@@ -23,12 +24,12 @@ import {
   useFinancialPeriodSummaryReport,
   useOverdueInvoicesReport,
 } from '@/features/financials/reports/useFinancialReports';
-import { buildRentRollRows, createReceiptPrintHref } from './reports-page.helpers';
+import { buildAgingBucketChartRows, buildPaymentsTrendRows, buildRentRollRows, createReceiptPrintHref } from './reports-page.helpers';
 
 export type CsvValue = string | number | boolean | null | undefined;
 type CsvRow = Record<string, CsvValue>;
 type FilterState = Readonly<{ from: string; to: string; asOf: string }>;
-type ReportCardProps = Readonly<{ title: string; description: string; children: React.ReactNode; action?: React.ReactNode }>;
+type ReportCardProps = Readonly<{ title: string; description: string; children: React.ReactNode; action?: React.ReactNode; isLoading?: boolean }>;
 type MetricCardProps = Readonly<{ label: string; value: string; helper: string; tone?: 'blue' | 'green' | 'red' | 'gray' | 'gold' }>;
 
 type RentRollRow = ReturnType<typeof buildRentRollRows>[number];
@@ -132,7 +133,21 @@ function SafeAnchor({ href, label }: SafeLinkProps) {
   );
 }
 
-function ReportCard({ title, description, action, children }: ReportCardProps) {
+function SectionSkeleton() {
+  return (
+    <div className="space-y-4 p-4" role="status" aria-live="polite" aria-label="جارٍ تحميل هذا التقرير">
+      <div className="grid gap-3 md:grid-cols-4">
+        <Skeleton className="h-24" />
+        <Skeleton className="h-24" />
+        <Skeleton className="h-24" />
+        <Skeleton className="h-24" />
+      </div>
+      <Skeleton className="h-72" />
+    </div>
+  );
+}
+
+function ReportCard({ title, description, action, children, isLoading = false }: ReportCardProps) {
   return (
     <Card className="overflow-hidden border-primary/10 bg-card/95">
       <CardHeader className="flex flex-col gap-3 border-b border-border/70 bg-muted/20 md:flex-row md:items-start md:justify-between">
@@ -140,9 +155,9 @@ function ReportCard({ title, description, action, children }: ReportCardProps) {
           <CardTitle>{title}</CardTitle>
           <CardDescription>{description}</CardDescription>
         </div>
-        {action}
+        {isLoading ? null : action}
       </CardHeader>
-      <CardContent className="p-0">{children}</CardContent>
+      <CardContent className="p-0">{isLoading ? <SectionSkeleton /> : children}</CardContent>
     </Card>
   );
 }
@@ -203,9 +218,10 @@ function FiltersPanel({ filters, onChange, onResetCurrentMonth }: Readonly<{
   );
 }
 
-function FinancialSummarySection({ summary, cashflowRows }: Readonly<{
+function FinancialSummarySection({ summary, cashflowRows, isLoading }: Readonly<{
   summary: NonNullable<ReturnType<typeof useFinancialPeriodSummaryReport>['data']> | undefined;
   cashflowRows: NonNullable<ReturnType<typeof useFinancialCashflowReport>['data']>['rows'];
+  isLoading: boolean;
 }>) {
   const emptySummary = { invoiced: 0, paid: 0, outstanding: 0, expenses: 0, netCash: 0, invoicesCount: 0, paymentsCount: 0, expensesCount: 0 };
   const report = summary ?? emptySummary;
@@ -215,6 +231,7 @@ function FinancialSummarySection({ summary, cashflowRows }: Readonly<{
       title="1. ملخص التحصيل للفترة"
       description="ملخص للفترة المحددة يجمع الفواتير والتحصيل والمصروفات المسجلة."
       action={<Button variant="secondary" onClick={() => downloadCsv('financial-summary.csv', toFinancialSummaryCsv(report))}>تصدير CSV</Button>}
+      isLoading={isLoading}
     >
       <div className="grid gap-3 p-4 md:grid-cols-5">
         <MetricCard label="إجمالي الفواتير" value={formatMoney(report.invoiced)} helper={`${report.invoicesCount} فواتير`} />
@@ -240,12 +257,13 @@ function FinancialSummarySection({ summary, cashflowRows }: Readonly<{
   );
 }
 
-function RentRollSection({ rows }: Readonly<{ rows: RentRollRow[] }>) {
+function RentRollSection({ rows, isLoading }: Readonly<{ rows: RentRollRow[]; isLoading: boolean }>) {
   return (
     <ReportCard
       title="2. قائمة العقود الإيجارية (Rent Roll)"
       description="قائمة الإيجارات من العقود الحالية فقط، مع روابط آمنة لتفاصيل العقود."
       action={<Button variant="secondary" onClick={() => downloadCsv('rent-roll.csv', rows)}>تصدير CSV</Button>}
+      isLoading={isLoading}
     >
       {/* Mobile cards */}
       <div className="grid gap-3 p-4 md:hidden">
@@ -300,13 +318,31 @@ function RentRollSection({ rows }: Readonly<{ rows: RentRollRow[] }>) {
   );
 }
 
-function OverdueInvoicesSection({ rows }: Readonly<{ rows: OverdueInvoiceReportRow[] }>) {
+function OverdueInvoicesSection({ rows, trendRows, isLoading }: Readonly<{
+  rows: OverdueInvoiceReportRow[];
+  trendRows: ReturnType<typeof buildPaymentsTrendRows>;
+  isLoading: boolean;
+}>) {
   return (
     <ReportCard
       title="3. الفواتير المتأخرة"
       description="الفواتير المتأخرة المحسوبة من خدمة arrears الحالية حسب as-of date."
       action={<Button variant="secondary" onClick={() => downloadCsv('overdue-invoices.csv', rows)}>تصدير CSV</Button>}
+      isLoading={isLoading}
     >
+      <div className="h-72 p-4">
+        <ResponsiveContainer width="100%" height="100%">
+          <BarChart data={trendRows}>
+            <CartesianGrid strokeDasharray="3 3" />
+            <XAxis dataKey="month" />
+            <YAxis />
+            <Tooltip />
+            <Legend />
+            <Bar dataKey="collections" name="التحصيل" fill="#0f766e" />
+            <Bar dataKey="overdue" name="المتأخر" fill="#f59e0b" />
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
       {/* Mobile cards */}
       <div className="grid gap-3 p-4 md:hidden">
         {rows.map((row) => (
@@ -358,20 +394,38 @@ function OverdueInvoicesSection({ rows }: Readonly<{ rows: OverdueInvoiceReportR
   );
 }
 
-function AgedReceivablesSection({ report }: Readonly<{ report: NonNullable<ReturnType<typeof useAgedReceivablesReport>['data']> | undefined }>) {
+function AgedReceivablesSection({ report, isLoading }: Readonly<{
+  report: NonNullable<ReturnType<typeof useAgedReceivablesReport>['data']> | undefined;
+  isLoading: boolean;
+}>) {
   const rows = report?.rows ?? [];
+  const bucketChartRows = buildAgingBucketChartRows(report?.buckets, agingBucketKeys);
 
   return (
     <ReportCard
       title="4. تقادم الذمم"
       description="تقادم الذمم حسب العقود والفئات العمرية الآمنة من خدمة التقارير الحالية."
       action={<Button variant="secondary" onClick={() => downloadCsv('aged-receivables.csv', rows.map((row) => ({ contractId: row.contractId, tenantName: row.tenantName, totalOutstanding: row.totalOutstanding, totalOverdue: row.totalOverdue, invoiceCount: row.invoiceCount })))}>تصدير CSV</Button>}
+      isLoading={isLoading}
     >
       <div className="grid gap-3 p-4 md:grid-cols-5">
         {agingBucketKeys.map((key) => {
           const bucket = report?.buckets[key];
           return <MetricCard key={key} label={bucket?.label ?? key} value={formatMoney(bucket?.total ?? 0)} helper={`${bucket?.invoiceCount ?? 0} فواتير`} tone={key === 'current' ? 'green' : 'gold'} />;
         })}
+      </div>
+      <div className="h-72 p-4 pt-0">
+        <ResponsiveContainer width="100%" height="100%">
+          <BarChart data={bucketChartRows}>
+            <CartesianGrid strokeDasharray="3 3" />
+            <XAxis dataKey="bucket" />
+            <YAxis />
+            <Tooltip />
+            <Legend />
+            <Bar dataKey="total" name="إجمالي الذمم" fill="#d97706" />
+            <Bar dataKey="invoiceCount" name="عدد الفواتير" fill="#2563eb" />
+          </BarChart>
+        </ResponsiveContainer>
       </div>
       {/* Mobile cards */}
       <div className="grid gap-3 p-4 md:hidden">
@@ -426,16 +480,31 @@ function AgedReceivablesSection({ report }: Readonly<{ report: NonNullable<Retur
   );
 }
 
-function DailyCollectionSection({ rows, receiptRows }: Readonly<{
+function DailyCollectionSection({ rows, receiptRows, isLoading }: Readonly<{
   rows: DailyCollectionReportRow[];
   receiptRows: Array<{ id: string; receipt_number: string; payment_date: string; amount: number; tenant_name: string | null }>;
+  isLoading: boolean;
 }>) {
   return (
     <ReportCard
       title="5. التحصيل اليومي"
       description="ملخص يومي للتحصيل مع روابط مباشرة لفتح إيصالات الدفع وطباعتها."
       action={<Button variant="secondary" onClick={() => downloadCsv('daily-collection.csv', toDailyCollectionCsv(rows))}>تصدير CSV</Button>}
+      isLoading={isLoading}
     >
+      <div className="h-72 p-4">
+        <ResponsiveContainer width="100%" height="100%">
+          <BarChart data={rows}>
+            <CartesianGrid strokeDasharray="3 3" />
+            <XAxis dataKey="paymentDate" />
+            <YAxis />
+            <Tooltip />
+            <Legend />
+            <Bar dataKey="totalPaid" name="إجمالي التحصيل" fill="#0f766e" />
+            <Bar dataKey="paymentsCount" name="عدد المدفوعات" fill="#2563eb" />
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
       {/* Mobile cards */}
       <div className="grid gap-3 p-4 md:hidden">
         {rows.map((row) => (
@@ -526,6 +595,10 @@ export function ReportsPage() {
   const receiptsQuery = useReceipts({ limit: latestReceiptLimit });
 
   const rentRollRows = useMemo(() => buildRentRollRows(contractsQuery.data ?? [], contractStatusLabels), [contractsQuery.data]);
+  const paymentsTrendRows = useMemo(() => buildPaymentsTrendRows({
+    dailyCollections: dailyCollectionQuery.data?.rows,
+    overdueInvoices: overdueInvoicesQuery.data?.rows,
+  }), [dailyCollectionQuery.data?.rows, overdueInvoicesQuery.data?.rows]);
   const receiptRows = useMemo(() => (receiptsQuery.data ?? [])
     .filter((receipt) => isWithinDateRange(receipt.payment_date, filters))
     .map((receipt) => ({
@@ -562,13 +635,21 @@ export function ReportsPage() {
       </div>
 
       {firstError ? <Card><CardContent className="p-4 text-sm text-destructive">{getErrorMessage(firstError, 'تعذر تحميل بعض التقارير. يمكنك تحديث الصفحة أو إعادة المحاولة بأمان دون تعديل أي بيانات.')}</CardContent></Card> : null}
-      {isLoading ? <Card><CardContent className="p-4 text-sm text-muted-foreground">جارٍ تحميل معاينات التقارير التجارية للقراءة فقط...</CardContent></Card> : null}
+      {isLoading ? <Card><CardContent className="p-4 text-sm text-muted-foreground">جارٍ تحميل معاينات التقارير التجارية للقراءة فقط، وستظهر كل بطاقة عند اكتمال بياناتها.</CardContent></Card> : null}
 
-      <FinancialSummarySection summary={financialSummaryQuery.data} cashflowRows={financialCashflowQuery.data?.rows ?? []} />
-      <RentRollSection rows={rentRollRows} />
-      <OverdueInvoicesSection rows={overdueInvoicesQuery.data?.rows ?? []} />
-      <AgedReceivablesSection report={agedReceivablesQuery.data} />
-      <DailyCollectionSection rows={dailyCollectionQuery.data?.rows ?? []} receiptRows={receiptRows} />
+      <FinancialSummarySection
+        summary={financialSummaryQuery.data}
+        cashflowRows={financialCashflowQuery.data?.rows ?? []}
+        isLoading={financialSummaryQuery.isLoading || financialCashflowQuery.isLoading}
+      />
+      <RentRollSection rows={rentRollRows} isLoading={contractsQuery.isLoading} />
+      <OverdueInvoicesSection
+        rows={overdueInvoicesQuery.data?.rows ?? []}
+        trendRows={paymentsTrendRows}
+        isLoading={overdueInvoicesQuery.isLoading || dailyCollectionQuery.isLoading}
+      />
+      <AgedReceivablesSection report={agedReceivablesQuery.data} isLoading={agedReceivablesQuery.isLoading} />
+      <DailyCollectionSection rows={dailyCollectionQuery.data?.rows ?? []} receiptRows={receiptRows} isLoading={dailyCollectionQuery.isLoading || receiptsQuery.isLoading} />
     </div>
   );
 }
