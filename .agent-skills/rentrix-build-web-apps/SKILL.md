@@ -78,10 +78,10 @@ Fix these before any new feature work.
 Completed:
 - `FinancialsPage` (`/financials`): hub tabs and direct page links added
 - `ExpensesPage` (`/expenses`): category filter labels, empty state, and CSV export added
+- `ReceiptsPage` (`/receipts`): role-gated void action for ADMIN/MANAGER, receipt-number search hint, and print button per row added
 
 Remaining:
 - `InvoicesPage` (`/invoices`): add "Generate Invoice" modal polish
-- `ReceiptsPage` (`/receipts`): polish void action (ADMIN/MANAGER only), receipt number search, and print button per row
 
 ### 3.3 Reports page — complete content
 - Currently shows charts but some sections return empty arrays
