@@ -17,6 +17,23 @@ export type PaginatedResult<T> = {
   count: number;
 };
 
+function getWriteErrorMessage(action: 'create' | 'update' | 'archive', error: unknown) {
+  const fallback = action === 'create' ? 'تعذر إنشاء العقار' : action === 'update' ? 'تعذر تحديث العقار' : 'تعذر أرشفة العقار';
+  const message = error instanceof Error ? error.message : String(error ?? '');
+  const lower = message.toLowerCase();
+
+  if (lower.includes('permission denied') || lower.includes('rls') || lower.includes('row-level security') || lower.includes('not authorized')) {
+    return `${fallback}: لا تملك صلاحية الكتابة على العقارات. تواصل مع المسؤول أو استخدم حساباً بصلاحيات أعلى.`;
+  }
+
+  if (message) return `${fallback}: ${message}`;
+  return fallback;
+}
+
+export function normalizePropertyPayload(payload: PropertyPayload): PropertyInsert {
+  return { ...payload };
+}
+
 type PropertyInsert = Database['public']['Tables']['properties']['Insert'];
 type PropertyUpdate = Database['public']['Tables']['properties']['Update'];
 
@@ -59,22 +76,14 @@ export async function getProperty(propertyId: string): Promise<Property> {
 }
 
 export async function createProperty(payload: PropertyPayload): Promise<Property> {
-  const insertPayload: any = {
-    ...payload,
-    // Database 'name' field maps from 'title'
-    name: payload.title || '',
-  };
+  const insertPayload = normalizePropertyPayload(payload);
   const { data, error } = await supabase.from('properties').insert(insertPayload).select('*').single().returns<Property>();
-  if (error) throw error;
+  if (error) throw new Error(getWriteErrorMessage('create', error));
   return data;
 }
 
 export async function updateProperty(propertyId: string, payload: PropertyPayload): Promise<Property> {
-  const updatePayload: any = {
-    ...payload,
-    // Database 'name' field maps from 'title'
-    name: payload.title || '',
-  };
+  const updatePayload: PropertyUpdate = normalizePropertyPayload(payload);
   const { data, error } = await supabase
     .from('properties')
     .update(updatePayload)
@@ -83,12 +92,12 @@ export async function updateProperty(propertyId: string, payload: PropertyPayloa
     .select('*')
     .single()
     .returns<Property>();
-  if (error) throw error;
+  if (error) throw new Error(getWriteErrorMessage('update', error));
   return data;
 }
 
 export async function softDeleteProperty(propertyId: string): Promise<void> {
   const updatePayload: PropertyUpdate = { deleted_at: new Date().toISOString() };
   const { error } = await supabase.from('properties').update(updatePayload).eq('id', propertyId).is('deleted_at', null);
-  if (error) throw error;
+  if (error) throw new Error(getWriteErrorMessage('archive', error));
 }

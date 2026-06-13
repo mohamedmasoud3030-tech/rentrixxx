@@ -1,5 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -25,6 +25,7 @@ export function PropertyFormModal({ open, onClose, propertyId }: PropertyFormMod
   const propertyQuery = useProperty(propertyId ?? '');
   const createMutation = useCreateProperty();
   const updateMutation = useUpdateProperty(propertyId ?? '');
+  const [submitError, setSubmitError] = useState<string | null>(null);
   const form = useForm<PropertyFormValues>({
     resolver: zodResolver(propertySchema),
     defaultValues: {
@@ -42,8 +43,10 @@ export function PropertyFormModal({ open, onClose, propertyId }: PropertyFormMod
   useEffect(() => {
     if (!open) {
       form.reset();
+      setSubmitError(null);
       return;
     }
+    setSubmitError(null);
     if (propertyQuery.data) {
       form.reset({
         title: propertyQuery.data.title,
@@ -61,13 +64,18 @@ export function PropertyFormModal({ open, onClose, propertyId }: PropertyFormMod
   const isSubmitting = createMutation.isPending || updateMutation.isPending;
 
   const handleSubmit = form.handleSubmit(async (values) => {
+    setSubmitError(null);
     const payload = propertySchema.parse(values);
-    if (isEdit && propertyId) {
-      await updateMutation.mutateAsync(payload);
-    } else {
-      await createMutation.mutateAsync(payload);
+    try {
+      if (isEdit && propertyId) {
+        await updateMutation.mutateAsync(payload);
+      } else {
+        await createMutation.mutateAsync(payload);
+      }
+      onClose();
+    } catch (error) {
+      setSubmitError(error instanceof Error ? error.message : 'تعذر حفظ العقار. تحقق من الصلاحيات ثم أعد المحاولة.');
     }
-    onClose();
   });
 
   return (
@@ -81,6 +89,9 @@ export function PropertyFormModal({ open, onClose, propertyId }: PropertyFormMod
           <RouteLoadingState />
         ) : (
           <form className="grid gap-4 md:grid-cols-2" onSubmit={handleSubmit}>
+            {submitError ? (
+              <div className="rounded-2xl border border-destructive/30 bg-destructive/5 p-3 text-sm font-bold text-destructive md:col-span-2" role="alert">{submitError}</div>
+            ) : null}
             <label className="grid gap-2 text-sm font-bold">
               اسم العقار
               <Input {...form.register('title')} placeholder="مثال: عمارة الندى" autoFocus />

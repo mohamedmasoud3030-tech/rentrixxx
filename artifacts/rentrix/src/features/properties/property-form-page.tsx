@@ -1,7 +1,7 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Link, useParams, useRouter } from '@tanstack/react-router';
 import { ArrowRight } from 'lucide-react';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -24,6 +24,7 @@ export function PropertyFormPage() {
   const propertyQuery = useProperty(propertyId ?? '');
   const createMutation = useCreateProperty();
   const updateMutation = useUpdateProperty(propertyId ?? '');
+  const [submitError, setSubmitError] = useState<string | null>(null);
   const form = useForm<PropertyFormValues>({
     resolver: zodResolver(propertySchema),
     defaultValues: {
@@ -54,6 +55,20 @@ export function PropertyFormPage() {
   }, [form, propertyQuery.data]);
 
   if (isEdit && propertyQuery.isLoading) return <RouteLoadingState />;
+  if (isEdit && propertyQuery.isError) {
+    return (
+      <Card className="mx-auto max-w-3xl" role="alert" aria-live="assertive">
+        <CardHeader>
+          <CardTitle>تعذر تحميل العقار للتعديل</CardTitle>
+          <CardDescription>{propertyQuery.error instanceof Error ? propertyQuery.error.message : 'تحقق من الصلاحيات أو الاتصال ثم أعد المحاولة.'}</CardDescription>
+        </CardHeader>
+        <CardContent className="flex flex-wrap gap-2">
+          <Button onClick={() => propertyQuery.refetch()}>إعادة المحاولة</Button>
+          <Button variant="secondary" asChild><Link to="/properties">العودة للعقارات</Link></Button>
+        </CardContent>
+      </Card>
+    );
+  }
 
   const isSubmitting = createMutation.isPending || updateMutation.isPending;
 
@@ -70,15 +85,23 @@ export function PropertyFormPage() {
         <form
           className="grid gap-5 md:grid-cols-2"
           onSubmit={form.handleSubmit(async (values) => {
+            setSubmitError(null);
             const payload = propertySchema.parse(values);
-            if (isEdit && propertyId) {
-              await updateMutation.mutateAsync(payload);
-            } else {
-              await createMutation.mutateAsync(payload);
+            try {
+              if (isEdit && propertyId) {
+                await updateMutation.mutateAsync(payload);
+              } else {
+                await createMutation.mutateAsync(payload);
+              }
+              await router.navigate({ to: '/properties' });
+            } catch (error) {
+              setSubmitError(error instanceof Error ? error.message : 'تعذر حفظ العقار. تحقق من الصلاحيات ثم أعد المحاولة.');
             }
-            await router.navigate({ to: '/properties' });
           })}
         >
+          {submitError ? (
+            <div className="rounded-2xl border border-destructive/30 bg-destructive/5 p-3 text-sm font-bold text-destructive md:col-span-2" role="alert">{submitError}</div>
+          ) : null}
           <label className="grid gap-2 text-sm font-bold">
             اسم العقار
             <Input {...form.register('title')} placeholder="مثال: عمارة الندى" />
