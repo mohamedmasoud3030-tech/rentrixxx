@@ -98,8 +98,8 @@ function ReceiptsHistoryContent() {
           <p className="mt-1 max-w-2xl text-sm leading-7 text-muted-foreground">مراجعة إيصالات الدفعات المنشورة، فتح تفاصيل الإيصال، واستخدام أمر الطباعة عند الحاجة.</p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <Button variant="secondary" asChild><Link to="/financials"><ArrowRight className="ml-2 size-4" />المالية</Link></Button>
-          {selectedReceiptId ? <Button asChild><a href={createReceiptPrintHref(selectedReceiptId)}><Printer className="ml-2 size-4" />طباعة المحدد</a></Button> : null}
+          <Button variant="secondary" asChild><Link to="/financials"><ArrowRight className="me-2 size-4" />المالية</Link></Button>
+          {selectedReceiptId ? <Button asChild><a href={createReceiptPrintHref(selectedReceiptId)}><Printer className="me-2 size-4" />طباعة المحدد</a></Button> : null}
         </div>
       </div>
 
@@ -119,8 +119,8 @@ function ReceiptsHistoryContent() {
           <label className="space-y-1 text-sm font-bold xl:col-span-2">
             <span>بحث</span>
             <div className="relative">
-              <Search className="pointer-events-none absolute right-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-              <Input className="pr-9" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="رقم الإيصال REC-، المرجع، المستأجر، العقار" />
+              <Search className="pointer-events-none absolute end-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+              <Input className="pe-9" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="رقم الإيصال REC-، المرجع، المستأجر، العقار" />
             </div>
           </label>
           <label className="space-y-1 text-sm font-bold">
@@ -170,8 +170,8 @@ function ReceiptsHistoryContent() {
                 {filteredReceipts.map((receipt) => (
                   <div key={`${receipt.id}-actions`} className="flex flex-wrap gap-2 rounded-2xl border border-border/70 bg-muted/20 p-3">
                     <Button variant="secondary" className="min-h-10 px-3" onClick={() => setSelectedReceiptId(receipt.id)}>عرض</Button>
-                    <Button variant="secondary" className="min-h-10 px-3" asChild><a href={createReceiptPrintHref(receipt.id)}><Printer className="ml-2 size-4" />طباعة</a></Button>
-                    {canVoidReceipt ? <Button variant="danger" className="min-h-10 px-3" onClick={() => handleVoidReceipt(receipt)} disabled={voidReceiptMutation.isPending}><Ban className="ml-2 size-4" />إلغاء</Button> : null}
+                    <Button variant="secondary" className="min-h-10 px-3" asChild><a href={createReceiptPrintHref(receipt.id)}><Printer className="me-2 size-4" />طباعة</a></Button>
+                    {canVoidReceipt ? <Button variant="danger" className="min-h-10 px-3" onClick={() => handleVoidReceipt(receipt)} disabled={voidReceiptMutation.isPending}><Ban className="me-2 size-4" />إلغاء</Button> : null}
                   </div>
                 ))}
               </div>
@@ -204,8 +204,8 @@ function ReceiptsHistoryContent() {
                         <TableCell>
                           <div className="flex flex-wrap gap-2">
                             <Button variant="secondary" className="min-h-10 px-3" onClick={() => setSelectedReceiptId(receipt.id)}>عرض</Button>
-                            <Button variant="secondary" className="min-h-10 px-3" asChild><a href={createReceiptPrintHref(receipt.id)}><Printer className="ml-2 size-4" />طباعة</a></Button>
-                            {canVoidReceipt ? <Button variant="danger" className="min-h-10 px-3" onClick={() => handleVoidReceipt(receipt)} disabled={voidReceiptMutation.isPending}><Ban className="ml-2 size-4" />إلغاء</Button> : null}
+                            <Button variant="secondary" className="min-h-10 px-3" asChild><a href={createReceiptPrintHref(receipt.id)}><Printer className="me-2 size-4" />طباعة</a></Button>
+                            {canVoidReceipt ? <Button variant="danger" className="min-h-10 px-3" onClick={() => handleVoidReceipt(receipt)} disabled={voidReceiptMutation.isPending}><Ban className="me-2 size-4" />إلغاء</Button> : null}
                           </div>
                         </TableCell>
                       </TableRow>

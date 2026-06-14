@@ -2,13 +2,14 @@ import { Link } from '@tanstack/react-router';
 import {
   AlertTriangle, ArrowLeft, Banknote, Building2, CalendarClock,
   FileText, Home, Plus, ReceiptText, TrendingUp, Users, WalletCards,
-  BarChart3, Clock, Zap,
+  BarChart3, Clock,
 } from 'lucide-react';
 import { useCallback, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { DataErrorScreen } from '@/components/data-error-screen';
+import { EmptyState } from '@/components/empty-state';
 import { Skeleton } from '@/components/ui/skeleton';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { KpiCard } from '@/components/ui/kpi-card';
@@ -170,7 +171,7 @@ function HeroBanner({ snapshot, isLoading, settings, today }: Readonly<{
             <p className="text-sm font-semibold text-slate-400">عقد نشط</p>
           </div>
 
-          <div className="mb-1 mr-4 h-10 w-px bg-white/20" />
+          <div className="mb-1 ms-4 h-10 w-px bg-white/20" />
 
           <div>
             {isLoading ? (
@@ -236,6 +237,7 @@ function KpiGrid({ snapshot, isLoading, settings }: Readonly<{
       accent: (snapshot?.arrears.totalOverdue ?? 0) > 0 ? 'rose' as const : 'emerald' as const,
       sub: `${snapshot?.arrears.overdueInvoiceCount ?? 0} فاتورة`,
       trend: (snapshot?.arrears.totalOverdue ?? 0) > 0 ? 'down' as const : 'neutral' as const,
+      trendValue: money(settings, snapshot?.arrears.totalOverdue ?? 0),
     },
     {
       label: 'عقود تنتهي قريباً',
@@ -243,6 +245,8 @@ function KpiGrid({ snapshot, isLoading, settings }: Readonly<{
       icon: CalendarClock,
       accent: (snapshot?.operational.expiringContracts30Days ?? 0) > 0 ? 'amber' as const : 'emerald' as const,
       sub: `خلال ${dashboardWindowDays} يوم`,
+      trend: (snapshot?.operational.expiringContracts30Days ?? 0) > 0 ? 'down' as const : 'neutral' as const,
+      trendValue: `${snapshot?.operational.expiringContracts30Days ?? 0}`,
     },
   ];
 
@@ -301,10 +305,10 @@ function ExpiringContractsSection({ rows, isLoading, settings }: Readonly<{
       {isLoading && <Skeleton className="h-36 rounded-2xl" />}
 
       {!isLoading && rows.length === 0 && (
-        <div className="rounded-2xl border border-dashed border-border p-6 text-center">
-          <CalendarClock className="mx-auto size-8 text-muted-foreground/40 mb-2" />
-          <p className="text-sm font-bold text-muted-foreground">لا توجد عقود تنتهي خلال {dashboardWindowDays} يوماً</p>
-        </div>
+        <EmptyState
+          title={`لا توجد عقود تنتهي خلال ${dashboardWindowDays} يوماً`}
+          description="ستظهر هنا العقود القريبة من الانتهاء عند توفرها ضمن بيانات لوحة التحكم."
+        />
       )}
 
       {!isLoading && rows.length > 0 && (
@@ -359,10 +363,10 @@ function OverdueSection({ rows, isLoading, settings }: Readonly<{
       {isLoading && <Skeleton className="h-36 rounded-2xl" />}
 
       {!isLoading && rows.length === 0 && (
-        <div className="rounded-2xl border border-dashed border-border p-6 text-center">
-          <Zap className="mx-auto size-8 text-emerald-400/60 mb-2" />
-          <p className="text-sm font-bold text-muted-foreground">لا توجد فواتير متأخرة</p>
-        </div>
+        <EmptyState
+          title="لا توجد فواتير متأخرة"
+          description="ستظهر أعلى المتأخرات هنا عند وجود فواتير مستحقة غير مسددة."
+        />
       )}
 
       {!isLoading && rows.length > 0 && (

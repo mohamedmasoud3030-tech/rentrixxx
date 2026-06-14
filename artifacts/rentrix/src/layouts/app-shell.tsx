@@ -148,7 +148,7 @@ export function AppShell() {
         <MobileNavigationDrawer authorization={authorization} sharedLabel={sharedLabel} onClose={() => setMobileNavOpen(false)} onLogout={handleLogout} onQuickLink={navigateToQuickLink} />
       ) : null}
 
-      <aside className={cn('fixed inset-y-0 right-0 z-30 hidden overflow-hidden border-l border-sidebar-border bg-sidebar text-sidebar-foreground shadow-sidebar transition-all duration-300 lg:flex lg:flex-col', sidebarCollapsed ? 'w-20' : 'w-80')}>
+      <aside data-print-hide className={cn('fixed inset-y-0 right-0 z-30 hidden overflow-hidden border-l border-sidebar-border bg-sidebar text-sidebar-foreground shadow-sidebar transition-all duration-300 lg:flex lg:flex-col', sidebarCollapsed ? 'w-20' : 'w-80')}>
         <div className="h-[3px] w-full bg-accent" />
         <div className="min-h-24 border-b border-white/10 px-5 py-5"><Brand expanded={isSidebarExpanded} /></div>
         <nav className="sidebar-scroll min-h-0 flex-1 overflow-y-auto p-4">
@@ -164,7 +164,7 @@ export function AppShell() {
       </aside>
 
       <div className={cn('w-full transition-all duration-300 lg:pr-80', sidebarCollapsed && 'lg:pr-20')}>
-        <header className="sticky top-0 z-20 border-b border-border bg-background/82 backdrop-blur-2xl">
+        <header data-print-hide className="sticky top-0 z-20 border-b border-border bg-background/82 backdrop-blur-2xl">
           <div className="flex min-h-16 items-center gap-2 px-3 py-2 sm:min-h-20 sm:px-5">
             <Button variant="ghost" className="size-10 shrink-0 px-0 lg:hidden" onClick={() => setMobileNavOpen(true)} aria-label="فتح القائمة"><Menu className="size-5" /></Button>
             <Button variant="ghost" className="hidden size-10 shrink-0 px-0 lg:inline-flex" onClick={toggleSidebar} aria-label={sharedLabel('collapseMenu')}><Menu className="size-5" /></Button>
@@ -187,7 +187,9 @@ export function AppShell() {
         <main id="main-content" tabIndex={-1} className="animate-route-in overflow-x-hidden p-3 pb-24 outline-none sm:p-4 sm:pb-28 lg:p-6 lg:pb-6"><Outlet /></main>
       </div>
 
-      <MobileBottomNav authorization={authorization} sharedLabel={sharedLabel} />
+      <div data-print-hide>
+        <MobileBottomNav authorization={authorization} sharedLabel={sharedLabel} />
+      </div>
     </div>
   );
 }

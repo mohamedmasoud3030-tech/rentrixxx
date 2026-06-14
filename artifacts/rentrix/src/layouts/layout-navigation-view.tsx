@@ -31,9 +31,9 @@ export function NavigationLinks({
                 to={to}
                 onClick={onNavigate}
                 aria-label={sharedLabel(labelKey)}
-                title={expanded ? undefined : sharedLabel(labelKey)}
+                title={expanded ? undefined : `${sharedLabel(labelKey)} — ${description}`}
                 activeOptions={{ exact: to === '/' }}
-                className="group flex min-h-12 min-w-0 items-center gap-3 rounded-2xl border border-transparent px-3 py-2.5 text-sidebar-foreground transition-all hover:-translate-y-0.5 hover:border-white/10 hover:bg-sidebar-accent hover:text-white [&.active]:border-white/15 [&.active]:bg-primary [&.active]:text-primary-foreground"
+                className="group relative flex min-h-12 min-w-0 items-center gap-3 rounded-2xl border border-transparent px-3 py-2.5 text-sidebar-foreground transition-all hover:-translate-y-0.5 hover:border-white/10 hover:bg-sidebar-accent hover:text-white [&.active]:border-white/15 [&.active]:bg-primary [&.active]:text-primary-foreground"
               >
                 <Icon className="size-5 shrink-0 transition-transform group-hover:scale-110" />
                 {expanded ? (
@@ -43,7 +43,15 @@ export function NavigationLinks({
                       {description}
                     </span>
                   </span>
-                ) : null}
+                ) : (
+                  <span
+                    aria-hidden="true"
+                    className="pointer-events-none absolute right-[calc(100%+0.75rem)] top-1/2 z-50 hidden min-w-52 -translate-y-1/2 rounded-2xl border border-white/10 bg-sidebar px-3 py-2 text-right text-sidebar-foreground opacity-0 shadow-2xl transition-all group-hover:block group-hover:translate-x-0 group-hover:opacity-100 group-focus-visible:block group-focus-visible:opacity-100"
+                  >
+                    <span className="block text-[12px] font-black text-white">{sharedLabel(labelKey)}</span>
+                    <span className="mt-0.5 block text-[10px] font-bold leading-5 text-sidebar-foreground/65">{description}</span>
+                  </span>
+                )}
               </Link>
             );
           })}
@@ -75,7 +83,7 @@ export function WorkspaceCard({
         >
           <Icon className="size-4 shrink-0 text-primary transition-transform group-hover:scale-110" />
           <span>{title}</span>
-          <Plus className="mr-auto size-3.5 shrink-0 opacity-50" />
+          <Plus className="ms-auto size-3.5 shrink-0 opacity-50" />
         </button>
       ))}
     </section>
