@@ -16,7 +16,7 @@ const forbiddenNamePieces = [
   ['use', 'App'],
   ['react-router', '-dom'],
 ] as const;
-const writePattern = new RegExp(`\.(?:${['insert', 'update', 'upsert', 'delete', 'rpc'].join('|')})\s*\(`);
+const writeMethodCalls = ['.insert(', '.update(', '.upsert(', '.delete(', '.rpc('] as const;
 
 function userWithRole(role: unknown) {
   return { id: 'user-1', email: 'user@example.com', app_metadata: { user_role: role } };
@@ -123,6 +123,8 @@ describe('Owners and CRM source safety', () => {
     expect(ownerManagementSource).toContain('.insert(');
     expect(ownerManagementSource).toContain('.update(');
     expect(ownerManagementSource).not.toContain('.delete(');
-    expect(recoveredReadOnlySource).not.toMatch(writePattern);
+    for (const writeMethodCall of writeMethodCalls) {
+      expect(recoveredReadOnlySource).not.toContain(writeMethodCall);
+    }
   });
 });
