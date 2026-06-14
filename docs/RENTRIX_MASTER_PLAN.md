@@ -101,6 +101,20 @@ Preserve these invariants across UI, services, migrations, RPCs, RLS, imports, e
 - Orphan chains are not allowed.
 - Frontend route visibility does not replace backend authorization, grants, or RLS.
 
+### 2.1 Evidence required / historical audit claim
+
+A historical audit claim treated a Gemini integration as a same-day critical security fix. Current runtime-boundary evidence does **not** support keeping that claim in the critical-fix lane. On 2026-06-13, targeted searches of `package.json`, `artifacts/rentrix/package.json`, `artifacts/rentrix/src/`, and `supabase/` found no `@google/genai` package, Gemini SDK import, Gemini endpoint, Gemini API key reference, `generateContent` call, or Google Generative Language API reference.
+
+Status: `EVIDENCE REQUIRED`. Do not classify Gemini as a current same-day critical security item unless a future verification documents all of the following from code inside or intentionally connected to the runtime boundary:
+
+- exact file path;
+- package or SDK name;
+- environment variable or secret name;
+- endpoint or call site;
+- why the integration is reachable from the shipped Rentrix runtime.
+
+Current known non-runtime references are documentation-only historical notes under `docs/reconciliation/`; they are not active application code and are insufficient by themselves to justify a critical security item.
+
 Read `docs/ai/domain-rules.md` before touching contracts, invoices, payments, receipts, arrears, expenses, reports, migrations, or RLS.
 
 ## 3. Verified Current Baseline
