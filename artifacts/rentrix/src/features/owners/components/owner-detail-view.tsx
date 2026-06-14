@@ -30,7 +30,7 @@ export function OwnerDetailView({ state }: Readonly<{ state: OwnerDetailState }>
 
   return (
     <section className="space-y-6">
-      <Button asChild variant="ghost" className="gap-2"><a href="/owners-hub"><ArrowRight className="size-4" />عودة إلى مركز الملاك</a></Button>
+      <Button asChild variant="ghost" className="gap-2"><a href="/owners"><ArrowRight className="size-4" />عودة إلى إدارة الملاك</a></Button>
       <Card>
         <CardHeader className="gap-3">
           <div className="flex size-12 items-center justify-center rounded-2xl bg-primary/10 text-primary"><UserRoundCog className="size-6" /></div>
