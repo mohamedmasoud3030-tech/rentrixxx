@@ -1,8 +1,7 @@
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
 import { OwnerDetailView } from './components/owner-detail-view';
-import { OwnersHubView } from './components/owners-hub-view';
-import type { Owner, OwnerDetailSnapshot, OwnerHubSnapshot, PropertyWithOwners } from './ownerService';
+import type { Owner, OwnerDetailSnapshot, PropertyWithOwners } from './ownerService';
 
 const owner: Owner = {
   id: 'owner-1',
@@ -46,34 +45,6 @@ const property: PropertyWithOwners = {
   }],
 };
 
-describe('Owners Hub recovery states', () => {
-  it('renders the owners hub loading state', () => {
-    expect(renderToStaticMarkup(<OwnersHubView state={{ status: 'loading' }} />)).toContain('جار تحميل مركز الملاك');
-  });
-
-  it('renders the owners hub empty state', () => {
-    const snapshot: OwnerHubSnapshot = { owners: [], properties: [] };
-
-    expect(renderToStaticMarkup(<OwnersHubView state={{ status: 'ready', snapshot }} />)).toContain('لا يوجد ملاك');
-  });
-
-  it('renders the owners hub recoverable error state', () => {
-    const html = renderToStaticMarkup(<OwnersHubView state={{ status: 'error', error: new Error('فشل القراءة') }} />);
-
-    expect(html).toContain('تعذر تحميل مركز الملاك');
-    expect(html).toContain('إعادة المحاولة');
-  });
-
-  it('renders successful owners hub rows without financial totals', () => {
-    const snapshot: OwnerHubSnapshot = { owners: [owner], properties: [property] };
-    const html = renderToStaticMarkup(<OwnersHubView state={{ status: 'ready', snapshot }} />);
-
-    expect(html).toContain('مالك موثق');
-    expect(html).toContain('Owners &amp; CRM');
-    expect(html).not.toContain('رصيد');
-  });
-});
-
 describe('Owner detail recovery states', () => {
   it('renders the owner detail loading state', () => {
     expect(renderToStaticMarkup(<OwnerDetailView state={{ status: 'loading' }} />)).toContain('جار تحميل ملف المالك');
@@ -101,6 +72,8 @@ describe('Owner detail recovery states', () => {
     expect(html).toContain('الرصيد المستحق');
     expect(html).toContain('OMR');
     expect(html).toContain('٧٥٠');
+    expect(html).toContain('/owners');
+    expect(html).not.toContain('/owners-hub');
   });
 
   it('renders the owner detail unavailable state', () => {
