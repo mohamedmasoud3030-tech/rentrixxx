@@ -339,13 +339,13 @@ Stop and report the exact blocker when any of these apply:
 | 1 | Secure operator runbook | `DONE` | Added `docs/ai/SECURE_OPERATOR_RUNBOOK.md` with redacted environment ownership, intended/prohibited Supabase ref classifications, available Vercel identity evidence, and connector blocker reporting. |
 | 2 | Verify migration chain rebuild and document current Supabase reset blocker | `BLOCKED` by detailed connector access | Verify the canonical `supabase/migrations/` chain against the `MIGRATIONS_FAILED` live-state evidence; capture migration list, failure evidence, Supabase reset/replay blocker, and safe preview replay plan. No production mutation. Do not create a root-level SQL consolidation task because the repository root currently has zero `.sql` files. |
 | 3 | Preview-branch migration replay | `BLOCKED` by item 2 and preview access | Prove replay outside production; split any repair into a narrow reviewed migration PR. |
-| 4 | Auth, RLS, and RPC least-privilege reconciliation | `IN PROGRESS` — security hardening applied; idempotency stack deferred | Applied: search_path fix on sync_payment_reference_fields; revoked authenticated EXECUTE on is_app_user and is_admin_or_manager. Security Advisor: 3/4 warnings cleared; 1 dashboard-only residual. Idempotency: financial_operation_idempotency, receipts.request_id, and record_invoice_payment_atomic missing on live — separate PR required. See docs/v01-security-reconciliation-final.md. |
-| 5 | Browser/manual operational QA | `BLOCKED` by browser-driving tool + Custom Access Token hook verification | Deployment is reachable at `rentrix-alpha.vercel.app` and, as of 2026-06-14, the served production bundle is verified to embed the correct live Supabase env values (`VITE_SUPABASE_URL`/`VITE_SUPABASE_ANON_KEY` for `nnggcnpcuomwfuupupwg`) — the deployment-config sub-blocker is resolved. Remaining blockers: (a) registration of `pg-functions://postgres/public/custom_access_token_hook` as the project's Custom Access Token Auth Hook cannot be verified without Supabase Dashboard/Management-API access; (b) authenticated browser/manual QA requires a tool that can submit the login form and inspect post-auth app state, not just unauthenticated GET. See `docs/v01-migration-reconciliation-status.md` for evidence. Verify RTL desktop, RTL mobile, LTR sanity, protected-route refresh, forms, tables, dialogs, receipt lookup/print, CSV export, PWA install/offline/update, and invalid-route fallback once unblocked. |
+| 4 | Auth, RLS, and RPC least-privilege reconciliation | `IN PROGRESS` — security hardening applied; idempotency stack deferred | Applied: search_path fix on sync_payment_reference_fields; revoked authenticated EXECUTE on is_app_user and is_admin_or_manager. Security Advisor: 3/4 warnings cleared; 1 dashboard-only residual. Idempotency: financial_operation_idempotency, receipts.request_id, and record_invoice_payment_atomic missing on live — separate PR required. See docs/v01/security-reconciliation-final.md. |
+| 5 | Browser/manual operational QA | `BLOCKED` by browser-driving tool + Custom Access Token hook verification | Deployment is reachable at `rentrix-alpha.vercel.app` and, as of 2026-06-14, the served production bundle is verified to embed the correct live Supabase env values (`VITE_SUPABASE_URL`/`VITE_SUPABASE_ANON_KEY` for `nnggcnpcuomwfuupupwg`) — the deployment-config sub-blocker is resolved. Remaining blockers: (a) registration of `pg-functions://postgres/public/custom_access_token_hook` as the project's Custom Access Token Auth Hook cannot be verified without Supabase Dashboard/Management-API access; (b) authenticated browser/manual QA requires a tool that can submit the login form and inspect post-auth app state, not just unauthenticated GET. See `docs/v01/migration-reconciliation-status.md` for evidence. Verify RTL desktop, RTL mobile, LTR sanity, protected-route refresh, forms, tables, dialogs, receipt lookup/print, CSV export, PWA install/offline/update, and invalid-route fallback once unblocked. |
 | 6 | Final constrained-beta release check | `BLOCKED` until items 1–5 close | Run the full CI gate, review live evidence, record residual risks, and decide GO / NO-GO. |
 
 Repository-side migration evidence preflight now runs in CI after dependency installation. This keeps the local canonical migration chain guarded while live migration-state reconciliation remains blocked by approved read-only Supabase access.
 
-Latest execution note: `docs/v01-migration-reconciliation-status.md` is the active status source for the current v0.1 continuation. On 2026-06-09, browser execution reached `rentrix-alpha.vercel.app/login`, but the deployed app reported incomplete Supabase runtime environment, so item 5 remains blocked by deployment configuration and manual auth-hook setup rather than deployment reachability alone.
+Latest execution note: `docs/v01/migration-reconciliation-status.md` is the active status source for the current v0.1 continuation. On 2026-06-09, browser execution reached `rentrix-alpha.vercel.app/login`, but the deployed app reported incomplete Supabase runtime environment, so item 5 remains blocked by deployment configuration and manual auth-hook setup rather than deployment reachability alone.
 
 Next continuation item: Vercel Supabase environment values are now verified correct in the deployed bundle (2026-06-14). The remaining item-5 prerequisites — verifying the Custom Access Token hook registration in the Supabase Dashboard and running authenticated browser/manual operational QA — require Supabase Dashboard/Management-API access and a browser-driving tool not currently available in this environment. No production mutation is authorized by the secure operator runbook.
 
@@ -540,7 +540,7 @@ A visible screen is not commercially ready until it has:
 As of 2026-06-07, a detailed live-connector audit was performed against the intended Supabase project. Results are documented in:
 
 ```
-docs/v01-migration-reconciliation-status.md
+docs/v01/migration-reconciliation-status.md
 ```
 
 **Summary:**
@@ -615,6 +615,13 @@ All issues above were found on mobile. Some may not appear on desktop. Agents mu
 
 The P1/P2 frontend polish queue above is now complete. The next actionable tasks come from the active roadmap, but the earliest remaining v0.1 items are blocked or require confirmation/access rather than being clean `READY` implementation slices.
 
+- Task name: Reconcile PR #892 schema-integrity migrations into the canonical chain ordering — `READY`
+- Source doc/path: `supabase/migrations/20260613000300_*`, `20260613000400_*`, `20260613000500_*` (added by PR #892, not yet applied to any environment) and section 6.2 item 2
+- Why it is next: PR #892 added three new migrations timestamped 2026-06-13 00:03–00:05, which sort *before* several already-merged/likely-already-applied migrations (`20260613054500`, `20260614120000`, `20260614130000`). This adds a new, concrete instance of the chain-ordering problem item 2 describes, on top of the existing `MIGRATIONS_FAILED` evidence. An agent can investigate and resolve the *ordering* (e.g. re-timestamp the three new files to sort after `20260614130000`, verify no other migration depends on their original position, update the audit doc's migration filenames to match) without needing Supabase Dashboard/Management-API access — that access is only required for the *live-state* verification in item 2, not for fixing local chain ordering.
+- Risk level: low (file rename + local verification only; no live mutation)
+- Whether it touches Supabase: only local `supabase/migrations/` files
+- Suggested PR size: small
+
 - Task name: Verify migration chain rebuild and document current Supabase reset blocker — Needs confirmation
 - Source doc/path: `docs/RENTRIX_MASTER_PLAN.md` section 6.2, item 2
 - Why it is next: earliest remaining v0.1 ordered item, but it is explicitly `BLOCKED` by detailed connector access.
@@ -630,14 +637,14 @@ The P1/P2 frontend polish queue above is now complete. The next actionable tasks
 - Suggested PR size: large
 
 - Task name: Auth, RLS, and RPC least-privilege reconciliation idempotency follow-up — Needs confirmation
-- Source doc/path: `docs/RENTRIX_MASTER_PLAN.md` section 6.2, item 4 and `docs/v01-security-reconciliation-final.md`
+- Source doc/path: `docs/RENTRIX_MASTER_PLAN.md` section 6.2, item 4 and `docs/v01/security-reconciliation-final.md`
 - Why it is next: roadmap records the security hardening as partly applied while the idempotency stack remains a separate required PR.
 - Risk level: high
 - Whether it touches Supabase: yes
 - Suggested PR size: medium
 
 - Task name: Browser/manual operational QA — Needs confirmation
-- Source doc/path: `docs/RENTRIX_MASTER_PLAN.md` section 6.2, item 5 and `docs/v01-migration-reconciliation-status.md`
+- Source doc/path: `docs/RENTRIX_MASTER_PLAN.md` section 6.2, item 5 and `docs/v01/migration-reconciliation-status.md`
 - Why it is next: the deployment-config sub-blocker is resolved, but auth-hook verification and authenticated browser/manual QA still need access/tooling.
 - Risk level: medium
 - Whether it touches Supabase: yes
