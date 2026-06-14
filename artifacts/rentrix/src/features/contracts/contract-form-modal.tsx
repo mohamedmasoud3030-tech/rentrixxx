@@ -1,9 +1,10 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useEffect } from 'react';
-import { useForm, useWatch } from 'react-hook-form';
+import { useForm, useWatch, Controller } from 'react-hook-form';
 import { useQuery } from '@tanstack/react-query';
 import { RouteLoadingState } from '@/components/loading-state';
 import { Button } from '@/components/ui/button';
+import { FileAttachmentField } from '@/components/ui/file-attachment-field';
 import { Input } from '@/components/ui/input';
 import { ResponsiveFormOverlay } from '@/components/ui/responsive-form-overlay';
 import { Select } from '@/components/ui/select';
@@ -43,6 +44,7 @@ export function ContractFormModal({ open, onClose, contractId }: ContractFormMod
       status: 'draft',
       cancellation_reason: '',
       notes: '',
+      attachment_url: null,
     },
   });
 
@@ -70,6 +72,7 @@ export function ContractFormModal({ open, onClose, contractId }: ContractFormMod
       status: contractQuery.data.status,
       cancellation_reason: contractQuery.data.cancellation_reason ?? '',
       notes: contractQuery.data.notes ?? '',
+      attachment_url: contractQuery.data.attachment_url ?? null,
     });
   }, [contractQuery.data, form, open]);
 
@@ -183,6 +186,15 @@ export function ContractFormModal({ open, onClose, contractId }: ContractFormMod
               ملاحظات
               <Textarea {...form.register('notes')} placeholder="ملاحظات العقد" />
             </label>
+            <div className="md:col-span-2">
+              <Controller
+                control={form.control}
+                name="attachment_url"
+                render={({ field }) => (
+                  <FileAttachmentField label="نسخة العقد الموقعة (PDF أو صورة)" value={field.value ?? null} onChange={field.onChange} />
+                )}
+              />
+            </div>
             <div className="flex justify-end gap-3 md:col-span-2">
               <Button type="button" variant="secondary" onClick={onClose}>إلغاء</Button>
               <Button type="submit" disabled={submitting}>

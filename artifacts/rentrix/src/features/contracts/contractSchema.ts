@@ -50,6 +50,7 @@ export const contractSchema = z.object({
   status: z.enum(contractStatusValues, { required_error: 'الحالة مطلوبة' }),
   cancellation_reason: z.string().trim().optional().transform((value) => value || null),
   notes: z.string().trim().optional().transform((value) => value || null),
+  attachment_url: z.string().nullable().optional(),
 }).refine((value) => value.end_date > value.start_date, { path: ['end_date'], message: 'تاريخ النهاية يجب أن يكون بعد تاريخ البداية' });
 
 export const renewalSchema = z.object({

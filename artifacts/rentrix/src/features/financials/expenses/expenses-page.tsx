@@ -20,6 +20,7 @@ const expenseSchema = z.object({
   amount: z.coerce.number().positive('المبلغ يجب أن يكون أكبر من صفر'),
   expense_date: z.string().min(1, 'اختر التاريخ'),
   description: z.string().optional(),
+  attachment_url: z.string().nullable().optional(),
 });
 
 function ExpenseMetric({ label, value, helper, icon: Icon }: Readonly<{ label: string; value: string; helper: string; icon: typeof WalletCards }>) {
@@ -57,7 +58,7 @@ export function ExpensesPage() {
 
   const expenseForm = useForm<ExpenseFormValues>({
     resolver: zodResolver(expenseSchema),
-    defaultValues: { property_id: '', category: 'صيانة', amount: 0, expense_date: toLocalDateInputValue(), description: '' },
+    defaultValues: { property_id: '', category: 'صيانة', amount: 0, expense_date: toLocalDateInputValue(), description: '', attachment_url: null },
   });
 
   const onCreateExpense = (values: ExpenseFormValues) => {
@@ -68,8 +69,9 @@ export function ExpensesPage() {
         amount: values.amount,
         expense_date: values.expense_date,
         description: values.description?.trim() ? values.description.trim() : null,
+        attachment_url: values.attachment_url ?? null,
       },
-      { onSuccess: () => expenseForm.reset({ property_id: '', category: 'صيانة', amount: 0, expense_date: toLocalDateInputValue(), description: '' }) },
+      { onSuccess: () => expenseForm.reset({ property_id: '', category: 'صيانة', amount: 0, expense_date: toLocalDateInputValue(), description: '', attachment_url: null }) },
     );
   };
 

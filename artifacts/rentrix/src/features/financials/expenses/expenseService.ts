@@ -3,7 +3,7 @@ import { handleSupabaseError } from '@/lib/supabase-error';
 import type { Expense } from '@/types/domain';
 
 export type ExpenseFilters = { propertyId: string; category: string; from: string; to: string };
-export type ExpensePayload = Pick<Expense, 'property_id' | 'category' | 'amount' | 'expense_date' | 'description'>;
+export type ExpensePayload = Pick<Expense, 'property_id' | 'category' | 'amount' | 'expense_date' | 'description'> & { attachment_url?: string | null };
 
 export async function listExpenses(filters: ExpenseFilters): Promise<Expense[]> {
   try {
