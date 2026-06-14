@@ -588,6 +588,11 @@ The following issues were reported by the product owner after testing exclusivel
 | P2-4 | File upload & attachments — maintenance photos, contract PDFs, expense receipts → Supabase Storage |
 | P2-5 | Mobile UX — bottom nav FAB, min-h-12 touch targets, table→card list below sm:, BottomSheet for forms |
 | P2-6 | RTL consistency — all spacing via gap-*, no ml-*/mr-* in flex containers |
+| P2-7 | Main bundle size — `index-*.js` is ~734kB (gzip ~197kB), over the default 500kB warning. Audit largest contributors (react-router devtools, i18n resources, framer-motion usage) and split via route-level `lazy()`/dynamic import where safe. |
+
+### Recent merges
+
+- PR #883 — `DocumentController.renderToPDF` now dynamically imports `DocumentRenderer`/jsPDF (lazy ~390kB chunk on PDF export only), removed unused `jspdf-autotable`, restored default `chunkSizeWarningLimit`. This is what surfaced the P2-7 main-bundle finding above.
 
 ### Mobile-vs-desktop note
 
