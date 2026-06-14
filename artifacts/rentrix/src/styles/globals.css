@@ -127,30 +127,49 @@
 
 /* ─── Print styles ──────────────────────────────────────────────────────────── */
 @media print {
+  @page { margin: 12mm; }
+
   /* Hide everything except the document */
   body > *:not(#root) { display: none !important; }
 
   /* Hide app shell chrome */
-  [data-sidebar], nav, header, aside,
+  [data-print-hide], [data-sidebar], nav, header, aside,
   .print\:hidden { display: none !important; }
 
   /* Show only print-specific content */
   .print\:block { display: block !important; }
 
+  html,
+  body,
+  #root {
+    min-width: 0 !important;
+    background: #fff !important;
+    color: #000 !important;
+  }
+
+  main {
+    animation: none !important;
+    overflow: visible !important;
+    padding: 0 !important;
+  }
+
   /* Receipt / invoice document */
   .print-document {
-    margin: 0;
-    padding: 1.5cm;
+    width: 100% !important;
+    max-width: none !important;
+    margin: 0 auto !important;
+    padding: 0 !important;
     font-size: 12pt;
     color: #000;
     background: #fff;
+    box-shadow: none !important;
   }
 
   /* Remove card shadows and borders for clean print */
   .print-document .card,
   .print-document [class*="rounded"] {
     box-shadow: none !important;
-    border: 1px solid #ccc !important;
+    border-color: #d1d5db !important;
   }
 
   /* Force page breaks before major sections */
@@ -159,6 +178,6 @@
   /* Ensure tables don't split across pages mid-row */
   tr { page-break-inside: avoid; }
 
-  /* Hide action buttons */
-  button, [role="button"] { display: none !important; }
+  /* Hide action buttons and quick actions without removing document fields */
+  button, [role="button"], [data-print-actions] { display: none !important; }
 }

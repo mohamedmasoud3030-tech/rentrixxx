@@ -1,7 +1,9 @@
 import { Link, useSearch } from '@tanstack/react-router';
 import { ArrowRight, Printer, ReceiptText } from 'lucide-react';
+import { EmptyState } from '@/components/empty-state';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { Skeleton } from '@/components/ui/skeleton';
 import { defaultCompanyLocalSettings } from '@/lib/companySettings';
 import { formatDate, formatMoney, formatShortId, getErrorMessage } from '../components/financials-formatters';
 import { paymentMethodLabels } from '../components/receipt-formatters';
@@ -51,7 +53,7 @@ function ReceiptFieldGrid({ receipt }: Readonly<{ receipt: ReceiptRecord }>) {
 
 function ReceiptPrintDocument({ receipt }: Readonly<{ receipt: ReceiptRecord }>) {
   return (
-    <Card className="mx-auto max-w-3xl overflow-hidden border-primary/10 bg-card print:border-0 print:shadow-none">
+    <Card className="print-document mx-auto max-w-3xl overflow-hidden border-primary/10 bg-card print:border-0 print:shadow-none">
       <CardContent className="space-y-8 p-8 print:p-0">
         <header className="flex flex-col gap-5 border-b pb-6 print:border-slate-300">
           <div className="flex items-start justify-between gap-4">
@@ -83,15 +85,24 @@ function ReceiptDetailContent({ receiptId }: Readonly<{ receiptId: string }>) {
   const receiptQuery = useReceipt(receiptId);
 
   if (receiptQuery.isLoading) {
-    return <Card><CardContent className="p-6 text-center text-muted-foreground">جارٍ تحميل الإيصال...</CardContent></Card>;
+    return (
+      <Card>
+        <CardContent className="space-y-4 p-6" role="status" aria-live="polite" aria-label="جارٍ تحميل الإيصال">
+          <Skeleton className="h-24 rounded-2xl" />
+          <div className="grid gap-3 md:grid-cols-2">
+            {Array.from({ length: 6 }, (_, index) => <Skeleton key={index} className="h-24 rounded-2xl" />)}
+          </div>
+        </CardContent>
+      </Card>
+    );
   }
 
   if (receiptQuery.isError) {
-    return <Card><CardContent className="p-6 text-center text-destructive">{getErrorMessage(receiptQuery.error, 'تعذر تحميل الإيصال')}</CardContent></Card>;
+    return <EmptyState title="تعذر تحميل الإيصال" description={getErrorMessage(receiptQuery.error, 'أعد المحاولة بعد لحظات.')} role="alert" ariaLive="assertive" />;
   }
 
   if (receiptQuery.data === undefined) {
-    return <Card><CardContent className="p-6 text-center text-muted-foreground">الإيصال غير موجود.</CardContent></Card>;
+    return <EmptyState title="الإيصال غير موجود" description="ربما تم حذف الإيصال أو لا تملك صلاحية الوصول إليه." />;
   }
 
   return <ReceiptPrintDocument receipt={receiptQuery.data} />;
@@ -115,8 +126,8 @@ export function ReceiptDetailPage() {
           <p className="text-sm text-muted-foreground">عرض جاهز للطباعة بدون إضافة اعتماد PDF جديد.</p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <Button variant="secondary" asChild><Link to="/financials"><ArrowRight className="ml-2 size-4" />العودة للمالية</Link></Button>
-          <Button onClick={() => globalThis.print()}><Printer className="ml-2 size-4" />طباعة</Button>
+          <Button variant="secondary" asChild><Link to="/financials"><ArrowRight className="me-2 size-4" />العودة للمالية</Link></Button>
+          <Button onClick={() => globalThis.print()}><Printer className="me-2 size-4" />طباعة</Button>
         </div>
       </div>
 
