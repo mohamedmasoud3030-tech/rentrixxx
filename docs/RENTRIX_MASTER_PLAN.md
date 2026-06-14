@@ -572,7 +572,7 @@ The following issues were reported by the product owner after testing exclusivel
 
 | # | Item | Notes |
 |---|------|-------|
-| P1-1 | Sidebar refactor — remove duplicate /owners-hub, fix mobile truncation, add governance pages | Mobile drawer shows incomplete list |
+| P1-1 | Sidebar refactor — remove duplicate /owners-hub, fix mobile truncation, add governance pages | `DONE` — PR #885 removed the duplicate `/owners-hub` visible route and kept `/owners` canonical. PR #886 fixed mobile drawer navigation coverage, scroll behavior, text wrapping, and governance navigation coverage. Historical mobile-drawer concern is retained here as the original report, not current open work. |
 | P1-2 | Financial pages polish — Financials/Invoices/Receipts/Expenses each need tabs, filters, empty states | `DONE` — financial hub tabs, direct page links, expenses filter labels, empty state, CSV export, receipts role-gated void action, receipt-number search hint, per-row print links, and invoice generation modal polish added. |
 | P1-3 | Reports page — complete chart data, date-range picker, per-section CSV export | `DONE` — reports now use real daily collection, overdue invoice, aged receivable, rent-roll, and cashflow data with shared date controls, per-section CSV exports, chart visualizations, and section-level loading skeletons. |
 | P1-4 | Owner detail page — linked properties, contracts count, outstanding balance | `DONE` — owner detail snapshot now loads linked properties, units, contracts, and invoices; page shows linked property rows, active contract count, and derived outstanding balance. |
@@ -580,19 +580,32 @@ The following issues were reported by the product owner after testing exclusivel
 
 ### P2 polish (in parallel with P1)
 
-| # | Item |
-|---|------|
-| P2-1 | Visual consistency — EmptyState, Skeleton, StatusBadge used uniformly across all pages |
-| P2-2 | Magic touches — sidebar hover tooltips, dashboard trend arrows, receipt expand animation |
-| P2-3 | Print support — receipt + invoice print view with `@media print` CSS |
-| P2-4 | File upload & attachments — maintenance photos, contract PDFs, expense receipts → Supabase Storage |
-| P2-5 | Mobile UX — bottom nav FAB, min-h-12 touch targets, table→card list below sm:, BottomSheet for forms |
-| P2-6 | RTL consistency — all spacing via gap-*, no ml-*/mr-* in flex containers |
-| P2-7 | Main bundle size — `index-*.js` is ~734kB (gzip ~197kB), over the default 500kB warning. Audit largest contributors (react-router devtools, i18n resources, framer-motion usage) and split via route-level `lazy()`/dynamic import where safe. |
+| # | Item | Status |
+|---|------|--------|
+| P2-1 | Visual consistency — EmptyState, Skeleton, StatusBadge used uniformly across all pages | `DONE` — PR #887 completed the shared visual-state polish batch. |
+| P2-2 | Magic touches — sidebar hover tooltips, dashboard trend arrows, receipt expand animation | `DONE` — PR #887 added dashboard KPI trend cues from existing snapshot data and receipt detail expansion polish. Sidebar/navigation polish was also covered by PR #886. |
+| P2-3 | Print support — receipt + invoice print view with `@media print` CSS | `DONE` — PR #887 added scoped print CSS and printable receipt document support. Historical print-support concern is retained here as the original backlog item, not current open work. |
+| P2-4 | File upload & attachments — maintenance photos, contract PDFs, expense receipts → Supabase Storage | `DONE` — completed before this docs update in PR #880. |
+| P2-5 | Mobile UX — bottom nav FAB, min-h-12 touch targets, table→card list below sm:, BottomSheet for forms | `DONE` — completed before this docs update in PR #876, with mobile drawer coverage completed by PR #886. |
+| P2-6 | RTL consistency — all spacing via gap-*, no ml-*/mr-* in flex containers | `DONE` — PR #887 completed RTL-safe spacing cleanup in touched UI. |
+| P2-7 | Main bundle size — `index-*.js` is ~734kB (gzip ~197kB), over the default 500kB warning. Audit largest contributors (react-router devtools, i18n resources, framer-motion usage) and split via route-level `lazy()`/dynamic import where safe. | `DONE` — PR #887 added route-level lazy loading via TanStack `lazyRouteComponent`. Measured main app chunk changed from about 729.49 kB / 196.21 kB gzip to 286.62 kB / 90.92 kB gzip. Historical bundle-size concern is retained here as the original finding, not current open work. |
+
+### Completed frontend polish batch
+
+PR #885, PR #886, and PR #887 completed the current frontend polish batch without changing Supabase schema, migrations, RLS policies, environment variables, production configuration, storage buckets, or backend/auth logic.
+
+Completed items:
+- PR #885 removed the duplicate `/owners-hub` visible navigation route and kept `/owners` canonical.
+- PR #886 fixed mobile drawer navigation coverage, scroll behavior, text wrapping, and governance navigation coverage.
+- PR #887 completed shared EmptyState/Skeleton/StatusBadge visual consistency, dashboard KPI trend cues from existing snapshot data, receipt detail loading/error/empty states, the expandable receipt detail panel, scoped print CSS, printable receipt document support, RTL-safe spacing cleanup, and route-level lazy loading via TanStack `lazyRouteComponent`.
+- PR #887 measured the main app chunk reduction from about 729.49 kB / 196.21 kB gzip to 286.62 kB / 90.92 kB gzip.
 
 ### Recent merges
 
 - PR #883 — `DocumentController.renderToPDF` now dynamically imports `DocumentRenderer`/jsPDF (lazy ~390kB chunk on PDF export only), removed unused `jspdf-autotable`, restored default `chunkSizeWarningLimit`. This is what surfaced the P2-7 main-bundle finding above.
+- PR #885 — duplicate `/owners-hub` visible navigation removed; `/owners` remains canonical.
+- PR #886 — mobile drawer coverage, scrolling, wrapping, and governance navigation coverage completed.
+- PR #887 — frontend polish batch completed; main app chunk reduced from about 729.49 kB / 196.21 kB gzip to 286.62 kB / 90.92 kB gzip.
 
 ### Mobile-vs-desktop note
 
@@ -600,6 +613,41 @@ All issues above were found on mobile. Some may not appear on desktop. Agents mu
 
 ### Execution order for next agent
 
-1. P2 items — can be batched per page after P1 remains are stable
+The P1/P2 frontend polish queue above is now complete. The next actionable tasks come from the active roadmap, but the earliest remaining v0.1 items are blocked or require confirmation/access rather than being clean `READY` implementation slices.
+
+- Task name: Verify migration chain rebuild and document current Supabase reset blocker — Needs confirmation
+- Source doc/path: `docs/RENTRIX_MASTER_PLAN.md` section 6.2, item 2
+- Why it is next: earliest remaining v0.1 ordered item, but it is explicitly `BLOCKED` by detailed connector access.
+- Risk level: high
+- Whether it touches Supabase: yes
+- Suggested PR size: large
+
+- Task name: Preview-branch migration replay — Needs confirmation
+- Source doc/path: `docs/RENTRIX_MASTER_PLAN.md` section 6.2, item 3
+- Why it is next: follows the migration-chain blocker and must prove replay outside production before any repair PR.
+- Risk level: high
+- Whether it touches Supabase: yes
+- Suggested PR size: large
+
+- Task name: Auth, RLS, and RPC least-privilege reconciliation idempotency follow-up — Needs confirmation
+- Source doc/path: `docs/RENTRIX_MASTER_PLAN.md` section 6.2, item 4 and `docs/v01-security-reconciliation-final.md`
+- Why it is next: roadmap records the security hardening as partly applied while the idempotency stack remains a separate required PR.
+- Risk level: high
+- Whether it touches Supabase: yes
+- Suggested PR size: medium
+
+- Task name: Browser/manual operational QA — Needs confirmation
+- Source doc/path: `docs/RENTRIX_MASTER_PLAN.md` section 6.2, item 5 and `docs/v01-migration-reconciliation-status.md`
+- Why it is next: the deployment-config sub-blocker is resolved, but auth-hook verification and authenticated browser/manual QA still need access/tooling.
+- Risk level: medium
+- Whether it touches Supabase: yes
+- Suggested PR size: medium
+
+- Task name: Final constrained-beta release check — Needs confirmation
+- Source doc/path: `docs/RENTRIX_MASTER_PLAN.md` section 6.2, item 6
+- Why it is next: final release decision is blocked until v0.1 items 1-5 close.
+- Risk level: medium
+- Whether it touches Supabase: no
+- Suggested PR size: small
 
 Read `.agent-skills/rentrix-build-web-apps/SKILL.md` for implementation patterns before starting any item.
