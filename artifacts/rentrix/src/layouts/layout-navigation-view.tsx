@@ -92,8 +92,8 @@ export function WorkspaceCard({
 
 export function MobileBottomNav({ authorization, sharedLabel }: Readonly<{ authorization: AuthorizationContext | null; sharedLabel: SharedLabel }>) {
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-background/95 backdrop-blur-xl lg:hidden">
-      <div className="grid h-16 grid-cols-5">
+    <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-background/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-xl lg:hidden">
+      <div className="grid min-h-16 grid-cols-5">
         {mobileNavItems.map(([to, labelKey, Icon]) => {
           if (!canShowNavigationItem(authorization, undefined)) return null;
 
@@ -103,10 +103,10 @@ export function MobileBottomNav({ authorization, sharedLabel }: Readonly<{ autho
               to={to}
               activeOptions={{ exact: to === '/' }}
               aria-label={sharedLabel(labelKey)}
-              className="flex min-h-14 flex-col items-center justify-center gap-1 text-muted-foreground transition-colors [&.active]:text-primary"
+              className="flex min-h-14 min-w-0 flex-col items-center justify-center gap-1 px-1 text-muted-foreground transition-colors [&.active]:text-primary"
             >
               <Icon className="size-5" />
-              <span className="text-[10px] font-bold leading-none">{sharedLabel(labelKey)}</span>
+              <span className="max-w-full truncate text-[10px] font-bold leading-none">{sharedLabel(labelKey)}</span>
             </Link>
           );
         })}

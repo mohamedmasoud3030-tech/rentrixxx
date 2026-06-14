@@ -57,6 +57,7 @@ export function UnitFormModal({ propertyId, unit, open, onOpenChange }: UnitForm
       onOpenChange={onOpenChange}
       title={unit ? 'تعديل وحدة' : 'إضافة وحدة'}
       description="الوحدات مرتبطة بالعقار الحالي وتُحذف أرشيفياً عند الإزالة."
+      className="max-w-2xl"
     >
         <form
           className="grid gap-4 md:grid-cols-2"
@@ -102,7 +103,7 @@ export function UnitFormModal({ propertyId, unit, open, onOpenChange }: UnitForm
             ملاحظات
             <Textarea {...form.register('notes')} />
           </label>
-          <div className="flex justify-end gap-3 md:col-span-2">
+          <div className="safe-bottom-overlay -mx-4 flex flex-col-reverse gap-3 border-t border-border/60 px-4 pt-4 sm:mx-0 sm:flex-row sm:justify-end sm:border-0 sm:px-0 sm:pb-0 md:col-span-2">
             <Button type="button" variant="secondary" onClick={() => onOpenChange(false)} disabled={isSubmitting}>إلغاء</Button>
             <Button type="submit" disabled={isSubmitting}>{isSubmitting ? 'جار الحفظ...' : 'حفظ الوحدة'}</Button>
           </div>

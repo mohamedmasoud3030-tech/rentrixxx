@@ -23,5 +23,10 @@ export function formatDefaultCompanyMoney(amount: number | null | undefined) {
 
 export function formatCompanyDate(settings: CompanyFormatterSettings, value: string | number | Date) {
   const normalized = normalizeCompanySettingsContract(settings);
-  return new Date(value).toLocaleDateString(normalized.locale, { timeZone: normalized.timezone });
+  return new Date(value).toLocaleDateString(normalized.locale, {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+    timeZone: normalized.timezone,
+  });
 }

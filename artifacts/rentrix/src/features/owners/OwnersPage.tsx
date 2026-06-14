@@ -125,7 +125,7 @@ function OwnerFormDialog({ owner, open, onOpenChange }: OwnerFormDialogProps) {
       onOpenChange={onOpenChange}
       title={isEditing ? 'تعديل بيانات المالك' : 'إضافة مالك'}
       description="بيانات تعريفية خفيفة للملاك بدون إضافة أرصدة أو تسويات مالية."
-      className="max-h-[88vh] overflow-y-auto"
+      className="max-w-2xl"
     >
         <form className="grid gap-4" onSubmit={handleSubmit}>
           {error ? <div className="rounded-2xl border border-destructive/20 bg-destructive/10 p-3 text-sm font-bold text-destructive">{error}</div> : null}
@@ -140,7 +140,7 @@ function OwnerFormDialog({ owner, open, onOpenChange }: OwnerFormDialogProps) {
           <Field label="العنوان"><Textarea value={values.address} onChange={(event) => setField('address', event.target.value)} /></Field>
           <Field label="ملاحظات"><Textarea value={values.notes} onChange={(event) => setField('notes', event.target.value)} /></Field>
           <OwnerCheckbox checked={values.is_active} label="مالك نشط" onCheckedChange={(checked) => setField('is_active', checked)} />
-          <div className="flex justify-end gap-2"><Button type="button" variant="secondary" onClick={() => onOpenChange(false)}>إلغاء</Button><Button type="submit" disabled={isPending}>{isEditing ? 'حفظ التعديلات' : 'إنشاء المالك'}</Button></div>
+          <div className="safe-bottom-overlay -mx-4 flex flex-col-reverse gap-3 border-t border-border/60 px-4 pt-4 sm:mx-0 sm:flex-row sm:justify-end sm:border-0 sm:px-0 sm:pb-0"><Button type="button" variant="secondary" onClick={() => onOpenChange(false)}>إلغاء</Button><Button type="submit" disabled={isPending}>{isEditing ? 'حفظ التعديلات' : 'إنشاء المالك'}</Button></div>
         </form>
     </ResponsiveFormOverlay>
   );

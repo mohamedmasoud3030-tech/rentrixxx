@@ -16,7 +16,7 @@ export const DialogOverlay = forwardRef<
 >(({ className, ...props }, ref) => (
   <DialogPrimitive.Overlay
     ref={ref}
-    className={cn('fixed inset-0 z-50 bg-black/55 backdrop-blur-sm', className)}
+    className={cn('fixed inset-0 z-[100] bg-black/55 backdrop-blur-sm', className)}
     {...props}
   />
 ));
@@ -31,14 +31,14 @@ export const DialogContent = forwardRef<
     <DialogPrimitive.Content
       ref={ref}
       className={cn(
-        'fixed left-1/2 top-1/2 z-50 grid w-[min(92vw,42rem)] -translate-x-1/2 -translate-y-1/2 gap-4 rounded-3xl border border-border bg-card p-6 text-card-foreground shadow-2xl',
+        'fixed left-1/2 top-1/2 z-[101] grid max-h-[calc(100dvh-1.5rem)] w-[calc(100vw-1.5rem)] max-w-[42rem] -translate-x-1/2 -translate-y-1/2 gap-4 overflow-y-auto rounded-3xl border border-border bg-card p-4 text-card-foreground shadow-2xl sm:max-h-[calc(100dvh-3rem)] sm:w-[min(92vw,42rem)] sm:p-6',
         className,
       )}
       {...props}
     >
       {children}
       <DialogPrimitive.Close
-        className="absolute end-4 top-4 rounded-xl p-2 text-muted-foreground outline-none transition hover:bg-muted hover:text-foreground focus-visible:ring-4 focus-visible:ring-primary/20"
+        className="absolute end-3 top-3 grid size-10 place-items-center rounded-xl text-muted-foreground outline-none transition hover:bg-muted hover:text-foreground focus-visible:ring-4 focus-visible:ring-primary/20 sm:end-4 sm:top-4"
         aria-label="إغلاق"
       >
         <X className="size-4" />
