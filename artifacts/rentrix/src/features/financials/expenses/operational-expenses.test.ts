@@ -10,6 +10,7 @@ function makeExpense(overrides: Partial<Expense> = {}): Expense {
     amount: 100,
     expense_date: '2026-05-18',
     description: null,
+    attachment_url: null,
     created_at: '2026-05-18T00:00:00.000Z',
     updated_at: '2026-05-18T00:00:00.000Z',
     deleted_at: null,
@@ -26,7 +27,7 @@ describe('operational expenses helpers', () => {
         {
           id: expense.property_id,
           title: 'برج النخبة',
-          address: "الرياض",
+          address: 'الرياض',
           type: 'building',
           owner_name: null,
           purchase_value: null,
