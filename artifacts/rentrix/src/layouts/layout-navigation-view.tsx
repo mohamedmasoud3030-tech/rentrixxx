@@ -11,7 +11,8 @@ export function NavigationLinks({
   expanded,
   sharedLabel,
   onNavigate,
-}: Readonly<{ authorization: AuthorizationContext | null; expanded: boolean; sharedLabel: SharedLabel; onNavigate?: () => void }>) {
+  wrapText = false,
+}: Readonly<{ authorization: AuthorizationContext | null; expanded: boolean; sharedLabel: SharedLabel; onNavigate?: () => void; wrapText?: boolean }>) {
   return (
     <div className="space-y-5">
       {navGroups.map(([sectionTitle, items]) => (
@@ -32,13 +33,13 @@ export function NavigationLinks({
                 aria-label={sharedLabel(labelKey)}
                 title={expanded ? undefined : sharedLabel(labelKey)}
                 activeOptions={{ exact: to === '/' }}
-                className="group flex min-h-12 items-center gap-3 rounded-2xl border border-transparent px-3 py-2.5 text-sidebar-foreground transition-all hover:-translate-y-0.5 hover:border-white/10 hover:bg-sidebar-accent hover:text-white [&.active]:border-white/15 [&.active]:bg-primary [&.active]:text-primary-foreground"
+                className="group flex min-h-12 min-w-0 items-center gap-3 rounded-2xl border border-transparent px-3 py-2.5 text-sidebar-foreground transition-all hover:-translate-y-0.5 hover:border-white/10 hover:bg-sidebar-accent hover:text-white [&.active]:border-white/15 [&.active]:bg-primary [&.active]:text-primary-foreground"
               >
                 <Icon className="size-5 shrink-0 transition-transform group-hover:scale-110" />
                 {expanded ? (
-                  <span className="min-w-0">
-                    <span className="block truncate text-[13px] font-black">{sharedLabel(labelKey)}</span>
-                    <span className="block truncate text-[10px] font-bold text-sidebar-foreground/50 group-hover:text-white/70">
+                  <span className="min-w-0 flex-1">
+                    <span className={cn('block text-[13px] font-black', wrapText ? 'whitespace-normal leading-snug' : 'truncate')}>{sharedLabel(labelKey)}</span>
+                    <span className={cn('block text-[10px] font-bold text-sidebar-foreground/50 group-hover:text-white/70', wrapText ? 'whitespace-normal leading-snug' : 'truncate')}>
                       {description}
                     </span>
                   </span>

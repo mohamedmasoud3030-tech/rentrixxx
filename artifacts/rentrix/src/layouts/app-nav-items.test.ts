@@ -42,6 +42,13 @@ const requiredOperationalRoutes = [
   '/accounting',
 ] as const;
 
+const governanceRoutes = [
+  '/maintenance',
+  '/audit-log',
+  '/data-integrity',
+  '/system',
+] as const;
+
 const deferredBetaRoutes = [
   '/lands',
   '/leads',
@@ -89,6 +96,12 @@ describe('app route and navigation parity', () => {
 
       expect(getRouteDefinition(to)).toContain(`requirePermission('${permission}')`);
     }
+  });
+
+  it('keeps governance routes available in the primary navigation rendered by the mobile drawer', () => {
+    const navPaths = navItems.map(([to]) => to);
+
+    expect(navPaths).toEqual(expect.arrayContaining([...governanceRoutes]));
   });
 
   it('keeps deferred beta modules registered but hidden from visible navigation', () => {
