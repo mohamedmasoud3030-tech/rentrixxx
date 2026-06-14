@@ -86,8 +86,8 @@ export function MobileBottomNav({ authorization, sharedLabel }: Readonly<{ autho
   return (
     <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-background/95 backdrop-blur-xl lg:hidden">
       <div className="grid h-16 grid-cols-5">
-        {mobileNavItems.map(([to, labelKey, Icon, permission]) => {
-          if (!canShowNavigationItem(authorization, permission)) return null;
+        {mobileNavItems.map(([to, labelKey, Icon]) => {
+          if (!canShowNavigationItem(authorization, undefined)) return null;
 
           return (
             <Link
