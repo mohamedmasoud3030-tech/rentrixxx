@@ -83,7 +83,12 @@ Blind restoration of legacy modules
 
 ### 1.1 Current repository metrics
 
-Repository-root SQL status is intentionally clean: `find . -maxdepth 1 -type f -name '*.sql'` returns zero files. Active canonical migration files live under `supabase/migrations/`; roadmap work must verify and document that migration chain rather than inventing a root-level SQL consolidation task.
+| Metric | Current state | Source | Roadmap implication |
+| --- | --- | --- | --- |
+| Repository-root SQL status | Intentionally clean: `find . -maxdepth 1 -type f -name '*.sql'` returns zero files. Active canonical migration files live under `supabase/migrations/`. | Current root inventory. | Verify and document the canonical migration chain rather than inventing a root-level SQL consolidation task. |
+| Test runner | Vitest is already installed and wired through `test` and `test:financials` scripts. | `artifacts/rentrix/package.json` | Do not add a new test-runner selection task; use the existing Vitest setup for targeted regression coverage. |
+| CI test gate | CI already runs install, migration evidence, typecheck, lint, build, test typecheck, the targeted app test script, and a named financial test gate with uploaded diagnostics on failure. | `.github/workflows/ci.yml` | Keep the existing financial test gate and expand it with focused regression tests. |
+| Coverage reporting | No baseline threshold is currently agreed in the active package or CI gate. | `artifacts/rentrix/package.json`, `.github/workflows/ci.yml` | Consider coverage reporting only after agreeing on a baseline threshold. |
 
 ## 2. Non-Negotiable Domain Rules
 
@@ -263,6 +268,15 @@ Each roadmap item uses one status:
 | `OPTIONAL` | Execute only when explicitly approved or when the roadmap gate requires it. |
 
 Agents must update the evidence row when a roadmap item changes status through a reviewed PR or a completed read-only verification task.
+
+### 4.1 Financial test follow-ups
+
+The active app already has Vitest wiring and CI coverage for a dedicated financial test gate. Do not reopen stale roadmap tasks for test-runner selection or initial CI integration. Current-state follow-ups are:
+
+1. Inventory financial calculation coverage gaps against the canonical domain chain and the existing `src/features/financials` Vitest suite.
+2. Add missing targeted tests for prorations, late-fee logic, arrears, invoice/payment posting, receipt generation, and reversals.
+3. Consider coverage reporting only after the team agrees on a baseline threshold and how it should affect pull-request gating.
+4. Keep the existing CI financial test gate and expand it with targeted regression tests rather than replacing the current workflow.
 
 ## 5. Continuation Protocol
 
