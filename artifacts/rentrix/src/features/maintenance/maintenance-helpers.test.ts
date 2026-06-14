@@ -25,6 +25,7 @@ const baseRequest: Maintenance = {
   reported_by: null,
   completed_at: null,
   resolved_at: null,
+  attachment_url: null,
   created_at: '2026-05-17T00:00:00.000Z',
   updated_at: '2026-05-17T00:00:00.000Z',
   deleted_at: null,
