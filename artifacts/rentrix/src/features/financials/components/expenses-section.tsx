@@ -1,7 +1,9 @@
 import type { UseFormReturn } from 'react-hook-form';
+import { Controller } from 'react-hook-form';
 import { EmptyState } from '@/components/empty-state';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { FileAttachmentField } from '@/components/ui/file-attachment-field';
 import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
@@ -21,6 +23,7 @@ export type ExpenseFormValues = {
   amount: number;
   expense_date: string;
   description?: string;
+  attachment_url?: string | null;
 };
 
 type ExpensesSectionProps = Readonly<{
@@ -149,6 +152,15 @@ export function ExpensesSection({ expenses, propertyRows, filters, onFiltersChan
           <Input type="date" {...expenseForm.register('expense_date')} />
           <div className="sm:col-span-2">
             <Textarea placeholder="الوصف (اختياري)" className="min-h-16" {...expenseForm.register('description')} />
+          </div>
+          <div className="sm:col-span-2">
+            <Controller
+              control={expenseForm.control}
+              name="attachment_url"
+              render={({ field }) => (
+                <FileAttachmentField label="إيصال مرفق (اختياري)" value={field.value ?? null} onChange={field.onChange} />
+              )}
+            />
           </div>
           <Button type="submit" disabled={isCreateExpensePending} className="sm:col-span-2">
             {isCreateExpensePending ? 'جارٍ الحفظ...' : 'إضافة مصروف'}

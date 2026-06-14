@@ -22,6 +22,7 @@ const expenseSchema = z.object({
   amount: z.coerce.number().positive('المبلغ يجب أن يكون أكبر من صفر'),
   expense_date: z.string().min(1, 'اختر التاريخ'),
   description: z.string().optional(),
+  attachment_url: z.string().nullable().optional(),
 });
 
 function getCurrentMonthReportRange() {
@@ -62,6 +63,7 @@ export function FinancialsPage() {
       amount: 0,
       expense_date: new Date().toISOString().slice(0, 10),
       description: '',
+      attachment_url: null,
     },
   });
 
@@ -73,6 +75,7 @@ export function FinancialsPage() {
         amount: values.amount,
         expense_date: values.expense_date,
         description: values.description?.trim() ? values.description.trim() : null,
+        attachment_url: values.attachment_url ?? null,
       },
       {
         onSuccess: () => {
@@ -82,6 +85,7 @@ export function FinancialsPage() {
             amount: 0,
             expense_date: new Date().toISOString().slice(0, 10),
             description: '',
+            attachment_url: null,
           });
         },
       },

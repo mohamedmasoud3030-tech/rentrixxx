@@ -155,6 +155,7 @@ export type Database = {
           created_at: string;
           updated_at: string;
           deleted_at: string | null;
+          attachment_url: string | null;
         };
         Insert: Partial<Database['public']['Tables']['contracts']['Row']> & Pick<Database['public']['Tables']['contracts']['Row'], 'property_id' | 'tenant_id' | 'start_date' | 'end_date' | 'rent_amount'>;
         Update: Partial<Database['public']['Tables']['contracts']['Row']>;
@@ -271,6 +272,7 @@ export type Database = {
           resolved_at: string | null;
           created_at: string | null;
           updated_at: string | null;
+          attachment_url: string | null;
           deleted_at: string | null;
         };
         Insert: Partial<Database['public']['Tables']['maintenance_records']['Row']> & Pick<Database['public']['Tables']['maintenance_records']['Row'], 'status'>;
@@ -289,6 +291,7 @@ export type Database = {
           created_at: string;
           updated_at: string;
           deleted_at: string | null;
+          attachment_url: string | null;
         };
         Insert: Partial<Database['public']['Tables']['expenses']['Row']> & Pick<Database['public']['Tables']['expenses']['Row'], 'property_id' | 'category' | 'amount' | 'expense_date'>;
         Update: Partial<Database['public']['Tables']['expenses']['Row']>;

@@ -1,11 +1,12 @@
 import { useMemo, useState } from 'react';
 import { z } from 'zod';
-import { useForm } from 'react-hook-form';
+import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { AlertCircle, CheckCircle2, Clock, Flame, PlusCircle, Wrench } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { EmptyState } from '@/components/empty-state';
+import { FileAttachmentField } from '@/components/ui/file-attachment-field';
 import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -29,6 +30,7 @@ const schema = z.object({
   title: z.string().min(1, 'أدخل عنوان الطلب'),
   description: z.string().nullable().optional(),
   priority: z.enum(['low', 'medium', 'high', 'urgent']),
+  attachment_url: z.string().nullable().optional(),
 });
 
 type FormValues = z.infer<typeof schema>;
@@ -94,7 +96,7 @@ export function MaintenancePage() {
 
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
-    defaultValues: { property_id: '', unit_id: null, title: '', description: '', priority: 'medium' },
+    defaultValues: { property_id: '', unit_id: null, title: '', description: '', priority: 'medium', attachment_url: null },
   });
 
   const formPropertyId = form.watch('property_id');
@@ -130,6 +132,7 @@ export function MaintenancePage() {
         assigned_to: null,
         cost: 0,
         resolved_at: null,
+        attachment_url: values.attachment_url ?? null,
       },
       {
         onSuccess: () => {
@@ -225,6 +228,16 @@ export function MaintenancePage() {
 
               <div className="sm:col-span-2">
                 <Textarea placeholder="الوصف (اختياري)" className="min-h-20" {...form.register('description')} />
+              </div>
+
+              <div className="sm:col-span-2">
+                <Controller
+                  control={form.control}
+                  name="attachment_url"
+                  render={({ field }) => (
+                    <FileAttachmentField label="صورة مرفقة (اختياري)" value={field.value ?? null} onChange={field.onChange} />
+                  )}
+                />
               </div>
 
               <Select {...form.register('priority')}>
