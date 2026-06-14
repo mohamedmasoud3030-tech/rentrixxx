@@ -1,5 +1,5 @@
 -- =============================================================================
--- Migration: 20260613000400_fix_owner_balance_recalc_ended_contracts
+-- Migration: 20260614140100_fix_owner_balance_recalc_ended_contracts
 -- Priority: P2 (CRITICAL-1)
 -- Date: 2026-06-13
 --

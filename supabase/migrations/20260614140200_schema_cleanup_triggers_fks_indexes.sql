@@ -1,5 +1,5 @@
 -- =============================================================================
--- Migration: 20260613000500_schema_cleanup_triggers_fks_indexes
+-- Migration: 20260614140200_schema_cleanup_triggers_fks_indexes
 -- Priority: P3 (HIGH-1) + P4 (MEDIUM-1) + P5 (MEDIUM-2) + P6 (LOW-1)
 -- Date: 2026-06-13
 --
