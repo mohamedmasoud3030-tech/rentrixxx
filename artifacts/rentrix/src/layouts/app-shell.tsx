@@ -73,8 +73,8 @@ function MobileNavigationDrawer({
             <X className="size-5" />
           </Button>
         </div>
-        <nav className="sidebar-scroll flex-1 overflow-y-auto p-3">
-          <NavigationLinks authorization={authorization} expanded sharedLabel={sharedLabel} onNavigate={onClose} />
+        <nav className="sidebar-scroll min-h-0 flex-1 overflow-y-auto p-3">
+          <NavigationLinks authorization={authorization} expanded sharedLabel={sharedLabel} onNavigate={onClose} wrapText />
           <WorkspaceCard compact onQuickLink={onQuickLink} />
         </nav>
         <div className="border-t border-white/10 p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
@@ -151,7 +151,7 @@ export function AppShell() {
       <aside className={cn('fixed inset-y-0 right-0 z-30 hidden overflow-hidden border-l border-sidebar-border bg-sidebar text-sidebar-foreground shadow-sidebar transition-all duration-300 lg:flex lg:flex-col', sidebarCollapsed ? 'w-20' : 'w-80')}>
         <div className="h-[3px] w-full bg-accent" />
         <div className="min-h-24 border-b border-white/10 px-5 py-5"><Brand expanded={isSidebarExpanded} /></div>
-        <nav className="sidebar-scroll flex-1 overflow-y-auto p-4">
+        <nav className="sidebar-scroll min-h-0 flex-1 overflow-y-auto p-4">
           <NavigationLinks authorization={authorization} expanded={isSidebarExpanded} sharedLabel={sharedLabel} />
           {isSidebarExpanded ? <WorkspaceCard onQuickLink={navigateToQuickLink} /> : null}
         </nav>
