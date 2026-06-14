@@ -18,7 +18,6 @@ const requiredOperationalRoutes = [
   '/people/$personId/edit',
   '/tenants',
   '/owners',
-  '/owners-hub',
   '/owners/$ownerId',
   '/lands',
   '/leads',

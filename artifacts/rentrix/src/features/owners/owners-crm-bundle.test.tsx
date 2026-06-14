@@ -112,9 +112,7 @@ describe('Owners and CRM source safety', () => {
   it('preserves verified owner management writes while keeping recovered surfaces read-only', () => {
     const ownerManagementSource = readFeatureSources('features/owners/ownerService.ts');
     const recoveredReadOnlySource = [
-      'features/owners/owners-hub-page.tsx',
       'features/owners/owner-detail-page.tsx',
-      'features/owners/components/owners-hub-view.tsx',
       'features/owners/components/owner-detail-view.tsx',
       'features/lands',
       'features/leads',

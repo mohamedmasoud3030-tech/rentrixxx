@@ -34,7 +34,6 @@ const sharedTranslationEntries = [
   ['people', 'الأشخاص', 'People'],
   ['tenants', 'المستأجرين', 'Tenants'],
   ['owners', 'الملاك', 'Owners'],
-  ['ownersHub', 'مركز الملاك', 'Owners hub'],
   ['lands', 'الأراضي', 'Lands'],
   ['leads', 'العملاء المحتملون', 'Leads'],
   ['commissions', 'العمولات', 'Commissions'],
