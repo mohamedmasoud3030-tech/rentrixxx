@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { ContractListItem } from '@/features/contracts/services/contractService';
 import { buildAgingBucketChartRows, buildOccupancyRows, buildPaymentsTrendRows, buildRentRollRows, createReceiptPrintHref } from './reports-page.helpers';
-import { escapeCsvValue } from './reports-page';
+import { escapeCsvValue, toDateInputValue } from './reports-page';
 
 function createContract(overrides: Partial<ContractListItem>): ContractListItem {
   return {
@@ -109,5 +109,17 @@ describe('ReportsPage shaping helpers', () => {
     expect(escapeCsvValue(' +SUM(1,2)')).toBe('"\' +SUM(1,2)"');
     expect(escapeCsvValue('@tenant')).toBe('"\'@tenant"');
     expect(escapeCsvValue('safe tenant')).toBe('"safe tenant"');
+  });
+
+  it('formats report filter dates from the local day instead of UTC serialization', () => {
+    const utcDate = new Date('2026-01-01T01:30:00.000Z');
+    const localDate = Object.assign(utcDate, {
+      getFullYear: () => 2025,
+      getMonth: () => 11,
+      getDate: () => 31,
+    });
+
+    expect(utcDate.toISOString().slice(0, 10)).toBe('2026-01-01');
+    expect(toDateInputValue(localDate)).toBe('2025-12-31');
   });
 });
