@@ -1,10 +1,13 @@
 import { documentEngine } from './DocumentEngine';
-import { DocumentRenderer } from './DocumentRenderer';
 import type { DocumentRequest } from './types';
 
 export const DocumentController = {
   async renderToPDF(request: DocumentRequest): Promise<void> {
     const model = documentEngine.build(request);
+    // jsPDF is ~500kb and is only needed when a document is actually
+    // exported. Loading it dynamically keeps it out of the initial
+    // bundle and out of route chunks that merely *might* export a PDF.
+    const { DocumentRenderer } = await import('./DocumentRenderer');
     DocumentRenderer.renderToPDF(model);
   },
 };
