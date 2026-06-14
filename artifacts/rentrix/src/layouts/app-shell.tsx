@@ -63,9 +63,9 @@ function MobileNavigationDrawer({
   }, [onClose]);
 
   return (
-    <dialog open aria-modal="true" aria-label="القائمة الرئيسية" className="fixed inset-0 z-[90] m-0 h-dvh w-screen max-w-none overflow-hidden border-0 bg-transparent p-0 lg:hidden">
+    <dialog open aria-modal="true" aria-label="القائمة الرئيسية" className="fixed inset-0 z-[90] m-0 h-dvh w-full max-w-none overflow-hidden border-0 bg-transparent p-0 lg:hidden">
       <button type="button" className="absolute inset-0 bg-slate-950/60 backdrop-blur-[2px]" aria-label="إغلاق القائمة" onClick={onClose} />
-      <aside className="animate-panel-in absolute inset-y-0 right-0 flex w-[min(22rem,90vw)] flex-col overflow-hidden border-l border-sidebar-border bg-sidebar text-sidebar-foreground shadow-sidebar">
+      <aside className="animate-panel-in absolute inset-y-0 end-0 flex w-[min(22rem,92vw)] flex-col overflow-hidden border-s border-sidebar-border bg-sidebar text-sidebar-foreground shadow-sidebar">
         <div className="h-[3px] w-full bg-accent" />
         <div className="flex min-h-24 items-center justify-between gap-3 border-b border-white/10 px-4 py-4">
           <Brand expanded />
@@ -148,7 +148,7 @@ export function AppShell() {
         <MobileNavigationDrawer authorization={authorization} sharedLabel={sharedLabel} onClose={() => setMobileNavOpen(false)} onLogout={handleLogout} onQuickLink={navigateToQuickLink} />
       ) : null}
 
-      <aside data-print-hide className={cn('fixed inset-y-0 right-0 z-30 hidden overflow-hidden border-l border-sidebar-border bg-sidebar text-sidebar-foreground shadow-sidebar transition-all duration-300 lg:flex lg:flex-col', sidebarCollapsed ? 'w-20' : 'w-80')}>
+      <aside data-print-hide className={cn('fixed inset-y-0 end-0 z-30 hidden overflow-hidden border-s border-sidebar-border bg-sidebar text-sidebar-foreground shadow-sidebar transition-all duration-300 lg:flex lg:flex-col', sidebarCollapsed ? 'w-20' : 'w-80')}>
         <div className="h-[3px] w-full bg-accent" />
         <div className="min-h-24 border-b border-white/10 px-5 py-5"><Brand expanded={isSidebarExpanded} /></div>
         <nav className="sidebar-scroll min-h-0 flex-1 overflow-y-auto p-4">
@@ -184,7 +184,7 @@ export function AppShell() {
             </div>
           </div>
         </header>
-        <main id="main-content" tabIndex={-1} className="animate-route-in overflow-x-hidden p-3 pb-24 outline-none sm:p-4 sm:pb-28 lg:p-6 lg:pb-6"><Outlet /></main>
+        <main id="main-content" tabIndex={-1} className="animate-route-in safe-bottom-app overflow-x-hidden p-3 outline-none sm:p-4 lg:p-6 lg:pb-6"><Outlet /></main>
       </div>
 
       <div data-print-hide>

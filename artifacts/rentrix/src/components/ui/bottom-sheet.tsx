@@ -27,7 +27,7 @@ export function BottomSheet({ open, onClose, title, children, className }: Botto
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col justify-end">
+    <div className="fixed inset-0 z-[100] flex flex-col justify-end">
       {/* Backdrop */}
       <div
         className="absolute inset-0 bg-black/50 backdrop-blur-[2px]"
@@ -38,25 +38,27 @@ export function BottomSheet({ open, onClose, title, children, className }: Botto
       <div
         ref={sheetRef}
         className={cn(
-          'relative z-10 w-full rounded-t-3xl bg-background',
+          'relative z-10 w-full max-w-full rounded-t-3xl bg-background',
           'shadow-2xl ring-1 ring-border/30',
           'animate-in slide-in-from-bottom duration-300',
-          'max-h-[92dvh] overflow-y-auto',
+          'max-h-[calc(100dvh-0.75rem)] overflow-y-auto overscroll-contain',
           className,
         )}
       >
         {/* Handle */}
-        <div className="flex justify-center pt-3 pb-1">
+        <div className="flex justify-center pb-1 pt-3">
           <div className="h-1 w-10 rounded-full bg-muted-foreground/20" />
         </div>
 
         {/* Header */}
         {title && (
-          <div className="flex items-center justify-between px-5 py-3">
-            <h2 className="text-base font-bold">{title}</h2>
+          <div className="sticky top-0 z-10 flex items-center justify-between gap-3 border-b border-border/60 bg-background/95 px-4 py-3 backdrop-blur sm:px-5">
+            <h2 className="min-w-0 text-base font-bold leading-7">{title}</h2>
             <button
+              type="button"
               onClick={onClose}
-              className="grid size-8 place-items-center rounded-xl text-muted-foreground hover:bg-muted transition-colors"
+              className="grid size-10 shrink-0 place-items-center rounded-xl text-muted-foreground transition-colors hover:bg-muted"
+              aria-label="إغلاق"
             >
               <X className="size-4" />
             </button>
@@ -64,7 +66,7 @@ export function BottomSheet({ open, onClose, title, children, className }: Botto
         )}
 
         {/* Content */}
-        <div className="px-5 pb-8">{children}</div>
+        <div className="safe-bottom-overlay px-4 pt-4 sm:px-5">{children}</div>
       </div>
     </div>
   );

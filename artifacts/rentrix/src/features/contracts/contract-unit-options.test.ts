@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { buildContractUnitOptionLabel, getContractUnitSelectionIssue, isUnitSelectableForContract, type ContractUnitOptionUnit } from './contract-unit-options';
 
 describe('contract unit option helpers', () => {
-  it('builds labels with property, address, unit number, visible status, and rent amount', () => {
+  it('builds concise mobile-friendly labels from available display fields only', () => {
     const unit: ContractUnitOptionUnit = {
       id: 'unit-1',
       property_id: 'property-1',
@@ -17,10 +17,10 @@ describe('contract unit option helpers', () => {
         property: { title: 'برج النخيل', address: 'شارع 1' },
         formatRent: (amount) => `${amount ?? 0} OMR`,
       }),
-    ).toBe('برج النخيل — شارع 1 | الوحدة A-101 | الحالة صيانة | الإيجار 1250 OMR');
+    ).toBe('برج النخيل — غرفة A-101 — صيانة — 1250 OMR');
   });
 
-  it('keeps unavailable statuses visible and explains missing rent', () => {
+  it('keeps statuses visible without rendering missing rent or null-like separators', () => {
     const unit: ContractUnitOptionUnit = {
       id: 'unit-2',
       property_id: 'property-1',
@@ -29,8 +29,13 @@ describe('contract unit option helpers', () => {
       rent_amount: null,
     };
 
-    expect(buildContractUnitOptionLabel({ unit })).toContain('الحالة محجوزة');
-    expect(buildContractUnitOptionLabel({ unit })).toContain('الإيجار غير محدد');
+    const label = buildContractUnitOptionLabel({ unit });
+
+    expect(label).toBe('غرفة B-202 — محجوزة');
+    expect(label).not.toContain('null');
+    expect(label).not.toContain('undefined');
+    expect(label).not.toContain('الإيجار');
+    expect(label).not.toContain('|');
   });
 
   it('allows available units and the currently selected edit unit only', () => {

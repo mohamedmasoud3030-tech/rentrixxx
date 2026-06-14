@@ -55,7 +55,7 @@ export function ResponsiveFormOverlay({ open, onOpenChange, title, description, 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className={className}>
-        <DialogHeader>
+        <DialogHeader className="pe-10">
           <DialogTitle>{title}</DialogTitle>
           {description ? <DialogDescription>{description}</DialogDescription> : null}
         </DialogHeader>

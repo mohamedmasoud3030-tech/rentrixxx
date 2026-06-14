@@ -83,7 +83,7 @@ export function PersonFormModal({ open, onClose, personId, defaultType = 'tenant
       open={open}
       onOpenChange={(v) => { if (!v) onClose(); }}
       title={title}
-      className="max-h-[90dvh] overflow-y-auto"
+      className="max-w-2xl"
     >
         {isEdit && personQuery.isLoading ? (
           <RouteLoadingState />
@@ -125,7 +125,7 @@ export function PersonFormModal({ open, onClose, personId, defaultType = 'tenant
               ملاحظات
               <Textarea {...form.register('notes')} />
             </label>
-            <div className="flex justify-end gap-3 md:col-span-2">
+            <div className="safe-bottom-overlay -mx-4 flex flex-col-reverse gap-3 border-t border-border/60 px-4 pt-4 sm:mx-0 sm:flex-row sm:justify-end sm:border-0 sm:px-0 sm:pb-0 md:col-span-2">
               <Button type="button" variant="secondary" onClick={onClose}>إلغاء</Button>
               <Button type="submit" disabled={isSubmitting}>
                 {isSubmitting ? 'جار الحفظ...' : 'حفظ'}

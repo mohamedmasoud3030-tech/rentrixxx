@@ -24,11 +24,14 @@ type ContractUnitSelectionParams = Readonly<{
 }>;
 
 export function buildContractUnitOptionLabel({ unit, property, formatRent = formatDefaultCompanyMoney }: ContractUnitOptionLabelParams): string {
-  const propertyLabel = property ? `${property.title} — ${property.address}` : null;
-  const rentLabel = unit.rent_amount === null ? 'الإيجار غير محدد' : `الإيجار ${formatRent(unit.rent_amount)}`;
-  const parts = [propertyLabel, `الوحدة ${unit.unit_number}`, `الحالة ${unitStatusLabels[unit.status]}`, rentLabel];
+  const propertyLabel = property?.title?.trim() || property?.address?.trim() || null;
+  const unitNumber = unit.unit_number?.trim();
+  const unitLabel = unitNumber ? `غرفة ${unitNumber}` : null;
+  const statusLabel = unitStatusLabels[unit.status] ?? null;
+  const rentLabel = unit.rent_amount === null || unit.rent_amount === undefined ? null : formatRent(unit.rent_amount);
+  const parts = [propertyLabel, unitLabel, statusLabel, rentLabel];
 
-  return parts.filter((part): part is string => Boolean(part)).join(' | ');
+  return parts.filter((part): part is string => Boolean(part)).join(' — ');
 }
 
 export function isUnitSelectableForContract({ unit, currentLinkedUnitId }: ContractUnitSelectableParams): boolean {

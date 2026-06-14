@@ -112,6 +112,10 @@
   .sidebar-scroll::-webkit-scrollbar { width: 5px; }
   .sidebar-scroll::-webkit-scrollbar-track { background: transparent; }
   .sidebar-scroll::-webkit-scrollbar-thumb { border-radius: 999px; background: hsl(var(--sidebar-foreground) / 0.22); }
+  .safe-bottom-app { padding-bottom: calc(5.75rem + env(safe-area-inset-bottom)); }
+  .safe-bottom-overlay { padding-bottom: calc(1.25rem + env(safe-area-inset-bottom)); }
+  .mobile-scroll-x { overflow-x: auto; overscroll-behavior-inline: contain; -webkit-overflow-scrolling: touch; }
+  .mobile-scroll-x > table { min-width: max-content; }
 }
 
 @media (prefers-reduced-motion: reduce) {
