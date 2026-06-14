@@ -161,6 +161,14 @@ Checklist:
 3. Register `pg-functions://postgres/public/custom_access_token_hook` in Supabase Dashboard.
 4. Re-run the full authenticated browser/manual QA checklist with approved ADMIN credentials.
 
+#### 2026-06-14 verification — deployment env config resolved
+
+- Fetched `https://rentrix-alpha.vercel.app/login` (HTTP 200) via the Vercel deployment-fetch tool. The page now serves the production bundle `assets/index-CIMhMMfD.js`.
+- Inspected the served bundle: it embeds `https://nnggcnpcuomwfuupupwg.supabase.co` (the intended live RENTRIX EGY project ref) and the matching `anon` JWT (`ref: nnggcnpcuomwfuupupwg`, `role: anon`). The only other Supabase host string present is the harmless `example.supabase.co` placeholder constant from `src/lib/env.ts`, which is not used at runtime when real values are configured.
+- This confirms `VITE_SUPABASE_URL` / `VITE_SUPABASE_ANON_KEY` are now set correctly on the Vercel production environment and a build has been deployed with them (`latestDeployment` on the Vercel project is `READY`, target `production`). **Updated next action for Item 5, sub-step 1–2 are resolved** — the prior "Supabase environment is incomplete" console state from 2026-06-09 no longer applies to the deployed bundle.
+- Remaining blocker for Item 5 sub-step 3: registration of `pg-functions://postgres/public/custom_access_token_hook` as the project's Custom Access Token Auth Hook cannot be verified from repository-side evidence or the available Supabase MCP tools (no config/hooks read API exposed). `public.custom_access_token_hook` exists in the live database (verified via SQL), but whether Supabase Auth is configured to *call* it requires Dashboard or Management-API access (`api.supabase.com`), which is outside the current connector/network allowlist.
+- Full authenticated browser/manual QA (sub-step 4) remains blocked by lack of a browser-driving tool with form-submission/cookie support against `rentrix-alpha.vercel.app` in this environment; `web_fetch_vercel_url` performs unauthenticated GET only.
+
 ### v0.1 Item 6: Final Constrained-Beta Release Check
 After browser QA passes:
 - Run full CI gate
