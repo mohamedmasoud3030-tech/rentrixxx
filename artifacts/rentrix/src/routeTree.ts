@@ -14,7 +14,6 @@ import { UnitsRouteComponent } from '@/routes/_protected.units';
 import { PeopleRouteComponent } from '@/routes/_protected.people';
 import { TenantsRouteComponent } from '@/routes/_protected.tenants';
 import { OwnersRouteComponent } from '@/routes/_protected.owners';
-import { OwnersHubRouteComponent } from '@/routes/_protected.owners-hub';
 import { OwnerDetailRouteComponent } from '@/routes/_protected.owners.$ownerId';
 import { LandsRouteComponent } from '@/routes/_protected.lands';
 import { LeadsRouteComponent } from '@/routes/_protected.leads';
@@ -86,7 +85,6 @@ const unitsRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/u
 const peopleRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/people', component: PeopleRouteComponent, staticData: { title: 'الأشخاص' } });
 const tenantsRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/tenants', component: TenantsRouteComponent, staticData: { title: 'المستأجرين' } });
 const ownersRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/owners', beforeLoad: requirePermission('owners.hub.view'), component: OwnersRouteComponent, staticData: { title: 'الملاك' } });
-const ownersHubRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/owners-hub', beforeLoad: requirePermission('owners.hub.view'), component: OwnersHubRouteComponent, staticData: { title: 'مركز الملاك' } });
 const ownerDetailRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/owners/$ownerId', beforeLoad: requirePermission('owners.detail.view'), component: OwnerDetailRouteComponent, staticData: { title: 'ملف المالك' } });
 const landsRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/lands', beforeLoad: requirePermission('lands.view'), component: LandsRouteComponent, staticData: { title: 'الأراضي' } });
 const leadsRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/leads', beforeLoad: requirePermission('leads.view'), component: LeadsRouteComponent, staticData: { title: 'العملاء المحتملون' } });
@@ -160,7 +158,6 @@ export const routeTree = rootRoute.addChildren([
     peopleRoute,
     tenantsRoute,
     ownersRoute,
-    ownersHubRoute,
     ownerDetailRoute,
     landsRoute,
     leadsRoute,
