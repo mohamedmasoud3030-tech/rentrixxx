@@ -218,7 +218,7 @@ docs/wave1/1A_CONTRACT_INTEGRITY_RECONCILIATION.md
 docs/wave1/1B_FINANCIAL_POSTING_DESIGN_RECONCILIATION.md
 docs/wave1/1C_AUTH_AND_RLS_HARDENING_PLAN.md
 docs/CONSTRAINED_BETA_LAUNCH_AUDIT_2026_06_06.md
-docs/v01-migration-reconciliation-status.md  [LATEST — updated 2026-06-07]
+docs/v01/migration-reconciliation-status.md  [LATEST — updated 2026-06-07]
 ```
 
 The latest recorded Supabase boundary is:
@@ -234,7 +234,7 @@ prohibited project:    rentrix (V2) / ktmizdznbdwvalmmfvfc
 - Main runtime: healthy, no schema corruption detected
 - Critical auth function `custom_access_token_hook` applied ✅
 - Critical payment RPC `record_invoice_payment_atomic` still needed ⏸️
-- See `docs/v01-migration-reconciliation-status.md` for full findings and next steps
+- See `docs/v01/migration-reconciliation-status.md` for full findings and next steps
 
 ## 11. Cleanup boundary
 

@@ -10,7 +10,7 @@
 
 ## Why this follow-up exists
 
-The continuation handoff in `docs/v01-migration-reconciliation-status.md` listed three critical RPC migrations for later rollout. Before applying them, a fresh read-only Supabase verification was performed against the intended live project only.
+The continuation handoff in `docs/v01/migration-reconciliation-status.md` listed three critical RPC migrations for later rollout. Before applying them, a fresh read-only Supabase verification was performed against the intended live project only.
 
 Fresh Security Advisor evidence showed that:
 
