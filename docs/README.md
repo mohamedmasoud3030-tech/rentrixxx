@@ -28,8 +28,11 @@ Use this page to navigate repository documentation without treating every histor
 ## Current operational evidence
 
 ```text
+audits/
 demo-gates/
 reconciliation/
+v01/
+v02/
 wave1/
 ```
 
@@ -40,6 +43,10 @@ reconciliation/01-repository-inventory.md
 reconciliation/02-root-cleanup-candidates.md
 ```
 
+`audits/` holds dated, narrow follow-up audits (e.g. schema/migration integrity reviews) that produced migrations or other fixes — verify the referenced migration and schema are still current before relying on an older audit.
+
+`v01/` and `v02/` hold dated status/review reports for specific v0.1 and v0.2 reconciliation threads (security, migrations, idempotency, mobile/RTL/money formatting). They are status snapshots, not live policy — check `RENTRIX_MASTER_PLAN.md` for current status before acting on one.
+
 Use the Wave 1 documents before any live Supabase or Vercel rollout work:
 
 ```text
@@ -48,7 +55,6 @@ wave1/1B_FINANCIAL_POSTING_DESIGN_RECONCILIATION.md
 wave1/1C_AUTH_AND_RLS_HARDENING_PLAN.md
 ```
 
-Also see `CONSTRAINED_BETA_LAUNCH_AUDIT_2026_06_06.md` for the most recent NO-GO live-environment audit.
 Use `ai/SECURE_OPERATOR_RUNBOOK.md` for the current redacted Vercel/Supabase ownership registry and the connector blocker report template.
 
 ## Historical reports
@@ -64,4 +70,6 @@ Prefer current code, migrations, `AGENTS.md`, `ai/ONBOARDING.md`, `RENTRIX_MASTE
 - Runtime validation notes belong under `demo-gates/`.
 - Repository comparisons and cleanup inventories belong under `reconciliation/`.
 - Wave-specific rollout reconciliation belongs under `wave1/`.
+- Dated narrow follow-up audits (schema, migrations, security, etc.) belong under `audits/`.
+- v0.1/v0.2 dated status and review reports belong under `v01/`/`v02/`, not loose at the `docs/` root.
 - Avoid adding one-off reports loosely to the repository root.

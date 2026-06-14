@@ -1,5 +1,5 @@
 -- =============================================================================
--- Migration: 20260613000300_unit_status_update_triggers_and_backfill
+-- Migration: 20260614140000_unit_status_update_triggers_and_backfill
 -- Priority: P1 (CRITICAL-2)
 -- Date: 2026-06-13
 --
