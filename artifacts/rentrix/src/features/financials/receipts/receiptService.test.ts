@@ -247,3 +247,41 @@ describe('receiptService', () => {
     expect(receipts.every((receipt) => !('remaining_amount' in receipt))).toBe(true);
   });
 });
+
+describe('voidReceipt', () => {
+  it('voids the payment-backed receipt by id through the void facade and returns the result', async () => {
+    supabaseMock.rpc.mockResolvedValue({ data: { success: true, voided_at: '2026-05-15T08:00:00Z' }, error: null });
+    const { voidReceipt } = await import('./receiptService');
+    const payload = { receipt_id: 'payment_123', reason: 'دفعة مكررة', request_id: 'void-request-1' };
+
+    await expect(voidReceipt(payload)).resolves.toEqual({ success: true, voided_at: '2026-05-15T08:00:00Z' });
+    expect(supabaseMock.rpc).toHaveBeenCalledWith('void_receipt_atomic', { payload });
+  });
+
+  it('sends the payment-backed receipt id as receipt_id, matching the receipt projection identifier', async () => {
+    supabaseMock.rpc.mockResolvedValue({ data: { success: true, voided_at: '2026-05-15T08:00:00Z' }, error: null });
+    const { voidReceipt } = await import('./receiptService');
+
+    await voidReceipt({ receipt_id: 'payment_123', reason: 'سبب', request_id: 'void-request-1' });
+
+    const [, { payload }] = supabaseMock.rpc.mock.calls[0] as [string, { payload: { receipt_id: string } }];
+    expect(payload.receipt_id).toBe('payment_123');
+  });
+
+  it('does not convert RPC errors into a fake success result', async () => {
+    const error = new Error('receipt already voided');
+    supabaseMock.rpc.mockResolvedValue({ data: null, error });
+    const { voidReceipt } = await import('./receiptService');
+
+    await expect(voidReceipt({ receipt_id: 'payment_123', reason: 'سبب', request_id: 'void-request-1' }))
+      .rejects.toThrow('receipt already voided');
+  });
+
+  it('rejects when the RPC reports success but returns no data', async () => {
+    supabaseMock.rpc.mockResolvedValue({ data: null, error: null });
+    const { voidReceipt } = await import('./receiptService');
+
+    await expect(voidReceipt({ receipt_id: 'payment_123', reason: 'سبب', request_id: 'void-request-1' }))
+      .rejects.toThrow('void_receipt_atomic returned no data');
+  });
+});
