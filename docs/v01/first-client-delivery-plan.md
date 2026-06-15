@@ -84,12 +84,12 @@ the first client's actual workflow.
 
 | # | Task | Decision needed |
 | --- | --- | --- |
-| 3.1 | `/lands` | Does the first client manage land plots? Schema, page, and service exist under `features/lands/`. If yes, verify RLS, add a focused test pass, and re-expose in navigation. If no, leave hidden. |
-| 3.2 | `/leads`, `/commissions`, `/communication` | Do not build these for v1 unless the first client explicitly requires lead tracking, commission tracking, or templated communication. They currently remain unavailable by design. |
-| 3.3 | Owner settlements | Only relevant if the first client pays owners through Rentrix rather than externally. Treat as v1.1+ unless it is a hard requirement. |
+| 3.1 | `/lands` | Decision recorded in `docs/decisions/ADR-007-first-client-v04-module-scope.md`: leave hidden for day one unless the first client confirms active land-plot management. If confirmed, verify schema/RLS, add focused tests, and re-expose navigation through a narrow PR. |
+| 3.2 | `/leads`, `/commissions`, `/communication` | Decision recorded in `docs/decisions/ADR-007-first-client-v04-module-scope.md`: do not build these for v1 unless the first client explicitly requires lead tracking, commission tracking, or templated communication. They currently remain unavailable by design. |
+| 3.3 | Owner settlements | Decision recorded in `docs/decisions/ADR-007-first-client-v04-module-scope.md`: treat as v1.1+ unless paying owners through Rentrix is a hard first-client requirement. |
 
-**Exit criteria:** a short written decision exists for each row, scoped to the first
-client's actual workflow rather than a generic roadmap statement.
+**Exit criteria:** complete. ADR-007 records a short first-client decision for each row
+without re-exposing deferred routes or adding unconfirmed module scope.
 
 ---
 

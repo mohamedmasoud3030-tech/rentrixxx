@@ -423,7 +423,7 @@ Close `v0.1` only when:
 
 ## 9. v0.4 — Optional CRM and Relationship Modules
 
-**Status:** `DEFERRED until product decisions exist`
+**Status:** `DEFERRED until first-client intake confirms optional scope`
 
 **Goal:** decide whether optional recovered CRM surfaces belong in the commercial product.
 
@@ -431,10 +431,10 @@ Close `v0.1` only when:
 
 | Order | Item | Status | Notes |
 | --- | --- | --- | --- |
-| 1 | Decide lands lifecycle, ownership, and reporting scope | `BLOCKED` by product decision | Page and service exist under `features/lands/`. |
-| 2 | Decide lead stages, ownership, source, and conversion rules | `BLOCKED` by product decision | Page and service return `unavailable` (no schema table). |
-| 3 | Decide read-only commissions visibility before any settlement workflow | `BLOCKED` by product decision | Page and service return `unavailable` (no schema table). |
-| 4 | Decide communication provider, templates, consent, audit, retries, and failure model | `BLOCKED` by product decision | Page and service return `unavailable` (no schema table). |
+| 1 | Decide lands lifecycle, ownership, and reporting scope | `DEFERRED` until client confirms land-plot management | First-client decision recorded in ADR-007: keep `/lands` hidden for day one unless active land-plot management is confirmed. Page and service exist under `features/lands/`; any re-exposure still requires schema/RLS/test evidence. |
+| 2 | Decide lead stages, ownership, source, and conversion rules | `DEFERRED` post-v1 unless hard client requirement | First-client decision recorded in ADR-007: do not build lead tracking for v1. Page and service return `unavailable` (no schema table). |
+| 3 | Decide read-only commissions visibility before any settlement workflow | `DEFERRED` post-v1 unless hard client requirement | First-client decision recorded in ADR-007: do not build commission tracking for v1. Page and service return `unavailable` (no schema table). |
+| 4 | Decide communication provider, templates, consent, audit, retries, and failure model | `DEFERRED` post-v1 unless hard client requirement | First-client decision recorded in ADR-007: do not build templated communication for v1. Page and service return `unavailable` (no schema table). |
 | 5 | Recover approved modules read-only first, one module per narrow PR | `DEFERRED` | |
 | 6 | Add writes or external sends only through separate security-reviewed PRs | `DEFERRED` | |
 
