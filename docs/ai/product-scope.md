@@ -33,6 +33,10 @@ Receipts
 Expenses
 Arrears
 Reports
+Maintenance
+System
+Audit Log
+Data Integrity
 Change Password
 Settings
 ```
@@ -52,12 +56,8 @@ The following routes remain registered for controlled recovery and verification,
 ```text
 /lands
 /leads
-/maintenance
 /commissions
 /communication
-/system
-/audit-log
-/data-integrity
 ```
 
 Do not delete a deferred route merely because it is hidden. Do not re-expose a deferred route merely because it remains registered. Any visibility change requires a narrow reviewed PR with route, permission, UX, and regression-test evidence.
