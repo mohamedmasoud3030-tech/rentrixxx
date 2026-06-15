@@ -23,29 +23,32 @@ Rentrix is also not approved for a general accounting ledger during stabilizatio
 
 ## Latest Merged Work Verified
 
-Current local history was verified on branch `work` with latest commits through `7c070a0 test(financials): lock payment-backed receipt lookup (#906)`. The current branch includes the requested recent financial fixes:
+Current local history was verified on branch `main` with latest commits through `936ac3d test(financials): lock payment-backed void-receipt contract (#909)`.
 
-- PR #896 / `b2457cf fix(db): repair invoice payment account resolution`: added `supabase/migrations/20260615000100_fix_invoice_payment_account_resolution.sql`, replacing `find_payment_account_id(text)` with text account ID resolution by the observed chart-of-accounts numbers `1111` and `1201`, then recreating `record_invoice_payment_atomic(jsonb)` to post journal entries using text account IDs.
-- PR #899 / `ea46810 fix: harden payment account fallback migration`: kept the payment-account repair forward-only and hardened the fallback behavior around account resolution. Current local evidence still requires live replay/application evidence before closing the blocker.
-- PR #901 / `3664472 fix(financials): use local dates for defaults`: active UI/default date cleanup is present. The remaining `toISOString().slice(0, 10)` matches in `artifacts/rentrix/src` are test fixtures that intentionally demonstrate UTC drift and a contract-schema validation round-trip, not active business-date defaults.
-- PR #905 / `5b540ab docs(v01): inventory payments/receipts source-of-truth and roadmap breadcrumb` and PR #906 / `7c070a0 test(financials): lock payment-backed receipt lookup` further document and test the current payment-backed receipt detail contract.
-- Current payment-account repair repo-side evidence now includes a financials migration contract test that locks `20260615000100_fix_invoice_payment_account_resolution.sql` to text account IDs, chart-of-accounts numbers `1111` and `1201`, no `id::uuid` regression, retained `record_invoice_payment_atomic(jsonb)` browser execution, and revoked direct helper execution.
+### ✅ مُنجز ومُطبَّق على الـ live DB (`nnggcnpcuomwfuupupwg`)
 
-What is fixed locally:
+- **PR #896 / fix(db): repair invoice payment account resolution** — `20260615000100_fix_invoice_payment_account_resolution.sql` مطبَّقة. `find_payment_account_id('cash')` يعيد `1111` و`find_payment_account_id('receivable')` يعيد `1201` ✅
+- **PR #892 / fix(db): schema integrity audit** — migrations `20260614140000`, `20260614140100`, `20260614140200` مطبَّقة على الـ live.
+- **DB fix session 2026-06-15** — migration `20260615000200_fix_type_casts_void_receipt_security` مطبَّقة على الـ live:
+  - `renew_contract_atomic`: إصلاح `updated_at = bigint` → `now()` ✅
+  - `update_contract_balance_on_receipt_allocation`: إصلاح `updated_at = bigint` → `now()` ✅
+  - `update_owner_balance_on_expense`: إزالة `c.status = 'ACTIVE'` filter + `updated_at = now()` ✅
+  - `void_receipt_atomic(uuid,bigint,jsonb,jsonb)`: إصلاح `created_at cast bigint→timestamptz` ✅
+  - `void_receipt_atomic(jsonb)`: **wrapper جديد** يطابق استدعاء الـ frontend `{ payload }` ✅
+  - `invoices/receipts/expenses/app_notifications/outgoing_notifications.deleted_at`: `bigint → timestamptz` ✅
+  - `v_balance_reconciliation`: أُعيد إنشاؤها بعد تغيير النوع ✅
+  - `set_receipts_updated_at` / `set_invoices_updated_at` triggers: مضافة ✅
+  - Security: `REVOKE anon` من `void_receipt_atomic` ✅
+- **Migration chain reconciliation 2026-06-15**:
+  - 43 migration موجودة في الـ repo مسجَّلة في `supabase_migrations.schema_migrations` ✅
+  - 11 stub أُنشئت في الـ repo لـ migrations طُبِّقت مباشرة على الـ live خارج الـ repo ✅
+  - إجمالي migrations مسجَّلة: 100 ✅
 
-- The repository contains the forward migration intended to fix the invoice payment account-resolution mismatch.
-- The repair migration uses the real observed accounts shape: `accounts.id` is treated as text and account selection prefers `accounts.no` codes before name fallback.
-- The active frontend payment call still uses the browser-facing `record_invoice_payment_atomic` RPC and preserves idempotent `request_id` behavior.
-- The active receipt UI remains payment-backed: the UI maps internal RPC `receipt_id` to `ledger_receipt_id` and uses `payment_id` as the browser receipt detail identifier.
-- Local business-date defaults no longer depend on UTC `toISOString().slice(0, 10)` in active financial/report UI defaults.
+### ما يزال غير مؤكَّد
 
-What remains unverified:
-
-- Whether `20260615000100_fix_invoice_payment_account_resolution.sql` has been applied to the intended live Supabase project.
-- Whether live `find_payment_account_id('cash')` and `find_payment_account_id('receivable')` now return configured account IDs without `22P02`.
-- Whether live `record_invoice_payment_atomic(jsonb)` records payment, internal receipt/allocation, journal entries, invoice status, and idempotency rows under authenticated ADMIN/MANAGER execution.
-- Whether the Supabase Custom Access Token Hook is registered in Dashboard/Management API configuration, not merely present as a database function.
-- Whether authenticated browser E2E payment QA passes on the deployed app.
+- Custom Access Token Hook: موجود كـ DB function لكن لم يُؤكَّد تسجيله في Supabase Dashboard.
+- Authenticated browser E2E QA: لم يُنفَّذ بعد.
+- `financial_operation_idempotency` grants/policies: يحتاج تحقق بالـ authenticated session.
 
 ## Core MVP Systems
 
@@ -125,7 +128,7 @@ Do not claim production readiness until these blockers are closed with fresh evi
 - Preview-branch migration replay remains blocked by the migration reconciliation item and required access.
 - Custom Access Token hook registration cannot be considered verified until Supabase Dashboard or Management API evidence confirms the hook registration.
 - Authenticated browser/manual QA remains blocked until an operator or browser-driving capability verifies post-login runtime behavior.
-- The `find_payment_account_id(text)` account-resolution issue is unresolved until the approved environment applies/replays the repair and verifies `find_payment_account_id('cash')` and `find_payment_account_id('receivable')`.
+- ~~The `find_payment_account_id(text)` account-resolution issue~~ — **✅ حُلَّت**: `find_payment_account_id('cash')` = `1111`, `find_payment_account_id('receivable')` = `1201`.
 - `financial_operation_idempotency` live status is unresolved until table existence, grants, RLS, policies, duplicate-index cleanup, and browser-write denial are verified against the intended environment.
 - Payments vs receipts source-of-truth behavior is unresolved until active code, RPC return payloads, receipt projections, and database objects are verified together. Do not switch UI receipt identifiers from payment-backed projections to internal receipt IDs without a reviewed migration and frontend cutover.
 - Canonical balance-model behavior remains unclosed until invoice outstanding, arrears, reports, receipt projection, payment posting, void/reversal behavior, and live RPC results are verified from one source-of-truth path.
