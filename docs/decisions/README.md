@@ -28,17 +28,21 @@ Visible navigation is limited to the verified operational flow. Deferred routes 
 
 The `leads`, `commissions`, and `communication` tables do not exist in the confirmed live schema. Their services return `status: unavailable`. No schema migration for these tables should be written until an explicit product decision is made and documented here.
 
+### ADR-007 — First-client v0.4 module scope
+
+The first-client rollout does not expand day-one scope beyond the verified operational core unless client intake confirms a hard workflow requirement. `/lands` stays hidden unless land-plot management is confirmed; `/leads`, `/commissions`, `/communication`, and owner settlements are deferred for v1. See `ADR-007-first-client-v04-module-scope.md`.
+
 ## Open product decisions required
 
 The following decisions are required before work in v0.4 can proceed:
 
 | Decision | Needed for |
 | --- | --- |
-| Lands lifecycle, ownership, and reporting scope | `/lands` v0.4 |
-| Lead stages, sources, and conversion rules | `/leads` v0.4 |
-| Commissions read-only visibility and settlement model | `/commissions` v0.4 |
-| Communication provider, templates, consent, audit | `/communication` v0.4 |
-| Owner-settlement workflow scope | v0.5 optional |
+| Client confirmation that land plots are managed in Rentrix | `/lands` fast-follow |
+| Explicit first-client requirement for lead tracking | `/leads` post-v1 |
+| Explicit first-client requirement for commission tracking | `/commissions` post-v1 |
+| Explicit first-client requirement for templated communication | `/communication` post-v1 |
+| Explicit first-client requirement to pay owners through Rentrix | v1.1+ owner settlements |
 
 ## Adding a decision
 
