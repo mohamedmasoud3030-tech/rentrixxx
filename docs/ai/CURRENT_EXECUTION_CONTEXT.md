@@ -106,7 +106,7 @@ Do not claim production readiness until these blockers are closed with fresh evi
 For implementation after this documentation consolidation PR, use this order:
 
 1. Apply or replay the payment-account repair only through the approved non-production or operator path, then verify `find_payment_account_id('cash')`, `find_payment_account_id('receivable')`, and `record_invoice_payment_atomic(jsonb)` behavior. This is the next safe implementation PR only if the environment path is approved and non-production evidence is available.
-2. If live/preview access is not available, make a documentation-only or test-only PR that inventories the payments/receipts source-of-truth path from active code and existing migrations without touching Supabase, production, RPCs, RLS, or migrations.
+2. If live/preview access is not available, use `docs/v01/payments-receipts-source-of-truth-inventory.md` as the repository-only payment/receipt source-of-truth inventory. A follow-up test-only PR may add more contract coverage, but it must not touch Supabase, production, RPCs, RLS, or migrations.
 3. Reconcile the canonical migration chain against the latest live migration inventory through read-only evidence.
 4. Run preview-branch migration replay before any production mutation.
 5. Complete auth, RLS, RPC, and idempotency least-privilege reconciliation with fresh environment evidence.
