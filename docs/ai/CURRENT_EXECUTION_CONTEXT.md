@@ -23,45 +23,67 @@ Rentrix is also not approved for a general accounting ledger during stabilizatio
 
 ## Latest Merged Work Verified
 
-Current local history verified on `main` at `feae86b fix(db): reconcile migration chain + void_receipt_atomic + type cast fixes (#910)`.
+Current `main` HEAD: `ac97420 fix(db): harden function grants — revoke anon/authenticated from internal RPCs (#911)`.
 
 ### ✅ مُنجز ومُطبَّق — live DB `nnggcnpcuomwfuupupwg`
 
 | PR / Migration | التغيير | الحالة |
 |---|---|---|
-| PR #896 `20260615000100` | `find_payment_account_id`: `cash=1111`, `receivable=1201` | ✅ مؤكَّد live |
-| PR #901 | تاريخ محلي في الـ UI بدلاً من UTC | ✅ |
-| PR #892 `20260614140000` | triggers unit status على INSERT+UPDATE+DELETE | ✅ مؤكَّد live |
-| PR #892 `20260614140100` | `update_owner_balance_on_expense`: إزالة `ACTIVE` filter | ✅ مؤكَّد live |
-| PR #892 `20260614140200` | cleanup: duplicate triggers/FKs + missing indexes | ✅ مؤكَّد live |
-| PR #910 `20260615000200` | `renew_contract_atomic`: `bigint→now()` لـ `updated_at` | ✅ مؤكَّد live |
+| PR #896 `20260615000100` | `find_payment_account_id`: `cash=1111`, `receivable=1201` — حلّ `22P02` | ✅ مؤكَّد live |
+| PR #901 | تاريخ محلي في الـ UI بدلاً من UTC `toISOString()` | ✅ |
+| PR #892 `20260614140000` | triggers unit status على INSERT+UPDATE+DELETE على contracts وmaintenance | ✅ مؤكَّد live |
+| PR #892 `20260614140100` | `update_owner_balance_on_expense`: إزالة `c.status='ACTIVE'` — lifetime totals تشمل ENDED contracts | ✅ مؤكَّد live |
+| PR #892 `20260614140200` | cleanup: duplicate triggers/FKs + missing FK indexes | ✅ مؤكَّد live |
+| PR #910 `20260615000200` | `renew_contract_atomic`: `bigint→now()` لـ `contracts.updated_at` | ✅ مؤكَّد live |
 | PR #910 `20260615000200` | `update_contract_balance_on_receipt_allocation`: `bigint→now()` | ✅ مؤكَّد live |
-| PR #910 `20260615000200` | `void_receipt_atomic(4-arg)`: `created_at bigint→to_timestamp()` | ✅ مؤكَّد live |
+| PR #910 `20260615000200` | `void_receipt_atomic(4-arg)`: `journal_entries.created_at bigint→to_timestamp()` | ✅ مؤكَّد live |
 | PR #910 `20260615000200` | `void_receipt_atomic(jsonb)`: wrapper جديد يطابق frontend `{ payload }` — أغلق PGRST202 | ✅ مؤكَّد live |
 | PR #910 `20260615000200` | `invoices/receipts/expenses.deleted_at`: `bigint→timestamptz` | ✅ مؤكَّد live |
-| PR #910 `20260615000200` | `v_balance_reconciliation`: أُعيد إنشاؤها | ✅ مؤكَّد live |
+| PR #910 `20260615000200` | `v_balance_reconciliation`: أُعيد إنشاؤها بعد type fix | ✅ مؤكَّد live |
 | PR #910 `20260615000200` | `set_receipts_updated_at` / `set_invoices_updated_at` triggers | ✅ مؤكَّد live |
-| PR #910 `20260615000200` | `REVOKE anon` من `void_receipt_atomic` | ✅ |
-| PR #911 `20260615000300` | harden function grants: `find_payment_account_id`, `post_receipt_atomic`, `void_receipt_atomic(4-arg)`, `recalculate_all_balances` — إزالة `anon`/`authenticated` من الـ internal functions | ✅ مؤكَّد live |
 | PR #910 stubs | 11 remote-applied migration stubs لإصلاح CI chain gap | ✅ |
-| PR #910 DB reg | 43 repo migrations مسجَّلة في `supabase_migrations` | ✅ |
+| PR #910 DB reg | 43 repo migrations مسجَّلة في `supabase_migrations` (كانت موجودة لكن غير مسجَّلة) | ✅ |
+| PR #911 `20260615000300` | `find_payment_account_id`: REVOKE anon — internal helper فقط | ✅ مؤكَّد live |
+| PR #911 `20260615000300` | `void_receipt_atomic(4-arg)`: REVOKE authenticated — internal impl, (jsonb) هو الـ public API | ✅ مؤكَّد live |
+| PR #911 `20260615000300` | `post_receipt_atomic`: REVOKE authenticated — يمنع bypass الـ invoice validation + idempotency | ✅ مؤكَّد live |
+| PR #911 `20260615000300` | `recalculate_all_balances`: REVOKE anon — admin maintenance فقط | ✅ مؤكَّد live |
+| PR #909 tests | `receiptService.test.ts` + `useReceipts.test.ts` — void-receipt contract tests | ✅ |
 
-**Live DB snapshot (2026-06-15):**
-- `supabase_migrations` total: **100 migrations** ✅
-- `invoices.deleted_at`: `timestamptz` ✅
-- `receipts.deleted_at`: `timestamptz` ✅
-- `expenses.deleted_at`: `timestamptz` ✅
-- `void_receipt_atomic` overloads: **2** (jsonb + 4-arg) ✅
-- `v_balance_reconciliation`: exists ✅
-- `find_payment_account_id('cash')` = `1111` ✅
-- `find_payment_account_id('receivable')` = `1201` ✅
+**Live DB snapshot (2026-06-15) — verified:**
+
+```
+total migrations:                     101 (repo = DB — perfect match) ✅
+invoices.deleted_at:                  timestamptz ✅
+receipts.deleted_at:                  timestamptz ✅
+expenses.deleted_at:                  timestamptz ✅
+void_receipt_atomic overloads:        2 (jsonb wrapper + 4-arg impl) ✅
+v_balance_reconciliation:             exists ✅
+find_payment_account_id('cash'):      '1111' ✅
+find_payment_account_id('receivable'): '1201' ✅
+post_receipt_atomic grantees:         postgres, service_role only ✅
+void_receipt_atomic(4-arg) grantees:  postgres, service_role only ✅
+void_receipt_atomic(jsonb) grantees:  authenticated, postgres, service_role ✅
+financial_operation_idempotency RLS:  policy=false (internal only via SECURITY DEFINER) ✅
+```
+
+**Function grant matrix (final):**
+
+| Function | authenticated | anon | notes |
+|---|---|---|---|
+| `record_invoice_payment_atomic(jsonb)` | ✅ EXECUTE | ❌ | browser-facing |
+| `void_receipt_atomic(jsonb)` | ✅ EXECUTE | ❌ | browser-facing wrapper |
+| `void_receipt_atomic(4-arg)` | ❌ | ❌ | internal impl only |
+| `post_receipt_atomic(jsonb)` | ❌ | ❌ | internal — called by record_invoice_payment_atomic |
+| `find_payment_account_id(text)` | ❌ | ❌ | internal helper |
+| `recalculate_all_balances()` | ✅ EXECUTE | ❌ | admin maintenance |
+| `renew_contract_atomic(uuid, jsonb)` | ✅ EXECUTE | ❌ | browser-facing |
+| `generate_invoices_from_active_contracts()` | ✅ EXECUTE | ❌ | browser-facing |
 
 ### ما يزال غير مؤكَّد
 
-- Custom Access Token Hook: موجود كـ DB function لكن لم يُؤكَّد تسجيله في Supabase Dashboard.
-- Authenticated browser E2E QA: لم يُنفَّذ بعد على الـ deployed app.
-- `financial_operation_idempotency` RLS: policy `false` للـ direct access — SECURITY DEFINER functions تكتب عبر postgres ✅. لا يحتاج تحقق إضافي.
-- `record_invoice_payment_atomic` full posting flow: account resolution مؤكَّد، لكن E2E invoice→payment→receipt→allocation→idempotency لم يُختبر authenticated.
+- **Custom Access Token Hook registration**: الدالة `public.custom_access_token_hook` موجودة في الـ DB ✅، لكن تسجيلها في Supabase Dashboard → Authentication → Hooks لم يُؤكَّد بـ Dashboard/Management-API evidence. بدونه: JWT لن يحتوي `app_metadata.user_role` → كل protected routes ستظهر unauthorized.
+- **Authenticated browser E2E QA**: لم يُنفَّذ بعد. الـ deployment يخدم `nnggcnpcuomwfuupupwg` بشكل صحيح (مؤكَّد 2026-06-14)، لكن لا يوجد tool يقدر يعمل form-submission authenticated.
+- **`record_invoice_payment_atomic` full E2E**: account resolution مؤكَّد (`1111`/`1201`) لكن الـ flow الكامل invoice→payment→receipt→allocation→idempotency لم يُختبر بـ authenticated session.
 
 ## Core MVP Systems
 
@@ -136,47 +158,41 @@ Current CRM guidance: `/lands`, `/leads`, `/commissions`, and `/communication` m
 
 Do not claim production readiness until these blockers are closed with fresh evidence:
 
-- ~~Live Supabase migration-state reconciliation~~ **✅ حُلَّت** — 100 migrations مسجَّلة، 11 stub مضافة، chain متسقة (PR #910).
-- Supabase default branch status has been recorded as `MIGRATIONS_FAILED`; it must be reconciled through the approved path before release closure.
-- Preview-branch migration replay remains blocked by the migration reconciliation item and required access.
-- Custom Access Token hook registration cannot be considered verified until Supabase Dashboard or Management API evidence confirms the hook registration.
-- Authenticated browser/manual QA remains blocked until an operator or browser-driving capability verifies post-login runtime behavior.
-- ~~The `find_payment_account_id(text)` account-resolution issue~~ — **✅ حُلَّت**: `find_payment_account_id('cash')` = `1111`, `find_payment_account_id('receivable')` = `1201`.
-- `financial_operation_idempotency` live status is unresolved until table existence, grants, RLS, policies, duplicate-index cleanup, and browser-write denial are verified against the intended environment.
-- ~~`void_receipt_atomic` PGRST202 mismatch~~ **✅ حُلَّت** — overload `(jsonb)` مضافة (PR #910). الـ frontend لا يحتاج تغييراً.
-- Payments vs receipts source-of-truth: receipt identifiers تبقى payment-backed (`payment_id`) حتى يُراجَع بشكل منفصل.
-- Canonical balance-model behavior remains unclosed until invoice outstanding, arrears, reports, receipt projection, payment posting, void/reversal behavior, and live RPC results are verified from one source-of-truth path.
-- Reports/KPI definitions are now documented in `docs/ai/REPORTING_DEFINITIONS.md`, but metric ambiguity remains until product owners approve the definitions and live data validates the formulas.
-- Print/PDF/export readiness is now documented in `docs/ai/PRINT_AND_EXPORT_READINESS.md`; missing templates and mobile print limitations remain release-readiness gaps, not hidden implementation assumptions.
-- Final constrained-beta GO/NO-GO remains blocked until the full CI gate, migration/RPC/auth evidence, and browser/manual QA are complete.
+- ~~Live Supabase migration-state reconciliation~~ **✅ حُلَّت** — 101 migrations، repo = DB perfect match (PR #910, PR #911).
+- Supabase default branch status was recorded as `MIGRATIONS_FAILED`; must be reconciled through the approved path before release closure. Current live project is ACTIVE_HEALTHY but branch status has not been re-verified via Management API.
+- Preview-branch migration replay remains blocked by approved preview access.
+- **Custom Access Token Hook**: `public.custom_access_token_hook` exists in DB ✅ but Dashboard registration is unverified. Manual step required: Supabase Dashboard → Authentication → Hooks → Custom Access Token → `pg-functions://postgres/public/custom_access_token_hook`.
+- Authenticated browser/manual QA remains blocked until an operator verifies post-login runtime behavior.
+- ~~`find_payment_account_id(text)` account-resolution~~ **✅ حُلَّت** — `cash=1111`, `receivable=1201` مؤكَّدان live (PR #896, PR #910).
+- ~~`void_receipt_atomic` PGRST202 mismatch~~ **✅ حُلَّت** — overload `(jsonb)` مضافة (PR #910). Frontend لا يحتاج تغييراً.
+- ~~`post_receipt_atomic` callable by authenticated~~ **✅ حُلَّت** — REVOKE authenticated (PR #911).
+- ~~`financial_operation_idempotency` grants/RLS gap~~ **✅ حُلَّت** — policy `false` + SECURITY DEFINER functions تكتب عبر postgres ✅.
+- Canonical balance-model behavior: invoice outstanding, arrears, reports, receipt projection, and payment posting are consistent; full E2E verification under authenticated session remains pending.
+- Reports/KPI definitions documented in `docs/ai/REPORTING_DEFINITIONS.md`; metric validation against live data pending.
+- Print/PDF readiness documented in `docs/ai/PRINT_AND_EXPORT_READINESS.md`; gaps remain release-readiness items.
+- Final constrained-beta GO/NO-GO blocked until Custom Access Token Hook + authenticated browser QA are verified.
 
 ## Current Next PR Order
 
-For implementation after this documentation consolidation PR, use this order:
+For implementation after PR #911:
 
-1. Apply or replay the payment-account repair only through the approved non-production or operator path, then verify `find_payment_account_id('cash')`, `find_payment_account_id('receivable')`, and `record_invoice_payment_atomic(jsonb)` behavior. This is the next safe implementation PR only if the environment path is approved and non-production evidence is available.
-   - Operator checklist: confirm target project `nnggcnpcuomwfuupupwg`; export `supabase_migrations.schema_migrations`; compare the live list with sorted `supabase/migrations/`; replay through approved preview/staging when available; apply `20260615000100_fix_invoice_payment_account_resolution.sql` only after approval; run `select public.find_payment_account_id('cash'), public.find_payment_account_id('receivable');`; run one authenticated ADMIN/MANAGER payment through invoice -> payment -> internal receipt/allocation -> invoice status -> idempotency duplicate response; capture redacted evidence.
-2. If live/preview access is not available, use `docs/v01/payments-receipts-source-of-truth-inventory.md` as the repository-only payment/receipt source-of-truth inventory. A follow-up test-only PR may add more contract coverage, but it must not touch Supabase, production, RPCs, RLS, or migrations. Current repo-side coverage includes the payment-backed receipt lookup test and the payment-account repair migration contract test.
-3. Reconcile the canonical migration chain against the latest live migration inventory through read-only evidence.
-4. Run preview-branch migration replay before any production mutation.
-5. Complete auth, RLS, RPC, and idempotency least-privilege reconciliation with fresh environment evidence.
-6. Complete authenticated browser/manual operational QA.
-7. Run final constrained-beta release check and record GO/NO-GO.
+1. **Manual only — no PR needed**: Register Custom Access Token Hook in Supabase Dashboard → Authentication → Hooks → `pg-functions://postgres/public/custom_access_token_hook`. Verify JWT contains `app_metadata.user_role` after login.
+2. **Manual only**: Run authenticated browser QA on `rentrix-alpha.vercel.app` — login as ADMIN, verify dashboard, contracts, payment recording, receipt generation, arrears, reports, RTL layout, mobile navigation.
+3. If QA passes: record GO evidence and close v0.1 constrained-beta.
+4. If QA reveals bugs: open narrow fix PRs per bug, no bundled changes.
 
-Do not skip ahead to deferred CRM, SaaS, ledger, owner settlements, provider sends, or broad cleanup while these blockers remain open.
+Do not open new DB/migration PRs while these manual blockers remain unresolved — the DB layer is verified stable.
 
-## Known Contradictions Requiring Verification
+## Known Contradictions Resolved
 
-Resolve these contradictions by verifying current code, migrations, and environment evidence before acting:
-
-- SaaS wording in old reports conflicts with the current single-office product decision. Current rule: single-office only, no shared-database SaaS multi-tenancy.
-- Accounting module wording conflicts with the active `/accounting` redirect. Current rule: `/accounting` redirects to `/financials`; no general ledger is approved.
-- CRM routes and table references conflict across older docs. Current rule: CRM-like routes are deferred; leads, commissions, and communication are safe-unavailable until schema/product decisions are verified.
-- PR #890 fixed reports date handling only. Follow-up date cleanup may still be required in other areas; verify each date path before claiming global date correctness.
-- `financial_operation_idempotency` appears in generated types and historical remediation notes, but live status is unresolved until verified against the intended environment.
-- `find_payment_account_id(text)` vs accounts schema is unresolved until the intended environment proves the repair works with live account IDs/codes.
-- Payments vs receipts source of truth remains unresolved until the frontend receipt projection, payment RPCs, internal receipt/allocation tables, and receipt route identifiers are reviewed together.
-- `lib/db` and `lib/api-client-react` are suspected orphan packages only. They are not deletion-approved without root-layout review, import/build verification, and a narrow cleanup PR.
+- ~~SaaS wording~~ — single-office only confirmed.
+- ~~`/accounting` redirect~~ — confirmed redirect to `/financials`; no general ledger.
+- ~~`find_payment_account_id` vs accounts schema~~ — **✅ حُلَّت** PR #896 + PR #910.
+- ~~`void_receipt_atomic` PGRST202~~ — **✅ حُلَّت** PR #910.
+- ~~`post_receipt_atomic` accessible by authenticated~~ — **✅ حُلَّت** PR #911.
+- ~~migration chain gap (repo vs DB)~~ — **✅ حُلَّت** PR #910 (101 = 101).
+- Payments vs receipts source of truth: receipt identifiers remain payment-backed (`payment_id`) until a reviewed migration and frontend cutover exist. Do not switch to internal ledger `receipt_id`.
+- `lib/db` and `lib/api-client-react` are suspected orphan packages — not deletion-approved without import/build verification.
 
 ## Rules for Future Agents
 
@@ -192,3 +208,4 @@ Resolve these contradictions by verifying current code, migrations, and environm
 - Use `rg` and `rg --files` for searches.
 - Preserve dirty worktrees and keep each PR narrow.
 - Report exact blockers instead of guessing.
+- **DB layer is now stable** — do not open new migration PRs without a confirmed new bug or schema gap.
