@@ -81,6 +81,10 @@ Current repository-side facts:
 
 - the canonical local migration directory currently contains the forward repair
   `20260615000100_fix_invoice_payment_account_resolution.sql`;
+- the financials test suite contains a repository-only migration contract test
+  that guards the repair against the previous `id::uuid` account-resolution
+  regression and verifies the intended `1111`/`1201` account-number lookup
+  strategy;
 - the previous PR #892 schema-integrity migrations have been re-timestamped after
   `20260614130000_attachments_storage_bucket.sql`;
 - the root of the repository intentionally contains no root-level `.sql` files;
@@ -102,6 +106,10 @@ Required reconciliation evidence before v0.1 closure:
 - rerun the read-only `find_payment_account_id('cash')` and
   `find_payment_account_id('receivable')` verification until both resolve without
   `22P02`;
+- verify `record_invoice_payment_atomic(jsonb)` as an authenticated ADMIN/MANAGER
+  by recording a payment with a stable `request_id`, confirming a duplicate call
+  returns the same idempotent response, and confirming payment, receipt,
+  allocation, journal entries, and invoice status are all updated coherently;
 - complete authenticated browser QA for contract -> invoice -> payment -> receipt
   -> invoice status -> reversal behavior.
 

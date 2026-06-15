@@ -29,6 +29,7 @@ Current local history was verified on branch `work` with latest commits through 
 - PR #899 / `ea46810 fix: harden payment account fallback migration`: kept the payment-account repair forward-only and hardened the fallback behavior around account resolution. Current local evidence still requires live replay/application evidence before closing the blocker.
 - PR #901 / `3664472 fix(financials): use local dates for defaults`: active UI/default date cleanup is present. The remaining `toISOString().slice(0, 10)` matches in `artifacts/rentrix/src` are test fixtures that intentionally demonstrate UTC drift and a contract-schema validation round-trip, not active business-date defaults.
 - PR #905 / `5b540ab docs(v01): inventory payments/receipts source-of-truth and roadmap breadcrumb` and PR #906 / `7c070a0 test(financials): lock payment-backed receipt lookup` further document and test the current payment-backed receipt detail contract.
+- Current payment-account repair repo-side evidence now includes a financials migration contract test that locks `20260615000100_fix_invoice_payment_account_resolution.sql` to text account IDs, chart-of-accounts numbers `1111` and `1201`, no `id::uuid` regression, retained `record_invoice_payment_atomic(jsonb)` browser execution, and revoked direct helper execution.
 
 What is fixed locally:
 
@@ -137,7 +138,8 @@ Do not claim production readiness until these blockers are closed with fresh evi
 For implementation after this documentation consolidation PR, use this order:
 
 1. Apply or replay the payment-account repair only through the approved non-production or operator path, then verify `find_payment_account_id('cash')`, `find_payment_account_id('receivable')`, and `record_invoice_payment_atomic(jsonb)` behavior. This is the next safe implementation PR only if the environment path is approved and non-production evidence is available.
-2. If live/preview access is not available, use `docs/v01/payments-receipts-source-of-truth-inventory.md` as the repository-only payment/receipt source-of-truth inventory. A follow-up test-only PR may add more contract coverage, but it must not touch Supabase, production, RPCs, RLS, or migrations.
+   - Operator checklist: confirm target project `nnggcnpcuomwfuupupwg`; export `supabase_migrations.schema_migrations`; compare the live list with sorted `supabase/migrations/`; replay through approved preview/staging when available; apply `20260615000100_fix_invoice_payment_account_resolution.sql` only after approval; run `select public.find_payment_account_id('cash'), public.find_payment_account_id('receivable');`; run one authenticated ADMIN/MANAGER payment through invoice -> payment -> internal receipt/allocation -> invoice status -> idempotency duplicate response; capture redacted evidence.
+2. If live/preview access is not available, use `docs/v01/payments-receipts-source-of-truth-inventory.md` as the repository-only payment/receipt source-of-truth inventory. A follow-up test-only PR may add more contract coverage, but it must not touch Supabase, production, RPCs, RLS, or migrations. Current repo-side coverage includes the payment-backed receipt lookup test and the payment-account repair migration contract test.
 3. Reconcile the canonical migration chain against the latest live migration inventory through read-only evidence.
 4. Run preview-branch migration replay before any production mutation.
 5. Complete auth, RLS, RPC, and idempotency least-privilege reconciliation with fresh environment evidence.
