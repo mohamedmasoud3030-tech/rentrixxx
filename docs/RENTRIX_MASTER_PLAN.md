@@ -337,9 +337,9 @@ Stop and report the exact blocker when any of these apply:
 | Order | Item | Status | Required result |
 | --- | --- | --- | --- |
 | 1 | Secure operator runbook | `DONE` | Added `docs/ai/SECURE_OPERATOR_RUNBOOK.md` with redacted environment ownership, intended/prohibited Supabase ref classifications, available Vercel identity evidence, and connector blocker reporting. |
-| 2 | Verify migration chain rebuild and document current Supabase reset blocker | `BLOCKED` by detailed connector access | Verify the canonical `supabase/migrations/` chain against the `MIGRATIONS_FAILED` live-state evidence; capture migration list, failure evidence, Supabase reset/replay blocker, and safe preview replay plan. No production mutation. Do not create a root-level SQL consolidation task because the repository root currently has zero `.sql` files. |
+| 2 | Verify migration chain rebuild and document current Supabase reset blocker | `BLOCKED` by detailed connector access | Verify the canonical `supabase/migrations/` chain against the `MIGRATIONS_FAILED` live-state evidence and the latest handoff dataset of 50 live migration entries; capture migration list, failure evidence, Supabase reset/replay blocker, and safe preview replay plan. No production mutation. Do not create a root-level SQL consolidation task because the repository root currently has zero `.sql` files. See `docs/v01/payment-account-resolution-critical-finding.md`. |
 | 3 | Preview-branch migration replay | `BLOCKED` by item 2 and preview access | Prove replay outside production; split any repair into a narrow reviewed migration PR. |
-| 4 | Auth, RLS, and RPC least-privilege reconciliation | `IN PROGRESS` — security hardening applied; idempotency stack deferred | Applied: search_path fix on sync_payment_reference_fields; revoked authenticated EXECUTE on is_app_user and is_admin_or_manager. Security Advisor: 3/4 warnings cleared; 1 dashboard-only residual. Idempotency: financial_operation_idempotency, receipts.request_id, and record_invoice_payment_atomic missing on live — separate PR required. See docs/v01/security-reconciliation-final.md. |
+| 4 | Auth, RLS, and RPC least-privilege reconciliation | `BLOCKED` — critical payment RPC account-resolution evidence pending live apply/re-verify | Applied: search_path fix on sync_payment_reference_fields; revoked authenticated EXECUTE on is_app_user and is_admin_or_manager; idempotency rollout and local account-resolution repair now exist in the repository. Blocking finding: live `find_payment_account_id(text)` failed with `22P02 invalid input syntax for type uuid: "1000"`, which can prevent `record_invoice_payment_atomic(jsonb)` from posting payments. Apply/replay `20260615000100_fix_invoice_payment_account_resolution.sql` through the approved path, rerun `find_payment_account_id('cash'/'receivable')`, and complete browser payment QA before closing item 4. See `docs/v01/payment-account-resolution-critical-finding.md`, `docs/v01/migration-reconciliation-status.md`, and `docs/v01/security-reconciliation-final.md`. |
 | 5 | Browser/manual operational QA | `BLOCKED` by browser-driving tool + Custom Access Token hook verification | Deployment is reachable at `rentrix-alpha.vercel.app` and, as of 2026-06-14, the served production bundle is verified to embed the correct live Supabase env values (`VITE_SUPABASE_URL`/`VITE_SUPABASE_ANON_KEY` for `nnggcnpcuomwfuupupwg`) — the deployment-config sub-blocker is resolved. Remaining blockers: (a) registration of `pg-functions://postgres/public/custom_access_token_hook` as the project's Custom Access Token Auth Hook cannot be verified without Supabase Dashboard/Management-API access; (b) authenticated browser/manual QA requires a tool that can submit the login form and inspect post-auth app state, not just unauthenticated GET. See `docs/v01/migration-reconciliation-status.md` for evidence. Verify RTL desktop, RTL mobile, LTR sanity, protected-route refresh, forms, tables, dialogs, receipt lookup/print, CSV export, PWA install/offline/update, and invalid-route fallback once unblocked. |
 | 6 | Final constrained-beta release check | `BLOCKED` until items 1–5 close | Run the full CI gate, review live evidence, record residual risks, and decide GO / NO-GO. |
 
@@ -347,7 +347,7 @@ Repository-side migration evidence preflight now runs in CI after dependency ins
 
 Latest execution note: `docs/v01/migration-reconciliation-status.md` is the active status source for the current v0.1 continuation. On 2026-06-09, browser execution reached `rentrix-alpha.vercel.app/login`, but the deployed app reported incomplete Supabase runtime environment, so item 5 remains blocked by deployment configuration and manual auth-hook setup rather than deployment reachability alone.
 
-Next continuation item: Vercel Supabase environment values are now verified correct in the deployed bundle (2026-06-14). The remaining item-5 prerequisites — verifying the Custom Access Token hook registration in the Supabase Dashboard and running authenticated browser/manual operational QA — require Supabase Dashboard/Management-API access and a browser-driving tool not currently available in this environment. No production mutation is authorized by the secure operator runbook.
+Next continuation item: resolve the payment-account blocker documented in `docs/v01/payment-account-resolution-critical-finding.md`. Vercel Supabase environment values are now verified correct in the deployed bundle (2026-06-14), but item 5 cannot produce a GO result until item 4's payment RPC evidence is re-verified, the Custom Access Token hook registration is verified in the Supabase Dashboard, and authenticated browser/manual operational QA is run with a browser-driving tool or manual operator session. No production mutation is authorized by the secure operator runbook.
 
 ### 6.3 v0.1 acceptance gate
 
@@ -552,6 +552,28 @@ docs/v01/migration-reconciliation-status.md
 - Auth hook registration (manual Dashboard step) still needed ⏸️
 
 **Next agent:** Start there to continue v0.1 item 4.
+
+### 2026-06-15 critical payment-account addendum
+
+The latest handoff identified a higher-priority blocker than generic UI QA:
+`find_payment_account_id(text)` can fail on live with `22P02 invalid input syntax
+for type uuid: "1000"` because the live accounts table stores text account codes.
+This can block `record_invoice_payment_atomic(jsonb)` before payment, receipt,
+allocation, or invoice-status posting.
+
+The repository now contains the forward repair candidate:
+
+```text
+supabase/migrations/20260615000100_fix_invoice_payment_account_resolution.sql
+```
+
+The next operator session must also reconcile the latest 50 live migration entries
+against `supabase/migrations/` and record the resulting classification. See:
+
+```text
+docs/v01/payment-account-resolution-critical-finding.md
+docs/FIRST_CLIENT_DELIVERY_PLAN.md
+```
 
 
 ---
