@@ -1,5 +1,6 @@
 import { supabase } from '@/integrations/supabase/client';
 import { getSafeRemainingAmount, sumFinancialValues } from '@/features/financials/financialMath';
+import { getTodayLocalDateString } from '@/features/financials/financials-date-utils';
 import { handleSupabaseError } from '@/lib/supabase-error';
 import type { Database } from '@/types/database';
 import type { Contract, Invoice, Property, Unit } from '@/types/domain';
@@ -222,8 +223,8 @@ export function summarizeOwnerFinancials(invoices: readonly Pick<OwnerInvoice, '
   };
 }
 
-function getTodayIsoDate(): string {
-  return new Date().toISOString().slice(0, 10);
+function getTodayLocalDate(): string {
+  return getTodayLocalDateString();
 }
 
 export async function listOwners(): Promise<Owner[]> {
@@ -324,10 +325,10 @@ export async function updatePropertyOwnerLink(linkId: string, payload: PropertyO
   return requireSupabaseData(data, 'تعذر تحديث علاقة ملكية العقار');
 }
 
-export async function unlinkOwnerFromProperty(linkId: string, endsOn = getTodayIsoDate()): Promise<PropertyOwner> {
+export async function unlinkOwnerFromProperty(linkId: string, endsOn = getTodayLocalDate()): Promise<PropertyOwner> {
   const { data, error } = await supabase
     .from('property_owners')
-    .update({ ends_on: normalizeNullableDate(endsOn) ?? getTodayIsoDate() })
+    .update({ ends_on: normalizeNullableDate(endsOn) ?? getTodayLocalDate() })
     .eq('id', linkId)
     .select('*')
     .single()

@@ -1,5 +1,6 @@
 import { DEFAULT_CURRENCY } from '@/lib/formatters';
 import { formatDefaultCompanyMoney } from '@/lib/companyFormatters';
+import { getTodayLocalDateString } from '@/features/financials/financials-date-utils';
 import { contractStatusLabels, paymentCycleLabels } from './contractSchema';
 import type { ContractListItem } from './services/contractService';
 
@@ -51,5 +52,5 @@ export function buildContractsCsvBlob(contracts: ContractListItem[]) {
 }
 
 export function buildContractsCsvFilename(date: Date) {
-  return `rentrix-contracts-${date.toISOString().slice(0, 10)}.csv`;
+  return `rentrix-contracts-${getTodayLocalDateString(date)}.csv`;
 }
