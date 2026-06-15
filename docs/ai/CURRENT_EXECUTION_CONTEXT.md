@@ -23,32 +23,44 @@ Rentrix is also not approved for a general accounting ledger during stabilizatio
 
 ## Latest Merged Work Verified
 
-Current local history was verified on branch `main` with latest commits through `936ac3d test(financials): lock payment-backed void-receipt contract (#909)`.
+Current local history verified on `main` at `feae86b fix(db): reconcile migration chain + void_receipt_atomic + type cast fixes (#910)`.
 
-### ✅ مُنجز ومُطبَّق على الـ live DB (`nnggcnpcuomwfuupupwg`)
+### ✅ مُنجز ومُطبَّق — live DB `nnggcnpcuomwfuupupwg`
 
-- **PR #896 / fix(db): repair invoice payment account resolution** — `20260615000100_fix_invoice_payment_account_resolution.sql` مطبَّقة. `find_payment_account_id('cash')` يعيد `1111` و`find_payment_account_id('receivable')` يعيد `1201` ✅
-- **PR #892 / fix(db): schema integrity audit** — migrations `20260614140000`, `20260614140100`, `20260614140200` مطبَّقة على الـ live.
-- **DB fix session 2026-06-15** — migration `20260615000200_fix_type_casts_void_receipt_security` مطبَّقة على الـ live:
-  - `renew_contract_atomic`: إصلاح `updated_at = bigint` → `now()` ✅
-  - `update_contract_balance_on_receipt_allocation`: إصلاح `updated_at = bigint` → `now()` ✅
-  - `update_owner_balance_on_expense`: إزالة `c.status = 'ACTIVE'` filter + `updated_at = now()` ✅
-  - `void_receipt_atomic(uuid,bigint,jsonb,jsonb)`: إصلاح `created_at cast bigint→timestamptz` ✅
-  - `void_receipt_atomic(jsonb)`: **wrapper جديد** يطابق استدعاء الـ frontend `{ payload }` ✅
-  - `invoices/receipts/expenses/app_notifications/outgoing_notifications.deleted_at`: `bigint → timestamptz` ✅
-  - `v_balance_reconciliation`: أُعيد إنشاؤها بعد تغيير النوع ✅
-  - `set_receipts_updated_at` / `set_invoices_updated_at` triggers: مضافة ✅
-  - Security: `REVOKE anon` من `void_receipt_atomic` ✅
-- **Migration chain reconciliation 2026-06-15**:
-  - 43 migration موجودة في الـ repo مسجَّلة في `supabase_migrations.schema_migrations` ✅
-  - 11 stub أُنشئت في الـ repo لـ migrations طُبِّقت مباشرة على الـ live خارج الـ repo ✅
-  - إجمالي migrations مسجَّلة: 100 ✅
+| PR / Migration | التغيير | الحالة |
+|---|---|---|
+| PR #896 `20260615000100` | `find_payment_account_id`: `cash=1111`, `receivable=1201` | ✅ مؤكَّد live |
+| PR #901 | تاريخ محلي في الـ UI بدلاً من UTC | ✅ |
+| PR #892 `20260614140000` | triggers unit status على INSERT+UPDATE+DELETE | ✅ مؤكَّد live |
+| PR #892 `20260614140100` | `update_owner_balance_on_expense`: إزالة `ACTIVE` filter | ✅ مؤكَّد live |
+| PR #892 `20260614140200` | cleanup: duplicate triggers/FKs + missing indexes | ✅ مؤكَّد live |
+| PR #910 `20260615000200` | `renew_contract_atomic`: `bigint→now()` لـ `updated_at` | ✅ مؤكَّد live |
+| PR #910 `20260615000200` | `update_contract_balance_on_receipt_allocation`: `bigint→now()` | ✅ مؤكَّد live |
+| PR #910 `20260615000200` | `void_receipt_atomic(4-arg)`: `created_at bigint→to_timestamp()` | ✅ مؤكَّد live |
+| PR #910 `20260615000200` | `void_receipt_atomic(jsonb)`: wrapper جديد يطابق frontend `{ payload }` — أغلق PGRST202 | ✅ مؤكَّد live |
+| PR #910 `20260615000200` | `invoices/receipts/expenses.deleted_at`: `bigint→timestamptz` | ✅ مؤكَّد live |
+| PR #910 `20260615000200` | `v_balance_reconciliation`: أُعيد إنشاؤها | ✅ مؤكَّد live |
+| PR #910 `20260615000200` | `set_receipts_updated_at` / `set_invoices_updated_at` triggers | ✅ مؤكَّد live |
+| PR #910 `20260615000200` | `REVOKE anon` من `void_receipt_atomic` | ✅ |
+| PR #910 stubs | 11 remote-applied migration stubs لإصلاح CI chain gap | ✅ |
+| PR #910 DB reg | 43 repo migrations مسجَّلة في `supabase_migrations` | ✅ |
+
+**Live DB snapshot (2026-06-15):**
+- `supabase_migrations` total: **100 migrations** ✅
+- `invoices.deleted_at`: `timestamptz` ✅
+- `receipts.deleted_at`: `timestamptz` ✅
+- `expenses.deleted_at`: `timestamptz` ✅
+- `void_receipt_atomic` overloads: **2** (jsonb + 4-arg) ✅
+- `v_balance_reconciliation`: exists ✅
+- `find_payment_account_id('cash')` = `1111` ✅
+- `find_payment_account_id('receivable')` = `1201` ✅
 
 ### ما يزال غير مؤكَّد
 
 - Custom Access Token Hook: موجود كـ DB function لكن لم يُؤكَّد تسجيله في Supabase Dashboard.
-- Authenticated browser E2E QA: لم يُنفَّذ بعد.
-- `financial_operation_idempotency` grants/policies: يحتاج تحقق بالـ authenticated session.
+- Authenticated browser E2E QA: لم يُنفَّذ بعد على الـ deployed app.
+- `financial_operation_idempotency` grants/RLS: يحتاج تحقق بـ authenticated session.
+- `record_invoice_payment_atomic` full posting flow: account resolution مؤكَّد، لكن E2E invoice→payment→receipt→allocation→idempotency لم يُختبر authenticated.
 
 ## Core MVP Systems
 
@@ -123,14 +135,15 @@ Current CRM guidance: `/lands`, `/leads`, `/commissions`, and `/communication` m
 
 Do not claim production readiness until these blockers are closed with fresh evidence:
 
-- Live Supabase migration-state reconciliation remains unresolved. The intended live project is `RENTRIX EGY (live) / nnggcnpcuomwfuupupwg`; the prohibited project is `rentrix (V2) / ktmizdznbdwvalmmfvfc`.
+- ~~Live Supabase migration-state reconciliation~~ **✅ حُلَّت** — 100 migrations مسجَّلة، 11 stub مضافة، chain متسقة (PR #910).
 - Supabase default branch status has been recorded as `MIGRATIONS_FAILED`; it must be reconciled through the approved path before release closure.
 - Preview-branch migration replay remains blocked by the migration reconciliation item and required access.
 - Custom Access Token hook registration cannot be considered verified until Supabase Dashboard or Management API evidence confirms the hook registration.
 - Authenticated browser/manual QA remains blocked until an operator or browser-driving capability verifies post-login runtime behavior.
 - ~~The `find_payment_account_id(text)` account-resolution issue~~ — **✅ حُلَّت**: `find_payment_account_id('cash')` = `1111`, `find_payment_account_id('receivable')` = `1201`.
 - `financial_operation_idempotency` live status is unresolved until table existence, grants, RLS, policies, duplicate-index cleanup, and browser-write denial are verified against the intended environment.
-- Payments vs receipts source-of-truth behavior is unresolved until active code, RPC return payloads, receipt projections, and database objects are verified together. Do not switch UI receipt identifiers from payment-backed projections to internal receipt IDs without a reviewed migration and frontend cutover.
+- ~~`void_receipt_atomic` PGRST202 mismatch~~ **✅ حُلَّت** — overload `(jsonb)` مضافة (PR #910). الـ frontend لا يحتاج تغييراً.
+- Payments vs receipts source-of-truth: receipt identifiers تبقى payment-backed (`payment_id`) حتى يُراجَع بشكل منفصل.
 - Canonical balance-model behavior remains unclosed until invoice outstanding, arrears, reports, receipt projection, payment posting, void/reversal behavior, and live RPC results are verified from one source-of-truth path.
 - Reports/KPI definitions are now documented in `docs/ai/REPORTING_DEFINITIONS.md`, but metric ambiguity remains until product owners approve the definitions and live data validates the formulas.
 - Print/PDF/export readiness is now documented in `docs/ai/PRINT_AND_EXPORT_READINESS.md`; missing templates and mobile print limitations remain release-readiness gaps, not hidden implementation assumptions.
