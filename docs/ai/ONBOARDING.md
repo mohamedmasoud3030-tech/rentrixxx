@@ -63,6 +63,10 @@ Receipts
 Expenses
 Arrears
 Reports
+Maintenance
+System
+Audit Log
+Data Integrity
 Change Password
 Settings
 ```
@@ -79,17 +83,13 @@ Arrears
 
 ### Registered but intentionally hidden routes
 
-The following routes remain registered in `artifacts/rentrix/src/routeTree.ts`, but they are intentionally hidden from visible constrained-beta navigation until they are separately verified and approved:
+The following optional and product-decision routes remain registered in `artifacts/rentrix/src/routeTree.ts`, but they are intentionally hidden from visible constrained-beta navigation until they are separately verified and approved:
 
 ```text
 /lands
 /leads
-/maintenance
 /commissions
 /communication
-/system
-/audit-log
-/data-integrity
 ```
 
 Do not delete these routes merely because they are hidden. Do not re-expose them in navigation merely because they remain registered.
@@ -98,10 +98,10 @@ Current deferred page status (verified June 2026):
 
 | Route | Backend support | Page ready | Service status |
 | --- | --- | --- | --- |
-| `/maintenance` | Schema in migrations | Yes — full service + tests | Ready for v0.3 review |
-| `/audit-log` | `public.audit_log` queried (pilot, PR #806) | Yes — read-only view | Pilot active; `database.ts` not refreshed |
-| `/data-integrity` | Minimal | Yes — page exists | Service minimal |
-| `/system` | Minimal | Yes — page + components | Service minimal |
+| `/maintenance` | Schema in migrations | Yes — full service + tests | Re-exposed in v0.3 with permissioned navigation |
+| `/audit-log` | `public.audit_log` queried with generated `database.ts` type | Yes — read-only view | Re-exposed in v0.3 with hardened RLS evidence |
+| `/data-integrity` | Minimal read model | Yes — page exists | Re-exposed in v0.3 with permissioned navigation |
+| `/system` | Minimal governance source support | Yes — page + components | Re-exposed in v0.3 with permissioned navigation |
 | `/lands` | In migrations | Yes — page + service | Needs v0.4 product decision |
 | `/leads` | No confirmed schema table | Yes — page returns unavailable | Needs v0.4 product decision |
 | `/commissions` | No confirmed schema table | Yes — page returns unavailable | Needs v0.4 product decision |
@@ -136,11 +136,11 @@ Preserve at minimum:
 - outstanding balance is derived through one canonical calculation path;
 - orphan chains are not allowed.
 
-## 5. Known tech debt (do not fix during docs-only or audit PRs)
+## 5. Closed tech debt and known blockers
 
-- **Duplicate hook pairs:** `useProperties.ts` / `use-properties.ts` and `useUnits.ts` / `use-units.ts` both exist. `useMaintenance.ts` is a re-export facade over `use-maintenance.ts` (benign). The property/unit pairs need consolidation in v0.2.
-- **`database.ts` type gap:** `public.audit_log` is being queried in the audit pilot but is not in the generated `database.ts` types. A local type cast workaround is in place. Refresh `database.ts` in v0.3.
-- **Supabase MIGRATIONS_FAILED:** the live Supabase project reports a failed migration state. Reconciliation is blocked pending direct connector access. See v0.1 item 2.
+- **Duplicate hook pairs closed:** `useProperties.ts` / `use-properties.ts` and `useUnits.ts` / `use-units.ts` were consolidated in v0.2. Current canonical hooks are `use-properties.ts` and `use-units.ts`.
+- **`database.ts` audit type gap closed:** `public.audit_log` and other previously untracked tables are now represented in the generated database types, and the audit service uses `Database['public']['Tables']['audit_log']['Row']` directly.
+- **Supabase migration and browser QA blockers remain:** live migration-state reconciliation, Custom Access Token hook registration verification, and authenticated browser/manual QA are blocked by dashboard/management API access and browser-driving capability. See v0.1 items 2, 5, and `docs/v01/migration-reconciliation-status.md`.
 
 ## 6. Required reading order
 
