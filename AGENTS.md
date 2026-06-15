@@ -47,11 +47,11 @@ The current visible constrained-beta navigation and the registered-but-hidden de
 - Reuse archived recovery notes only after comparing them against current architecture and adapting deliberately.
 - Treat migrations, RLS policies, auth boundaries, environment handling, and financial posting behavior as sensitive surfaces.
 
-## Known tech debt (acknowledge, do not fix casually)
+## Known release blockers and closed tech debt
 
-- `useProperties.ts` / `use-properties.ts` and `useUnits.ts` / `use-units.ts` are duplicate hook pairs — consolidate in v0.2.
-- `database.ts` types do not include `public.audit_log` — the audit service uses a local cast workaround; refresh in v0.3.
-- Live Supabase reports `MIGRATIONS_FAILED` — blocked pending direct connector access.
+- `useProperties.ts` / `use-properties.ts` and `useUnits.ts` / `use-units.ts` duplicate hook pairs were consolidated in v0.2. Current canonical hooks are `use-properties.ts` and `use-units.ts`.
+- `database.ts` now includes `public.audit_log`; the audit service uses the generated database type directly.
+- Live Supabase migration-state reconciliation and authenticated browser/manual QA remain blocked by dashboard/management API access and browser-driving capability, as documented in `docs/RENTRIX_MASTER_PLAN.md` and `docs/v01/migration-reconciliation-status.md`.
 
 ## Skills and workflows
 

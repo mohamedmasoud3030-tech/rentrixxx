@@ -143,9 +143,9 @@ Baseline source: `main@5d6d43bbe7a58ec271559f5986be784bcbd04290` (HEAD at founda
 
 **Legacy trees removed:** `.migration-backup/`, `artifacts/rentrix/legacy-src/`, `artifacts/mockup-sandbox/` were deleted in PR #805. Recovery knowledge extracted to `archive/recovery-reference/`.
 
-**Audit Log pilot:** `public.audit_log` is being queried read-only in `features/audit/services/audit-log-service.ts`. The Supabase database type file has not been refreshed to include `audit_log`; the service uses a local type cast workaround. Route `/audit-log` remains registered but hidden from navigation.
+**Audit Log:** `public.audit_log` is being queried read-only in `features/audit/services/audit-log-service.ts` using the generated `Database['public']['Tables']['audit_log']['Row']` type. Route `/audit-log` was re-exposed through the v0.3 governance recovery work with hardened RLS evidence.
 
-**Duplicate hooks:** `useProperties.ts` / `use-properties.ts`, `useUnits.ts` / `use-units.ts`, and `useMaintenance.ts` (re-export facade) / `use-maintenance.ts` (real implementation) remain. These are known tech debt. `useMaintenance.ts` is a re-export facade so it is benign; the property and unit pairs need consolidation in v0.2.
+**Duplicate hooks:** `useProperties.ts` / `use-properties.ts` and `useUnits.ts` / `use-units.ts` were consolidated in v0.2. The canonical active hooks are `use-properties.ts` and `use-units.ts`.
 
 **Agent skills materialized:** `.codex/vendor/selected-agent-skills/` materialized in #807.
 
@@ -170,6 +170,10 @@ Receipts
 Expenses
 Arrears
 Reports
+Maintenance
+System
+Audit Log
+Data Integrity
 Change Password
 Settings
 ```
@@ -186,26 +190,22 @@ Arrears
 
 ### 3.4 Registered but intentionally hidden routes
 
-These routes remain registered for controlled recovery and verification, but are hidden from visible constrained-beta navigation:
+These optional and product-decision routes remain registered for controlled recovery and verification, but are hidden from visible constrained-beta navigation:
 
 ```text
 /lands
 /leads
-/maintenance
 /commissions
 /communication
-/system
-/audit-log
-/data-integrity
 ```
 
 Do not delete them merely because they are hidden. Do not re-expose them merely because their route modules exist.
 
 Status of deferred feature pages (verified from code):
-- `/maintenance` — service, hook, and page exist; schema backed by migrations; ready for v0.3 review.
-- `/audit-log` — read-only pilot wired to `public.audit_log`; env-guard added; ready for v0.3 decision.
-- `/data-integrity` — page exists under `features/system/`; service present but minimal.
-- `/system` — page and components exist under `features/system/`.
+- `/maintenance` — service, hook, and page exist; schema backed by migrations; re-exposed in v0.3 with permissioned navigation.
+- `/audit-log` — read-only view wired to `public.audit_log` with generated database types; re-exposed in v0.3 with hardened RLS evidence.
+- `/data-integrity` — page exists under `features/system/`; re-exposed in v0.3 with permissioned navigation.
+- `/system` — page and components exist under `features/system/`; re-exposed in v0.3 with permissioned navigation.
 - `/commissions` — page and service return `status: unavailable` (no schema table confirmed).
 - `/leads` — page and service return `status: unavailable` (no schema table confirmed).
 - `/communication` — page and service return `status: unavailable` (no schema table confirmed).
