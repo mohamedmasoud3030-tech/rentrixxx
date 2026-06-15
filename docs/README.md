@@ -1,17 +1,19 @@
 # Rentrix Documentation Index
 
-Use this page to navigate repository documentation without treating every historical report as current policy. Older reports are historical snapshots, not current execution guidance, unless `ai/CURRENT_EXECUTION_CONTEXT.md` and active code/migrations verify the same fact.
+Use this page to navigate repository documentation without treating every historical report as current policy. Older reports are historical snapshots, not current execution guidance, unless `ai/CURRENT_EXECUTION_CONTEXT.md` and active code/migrations verify the same fact. Payment, migration, launch, security, and roadmap reports under `v01/`, `v02/`, `wave1/`, `audits/`, and `demo-gates/` are dated evidence, not instructions to bypass the current single-office product boundary.
 
 ## Start here
 
 1. `../AGENTS.md` — canonical repository operating policy.
 2. `ai/CURRENT_EXECUTION_CONTEXT.md` — single current execution source of truth for scope, blockers, contradictions, next PR order, and future-agent rules.
-3. `ai/ONBOARDING.md` — constrained-beta application snapshot and reading order.
-4. `RENTRIX_MASTER_PLAN.md` — final product shape, current release, ordered releases, acceptance gates, and continuation behavior.
-5. `ai/AGENT_CAPABILITIES.md` — project skills, installed additions, and task-to-skill matrix.
-6. `ai/GIT_TOOLING_POLICY.md` — Git and GitHub usage rules.
-7. `ROOT_LAYOUT.md` — architectural tree, ownership, dependency direction, and retention rules.
-8. `ai/SECURE_OPERATOR_RUNBOOK.md` — redacted constrained-beta environment ownership and connector-safe blocker reporting.
+3. `ai/REPORTING_DEFINITIONS.md` — current metric sources, formulas, statuses, and limitations.
+4. `ai/PRINT_AND_EXPORT_READINESS.md` — current print/PDF/CSV support and gaps.
+5. `ai/ONBOARDING.md` — constrained-beta application snapshot and reading order.
+6. `RENTRIX_MASTER_PLAN.md` — final product shape, current release, ordered releases, acceptance gates, and continuation behavior.
+7. `ai/AGENT_CAPABILITIES.md` — project skills, installed additions, and task-to-skill matrix.
+8. `ai/GIT_TOOLING_POLICY.md` — Git and GitHub usage rules.
+9. `ROOT_LAYOUT.md` — architectural tree, ownership, dependency direction, and retention rules.
+10. `ai/SECURE_OPERATOR_RUNBOOK.md` — redacted constrained-beta environment ownership and connector-safe blocker reporting.
 
 ## Canonical guidance
 

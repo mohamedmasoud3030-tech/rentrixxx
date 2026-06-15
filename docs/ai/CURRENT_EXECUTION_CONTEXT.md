@@ -21,6 +21,31 @@ Rentrix is explicitly not a shared-database SaaS product. Do not add organizatio
 
 Rentrix is also not approved for a general accounting ledger during stabilization. `/accounting` is a redirect to `/financials`; it is not permission to build a balance sheet, accounting-grade P&L, journal-entry UI, or broad ledger module.
 
+## Latest Merged Work Verified
+
+Current local history was verified on branch `work` with latest commits through `7c070a0 test(financials): lock payment-backed receipt lookup (#906)`. The current branch includes the requested recent financial fixes:
+
+- PR #896 / `b2457cf fix(db): repair invoice payment account resolution`: added `supabase/migrations/20260615000100_fix_invoice_payment_account_resolution.sql`, replacing `find_payment_account_id(text)` with text account ID resolution by the observed chart-of-accounts numbers `1111` and `1201`, then recreating `record_invoice_payment_atomic(jsonb)` to post journal entries using text account IDs.
+- PR #899 / `ea46810 fix: harden payment account fallback migration`: kept the payment-account repair forward-only and hardened the fallback behavior around account resolution. Current local evidence still requires live replay/application evidence before closing the blocker.
+- PR #901 / `3664472 fix(financials): use local dates for defaults`: active UI/default date cleanup is present. The remaining `toISOString().slice(0, 10)` matches in `artifacts/rentrix/src` are test fixtures that intentionally demonstrate UTC drift and a contract-schema validation round-trip, not active business-date defaults.
+- PR #905 / `5b540ab docs(v01): inventory payments/receipts source-of-truth and roadmap breadcrumb` and PR #906 / `7c070a0 test(financials): lock payment-backed receipt lookup` further document and test the current payment-backed receipt detail contract.
+
+What is fixed locally:
+
+- The repository contains the forward migration intended to fix the invoice payment account-resolution mismatch.
+- The repair migration uses the real observed accounts shape: `accounts.id` is treated as text and account selection prefers `accounts.no` codes before name fallback.
+- The active frontend payment call still uses the browser-facing `record_invoice_payment_atomic` RPC and preserves idempotent `request_id` behavior.
+- The active receipt UI remains payment-backed: the UI maps internal RPC `receipt_id` to `ledger_receipt_id` and uses `payment_id` as the browser receipt detail identifier.
+- Local business-date defaults no longer depend on UTC `toISOString().slice(0, 10)` in active financial/report UI defaults.
+
+What remains unverified:
+
+- Whether `20260615000100_fix_invoice_payment_account_resolution.sql` has been applied to the intended live Supabase project.
+- Whether live `find_payment_account_id('cash')` and `find_payment_account_id('receivable')` now return configured account IDs without `22P02`.
+- Whether live `record_invoice_payment_atomic(jsonb)` records payment, internal receipt/allocation, journal entries, invoice status, and idempotency rows under authenticated ADMIN/MANAGER execution.
+- Whether the Supabase Custom Access Token Hook is registered in Dashboard/Management API configuration, not merely present as a database function.
+- Whether authenticated browser E2E payment QA passes on the deployed app.
+
 ## Core MVP Systems
 
 The current MVP execution path is the operational chain:
@@ -39,19 +64,20 @@ Core systems that belong in the active constrained-beta and first-client path:
 - Properties.
 - Units.
 - People.
-- Tenants.
 - Owners.
+- Tenants.
 - Owners Hub.
 - Contracts.
 - Financials.
 - Invoices.
-- Payment recording.
-- Receipts and receipt printing.
+- Receipts / payment recording.
 - Expenses.
 - Arrears.
 - Reports.
 - Maintenance.
 - Settings and change password.
+- Auth and permissions.
+- Print/PDF for core documents.
 - Authorized system governance.
 - Authorized audit visibility.
 - Authorized data-integrity visibility.
@@ -77,8 +103,10 @@ These systems are deferred unless a reviewed product decision and verified schem
 - Leads.
 - Commissions.
 - Communication.
+- Communication / notifications.
 - General CRM expansion.
-- Owner settlements and payout workflows.
+- Advanced owner settlements and payout workflows.
+- Advanced automation and governance.
 - External provider sends.
 - Property map.
 - Smart assistant expansion.
@@ -99,6 +127,9 @@ Do not claim production readiness until these blockers are closed with fresh evi
 - The `find_payment_account_id(text)` account-resolution issue is unresolved until the approved environment applies/replays the repair and verifies `find_payment_account_id('cash')` and `find_payment_account_id('receivable')`.
 - `financial_operation_idempotency` live status is unresolved until table existence, grants, RLS, policies, duplicate-index cleanup, and browser-write denial are verified against the intended environment.
 - Payments vs receipts source-of-truth behavior is unresolved until active code, RPC return payloads, receipt projections, and database objects are verified together. Do not switch UI receipt identifiers from payment-backed projections to internal receipt IDs without a reviewed migration and frontend cutover.
+- Canonical balance-model behavior remains unclosed until invoice outstanding, arrears, reports, receipt projection, payment posting, void/reversal behavior, and live RPC results are verified from one source-of-truth path.
+- Reports/KPI definitions are now documented in `docs/ai/REPORTING_DEFINITIONS.md`, but metric ambiguity remains until product owners approve the definitions and live data validates the formulas.
+- Print/PDF/export readiness is now documented in `docs/ai/PRINT_AND_EXPORT_READINESS.md`; missing templates and mobile print limitations remain release-readiness gaps, not hidden implementation assumptions.
 - Final constrained-beta GO/NO-GO remains blocked until the full CI gate, migration/RPC/auth evidence, and browser/manual QA are complete.
 
 ## Current Next PR Order
