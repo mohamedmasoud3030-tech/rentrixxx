@@ -14,6 +14,7 @@ import { FinancialReportsPreviewSection } from './components/financial-reports-p
 import { InvoiceWorkspaceSection } from './components/invoice-workspace-section';
 import { OPERATIONAL_EXPENSE_CATEGORIES, type OperationalExpenseFilterValues } from './expenses/operational-expenses';
 import { useCreateExpense, useExpenses } from './expenses/useExpenses';
+import { getTodayLocalDateString } from './financials-date-utils';
 import { useCollectionSummaryReport } from './reports/useFinancialReports';
 
 const expenseSchema = z.object({
@@ -27,11 +28,11 @@ const expenseSchema = z.object({
 
 function getCurrentMonthReportRange() {
   const now = new Date();
-  const firstDay = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
-  const lastDay = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 0));
+  const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
+  const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0);
   return {
-    dateFrom: firstDay.toISOString().slice(0, 10),
-    dateTo: lastDay.toISOString().slice(0, 10),
+    dateFrom: getTodayLocalDateString(firstDay),
+    dateTo: getTodayLocalDateString(lastDay),
     status: 'all' as const,
   };
 }
@@ -61,7 +62,7 @@ export function FinancialsPage() {
       property_id: '',
       category: 'صيانة',
       amount: 0,
-      expense_date: new Date().toISOString().slice(0, 10),
+      expense_date: getTodayLocalDateString(),
       description: '',
       attachment_url: null,
     },
@@ -83,7 +84,7 @@ export function FinancialsPage() {
             property_id: '',
             category: 'صيانة',
             amount: 0,
-            expense_date: new Date().toISOString().slice(0, 10),
+            expense_date: getTodayLocalDateString(),
             description: '',
             attachment_url: null,
           });

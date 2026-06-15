@@ -11,6 +11,7 @@ import { useProperties } from '@/features/properties/use-properties';
 import { defaultCompanyLocalSettings } from '@/lib/companySettings';
 import { formatCompanyMoney, getCompanyLocale } from '@/lib/companyFormatters';
 import { ExpensesSection, type ExpenseFormValues } from '../components/expenses-section';
+import { getTodayLocalDateString } from '../financials-date-utils';
 import { OPERATIONAL_EXPENSE_CATEGORIES, summarizeOperationalExpenses, type OperationalExpenseFilterValues } from './operational-expenses';
 import { useCreateExpense, useExpenses } from './useExpenses';
 
@@ -39,11 +40,7 @@ function ExpenseMetric({ label, value, helper, icon: Icon }: Readonly<{ label: s
 }
 
 export function toLocalDateInputValue(date: Date = new Date()) {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
-
-  return `${year}-${month}-${day}`;
+  return getTodayLocalDateString(date);
 }
 
 export function ExpensesPage() {

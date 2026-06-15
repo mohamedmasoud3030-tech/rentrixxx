@@ -16,6 +16,7 @@ import {
   type OperationalExpenseCategory,
   type OperationalExpenseFilterValues,
 } from '../expenses/operational-expenses';
+import { getTodayLocalDateString } from '../financials-date-utils';
 
 export type ExpenseFormValues = {
   property_id: string;
@@ -72,7 +73,7 @@ export function ExpensesSection({ expenses, propertyRows, filters, onFiltersChan
   const summary = summarizeOperationalExpenses(expenses);
   const hasFilters = Boolean(filters.propertyId || filters.category || filters.from || filters.to);
   const clearFilters = () => onFiltersChange({ propertyId: '', category: '', from: '', to: '' });
-  const exportVisibleExpenses = () => downloadCsv(`rentrix-expenses-${new Date().toISOString().slice(0, 10)}.csv`, buildExpensesCsv(expenses, propertyRows));
+  const exportVisibleExpenses = () => downloadCsv(`rentrix-expenses-${getTodayLocalDateString()}.csv`, buildExpensesCsv(expenses, propertyRows));
 
   return (
     <Card className="rounded-2xl">
