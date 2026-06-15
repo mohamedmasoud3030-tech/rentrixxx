@@ -1,5 +1,7 @@
 # Rentrix v0.1 first-customer release handoff
 
+> Historical snapshot — verify against `docs/ai/CURRENT_EXECUTION_CONTEXT.md` before acting.
+
 ## Completed and pushed
 
 - Operational route surfaces were merged.

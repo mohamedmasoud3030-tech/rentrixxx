@@ -1,5 +1,7 @@
 # Wave 1C — Auth and RLS Hardening Plan
 
+> Historical snapshot — verify against `docs/ai/CURRENT_EXECUTION_CONTEXT.md` before acting.
+
 ## Scope
 
 Documentation-only hardening plan for authentication, authorization, JWT role issuance, route guards, table privileges, RPC execution grants, and Row Level Security.

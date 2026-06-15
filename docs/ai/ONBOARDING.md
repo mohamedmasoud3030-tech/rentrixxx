@@ -1,8 +1,8 @@
 # Rentrix Agent Onboarding
 
-This is the canonical onboarding sequence and current application snapshot for coding agents. Read `AGENTS.md` first, then use this file before editing.
+This is the canonical onboarding sequence and current application snapshot for coding agents. Read `AGENTS.md` first, then read `docs/ai/CURRENT_EXECUTION_CONTEXT.md` before this file or any older report.
 
-When documentation and code disagree, inspect the active code and migrations, report the mismatch, and update the stale documentation through a reviewed change. Do not guess from historical reports, recovery folders, or old pull requests.
+When documentation and code disagree, `docs/ai/CURRENT_EXECUTION_CONTEXT.md` is the current execution source of truth. Inspect the active code and migrations, report the mismatch, and update stale documentation through a reviewed change. Do not guess from historical reports, recovery folders, or old pull requests.
 
 ## 1. Product boundary
 
@@ -146,20 +146,21 @@ Preserve at minimum:
 
 After `AGENTS.md`, read in this order before non-trivial edits:
 
-1. `README.md`
-2. `docs/RENTRIX_MASTER_PLAN.md`
-3. `docs/ai/AGENT_CAPABILITIES.md`
-4. `docs/ai/GIT_TOOLING_POLICY.md`
-5. `docs/ROOT_LAYOUT.md`
-6. `docs/README.md`
-7. `docs/ai/product-scope.md`
-8. `docs/ai/domain-rules.md`
-9. `docs/ai/engineering-policy.md`
-10. `docs/ai/security-policy.md`
-11. `docs/ai/testing-guide.md`
-12. `docs/ai/release-policy.md`
-13. `docs/decisions/README.md`
-14. `.ai/workflows/README.md`
+1. `docs/ai/CURRENT_EXECUTION_CONTEXT.md`
+2. `README.md`
+3. `docs/RENTRIX_MASTER_PLAN.md`
+4. `docs/ai/AGENT_CAPABILITIES.md`
+5. `docs/ai/GIT_TOOLING_POLICY.md`
+6. `docs/ROOT_LAYOUT.md`
+7. `docs/README.md`
+8. `docs/ai/product-scope.md`
+9. `docs/ai/domain-rules.md`
+10. `docs/ai/engineering-policy.md`
+11. `docs/ai/security-policy.md`
+12. `docs/ai/testing-guide.md`
+13. `docs/ai/release-policy.md`
+14. `docs/decisions/README.md`
+15. `.ai/workflows/README.md`
 
 Then load only the task-specific references needed for the requested change.
 

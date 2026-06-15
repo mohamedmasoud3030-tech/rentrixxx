@@ -1,4 +1,7 @@
 # Rentrixxx — Second Audit: Schema Integrity, Trigger Logic & Constraint Review
+
+> Historical snapshot — verify against `docs/ai/CURRENT_EXECUTION_CONTEXT.md` before acting.
+
 **Date:** 2026-06-13 (Session 3)
 **Scope:** Production project `nnggcnpcuomwfuupupwg`
 **Methodology:** Direct SQL inspection of triggers, FK constraints, indexes, and function bodies in `public` schema. All findings below are reproduced with the exact verification query used. No code changes applied in this session — findings only, pending PR.

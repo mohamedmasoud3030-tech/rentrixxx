@@ -1,5 +1,7 @@
 # Wave 1A — Contract Integrity Reconciliation
 
+> Historical snapshot — verify against `docs/ai/CURRENT_EXECUTION_CONTEXT.md` before acting.
+
 ## Scope
 
 Repository reconciliation for contract integrity on top of `main` after PR #793 and the later hardening commits already present on `main`.

@@ -1,5 +1,7 @@
 # v0.1 Critical Finding: Payment Account Resolution and Migration Chain Reconciliation
 
+> Historical snapshot — verify against `docs/ai/CURRENT_EXECUTION_CONTEXT.md` before acting.
+
 **Date:** 2026-06-15
 **Roadmap:** v0.1 items 2, 4, and 5
 **Status:** BLOCKING until the live fix is applied and verified

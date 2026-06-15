@@ -1,5 +1,7 @@
 # v0.1 Security Reconciliation — Final Status
 
+> Historical snapshot — verify against `docs/ai/CURRENT_EXECUTION_CONTEXT.md` before acting.
+
 **Status:** PARTIAL COMPLETE — 2 of 4 security fixes applied; 1 dashboard-only; 1 deferred to separate PR  
 **Date:** 2026-06-07  
 **Roadmap:** v0.1 Item 4 — Auth, RLS, and RPC least-privilege reconciliation  
