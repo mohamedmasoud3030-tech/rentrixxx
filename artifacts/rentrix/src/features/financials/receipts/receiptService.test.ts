@@ -41,6 +41,7 @@ type TableResponses = Partial<Record<TableName, unknown[]>>;
 type QueryLogEntry = { table: string; method: string; args: unknown[] };
 
 function createQueryBuilder(table: string, responses: TableResponses, log: QueryLogEntry[]) {
+  const eqFilters: Array<{ column: string; value: unknown }> = [];
   const builder = {
     select: vi.fn((...args: unknown[]) => {
       log.push({ table, method: 'select', args });
@@ -56,6 +57,7 @@ function createQueryBuilder(table: string, responses: TableResponses, log: Query
     }),
     eq: vi.fn((...args: unknown[]) => {
       log.push({ table, method: 'eq', args });
+      eqFilters.push({ column: String(args[0]), value: args[1] });
       return builder;
     }),
     order: vi.fn((...args: unknown[]) => {
@@ -72,7 +74,12 @@ function createQueryBuilder(table: string, responses: TableResponses, log: Query
     }),
     returns: vi.fn(async () => {
       log.push({ table, method: 'returns', args: [] });
-      const data = responses[table as TableName] ?? [];
+      const data = (responses[table as TableName] ?? []).filter((row) => (
+        eqFilters.every((filter) => {
+          if (!row || typeof row !== 'object') return false;
+          return (row as Record<string, unknown>)[filter.column] === filter.value;
+        })
+      ));
       return {
         data: table === 'payments' && builder.single.mock.calls.length > 0 ? data[0] ?? null : data,
         error: null,
@@ -190,6 +197,30 @@ describe('receiptService', () => {
     expect(log.filter((entry) => entry.table === 'payments' && entry.method === 'eq')).toEqual([
       { table: 'payments', method: 'eq', args: ['id', 'payment_123'] },
     ]);
+  });
+
+  it('keeps browser receipt lookup payment-backed when the RPC also returns an internal ledger receipt id', async () => {
+    mockSupabaseTables({
+      payments: [createPaymentFixture({ id: 'payment_123', invoice_id: 'inv_1' })],
+      invoices: [{ id: 'inv_1', contract_id: null, status: 'paid' }],
+    });
+    const { toPaymentBackedReceiptResult } = await import('../payments/usePayments');
+    const { getReceiptDetail } = await import('./receiptService');
+
+    const uiResult = toPaymentBackedReceiptResult({
+      status: 'recorded',
+      request_id: 'request-1',
+      invoice_id: 'inv_1',
+      payment_id: 'payment_123',
+      receipt_id: 'ledger_receipt_123',
+    });
+
+    await expect(getReceiptDetail(uiResult.receipt_id)).resolves.toMatchObject({
+      id: 'payment_123',
+      payment_id: 'payment_123',
+      invoice_id: 'inv_1',
+    });
+    await expect(getReceiptDetail(uiResult.ledger_receipt_id)).rejects.toThrow('Receipt not found');
   });
 
   it('uses posted payment amounts as receipt truth without deriving balances', async () => {
