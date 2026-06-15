@@ -1,16 +1,17 @@
 # Rentrix Documentation Index
 
-Use this page to navigate repository documentation without treating every historical report as current policy.
+Use this page to navigate repository documentation without treating every historical report as current policy. Older reports are historical snapshots, not current execution guidance, unless `ai/CURRENT_EXECUTION_CONTEXT.md` and active code/migrations verify the same fact.
 
 ## Start here
 
 1. `../AGENTS.md` — canonical repository operating policy.
-2. `ai/ONBOARDING.md` — current constrained-beta application snapshot and reading order.
-3. `RENTRIX_MASTER_PLAN.md` — final product shape, current release, ordered releases, acceptance gates, and continuation behavior.
-4. `ai/AGENT_CAPABILITIES.md` — project skills, installed additions, and task-to-skill matrix.
-5. `ai/GIT_TOOLING_POLICY.md` — Git and GitHub usage rules.
-6. `ROOT_LAYOUT.md` — architectural tree, ownership, dependency direction, and retention rules.
-7. `ai/SECURE_OPERATOR_RUNBOOK.md` — redacted constrained-beta environment ownership and connector-safe blocker reporting.
+2. `ai/CURRENT_EXECUTION_CONTEXT.md` — single current execution source of truth for scope, blockers, contradictions, next PR order, and future-agent rules.
+3. `ai/ONBOARDING.md` — constrained-beta application snapshot and reading order.
+4. `RENTRIX_MASTER_PLAN.md` — final product shape, current release, ordered releases, acceptance gates, and continuation behavior.
+5. `ai/AGENT_CAPABILITIES.md` — project skills, installed additions, and task-to-skill matrix.
+6. `ai/GIT_TOOLING_POLICY.md` — Git and GitHub usage rules.
+7. `ROOT_LAYOUT.md` — architectural tree, ownership, dependency direction, and retention rules.
+8. `ai/SECURE_OPERATOR_RUNBOOK.md` — redacted constrained-beta environment ownership and connector-safe blocker reporting.
 
 ## Canonical guidance
 
@@ -43,13 +44,13 @@ reconciliation/01-repository-inventory.md
 reconciliation/02-root-cleanup-candidates.md
 ```
 
-`audits/` holds dated, narrow follow-up audits (e.g. schema/migration integrity reviews) that produced migrations or other fixes — verify the referenced migration and schema are still current before relying on an older audit.
+`audits/` holds dated, narrow follow-up audits (e.g. schema/migration integrity reviews) that produced migrations or other fixes. These are historical snapshots; verify the referenced migration and schema against `ai/CURRENT_EXECUTION_CONTEXT.md` and active code before relying on an older audit.
 
-`v01/` and `v02/` hold dated status/review reports for specific v0.1 and v0.2 reconciliation threads (security, migrations, idempotency, mobile/RTL/money formatting). They are status snapshots, not live policy — check `RENTRIX_MASTER_PLAN.md` for current status before acting on one.
+`v01/` and `v02/` hold dated status/review reports for specific v0.1 and v0.2 reconciliation threads (security, migrations, idempotency, mobile/RTL/money formatting). They are historical snapshots, not live policy; check `ai/CURRENT_EXECUTION_CONTEXT.md` first and `RENTRIX_MASTER_PLAN.md` second before acting on one.
 
-Use `v01/first-client-delivery-plan.md` as the current draft sequencing plan for converting the constrained-beta path into one real, paying first-client rollout. It does not replace `RENTRIX_MASTER_PLAN.md`; it reorders existing v0.1, v0.4, and v0.5 scope around first-client delivery.
+Use `v01/first-client-delivery-plan.md` as a historical draft sequencing plan for converting the constrained-beta path into one real, paying first-client rollout. It does not replace `ai/CURRENT_EXECUTION_CONTEXT.md` or `RENTRIX_MASTER_PLAN.md`; it reorders existing v0.1, v0.4, and v0.5 scope around first-client delivery.
 
-Use the Wave 1 documents before any live Supabase or Vercel rollout work:
+Use the Wave 1 documents as historical reconciliation inputs before any live Supabase or Vercel rollout work, then verify against `ai/CURRENT_EXECUTION_CONTEXT.md`, active code/migrations, and fresh connector evidence:
 
 ```text
 wave1/1A_CONTRACT_INTEGRITY_RECONCILIATION.md
@@ -61,9 +62,9 @@ Use `ai/SECURE_OPERATOR_RUNBOOK.md` for the current redacted Vercel/Supabase own
 
 ## Historical reports
 
-Files named like `PHASE_*`, recovery audits, and completion reports are retained as historical evidence. Before acting on an older report, verify that the referenced route, module, schema, and migration are still active.
+Files named like `PHASE_*`, recovery audits, completion reports, and dated status or audit reports are retained as historical evidence. Before acting on an older report, verify that the referenced route, module, schema, migration, environment state, and product decision are still active.
 
-Prefer current code, migrations, `AGENTS.md`, `ai/ONBOARDING.md`, `RENTRIX_MASTER_PLAN.md`, and `decisions/README.md` when conflicts exist.
+Prefer current code, migrations, `AGENTS.md`, `ai/CURRENT_EXECUTION_CONTEXT.md`, `ai/ONBOARDING.md`, `RENTRIX_MASTER_PLAN.md`, and `decisions/README.md` when conflicts exist.
 
 ## Placement rules
 

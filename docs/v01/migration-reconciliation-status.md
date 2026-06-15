@@ -1,5 +1,7 @@
 # v0.1 — Live Migration Reconciliation Status
 
+> Historical snapshot — verify against `docs/ai/CURRENT_EXECUTION_CONTEXT.md` before acting.
+
 **Last updated:** 2026-06-15
 **Session 2 merge commit:** `86d7665ed90e` (PR #817)  
 **Status:** ACTIVE — v0.1 item 4 has a live-verified payment RPC blocker pending deployment and end-to-end browser QA

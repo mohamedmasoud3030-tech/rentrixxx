@@ -1,5 +1,7 @@
 # v0.2 Item 5 — Receipt Output, Print Behavior, and Document Polish
 
+> Historical snapshot — verify against `docs/ai/CURRENT_EXECUTION_CONTEXT.md` before acting.
+
 **Date:** 2026-06-09  
 **Roadmap:** v0.2 Item 5 — Complete receipt output, print behavior, and operator-facing document polish  
 **Status:** PASS — receipt printing and output are complete

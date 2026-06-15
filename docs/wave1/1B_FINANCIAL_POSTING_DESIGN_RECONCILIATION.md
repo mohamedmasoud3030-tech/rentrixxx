@@ -1,5 +1,7 @@
 # Wave 1B — Financial Posting Design Reconciliation
 
+> Historical snapshot — verify against `docs/ai/CURRENT_EXECUTION_CONTEXT.md` before acting.
+
 ## Scope
 
 Documentation-only reconciliation of the current payment, receipt, invoice-allocation, and posting design.

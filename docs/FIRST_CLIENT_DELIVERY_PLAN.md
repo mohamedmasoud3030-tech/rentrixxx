@@ -1,5 +1,7 @@
 # First Client Delivery Plan
 
+> Historical snapshot — verify against `docs/ai/CURRENT_EXECUTION_CONTEXT.md` before acting.
+
 **Status:** Draft execution roadmap
 **Audience:** product owner, operators, and coding agents
 **Updated:** 2026-06-15

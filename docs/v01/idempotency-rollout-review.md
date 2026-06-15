@@ -1,5 +1,7 @@
 # v0.1 Idempotency Rollout Review
 
+> Historical snapshot — verify against `docs/ai/CURRENT_EXECUTION_CONTEXT.md` before acting.
+
 Date: 2026-06-07
 GitHub PR: #816
 GitHub branch: `codex/investigate-idempotency-rollout`

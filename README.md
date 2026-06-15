@@ -9,12 +9,13 @@ The active application is intentionally focused. SaaS multi-tenancy and accounti
 Read in this order:
 
 1. `AGENTS.md`
-2. `docs/ai/ONBOARDING.md`
-3. `docs/RENTRIX_MASTER_PLAN.md`
-4. `docs/ai/AGENT_CAPABILITIES.md`
-5. `docs/ai/GIT_TOOLING_POLICY.md`
+2. `docs/ai/CURRENT_EXECUTION_CONTEXT.md`
+3. `docs/ai/ONBOARDING.md`
+4. `docs/RENTRIX_MASTER_PLAN.md`
+5. `docs/ai/AGENT_CAPABILITIES.md`
+6. `docs/ai/GIT_TOOLING_POLICY.md`
 
-`docs/ai/ONBOARDING.md` contains the current application snapshot and the full reading sequence. `docs/RENTRIX_MASTER_PLAN.md` defines the final product shape, current release, ordered releases, and next ready item. `docs/ai/AGENT_CAPABILITIES.md` maps tasks to skills and project additions. `docs/ai/GIT_TOOLING_POLICY.md` defines how branch, diff, PR, CI, and merge tools must be used.
+`docs/ai/CURRENT_EXECUTION_CONTEXT.md` is the single current execution source of truth for scope, blockers, contradictions, next PR order, and future-agent rules. `docs/ai/ONBOARDING.md` contains the current application snapshot and the full reading sequence. `docs/RENTRIX_MASTER_PLAN.md` defines the final product shape, current release, ordered releases, and next ready item. `docs/ai/AGENT_CAPABILITIES.md` maps tasks to skills and project additions. `docs/ai/GIT_TOOLING_POLICY.md` defines how branch, diff, PR, CI, and merge tools must be used.
 
 ## Canonical runtime
 
