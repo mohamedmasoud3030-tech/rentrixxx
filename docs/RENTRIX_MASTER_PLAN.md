@@ -349,6 +349,8 @@ Latest execution note: `docs/v01/migration-reconciliation-status.md` is the acti
 
 Next continuation item: resolve the payment-account blocker documented in `docs/v01/payment-account-resolution-critical-finding.md`. Vercel Supabase environment values are now verified correct in the deployed bundle (2026-06-14), but item 5 cannot produce a GO result until item 4's payment RPC evidence is re-verified, the Custom Access Token hook registration is verified in the Supabase Dashboard, and authenticated browser/manual operational QA is run with a browser-driving tool or manual operator session. No production mutation is authorized by the secure operator runbook.
 
+First-client rollout sequencing is tracked in `docs/v01/first-client-delivery-plan.md`. That draft does not replace this roadmap; it reorders the existing v0.1, v0.4, and v0.5 scope around the first real office rollout, with Phase 1 focused on unblocking live payment recording before any client go-live work begins.
+
 ### 6.3 v0.1 acceptance gate
 
 Close `v0.1` only when:

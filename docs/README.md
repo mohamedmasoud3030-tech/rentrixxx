@@ -47,6 +47,8 @@ reconciliation/02-root-cleanup-candidates.md
 
 `v01/` and `v02/` hold dated status/review reports for specific v0.1 and v0.2 reconciliation threads (security, migrations, idempotency, mobile/RTL/money formatting). They are status snapshots, not live policy — check `RENTRIX_MASTER_PLAN.md` for current status before acting on one.
 
+Use `v01/first-client-delivery-plan.md` as the current draft sequencing plan for converting the constrained-beta path into one real, paying first-client rollout. It does not replace `RENTRIX_MASTER_PLAN.md`; it reorders existing v0.1, v0.4, and v0.5 scope around first-client delivery.
+
 Use the Wave 1 documents before any live Supabase or Vercel rollout work:
 
 ```text
