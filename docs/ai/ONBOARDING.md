@@ -1,8 +1,10 @@
 # Rentrix Agent Onboarding
 
-This is the canonical onboarding sequence and current application snapshot for coding agents. Read `AGENTS.md` first, then read `docs/ai/CURRENT_EXECUTION_CONTEXT.md` before this file or any older report.
+This is the canonical onboarding sequence and current application snapshot for coding agents. Read `AGENTS.md` first, then read `docs/ai/CURRENT_EXECUTION_CONTEXT.md` before this file, roadmap notes, payment reports, migration reports, or any older audit.
 
 When documentation and code disagree, `docs/ai/CURRENT_EXECUTION_CONTEXT.md` is the current execution source of truth. Inspect the active code and migrations, report the mismatch, and update stale documentation through a reviewed change. Do not guess from historical reports, recovery folders, or old pull requests.
+
+For reporting or document-output work, also read `docs/ai/REPORTING_DEFINITIONS.md` and `docs/ai/PRINT_AND_EXPORT_READINESS.md` after `CURRENT_EXECUTION_CONTEXT.md`. These files describe current repository evidence and known limitations; they do not replace live Supabase/payment QA evidence.
 
 ## 1. Product boundary
 
