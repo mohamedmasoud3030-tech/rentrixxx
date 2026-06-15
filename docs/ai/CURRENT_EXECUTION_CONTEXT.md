@@ -42,6 +42,7 @@ Current local history verified on `main` at `feae86b fix(db): reconcile migratio
 | PR #910 `20260615000200` | `v_balance_reconciliation`: أُعيد إنشاؤها | ✅ مؤكَّد live |
 | PR #910 `20260615000200` | `set_receipts_updated_at` / `set_invoices_updated_at` triggers | ✅ مؤكَّد live |
 | PR #910 `20260615000200` | `REVOKE anon` من `void_receipt_atomic` | ✅ |
+| PR #911 `20260615000300` | harden function grants: `find_payment_account_id`, `post_receipt_atomic`, `void_receipt_atomic(4-arg)`, `recalculate_all_balances` — إزالة `anon`/`authenticated` من الـ internal functions | ✅ مؤكَّد live |
 | PR #910 stubs | 11 remote-applied migration stubs لإصلاح CI chain gap | ✅ |
 | PR #910 DB reg | 43 repo migrations مسجَّلة في `supabase_migrations` | ✅ |
 
@@ -59,7 +60,7 @@ Current local history verified on `main` at `feae86b fix(db): reconcile migratio
 
 - Custom Access Token Hook: موجود كـ DB function لكن لم يُؤكَّد تسجيله في Supabase Dashboard.
 - Authenticated browser E2E QA: لم يُنفَّذ بعد على الـ deployed app.
-- `financial_operation_idempotency` grants/RLS: يحتاج تحقق بـ authenticated session.
+- `financial_operation_idempotency` RLS: policy `false` للـ direct access — SECURITY DEFINER functions تكتب عبر postgres ✅. لا يحتاج تحقق إضافي.
 - `record_invoice_payment_atomic` full posting flow: account resolution مؤكَّد، لكن E2E invoice→payment→receipt→allocation→idempotency لم يُختبر authenticated.
 
 ## Core MVP Systems
