@@ -1,8 +1,8 @@
 # v0.1 — Live Migration Reconciliation Status
 
-**Last updated:** 2026-06-08  
+**Last updated:** 2026-06-15
 **Session 2 merge commit:** `86d7665ed90e` (PR #817)  
-**Status:** ACTIVE — v0.1 items 2–4 functionally CLOSED pending browser QA
+**Status:** ACTIVE — v0.1 item 4 has a live-verified payment RPC blocker pending deployment and end-to-end browser QA
 
 ---
 
@@ -44,7 +44,7 @@ Status: ACTIVE_HEALTHY
 
 ---
 
-## Critical Bugs Fixed
+## Critical Bugs
 
 ### 1. Dashboard Load Failure — FIXED ✅
 **Root cause:** `dashboardService.ts` called `rpt_financial_summary({month, year})` but live function signature is `(p_from date, p_to date)`.
@@ -56,10 +56,14 @@ Status: ACTIVE_HEALTHY
 
 **Expected result:** Dashboard loads correctly. Data shows 0s until real data is added.
 
-### 2. Payment Recording — FIXED ✅
-**Root cause:** `record_invoice_payment_atomic` RPC was missing from live.
+### 2. Payment Recording — BLOCKING ⛔
+**Root cause:** `record_invoice_payment_atomic` exists on live, but it calls `find_payment_account_id(text)`, which cast `public.accounts.id` to `uuid`. The live chart of accounts stores text account codes such as `1111` and `1201`, so payment recording fails before receipt/allocation posting.
 
-**Fix:** PR #816 — migration 20260608000100 creates the function + idempotency table.
+**Live evidence:** On 2026-06-15, read-only execution against `nnggcnpcuomwfuupupwg` of `select public.find_payment_account_id('cash'), public.find_payment_account_id('receivable')` failed with `22P02 invalid input syntax for type uuid: "1000"`.
+
+**Repository fix candidate:** migration `20260615000100_fix_invoice_payment_account_resolution.sql` replaces `find_payment_account_id(text)` with a text-returning implementation that resolves the configured cash and receivable accounts by chart-of-accounts codes `1111` and `1201`, then recreates `record_invoice_payment_atomic(jsonb)` with text account IDs for journal posting.
+
+**Remaining required evidence:** deploy the latest migration to the intended live project, rerun the `find_payment_account_id('cash'/'receivable')` verification query until it returns without error, then complete browser/manual payment QA: create contract → invoice → record payment → verify receipt, allocation, and invoice status.
 
 ### 3. Auth JWT Role Injection — FIXED ✅
 **Root cause:** `custom_access_token_hook` was callable by `anon`/`authenticated` (security issue), not locked to `supabase_auth_admin`.
