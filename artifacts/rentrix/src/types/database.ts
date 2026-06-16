@@ -83,6 +83,86 @@ export type Database = {
           },
         ];
       };
+      lands: {
+        Row: {
+          id: string;
+          plot_no: string | null;
+          name: string | null;
+          location: string | null;
+          area: number | null;
+          owner_id: string | null;
+          purchase_price: number | null;
+          owner_price: number | null;
+          commission: number | null;
+          category: string;
+          status: string;
+          notes: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: Partial<Database['public']['Tables']['lands']['Row']>;
+        Update: Partial<Database['public']['Tables']['lands']['Row']>;
+        Relationships: [];
+      };
+      leads: {
+        Row: {
+          id: string;
+          name: string;
+          phone: string | null;
+          email: string | null;
+          source: string;
+          status: string;
+          desired_unit_type: string | null;
+          min_budget: number | null;
+          max_budget: number | null;
+          notes: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: Partial<Database['public']['Tables']['leads']['Row']> & Pick<Database['public']['Tables']['leads']['Row'], 'name'>;
+        Update: Partial<Database['public']['Tables']['leads']['Row']>;
+        Relationships: [];
+      };
+      commissions: {
+        Row: {
+          id: string;
+          staff_name: string;
+          type: string;
+          status: string;
+          source_id: string | null;
+          deal_value: number | null;
+          percentage: number | null;
+          amount: number | null;
+          paid_at: number | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: Partial<Database['public']['Tables']['commissions']['Row']> & Pick<Database['public']['Tables']['commissions']['Row'], 'staff_name'>;
+        Update: Partial<Database['public']['Tables']['commissions']['Row']>;
+        Relationships: [];
+      };
+      communication_records: {
+        Row: {
+          id: string;
+          contact_name: string;
+          contact_phone: string | null;
+          contact_email: string | null;
+          channel: string;
+          direction: string;
+          status: string;
+          subject: string | null;
+          body: string;
+          related_entity_type: string | null;
+          related_entity_id: string | null;
+          created_by: string | null;
+          created_at: string;
+          updated_at: string;
+          deleted_at: string | null;
+        };
+        Insert: Partial<Database['public']['Tables']['communication_records']['Row']> & Pick<Database['public']['Tables']['communication_records']['Row'], 'contact_name' | 'body'>;
+        Update: Partial<Database['public']['Tables']['communication_records']['Row']>;
+        Relationships: [];
+      };
       properties: {
         Row: {
           id: string;

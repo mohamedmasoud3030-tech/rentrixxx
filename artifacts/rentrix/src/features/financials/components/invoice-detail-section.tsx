@@ -1,3 +1,5 @@
+import { Download } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import type { Payment } from '@/types/domain';
 import type { InvoiceDetail } from '../invoices/invoiceService';
@@ -23,6 +25,7 @@ type InvoiceDetailSectionProps = {
   onPaymentDateChange: (paymentDate: string) => void;
   onReferenceChange: (reference: string) => void;
   onPostPayment: () => void;
+  onExportPdf?: () => void;
 };
 
 export function InvoiceDetailSection({
@@ -44,6 +47,7 @@ export function InvoiceDetailSection({
   onPaymentDateChange,
   onReferenceChange,
   onPostPayment,
+  onExportPdf,
 }: InvoiceDetailSectionProps) {
   return (
     <Card>
@@ -55,6 +59,16 @@ export function InvoiceDetailSection({
         {selectedInvoiceId && isLoading ? <div className="rounded-2xl border border-dashed p-6 text-center text-muted-foreground">جارٍ تحميل تفاصيل الفاتورة...</div> : null}
         {selectedInvoiceId && isError ? <div className="rounded-2xl border border-destructive/40 bg-destructive/10 p-6 text-center text-destructive">{getErrorMessage(error, 'تعذر تحميل تفاصيل الفاتورة')}</div> : null}
         {invoiceDetail ? <>
+          <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border bg-muted/20 p-4">
+            <div>
+              <p className="text-sm text-muted-foreground">إخراج المستند</p>
+              <p className="font-black">يمكن تصدير الفاتورة الحالية من نفس بياناتها المحملة.</p>
+            </div>
+            <Button type="button" variant="secondary" onClick={onExportPdf} disabled={!onExportPdf}>
+              <Download className="me-2 size-4" />تصدير PDF
+            </Button>
+          </div>
+
           <div className="grid gap-3 md:grid-cols-5">
             <div className="rounded-2xl border bg-muted/30 p-4">
               <p className="text-sm text-muted-foreground">رقم الفاتورة</p>

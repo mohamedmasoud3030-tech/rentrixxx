@@ -37,7 +37,26 @@ describe('buildExpensesCsv', () => {
 
     expect(buildExpensesCsv([expense], [property])).toBe([
       'date,property,category,amount,description',
-      '2026-06-13,"برج ""النيل""",صيانة,1250.5,"مصعد, دور 2"',
+      '"2026-06-13","برج \\"النيل\\"","صيانة",1250.5,"مصعد, دور 2"',
     ].join('\n'));
+  });
+
+  it('neutralizes spreadsheet formulas in exported text cells', () => {
+    const property = { id: 'property-1', title: '=cmd' } as Property;
+    const expense = {
+      id: 'expense-1',
+      property_id: 'property-1',
+      category: '@category',
+      amount: 20,
+      expense_date: '2026-06-13',
+      description: ' +SUM(1,2)',
+      created_at: '2026-06-13T00:00:00.000Z',
+      updated_at: '2026-06-13T00:00:00.000Z',
+      deleted_at: null,
+    } as Expense;
+
+    expect(buildExpensesCsv([expense], [property])).toContain('"\'=cmd"');
+    expect(buildExpensesCsv([expense], [property])).toContain('"\'@category"');
+    expect(buildExpensesCsv([expense], [property])).toContain('"\' +SUM(1,2)"');
   });
 });
