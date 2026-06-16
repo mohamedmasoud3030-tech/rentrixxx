@@ -1,6 +1,7 @@
 import { Archive, ContactRound, Edit, Plus, RotateCcw } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
+import { PageStateCard, WriteErrorCard } from '@/components/page-state-card';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
@@ -23,6 +24,7 @@ type Props = Readonly<{
   isSaving: boolean;
   isArchiving: boolean;
   error: unknown;
+  writeError: unknown;
   onFiltersChange: (filters: LeadFilters) => void;
   onDraftChange: (draft: LeadFormValues) => void;
   onCreate: () => void;
@@ -34,8 +36,9 @@ type Props = Readonly<{
 }>;
 
 export function LeadsView(props: Props) {
-  const { rows, filters, draft, editingLead, formOpen, isLoading, isSaving, isArchiving, error, onFiltersChange, onDraftChange, onCreate, onEdit, onFormOpenChange, onSubmit, onArchive, onRetry } = props;
+  const { rows, filters, draft, editingLead, formOpen, isLoading, isSaving, isArchiving, error, writeError, onFiltersChange, onDraftChange, onCreate, onEdit, onFormOpenChange, onSubmit, onArchive, onRetry } = props;
   const openLeads = rows.filter((row) => !['converted', 'lost', 'archived'].includes(row.status ?? '')).length;
+  const hasFilters = filters.query.trim().length > 0 || filters.status !== 'all' || filters.source !== 'all';
 
   return (
     <section className="space-y-5">
@@ -50,8 +53,9 @@ export function LeadsView(props: Props) {
       <Card><CardContent className="grid gap-3 pt-6 md:grid-cols-[1fr_12rem_12rem]"><Input value={filters.query} onChange={(event) => onFiltersChange({ ...filters, query: event.target.value })} placeholder="بحث بالاسم، الهاتف، البريد، نوع الوحدة" aria-label="بحث العملاء المحتملين" /><Select value={filters.status} onChange={(event) => onFiltersChange({ ...filters, status: event.target.value })}><option value="all">كل الحالات</option>{Object.entries(statusLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</Select><Select value={filters.source} onChange={(event) => onFiltersChange({ ...filters, source: event.target.value })}><option value="all">كل المصادر</option>{Object.entries(sourceLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</Select></CardContent></Card>
 
       {error ? <ErrorCard message="تعذر تحميل العملاء المحتملين" onRetry={onRetry} /> : null}
-      {isLoading ? <StateCard title="جارٍ تحميل العملاء المحتملين..." /> : null}
-      {!isLoading && !error && rows.length === 0 ? <StateCard title="لا يوجد عملاء محتملون ضمن الفلاتر الحالية" description="أضف عميلاً محتملاً عند توفر بياناته، أو غيّر البحث والحالة والمصدر." /> : null}
+      {writeError ? <WriteErrorCard message={writeError instanceof Error ? writeError.message : 'تعذر حفظ التغيير على العميل المحتمل. راجع الصلاحيات أو الاتصال ثم حاول مرة أخرى.'} /> : null}
+      {isLoading ? <PageStateCard title="جارٍ تحميل العملاء المحتملين..." /> : null}
+      {!isLoading && !error && rows.length === 0 ? <PageStateCard title={hasFilters ? 'لا يوجد عملاء محتملون ضمن الفلاتر الحالية' : 'لا يوجد عملاء محتملون بعد'} description={hasFilters ? 'غيّر البحث أو الحالة أو المصدر لعرض عملاء محتملين آخرين.' : 'أضف أول عميل محتمل من بيانات تواصل حقيقية؛ لن ينشئ النظام مستأجراً أو مالكاً تلقائياً.'} action={hasFilters ? undefined : <Button onClick={onCreate}>إضافة عميل محتمل</Button>} /> : null}
       {rows.length > 0 ? <LeadRows rows={rows} isArchiving={isArchiving} onEdit={onEdit} onArchive={onArchive} /> : null}
 
       <Dialog open={formOpen} onOpenChange={onFormOpenChange}>
@@ -81,10 +85,6 @@ function Summary({ label, value }: Readonly<{ label: string; value: string }>) {
 
 function Field({ label, children }: Readonly<{ label: string; children: ReactNode }>) {
   return <label className="grid gap-2 text-sm font-bold">{label}{children}</label>;
-}
-
-function StateCard({ title, description }: Readonly<{ title: string; description?: string }>) {
-  return <Card><CardHeader><CardTitle>{title}</CardTitle>{description ? <CardDescription>{description}</CardDescription> : null}</CardHeader></Card>;
 }
 
 function ErrorCard({ message, onRetry }: Readonly<{ message: string; onRetry: () => void }>) {

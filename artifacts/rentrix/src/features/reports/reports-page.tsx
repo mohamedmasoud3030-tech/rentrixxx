@@ -235,7 +235,7 @@ function FinancialSummarySection({ summary, cashflowRows, isLoading }: Readonly<
         <MetricCard label="إجمالي التحصيل" value={formatMoney(report.paid)} helper={`${report.paymentsCount} مدفوعات`} tone="green" />
         <MetricCard label="الرصيد المستحق" value={formatMoney(report.outstanding)} helper="من فواتير الفترة" tone="gold" />
         <MetricCard label="إجمالي المصروفات" value={formatMoney(report.expenses)} helper={`${report.expensesCount} مصروفات`} tone="red" />
-        <MetricCard label="صافي التدفق النقدي" value={formatMoney(report.netCash)} helper="المقبوض - المصروف" tone={report.netCash >= 0 ? 'green' : 'red'} />
+        <MetricCard label="المحصل بعد المصروفات" value={formatMoney(report.netCash)} helper="المحصّل - المصروفات المسجلة فقط" tone={report.netCash >= 0 ? 'green' : 'red'} />
       </div>
       <div className="h-80 p-4 pt-0">
         <ResponsiveContainer width="100%" height="100%">
@@ -245,7 +245,7 @@ function FinancialSummarySection({ summary, cashflowRows, isLoading }: Readonly<
             <YAxis />
             <Tooltip />
             <Legend />
-            <Bar dataKey="revenue" name="الإيرادات" fill="#0f766e" />
+            <Bar dataKey="revenue" name="المحصّل" fill="#0f766e" />
             <Bar dataKey="expenses" name="المصاريف" fill="#e11d48" />
           </BarChart>
         </ResponsiveContainer>
@@ -632,7 +632,7 @@ export function ReportsPage() {
       </div>
 
       {firstError ? <Card><CardContent className="p-4 text-sm text-destructive">{getErrorMessage(firstError, 'تعذر تحميل بعض التقارير. يمكنك تحديث الصفحة أو إعادة المحاولة بأمان دون تعديل أي بيانات.')}</CardContent></Card> : null}
-      {isLoading ? <Card><CardContent className="p-4 text-sm text-muted-foreground">جارٍ تحميل معاينات التقارير التجارية للقراءة فقط، وستظهر كل بطاقة عند اكتمال بياناتها.</CardContent></Card> : null}
+      {isLoading ? <Card><CardContent className="p-4 text-sm text-muted-foreground">جارٍ تحميل معاينات التقارير التشغيلية للقراءة فقط، وستظهر كل بطاقة عند اكتمال بياناتها.</CardContent></Card> : null}
 
       <FinancialSummarySection
         summary={financialSummaryQuery.data}

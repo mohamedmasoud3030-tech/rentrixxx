@@ -40,6 +40,7 @@ export function CommunicationPage() {
       isSaving={saveRecord.isPending}
       isArchiving={archiveRecord.isPending}
       error={recordsQuery.error}
+      writeError={saveRecord.error ?? archiveRecord.error}
       onFiltersChange={setFilters}
       onDraftChange={setDraft}
       onCreate={() => { setEditingRecord(null); setDraft(emptyForm); setFormOpen(true); }}

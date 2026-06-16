@@ -1,6 +1,7 @@
 import { Archive, Edit, MessageSquareText, Plus, RotateCcw } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
+import { PageStateCard, WriteErrorCard } from '@/components/page-state-card';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
@@ -24,6 +25,7 @@ type Props = Readonly<{
   isSaving: boolean;
   isArchiving: boolean;
   error: unknown;
+  writeError: unknown;
   onFiltersChange: (filters: CommunicationFilters) => void;
   onDraftChange: (draft: CommunicationFormValues) => void;
   onCreate: () => void;
@@ -35,8 +37,9 @@ type Props = Readonly<{
 }>;
 
 export function CommunicationHubView(props: Props) {
-  const { rows, filters, draft, editingRecord, formOpen, isLoading, isSaving, isArchiving, error, onFiltersChange, onDraftChange, onCreate, onEdit, onFormOpenChange, onSubmit, onArchive, onRetry } = props;
+  const { rows, filters, draft, editingRecord, formOpen, isLoading, isSaving, isArchiving, error, writeError, onFiltersChange, onDraftChange, onCreate, onEdit, onFormOpenChange, onSubmit, onArchive, onRetry } = props;
   const followUps = rows.filter((row) => row.status === 'follow_up').length;
+  const hasFilters = filters.query.trim().length > 0 || filters.channel !== 'all' || filters.status !== 'all';
 
   return (
     <section className="space-y-5">
@@ -51,8 +54,9 @@ export function CommunicationHubView(props: Props) {
       <Card><CardContent className="grid gap-3 pt-6 md:grid-cols-[1fr_12rem_12rem]"><Input value={filters.query} onChange={(event) => onFiltersChange({ ...filters, query: event.target.value })} placeholder="بحث بالاسم، الهاتف، الموضوع، المحتوى" aria-label="بحث سجل التواصل" /><Select value={filters.channel} onChange={(event) => onFiltersChange({ ...filters, channel: event.target.value })}><option value="all">كل القنوات</option>{Object.entries(channelLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</Select><Select value={filters.status} onChange={(event) => onFiltersChange({ ...filters, status: event.target.value })}><option value="all">كل الحالات</option>{Object.entries(statusLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</Select></CardContent></Card>
 
       {error ? <ErrorCard message="تعذر تحميل سجل التواصل" onRetry={onRetry} /> : null}
-      {isLoading ? <StateCard title="جارٍ تحميل سجل التواصل..." /> : null}
-      {!isLoading && !error && rows.length === 0 ? <StateCard title="لا توجد سجلات تواصل ضمن الفلاتر الحالية" description="أضف سجلاً داخلياً عند حدوث تواصل، أو غيّر البحث والقناة والحالة." /> : null}
+      {writeError ? <WriteErrorCard message={writeError instanceof Error ? writeError.message : 'تعذر حفظ التغيير على سجل التواصل. راجع الصلاحيات أو الاتصال ثم حاول مرة أخرى.'} /> : null}
+      {isLoading ? <PageStateCard title="جارٍ تحميل سجل التواصل..." /> : null}
+      {!isLoading && !error && rows.length === 0 ? <PageStateCard title={hasFilters ? 'لا توجد سجلات تواصل ضمن الفلاتر الحالية' : 'لا توجد سجلات تواصل بعد'} description={hasFilters ? 'غيّر البحث أو القناة أو الحالة لعرض سجلات تواصل أخرى.' : 'أضف أول سجل داخلي عند حدوث اتصال أو اجتماع أو ملاحظة. لا يتم إرسال أي رسالة خارجية.'} action={hasFilters ? undefined : <Button onClick={onCreate}>إضافة سجل تواصل</Button>} /> : null}
       {rows.length > 0 ? <CommunicationRows rows={rows} isArchiving={isArchiving} onEdit={onEdit} onArchive={onArchive} /> : null}
 
       <Dialog open={formOpen} onOpenChange={onFormOpenChange}>
@@ -83,10 +87,6 @@ function Summary({ label, value }: Readonly<{ label: string; value: string }>) {
 
 function Field({ label, children }: Readonly<{ label: string; children: ReactNode }>) {
   return <label className="grid gap-2 text-sm font-bold">{label}{children}</label>;
-}
-
-function StateCard({ title, description }: Readonly<{ title: string; description?: string }>) {
-  return <Card><CardHeader><CardTitle>{title}</CardTitle>{description ? <CardDescription>{description}</CardDescription> : null}</CardHeader></Card>;
 }
 
 function ErrorCard({ message, onRetry }: Readonly<{ message: string; onRetry: () => void }>) {

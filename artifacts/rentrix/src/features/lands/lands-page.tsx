@@ -41,6 +41,7 @@ export function LandsPage() {
       isSaving={saveLand.isPending}
       isArchiving={archiveLand.isPending}
       error={landsQuery.error}
+      writeError={saveLand.error ?? archiveLand.error}
       onFiltersChange={setFilters}
       onDraftChange={setDraft}
       onCreate={() => { setEditingLand(null); setDraft(emptyForm); setFormOpen(true); }}

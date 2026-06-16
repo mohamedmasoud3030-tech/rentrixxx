@@ -37,6 +37,7 @@ export function CommissionsPage() {
       isSaving={saveCommission.isPending}
       isArchiving={archiveCommission.isPending}
       error={commissionsQuery.error}
+      writeError={saveCommission.error ?? archiveCommission.error}
       onFiltersChange={setFilters}
       onDraftChange={setDraft}
       onCreate={() => { setEditingCommission(null); setDraft(emptyForm); setFormOpen(true); }}

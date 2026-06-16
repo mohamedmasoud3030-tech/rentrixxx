@@ -1,6 +1,7 @@
 import { Archive, BadgeDollarSign, Edit, Plus, RotateCcw } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
+import { PageStateCard, WriteErrorCard } from '@/components/page-state-card';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
@@ -8,7 +9,7 @@ import { Select } from '@/components/ui/select';
 import { StatusBadge } from '@/components/ui/status-badge';
 import type { CommissionFilters, CommissionFormValues, CommissionRecord } from '../types';
 
-const statusLabels: Record<string, string> = { pending: 'مستحقة', approved: 'معتمدة', paid: 'مدفوعة', cancelled: 'ملغاة' };
+const statusLabels: Record<string, string> = { pending: 'قيد المراجعة', approved: 'معتمدة للتتبع', paid: 'مسجلة كمدفوعة', cancelled: 'ملغاة' };
 const typeLabels: Record<string, string> = { contract: 'عقد', payment: 'تحصيل', owner: 'مالك', lead: 'عميل محتمل', land: 'أرض' };
 const statusTone: Record<string, 'blue' | 'green' | 'red' | 'gray' | 'gold'> = { pending: 'gold', approved: 'blue', paid: 'green', cancelled: 'red' };
 
@@ -26,6 +27,7 @@ type Props = Readonly<{
   isSaving: boolean;
   isArchiving: boolean;
   error: unknown;
+  writeError: unknown;
   onFiltersChange: (filters: CommissionFilters) => void;
   onDraftChange: (draft: CommissionFormValues) => void;
   onCreate: () => void;
@@ -37,30 +39,32 @@ type Props = Readonly<{
 }>;
 
 export function CommissionsView(props: Props) {
-  const { rows, filters, draft, editingCommission, formOpen, isLoading, isSaving, isArchiving, error, onFiltersChange, onDraftChange, onCreate, onEdit, onFormOpenChange, onSubmit, onArchive, onRetry } = props;
+  const { rows, filters, draft, editingCommission, formOpen, isLoading, isSaving, isArchiving, error, writeError, onFiltersChange, onDraftChange, onCreate, onEdit, onFormOpenChange, onSubmit, onArchive, onRetry } = props;
   const pendingTotal = rows.filter((row) => row.status !== 'paid' && row.status !== 'cancelled').reduce((sum, row) => sum + (row.amount ?? 0), 0);
   const paidTotal = rows.filter((row) => row.status === 'paid').reduce((sum, row) => sum + (row.amount ?? 0), 0);
+  const hasFilters = filters.query.trim().length > 0 || filters.status !== 'all' || filters.type !== 'all';
 
   return (
     <section className="space-y-5">
       <Card className="border-primary/10 bg-gradient-to-l from-primary/10 via-card to-card">
         <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div><CardTitle className="flex items-center gap-2"><BadgeDollarSign className="size-5" /> العمولات</CardTitle><CardDescription>تتبع تشغيلي لعمولات المكتب والوسطاء حسب الحالة والمصدر، ولا يمثل اعتماداً محاسبياً نهائياً.</CardDescription></div>
+          <div><CardTitle className="flex items-center gap-2"><BadgeDollarSign className="size-5" /> العمولات</CardTitle><CardDescription>تتبع تشغيلي لعمولات المكتب والوسطاء حسب الحالة والمصدر، ولا يعتمد صرفاً أو مطابقة مالية.</CardDescription></div>
           <Button onClick={onCreate}><Plus className="me-2 size-4" />إضافة عمولة</Button>
         </CardHeader>
-        <CardContent className="grid gap-3 sm:grid-cols-3"><Summary label="إجمالي السجلات" value={String(rows.length)} /><Summary label="قيد الاعتماد" value={money(pendingTotal)} /><Summary label="مدفوعة" value={money(paidTotal)} /></CardContent>
+        <CardContent className="grid gap-3 sm:grid-cols-3"><Summary label="إجمالي السجلات" value={String(rows.length)} /><Summary label="قيد المراجعة/التتبع" value={money(pendingTotal)} /><Summary label="مسجلة كمدفوعة" value={money(paidTotal)} /></CardContent>
       </Card>
 
       <Card><CardContent className="grid gap-3 pt-6 md:grid-cols-[1fr_12rem_12rem]"><Input value={filters.query} onChange={(event) => onFiltersChange({ ...filters, query: event.target.value })} placeholder="بحث بالموظف، المصدر، النوع" aria-label="بحث العمولات" /><Select value={filters.status} onChange={(event) => onFiltersChange({ ...filters, status: event.target.value })}><option value="all">كل الحالات</option>{Object.entries(statusLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</Select><Select value={filters.type} onChange={(event) => onFiltersChange({ ...filters, type: event.target.value })}><option value="all">كل الأنواع</option>{Object.entries(typeLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</Select></CardContent></Card>
 
       {error ? <ErrorCard message="تعذر تحميل العمولات" onRetry={onRetry} /> : null}
-      {isLoading ? <StateCard title="جارٍ تحميل العمولات..." /> : null}
-      {!isLoading && !error && rows.length === 0 ? <StateCard title="لا توجد عمولات ضمن الفلاتر الحالية" description="أضف عمولة تشغيلية عند توفر بياناتها، أو غيّر البحث والحالة والنوع." /> : null}
+      {writeError ? <WriteErrorCard message={writeError instanceof Error ? writeError.message : 'تعذر حفظ التغيير على العمولة. راجع الصلاحيات أو الاتصال ثم حاول مرة أخرى.'} /> : null}
+      {isLoading ? <PageStateCard title="جارٍ تحميل العمولات..." /> : null}
+      {!isLoading && !error && rows.length === 0 ? <PageStateCard title={hasFilters ? 'لا توجد عمولات ضمن الفلاتر الحالية' : 'لا توجد عمولات بعد'} description={hasFilters ? 'غيّر البحث أو الحالة أو النوع لعرض سجلات عمولات أخرى.' : 'أضف عمولة تشغيلية عند توفر مصدر ومبلغ حقيقيين. هذه الصفحة للتتبع فقط ولا تنشئ أمر صرف.'} action={hasFilters ? undefined : <Button onClick={onCreate}>إضافة عمولة</Button>} /> : null}
       {rows.length > 0 ? <CommissionRows rows={rows} isArchiving={isArchiving} onEdit={onEdit} onArchive={onArchive} /> : null}
 
       <Dialog open={formOpen} onOpenChange={onFormOpenChange}>
         <DialogContent className="max-h-[calc(100dvh-2rem)] overflow-y-auto sm:max-w-2xl">
-          <DialogHeader><DialogTitle>{editingCommission ? 'تعديل عمولة' : 'إضافة عمولة'}</DialogTitle><DialogDescription>يمكن إدخال مبلغ مباشر أو تركه ليُحسب من قيمة الصفقة ونسبة العمولة.</DialogDescription></DialogHeader>
+          <DialogHeader><DialogTitle>{editingCommission ? 'تعديل عمولة' : 'إضافة عمولة'}</DialogTitle><DialogDescription>يمكن إدخال مبلغ مباشر أو تركه ليُحسب من قيمة الصفقة ونسبة العمولة للتتبع التشغيلي فقط.</DialogDescription></DialogHeader>
           <form className="grid gap-3 md:grid-cols-2" onSubmit={(event) => { event.preventDefault(); onSubmit(draft); }}>
             <Field label="اسم الموظف / الوسيط"><Input required value={draft.staff_name} onChange={(event) => onDraftChange({ ...draft, staff_name: event.target.value })} /></Field>
             <Field label="نوع المصدر"><Select value={draft.type} onChange={(event) => onDraftChange({ ...draft, type: event.target.value })}>{Object.entries(typeLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</Select></Field>
@@ -83,10 +87,6 @@ function Summary({ label, value }: Readonly<{ label: string; value: string }>) {
 
 function Field({ label, children }: Readonly<{ label: string; children: ReactNode }>) {
   return <label className="grid gap-2 text-sm font-bold">{label}{children}</label>;
-}
-
-function StateCard({ title, description }: Readonly<{ title: string; description?: string }>) {
-  return <Card><CardHeader><CardTitle>{title}</CardTitle>{description ? <CardDescription>{description}</CardDescription> : null}</CardHeader></Card>;
 }
 
 function ErrorCard({ message, onRetry }: Readonly<{ message: string; onRetry: () => void }>) {
