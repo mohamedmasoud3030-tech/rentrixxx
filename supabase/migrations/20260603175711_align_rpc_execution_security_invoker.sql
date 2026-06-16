@@ -1,3 +1,0 @@
--- Foreign migration stub: 20260603175711
--- Applied directly to live before repo tracking.
--- Stub exists for local/remote migration history alignment.
