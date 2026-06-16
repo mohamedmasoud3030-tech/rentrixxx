@@ -104,7 +104,7 @@ Current deferred page status (verified June 2026):
 | `/audit-log` | `public.audit_log` queried with generated `database.ts` type | Yes — read-only view | Re-exposed in v0.3 with hardened RLS evidence |
 | `/data-integrity` | Minimal read model | Yes — page exists | Re-exposed in v0.3 with permissioned navigation |
 | `/system` | Minimal governance source support | Yes — page + components | Re-exposed in v0.3 with permissioned navigation |
-| `/lands` | In migrations | Yes — page + service | Needs v0.4 product decision |
+| `/lands` | Not verified for active product use | Yes — page returns unavailable | Needs v0.4 product decision |
 | `/leads` | No confirmed schema table | Yes — page returns unavailable | Needs v0.4 product decision |
 | `/commissions` | No confirmed schema table | Yes — page returns unavailable | Needs v0.4 product decision |
 | `/communication` | No confirmed schema table | Yes — page returns unavailable | Needs v0.4 product decision |

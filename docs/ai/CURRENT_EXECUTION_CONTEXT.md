@@ -23,7 +23,7 @@ Rentrix is also not approved for a general accounting ledger during stabilizatio
 
 ## Latest Merged Work Verified
 
-Current `main` HEAD: `eb614eb docs: sync all docs to post-PR#911 verified state (#912)`.
+Current `main` HEAD: `7bff142 fix(ui): add UTF-8 BOM and date-stamped filenames to Reports CSV exports (#913)`.
 
 ### ✅ مُنجز ومُطبَّق — live DB `nnggcnpcuomwfuupupwg`
 
@@ -48,7 +48,7 @@ Current `main` HEAD: `eb614eb docs: sync all docs to post-PR#911 verified state 
 | PR #911 `20260615000300` | `post_receipt_atomic`: REVOKE authenticated — يمنع bypass الـ invoice validation + idempotency | ✅ مؤكَّد live |
 | PR #911 `20260615000300` | `recalculate_all_balances`: REVOKE anon — admin maintenance فقط | ✅ مؤكَّد live |
 | PR #909 tests | `receiptService.test.ts` + `useReceipts.test.ts` — void-receipt contract tests | ✅ |
-| Client delivery polish PR | Reports CSV filenames use local-date suffixes and exports include UTF-8 BOM for Excel/Arabic compatibility | ⏳ in review |
+| PR #913 | Reports CSV filenames use local-date suffixes and exports include UTF-8 BOM for Excel/Arabic compatibility | ✅ merged |
 
 **Live DB snapshot (2026-06-15) — verified:**
 
@@ -153,7 +153,7 @@ These systems are deferred unless a reviewed product decision and verified schem
 - General accounting ledger.
 - Shared-database SaaS multi-tenancy.
 
-Current CRM guidance: `/lands`, `/leads`, `/commissions`, and `/communication` may remain registered for controlled verification, but they must stay hidden from visible constrained-beta navigation unless separately approved. Current evidence says leads, commissions, and communication do not have confirmed active schema support and should remain safe-unavailable.
+Current CRM guidance: `/lands`, `/leads`, `/commissions`, and `/communication` may remain registered for controlled verification, but they must stay hidden from visible constrained-beta navigation unless separately approved. Current code reality says all four pages are safe-unavailable read models; they must not be described as commercially implemented features until a reviewed product decision, schema/RLS evidence, UI work, and tests approve re-exposure.
 
 ## Current Production Blockers
 
@@ -175,7 +175,7 @@ Do not claim production readiness until these blockers are closed with fresh evi
 
 ## Current Next PR Order
 
-For implementation after PR #911:
+For implementation after PR #913 and the repository-only code-reality audit:
 
 1. **Manual only — no PR needed**: Register Custom Access Token Hook in Supabase Dashboard → Authentication → Hooks → `pg-functions://postgres/public/custom_access_token_hook`. Verify JWT contains `app_metadata.user_role` after login.
 2. **Manual only**: Run authenticated browser QA on `rentrix-alpha.vercel.app` — login as ADMIN, verify dashboard, contracts, payment recording, receipt generation, arrears, reports, RTL layout, mobile navigation.
@@ -183,6 +183,20 @@ For implementation after PR #911:
 4. If QA reveals bugs: open narrow fix PRs per bug, no bundled changes.
 
 Do not open new DB/migration PRs while these manual blockers remain unresolved — the DB layer is verified stable.
+
+## Latest Repository-Only Code-Reality Audit
+
+`docs/ai/CODE_REALITY_GAP_AUDIT.md` is the current repo-only gap audit for documentation versus active code as of `main@7bff142`. It did not use live Supabase, live Vercel, credentials, migrations, or production data.
+
+High-level classification:
+
+- Implemented and repository-verified: auth shell and login service, dashboard snapshot, properties, units, people, tenants, owners, contracts, invoices, payment RPC facade, payment-backed receipts, arrears, reports CSV, settings, change password, maintenance, audit log, data integrity, system governance, route/sidebar/mobile navigation, Supabase client configuration guard, PWA build configuration, and CI test wiring.
+- Partially implemented or repo-only verified: Arabic RTL/mobile/PWA/offline behavior, print/PDF output, reports/KPI definitions, balance projections, and browser payment-to-receipt flow; these still require authenticated browser and device/operator evidence before production-readiness claims.
+- Present but intentionally unavailable: `/lands`, `/leads`, `/commissions`, and `/communication`; services return `status: 'unavailable'` and these routes remain hidden from visible navigation.
+- Documented but missing or unverified in active UI: dedicated invoice PDF/print action, expense PDF action, reports PDF export, dedicated generated receipt PDF, owner-settlement statements, external communication sends, general ledger/accounting screens, and SaaS/multi-tenant behavior.
+- Blocked / unsafe to touch now: live hook registration verification, authenticated browser QA, preview migration replay, live Supabase/Vercel mutations, new DB/migration work without a confirmed bug, and product expansion beyond the single-office constrained-beta path.
+
+Recommended next implementation phase after manual blockers clear: a single `v0.1 release-evidence closure` phase that records hook-registration proof, authenticated browser QA, payment-to-receipt E2E evidence, RTL/mobile/PWA/print smoke evidence, and GO/NO-GO status. Do not start random feature PRs before that evidence phase.
 
 ## Known Contradictions Resolved
 

@@ -209,7 +209,7 @@ Status of deferred feature pages (verified from code):
 - `/commissions` — page and service return `status: unavailable` (no schema table confirmed).
 - `/leads` — page and service return `status: unavailable` (no schema table confirmed).
 - `/communication` — page and service return `status: unavailable` (no schema table confirmed).
-- `/lands` — page and service exist under `features/lands/`.
+- `/lands` — page exists, but the current service returns `status: unavailable`; no active commercial lands workflow is verified.
 
 ### 3.5 Current authorization shape
 
@@ -435,7 +435,7 @@ Close `v0.1` only when:
 
 | Order | Item | Status | Notes |
 | --- | --- | --- | --- |
-| 1 | Decide lands lifecycle, ownership, and reporting scope | `DEFERRED` until client confirms land-plot management | First-client decision recorded in ADR-007: keep `/lands` hidden for day one unless active land-plot management is confirmed. Page and service exist under `features/lands/`; any re-exposure still requires schema/RLS/test evidence. |
+| 1 | Decide lands lifecycle, ownership, and reporting scope | `DEFERRED` until client confirms land-plot management | First-client decision recorded in ADR-007: keep `/lands` hidden for day one unless active land-plot management is confirmed. Current service returns `unavailable`; any re-exposure still requires schema/RLS/test evidence. |
 | 2 | Decide lead stages, ownership, source, and conversion rules | `DEFERRED` post-v1 unless hard client requirement | First-client decision recorded in ADR-007: do not build lead tracking for v1. Page and service return `unavailable` (no schema table). |
 | 3 | Decide read-only commissions visibility before any settlement workflow | `DEFERRED` post-v1 unless hard client requirement | First-client decision recorded in ADR-007: do not build commission tracking for v1. Page and service return `unavailable` (no schema table). |
 | 4 | Decide communication provider, templates, consent, audit, retries, and failure model | `DEFERRED` post-v1 unless hard client requirement | First-client decision recorded in ADR-007: do not build templated communication for v1. Page and service return `unavailable` (no schema table). |
