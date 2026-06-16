@@ -23,7 +23,7 @@ Rentrix is also not approved for a general accounting ledger during stabilizatio
 
 ## Latest Merged Work Verified
 
-Current `main` HEAD: `ac97420 fix(db): harden function grants — revoke anon/authenticated from internal RPCs (#911)`.
+Current `main` HEAD: `eb614eb docs: sync all docs to post-PR#911 verified state (#912)`.
 
 ### ✅ مُنجز ومُطبَّق — live DB `nnggcnpcuomwfuupupwg`
 
@@ -48,6 +48,7 @@ Current `main` HEAD: `ac97420 fix(db): harden function grants — revoke anon/au
 | PR #911 `20260615000300` | `post_receipt_atomic`: REVOKE authenticated — يمنع bypass الـ invoice validation + idempotency | ✅ مؤكَّد live |
 | PR #911 `20260615000300` | `recalculate_all_balances`: REVOKE anon — admin maintenance فقط | ✅ مؤكَّد live |
 | PR #909 tests | `receiptService.test.ts` + `useReceipts.test.ts` — void-receipt contract tests | ✅ |
+| Client delivery polish PR | Reports CSV filenames use local-date suffixes and exports include UTF-8 BOM for Excel/Arabic compatibility | ⏳ in review |
 
 **Live DB snapshot (2026-06-15) — verified:**
 
@@ -169,7 +170,7 @@ Do not claim production readiness until these blockers are closed with fresh evi
 - ~~`financial_operation_idempotency` grants/RLS gap~~ **✅ حُلَّت** — policy `false` + SECURITY DEFINER functions تكتب عبر postgres ✅.
 - Canonical balance-model behavior: invoice outstanding, arrears, reports, receipt projection, and payment posting are consistent; full E2E verification under authenticated session remains pending.
 - Reports/KPI definitions documented in `docs/ai/REPORTING_DEFINITIONS.md`; metric validation against live data pending.
-- Print/PDF readiness documented in `docs/ai/PRINT_AND_EXPORT_READINESS.md`; gaps remain release-readiness items.
+- Print/PDF readiness documented in `docs/ai/PRINT_AND_EXPORT_READINESS.md`; Reports CSV filename/BOM polish is covered, and remaining print/PDF gaps remain release-readiness items.
 - Final constrained-beta GO/NO-GO blocked until Custom Access Token Hook + authenticated browser QA are verified.
 
 ## Current Next PR Order

@@ -63,10 +63,18 @@ export function toDateInputValue(date: Date) {
   return `${year}-${month}-${day}`;
 }
 
+export function getTodayLocalDateString() {
+  return toDateInputValue(new Date());
+}
+
+export function buildReportCsvFilename(reportSlug: string) {
+  return `${reportSlug}-${getTodayLocalDateString()}.csv`;
+}
+
 function getCurrentMonthFilters(): FilterState {
   const today = new Date();
   const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
-  const todayValue = toDateInputValue(today);
+  const todayValue = getTodayLocalDateString();
 
   return {
     from: toDateInputValue(firstDay),
@@ -92,7 +100,7 @@ export function escapeCsvValue(value: CsvValue) {
 function downloadCsv(filename: string, rows: CsvRow[]) {
   const keys = Object.keys(rows[0] ?? {}).sort((a, b) => a.localeCompare(b));
   const csv = [keys.join(','), ...rows.map((row) => keys.map((key) => escapeCsvValue(row[key])).join(','))].join('\n');
-  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const blob = new Blob(['\uFEFF', csv], { type: 'text/csv;charset=utf-8;' });
   const link = document.createElement('a');
   const objectUrl = URL.createObjectURL(blob);
   link.href = objectUrl;
@@ -234,7 +242,7 @@ function FinancialSummarySection({ summary, cashflowRows, isLoading }: Readonly<
     <ReportCard
       title="1. ملخص التحصيل للفترة"
       description="ملخص للفترة المحددة يجمع الفواتير والتحصيل والمصروفات المسجلة."
-      action={<Button variant="secondary" onClick={() => downloadCsv('financial-summary.csv', toFinancialSummaryCsv(report))}>تصدير CSV</Button>}
+      action={<Button variant="secondary" onClick={() => downloadCsv(buildReportCsvFilename('financial-summary'), toFinancialSummaryCsv(report))}>تصدير CSV</Button>}
       isLoading={isLoading}
     >
       <div className="grid gap-3 p-4 md:grid-cols-5">
@@ -266,7 +274,7 @@ function RentRollSection({ rows, isLoading }: Readonly<{ rows: RentRollRow[]; is
     <ReportCard
       title="2. قائمة العقود الإيجارية (Rent Roll)"
       description="قائمة الإيجارات من العقود الحالية فقط، مع روابط آمنة لتفاصيل العقود."
-      action={<Button variant="secondary" onClick={() => downloadCsv('rent-roll.csv', rows)}>تصدير CSV</Button>}
+      action={<Button variant="secondary" onClick={() => downloadCsv(buildReportCsvFilename('rent-roll'), rows)}>تصدير CSV</Button>}
       isLoading={isLoading}
     >
       {/* Mobile cards */}
@@ -331,7 +339,7 @@ function OverdueInvoicesSection({ rows, trendRows, isLoading }: Readonly<{
     <ReportCard
       title="3. الفواتير المتأخرة"
       description="الفواتير المتأخرة المحسوبة من خدمة arrears الحالية حسب as-of date."
-      action={<Button variant="secondary" onClick={() => downloadCsv('overdue-invoices.csv', rows)}>تصدير CSV</Button>}
+      action={<Button variant="secondary" onClick={() => downloadCsv(buildReportCsvFilename('overdue-invoices'), rows)}>تصدير CSV</Button>}
       isLoading={isLoading}
     >
       <div className="h-72 p-4">
@@ -409,7 +417,7 @@ function AgedReceivablesSection({ report, isLoading }: Readonly<{
     <ReportCard
       title="4. تقادم الذمم"
       description="تقادم الذمم حسب العقود والفئات العمرية الآمنة من خدمة التقارير الحالية."
-      action={<Button variant="secondary" onClick={() => downloadCsv('aged-receivables.csv', rows.map((row) => ({ contractId: row.contractId, tenantName: row.tenantName, totalOutstanding: row.totalOutstanding, totalOverdue: row.totalOverdue, invoiceCount: row.invoiceCount })))}>تصدير CSV</Button>}
+      action={<Button variant="secondary" onClick={() => downloadCsv(buildReportCsvFilename('aged-receivables'), rows.map((row) => ({ contractId: row.contractId, tenantName: row.tenantName, totalOutstanding: row.totalOutstanding, totalOverdue: row.totalOverdue, invoiceCount: row.invoiceCount })))}>تصدير CSV</Button>}
       isLoading={isLoading}
     >
       <div className="grid gap-3 p-4 md:grid-cols-5">
@@ -493,7 +501,7 @@ function DailyCollectionSection({ rows, receiptRows, isLoading }: Readonly<{
     <ReportCard
       title="5. التحصيل اليومي"
       description="ملخص يومي للتحصيل مع روابط مباشرة لفتح إيصالات الدفع وطباعتها."
-      action={<Button variant="secondary" onClick={() => downloadCsv('daily-collection.csv', toDailyCollectionCsv(rows))}>تصدير CSV</Button>}
+      action={<Button variant="secondary" onClick={() => downloadCsv(buildReportCsvFilename('daily-collection'), toDailyCollectionCsv(rows))}>تصدير CSV</Button>}
       isLoading={isLoading}
     >
       <div className="h-72 p-4">
