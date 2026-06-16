@@ -39,7 +39,7 @@ PDF rendering is intentionally lazy-loaded. `DocumentController.renderToPDF` bui
 - Contract addenda, attachments, and signed contract package generation are not implemented.
 - Reports PDF export is not implemented; current reports export is CSV only.
 - Owner statements and advanced owner settlement documents are deferred.
-- Lands, leads, commissions, communication, and CRM documents are deferred with their systems.
+- Lands, leads, commissions, and communication are live approved modules, but module-specific documents for those areas are not implemented. `/communication` remains an internal log only and does not include external provider sends.
 
 ## Required QA Before Release
 

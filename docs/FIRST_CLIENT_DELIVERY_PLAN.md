@@ -2,7 +2,7 @@
 
 **Status:** Active delivery plan
 **Audience:** product owner, operators, and coding agents
-**Updated:** 2026-06-15
+**Updated:** 2026-06-16
 
 This plan translates the active Rentrix roadmap into the shortest safe path to a
 real first-client rollout. It follows the repository documentation convention and
@@ -18,10 +18,10 @@ reports without violating the single-office, no-SaaS, no-general-ledger boundary
 | Area | Current state | Delivery implication |
 | --- | --- | --- |
 | Operational UI | Core visible workflows are implemented and polished enough for constrained-beta review. | UI work is no longer the first blocker. |
-| Payment recording | Account resolution fixes are recorded as live-verified in `docs/ai/CURRENT_EXECUTION_CONTEXT.md`; authenticated browser E2E remains unverified. | P0 evidence blocker for first client. |
+| Payment recording | Account resolution fixes are recorded as live-verified in `docs/ai/CURRENT_EXECUTION_CONTEXT.md`; authenticated browser E2E remains unverified. | Final delivery gate for first client. |
 | Migration chain | Current execution context reports the repo and live DB migration chain were reconciled after PR #910 and PR #911. | Re-verify only with approved read-only evidence before GO. |
-| Auth roles | `custom_access_token_hook` exists, but Dashboard/Auth Hook registration still needs owner-side verification. | Blocks real ADMIN QA. |
-| Deployment | `rentrix-alpha.vercel.app` is reachable and current docs record correct live Supabase env values in the served bundle. | Deployment can be QA target after auth/payment blockers clear. |
+| Auth roles | Custom Access Token Hook registration is `DONE` by owner confirmation. | Not a current repo-stabilization blocker; ADMIN QA still must verify post-login behavior at final delivery. |
+| Deployment | `rentrix-alpha.vercel.app` is reachable and current docs record correct live Supabase env values in the served bundle. | Deployment can be QA target during final delivery QA. |
 | Planned modules | `/lands`, `/leads`, `/commissions`, and `/communication` are approved single-office modules. | Do not let planned-module work delay first payment and receipt QA. |
 
 ## Phase 1: Unblock the Financial Core
@@ -31,24 +31,23 @@ updates invoice status on the intended live project.
 
 | Order | Task | Owner/access needed | Exit evidence |
 | --- | --- | --- | --- |
-| 1 | Verify Custom Access Token Auth Hook registration. | Supabase owner/operator access | ADMIN JWT includes `app_metadata.user_role = "ADMIN"`. |
-| 2 | Run authenticated payment QA: contract -> invoice -> payment -> receipt -> invoice status. | Browser-driving capability and ADMIN credentials | Screenshots or written QA evidence. |
-| 3 | Run reversal QA for posted payment correction behavior. | ADMIN/MANAGER session | Receipt void/reversal behavior recorded. |
-| 4 | Record payment-to-receipt E2E evidence in the active execution context or roadmap. | Reviewable docs PR | Evidence and remaining blockers are current. |
+| 1 | Run authenticated payment QA: contract -> invoice -> payment -> receipt -> invoice status. | Browser-driving capability and ADMIN credentials | Screenshots or written QA evidence. |
+| 2 | Run reversal QA for posted payment correction behavior. | ADMIN/MANAGER session | Receipt void/reversal behavior recorded. |
+| 3 | Record payment-to-receipt E2E evidence in the active execution context or roadmap. | Reviewable docs PR | Evidence and remaining blockers are current. |
 
 Exit criterion: payment recording and receipt generation are verified end-to-end
 against the target environment.
 
 ## Phase 2: Close v0.1 Constrained-Beta Risk
 
-Goal: close the remaining release blockers without adding new product scope.
+Goal: close the remaining final delivery gates without adding new product scope.
 
 | Order | Task | Exit evidence |
 | --- | --- | --- |
 | 1 | Re-verify migration chain status only with approved read-only access. | Current execution context or roadmap evidence updated. |
-| 2 | Verify Custom Access Token Auth Hook registration. | ADMIN JWT includes `app_metadata.user_role = "ADMIN"`. |
+| 2 | Verify authenticated ADMIN role behavior in-browser. | Protected routes, permissioned navigation, and role-dependent actions work after login. |
 | 3 | Complete full browser/manual QA. | RTL desktop, RTL mobile, LTR sanity, protected-route refresh, forms, dialogs, receipt print, CSV export, PWA, and invalid-route evidence. |
-| 4 | Record GO/NO-GO in `docs/RENTRIX_MASTER_PLAN.md`. | v0.1 status updated with evidence. |
+| 4 | Record GO/NO-GO in `docs/RENTRIX_MASTER_PLAN.md`. | Final delivery status updated with evidence. |
 
 Exit criterion: v0.1 can be closed with a documented GO decision or an explicit
 remaining blocker.
@@ -94,14 +93,24 @@ Goal: move from controlled readiness to real operation with a tight feedback loo
 | 3 | Monitor the first 1-2 weeks of usage. | Daily issue log and no silent financial failures. |
 | 4 | Only then start optional v0.4 fast-follow modules. | Separate product decision and narrow PR per module. |
 
-## Immediate Blockers for Mohamed
+## Incomplete / Planned / Deferred Work
 
-1. Supabase owner/operator access is required to confirm the 50 live migration
-   entries and apply/replay the account-resolution fix.
-2. Supabase Dashboard or Management API access is required to verify Custom Access
-   Token Auth Hook registration.
-3. A browser-driving or manual QA session with real ADMIN credentials is required
+| Item | Status | Current note |
+| --- | --- | --- |
+| Authenticated ADMIN browser QA | `FINAL DELIVERY GATE` | Required before production GO; not a repo-stabilization blocker. |
+| Production GO/NO-GO | `FINAL DELIVERY GATE` | Pending final handover QA. |
+| Mobile/physical-device print QA | `FINAL DELIVERY GATE` | Must verify at least one supported mobile/device path. |
+| Commercial hardening v0.5 | `PLANNED` | Starts after final delivery QA closes or records a NO-GO fix path. |
+| v1.0 commercial release | `PLANNED` | Depends on final delivery QA and v0.5. |
+| Dedicated generated receipt PDF file | `PLANNED` | Current receipt support is browser print only. |
+| External communication sending | `OUT OF SCOPE` | Internal communication log only. |
+| General accounting ledger | `OUT OF SCOPE` | Not part of first-client delivery. |
+| Owner settlement/payout workflow | `NEEDS OWNER DECISION` | Defer unless owner payout management becomes a day-one requirement. |
+| Tax finality/accounting-grade tax treatment | `OUT OF SCOPE` | Requires approved accounting requirements. |
+
+## Immediate Final Delivery Gates for Mohamed
+
+1. A browser-driving or manual QA session with real ADMIN credentials is required
    to prove the payment and receipt flow.
-4. GitHub push credentials are not available in this session, so this branch can
-   be committed locally but cannot be pushed or opened as a real remote PR from
-   here.
+2. Production GO/NO-GO remains pending final handover QA.
+3. Full production readiness must not be claimed before final delivery QA closes.

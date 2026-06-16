@@ -42,13 +42,13 @@ Other important categories:
 
 ```text
 artifacts/rentrix-promo/        # optional promotional support only
-archive/recovery-reference/     # concise reference-only recovery notes
 .ai/                            # Rentrix-specific agent workflows
 .agent-skills/                  # Rentrix-owned reusable skills
 .agents/                        # installed or shared agent tooling
 .codex/vendor/                  # source-locked upstream references
-understand-anything/            # generated analysis support only
 ```
+
+`archive/recovery-reference/` and `understand-anything/` are not present in the current repository checkout. Treat them as removed historical references, not active directories.
 
 Do not import agent-tooling files, generated analysis artifacts, or historical recovery modules into the production bundle.
 
@@ -156,7 +156,8 @@ Preserve at minimum:
 
 - **Duplicate hook pairs closed:** `useProperties.ts` / `use-properties.ts` and `useUnits.ts` / `use-units.ts` were consolidated in v0.2. Current canonical hooks are `use-properties.ts` and `use-units.ts`.
 - **`database.ts` audit type gap closed:** `public.audit_log` and other previously untracked tables are now represented in the generated database types, and the audit service uses `Database['public']['Tables']['audit_log']['Row']` directly.
-- **Supabase migration and browser QA blockers remain:** live migration-state reconciliation, Custom Access Token hook registration verification, and authenticated browser/manual QA are blocked by dashboard/management API access and browser-driving capability. See v0.1 items 2 and 5 in `docs/RENTRIX_MASTER_PLAN.md`; old migration reconciliation reports were removed from active docs and remain available through git history.
+- **Custom Access Token Hook done:** the owner confirmed the Custom Access Token Hook is registered. Document it as `DONE`; it is not a current repo-stabilization blocker.
+- **Final delivery QA remains:** authenticated ADMIN browser QA, mobile/physical-device print QA, and production GO/NO-GO are `FINAL DELIVERY GATE` items for handover evidence. Do not claim full production readiness before final delivery QA closes.
 
 ## 6. Required reading order
 
@@ -235,19 +236,41 @@ intended live project: RENTRIX EGY (live) / nnggcnpcuomwfuupupwg
 prohibited project:    rentrix (V2) / ktmizdznbdwvalmmfvfc
 ```
 
-**Latest connector evidence (2026-06-07):**
-- Live project status: `ACTIVE_HEALTHY`
-- Branch default status: `MIGRATIONS_FAILED` (on branch, not main runtime)
-- Main runtime: healthy, no schema corruption detected
-- Critical auth function `custom_access_token_hook` applied ✅
-- Critical payment RPC `record_invoice_payment_atomic` still needed ⏸️
-- Old migration reconciliation findings were removed from active docs and remain available through git history.
+**Current delivery evidence boundary (2026-06-16):**
+- The active app and docs are repo-stabilized through local checks and reviewed PRs only.
+- Custom Access Token Hook: `DONE` by owner confirmation.
+- Authenticated ADMIN browser QA: `FINAL DELIVERY GATE`.
+- Production GO/NO-GO: pending final handover QA.
+- Full production readiness must not be claimed before final delivery QA closes.
 
-## 11. Cleanup boundary
+## 11. Incomplete / Planned / Deferred Work
+
+Classify every non-complete item with exactly one of these statuses:
+
+| Item | Status | Current note |
+| --- | --- | --- |
+| Authenticated ADMIN browser QA | `FINAL DELIVERY GATE` | Final handover must verify login, protected routes, payment-to-receipt flow, reports refresh, RTL/LTR, and operator-critical workflows. |
+| Production GO/NO-GO | `FINAL DELIVERY GATE` | Remains pending final handover QA. |
+| Mobile/physical-device print QA | `FINAL DELIVERY GATE` | Repository supports print styles/browser print, but device print evidence is still required. |
+| Commercial hardening v0.5 | `PLANNED` | Starts after final delivery QA closes or records a NO-GO fix path. |
+| v1.0 commercial release | `PLANNED` | Depends on final delivery QA and v0.5 hardening. |
+| Dedicated generated receipt PDF file | `PLANNED` | Current receipt output is browser print from the payment-backed receipt detail page. |
+| Reports CSV date filenames/BOM | `DONE` | Implemented in current code; do not list as missing. |
+| Invoice print/export button | `DONE` | Active invoice workspace exposes PDF export when invoice document context is loaded. |
+| Receipt browser print | `DONE` | Receipt detail page supports browser print; this is not a generated PDF file. |
+| External communication sending | `OUT OF SCOPE` | `/communication` is an internal log only unless a provider boundary is approved later. |
+| General accounting ledger | `OUT OF SCOPE` | `/accounting` redirects to `/financials`; no ledger expansion during stabilization. |
+| Tax finality/accounting-grade tax treatment | `OUT OF SCOPE` | Requires approved accounting requirements before product claims. |
+| Owner settlement/payout workflow | `NEEDS OWNER DECISION` | Do not infer payout workflows from current owner or commission modules. |
+| SaaS multi-tenancy | `OUT OF SCOPE` | Rentrix remains single-office. |
+| Owner statements/settlement documents | `DEFERRED` | Future scope only after owner settlement decision. |
+| Reports PDF export | `DEFERRED` | Current reports export CSV. |
+
+## 12. Cleanup boundary
 
 Read `docs/ROOT_LAYOUT.md` before removing or moving files. Remove only explicitly approved cleanup targets in a narrow cleanup PR. Keep docs pruning, recovery-source review, optional artifact decisions, and runtime changes separate.
 
-## 12. Documentation maintenance rule
+## 13. Documentation maintenance rule
 
 Update this file when an approved change alters:
 

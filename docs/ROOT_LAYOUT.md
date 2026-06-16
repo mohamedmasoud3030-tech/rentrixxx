@@ -60,7 +60,7 @@ artifacts/rentrix/
 - Keep service modules and hooks close to the feature unless they are genuinely shared.
 - Keep route registration in TanStack Router files and `routeTree.ts`.
 - Put shared UI primitives under `src/components/` only when multiple features reuse them.
-- Do not place new runtime code in `archive/recovery-reference/`, agent-tooling folders, or generated-analysis folders.
+- Do not place new runtime code in removed historical-reference paths, agent-tooling folders, or generated-analysis folders.
 
 ## 3. Canonical Backend Assets
 
@@ -147,13 +147,9 @@ artifacts/rentrix-promo/        # Optional promotional support
 
 The promo project is not production runtime. Retain, archive, or remove it only through a reviewed cleanup PR after confirming current use.
 
-## 8. Recovery Reference Archive
+## 8. Removed Historical References
 
-```text
-archive/recovery-reference/     # Concise reference-only recovery notes
-```
-
-Broad historical recovery trees were removed after selective extraction. The archive path is not deployed runtime and must not be imported.
+`archive/recovery-reference/` is not present in the current repository checkout. Broad historical recovery trees were removed after selective extraction and old notes remain available through git history. Do not describe this path as an existing active directory unless a future reviewed cleanup PR recreates it deliberately.
 
 ### Recovery rules
 
@@ -165,22 +161,17 @@ Broad historical recovery trees were removed after selective extraction. The arc
 
 ## 9. Generated Analysis Support
 
-```text
-understand-anything/            # Generated repository-understanding artifacts
-```
-
-Use generated analysis only as orientation support. Verify every conclusion against active code, migrations, tests, and runtime configuration before editing.
+`understand-anything/` is not present in the current repository checkout. If generated analysis is recreated later, use it only as orientation support and verify every conclusion against active code, migrations, tests, and runtime configuration before editing.
 
 ## 10. Dependency Firewall
 
 The following dependency directions are prohibited:
 
 ```text
-active runtime → archive/recovery-reference
 active runtime → .agent-skills
 active runtime → .agents
 active runtime → .codex/vendor
-active runtime → understand-anything
+active runtime → removed or generated historical references
 shared lib      → active feature UI or route modules
 Supabase SQL    → frontend source files
 ```

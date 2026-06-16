@@ -8,7 +8,7 @@ Scope: read-only identification and handoff for the intended Vercel and Supabase
 targets. This runbook is not approval to mutate production, replay migrations,
 change RLS, edit auth hooks, rotate secrets, or expose deferred routes.
 
-Last repository-side update: 2026-06-07.
+Last repository-side update: 2026-06-16.
 
 ## Safety rules
 
@@ -30,7 +30,7 @@ Last repository-side update: 2026-06-07.
 | Vercel project | BLOCKED - not verified in repository evidence | Project name, project ID, team/account owner, production URL, preview URL pattern, active production commit SHA, and redacted env target summary | No `.vercel/project.json` was present in the checkout during the 2026-06-06 audit. No authenticated Vercel CLI identity was available. |
 | Supabase project | BLOCKED - not verified in repository evidence | Project ref, project name, organization owner, region, database access path, auth configuration owner, and backup owner | Candidate ref `nnggcnpcuomwfuupupwg` was recovered from local Supabase pooler metadata in the 2026-06-06 audit, but remains unconfirmed. |
 | Runtime Supabase env vars | PARTIAL - shell name evidence only | Presence of `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` for the intended deployment, values verified out-of-band and not printed | On 2026-06-07, the current shell exposed these variable names only. Values were not printed and do not prove platform ownership. |
-| Beta operator identity | BLOCKED - not verified in repository evidence | Approved ADMIN test account, allowed login method, and role claim source verified against live auth | Repository expects `ADMIN`, `MANAGER`, and `USER` roles from `app_metadata.user_role`; live account claims remain unverified. |
+| Beta operator identity | FINAL DELIVERY GATE | Approved ADMIN test account, allowed login method, and role claim source verified during final handover QA | Repository expects `ADMIN`, `MANAGER`, and `USER` roles from `app_metadata.user_role`; Custom Access Token Hook registration is `DONE` by owner confirmation, but post-login browser behavior still needs final QA evidence. |
 
 ## Supabase target classification
 
@@ -73,12 +73,16 @@ enough stable characters for operators to distinguish environments.
    This captures the local canonical migration chain, redacts secret values, and
    reports the exact authenticated Supabase access blocker when live read-only
    migration-state evidence is unavailable.
-5. Query migration history, schema/catalog, RPC definitions/grants, auth hook
-   registration, RLS policies, logs, advisors, and backup posture read-only.
+5. Query migration history, schema/catalog, RPC definitions/grants, RLS
+   policies, logs, advisors, and backup posture read-only when approved access
+   exists. Custom Access Token Hook registration is already `DONE` by owner
+   confirmation.
 6. If `MIGRATIONS_FAILED` is confirmed, write a safe replay plan against a
    preview branch before any production migration repair.
 7. Keep deferred routes hidden from constrained-beta navigation until live schema
-   and authorization support is verified.
+   and authorization support is verified. Do not describe `/lands`, `/leads`,
+   `/commissions`, or `/communication` as deferred; current code exposes them as
+   approved permissioned modules.
 
 ## Connector blocker report template
 
@@ -92,25 +96,17 @@ Repeated call: <no | once using the same documented action>
 Next action: <specific access, approval, or identifier required>
 ```
 
-## Current next blocker
+## Current final delivery gate
 
-As of 2026-06-07, the next v0.1 roadmap item is partially unblocked:
+As of 2026-06-16, repo/docs stabilization is separate from final delivery QA:
 
 **Cleared:**
-- ✅ Live Supabase project confirmed `ACTIVE_HEALTHY`
-- ✅ Migration list retrieved successfully
-- ✅ Database schema and RLS verified
-- ✅ Auth and RPC catalogs inspected
-- ✅ Security advisor findings documented
-- ✅ `custom_access_token_hook` applied via connector
+- ✅ Custom Access Token Hook registration is `DONE` by owner confirmation.
+- ✅ Current source-of-truth docs classify remaining work without treating the hook as a repo-stabilization blocker.
 
-**Still blocked:**
-- ⏸️ Manual Supabase Dashboard registration of custom auth hook (required for JWT role injection)
-- ⏸️ Remaining RPC migrations to apply (3 critical ones needed)
-- ⏸️ Vercel deployment verification (connector read-only access blocked)
+**Final delivery gates:**
+- Authenticated ADMIN browser QA.
+- Mobile/physical-device print QA.
+- Production GO/NO-GO during final handover.
 
-**For next continuation:** Read `docs/ai/CURRENT_EXECUTION_CONTEXT.md` first. Old migration reconciliation evidence was removed from active docs and remains available through git history. It contained:
-- Complete drift inventory
-- RPC inventory (what exists vs what's missing)
-- Exact next steps (4 ordered actions)
-- Test verification checklist
+**For next continuation:** Read `docs/ai/CURRENT_EXECUTION_CONTEXT.md` first. Old migration reconciliation evidence was removed from active docs and remains available through git history.
