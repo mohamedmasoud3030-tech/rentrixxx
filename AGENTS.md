@@ -15,7 +15,7 @@ Use actual code and migrations as the source of truth. Prefer `rg` and `rg --fil
 
 - Treat `artifacts/rentrix/`, `lib/`, and `supabase/` as the canonical runtime boundary.
 - Treat `artifacts/rentrix-promo/` as the retained optional promotional artifact.
-- Treat `archive/recovery-reference/` as reference-only cleanup notes, not runtime code.
+- `archive/recovery-reference/` and `understand-anything/` are not present in the current repository checkout. Treat references to them as removed historical references, not active runtime paths.
 - Treat `.agents/`, `.agent-skills/`, `.ai/`, and `.codex/vendor/` as agent-tooling layers, not runtime code.
 - Read `docs/ROOT_LAYOUT.md` before creating a new top-level folder or moving files between root categories.
 - **`.migration-backup/` and `artifacts/rentrix/legacy-src/` no longer exist** (removed in PR #805). Do not reference them.
@@ -26,7 +26,7 @@ Rentrix is a focused single-office property operations system. It is Arabic-firs
 
 Do not reintroduce SaaS multi-tenancy. Do not wire a general accounting ledger during stabilization. Do not expand scope while performing audits, repairs, or release-readiness work.
 
-The current visible constrained-beta navigation and the registered-but-hidden deferred routes are documented in `docs/ai/ONBOARDING.md`. Do not re-expose or delete deferred routes casually.
+The current visible constrained-beta navigation and planned/deferred classifications are documented in `docs/ai/ONBOARDING.md`. Do not describe live visible modules as deferred, and do not re-expose or delete deferred routes casually.
 
 ## Domain invariants
 
@@ -44,14 +44,14 @@ The current visible constrained-beta navigation and the registered-but-hidden de
 - The active application is `artifacts/rentrix/`.
 - Keep the current TanStack Router, React Query, Supabase, PWA, RTL, and i18n direction.
 - Do not restore legacy `useApp`, `AppContext`, `dataService`, local database flows, or `react-router-dom` into the active app.
-- Reuse archived recovery notes only after comparing them against current architecture and adapting deliberately.
+- Reuse historical recovery notes only from git history or a reviewed restored reference after comparing them against current architecture and adapting deliberately.
 - Treat migrations, RLS policies, auth boundaries, environment handling, and financial posting behavior as sensitive surfaces.
 
 ## Known release blockers and closed tech debt
 
 - `useProperties.ts` / `use-properties.ts` and `useUnits.ts` / `use-units.ts` duplicate hook pairs were consolidated in v0.2. Current canonical hooks are `use-properties.ts` and `use-units.ts`.
 - `database.ts` now includes `public.audit_log`; the audit service uses the generated database type directly.
-- Live Supabase migration-state reconciliation and authenticated browser/manual QA remain blocked by dashboard/management API access and browser-driving capability, as documented in `docs/RENTRIX_MASTER_PLAN.md`; old migration reconciliation reports were removed from active docs and remain available through git history.
+- Custom Access Token Hook registration is `DONE` by owner confirmation. Authenticated ADMIN browser/manual QA and production GO/NO-GO are `FINAL DELIVERY GATE` items, not current repo-stabilization blockers. Old migration reconciliation reports were removed from active docs and remain available through git history.
 
 ## Skills and workflows
 

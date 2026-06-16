@@ -23,7 +23,7 @@ Rentrix is also not approved for a general accounting ledger during stabilizatio
 
 ## Latest Merged Work Verified
 
-Current `main` HEAD: `7bff142 fix(ui): add UTF-8 BOM and date-stamped filenames to Reports CSV exports (#913)`.
+Current `main` HEAD at this reconciliation: `8129cb8 fix(ui): polish active page IA and states (#922)`.
 
 ### ✅ مُنجز ومُطبَّق — live DB `nnggcnpcuomwfuupupwg`
 
@@ -80,11 +80,11 @@ financial_operation_idempotency RLS:  policy=false (internal only via SECURITY D
 | `renew_contract_atomic(uuid, jsonb)` | ✅ EXECUTE | ❌ | browser-facing |
 | `generate_invoices_from_active_contracts()` | ✅ EXECUTE | ❌ | browser-facing |
 
-### ما يزال غير مؤكَّد
+### Final delivery gates still open
 
-- **Custom Access Token Hook registration**: الدالة `public.custom_access_token_hook` موجودة في الـ DB ✅، لكن تسجيلها في Supabase Dashboard → Authentication → Hooks لم يُؤكَّد بـ Dashboard/Management-API evidence. بدونه: JWT لن يحتوي `app_metadata.user_role` → كل protected routes ستظهر unauthorized.
-- **Authenticated browser E2E QA**: لم يُنفَّذ بعد. الـ deployment يخدم `nnggcnpcuomwfuupupwg` بشكل صحيح (مؤكَّد 2026-06-14)، لكن لا يوجد tool يقدر يعمل form-submission authenticated.
-- **`record_invoice_payment_atomic` full E2E**: account resolution مؤكَّد (`1111`/`1201`) لكن الـ flow الكامل invoice→payment→receipt→allocation→idempotency لم يُختبر بـ authenticated session.
+- **Custom Access Token Hook registration:** `DONE` by owner confirmation. It is not a current repo-stabilization blocker.
+- **Authenticated ADMIN browser QA:** `FINAL DELIVERY GATE`. It must verify login, protected routes, invoice -> payment -> receipt behavior, reports refresh, RTL/LTR, mobile, print, and critical operator workflows before production GO.
+- **Production GO/NO-GO:** `FINAL DELIVERY GATE`. Final GO remains pending final handover QA; do not claim full production readiness before that evidence exists.
 
 ## Core MVP Systems
 
@@ -149,7 +149,6 @@ These modules must be real working routes when shipped: no placeholder, coming-s
 Systems that remain deferred or out of shipped navigation unless separately approved:
 
 - External communication / notification sends.
-- Communication / notifications.
 - General CRM expansion.
 - Advanced owner settlements and payout workflows.
 - Advanced automation and governance.
@@ -159,36 +158,50 @@ Systems that remain deferred or out of shipped navigation unless separately appr
 - General accounting ledger.
 - Shared-database SaaS multi-tenancy.
 
-Current expansion guidance: `/lands`, `/leads`, `/commissions`, and `/communication` are approved active routes. They must be reachable from desktop navigation and the mobile drawer, and must include schema/RLS evidence, service hooks, working list/form flows, Arabic validation/error states, and tests. `/communication` is an internal log only; do not send WhatsApp/SMS/email from the browser without a separate safe provider boundary.
+Current expansion guidance: `/lands`, `/leads`, `/commissions`, and `/communication` are approved active routes. Current code shows them in desktop navigation with permission guards and registered protected TanStack routes. `/communication` is an internal log only; do not send WhatsApp/SMS/email from the browser without a separate safe provider boundary.
 
-## Current Production Blockers
+## Current Delivery Gates and Repo Stabilization Status
 
-Do not claim production readiness until these blockers are closed with fresh evidence:
+Do not claim production readiness until the final delivery gates close with fresh evidence:
 
 - ~~Live Supabase migration-state reconciliation~~ **✅ حُلَّت** — 101 migrations، repo = DB perfect match (PR #910, PR #911).
-- Supabase default branch status was recorded as `MIGRATIONS_FAILED`; must be reconciled through the approved path before release closure. Current live project is ACTIVE_HEALTHY but branch status has not been re-verified via Management API.
-- Preview-branch migration replay remains blocked by approved preview access.
-- **Custom Access Token Hook**: `public.custom_access_token_hook` exists in DB ✅ but Dashboard registration is unverified. Manual step required: Supabase Dashboard → Authentication → Hooks → Custom Access Token → `pg-functions://postgres/public/custom_access_token_hook`.
-- Authenticated browser/manual QA remains blocked until an operator verifies post-login runtime behavior.
+- Custom Access Token Hook registration is **DONE** by owner confirmation and is not a current repo-stabilization blocker.
+- Authenticated ADMIN browser/manual QA is a **FINAL DELIVERY GATE**. It remains pending operator handover evidence.
+- Production GO/NO-GO is a **FINAL DELIVERY GATE** and remains pending final handover QA.
 - ~~`find_payment_account_id(text)` account-resolution~~ **✅ حُلَّت** — `cash=1111`, `receivable=1201` مؤكَّدان live (PR #896, PR #910).
 - ~~`void_receipt_atomic` PGRST202 mismatch~~ **✅ حُلَّت** — overload `(jsonb)` مضافة (PR #910). Frontend لا يحتاج تغييراً.
 - ~~`post_receipt_atomic` callable by authenticated~~ **✅ حُلَّت** — REVOKE authenticated (PR #911).
 - ~~`financial_operation_idempotency` grants/RLS gap~~ **✅ حُلَّت** — policy `false` + SECURITY DEFINER functions تكتب عبر postgres ✅.
-- Canonical balance-model behavior: invoice outstanding, arrears, reports, receipt projection, and payment posting are consistent; full E2E verification under authenticated session remains pending.
+- Canonical balance-model behavior: invoice outstanding, arrears, reports, receipt projection, and payment posting are consistent in repository evidence; full E2E verification under authenticated session remains a final delivery gate.
 - Reports/KPI definitions documented in `docs/ai/REPORTING_DEFINITIONS.md`; metric validation against live data pending.
-- Print/PDF readiness documented in `docs/ai/PRINT_AND_EXPORT_READINESS.md`; Reports CSV filename/BOM polish is covered, and remaining print/PDF gaps remain release-readiness items.
-- Final constrained-beta GO/NO-GO blocked until Custom Access Token Hook + authenticated browser QA are verified.
+- Print/PDF readiness documented in `docs/ai/PRINT_AND_EXPORT_READINESS.md`; invoice PDF, expense PDF, contract PDF, Reports CSV filename/BOM, and receipt browser print are implemented in repo evidence. Dedicated generated receipt PDF and mobile/physical-device print QA remain open.
+- Current repo/docs stabilization is ready after this PR's local checks pass; full production readiness is not claimed before final delivery QA.
+
+## Incomplete / Planned / Deferred Work
+
+| Item | Status | Current note |
+| --- | --- | --- |
+| Authenticated ADMIN browser QA | `FINAL DELIVERY GATE` | Required during final handover; not a repo-stabilization blocker. |
+| Production GO/NO-GO | `FINAL DELIVERY GATE` | Pending final handover QA. |
+| Mobile/physical-device print QA | `FINAL DELIVERY GATE` | Required before full production-readiness claims. |
+| Commercial hardening v0.5 | `PLANNED` | Starts after final delivery QA closes or identifies a fix path. |
+| v1.0 commercial release | `PLANNED` | Depends on final delivery QA and commercial hardening. |
+| External communication sending | `OUT OF SCOPE` | `/communication` is an internal log only. |
+| General accounting ledger | `OUT OF SCOPE` | `/accounting` remains a redirect to `/financials`. |
+| Owner settlement/payout workflow | `NEEDS OWNER DECISION` | Future owner decision; do not add in stabilization. |
+| Tax finality/accounting-grade tax treatment | `OUT OF SCOPE` | Requires approved accounting requirements. |
+| Dedicated generated receipt PDF file | `PLANNED` | Current receipt support is browser print only. |
+| Reports PDF export | `DEFERRED` | Current reports export CSV. |
+| Owner statements/settlement documents | `DEFERRED` | Depends on owner settlement decision. |
+| SaaS multi-tenancy | `OUT OF SCOPE` | Single-office boundary remains. |
 
 ## Current Next PR Order
 
-For implementation after PR #913 and the repository-only code-reality audit:
+1. Finish this docs-only reconciliation PR and keep it limited to source-of-truth documentation.
+2. If final delivery QA reveals bugs, open narrow fix PRs per bug, no bundled changes.
+3. After final delivery QA closes, start the planned commercial hardening v0.5 documentation and runbook work.
 
-1. **Manual only — no PR needed**: Register Custom Access Token Hook in Supabase Dashboard → Authentication → Hooks → `pg-functions://postgres/public/custom_access_token_hook`. Verify JWT contains `app_metadata.user_role` after login.
-2. **Manual only**: Run authenticated browser QA on `rentrix-alpha.vercel.app` — login as ADMIN, verify dashboard, contracts, payment recording, receipt generation, arrears, reports, RTL layout, mobile navigation.
-3. If QA passes: record GO evidence and close v0.1 constrained-beta.
-4. If QA reveals bugs: open narrow fix PRs per bug, no bundled changes.
-
-Do not open new DB/migration PRs while these manual blockers remain unresolved — the DB layer is verified stable.
+Do not open new DB/migration PRs without a confirmed repo or QA bug — the DB layer is treated as stable from current repository evidence.
 
 ## Latest Repository-Only Code-Reality Audit
 
@@ -200,11 +213,11 @@ High-level classification:
 
 - Implemented and repository-verified: auth shell and login service, dashboard snapshot, properties, units, people, tenants, owners, contracts, invoices, payment RPC facade, payment-backed receipts, arrears, reports CSV, settings, change password, maintenance, audit log, data integrity, system governance, route/sidebar/mobile navigation, Supabase client configuration guard, PWA build configuration, and CI test wiring.
 - Partially implemented or repo-only verified: Arabic RTL/mobile/PWA/offline behavior, print/PDF output, reports/KPI definitions, balance projections, and browser payment-to-receipt flow; these still require authenticated browser and device/operator evidence before production-readiness claims.
-- Approved for implementation in the active product-expansion phase: `/lands`, `/leads`, `/commissions`, and `/communication`; these routes should no longer ship as hidden or unavailable pages.
-- Documented but missing or unverified in active UI: dedicated invoice PDF/print action, expense PDF action, reports PDF export, dedicated generated receipt PDF, owner-settlement statements, external communication sends, general ledger/accounting screens, and SaaS/multi-tenant behavior.
-- Blocked / unsafe to touch now: live hook registration verification, authenticated browser QA, preview migration replay, live Supabase/Vercel mutations, new DB/migration work without a confirmed bug, and product expansion beyond the single-office constrained-beta path.
+- Implemented and visible with permission guards in the active app: `/lands`, `/leads`, `/commissions`, and `/communication`; these routes should no longer be described as hidden, pending, or unavailable pages.
+- Missing or intentionally not exposed in active UI: reports PDF export, dedicated generated receipt PDF, owner-settlement statements, external communication sends, general ledger/accounting screens, and SaaS/multi-tenant behavior.
+- Blocked / unsafe to touch now: live Supabase/Vercel mutations, new DB/migration work without a confirmed bug, and product expansion beyond the single-office path.
 
-Recommended next implementation phase after manual blockers clear: a single `v0.1 release-evidence closure` phase that records hook-registration proof, authenticated browser QA, payment-to-receipt E2E evidence, RTL/mobile/PWA/print smoke evidence, and GO/NO-GO status. Do not start random feature PRs before that evidence phase.
+Recommended final delivery phase: record authenticated ADMIN browser QA, payment-to-receipt E2E evidence, RTL/mobile/PWA/print smoke evidence, and GO/NO-GO status. Do not start random feature PRs before that evidence phase.
 
 ## Known Contradictions Resolved
 

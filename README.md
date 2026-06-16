@@ -2,7 +2,7 @@
 
 Rentrix is an Arabic-first, single-office property operations system for managing the verified property workflow: properties, units, people, tenants, owners, contracts, invoices, payments, receipts, arrears, expenses, and reports.
 
-The active application is intentionally focused. SaaS multi-tenancy and accounting-grade ledger work are outside the current stabilization scope. Some recovered routes remain registered for controlled verification but are intentionally hidden from constrained-beta navigation.
+The active application is intentionally focused. SaaS multi-tenancy and accounting-grade ledger work are outside the current stabilization scope. Approved recovered modules such as lands, leads, commissions, and communication are live visible modules with permission guards.
 
 ## Start here
 
@@ -50,12 +50,12 @@ rentrixxx/
 ├── .ai/                        # Rentrix-specific agent workflows
 ├── .agent-skills/              # Rentrix-owned reusable agent skills
 ├── .agents/                    # Installed/shared agent tooling and plugin metadata
-├── .codex/vendor/              # Source-locked upstream skills and plugins
-├── archive/recovery-reference/ # Minimal reference-only recovery notes
-└── understand-anything/        # Generated repository-understanding artifacts
+└── .codex/vendor/              # Source-locked upstream skills and plugins
 ```
 
 See `docs/ROOT_LAYOUT.md` for retention rules, dependency direction, and root-folder ownership.
+
+`archive/recovery-reference/` and `understand-anything/` are not present in the current repository checkout. Treat any references to those paths as removed historical references unless a future reviewed cleanup or tooling PR recreates them deliberately.
 
 ## Optional support artifacts
 
@@ -67,9 +67,9 @@ The promo project is retained but is not part of the production runtime.
 
 ## Current constrained-beta boundary
 
-Visible navigation is intentionally limited to the verified operational flow. Routes such as lands, leads, maintenance, commissions, communication, system governance, audit log, and data integrity remain registered for controlled recovery but are hidden from visible navigation. `/accounting` redirects to `/financials` and must not be expanded into a general ledger during stabilization.
+Visible navigation includes the verified operational flow plus approved, permission-guarded operations modules. `/lands`, `/leads`, `/commissions`, and `/communication` are live visible approved modules in the active app, not pending or hidden deferred routes. `/accounting` redirects to `/financials` and must not be expanded into a general ledger during stabilization.
 
-Use `docs/ai/ONBOARDING.md` as the current source for the exact route snapshot.
+Use `docs/ai/ONBOARDING.md` as the current source for the exact route snapshot and incomplete/planned/deferred classifications.
 
 ## Root configuration
 
@@ -116,6 +116,12 @@ For schema or RLS changes, also run the repository-approved Supabase validation 
 - Do not wire a general accounting ledger during stabilization.
 - Reuse historical code only after deliberate adaptation to the active TanStack Router, React Query, and Supabase architecture.
 
-## Recovery references
+## Incomplete / Planned / Deferred Work
 
-Only concise notes under `archive/recovery-reference/` remain for selective maintenance reference, and they must not be imported into the active application. Old reports were removed from active repository docs and remain available through git history. `.migration-backup/` and `artifacts/rentrix/legacy-src/` were removed in PR #805.
+The Custom Access Token Hook is `DONE` by owner confirmation and is not a current repo-stabilization blocker. Authenticated ADMIN browser QA, mobile/physical-device print QA, and the final production GO/NO-GO remain `FINAL DELIVERY GATE` items for handover evidence. Full production readiness must not be claimed before that final QA closes.
+
+Commercial hardening v0.5 and v1.0 commercial release are `PLANNED` after final delivery QA. External communication sending, a general accounting ledger, accounting-grade tax finality, SaaS multi-tenancy, and blind legacy restoration are `OUT OF SCOPE` unless a later reviewed product decision changes the boundary. Owner settlement/payout workflow is `NEEDS OWNER DECISION`. Dedicated generated receipt PDF remains `PLANNED`; current receipts use browser print.
+
+## Historical references
+
+`archive/recovery-reference/` and `understand-anything/` are not present in the current repository checkout. Old reports were removed from active repository docs and remain available through git history. `.migration-backup/` and `artifacts/rentrix/legacy-src/` were removed in PR #805.
