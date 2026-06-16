@@ -192,9 +192,9 @@ Do not open new DB/migration PRs while these manual blockers remain unresolved â
 
 ## Latest Repository-Only Code-Reality Audit
 
-`docs/ai/CODE_REALITY_GAP_AUDIT.md` is the current repo-only gap audit for documentation versus active code as of `main@7bff142`. It did not use live Supabase, live Vercel, credentials, migrations, or production data.
+`docs/archive/ai/CODE_REALITY_GAP_AUDIT.md` is an archived repo-only gap audit for documentation versus active code as of `main@7bff142`. It did not use live Supabase, live Vercel, credentials, migrations, or production data.
 
-`docs/ai/SUPABASE_SECURITY_ADVISOR_REMEDIATION.md` records the 2026-06-16 repo-only Supabase Security Advisor remediation audit and migration proposal. It classifies the four advisor-listed financial SECURITY DEFINER functions as browser-facing facades that must keep `authenticated` EXECUTE unless app architecture changes, identifies `v_balance_reconciliation` as the main valid migration candidate via `security_invoker=true`, treats Leaked Password Protection as a dashboard setting, and includes verification queries plus rollback SQL. No live Supabase changes were made.
+`docs/archive/ai/SUPABASE_SECURITY_ADVISOR_REMEDIATION.md` records the archived 2026-06-16 repo-only Supabase Security Advisor remediation audit and migration proposal. It classifies the four advisor-listed financial SECURITY DEFINER functions as browser-facing facades that must keep `authenticated` EXECUTE unless app architecture changes, identifies `v_balance_reconciliation` as the main valid migration candidate via `security_invoker=true`, treats Leaked Password Protection as a dashboard setting, and includes verification queries plus rollback SQL. No live Supabase changes were made.
 
 High-level classification:
 

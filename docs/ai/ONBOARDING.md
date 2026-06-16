@@ -6,6 +6,16 @@ When documentation and code disagree, `docs/ai/CURRENT_EXECUTION_CONTEXT.md` is 
 
 For reporting or document-output work, also read `docs/ai/REPORTING_DEFINITIONS.md` and `docs/ai/PRINT_AND_EXPORT_READINESS.md` after `CURRENT_EXECUTION_CONTEXT.md`. These files describe current repository evidence and known limitations; they do not replace live Supabase/payment QA evidence.
 
+## Docs map
+
+Read first: `AGENTS.md`, `README.md`, `docs/ai/CURRENT_EXECUTION_CONTEXT.md`, `docs/RENTRIX_MASTER_PLAN.md`, `docs/FIRST_CLIENT_DELIVERY_PLAN.md`, and this onboarding snapshot.
+
+Active policy docs: `docs/ai/domain-rules.md`, `docs/ai/engineering-policy.md`, `docs/ai/security-policy.md`, `docs/ai/release-policy.md`, `docs/ai/testing-guide.md`, and `docs/decisions/README.md`.
+
+Technical references: `docs/ai/PRINT_AND_EXPORT_READINESS.md`, `docs/ai/REPORTING_DEFINITIONS.md`, `docs/ai/SECURE_OPERATOR_RUNBOOK.md`, `docs/ROOT_LAYOUT.md`, `docs/ai/AGENT_CAPABILITIES.md`, and `docs/ai/GIT_TOOLING_POLICY.md`.
+
+Archived historical material: `docs/archive/README.md` indexes dated reports, audits, evidence packs, superseded indexes, and release-thread notes. Treat archived docs as historical reference only.
+
 ## 1. Product boundary
 
 Rentrix is an Arabic-first, single-office property operations system. English/LTR behavior must remain functional.
@@ -146,7 +156,7 @@ Preserve at minimum:
 
 - **Duplicate hook pairs closed:** `useProperties.ts` / `use-properties.ts` and `useUnits.ts` / `use-units.ts` were consolidated in v0.2. Current canonical hooks are `use-properties.ts` and `use-units.ts`.
 - **`database.ts` audit type gap closed:** `public.audit_log` and other previously untracked tables are now represented in the generated database types, and the audit service uses `Database['public']['Tables']['audit_log']['Row']` directly.
-- **Supabase migration and browser QA blockers remain:** live migration-state reconciliation, Custom Access Token hook registration verification, and authenticated browser/manual QA are blocked by dashboard/management API access and browser-driving capability. See v0.1 items 2, 5, and `docs/v01/migration-reconciliation-status.md`.
+- **Supabase migration and browser QA blockers remain:** live migration-state reconciliation, Custom Access Token hook registration verification, and authenticated browser/manual QA are blocked by dashboard/management API access and browser-driving capability. See v0.1 items 2 and 5 in `docs/RENTRIX_MASTER_PLAN.md`; historical evidence is archived at `docs/archive/v01/migration-reconciliation-status.md`.
 
 ## 6. Required reading order
 
@@ -158,15 +168,13 @@ After `AGENTS.md`, read in this order before non-trivial edits:
 4. `docs/ai/AGENT_CAPABILITIES.md`
 5. `docs/ai/GIT_TOOLING_POLICY.md`
 6. `docs/ROOT_LAYOUT.md`
-7. `docs/README.md`
-8. `docs/ai/product-scope.md`
-9. `docs/ai/domain-rules.md`
-10. `docs/ai/engineering-policy.md`
-11. `docs/ai/security-policy.md`
-12. `docs/ai/testing-guide.md`
-13. `docs/ai/release-policy.md`
-14. `docs/decisions/README.md`
-15. `.ai/workflows/README.md`
+7. `docs/ai/domain-rules.md`
+8. `docs/ai/engineering-policy.md`
+9. `docs/ai/security-policy.md`
+10. `docs/ai/testing-guide.md`
+11. `docs/ai/release-policy.md`
+12. `docs/decisions/README.md`
+13. `.ai/workflows/README.md`
 
 Then load only the task-specific references needed for the requested change.
 
@@ -221,11 +229,10 @@ Use targeted tests during implementation, then run the relevant full gate before
 Before any live Supabase or Vercel action, read:
 
 ```text
-docs/wave1/1A_CONTRACT_INTEGRITY_RECONCILIATION.md
-docs/wave1/1B_FINANCIAL_POSTING_DESIGN_RECONCILIATION.md
-docs/wave1/1C_AUTH_AND_RLS_HARDENING_PLAN.md
-docs/CONSTRAINED_BETA_LAUNCH_AUDIT_2026_06_06.md
-docs/v01/migration-reconciliation-status.md  [LATEST — updated 2026-06-07]
+docs/archive/wave1/1A_CONTRACT_INTEGRITY_RECONCILIATION.md
+docs/archive/wave1/1B_FINANCIAL_POSTING_DESIGN_RECONCILIATION.md
+docs/archive/wave1/1C_AUTH_AND_RLS_HARDENING_PLAN.md
+docs/archive/v01/migration-reconciliation-status.md  [historical]
 ```
 
 The latest recorded Supabase boundary is:
@@ -241,11 +248,11 @@ prohibited project:    rentrix (V2) / ktmizdznbdwvalmmfvfc
 - Main runtime: healthy, no schema corruption detected
 - Critical auth function `custom_access_token_hook` applied ✅
 - Critical payment RPC `record_invoice_payment_atomic` still needed ⏸️
-- See `docs/v01/migration-reconciliation-status.md` for full findings and next steps
+- See `docs/archive/v01/migration-reconciliation-status.md` for historical findings and next steps
 
 ## 11. Cleanup boundary
 
-Read `docs/reconciliation/02-root-cleanup-candidates.md` before removing or moving files. Remove only items classified as `safe-delete-proven` in a narrow cleanup PR. Keep archive moves, recovery-source review, optional artifact decisions, and runtime changes separate.
+Read `docs/archive/reconciliation/02-root-cleanup-candidates.md` before removing or moving files. Remove only items classified as `safe-delete-proven` in a narrow cleanup PR. Keep archive moves, recovery-source review, optional artifact decisions, and runtime changes separate.
 
 ## 12. Documentation maintenance rule
 
@@ -260,4 +267,4 @@ Update this file when an approved change alters:
 - roadmap sequencing or continuation behavior;
 - known tech debt items.
 
-Keep `README.md`, `AGENTS.md`, `CLAUDE.md`, `docs/README.md`, and `docs/ai/README.md` as short entry points that link here instead of duplicating the full onboarding sequence.
+Keep `README.md` and `AGENTS.md` as short entry points that link here instead of duplicating the full onboarding sequence. Superseded docs indexes are archived under `docs/archive/`.

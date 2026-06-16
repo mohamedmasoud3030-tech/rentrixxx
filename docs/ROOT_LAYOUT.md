@@ -85,15 +85,12 @@ README.md                       # Repository start page
 AGENTS.md                       # Canonical operating policy
 CLAUDE.md                       # Short compatibility entry point
 docs/
-├── README.md                   # Documentation index
 ├── ROOT_LAYOUT.md              # This architectural map
 ├── RENTRIX_MASTER_PLAN.md      # Single authoritative version roadmap
+├── FIRST_CLIENT_DELIVERY_PLAN.md # Active first-client delivery plan
 ├── ai/                         # Durable agent and engineering policy
 ├── decisions/                  # ADRs and durable architecture decisions
-├── reconciliation/             # Repository comparisons and cleanup inventories
-├── stabilization/              # Historical stabilization evidence
-├── wave1/                      # Wave-specific reconciliation evidence
-└── demo-gates/                 # Validation and release-gate evidence
+└── archive/                    # Historical reports, audits, evidence packs, and superseded indexes
 .github/                        # CI and pull-request governance
 .ai/                            # Rentrix-specific execution workflows
 ```
@@ -102,7 +99,7 @@ docs/
 
 - Put stable current policy in `docs/ai/` or `docs/decisions/`.
 - Put the ordered implementation roadmap only in `docs/RENTRIX_MASTER_PLAN.md`.
-- Put cleanup inventories under `docs/reconciliation/`.
+- Put current cleanup decisions in active policy docs; keep historical cleanup inventories under `docs/archive/reconciliation/`.
 - Treat older `PHASE_*`, stabilization, recovery, and audit reports as historical evidence unless explicitly promoted into current policy.
 - Avoid adding loose one-off reports to the repository root.
 
@@ -193,7 +190,7 @@ Use repository search and build verification to enforce this firewall before del
 
 ## 11. Cleanup Categories
 
-Before removing anything, classify it in `docs/reconciliation/02-root-cleanup-candidates.md` as one of:
+Before removing anything, classify it in an active cleanup plan or verify the historical classification in `docs/archive/reconciliation/02-root-cleanup-candidates.md` as one of:
 
 ```text
 retain-runtime

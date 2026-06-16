@@ -118,7 +118,7 @@ Status: `EVIDENCE REQUIRED`. Do not classify Gemini as a current same-day critic
 - endpoint or call site;
 - why the integration is reachable from the shipped Rentrix runtime.
 
-Current known non-runtime references are documentation-only historical notes under `docs/reconciliation/`; they are not active application code and are insufficient by themselves to justify a critical security item.
+Current known non-runtime references are documentation-only historical notes under `docs/archive/reconciliation/`; they are not active application code and are insufficient by themselves to justify a critical security item.
 
 Read `docs/ai/domain-rules.md` before touching contracts, invoices, payments, receipts, arrears, expenses, reports, migrations, or RLS.
 
@@ -251,7 +251,7 @@ Current known release risk:
 Supabase default main branch status: MIGRATIONS_FAILED (last verified June 2026)
 ```
 
-The 2026-06-06 constrained-beta audit returned **NO-GO** due to inability to authenticate to Vercel or Supabase in the execution environment. Repository evidence only. See `docs/CONSTRAINED_BETA_LAUNCH_AUDIT_2026_06_06.md`.
+The 2026-06-06 constrained-beta audit returned **NO-GO** due to inability to authenticate to Vercel or Supabase in the execution environment. Repository evidence only. Historical demo-gate evidence is archived under `docs/archive/demo-gates/`.
 
 Repository documentation is not authorization to mutate production.
 
@@ -337,23 +337,23 @@ Stop and report the exact blocker when any of these apply:
 | Order | Item | Status | Required result |
 | --- | --- | --- | --- |
 | 1 | Secure operator runbook | `DONE` | Added `docs/ai/SECURE_OPERATOR_RUNBOOK.md` with redacted environment ownership, intended/prohibited Supabase ref classifications, available Vercel identity evidence, and connector blocker reporting. |
-| 2 | Verify migration chain rebuild and document current Supabase reset blocker | `DONE` | Migration chain fully reconciled as of PR #910 + PR #911. Repo and live DB both contain 101 migrations — perfect match. 11 remote-applied stubs added to repo; 43 repo migrations registered in live `supabase_migrations`. See `docs/v01/migration-reconciliation-status.md` for full chain and evidence. Supabase default-branch `MIGRATIONS_FAILED` status has not been re-verified via Management API — remains a GO/NO-GO gate item. |
+| 2 | Verify migration chain rebuild and document current Supabase reset blocker | `DONE` | Migration chain fully reconciled as of PR #910 + PR #911. Repo and live DB both contain 101 migrations — perfect match. 11 remote-applied stubs added to repo; 43 repo migrations registered in live `supabase_migrations`. Historical chain evidence is archived at `docs/archive/v01/migration-reconciliation-status.md`. Supabase default-branch `MIGRATIONS_FAILED` status has not been re-verified via Management API — remains a GO/NO-GO gate item. |
 | 3 | Preview-branch migration replay | `BLOCKED` by item 2 and preview access | Prove replay outside production; split any repair into a narrow reviewed migration PR. |
-| 4 | Auth, RLS, and RPC least-privilege reconciliation | `DONE` (DB layer) / `BLOCKED` (hook registration + browser QA) | **DB fixes applied and verified live (PR #896, #910, #911):** `find_payment_account_id('cash')=1111` ✅; `find_payment_account_id('receivable')=1201` ✅; `void_receipt_atomic(jsonb)` wrapper added (PGRST202 closed) ✅; `post_receipt_atomic` REVOKE authenticated ✅; `void_receipt_atomic(4-arg)` REVOKE authenticated ✅; `find_payment_account_id` REVOKE anon ✅; `recalculate_all_balances` REVOKE anon ✅; type cast bugs bigint→timestamptz fixed ✅; owner balance ACTIVE filter removed ✅. **Remaining manual blockers:** (a) Custom Access Token Hook not verified registered in Supabase Dashboard; (b) authenticated browser E2E payment flow not yet QA'd. See `docs/v01/migration-reconciliation-status.md` for full security advisor matrix. |
-| 5 | Browser/manual operational QA | `BLOCKED` by browser-driving tool + Custom Access Token hook verification | Deployment is reachable at `rentrix-alpha.vercel.app` and, as of 2026-06-14, the served production bundle is verified to embed the correct live Supabase env values (`VITE_SUPABASE_URL`/`VITE_SUPABASE_ANON_KEY` for `nnggcnpcuomwfuupupwg`) — the deployment-config sub-blocker is resolved. Remaining blockers: (a) registration of `pg-functions://postgres/public/custom_access_token_hook` as the project's Custom Access Token Auth Hook cannot be verified without Supabase Dashboard/Management-API access; (b) authenticated browser/manual QA requires a tool that can submit the login form and inspect post-auth app state, not just unauthenticated GET. See `docs/v01/migration-reconciliation-status.md` for evidence. Verify RTL desktop, RTL mobile, LTR sanity, protected-route refresh, forms, tables, dialogs, receipt lookup/print, CSV export, PWA install/offline/update, and invalid-route fallback once unblocked. |
+| 4 | Auth, RLS, and RPC least-privilege reconciliation | `DONE` (DB layer) / `BLOCKED` (hook registration + browser QA) | **DB fixes applied and verified live (PR #896, #910, #911):** `find_payment_account_id('cash')=1111` ✅; `find_payment_account_id('receivable')=1201` ✅; `void_receipt_atomic(jsonb)` wrapper added (PGRST202 closed) ✅; `post_receipt_atomic` REVOKE authenticated ✅; `void_receipt_atomic(4-arg)` REVOKE authenticated ✅; `find_payment_account_id` REVOKE anon ✅; `recalculate_all_balances` REVOKE anon ✅; type cast bugs bigint→timestamptz fixed ✅; owner balance ACTIVE filter removed ✅. **Remaining manual blockers:** (a) Custom Access Token Hook not verified registered in Supabase Dashboard; (b) authenticated browser E2E payment flow not yet QA'd. Historical security advisor evidence is archived at `docs/archive/v01/migration-reconciliation-status.md`. |
+| 5 | Browser/manual operational QA | `BLOCKED` by browser-driving tool + Custom Access Token hook verification | Deployment is reachable at `rentrix-alpha.vercel.app` and, as of 2026-06-14, the served production bundle is verified to embed the correct live Supabase env values (`VITE_SUPABASE_URL`/`VITE_SUPABASE_ANON_KEY` for `nnggcnpcuomwfuupupwg`) — the deployment-config sub-blocker is resolved. Remaining blockers: (a) registration of `pg-functions://postgres/public/custom_access_token_hook` as the project's Custom Access Token Auth Hook cannot be verified without Supabase Dashboard/Management-API access; (b) authenticated browser/manual QA requires a tool that can submit the login form and inspect post-auth app state, not just unauthenticated GET. Historical evidence is archived at `docs/archive/v01/migration-reconciliation-status.md`. Verify RTL desktop, RTL mobile, LTR sanity, protected-route refresh, forms, tables, dialogs, receipt lookup/print, CSV export, PWA install/offline/update, and invalid-route fallback once unblocked. |
 | 6 | Final constrained-beta release check | `BLOCKED` until items 1–5 close | Run the full CI gate, review live evidence, record residual risks, and decide GO / NO-GO. |
 
 Repository-side migration evidence preflight now runs in CI after dependency installation. This keeps the local canonical migration chain guarded while live migration-state reconciliation remains blocked by approved read-only Supabase access.
 
-Latest execution note: `docs/v01/migration-reconciliation-status.md` is the active status source for the current v0.1 continuation. On 2026-06-09, browser execution reached `rentrix-alpha.vercel.app/login`, but the deployed app reported incomplete Supabase runtime environment, so item 5 remains blocked by deployment configuration and manual auth-hook setup rather than deployment reachability alone.
+Latest execution note: `docs/ai/CURRENT_EXECUTION_CONTEXT.md` is the active execution source of truth. The older migration reconciliation status is archived at `docs/archive/v01/migration-reconciliation-status.md` as historical evidence.
 
-Next continuation item: resolve the payment-account blocker documented in `docs/v01/payment-account-resolution-critical-finding.md`. Vercel Supabase environment values are now verified correct in the deployed bundle (2026-06-14), but item 5 cannot produce a GO result until item 4's payment RPC evidence is re-verified, the Custom Access Token hook registration is verified in the Supabase Dashboard, and authenticated browser/manual operational QA is run with a browser-driving tool or manual operator session. No production mutation is authorized by the secure operator runbook.
+Next continuation item: use `docs/ai/CURRENT_EXECUTION_CONTEXT.md` for current scope and blockers. Historical payment-account findings are archived at `docs/archive/v01/payment-account-resolution-critical-finding.md`.
 
-Repository-only fallback evidence: `docs/v01/payments-receipts-source-of-truth-inventory.md` inventories the active payment-posting, receipt-projection, and local migration source-of-truth path without touching Supabase, production, RPCs, RLS, or migrations. It confirms that the current frontend receipt detail flow is intentionally payment-ID-backed while the RPC still returns a separate internal ledger receipt ID. Do not switch browser receipt identifiers to internal receipt IDs until a reviewed migration and frontend cutover exist. On 2026-06-15, targeted regression coverage was added around the payment-to-receipt seam: `receiptService.test.ts` now proves the UI-mapped `payment_id` opens receipt detail and the internal ledger `receipt_id` does not.
+Repository-only fallback evidence is archived at `docs/archive/v01/payments-receipts-source-of-truth-inventory.md`. Do not switch browser receipt identifiers to internal receipt IDs until a reviewed migration and frontend cutover exist.
 
 Current repository-only payment-account evidence: the financials test suite includes a migration contract test for `20260615000100_fix_invoice_payment_account_resolution.sql`. It locks the repair to text account IDs, chart-of-accounts numbers `1111` and `1201`, no `id::uuid` account-ID regression, retained authenticated execution of `record_invoice_payment_atomic(jsonb)`, and revoked direct browser execution of `find_payment_account_id(text)`. This does not close v0.1 item 4; it only protects the repository-side repair while operator-gated live/preview evidence remains pending.
 
-First-client rollout sequencing is tracked in `docs/v01/first-client-delivery-plan.md`. That draft does not replace this roadmap; it reorders the existing v0.1, v0.4, and v0.5 scope around the first real office rollout, with Phase 1 focused on unblocking live payment recording before any client go-live work begins.
+First-client rollout sequencing is tracked in the active `docs/FIRST_CLIENT_DELIVERY_PLAN.md`. The older draft is archived at `docs/archive/v01/first-client-delivery-plan.md`.
 
 ### 6.3 v0.1 acceptance gate
 
@@ -546,7 +546,7 @@ A visible screen is not commercially ready until it has:
 As of 2026-06-07, a detailed live-connector audit was performed against the intended Supabase project. Results are documented in:
 
 ```
-docs/v01/migration-reconciliation-status.md
+docs/archive/v01/migration-reconciliation-status.md
 ```
 
 **Summary:**
@@ -572,7 +572,7 @@ All DB-layer blockers identified in the payment-account critical finding are now
 - Migration chain: 101 repo files = 101 live DB entries ✅ (PR #910, PR #911)
 
 **Remaining:** Custom Access Token Hook Dashboard registration (manual) + authenticated browser QA.
-See `docs/v01/migration-reconciliation-status.md` for full evidence.
+See `docs/archive/v01/migration-reconciliation-status.md` for historical evidence.
 
 
 ---
@@ -638,7 +638,7 @@ The P1/P2 frontend polish queue above is now complete. The next actionable tasks
 
 - Task name: Reconcile PR #892 schema-integrity migrations into the canonical chain ordering — `DONE`
 - Source doc/path: `supabase/migrations/20260614140000_unit_status_update_triggers_and_backfill.sql`, `20260614140100_fix_owner_balance_recalc_ended_contracts.sql`, `20260614140200_schema_cleanup_triggers_fks_indexes.sql` (renamed from the PR #892 `20260613000300/000400/000500` timestamps) and section 6.2 item 2
-- Result: the three PR #892 migrations are re-timestamped to `2026-06-14 14:00:00`–`14:02:00`, sorting immediately after `20260614130000_attachments_storage_bucket.sql` (the previous latest) and before any future migration. Their self-referential `-- Migration: ...` header comments were updated to match. No other file referenced the old `20260613000300/000400/000500` names (the audit doc `docs/audits/2026-06-13-schema-integrity-audit.md` refers to the changes by description, not filename), so no further reference updates were needed. Still not applied to any environment — this only fixes local chain ordering, not the live-state verification in item 2.
+- Result: the three PR #892 migrations are re-timestamped to `2026-06-14 14:00:00`-`14:02:00`, sorting immediately after `20260614130000_attachments_storage_bucket.sql` (the previous latest) and before any future migration. Their self-referential `-- Migration: ...` header comments were updated to match. No other file referenced the old `20260613000300/000400/000500` names (the archived audit doc `docs/archive/audits/2026-06-13-schema-integrity-audit.md` refers to the changes by description, not filename), so no further reference updates were needed. Still not applied to any environment — this only fixes local chain ordering, not the live-state verification in item 2.
 - Risk level: low (file rename + local verification only; no live mutation)
 - Whether it touches Supabase: only local `supabase/migrations/` files
 - Suggested PR size: small
@@ -658,14 +658,14 @@ The P1/P2 frontend polish queue above is now complete. The next actionable tasks
 - Suggested PR size: large
 
 - Task name: Auth, RLS, and RPC least-privilege reconciliation idempotency follow-up — Needs confirmation
-- Source doc/path: `docs/RENTRIX_MASTER_PLAN.md` section 6.2, item 4 and `docs/v01/security-reconciliation-final.md`
+- Source doc/path: `docs/RENTRIX_MASTER_PLAN.md` section 6.2, item 4 and `docs/archive/v01/security-reconciliation-final.md`
 - Why it is next: roadmap records the security hardening as partly applied while the idempotency stack remains a separate required PR.
 - Risk level: high
 - Whether it touches Supabase: yes
 - Suggested PR size: medium
 
 - Task name: Browser/manual operational QA — Needs confirmation
-- Source doc/path: `docs/RENTRIX_MASTER_PLAN.md` section 6.2, item 5 and `docs/v01/migration-reconciliation-status.md`
+- Source doc/path: `docs/RENTRIX_MASTER_PLAN.md` section 6.2, item 5 and `docs/archive/v01/migration-reconciliation-status.md`
 - Why it is next: the deployment-config sub-blocker is resolved, but auth-hook verification and authenticated browser/manual QA still need access/tooling.
 - Risk level: medium
 - Whether it touches Supabase: yes
