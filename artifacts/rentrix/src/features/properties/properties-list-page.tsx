@@ -151,7 +151,7 @@ export function PropertiesListPage() {
                 onClick={() => navigate({ to: '/properties/$propertyId', params: { propertyId: p.id } })}
               />
               {/* Actions overlay */}
-              <div className="absolute top-3 left-3 hidden group-hover:flex gap-1.5">
+              <div className="absolute top-3 left-3 hidden gap-1.5 md:group-hover:flex">
                 <Link to="/properties/$propertyId" params={{ propertyId: p.id }}>
                   <button type="button" className="grid size-7 place-items-center rounded-xl bg-background/90 shadow-sm border border-border text-muted-foreground hover:text-foreground transition-colors">
                     <Eye className="size-3.5" />
@@ -171,6 +171,17 @@ export function PropertiesListPage() {
                 >
                   <Trash2 className="size-3.5" />
                 </button>
+              </div>
+              <div className="mt-2 grid grid-cols-3 gap-2 md:hidden">
+                <Button asChild variant="secondary" className="min-h-11 rounded-xl px-2 text-xs">
+                  <Link to="/properties/$propertyId" params={{ propertyId: p.id }}><Eye className="size-3.5" />عرض</Link>
+                </Button>
+                <Button variant="secondary" className="min-h-11 rounded-xl px-2 text-xs" onClick={() => { setEditPropertyId(p.id); setModalOpen(true); }}>
+                  <Edit className="size-3.5" />تعديل
+                </Button>
+                <Button variant="danger" className="min-h-11 rounded-xl px-2 text-xs" onClick={() => handleArchiveProperty(p.id, p.title ?? 'عقار')}>
+                  <Trash2 className="size-3.5" />أرشفة
+                </Button>
               </div>
             </div>
           ))}

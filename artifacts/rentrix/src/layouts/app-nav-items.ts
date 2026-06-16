@@ -24,7 +24,7 @@ export const navGroups = [
     ['/receipts', 'receipts', 'سجل الإيصالات والطباعة', ReceiptText],
     ['/expenses', 'expenses', 'مصاريف العقارات التشغيلية', WalletCards],
     ['/arrears', 'arrears', 'متابعة المبالغ المتأخرة', ClipboardList],
-    ['/commissions', 'commissions', 'تتبع عمولات المكتب دون دفتر أستاذ', BadgeDollarSign, 'commissions.view'],
+    ['/commissions', 'commissions', 'تتبع عمولات المكتب كحالة تشغيلية فقط', BadgeDollarSign, 'commissions.view'],
     ['/reports', 'reports', 'مؤشرات وتقارير الإدارة', BarChart3],
   ]],
   ['التشغيل والنظام', [

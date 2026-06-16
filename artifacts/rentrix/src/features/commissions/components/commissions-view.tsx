@@ -45,7 +45,7 @@ export function CommissionsView(props: Props) {
     <section className="space-y-5">
       <Card className="border-primary/10 bg-gradient-to-l from-primary/10 via-card to-card">
         <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div><CardTitle className="flex items-center gap-2"><BadgeDollarSign className="size-5" /> العمولات</CardTitle><CardDescription>تتبع عمولات المكتب والوسطاء دون إنشاء دفتر أستاذ أو قيود محاسبية عامة.</CardDescription></div>
+          <div><CardTitle className="flex items-center gap-2"><BadgeDollarSign className="size-5" /> العمولات</CardTitle><CardDescription>تتبع تشغيلي لعمولات المكتب والوسطاء حسب الحالة والمصدر، ولا يمثل اعتماداً محاسبياً نهائياً.</CardDescription></div>
           <Button onClick={onCreate}><Plus className="me-2 size-4" />إضافة عمولة</Button>
         </CardHeader>
         <CardContent className="grid gap-3 sm:grid-cols-3"><Summary label="إجمالي السجلات" value={String(rows.length)} /><Summary label="قيد الاعتماد" value={money(pendingTotal)} /><Summary label="مدفوعة" value={money(paidTotal)} /></CardContent>
@@ -55,11 +55,11 @@ export function CommissionsView(props: Props) {
 
       {error ? <ErrorCard message="تعذر تحميل العمولات" onRetry={onRetry} /> : null}
       {isLoading ? <StateCard title="جارٍ تحميل العمولات..." /> : null}
-      {!isLoading && !error && rows.length === 0 ? <StateCard title="لا توجد عمولات مطابقة" description="أضف أول عمولة أو غيّر عوامل البحث." /> : null}
+      {!isLoading && !error && rows.length === 0 ? <StateCard title="لا توجد عمولات ضمن الفلاتر الحالية" description="أضف عمولة تشغيلية عند توفر بياناتها، أو غيّر البحث والحالة والنوع." /> : null}
       {rows.length > 0 ? <CommissionRows rows={rows} isArchiving={isArchiving} onEdit={onEdit} onArchive={onArchive} /> : null}
 
       <Dialog open={formOpen} onOpenChange={onFormOpenChange}>
-        <DialogContent>
+        <DialogContent className="max-h-[calc(100dvh-2rem)] overflow-y-auto sm:max-w-2xl">
           <DialogHeader><DialogTitle>{editingCommission ? 'تعديل عمولة' : 'إضافة عمولة'}</DialogTitle><DialogDescription>يمكن إدخال مبلغ مباشر أو تركه ليُحسب من قيمة الصفقة ونسبة العمولة.</DialogDescription></DialogHeader>
           <form className="grid gap-3 md:grid-cols-2" onSubmit={(event) => { event.preventDefault(); onSubmit(draft); }}>
             <Field label="اسم الموظف / الوسيط"><Input required value={draft.staff_name} onChange={(event) => onDraftChange({ ...draft, staff_name: event.target.value })} /></Field>
@@ -69,7 +69,7 @@ export function CommissionsView(props: Props) {
             <Field label="قيمة الصفقة"><Input type="number" min="0" value={draft.deal_value} onChange={(event) => onDraftChange({ ...draft, deal_value: event.target.value })} /></Field>
             <Field label="النسبة %"><Input type="number" min="0" step="0.01" value={draft.percentage} onChange={(event) => onDraftChange({ ...draft, percentage: event.target.value })} /></Field>
             <Field label="مبلغ مباشر"><Input type="number" min="0" value={draft.amount} onChange={(event) => onDraftChange({ ...draft, amount: event.target.value })} /></Field>
-            <div className="flex items-end justify-end gap-2 md:col-span-2"><Button variant="secondary" onClick={() => onFormOpenChange(false)}>إلغاء</Button><Button type="submit" disabled={isSaving}>{isSaving ? 'جارٍ الحفظ...' : 'حفظ'}</Button></div>
+            <div className="flex flex-col-reverse gap-2 sm:flex-row sm:items-end sm:justify-end md:col-span-2"><Button variant="secondary" onClick={() => onFormOpenChange(false)}>إلغاء</Button><Button type="submit" disabled={isSaving}>{isSaving ? 'جارٍ الحفظ...' : 'حفظ'}</Button></div>
           </form>
         </DialogContent>
       </Dialog>
@@ -94,7 +94,7 @@ function ErrorCard({ message, onRetry }: Readonly<{ message: string; onRetry: ()
 }
 
 function CommissionRows({ rows, isArchiving, onEdit, onArchive }: Readonly<{ rows: CommissionRecord[]; isArchiving: boolean; onEdit: (row: CommissionRecord) => void; onArchive: (id: string) => void }>) {
-  return <Card className="overflow-hidden"><div className="grid gap-3 p-4 md:hidden">{rows.map((row) => <CommissionCard key={row.id} row={row} isArchiving={isArchiving} onEdit={onEdit} onArchive={onArchive} />)}</div><div className="hidden overflow-x-auto md:block"><table className="w-full text-sm"><thead className="bg-muted/50 text-muted-foreground"><tr><th className="p-3 text-right">المستفيد</th><th className="p-3 text-right">النوع</th><th className="p-3 text-right">المبلغ</th><th className="p-3 text-right">الحالة</th><th className="p-3 text-right">إجراءات</th></tr></thead><tbody>{rows.map((row) => <tr key={row.id} className="border-t"><td className="p-3 font-bold">{row.staff_name ?? '—'}<p className="text-xs text-muted-foreground">{row.source_id ?? 'بدون مصدر'}</p></td><td className="p-3">{typeLabels[row.type ?? ''] ?? row.type ?? '—'}</td><td className="p-3">{money(row.amount)}</td><td className="p-3"><StatusBadge tone={statusTone[row.status ?? ''] ?? 'gray'}>{statusLabels[row.status ?? ''] ?? row.status ?? '—'}</StatusBadge></td><td className="p-3"><RowActions id={row.id} disabled={isArchiving} onEdit={() => onEdit(row)} onArchive={onArchive} /></td></tr>)}</tbody></table></div></Card>;
+  return <Card className="overflow-hidden"><div className="grid gap-3 p-4 md:hidden">{rows.map((row) => <CommissionCard key={row.id} row={row} isArchiving={isArchiving} onEdit={onEdit} onArchive={onArchive} />)}</div><div className="hidden overflow-x-auto md:block"><table className="w-full min-w-[760px] text-sm"><thead className="bg-muted/50 text-muted-foreground"><tr><th className="p-3 text-right">المستفيد</th><th className="p-3 text-right">النوع</th><th className="p-3 text-right">المبلغ</th><th className="p-3 text-right">الحالة</th><th className="p-3 text-right">إجراءات</th></tr></thead><tbody>{rows.map((row) => <tr key={row.id} className="border-t"><td className="max-w-56 whitespace-normal break-words p-3 font-bold">{row.staff_name ?? '—'}<p className="text-xs text-muted-foreground">{row.source_id ?? 'بدون مصدر'}</p></td><td className="p-3">{typeLabels[row.type ?? ''] ?? row.type ?? '—'}</td><td className="p-3">{money(row.amount)}</td><td className="p-3"><StatusBadge tone={statusTone[row.status ?? ''] ?? 'gray'}>{statusLabels[row.status ?? ''] ?? row.status ?? '—'}</StatusBadge></td><td className="p-3"><RowActions id={row.id} disabled={isArchiving} onEdit={() => onEdit(row)} onArchive={onArchive} /></td></tr>)}</tbody></table></div></Card>;
 }
 
 function CommissionCard({ row, isArchiving, onEdit, onArchive }: Readonly<{ row: CommissionRecord; isArchiving: boolean; onEdit: (row: CommissionRecord) => void; onArchive: (id: string) => void }>) {
@@ -102,5 +102,5 @@ function CommissionCard({ row, isArchiving, onEdit, onArchive }: Readonly<{ row:
 }
 
 function RowActions({ id, disabled, onEdit, onArchive }: Readonly<{ id: string; disabled: boolean; onEdit: () => void; onArchive: (id: string) => void }>) {
-  return <div className="mt-3 flex flex-wrap gap-2"><Button variant="secondary" onClick={onEdit}><Edit className="me-2 size-4" />تعديل</Button><Button variant="danger" disabled={disabled} onClick={() => onArchive(id)}><Archive className="me-2 size-4" />إلغاء</Button></div>;
+  return <div className="mt-3 flex flex-wrap gap-2"><Button className="min-h-11" variant="secondary" onClick={onEdit}><Edit className="me-2 size-4" />تعديل</Button><Button className="min-h-11" variant="danger" disabled={disabled} onClick={() => onArchive(id)}><Archive className="me-2 size-4" />إلغاء</Button></div>;
 }
