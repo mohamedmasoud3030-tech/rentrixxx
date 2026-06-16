@@ -16,7 +16,7 @@ const forbiddenNamePieces = [
   ['use', 'App'],
   ['react-router', '-dom'],
 ] as const;
-const writeMethodCalls = ['.insert(', '.update(', '.upsert(', '.delete(', '.rpc('] as const;
+const destructiveCalls = ['.delete(', '.rpc('] as const;
 
 function userWithRole(role: unknown) {
   return { id: 'user-1', email: 'user@example.com', app_metadata: { user_role: role } };
@@ -54,7 +54,7 @@ describe('Owners and CRM route authorization', () => {
 });
 
 describe('Owners and CRM navigation visibility', () => {
-  it('keeps owner management visible while hiding deferred CRM surfaces from beta navigation', () => {
+  it('exposes approved CRM and operations modules to managers while hiding them from regular users', () => {
     const manager = getAuthorizationContextFromUser(userWithRole('MANAGER'));
     const user = getAuthorizationContextFromUser(userWithRole('USER'));
     const allNavItems: NavItem[] = [];
@@ -64,36 +64,39 @@ describe('Owners and CRM navigation visibility', () => {
     const crmNavItems = allNavItems.filter(([, labelKey]) => ['owners', 'ownersHub', 'lands', 'leads', 'commissions', 'communication'].includes(labelKey));
     const crmNavKeys = crmNavItems.map(([, labelKey]) => labelKey);
 
-    expect(crmNavKeys).toEqual(['owners']);
-    expect(crmNavKeys).not.toEqual(expect.arrayContaining(['lands', 'leads', 'commissions', 'communication']));
+    expect(crmNavKeys).toEqual(expect.arrayContaining(['owners', 'lands', 'leads', 'commissions', 'communication']));
     expect(crmNavItems.every(([, , , , permission]) => canShowNavigationItem(manager, permission))).toBe(true);
     expect(crmNavItems.every(([, , , , permission]) => !canShowNavigationItem(user, permission))).toBe(true);
   });
 });
 
-describe('Safe unavailable CRM modules', () => {
-  it('renders lands unavailable state', () => {
-    expect(renderToStaticMarkup(<LandsView state={{ status: 'unavailable', reason: 'schema unavailable' }} />)).toContain('schema unavailable');
+describe('Approved CRM module views', () => {
+  it('renders lands as a working module with create action', () => {
+    const html = renderToStaticMarkup(<LandsView rows={[]} filters={{ query: '', status: 'all' }} draft={{ plot_no: '', name: '', location: '', area: '', owner_id: '', purchase_price: '', owner_price: '', commission: '', category: 'residential', status: 'available', notes: '' }} editingLand={null} formOpen={false} isLoading={false} isSaving={false} isArchiving={false} error={null} onFiltersChange={() => undefined} onDraftChange={() => undefined} onCreate={() => undefined} onEdit={() => undefined} onFormOpenChange={() => undefined} onSubmit={() => undefined} onArchive={() => undefined} onRetry={() => undefined} />);
+
+    expect(html).toContain('إضافة أرض');
+    expect(html).not.toContain('غير متاح');
   });
 
-  it('renders leads unavailable state without invented pipeline statuses', () => {
-    const html = renderToStaticMarkup(<LeadsView state={{ status: 'unavailable', reason: 'schema unavailable' }} />);
+  it('renders leads as a working module without invented provider behavior', () => {
+    const html = renderToStaticMarkup(<LeadsView rows={[]} filters={{ query: '', status: 'all', source: 'all' }} draft={{ name: '', phone: '', email: '', source: 'walk_in', status: 'new', desired_unit_type: '', min_budget: '', max_budget: '', notes: '' }} editingLead={null} formOpen={false} isLoading={false} isSaving={false} isArchiving={false} error={null} onFiltersChange={() => undefined} onDraftChange={() => undefined} onCreate={() => undefined} onEdit={() => undefined} onFormOpenChange={() => undefined} onSubmit={() => undefined} onArchive={() => undefined} onRetry={() => undefined} />);
 
-    expect(html).toContain('schema unavailable');
+    expect(html).toContain('إضافة عميل محتمل');
     expect(html).not.toContain('pipeline');
   });
 
-  it('keeps commissions read-only without settlement behavior', () => {
-    const html = renderToStaticMarkup(<CommissionsView state={{ status: 'unavailable', reason: 'schema unavailable' }} />);
+  it('renders commissions without settlement or ledger behavior', () => {
+    const html = renderToStaticMarkup(<CommissionsView rows={[]} filters={{ query: '', status: 'all', type: 'all' }} draft={{ staff_name: '', type: 'contract', status: 'pending', source_id: '', deal_value: '', percentage: '2.5', amount: '' }} editingCommission={null} formOpen={false} isLoading={false} isSaving={false} isArchiving={false} error={null} onFiltersChange={() => undefined} onDraftChange={() => undefined} onCreate={() => undefined} onEdit={() => undefined} onFormOpenChange={() => undefined} onSubmit={() => undefined} onArchive={() => undefined} onRetry={() => undefined} />);
 
-    expect(html).toContain('قراءة فقط');
+    expect(html).toContain('إضافة عمولة');
     expect(html).not.toContain('تسوية');
+    expect(html).not.toContain('دفتر أستاذ عام');
   });
 
-  it('keeps communication hub read-only without provider sends', () => {
-    const html = renderToStaticMarkup(<CommunicationHubView state={{ status: 'unavailable', reason: 'schema unavailable' }} />);
+  it('renders communication as an internal log without external sends', () => {
+    const html = renderToStaticMarkup(<CommunicationHubView rows={[]} filters={{ query: '', channel: 'all', status: 'all' }} draft={{ contact_name: '', contact_phone: '', contact_email: '', channel: 'phone', direction: 'outbound', status: 'logged', subject: '', body: '', related_entity_type: '', related_entity_id: '' }} editingRecord={null} formOpen={false} isLoading={false} isSaving={false} isArchiving={false} error={null} onFiltersChange={() => undefined} onDraftChange={() => undefined} onCreate={() => undefined} onEdit={() => undefined} onFormOpenChange={() => undefined} onSubmit={() => undefined} onArchive={() => undefined} onRetry={() => undefined} />);
 
-    expect(html).toContain('قراءة فقط');
+    expect(html).toContain('سجل داخلي');
     expect(html).not.toContain('WhatsApp');
   });
 });
@@ -109,9 +112,9 @@ describe('Owners and CRM source safety', () => {
     }
   });
 
-  it('preserves verified owner management writes while keeping recovered surfaces read-only', () => {
+  it('preserves verified writes without destructive deletes or RPC provider sends in expansion modules', () => {
     const ownerManagementSource = readFeatureSources('features/owners/ownerService.ts');
-    const recoveredReadOnlySource = [
+    const expansionSource = [
       'features/owners/owner-detail-page.tsx',
       'features/owners/components/owner-detail-view.tsx',
       'features/lands',
@@ -123,8 +126,11 @@ describe('Owners and CRM source safety', () => {
     expect(ownerManagementSource).toContain('.insert(');
     expect(ownerManagementSource).toContain('.update(');
     expect(ownerManagementSource).not.toContain('.delete(');
-    for (const writeMethodCall of writeMethodCalls) {
-      expect(recoveredReadOnlySource).not.toContain(writeMethodCall);
+    expect(expansionSource).toContain('.insert(');
+    expect(expansionSource).toContain('.update(');
+    for (const destructiveCall of destructiveCalls) {
+      expect(expansionSource).not.toContain(destructiveCall);
     }
+    expect(expansionSource).not.toContain('sendMessage');
   });
 });

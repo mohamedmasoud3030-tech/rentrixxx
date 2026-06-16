@@ -388,6 +388,28 @@ export type Database = {
         Update: Partial<Database['public']['Tables']['lands']['Insert']>;
         Relationships: [];
       };
+      communication_records: {
+        Row: {
+          id: string;
+          contact_name: string;
+          contact_phone: string | null;
+          contact_email: string | null;
+          channel: string;
+          direction: string;
+          status: string;
+          subject: string | null;
+          body: string;
+          related_entity_type: string | null;
+          related_entity_id: string | null;
+          created_by: string | null;
+          created_at: string;
+          updated_at: string;
+          deleted_at: string | null;
+        };
+        Insert: { id?: string; contact_name: string; contact_phone?: string | null; contact_email?: string | null; channel?: string; direction?: string; status?: string; subject?: string | null; body: string; related_entity_type?: string | null; related_entity_id?: string | null; created_by?: string | null; created_at?: string; updated_at?: string; deleted_at?: string | null };
+        Update: Partial<Database['public']['Tables']['communication_records']['Insert']>;
+        Relationships: [];
+      };
       users: {
         Row: {
           id: string;

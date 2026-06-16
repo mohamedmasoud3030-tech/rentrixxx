@@ -26,14 +26,18 @@ People
 Tenants
 Owners
 Owners Hub
+Lands
+Leads
 Contracts
 Financials
 Invoices
 Receipts
 Expenses
 Arrears
+Commissions
 Reports
 Maintenance
+Communication
 System
 Audit Log
 Data Integrity
@@ -51,29 +55,28 @@ Financials
 Arrears
 ```
 
-The following routes remain registered for controlled recovery and verification, but are intentionally hidden from visible constrained-beta navigation:
+The mobile drawer exposes the full active route inventory. The bottom navigation remains concise and intentionally contains only:
 
 ```text
-/lands
-/leads
-/commissions
-/communication
+Dashboard
+Properties
+Contracts
+Financials
+Arrears
 ```
 
-Do not delete a deferred route merely because it is hidden. Do not re-expose a deferred route merely because it remains registered. Any visibility change requires a narrow reviewed PR with route, permission, UX, and regression-test evidence.
+Previously deferred planned modules are now approved active routes:
+
+- `/lands` — land records with search, filters, create/edit/archive, and optional owner linking by owner id.
+- `/leads` — lead intake with source/status/contact data, search, filters, create/edit/archive.
+- `/commissions` — commission tracking with status lifecycle and basic amount calculation, without broad ledger expansion.
+- `/communication` — internal communication log only, without external WhatsApp/SMS/email sends.
 
 `/accounting` is registered only as a redirect to `/financials`. Do not expand it into a general ledger during stabilization.
 
-## Conditional modules (require explicit product decision)
+## Conditional modules
 
-The following modules exist in code but require an explicit product decision before re-exposure:
-
-- `/lands` — page exists; service returns `unavailable`; awaiting product decision on lifecycle and scope.
-- `/leads` — page exists; service returns `unavailable`; no confirmed schema table.
-- `/commissions` — page exists; service returns `unavailable`; no confirmed schema table.
-- `/communication` — page exists; service returns `unavailable`; no confirmed schema table.
-
-See `docs/decisions/README.md` for the list of open product decisions.
+External provider sends, owner settlements/payout workflows, and any broad CRM or accounting expansion still require a separate product/security decision.
 
 ## Hard boundaries
 

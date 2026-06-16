@@ -135,14 +135,20 @@ Domain invariants remain non-negotiable:
 - Corrections use reversal and replacement.
 - Outstanding balance is derived through one canonical calculation path and is never manually edited.
 
-## Deferred Systems
+## Approved Product Expansion Systems
 
-These systems are deferred unless a reviewed product decision and verified schema, RLS, UX, and tests approve them:
+The June 2026 product decision approves the previously deferred planned modules for implementation in the single-office Rentrix product:
 
-- Lands, except for controlled verification while hidden.
+- Lands.
 - Leads.
 - Commissions.
-- Communication.
+- Internal communication log.
+
+These modules must be real working routes when shipped: no placeholder, coming-soon, unavailable, or hidden dead-route states. They remain inside the single-office product boundary and must not introduce SaaS multi-tenancy, organizations, subscriptions, a broad accounting ledger, or external provider sends.
+
+Systems that remain deferred or out of shipped navigation unless separately approved:
+
+- External communication / notification sends.
 - Communication / notifications.
 - General CRM expansion.
 - Advanced owner settlements and payout workflows.
@@ -153,7 +159,7 @@ These systems are deferred unless a reviewed product decision and verified schem
 - General accounting ledger.
 - Shared-database SaaS multi-tenancy.
 
-Current CRM guidance: `/lands`, `/leads`, `/commissions`, and `/communication` may remain registered for controlled verification, but they must stay hidden from visible constrained-beta navigation unless separately approved. Current code reality says all four pages are safe-unavailable read models; they must not be described as commercially implemented features until a reviewed product decision, schema/RLS evidence, UI work, and tests approve re-exposure.
+Current expansion guidance: `/lands`, `/leads`, `/commissions`, and `/communication` are approved active routes. They must be reachable from desktop navigation and the mobile drawer, and must include schema/RLS evidence, service hooks, working list/form flows, Arabic validation/error states, and tests. `/communication` is an internal log only; do not send WhatsApp/SMS/email from the browser without a separate safe provider boundary.
 
 ## Current Production Blockers
 
@@ -194,7 +200,7 @@ High-level classification:
 
 - Implemented and repository-verified: auth shell and login service, dashboard snapshot, properties, units, people, tenants, owners, contracts, invoices, payment RPC facade, payment-backed receipts, arrears, reports CSV, settings, change password, maintenance, audit log, data integrity, system governance, route/sidebar/mobile navigation, Supabase client configuration guard, PWA build configuration, and CI test wiring.
 - Partially implemented or repo-only verified: Arabic RTL/mobile/PWA/offline behavior, print/PDF output, reports/KPI definitions, balance projections, and browser payment-to-receipt flow; these still require authenticated browser and device/operator evidence before production-readiness claims.
-- Present but intentionally unavailable: `/lands`, `/leads`, `/commissions`, and `/communication`; services return `status: 'unavailable'` and these routes remain hidden from visible navigation.
+- Approved for implementation in the active product-expansion phase: `/lands`, `/leads`, `/commissions`, and `/communication`; these routes should no longer ship as hidden or unavailable pages.
 - Documented but missing or unverified in active UI: dedicated invoice PDF/print action, expense PDF action, reports PDF export, dedicated generated receipt PDF, owner-settlement statements, external communication sends, general ledger/accounting screens, and SaaS/multi-tenant behavior.
 - Blocked / unsafe to touch now: live hook registration verification, authenticated browser QA, preview migration replay, live Supabase/Vercel mutations, new DB/migration work without a confirmed bug, and product expansion beyond the single-office constrained-beta path.
 
@@ -220,7 +226,7 @@ Recommended next implementation phase after manual blockers clear: a single `v0.
 - Do not reintroduce `react-router-dom`, legacy `useApp`, `AppContext`, `dataService`, local database flows, or backup/legacy runtime code.
 - Do not delete historical docs merely because they are stale. Mark them historical, summarize current facts here, and delete only in a separate safe cleanup PR when clearly approved.
 - Keep visible navigation bounded to approved operational and governance surfaces.
-- Keep deferred routes hidden unless an explicit product decision and verification evidence approve re-exposure.
+- Keep every shipped route reachable and working. Previously deferred planned routes are approved for implementation, but external provider sends, owner-settlement payouts, broad accounting, and SaaS multi-tenancy remain out of scope.
 - Preserve Arabic-first, mobile-first, RTL behavior and English/LTR sanity.
 - Use `rg` and `rg --files` for searches.
 - Preserve dirty worktrees and keep each PR narrow.

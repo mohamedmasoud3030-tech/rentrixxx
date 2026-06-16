@@ -1,4 +1,4 @@
-import { BarChart3, Building2, ClipboardList, DoorOpen, FileText, KeyRound, LayoutDashboard, ListChecks, ReceiptText, SearchCheck, Settings, ShieldCheck, UserRoundCog, Users, WalletCards, Wrench } from 'lucide-react';
+import { BadgeDollarSign, BarChart3, Building2, ClipboardList, ContactRound, DoorOpen, FileText, KeyRound, LayoutDashboard, ListChecks, MapPinned, MessageSquareText, ReceiptText, SearchCheck, Settings, ShieldCheck, UserRoundCog, Users, WalletCards, Wrench } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import type { AppPermission } from '@/features/auth/permissions';
 
@@ -14,6 +14,8 @@ export const navGroups = [
     ['/people', 'people', 'دليل جهات التعامل', Users],
     ['/tenants', 'tenants', 'بيانات المستأجرين', Users],
     ['/owners', 'owners', 'إدارة ملفات الملاك وعلاقات الملكية', UserRoundCog, 'owners.hub.view'],
+    ['/lands', 'lands', 'إدارة قطع الأراضي ومتابعة حالتها', MapPinned, 'lands.view'],
+    ['/leads', 'leads', 'مصادر العملاء المحتملين والتحويلات', ContactRound, 'leads.view'],
     ['/contracts', 'contracts', 'العقود والتجديدات', FileText],
   ]],
   ['التحصيل والتقارير', [
@@ -22,10 +24,12 @@ export const navGroups = [
     ['/receipts', 'receipts', 'سجل الإيصالات والطباعة', ReceiptText],
     ['/expenses', 'expenses', 'مصاريف العقارات التشغيلية', WalletCards],
     ['/arrears', 'arrears', 'متابعة المبالغ المتأخرة', ClipboardList],
+    ['/commissions', 'commissions', 'تتبع عمولات المكتب دون دفتر أستاذ', BadgeDollarSign, 'commissions.view'],
     ['/reports', 'reports', 'مؤشرات وتقارير الإدارة', BarChart3],
   ]],
   ['التشغيل والنظام', [
     ['/maintenance', 'maintenance', 'طلبات الصيانة والمتابعة', Wrench, 'maintenance.view'],
+    ['/communication', 'communication', 'سجل التواصل الداخلي والمتابعات', MessageSquareText, 'communication.view'],
     ['/audit-log', 'auditLog', 'سجل أحداث الحوكمة قراءة فقط', ListChecks, 'audit.view'],
     ['/data-integrity', 'dataIntegrity', 'فحوصات سلامة البيانات', SearchCheck, 'integrity.view'],
     ['/system', 'system', 'إدارة حوكمة النظام', ShieldCheck, 'system.view'],

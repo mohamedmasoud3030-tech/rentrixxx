@@ -49,7 +49,7 @@ const governanceRoutes = [
   '/system',
 ] as const;
 
-const deferredBetaRoutes = [
+const approvedExpansionRoutes = [
   '/lands',
   '/leads',
   '/commissions',
@@ -104,14 +104,15 @@ describe('app route and navigation parity', () => {
     expect(navPaths).toEqual(expect.arrayContaining([...governanceRoutes]));
   });
 
-  it('keeps deferred beta modules registered but hidden from visible navigation', () => {
+  it('exposes approved product-expansion modules through the primary navigation rendered by desktop and mobile drawer', () => {
     const navPaths = navItems.map(([to]) => to);
-    const mobileNavPaths = mobileNavItems.map(([to]) => to);
 
-    expect(routePathList).toEqual(expect.arrayContaining([...deferredBetaRoutes]));
-    for (const route of deferredBetaRoutes) {
-      expect(navPaths).not.toContain(route);
-      expect(mobileNavPaths).not.toContain(route);
-    }
+    expect(routePathList).toEqual(expect.arrayContaining([...approvedExpansionRoutes]));
+    expect(navPaths).toEqual(expect.arrayContaining([...approvedExpansionRoutes]));
+  });
+
+  it('keeps mobile bottom navigation concise while the drawer carries the full route inventory', () => {
+    expect(mobileNavItems).toHaveLength(5);
+    expect(mobileNavItems.map(([to]) => to)).toEqual(['/', '/properties', '/contracts', '/financials', '/arrears']);
   });
 });

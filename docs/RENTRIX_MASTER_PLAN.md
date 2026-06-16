@@ -188,9 +188,9 @@ Financials
 Arrears
 ```
 
-### 3.4 Registered but intentionally hidden routes
+### 3.4 Approved product-expansion routes
 
-These optional and product-decision routes remain registered for controlled recovery and verification, but are hidden from visible constrained-beta navigation:
+The June 2026 product decision approves the previously deferred planned routes as active Rentrix modules:
 
 ```text
 /lands
@@ -199,17 +199,17 @@ These optional and product-decision routes remain registered for controlled reco
 /communication
 ```
 
-Do not delete them merely because they are hidden. Do not re-expose them merely because their route modules exist.
+They must be reachable from desktop navigation and the mobile drawer, and they must not ship as placeholder, coming-soon, unavailable, or hidden dead routes.
 
-Status of deferred feature pages (verified from code):
+Status of planned feature pages:
 - `/maintenance` — service, hook, and page exist; schema backed by migrations; re-exposed in v0.3 with permissioned navigation.
 - `/audit-log` — read-only view wired to `public.audit_log` with generated database types; re-exposed in v0.3 with hardened RLS evidence.
 - `/data-integrity` — page exists under `features/system/`; re-exposed in v0.3 with permissioned navigation.
 - `/system` — page and components exist under `features/system/`; re-exposed in v0.3 with permissioned navigation.
-- `/commissions` — page and service return `status: unavailable` (no schema table confirmed).
-- `/leads` — page and service return `status: unavailable` (no schema table confirmed).
-- `/communication` — page and service return `status: unavailable` (no schema table confirmed).
-- `/lands` — page exists, but the current service returns `status: unavailable`; no active commercial lands workflow is verified.
+- `/lands` — approved active module with table-backed list/create/edit/archive.
+- `/leads` — approved active module with table-backed lead intake and archive flow.
+- `/commissions` — approved active module with tracking lifecycle and basic calculations; no general ledger.
+- `/communication` — approved active internal log; no external provider sends.
 
 ### 3.5 Current authorization shape
 
@@ -435,12 +435,12 @@ Close `v0.1` only when:
 
 | Order | Item | Status | Notes |
 | --- | --- | --- | --- |
-| 1 | Decide lands lifecycle, ownership, and reporting scope | `DEFERRED` until client confirms land-plot management | First-client decision recorded in ADR-007: keep `/lands` hidden for day one unless active land-plot management is confirmed. Current service returns `unavailable`; any re-exposure still requires schema/RLS/test evidence. |
-| 2 | Decide lead stages, ownership, source, and conversion rules | `DEFERRED` post-v1 unless hard client requirement | First-client decision recorded in ADR-007: do not build lead tracking for v1. Page and service return `unavailable` (no schema table). |
-| 3 | Decide read-only commissions visibility before any settlement workflow | `DEFERRED` post-v1 unless hard client requirement | First-client decision recorded in ADR-007: do not build commission tracking for v1. Page and service return `unavailable` (no schema table). |
-| 4 | Decide communication provider, templates, consent, audit, retries, and failure model | `DEFERRED` post-v1 unless hard client requirement | First-client decision recorded in ADR-007: do not build templated communication for v1. Page and service return `unavailable` (no schema table). |
-| 5 | Recover approved modules read-only first, one module per narrow PR | `DEFERRED` | |
-| 6 | Add writes or external sends only through separate security-reviewed PRs | `DEFERRED` | |
+| 1 | Decide lands lifecycle, ownership, and reporting scope | `APPROVED` | Implement table-backed list/create/edit/archive with optional owner linking; keep single-office scope. |
+| 2 | Decide lead stages, ownership, source, and conversion rules | `APPROVED` | Implement lead intake with source/status/contact data and archive flow; conversion can be practical linking, not a broad CRM. |
+| 3 | Decide commissions visibility before settlement workflow | `APPROVED` | Implement commission tracking and basic calculations only; no general ledger, balance sheet, or payout settlement expansion. |
+| 4 | Decide communication provider, templates, consent, audit, retries, and failure model | `APPROVED INTERNAL LOG ONLY` | Implement internal communication records. External WhatsApp/SMS/email sends remain out of scope without a provider boundary. |
+| 5 | Recover approved modules with schema, services, UI, nav, and tests | `IN PROGRESS` | Product-expansion PR implements this vertical slice. |
+| 6 | Add external sends only through separate security-reviewed PRs | `DEFERRED` | |
 
 ### Acceptance gate
 
