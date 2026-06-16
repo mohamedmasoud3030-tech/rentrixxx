@@ -219,12 +219,13 @@ export type Database = {
           check_bank: string | null;
           check_date: string | null;
           check_status: string | null;
-          voided_at: number | null;
+          voided_at: string | null;
           request_id: string | null;
           tenant_id: string | null;
+          payment_id: string | null;
           created_at: string;
           updated_at: string | null;
-          deleted_at: number | null;
+          deleted_at: string | null;
         };
         Insert: Partial<Database['public']['Tables']['receipts']['Row']> & Pick<Database['public']['Tables']['receipts']['Row'], 'contract_id' | 'date_time' | 'amount'>;
         Update: Partial<Database['public']['Tables']['receipts']['Row']>;
@@ -327,67 +328,6 @@ export type Database = {
         Update: Partial<Database['public']['Tables']['financial_operation_idempotency']['Insert']>;
         Relationships: [];
       };
-      leads: {
-        Row: {
-          id: string;
-          no: string | null;
-          name: string | null;
-          phone: string | null;
-          email: string | null;
-          source: string | null;
-          status: string | null;
-          notes: string | null;
-          desired_unit_type: string | null;
-          min_budget: number | null;
-          max_budget: number | null;
-          created_at: string | null;
-          updated_at: string | null;
-        };
-        Insert: { id: string; no?: string | null; name?: string | null; phone?: string | null; email?: string | null; source?: string | null; status?: string | null; notes?: string | null; desired_unit_type?: string | null; min_budget?: number | null; max_budget?: number | null; created_at?: string | null; updated_at?: string | null };
-        Update: Partial<Database['public']['Tables']['leads']['Insert']>;
-        Relationships: [];
-      };
-      commissions: {
-        Row: {
-          id: string;
-          staff_id: string | null;
-          staff_name: string | null;
-          amount: number | null;
-          status: string | null;
-          source_id: string | null;
-          type: string | null;
-          deal_value: number | null;
-          percentage: number | null;
-          expense_id: string | null;
-          paid_at: number | null;
-          created_at: string | null;
-          updated_at: string | null;
-        };
-        Insert: { id: string; staff_id?: string | null; staff_name?: string | null; amount?: number | null; status?: string | null; source_id?: string | null; type?: string | null; deal_value?: number | null; percentage?: number | null; expense_id?: string | null; paid_at?: number | null; created_at?: string | null; updated_at?: string | null };
-        Update: Partial<Database['public']['Tables']['commissions']['Insert']>;
-        Relationships: [];
-      };
-      lands: {
-        Row: {
-          id: string;
-          plot_no: string | null;
-          location: string | null;
-          area: number | null;
-          owner_id: string | null;
-          purchase_price: number | null;
-          status: string | null;
-          notes: string | null;
-          name: string | null;
-          category: string | null;
-          owner_price: number | null;
-          commission: number | null;
-          created_at: string | null;
-          updated_at: string | null;
-        };
-        Insert: { id: string; plot_no?: string | null; location?: string | null; area?: number | null; owner_id?: string | null; purchase_price?: number | null; status?: string | null; notes?: string | null; name?: string | null; category?: string | null; owner_price?: number | null; commission?: number | null; created_at?: string | null; updated_at?: string | null };
-        Update: Partial<Database['public']['Tables']['lands']['Insert']>;
-        Relationships: [];
-      };
       users: {
         Row: {
           id: string;
@@ -407,7 +347,7 @@ export type Database = {
         Update: Partial<Database['public']['Tables']['users']['Insert']>;
         Relationships: [];
       };
-      };
+    };
     Views: Record<string, never>;
     Functions: {
       renew_contract_atomic: {

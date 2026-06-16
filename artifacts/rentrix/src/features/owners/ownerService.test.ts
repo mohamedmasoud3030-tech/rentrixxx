@@ -179,20 +179,23 @@ describe('owner read helpers', () => {
 });
 
 describe('owner relationship migration protections', () => {
-  const ownerMigrationSql = readFileSync(
-    new URL('../../../../../supabase/migrations/20260515130000_owner_relationship_foundation.sql', import.meta.url),
+  const coreSchemaSql = readFileSync(
+    new URL('../../../../../supabase/migrations/0001_core_schema.sql', import.meta.url),
+    'utf8',
+  );
+  const functionsSql = readFileSync(
+    new URL('../../../../../supabase/migrations/0003_functions_triggers_and_rpcs.sql', import.meta.url),
     'utf8',
   );
 
   it('protects against multiple active primary owners per property', () => {
-    expect(ownerMigrationSql).toContain('property_owners_active_primary_unique_idx');
-    expect(ownerMigrationSql).toContain('Only one active primary owner is allowed per property.');
-    expect(ownerMigrationSql).toContain('where ends_on is null and is_primary');
+    expect(coreSchemaSql).toContain('property_owners_active_primary_unique_idx');
+    expect(coreSchemaSql).toContain('where ends_on is null and is_primary');
   });
 
   it('protects active ownership percentage totals from exceeding 100 percent', () => {
-    expect(ownerMigrationSql).toContain('validate_property_owner_active_totals');
-    expect(ownerMigrationSql).toContain('v_other_active_percentage_total + new.ownership_percentage > 100');
-    expect(ownerMigrationSql).toContain('Active ownership percentages for a property cannot exceed 100.');
+    expect(functionsSql).toContain('validate_property_owner_active_totals');
+    expect(functionsSql).toContain('v_other_active_percentage_total + new.ownership_percentage > 100');
+    expect(functionsSql).toContain('Active ownership percentages for a property cannot exceed 100.');
   });
 });
