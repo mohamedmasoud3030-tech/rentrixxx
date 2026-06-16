@@ -192,9 +192,9 @@ Do not open new DB/migration PRs while these manual blockers remain unresolved â
 
 ## Latest Repository-Only Code-Reality Audit
 
-`docs/archive/ai/CODE_REALITY_GAP_AUDIT.md` is an archived repo-only gap audit for documentation versus active code as of `main@7bff142`. It did not use live Supabase, live Vercel, credentials, migrations, or production data.
+The repo-only gap audit for documentation versus active code as of `main@7bff142` was removed from active docs and remains available through git history. It did not use live Supabase, live Vercel, credentials, migrations, or production data.
 
-`docs/archive/ai/SUPABASE_SECURITY_ADVISOR_REMEDIATION.md` records the archived 2026-06-16 repo-only Supabase Security Advisor remediation audit and migration proposal. It classifies the four advisor-listed financial SECURITY DEFINER functions as browser-facing facades that must keep `authenticated` EXECUTE unless app architecture changes, identifies `v_balance_reconciliation` as the main valid migration candidate via `security_invoker=true`, treats Leaked Password Protection as a dashboard setting, and includes verification queries plus rollback SQL. No live Supabase changes were made.
+The 2026-06-16 repo-only Supabase Security Advisor remediation audit and migration proposal was removed from active docs and remains available through git history. It classified the four advisor-listed financial SECURITY DEFINER functions as browser-facing facades that must keep `authenticated` EXECUTE unless app architecture changes, identified `v_balance_reconciliation` as the main valid migration candidate via `security_invoker=true`, treated Leaked Password Protection as a dashboard setting, and included verification queries plus rollback SQL. No live Supabase changes were made.
 
 High-level classification:
 
@@ -224,7 +224,7 @@ Recommended next implementation phase after manual blockers clear: a single `v0.
 - Do not create loose root reports. Put current execution guidance in this file, roadmap sequencing in `docs/RENTRIX_MASTER_PLAN.md`, dated snapshots under the appropriate docs subfolder, and stable decisions under `docs/decisions/`.
 - Do not change application code in documentation-consolidation PRs.
 - Do not reintroduce `react-router-dom`, legacy `useApp`, `AppContext`, `dataService`, local database flows, or backup/legacy runtime code.
-- Do not delete historical docs merely because they are stale. Mark them historical, summarize current facts here, and delete only in a separate safe cleanup PR when clearly approved.
+- Do not add stale historical reports back into active docs. Summarize current facts here or in the relevant active source-of-truth doc, and rely on git history for old reports unless a future cleanup policy explicitly restores a tiny index.
 - Keep visible navigation bounded to approved operational and governance surfaces.
 - Keep every shipped route reachable and working. Previously deferred planned routes are approved for implementation, but external provider sends, owner-settlement payouts, broad accounting, and SaaS multi-tenancy remain out of scope.
 - Preserve Arabic-first, mobile-first, RTL behavior and English/LTR sanity.

@@ -14,7 +14,7 @@ Active policy docs: `docs/ai/domain-rules.md`, `docs/ai/engineering-policy.md`, 
 
 Technical references: `docs/ai/PRINT_AND_EXPORT_READINESS.md`, `docs/ai/REPORTING_DEFINITIONS.md`, `docs/ai/SECURE_OPERATOR_RUNBOOK.md`, `docs/ROOT_LAYOUT.md`, `docs/ai/AGENT_CAPABILITIES.md`, and `docs/ai/GIT_TOOLING_POLICY.md`.
 
-Archived historical material: `docs/archive/README.md` indexes dated reports, audits, evidence packs, superseded indexes, and release-thread notes. Treat archived docs as historical reference only.
+Old reports, audits, evidence packs, superseded indexes, and release-thread notes were removed from active repository docs to keep the docs map small. Use git history when historical material is needed, and verify old claims against active code, migrations, and current source-of-truth docs before acting on them.
 
 ## 1. Product boundary
 
@@ -156,7 +156,7 @@ Preserve at minimum:
 
 - **Duplicate hook pairs closed:** `useProperties.ts` / `use-properties.ts` and `useUnits.ts` / `use-units.ts` were consolidated in v0.2. Current canonical hooks are `use-properties.ts` and `use-units.ts`.
 - **`database.ts` audit type gap closed:** `public.audit_log` and other previously untracked tables are now represented in the generated database types, and the audit service uses `Database['public']['Tables']['audit_log']['Row']` directly.
-- **Supabase migration and browser QA blockers remain:** live migration-state reconciliation, Custom Access Token hook registration verification, and authenticated browser/manual QA are blocked by dashboard/management API access and browser-driving capability. See v0.1 items 2 and 5 in `docs/RENTRIX_MASTER_PLAN.md`; historical evidence is archived at `docs/archive/v01/migration-reconciliation-status.md`.
+- **Supabase migration and browser QA blockers remain:** live migration-state reconciliation, Custom Access Token hook registration verification, and authenticated browser/manual QA are blocked by dashboard/management API access and browser-driving capability. See v0.1 items 2 and 5 in `docs/RENTRIX_MASTER_PLAN.md`; old migration reconciliation reports were removed from active docs and remain available through git history.
 
 ## 6. Required reading order
 
@@ -226,14 +226,7 @@ Use targeted tests during implementation, then run the relevant full gate before
 
 ## 10. Current release and connector caution
 
-Before any live Supabase or Vercel action, read:
-
-```text
-docs/archive/wave1/1A_CONTRACT_INTEGRITY_RECONCILIATION.md
-docs/archive/wave1/1B_FINANCIAL_POSTING_DESIGN_RECONCILIATION.md
-docs/archive/wave1/1C_AUTH_AND_RLS_HARDENING_PLAN.md
-docs/archive/v01/migration-reconciliation-status.md  [historical]
-```
+Before any live Supabase or Vercel action, read the active execution context, roadmap, secure operator runbook, git policy, and connector workflow. Old rollout reconciliation reports were removed from active docs and remain available through git history.
 
 The latest recorded Supabase boundary is:
 
@@ -248,11 +241,11 @@ prohibited project:    rentrix (V2) / ktmizdznbdwvalmmfvfc
 - Main runtime: healthy, no schema corruption detected
 - Critical auth function `custom_access_token_hook` applied ✅
 - Critical payment RPC `record_invoice_payment_atomic` still needed ⏸️
-- See `docs/archive/v01/migration-reconciliation-status.md` for historical findings and next steps
+- Old migration reconciliation findings were removed from active docs and remain available through git history.
 
 ## 11. Cleanup boundary
 
-Read `docs/archive/reconciliation/02-root-cleanup-candidates.md` before removing or moving files. Remove only items classified as `safe-delete-proven` in a narrow cleanup PR. Keep archive moves, recovery-source review, optional artifact decisions, and runtime changes separate.
+Read `docs/ROOT_LAYOUT.md` before removing or moving files. Remove only explicitly approved cleanup targets in a narrow cleanup PR. Keep docs pruning, recovery-source review, optional artifact decisions, and runtime changes separate.
 
 ## 12. Documentation maintenance rule
 
@@ -267,4 +260,4 @@ Update this file when an approved change alters:
 - roadmap sequencing or continuation behavior;
 - known tech debt items.
 
-Keep `README.md` and `AGENTS.md` as short entry points that link here instead of duplicating the full onboarding sequence. Superseded docs indexes are archived under `docs/archive/`.
+Keep `README.md` and `AGENTS.md` as short entry points that link here instead of duplicating the full onboarding sequence. Superseded docs indexes were removed from active docs and remain available through git history.

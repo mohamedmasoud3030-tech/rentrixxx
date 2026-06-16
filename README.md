@@ -25,7 +25,7 @@ Active policy docs: `docs/ai/domain-rules.md`, `docs/ai/engineering-policy.md`, 
 
 Technical references: `docs/ai/PRINT_AND_EXPORT_READINESS.md`, `docs/ai/REPORTING_DEFINITIONS.md`, `docs/ai/SECURE_OPERATOR_RUNBOOK.md`, `docs/ROOT_LAYOUT.md`, `docs/ai/AGENT_CAPABILITIES.md`, and `docs/ai/GIT_TOOLING_POLICY.md`.
 
-Archived historical material: `docs/archive/README.md` indexes dated reports, audits, evidence packs, superseded indexes, and release-thread notes. Treat archived docs as historical reference only; do not copy active status out of them.
+Old reports, audits, evidence packs, superseded indexes, and release-thread notes were removed from active repository docs to keep the docs map small. Use git history when historical material is needed, and do not copy old status forward without verifying it against active code, migrations, and current source-of-truth docs.
 
 ## Canonical runtime
 
@@ -44,7 +44,7 @@ rentrixxx/
 ├── artifacts/rentrix/          # Active React application
 ├── lib/                        # Shared workspace libraries
 ├── supabase/                   # Canonical migrations and backend assets
-├── docs/                       # Product, engineering, audit, and recovery docs
+├── docs/                       # Active product, engineering, policy, and technical references
 ├── scripts/                    # Repository automation helpers
 ├── .github/                    # CI and pull-request governance
 ├── .ai/                        # Rentrix-specific agent workflows
@@ -118,4 +118,4 @@ For schema or RLS changes, also run the repository-approved Supabase validation 
 
 ## Recovery references
 
-Only concise notes under `archive/recovery-reference/` and historical documentation under `docs/archive/` remain for selective maintenance reference, and they must not be imported into the active application. `.migration-backup/` and `artifacts/rentrix/legacy-src/` were removed in PR #805.
+Only concise notes under `archive/recovery-reference/` remain for selective maintenance reference, and they must not be imported into the active application. Old reports were removed from active repository docs and remain available through git history. `.migration-backup/` and `artifacts/rentrix/legacy-src/` were removed in PR #805.

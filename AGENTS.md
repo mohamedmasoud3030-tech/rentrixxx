@@ -51,7 +51,7 @@ The current visible constrained-beta navigation and the registered-but-hidden de
 
 - `useProperties.ts` / `use-properties.ts` and `useUnits.ts` / `use-units.ts` duplicate hook pairs were consolidated in v0.2. Current canonical hooks are `use-properties.ts` and `use-units.ts`.
 - `database.ts` now includes `public.audit_log`; the audit service uses the generated database type directly.
-- Live Supabase migration-state reconciliation and authenticated browser/manual QA remain blocked by dashboard/management API access and browser-driving capability, as documented in `docs/RENTRIX_MASTER_PLAN.md`; historical migration reconciliation evidence is archived under `docs/archive/v01/migration-reconciliation-status.md`.
+- Live Supabase migration-state reconciliation and authenticated browser/manual QA remain blocked by dashboard/management API access and browser-driving capability, as documented in `docs/RENTRIX_MASTER_PLAN.md`; old migration reconciliation reports were removed from active docs and remain available through git history.
 
 ## Skills and workflows
 
@@ -95,5 +95,5 @@ For schema or RLS changes, also run the repository-approved database validation 
 - Ordered roadmap: `docs/RENTRIX_MASTER_PLAN.md`
 - Skill inventory: `docs/ai/AGENT_CAPABILITIES.md`
 - Git policy: `docs/ai/GIT_TOOLING_POLICY.md`
-- Root cleanup inventory: `docs/archive/reconciliation/02-root-cleanup-candidates.md`
+- Root cleanup policy: `docs/ROOT_LAYOUT.md`
 - Connector operations reference: `.agents/skills/connector-operator/SKILL.md`
