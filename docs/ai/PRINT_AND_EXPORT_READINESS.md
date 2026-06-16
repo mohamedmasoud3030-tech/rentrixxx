@@ -10,7 +10,7 @@ This is a repository-only audit of current print, PDF, and CSV export support. I
 | Invoice PDF | A generic `exportInvoiceToPdf` helper exists through the document engine. | `artifacts/rentrix/src/services/pdfService.ts`, `DocumentController.ts`, `DocumentEngine.ts` | No verified active invoice-page button was found in this audit. Template uses generic English labels and does not include verified Arabic RTL PDF shaping evidence. |
 | Contract PDF | Supported from contract detail with a `تصدير PDF` action that calls `exportContractToPdf`. | `artifacts/rentrix/src/features/contracts/ContractDetailPage.tsx`, `pdfService.ts` | Contract document shell explicitly remains a read-only wrapper for future documents and does not generate attachments or addenda PDFs. |
 | Contract CSV | Supported from the contracts list. Filenames use the local-date helper. | `artifacts/rentrix/src/features/contracts/ContractsListPage.tsx`, `contractListExport.ts` | Exports the filtered visible list only. Filename is `rentrix-contracts-YYYY-MM-DD.csv`. |
-| Reports CSV | Supported for financial summary, rent roll, overdue invoices, aged receivables, and daily collection. | `artifacts/rentrix/src/features/reports/reports-page.tsx` | Filenames are fixed strings such as `financial-summary.csv`; they do not include date ranges. CSV field order is sorted by object key. |
+| Reports CSV | Supported for financial summary, rent roll, overdue invoices, aged receivables, and daily collection. Filenames include a local-date suffix and exports include a UTF-8 BOM for Excel/Arabic compatibility. | `artifacts/rentrix/src/features/reports/reports-page.tsx` | CSV field order is sorted by object key. |
 | Expense PDF | A generic `exportExpenseToPdf` helper exists. | `artifacts/rentrix/src/services/pdfService.ts`, `DocumentEngine.ts` | No verified active expense-page export button was found in this audit. |
 | Accounting-style PDFs | Helpers exist for trial balance, income statement, and balance sheet. | `artifacts/rentrix/src/services/pdfService.ts` | These are not approval to build or expose a general ledger during stabilization. Treat as legacy/generic document service capability unless a reviewed product decision activates them. |
 
@@ -21,8 +21,8 @@ PDF rendering is intentionally lazy-loaded. `DocumentController.renderToPDF` bui
 ## CSV Filename Behavior
 
 - Contract CSV filenames include a local date: `rentrix-contracts-YYYY-MM-DD.csv`.
-- Reports CSV filenames are static: `financial-summary.csv`, `rent-roll.csv`, `overdue-invoices.csv`, `aged-receivables.csv`, and `daily-collection.csv`.
-- Current reports CSV export does not include a UTF-8 BOM; contract CSV does include a BOM.
+- Reports CSV filenames include a local date: `financial-summary-YYYY-MM-DD.csv`, `rent-roll-YYYY-MM-DD.csv`, `overdue-invoices-YYYY-MM-DD.csv`, `aged-receivables-YYYY-MM-DD.csv`, and `daily-collection-YYYY-MM-DD.csv`.
+- Reports CSV export includes a UTF-8 BOM for Excel/Arabic compatibility.
 
 ## Mobile Print Limitations
 

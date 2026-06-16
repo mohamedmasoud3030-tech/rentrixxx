@@ -1,7 +1,7 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { ContractListItem } from '@/features/contracts/services/contractService';
 import { buildAgingBucketChartRows, buildOccupancyRows, buildPaymentsTrendRows, buildRentRollRows, createReceiptPrintHref } from './reports-page.helpers';
-import { escapeCsvValue, toDateInputValue } from './reports-page';
+import { buildReportCsvFilename, escapeCsvValue, toDateInputValue } from './reports-page';
 
 function createContract(overrides: Partial<ContractListItem>): ContractListItem {
   return {
@@ -29,6 +29,10 @@ function createContract(overrides: Partial<ContractListItem>): ContractListItem 
 }
 
 describe('ReportsPage shaping helpers', () => {
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
   it('combines canonical daily collection and overdue invoice rows by month', () => {
     expect(buildPaymentsTrendRows({
       dailyCollections: [
@@ -121,5 +125,16 @@ describe('ReportsPage shaping helpers', () => {
 
     expect(utcDate.toISOString().slice(0, 10)).toBe('2026-01-01');
     expect(toDateInputValue(localDate)).toBe('2025-12-31');
+  });
+
+  it('builds date-stamped CSV filenames for all report exports', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-06-16T10:30:00.000Z'));
+
+    expect(buildReportCsvFilename('financial-summary')).toBe('financial-summary-2026-06-16.csv');
+    expect(buildReportCsvFilename('rent-roll')).toBe('rent-roll-2026-06-16.csv');
+    expect(buildReportCsvFilename('overdue-invoices')).toBe('overdue-invoices-2026-06-16.csv');
+    expect(buildReportCsvFilename('aged-receivables')).toBe('aged-receivables-2026-06-16.csv');
+    expect(buildReportCsvFilename('daily-collection')).toBe('daily-collection-2026-06-16.csv');
   });
 });
