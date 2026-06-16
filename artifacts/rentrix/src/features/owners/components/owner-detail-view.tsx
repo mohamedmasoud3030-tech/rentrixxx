@@ -34,7 +34,7 @@ export function OwnerDetailView({ state }: Readonly<{ state: OwnerDetailState }>
       <Card>
         <CardHeader className="gap-3">
           <div className="flex size-12 items-center justify-center rounded-2xl bg-primary/10 text-primary"><UserRoundCog className="size-6" /></div>
-          <div><CardTitle>{getOwnerDisplayName(owner)}</CardTitle><CardDescription>ملف تعريف قراءة فقط للمالك، دون أرصدة مالية أو إجراءات تسوية.</CardDescription></div>
+          <div><CardTitle>{getOwnerDisplayName(owner)}</CardTitle><CardDescription>ملف تعريف قراءة فقط للمالك يعرض بيانات التعريف والروابط المتاحة فقط.</CardDescription></div>
         </CardHeader>
         <CardContent className="grid gap-4 md:grid-cols-3">
           <div><p className="text-xs font-bold text-muted-foreground">الهاتف</p><p className="font-black">{owner.phone || 'غير موثق'}</p></div>

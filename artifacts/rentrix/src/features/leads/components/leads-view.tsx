@@ -51,11 +51,11 @@ export function LeadsView(props: Props) {
 
       {error ? <ErrorCard message="تعذر تحميل العملاء المحتملين" onRetry={onRetry} /> : null}
       {isLoading ? <StateCard title="جارٍ تحميل العملاء المحتملين..." /> : null}
-      {!isLoading && !error && rows.length === 0 ? <StateCard title="لا توجد نتائج" description="أضف أول عميل محتمل أو غيّر عوامل البحث." /> : null}
+      {!isLoading && !error && rows.length === 0 ? <StateCard title="لا يوجد عملاء محتملون ضمن الفلاتر الحالية" description="أضف عميلاً محتملاً عند توفر بياناته، أو غيّر البحث والحالة والمصدر." /> : null}
       {rows.length > 0 ? <LeadRows rows={rows} isArchiving={isArchiving} onEdit={onEdit} onArchive={onArchive} /> : null}
 
       <Dialog open={formOpen} onOpenChange={onFormOpenChange}>
-        <DialogContent>
+        <DialogContent className="max-h-[calc(100dvh-2rem)] overflow-y-auto sm:max-w-2xl">
           <DialogHeader><DialogTitle>{editingLead ? 'تعديل عميل محتمل' : 'إضافة عميل محتمل'}</DialogTitle><DialogDescription>لا يتم إنشاء مستأجر أو مالك تلقائياً؛ التحويل يبقى قراراً تشغيلياً منظماً.</DialogDescription></DialogHeader>
           <form className="grid gap-3 md:grid-cols-2" onSubmit={(event) => { event.preventDefault(); onSubmit(draft); }}>
             <Field label="الاسم"><Input required value={draft.name} onChange={(event) => onDraftChange({ ...draft, name: event.target.value })} /></Field>
@@ -67,7 +67,7 @@ export function LeadsView(props: Props) {
             <Field label="أقل ميزانية"><Input type="number" min="0" value={draft.min_budget} onChange={(event) => onDraftChange({ ...draft, min_budget: event.target.value })} /></Field>
             <Field label="أعلى ميزانية"><Input type="number" min="0" value={draft.max_budget} onChange={(event) => onDraftChange({ ...draft, max_budget: event.target.value })} /></Field>
             <label className="grid gap-2 text-sm font-bold md:col-span-2">ملاحظات<Textarea value={draft.notes} onChange={(event) => onDraftChange({ ...draft, notes: event.target.value })} /></label>
-            <div className="flex justify-end gap-2 md:col-span-2"><Button variant="secondary" onClick={() => onFormOpenChange(false)}>إلغاء</Button><Button type="submit" disabled={isSaving}>{isSaving ? 'جارٍ الحفظ...' : 'حفظ'}</Button></div>
+            <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end md:col-span-2"><Button variant="secondary" onClick={() => onFormOpenChange(false)}>إلغاء</Button><Button type="submit" disabled={isSaving}>{isSaving ? 'جارٍ الحفظ...' : 'حفظ'}</Button></div>
           </form>
         </DialogContent>
       </Dialog>
@@ -92,7 +92,7 @@ function ErrorCard({ message, onRetry }: Readonly<{ message: string; onRetry: ()
 }
 
 function LeadRows({ rows, isArchiving, onEdit, onArchive }: Readonly<{ rows: LeadRecord[]; isArchiving: boolean; onEdit: (row: LeadRecord) => void; onArchive: (id: string) => void }>) {
-  return <Card className="overflow-hidden"><div className="grid gap-3 p-4 md:hidden">{rows.map((row) => <LeadCard key={row.id} row={row} isArchiving={isArchiving} onEdit={onEdit} onArchive={onArchive} />)}</div><div className="hidden overflow-x-auto md:block"><table className="w-full text-sm"><thead className="bg-muted/50 text-muted-foreground"><tr><th className="p-3 text-right">العميل</th><th className="p-3 text-right">المصدر</th><th className="p-3 text-right">الميزانية</th><th className="p-3 text-right">الحالة</th><th className="p-3 text-right">إجراءات</th></tr></thead><tbody>{rows.map((row) => <tr key={row.id} className="border-t"><td className="p-3 font-bold">{row.name}<p className="text-xs text-muted-foreground">{row.phone ?? row.email ?? 'بدون بيانات اتصال'}</p></td><td className="p-3">{sourceLabels[row.source ?? ''] ?? row.source ?? '—'}</td><td className="p-3">{row.min_budget ?? '—'} - {row.max_budget ?? '—'}</td><td className="p-3"><StatusBadge tone={statusTone[row.status ?? ''] ?? 'gray'}>{statusLabels[row.status ?? ''] ?? row.status ?? '—'}</StatusBadge></td><td className="p-3"><RowActions id={row.id} disabled={isArchiving} onEdit={() => onEdit(row)} onArchive={onArchive} /></td></tr>)}</tbody></table></div></Card>;
+  return <Card className="overflow-hidden"><div className="grid gap-3 p-4 md:hidden">{rows.map((row) => <LeadCard key={row.id} row={row} isArchiving={isArchiving} onEdit={onEdit} onArchive={onArchive} />)}</div><div className="hidden overflow-x-auto md:block"><table className="w-full min-w-[760px] text-sm"><thead className="bg-muted/50 text-muted-foreground"><tr><th className="p-3 text-right">العميل</th><th className="p-3 text-right">المصدر</th><th className="p-3 text-right">الميزانية</th><th className="p-3 text-right">الحالة</th><th className="p-3 text-right">إجراءات</th></tr></thead><tbody>{rows.map((row) => <tr key={row.id} className="border-t"><td className="max-w-56 whitespace-normal break-words p-3 font-bold">{row.name}<p className="text-xs text-muted-foreground">{row.phone ?? row.email ?? 'بدون بيانات اتصال'}</p></td><td className="p-3">{sourceLabels[row.source ?? ''] ?? row.source ?? '—'}</td><td className="p-3">{row.min_budget ?? '—'} - {row.max_budget ?? '—'}</td><td className="p-3"><StatusBadge tone={statusTone[row.status ?? ''] ?? 'gray'}>{statusLabels[row.status ?? ''] ?? row.status ?? '—'}</StatusBadge></td><td className="p-3"><RowActions id={row.id} disabled={isArchiving} onEdit={() => onEdit(row)} onArchive={onArchive} /></td></tr>)}</tbody></table></div></Card>;
 }
 
 function LeadCard({ row, isArchiving, onEdit, onArchive }: Readonly<{ row: LeadRecord; isArchiving: boolean; onEdit: (row: LeadRecord) => void; onArchive: (id: string) => void }>) {
@@ -100,5 +100,5 @@ function LeadCard({ row, isArchiving, onEdit, onArchive }: Readonly<{ row: LeadR
 }
 
 function RowActions({ id, disabled, onEdit, onArchive }: Readonly<{ id: string; disabled: boolean; onEdit: () => void; onArchive: (id: string) => void }>) {
-  return <div className="mt-3 flex flex-wrap gap-2"><Button variant="secondary" onClick={onEdit}><Edit className="me-2 size-4" />تعديل</Button><Button variant="danger" disabled={disabled} onClick={() => onArchive(id)}><Archive className="me-2 size-4" />أرشفة</Button></div>;
+  return <div className="mt-3 flex flex-wrap gap-2"><Button className="min-h-11" variant="secondary" onClick={onEdit}><Edit className="me-2 size-4" />تعديل</Button><Button className="min-h-11" variant="danger" disabled={disabled} onClick={() => onArchive(id)}><Archive className="me-2 size-4" />أرشفة</Button></div>;
 }

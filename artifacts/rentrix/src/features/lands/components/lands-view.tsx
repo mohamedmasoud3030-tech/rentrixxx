@@ -77,11 +77,11 @@ export function LandsView(props: Props) {
 
       {error ? <ErrorCard message="تعذر تحميل الأراضي" onRetry={onRetry} /> : null}
       {isLoading ? <StateCard title="جارٍ تحميل الأراضي..." /> : null}
-      {!isLoading && !error && rows.length === 0 ? <StateCard title="لا توجد أراضٍ مطابقة" description="أضف أول سجل أرض أو غيّر عوامل البحث." /> : null}
+      {!isLoading && !error && rows.length === 0 ? <StateCard title="لا توجد أراضٍ ضمن الفلاتر الحالية" description="أضف سجل أرض تشغيلياً عند توفر بياناته، أو غيّر البحث والحالة." /> : null}
       {rows.length > 0 ? <LandRows rows={rows} isArchiving={isArchiving} onEdit={onEdit} onArchive={onArchive} /> : null}
 
       <Dialog open={formOpen} onOpenChange={onFormOpenChange}>
-        <DialogContent>
+        <DialogContent className="max-h-[calc(100dvh-2rem)] overflow-y-auto sm:max-w-2xl">
           <DialogHeader>
             <DialogTitle>{editingLand ? 'تعديل أرض' : 'إضافة أرض'}</DialogTitle>
             <DialogDescription>الحقول تحفظ سجل أرض تشغيلي وتربطه بالمالك عند توفر معرفه.</DialogDescription>
@@ -98,7 +98,7 @@ export function LandsView(props: Props) {
             <Field label="سعر الشراء"><Input type="number" min="0" value={draft.purchase_price} onChange={(event) => onDraftChange({ ...draft, purchase_price: event.target.value })} /></Field>
             <Field label="عمولة متوقعة"><Input type="number" min="0" value={draft.commission} onChange={(event) => onDraftChange({ ...draft, commission: event.target.value })} /></Field>
             <label className="grid gap-2 text-sm font-bold md:col-span-2">ملاحظات<Textarea value={draft.notes} onChange={(event) => onDraftChange({ ...draft, notes: event.target.value })} /></label>
-            <div className="flex justify-end gap-2 md:col-span-2"><Button variant="secondary" onClick={() => onFormOpenChange(false)}>إلغاء</Button><Button type="submit" disabled={isSaving}>{isSaving ? 'جارٍ الحفظ...' : 'حفظ'}</Button></div>
+            <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end md:col-span-2"><Button variant="secondary" onClick={() => onFormOpenChange(false)}>إلغاء</Button><Button type="submit" disabled={isSaving}>{isSaving ? 'جارٍ الحفظ...' : 'حفظ'}</Button></div>
           </form>
         </DialogContent>
       </Dialog>
@@ -127,9 +127,9 @@ function LandRows({ rows, isArchiving, onEdit, onArchive }: Readonly<{ rows: Lan
     <Card className="overflow-hidden">
       <div className="grid gap-3 p-4 md:hidden">{rows.map((row) => <LandCard key={row.id} row={row} isArchiving={isArchiving} onEdit={onEdit} onArchive={onArchive} />)}</div>
       <div className="hidden overflow-x-auto md:block">
-        <table className="w-full text-sm">
+        <table className="w-full min-w-[760px] text-sm">
           <thead className="bg-muted/50 text-muted-foreground"><tr><th className="p-3 text-right">الأرض</th><th className="p-3 text-right">الموقع</th><th className="p-3 text-right">القيمة</th><th className="p-3 text-right">الحالة</th><th className="p-3 text-right">إجراءات</th></tr></thead>
-          <tbody>{rows.map((row) => <tr key={row.id} className="border-t"><td className="p-3 font-bold">{row.name ?? row.plot_no ?? 'بدون اسم'}<p className="text-xs text-muted-foreground">{categoryLabels[row.category ?? ''] ?? row.category}</p></td><td className="p-3">{row.location ?? '—'}</td><td className="p-3">{money(row.owner_price ?? row.purchase_price)}</td><td className="p-3"><StatusBadge tone={tone(row.status)}>{statusLabels[row.status ?? ''] ?? row.status ?? '—'}</StatusBadge></td><td className="p-3"><RowActions id={row.id} disabled={isArchiving} onEdit={() => onEdit(row)} onArchive={onArchive} /></td></tr>)}</tbody>
+          <tbody>{rows.map((row) => <tr key={row.id} className="border-t"><td className="max-w-56 whitespace-normal break-words p-3 font-bold">{row.name ?? row.plot_no ?? 'بدون اسم'}<p className="text-xs text-muted-foreground">{categoryLabels[row.category ?? ''] ?? row.category}</p></td><td className="max-w-72 whitespace-normal break-words p-3">{row.location ?? '—'}</td><td className="p-3">{money(row.owner_price ?? row.purchase_price)}</td><td className="p-3"><StatusBadge tone={tone(row.status)}>{statusLabels[row.status ?? ''] ?? row.status ?? '—'}</StatusBadge></td><td className="p-3"><RowActions id={row.id} disabled={isArchiving} onEdit={() => onEdit(row)} onArchive={onArchive} /></td></tr>)}</tbody>
         </table>
       </div>
     </Card>
@@ -141,5 +141,5 @@ function LandCard({ row, isArchiving, onEdit, onArchive }: Readonly<{ row: LandR
 }
 
 function RowActions({ id, disabled, onEdit, onArchive }: Readonly<{ id: string; disabled: boolean; onEdit: () => void; onArchive: (id: string) => void }>) {
-  return <div className="mt-3 flex flex-wrap gap-2"><Button variant="secondary" onClick={onEdit}><Edit className="me-2 size-4" />تعديل</Button><Button variant="danger" disabled={disabled} onClick={() => onArchive(id)}><Archive className="me-2 size-4" />أرشفة</Button></div>;
+  return <div className="mt-3 flex flex-wrap gap-2"><Button className="min-h-11" variant="secondary" onClick={onEdit}><Edit className="me-2 size-4" />تعديل</Button><Button className="min-h-11" variant="danger" disabled={disabled} onClick={() => onArchive(id)}><Archive className="me-2 size-4" />أرشفة</Button></div>;
 }
