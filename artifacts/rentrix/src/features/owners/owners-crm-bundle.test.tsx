@@ -72,21 +72,21 @@ describe('Owners and CRM navigation visibility', () => {
 
 describe('Approved CRM module views', () => {
   it('renders lands as a working module with create action', () => {
-    const html = renderToStaticMarkup(<LandsView rows={[]} filters={{ query: '', status: 'all' }} draft={{ plot_no: '', name: '', location: '', area: '', owner_id: '', purchase_price: '', owner_price: '', commission: '', category: 'residential', status: 'available', notes: '' }} editingLand={null} formOpen={false} isLoading={false} isSaving={false} isArchiving={false} error={null} onFiltersChange={() => undefined} onDraftChange={() => undefined} onCreate={() => undefined} onEdit={() => undefined} onFormOpenChange={() => undefined} onSubmit={() => undefined} onArchive={() => undefined} onRetry={() => undefined} />);
+    const html = renderToStaticMarkup(<LandsView rows={[]} filters={{ query: '', status: 'all' }} draft={{ plot_no: '', name: '', location: '', area: '', owner_id: '', purchase_price: '', owner_price: '', commission: '', category: 'residential', status: 'available', notes: '' }} editingLand={null} formOpen={false} isLoading={false} isSaving={false} isArchiving={false} error={null} writeError={null} onFiltersChange={() => undefined} onDraftChange={() => undefined} onCreate={() => undefined} onEdit={() => undefined} onFormOpenChange={() => undefined} onSubmit={() => undefined} onArchive={() => undefined} onRetry={() => undefined} />);
 
-    expect(html).toContain('إضافة أرض');
+    expect(html).toContain('إضافة سجل أرض');
     expect(html).not.toContain('غير متاح');
   });
 
   it('renders leads as a working module without invented provider behavior', () => {
-    const html = renderToStaticMarkup(<LeadsView rows={[]} filters={{ query: '', status: 'all', source: 'all' }} draft={{ name: '', phone: '', email: '', source: 'walk_in', status: 'new', desired_unit_type: '', min_budget: '', max_budget: '', notes: '' }} editingLead={null} formOpen={false} isLoading={false} isSaving={false} isArchiving={false} error={null} onFiltersChange={() => undefined} onDraftChange={() => undefined} onCreate={() => undefined} onEdit={() => undefined} onFormOpenChange={() => undefined} onSubmit={() => undefined} onArchive={() => undefined} onRetry={() => undefined} />);
+    const html = renderToStaticMarkup(<LeadsView rows={[]} filters={{ query: '', status: 'all', source: 'all' }} draft={{ name: '', phone: '', email: '', source: 'walk_in', status: 'new', desired_unit_type: '', min_budget: '', max_budget: '', notes: '' }} editingLead={null} formOpen={false} isLoading={false} isSaving={false} isArchiving={false} error={null} writeError={null} onFiltersChange={() => undefined} onDraftChange={() => undefined} onCreate={() => undefined} onEdit={() => undefined} onFormOpenChange={() => undefined} onSubmit={() => undefined} onArchive={() => undefined} onRetry={() => undefined} />);
 
     expect(html).toContain('إضافة عميل محتمل');
     expect(html).not.toContain('pipeline');
   });
 
   it('renders commissions without settlement or ledger behavior', () => {
-    const html = renderToStaticMarkup(<CommissionsView rows={[]} filters={{ query: '', status: 'all', type: 'all' }} draft={{ staff_name: '', type: 'contract', status: 'pending', source_id: '', deal_value: '', percentage: '2.5', amount: '' }} editingCommission={null} formOpen={false} isLoading={false} isSaving={false} isArchiving={false} error={null} onFiltersChange={() => undefined} onDraftChange={() => undefined} onCreate={() => undefined} onEdit={() => undefined} onFormOpenChange={() => undefined} onSubmit={() => undefined} onArchive={() => undefined} onRetry={() => undefined} />);
+    const html = renderToStaticMarkup(<CommissionsView rows={[]} filters={{ query: '', status: 'all', type: 'all' }} draft={{ staff_name: '', type: 'contract', status: 'pending', source_id: '', deal_value: '', percentage: '2.5', amount: '' }} editingCommission={null} formOpen={false} isLoading={false} isSaving={false} isArchiving={false} error={null} writeError={null} onFiltersChange={() => undefined} onDraftChange={() => undefined} onCreate={() => undefined} onEdit={() => undefined} onFormOpenChange={() => undefined} onSubmit={() => undefined} onArchive={() => undefined} onRetry={() => undefined} />);
 
     expect(html).toContain('إضافة عمولة');
     expect(html).not.toContain('تسوية');
@@ -94,7 +94,7 @@ describe('Approved CRM module views', () => {
   });
 
   it('renders communication as an internal log without external sends', () => {
-    const html = renderToStaticMarkup(<CommunicationHubView rows={[]} filters={{ query: '', channel: 'all', status: 'all' }} draft={{ contact_name: '', contact_phone: '', contact_email: '', channel: 'phone', direction: 'outbound', status: 'logged', subject: '', body: '', related_entity_type: '', related_entity_id: '' }} editingRecord={null} formOpen={false} isLoading={false} isSaving={false} isArchiving={false} error={null} onFiltersChange={() => undefined} onDraftChange={() => undefined} onCreate={() => undefined} onEdit={() => undefined} onFormOpenChange={() => undefined} onSubmit={() => undefined} onArchive={() => undefined} onRetry={() => undefined} />);
+    const html = renderToStaticMarkup(<CommunicationHubView rows={[]} filters={{ query: '', channel: 'all', status: 'all' }} draft={{ contact_name: '', contact_phone: '', contact_email: '', channel: 'phone', direction: 'outbound', status: 'logged', subject: '', body: '', related_entity_type: '', related_entity_id: '' }} editingRecord={null} formOpen={false} isLoading={false} isSaving={false} isArchiving={false} error={null} writeError={null} onFiltersChange={() => undefined} onDraftChange={() => undefined} onCreate={() => undefined} onEdit={() => undefined} onFormOpenChange={() => undefined} onSubmit={() => undefined} onArchive={() => undefined} onRetry={() => undefined} />);
 
     expect(html).toContain('سجل داخلي');
     expect(html).not.toContain('WhatsApp');

@@ -140,7 +140,7 @@ function HeroBanner({ snapshot, isLoading, settings, today }: Readonly<{
   const activeContracts = snapshot?.operational.activeContracts ?? 0;
   const vacantUnits = snapshot?.operational.vacantUnits ?? 0;
   const collected = snapshot?.financial.collectedRent ?? 0;
-  const netPosition = snapshot?.financial.netPosition ?? 0;
+  const collectedAfterExpenses = snapshot?.financial.netPosition ?? 0;
 
   return (
     <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-5 sm:p-6 text-white">
@@ -196,10 +196,10 @@ function HeroBanner({ snapshot, isLoading, settings, today }: Readonly<{
           </div>
           <div className={cn(
             'flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-bold',
-            netPosition >= 0 ? 'bg-emerald-500/20 text-emerald-300' : 'bg-rose-500/20 text-rose-300',
+            collectedAfterExpenses >= 0 ? 'bg-emerald-500/20 text-emerald-300' : 'bg-rose-500/20 text-rose-300',
           )}>
             <TrendingUp className="size-3" />
-            صافي {money(settings, netPosition)}
+            محصل بعد المصروفات {money(settings, collectedAfterExpenses)}
           </div>
         </div>
       </div>
@@ -407,7 +407,7 @@ function FinancialSummary({ snapshot, isLoading, settings }: Readonly<{
     { label: 'المفوتر',    value: snapshot?.financial.rentDue,      color: 'text-foreground' },
     { label: 'المحصّل',    value: snapshot?.financial.collectedRent, color: 'text-emerald-600 dark:text-emerald-400' },
     { label: 'المتبقي',    value: snapshot?.financial.outstandingRent, color: 'text-amber-600 dark:text-amber-400' },
-    { label: 'صافي المركز', value: snapshot?.financial.netPosition,  color: 'text-primary' },
+    { label: 'المحصل بعد المصروفات', value: snapshot?.financial.netPosition,  color: 'text-primary' },
   ];
 
   return (
@@ -537,7 +537,7 @@ export function buildDashboardSummaryCards(
     { title: 'المحصل هذا الشهر',    value: money(settings, fin?.collectedRent ?? 0),   isMoney: true  },
     { title: 'الرصيد المتبقي',      value: money(settings, fin?.outstandingRent ?? 0), isMoney: true  },
     { title: 'المصروفات',           value: money(settings, fin?.expenses ?? 0),        isMoney: true  },
-    { title: 'صافي المركز',         value: money(settings, fin?.netPosition ?? 0),     isMoney: true  },
+    { title: 'المحصل بعد المصروفات', value: money(settings, fin?.netPosition ?? 0),     isMoney: true  },
     { title: 'الإشغال',             value: `${op?.occupancyRate ?? 0}%`,               isMoney: false },
     { title: 'تنتهي خلال 30 يوم',   value: op?.expiringContracts30Days ?? 0,           isMoney: false },
   ];

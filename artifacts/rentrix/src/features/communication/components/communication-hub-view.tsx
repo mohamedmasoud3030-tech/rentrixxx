@@ -24,6 +24,7 @@ type Props = Readonly<{
   isSaving: boolean;
   isArchiving: boolean;
   error: unknown;
+  writeError: unknown;
   onFiltersChange: (filters: CommunicationFilters) => void;
   onDraftChange: (draft: CommunicationFormValues) => void;
   onCreate: () => void;
@@ -35,8 +36,9 @@ type Props = Readonly<{
 }>;
 
 export function CommunicationHubView(props: Props) {
-  const { rows, filters, draft, editingRecord, formOpen, isLoading, isSaving, isArchiving, error, onFiltersChange, onDraftChange, onCreate, onEdit, onFormOpenChange, onSubmit, onArchive, onRetry } = props;
+  const { rows, filters, draft, editingRecord, formOpen, isLoading, isSaving, isArchiving, error, writeError, onFiltersChange, onDraftChange, onCreate, onEdit, onFormOpenChange, onSubmit, onArchive, onRetry } = props;
   const followUps = rows.filter((row) => row.status === 'follow_up').length;
+  const hasFilters = filters.query.trim().length > 0 || filters.channel !== 'all' || filters.status !== 'all';
 
   return (
     <section className="space-y-5">
@@ -51,8 +53,9 @@ export function CommunicationHubView(props: Props) {
       <Card><CardContent className="grid gap-3 pt-6 md:grid-cols-[1fr_12rem_12rem]"><Input value={filters.query} onChange={(event) => onFiltersChange({ ...filters, query: event.target.value })} placeholder="بحث بالاسم، الهاتف، الموضوع، المحتوى" aria-label="بحث سجل التواصل" /><Select value={filters.channel} onChange={(event) => onFiltersChange({ ...filters, channel: event.target.value })}><option value="all">كل القنوات</option>{Object.entries(channelLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</Select><Select value={filters.status} onChange={(event) => onFiltersChange({ ...filters, status: event.target.value })}><option value="all">كل الحالات</option>{Object.entries(statusLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</Select></CardContent></Card>
 
       {error ? <ErrorCard message="تعذر تحميل سجل التواصل" onRetry={onRetry} /> : null}
+      {writeError ? <WriteErrorCard message={writeError instanceof Error ? writeError.message : 'تعذر حفظ التغيير على سجل التواصل. راجع الصلاحيات أو الاتصال ثم حاول مرة أخرى.'} /> : null}
       {isLoading ? <StateCard title="جارٍ تحميل سجل التواصل..." /> : null}
-      {!isLoading && !error && rows.length === 0 ? <StateCard title="لا توجد سجلات تواصل ضمن الفلاتر الحالية" description="أضف سجلاً داخلياً عند حدوث تواصل، أو غيّر البحث والقناة والحالة." /> : null}
+      {!isLoading && !error && rows.length === 0 ? <StateCard title={hasFilters ? 'لا توجد سجلات تواصل ضمن الفلاتر الحالية' : 'لا توجد سجلات تواصل بعد'} description={hasFilters ? 'غيّر البحث أو القناة أو الحالة لعرض سجلات تواصل أخرى.' : 'أضف أول سجل داخلي عند حدوث اتصال أو اجتماع أو ملاحظة. لا يتم إرسال أي رسالة خارجية.'} action={hasFilters ? undefined : <Button onClick={onCreate}>إضافة سجل تواصل</Button>} /> : null}
       {rows.length > 0 ? <CommunicationRows rows={rows} isArchiving={isArchiving} onEdit={onEdit} onArchive={onArchive} /> : null}
 
       <Dialog open={formOpen} onOpenChange={onFormOpenChange}>
@@ -85,12 +88,16 @@ function Field({ label, children }: Readonly<{ label: string; children: ReactNod
   return <label className="grid gap-2 text-sm font-bold">{label}{children}</label>;
 }
 
-function StateCard({ title, description }: Readonly<{ title: string; description?: string }>) {
-  return <Card><CardHeader><CardTitle>{title}</CardTitle>{description ? <CardDescription>{description}</CardDescription> : null}</CardHeader></Card>;
+function StateCard({ title, description, action }: Readonly<{ title: string; description?: string; action?: ReactNode }>) {
+  return <Card><CardHeader><CardTitle>{title}</CardTitle>{description ? <CardDescription>{description}</CardDescription> : null}{action}</CardHeader></Card>;
 }
 
 function ErrorCard({ message, onRetry }: Readonly<{ message: string; onRetry: () => void }>) {
   return <Card role="alert"><CardHeader><CardTitle>{message}</CardTitle><CardDescription>راجع الاتصال والصلاحيات ثم أعد المحاولة.</CardDescription><Button variant="secondary" onClick={onRetry}><RotateCcw className="me-2 size-4" />إعادة المحاولة</Button></CardHeader></Card>;
+}
+
+function WriteErrorCard({ message }: Readonly<{ message: string }>) {
+  return <Card role="alert" className="border-destructive/40 bg-destructive/5"><CardHeader><CardTitle>لم يتم حفظ التغيير</CardTitle><CardDescription>{message}</CardDescription></CardHeader></Card>;
 }
 
 function CommunicationRows({ rows, isArchiving, onEdit, onArchive }: Readonly<{ rows: CommunicationRecord[]; isArchiving: boolean; onEdit: (row: CommunicationRecord) => void; onArchive: (id: string) => void }>) {

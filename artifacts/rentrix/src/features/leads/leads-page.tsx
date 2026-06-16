@@ -39,6 +39,7 @@ export function LeadsPage() {
       isSaving={saveLead.isPending}
       isArchiving={archiveLead.isPending}
       error={leadsQuery.error}
+      writeError={saveLead.error ?? archiveLead.error}
       onFiltersChange={setFilters}
       onDraftChange={setDraft}
       onCreate={() => { setEditingLead(null); setDraft(emptyForm); setFormOpen(true); }}

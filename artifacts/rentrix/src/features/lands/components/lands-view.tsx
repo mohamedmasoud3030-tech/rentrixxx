@@ -33,6 +33,7 @@ type Props = Readonly<{
   isSaving: boolean;
   isArchiving: boolean;
   error: unknown;
+  writeError: unknown;
   onFiltersChange: (filters: LandFilters) => void;
   onDraftChange: (draft: LandFormValues) => void;
   onCreate: () => void;
@@ -44,9 +45,10 @@ type Props = Readonly<{
 }>;
 
 export function LandsView(props: Props) {
-  const { rows, filters, draft, editingLand, formOpen, isLoading, isSaving, isArchiving, error, onFiltersChange, onDraftChange, onCreate, onEdit, onFormOpenChange, onSubmit, onArchive, onRetry } = props;
+  const { rows, filters, draft, editingLand, formOpen, isLoading, isSaving, isArchiving, error, writeError, onFiltersChange, onDraftChange, onCreate, onEdit, onFormOpenChange, onSubmit, onArchive, onRetry } = props;
   const activeRows = rows.filter((row) => row.status !== 'archived').length;
   const totalArea = rows.reduce((sum, row) => sum + (row.area ?? 0), 0);
+  const hasFilters = filters.query.trim().length > 0 || filters.status !== 'all';
 
   return (
     <section className="space-y-5">
@@ -56,7 +58,7 @@ export function LandsView(props: Props) {
             <CardTitle className="flex items-center gap-2"><MapPinned className="size-5" /> الأراضي</CardTitle>
             <CardDescription>إدارة قطع الأراضي والملكية التشغيلية بدون تحويلها إلى منتج عقاري منفصل.</CardDescription>
           </div>
-          <Button onClick={onCreate}><Plus className="me-2 size-4" />إضافة أرض</Button>
+          <Button onClick={onCreate}><Plus className="me-2 size-4" />إضافة سجل أرض</Button>
         </CardHeader>
         <CardContent className="grid gap-3 sm:grid-cols-3">
           <Summary label="إجمالي السجلات" value={String(rows.length)} />
@@ -76,8 +78,9 @@ export function LandsView(props: Props) {
       </Card>
 
       {error ? <ErrorCard message="تعذر تحميل الأراضي" onRetry={onRetry} /> : null}
+      {writeError ? <WriteErrorCard message={writeError instanceof Error ? writeError.message : 'تعذر حفظ التغيير على سجل الأرض. راجع الصلاحيات أو الاتصال ثم حاول مرة أخرى.'} /> : null}
       {isLoading ? <StateCard title="جارٍ تحميل الأراضي..." /> : null}
-      {!isLoading && !error && rows.length === 0 ? <StateCard title="لا توجد أراضٍ ضمن الفلاتر الحالية" description="أضف سجل أرض تشغيلياً عند توفر بياناته، أو غيّر البحث والحالة." /> : null}
+      {!isLoading && !error && rows.length === 0 ? <StateCard title={hasFilters ? 'لا توجد أراضٍ ضمن الفلاتر الحالية' : 'لا توجد سجلات أراضٍ بعد'} description={hasFilters ? 'غيّر البحث أو الحالة لعرض سجلات أراضٍ أخرى.' : 'أضف أول سجل أرض تشغيلي عند توفر بيانات قطعة أرض حقيقية.'} action={hasFilters ? undefined : <Button onClick={onCreate}>إضافة سجل أرض</Button>} /> : null}
       {rows.length > 0 ? <LandRows rows={rows} isArchiving={isArchiving} onEdit={onEdit} onArchive={onArchive} /> : null}
 
       <Dialog open={formOpen} onOpenChange={onFormOpenChange}>
@@ -93,10 +96,10 @@ export function LandsView(props: Props) {
             <Field label="المساحة"><Input type="number" min="0" value={draft.area} onChange={(event) => onDraftChange({ ...draft, area: event.target.value })} /></Field>
             <Field label="التصنيف"><Select value={draft.category} onChange={(event) => onDraftChange({ ...draft, category: event.target.value })}>{Object.entries(categoryLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</Select></Field>
             <Field label="الحالة"><Select value={draft.status} onChange={(event) => onDraftChange({ ...draft, status: event.target.value })}>{Object.entries(statusLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</Select></Field>
-            <Field label="معرف المالك"><Input value={draft.owner_id} onChange={(event) => onDraftChange({ ...draft, owner_id: event.target.value })} /></Field>
+            <Field label="معرف المالك"><Input value={draft.owner_id} onChange={(event) => onDraftChange({ ...draft, owner_id: event.target.value })} placeholder="اختياري: معرف مالك موجود فقط" /></Field>
             <Field label="سعر المالك"><Input type="number" min="0" value={draft.owner_price} onChange={(event) => onDraftChange({ ...draft, owner_price: event.target.value })} /></Field>
             <Field label="سعر الشراء"><Input type="number" min="0" value={draft.purchase_price} onChange={(event) => onDraftChange({ ...draft, purchase_price: event.target.value })} /></Field>
-            <Field label="عمولة متوقعة"><Input type="number" min="0" value={draft.commission} onChange={(event) => onDraftChange({ ...draft, commission: event.target.value })} /></Field>
+            <Field label="عمولة تقديرية مسجلة"><Input type="number" min="0" value={draft.commission} onChange={(event) => onDraftChange({ ...draft, commission: event.target.value })} /></Field>
             <label className="grid gap-2 text-sm font-bold md:col-span-2">ملاحظات<Textarea value={draft.notes} onChange={(event) => onDraftChange({ ...draft, notes: event.target.value })} /></label>
             <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end md:col-span-2"><Button variant="secondary" onClick={() => onFormOpenChange(false)}>إلغاء</Button><Button type="submit" disabled={isSaving}>{isSaving ? 'جارٍ الحفظ...' : 'حفظ'}</Button></div>
           </form>
@@ -114,12 +117,16 @@ function Field({ label, children }: Readonly<{ label: string; children: ReactNod
   return <label className="grid gap-2 text-sm font-bold">{label}{children}</label>;
 }
 
-function StateCard({ title, description }: Readonly<{ title: string; description?: string }>) {
-  return <Card><CardHeader><CardTitle>{title}</CardTitle>{description ? <CardDescription>{description}</CardDescription> : null}</CardHeader></Card>;
+function StateCard({ title, description, action }: Readonly<{ title: string; description?: string; action?: ReactNode }>) {
+  return <Card><CardHeader><CardTitle>{title}</CardTitle>{description ? <CardDescription>{description}</CardDescription> : null}{action}</CardHeader></Card>;
 }
 
 function ErrorCard({ message, onRetry }: Readonly<{ message: string; onRetry: () => void }>) {
   return <Card role="alert"><CardHeader><CardTitle>{message}</CardTitle><CardDescription>راجع الاتصال والصلاحيات ثم أعد المحاولة.</CardDescription><Button variant="secondary" onClick={onRetry}><RotateCcw className="me-2 size-4" />إعادة المحاولة</Button></CardHeader></Card>;
+}
+
+function WriteErrorCard({ message }: Readonly<{ message: string }>) {
+  return <Card role="alert" className="border-destructive/40 bg-destructive/5"><CardHeader><CardTitle>لم يتم حفظ التغيير</CardTitle><CardDescription>{message}</CardDescription></CardHeader></Card>;
 }
 
 function LandRows({ rows, isArchiving, onEdit, onArchive }: Readonly<{ rows: LandRecord[]; isArchiving: boolean; onEdit: (row: LandRecord) => void; onArchive: (id: string) => void }>) {
