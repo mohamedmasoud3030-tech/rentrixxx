@@ -68,7 +68,7 @@ Do not delete a deferred route merely because it is hidden. Do not re-expose a d
 
 The following modules exist in code but require an explicit product decision before re-exposure:
 
-- `/lands` — page and service exist; awaiting product decision on lifecycle and scope.
+- `/lands` — page exists; service returns `unavailable`; awaiting product decision on lifecycle and scope.
 - `/leads` — page exists; service returns `unavailable`; no confirmed schema table.
 - `/commissions` — page exists; service returns `unavailable`; no confirmed schema table.
 - `/communication` — page exists; service returns `unavailable`; no confirmed schema table.
