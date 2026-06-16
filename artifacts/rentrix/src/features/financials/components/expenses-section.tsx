@@ -1,5 +1,6 @@
 import type { UseFormReturn } from 'react-hook-form';
 import { Controller } from 'react-hook-form';
+import { Download } from 'lucide-react';
 import { EmptyState } from '@/components/empty-state';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -7,6 +8,8 @@ import { FileAttachmentField } from '@/components/ui/file-attachment-field';
 import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
+import { escapeCsvValue, withUtf8Bom } from '@/lib/csvExport';
+import { exportExpenseToPdf } from '@/services/pdfService';
 import type { Expense, Property } from '@/types/domain';
 import { formatDate, formatMoney } from './financials-formatters';
 import {
@@ -38,8 +41,7 @@ type ExpensesSectionProps = Readonly<{
 }>;
 
 function escapeCsvCell(value: string | number | null | undefined) {
-  const stringValue = String(value ?? '');
-  return /[",\n\r]/.test(stringValue) ? `"${stringValue.replaceAll('"', '""')}"` : stringValue;
+  return escapeCsvValue(value);
 }
 
 export function buildExpensesCsv(expenses: readonly Expense[], propertyRows: readonly Property[]) {
@@ -53,13 +55,13 @@ export function buildExpensesCsv(expenses: readonly Expense[], propertyRows: rea
   ]);
 
   return [
-    ['date', 'property', 'category', 'amount', 'description'],
-    ...rows,
-  ].map((row) => row.map(escapeCsvCell).join(',')).join('\n');
+    'date,property,category,amount,description',
+    ...rows.map((row) => row.map(escapeCsvCell).join(',')),
+  ].join('\n');
 }
 
 function downloadCsv(filename: string, csv: string) {
-  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+  const blob = new Blob([withUtf8Bom(csv)], { type: 'text/csv;charset=utf-8' });
   const url = URL.createObjectURL(blob);
   const anchor = document.createElement('a');
   anchor.href = url;
@@ -74,6 +76,16 @@ export function ExpensesSection({ expenses, propertyRows, filters, onFiltersChan
   const hasFilters = Boolean(filters.propertyId || filters.category || filters.from || filters.to);
   const clearFilters = () => onFiltersChange({ propertyId: '', category: '', from: '', to: '' });
   const exportVisibleExpenses = () => downloadCsv(`rentrix-expenses-${getTodayLocalDateString()}.csv`, buildExpensesCsv(expenses, propertyRows));
+  const exportExpenseVoucher = (expense: Expense) => {
+    const property = propertyById.get(expense.property_id);
+    exportExpenseToPdf(expense, {
+      settings: { general: { company: { name: 'Rentrix' } } },
+      contracts: [],
+      tenants: [],
+      units: [],
+      properties: property ? [property] : [],
+    });
+  };
 
   return (
     <Card className="rounded-2xl">
@@ -131,10 +143,13 @@ export function ExpensesSection({ expenses, propertyRows, filters, onFiltersChan
         ) : (
           <div className="divide-y divide-border rounded-xl border border-border">
             {expenses.map((expense) => (
-              <div key={expense.id} className="grid gap-1 px-4 py-3 text-sm sm:grid-cols-[7rem_1fr_auto] sm:items-center sm:gap-3">
+              <div key={expense.id} className="grid gap-1 px-4 py-3 text-sm sm:grid-cols-[7rem_1fr_auto_auto] sm:items-center sm:gap-3">
                 <span className="text-muted-foreground">{formatDate(expense.expense_date)}</span>
                 <span className="min-w-0 truncate">{buildExpensePropertyLabel(expense, propertyById)} — {expense.category}</span>
                 <span className="font-bold tabular-nums">{formatMoney(expense.amount)}</span>
+                <Button type="button" variant="secondary" className="h-9 px-3 text-xs" onClick={() => exportExpenseVoucher(expense)}>
+                  <Download className="me-2 size-4" />PDF
+                </Button>
               </div>
             ))}
           </div>

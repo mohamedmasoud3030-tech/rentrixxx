@@ -24,10 +24,11 @@ import {
   useFinancialPeriodSummaryReport,
   useOverdueInvoicesReport,
 } from '@/features/financials/reports/useFinancialReports';
+import { buildCsv, withUtf8Bom, type CsvRow } from '@/lib/csvExport';
 import { buildAgingBucketChartRows, buildPaymentsTrendRows, buildRentRollRows, createReceiptPrintHref } from './reports-page.helpers';
 
-export type CsvValue = string | number | boolean | null | undefined;
-type CsvRow = Record<string, CsvValue>;
+export { escapeCsvValue } from '@/lib/csvExport';
+
 type FilterState = Readonly<{ from: string; to: string; asOf: string }>;
 type ReportCardProps = Readonly<{ title: string; description: string; children: React.ReactNode; action?: React.ReactNode; isLoading?: boolean }>;
 type MetricCardProps = Readonly<{ label: string; value: string; helper: string; tone?: 'blue' | 'green' | 'red' | 'gray' | 'gold' }>;
@@ -83,24 +84,8 @@ function getCurrentMonthFilters(): FilterState {
   };
 }
 
-export function escapeCsvValue(value: CsvValue) {
-  if (value === null || value === undefined) {
-    return '';
-  }
-
-  if (typeof value === 'number' || typeof value === 'boolean') {
-    return JSON.stringify(value);
-  }
-
-  const trimmedStart = value.trimStart();
-  const safeValue = /^[=+\-@]/.test(trimmedStart) ? `'${value}` : value;
-  return JSON.stringify(safeValue);
-}
-
 function downloadCsv(filename: string, rows: CsvRow[]) {
-  const keys = Object.keys(rows[0] ?? {}).sort((a, b) => a.localeCompare(b));
-  const csv = [keys.join(','), ...rows.map((row) => keys.map((key) => escapeCsvValue(row[key])).join(','))].join('\n');
-  const blob = new Blob(['\uFEFF', csv], { type: 'text/csv;charset=utf-8;' });
+  const blob = new Blob([withUtf8Bom(buildCsv(rows))], { type: 'text/csv;charset=utf-8;' });
   const link = document.createElement('a');
   const objectUrl = URL.createObjectURL(blob);
   link.href = objectUrl;
