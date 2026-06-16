@@ -17,6 +17,16 @@ Read in this order:
 
 `docs/ai/CURRENT_EXECUTION_CONTEXT.md` is the single current execution source of truth for scope, blockers, contradictions, next PR order, and future-agent rules. `docs/ai/ONBOARDING.md` contains the current application snapshot and the full reading sequence. `docs/RENTRIX_MASTER_PLAN.md` defines the final product shape, current release, ordered releases, and next ready item. `docs/ai/AGENT_CAPABILITIES.md` maps tasks to skills and project additions. `docs/ai/GIT_TOOLING_POLICY.md` defines how branch, diff, PR, CI, and merge tools must be used.
 
+## Docs map
+
+Read first: `AGENTS.md`, `README.md`, `docs/ai/CURRENT_EXECUTION_CONTEXT.md`, `docs/RENTRIX_MASTER_PLAN.md`, `docs/FIRST_CLIENT_DELIVERY_PLAN.md`, and `docs/ai/ONBOARDING.md`.
+
+Active policy docs: `docs/ai/domain-rules.md`, `docs/ai/engineering-policy.md`, `docs/ai/security-policy.md`, `docs/ai/release-policy.md`, `docs/ai/testing-guide.md`, and `docs/decisions/README.md`.
+
+Technical references: `docs/ai/PRINT_AND_EXPORT_READINESS.md`, `docs/ai/REPORTING_DEFINITIONS.md`, `docs/ai/SECURE_OPERATOR_RUNBOOK.md`, `docs/ROOT_LAYOUT.md`, `docs/ai/AGENT_CAPABILITIES.md`, and `docs/ai/GIT_TOOLING_POLICY.md`.
+
+Archived historical material: `docs/archive/README.md` indexes dated reports, audits, evidence packs, superseded indexes, and release-thread notes. Treat archived docs as historical reference only; do not copy active status out of them.
+
 ## Canonical runtime
 
 ```text
@@ -108,4 +118,4 @@ For schema or RLS changes, also run the repository-approved Supabase validation 
 
 ## Recovery references
 
-Only concise notes under `archive/recovery-reference/` remain for selective maintenance reference, and they must not be imported into the active application. `.migration-backup/` and `artifacts/rentrix/legacy-src/` were removed in PR #805.
+Only concise notes under `archive/recovery-reference/` and historical documentation under `docs/archive/` remain for selective maintenance reference, and they must not be imported into the active application. `.migration-backup/` and `artifacts/rentrix/legacy-src/` were removed in PR #805.

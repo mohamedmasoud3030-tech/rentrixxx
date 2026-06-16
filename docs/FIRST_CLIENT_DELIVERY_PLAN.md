@@ -1,8 +1,6 @@
 # First Client Delivery Plan
 
-> Historical snapshot — verify against `docs/ai/CURRENT_EXECUTION_CONTEXT.md` before acting.
-
-**Status:** Draft execution roadmap
+**Status:** Active delivery plan
 **Audience:** product owner, operators, and coding agents
 **Updated:** 2026-06-15
 
@@ -20,11 +18,11 @@ reports without violating the single-office, no-SaaS, no-general-ledger boundary
 | Area | Current state | Delivery implication |
 | --- | --- | --- |
 | Operational UI | Core visible workflows are implemented and polished enough for constrained-beta review. | UI work is no longer the first blocker. |
-| Payment recording | `find_payment_account_id(text)` / `record_invoice_payment_atomic(jsonb)` has a live-verified account-ID mismatch. | P0 blocker for first client. |
-| Migration chain | Latest handoff reports 50 live migration entries requiring reconciliation against `supabase/migrations/`. | Must be reconciled before GO. |
+| Payment recording | Account resolution fixes are recorded as live-verified in `docs/ai/CURRENT_EXECUTION_CONTEXT.md`; authenticated browser E2E remains unverified. | P0 evidence blocker for first client. |
+| Migration chain | Current execution context reports the repo and live DB migration chain were reconciled after PR #910 and PR #911. | Re-verify only with approved read-only evidence before GO. |
 | Auth roles | `custom_access_token_hook` exists, but Dashboard/Auth Hook registration still needs owner-side verification. | Blocks real ADMIN QA. |
 | Deployment | `rentrix-alpha.vercel.app` is reachable and current docs record correct live Supabase env values in the served bundle. | Deployment can be QA target after auth/payment blockers clear. |
-| Deferred modules | `/lands`, `/leads`, `/commissions`, and `/communication` remain hidden or unavailable pending product decisions. | Do not expand scope before first payment works. |
+| Planned modules | `/lands`, `/leads`, `/commissions`, and `/communication` are approved single-office modules. | Do not let planned-module work delay first payment and receipt QA. |
 
 ## Phase 1: Unblock the Financial Core
 
@@ -33,11 +31,10 @@ updates invoice status on the intended live project.
 
 | Order | Task | Owner/access needed | Exit evidence |
 | --- | --- | --- | --- |
-| 1 | Confirm the latest 50 live migration entries from `supabase_migrations.schema_migrations`. | Supabase read access | Export or written table of live versions. |
-| 2 | Apply or replay the account-resolution repair from `20260615000100_fix_invoice_payment_account_resolution.sql` through the approved path. | Supabase owner/operator approval | Migration applied to the intended project or preview first when available. |
-| 3 | Rerun `find_payment_account_id('cash')` and `find_payment_account_id('receivable')`. | Supabase read access | Both calls return text account IDs without `22P02`. |
-| 4 | Run authenticated payment QA: contract -> invoice -> payment -> receipt -> invoice status. | Browser-driving capability and ADMIN credentials | Screenshots or written QA evidence. |
-| 5 | Run reversal QA for posted payment correction behavior. | ADMIN/MANAGER session | Receipt void/reversal behavior recorded. |
+| 1 | Verify Custom Access Token Auth Hook registration. | Supabase owner/operator access | ADMIN JWT includes `app_metadata.user_role = "ADMIN"`. |
+| 2 | Run authenticated payment QA: contract -> invoice -> payment -> receipt -> invoice status. | Browser-driving capability and ADMIN credentials | Screenshots or written QA evidence. |
+| 3 | Run reversal QA for posted payment correction behavior. | ADMIN/MANAGER session | Receipt void/reversal behavior recorded. |
+| 4 | Record payment-to-receipt E2E evidence in the active execution context or roadmap. | Reviewable docs PR | Evidence and remaining blockers are current. |
 
 Exit criterion: payment recording and receipt generation are verified end-to-end
 against the target environment.
@@ -48,11 +45,10 @@ Goal: close the remaining release blockers without adding new product scope.
 
 | Order | Task | Exit evidence |
 | --- | --- | --- |
-| 1 | Reconcile the 50 live migration entries against the local chain. | Difference table with each entry classified. |
-| 2 | Preview/staging replay of the reconciled migration chain when access exists. | Replay log or explicit access blocker. |
-| 3 | Verify Custom Access Token Auth Hook registration. | ADMIN JWT includes `app_metadata.user_role = "ADMIN"`. |
-| 4 | Complete full browser/manual QA. | RTL desktop, RTL mobile, LTR sanity, protected-route refresh, forms, dialogs, receipt print, CSV export, PWA, and invalid-route evidence. |
-| 5 | Record GO/NO-GO in `docs/RENTRIX_MASTER_PLAN.md`. | v0.1 status updated with evidence. |
+| 1 | Re-verify migration chain status only with approved read-only access. | Current execution context or roadmap evidence updated. |
+| 2 | Verify Custom Access Token Auth Hook registration. | ADMIN JWT includes `app_metadata.user_role = "ADMIN"`. |
+| 3 | Complete full browser/manual QA. | RTL desktop, RTL mobile, LTR sanity, protected-route refresh, forms, dialogs, receipt print, CSV export, PWA, and invalid-route evidence. |
+| 4 | Record GO/NO-GO in `docs/RENTRIX_MASTER_PLAN.md`. | v0.1 status updated with evidence. |
 
 Exit criterion: v0.1 can be closed with a documented GO decision or an explicit
 remaining blocker.
@@ -65,8 +61,8 @@ need optional modules.
 | Decision | Default recommendation | Reason |
 | --- | --- | --- |
 | Reuse current live project or provision a fresh client project | Prefer a fresh isolated Supabase/Vercel pair unless the owner approves reusing and cleaning current data. | Avoid demo/seed-data ambiguity. |
-| Lands | Decide from the client's actual portfolio. | `/lands` has code support but should stay hidden unless needed. |
-| Leads, commissions, communication | Defer unless the client requires them before go-live. | Schema/service support is incomplete or intentionally unavailable. |
+| Lands | Decide rollout timing from the client's actual portfolio. | Approved module, but not a blocker for first payment and receipt QA. |
+| Leads, commissions, communication | Decide rollout timing from the client's actual workflow. | Approved modules, but not blockers for first payment and receipt QA. |
 | Owner settlements | Defer unless owner payout management is a day-one requirement. | Prevents accidental accounting-ledger expansion. |
 | Data import | Choose manual entry for small portfolios; use a one-time reviewed CSV/import script for larger portfolios. | No bulk-import UI should be rushed into v1. |
 
