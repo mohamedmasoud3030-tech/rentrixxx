@@ -1,6 +1,7 @@
 import { Archive, Edit, MapPinned, Plus, RotateCcw } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
+import { PageStateCard, WriteErrorCard } from '@/components/page-state-card';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
@@ -79,8 +80,8 @@ export function LandsView(props: Props) {
 
       {error ? <ErrorCard message="تعذر تحميل الأراضي" onRetry={onRetry} /> : null}
       {writeError ? <WriteErrorCard message={writeError instanceof Error ? writeError.message : 'تعذر حفظ التغيير على سجل الأرض. راجع الصلاحيات أو الاتصال ثم حاول مرة أخرى.'} /> : null}
-      {isLoading ? <StateCard title="جارٍ تحميل الأراضي..." /> : null}
-      {!isLoading && !error && rows.length === 0 ? <StateCard title={hasFilters ? 'لا توجد أراضٍ ضمن الفلاتر الحالية' : 'لا توجد سجلات أراضٍ بعد'} description={hasFilters ? 'غيّر البحث أو الحالة لعرض سجلات أراضٍ أخرى.' : 'أضف أول سجل أرض تشغيلي عند توفر بيانات قطعة أرض حقيقية.'} action={hasFilters ? undefined : <Button onClick={onCreate}>إضافة سجل أرض</Button>} /> : null}
+      {isLoading ? <PageStateCard title="جارٍ تحميل الأراضي..." /> : null}
+      {!isLoading && !error && rows.length === 0 ? <PageStateCard title={hasFilters ? 'لا توجد أراضٍ ضمن الفلاتر الحالية' : 'لا توجد سجلات أراضٍ بعد'} description={hasFilters ? 'غيّر البحث أو الحالة لعرض سجلات أراضٍ أخرى.' : 'أضف أول سجل أرض تشغيلي عند توفر بيانات قطعة أرض حقيقية.'} action={hasFilters ? undefined : <Button onClick={onCreate}>إضافة سجل أرض</Button>} /> : null}
       {rows.length > 0 ? <LandRows rows={rows} isArchiving={isArchiving} onEdit={onEdit} onArchive={onArchive} /> : null}
 
       <Dialog open={formOpen} onOpenChange={onFormOpenChange}>
@@ -117,16 +118,8 @@ function Field({ label, children }: Readonly<{ label: string; children: ReactNod
   return <label className="grid gap-2 text-sm font-bold">{label}{children}</label>;
 }
 
-function StateCard({ title, description, action }: Readonly<{ title: string; description?: string; action?: ReactNode }>) {
-  return <Card><CardHeader><CardTitle>{title}</CardTitle>{description ? <CardDescription>{description}</CardDescription> : null}{action}</CardHeader></Card>;
-}
-
 function ErrorCard({ message, onRetry }: Readonly<{ message: string; onRetry: () => void }>) {
   return <Card role="alert"><CardHeader><CardTitle>{message}</CardTitle><CardDescription>راجع الاتصال والصلاحيات ثم أعد المحاولة.</CardDescription><Button variant="secondary" onClick={onRetry}><RotateCcw className="me-2 size-4" />إعادة المحاولة</Button></CardHeader></Card>;
-}
-
-function WriteErrorCard({ message }: Readonly<{ message: string }>) {
-  return <Card role="alert" className="border-destructive/40 bg-destructive/5"><CardHeader><CardTitle>لم يتم حفظ التغيير</CardTitle><CardDescription>{message}</CardDescription></CardHeader></Card>;
 }
 
 function LandRows({ rows, isArchiving, onEdit, onArchive }: Readonly<{ rows: LandRecord[]; isArchiving: boolean; onEdit: (row: LandRecord) => void; onArchive: (id: string) => void }>) {

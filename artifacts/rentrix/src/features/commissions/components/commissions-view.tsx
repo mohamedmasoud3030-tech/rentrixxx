@@ -1,6 +1,7 @@
 import { Archive, BadgeDollarSign, Edit, Plus, RotateCcw } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
+import { PageStateCard, WriteErrorCard } from '@/components/page-state-card';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
@@ -57,8 +58,8 @@ export function CommissionsView(props: Props) {
 
       {error ? <ErrorCard message="تعذر تحميل العمولات" onRetry={onRetry} /> : null}
       {writeError ? <WriteErrorCard message={writeError instanceof Error ? writeError.message : 'تعذر حفظ التغيير على العمولة. راجع الصلاحيات أو الاتصال ثم حاول مرة أخرى.'} /> : null}
-      {isLoading ? <StateCard title="جارٍ تحميل العمولات..." /> : null}
-      {!isLoading && !error && rows.length === 0 ? <StateCard title={hasFilters ? 'لا توجد عمولات ضمن الفلاتر الحالية' : 'لا توجد عمولات بعد'} description={hasFilters ? 'غيّر البحث أو الحالة أو النوع لعرض سجلات عمولات أخرى.' : 'أضف عمولة تشغيلية عند توفر مصدر ومبلغ حقيقيين. هذه الصفحة للتتبع فقط ولا تنشئ أمر صرف.'} action={hasFilters ? undefined : <Button onClick={onCreate}>إضافة عمولة</Button>} /> : null}
+      {isLoading ? <PageStateCard title="جارٍ تحميل العمولات..." /> : null}
+      {!isLoading && !error && rows.length === 0 ? <PageStateCard title={hasFilters ? 'لا توجد عمولات ضمن الفلاتر الحالية' : 'لا توجد عمولات بعد'} description={hasFilters ? 'غيّر البحث أو الحالة أو النوع لعرض سجلات عمولات أخرى.' : 'أضف عمولة تشغيلية عند توفر مصدر ومبلغ حقيقيين. هذه الصفحة للتتبع فقط ولا تنشئ أمر صرف.'} action={hasFilters ? undefined : <Button onClick={onCreate}>إضافة عمولة</Button>} /> : null}
       {rows.length > 0 ? <CommissionRows rows={rows} isArchiving={isArchiving} onEdit={onEdit} onArchive={onArchive} /> : null}
 
       <Dialog open={formOpen} onOpenChange={onFormOpenChange}>
@@ -88,16 +89,8 @@ function Field({ label, children }: Readonly<{ label: string; children: ReactNod
   return <label className="grid gap-2 text-sm font-bold">{label}{children}</label>;
 }
 
-function StateCard({ title, description, action }: Readonly<{ title: string; description?: string; action?: ReactNode }>) {
-  return <Card><CardHeader><CardTitle>{title}</CardTitle>{description ? <CardDescription>{description}</CardDescription> : null}{action}</CardHeader></Card>;
-}
-
 function ErrorCard({ message, onRetry }: Readonly<{ message: string; onRetry: () => void }>) {
   return <Card role="alert"><CardHeader><CardTitle>{message}</CardTitle><CardDescription>راجع الاتصال والصلاحيات ثم أعد المحاولة.</CardDescription><Button variant="secondary" onClick={onRetry}><RotateCcw className="me-2 size-4" />إعادة المحاولة</Button></CardHeader></Card>;
-}
-
-function WriteErrorCard({ message }: Readonly<{ message: string }>) {
-  return <Card role="alert" className="border-destructive/40 bg-destructive/5"><CardHeader><CardTitle>لم يتم حفظ التغيير</CardTitle><CardDescription>{message}</CardDescription></CardHeader></Card>;
 }
 
 function CommissionRows({ rows, isArchiving, onEdit, onArchive }: Readonly<{ rows: CommissionRecord[]; isArchiving: boolean; onEdit: (row: CommissionRecord) => void; onArchive: (id: string) => void }>) {
