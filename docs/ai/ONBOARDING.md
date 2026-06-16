@@ -58,14 +58,18 @@ People
 Tenants
 Owners
 Owners Hub
+Lands
+Leads
 Contracts
 Financials
 Invoices
 Receipts
 Expenses
 Arrears
+Commissions
 Reports
 Maintenance
+Communication
 System
 Audit Log
 Data Integrity
@@ -83,9 +87,11 @@ Financials
 Arrears
 ```
 
-### Registered but intentionally hidden routes
+The mobile drawer is the authoritative mobile route inventory and must expose every active desktop navigation module with Arabic RTL labels and current-route highlighting. Do not cram every route into the bottom navigation.
 
-The following optional and product-decision routes remain registered in `artifacts/rentrix/src/routeTree.ts`, but they are intentionally hidden from visible constrained-beta navigation until they are separately verified and approved:
+### Approved product-expansion routes
+
+The following previously deferred routes are approved active product modules and must not ship as placeholder, unavailable, coming-soon, or hidden dead routes:
 
 ```text
 /lands
@@ -94,9 +100,7 @@ The following optional and product-decision routes remain registered in `artifac
 /communication
 ```
 
-Do not delete these routes merely because they are hidden. Do not re-expose them in navigation merely because they remain registered.
-
-Current deferred page status (verified June 2026):
+Current planned-module status after the product decision:
 
 | Route | Backend support | Page ready | Service status |
 | --- | --- | --- | --- |
@@ -104,10 +108,10 @@ Current deferred page status (verified June 2026):
 | `/audit-log` | `public.audit_log` queried with generated `database.ts` type | Yes — read-only view | Re-exposed in v0.3 with hardened RLS evidence |
 | `/data-integrity` | Minimal read model | Yes — page exists | Re-exposed in v0.3 with permissioned navigation |
 | `/system` | Minimal governance source support | Yes — page + components | Re-exposed in v0.3 with permissioned navigation |
-| `/lands` | Not verified for active product use | Yes — page returns unavailable | Needs v0.4 product decision |
-| `/leads` | No confirmed schema table | Yes — page returns unavailable | Needs v0.4 product decision |
-| `/commissions` | No confirmed schema table | Yes — page returns unavailable | Needs v0.4 product decision |
-| `/communication` | No confirmed schema table | Yes — page returns unavailable | Needs v0.4 product decision |
+| `/lands` | Existing table and RLS hardening migration | Yes — list/create/edit/archive | Approved active module |
+| `/leads` | Existing table and RLS hardening migration | Yes — list/create/edit/archive | Approved active module |
+| `/commissions` | Existing table and RLS hardening migration | Yes — list/create/edit/cancel | Approved active module; no ledger expansion |
+| `/communication` | `communication_records` migration | Yes — internal log list/create/edit/archive | Approved active module; no external sends |
 
 `/accounting` remains registered only as a redirect to `/financials`. Do not wire a general ledger while stabilization is active.
 

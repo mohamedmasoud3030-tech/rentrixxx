@@ -1,8 +1,54 @@
-import { useQuery } from '@tanstack/react-query';
+import { useState } from 'react';
 import { LandsView } from './components/lands-view';
-import { fetchLandsReadModel } from './services/lands-service';
+import { useArchiveLand, useLands, useSaveLand } from './use-lands';
+import type { LandFilters, LandFormValues, LandRecord } from './types';
+
+const emptyForm: LandFormValues = { plot_no: '', name: '', location: '', area: '', owner_id: '', purchase_price: '', owner_price: '', commission: '', category: 'residential', status: 'available', notes: '' };
+
+function formFromLand(land: LandRecord): LandFormValues {
+  return {
+    plot_no: land.plot_no ?? '',
+    name: land.name ?? '',
+    location: land.location ?? '',
+    area: land.area?.toString() ?? '',
+    owner_id: land.owner_id ?? '',
+    purchase_price: land.purchase_price?.toString() ?? '',
+    owner_price: land.owner_price?.toString() ?? '',
+    commission: land.commission?.toString() ?? '',
+    category: land.category ?? 'residential',
+    status: land.status ?? 'available',
+    notes: land.notes ?? '',
+  };
+}
 
 export function LandsPage() {
-  const landsQuery = useQuery({ queryKey: ['lands', 'read-model'], queryFn: fetchLandsReadModel });
-  return <LandsView state={landsQuery.data ?? { status: 'unavailable', reason: 'لم يتم التحقق من مصدر بيانات الأراضي بعد.' }} />;
+  const [filters, setFilters] = useState<LandFilters>({ query: '', status: 'all' });
+  const [editingLand, setEditingLand] = useState<LandRecord | null>(null);
+  const [draft, setDraft] = useState<LandFormValues>(emptyForm);
+  const [formOpen, setFormOpen] = useState(false);
+  const landsQuery = useLands(filters);
+  const saveLand = useSaveLand();
+  const archiveLand = useArchiveLand();
+
+  return (
+    <LandsView
+      rows={landsQuery.data ?? []}
+      filters={filters}
+      draft={draft}
+      editingLand={editingLand}
+      formOpen={formOpen}
+      isLoading={landsQuery.isLoading}
+      isSaving={saveLand.isPending}
+      isArchiving={archiveLand.isPending}
+      error={landsQuery.error}
+      onFiltersChange={setFilters}
+      onDraftChange={setDraft}
+      onCreate={() => { setEditingLand(null); setDraft(emptyForm); setFormOpen(true); }}
+      onEdit={(land) => { setEditingLand(land); setDraft(formFromLand(land)); setFormOpen(true); }}
+      onFormOpenChange={setFormOpen}
+      onSubmit={(values) => saveLand.mutate({ id: editingLand?.id, values }, { onSuccess: () => setFormOpen(false) })}
+      onArchive={(id) => archiveLand.mutate(id)}
+      onRetry={() => void landsQuery.refetch()}
+    />
+  );
 }

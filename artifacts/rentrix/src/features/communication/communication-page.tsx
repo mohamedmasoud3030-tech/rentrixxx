@@ -1,8 +1,53 @@
-import { useQuery } from '@tanstack/react-query';
+import { useState } from 'react';
 import { CommunicationHubView } from './components/communication-hub-view';
-import { fetchCommunicationReadModel } from './services/communication-service';
+import type { CommunicationFilters, CommunicationFormValues, CommunicationRecord } from './types';
+import { useArchiveCommunicationRecord, useCommunicationRecords, useSaveCommunicationRecord } from './use-communication';
+
+const emptyForm: CommunicationFormValues = { contact_name: '', contact_phone: '', contact_email: '', channel: 'phone', direction: 'outbound', status: 'logged', subject: '', body: '', related_entity_type: '', related_entity_id: '' };
+
+function formFromRecord(record: CommunicationRecord): CommunicationFormValues {
+  return {
+    contact_name: record.contact_name,
+    contact_phone: record.contact_phone ?? '',
+    contact_email: record.contact_email ?? '',
+    channel: record.channel,
+    direction: record.direction,
+    status: record.status,
+    subject: record.subject ?? '',
+    body: record.body,
+    related_entity_type: record.related_entity_type ?? '',
+    related_entity_id: record.related_entity_id ?? '',
+  };
+}
 
 export function CommunicationPage() {
-  const communicationQuery = useQuery({ queryKey: ['communication', 'read-model'], queryFn: fetchCommunicationReadModel });
-  return <CommunicationHubView state={communicationQuery.data ?? { status: 'unavailable', reason: 'لم يتم التحقق من مصدر بيانات التواصل بعد.' }} />;
+  const [filters, setFilters] = useState<CommunicationFilters>({ query: '', channel: 'all', status: 'all' });
+  const [editingRecord, setEditingRecord] = useState<CommunicationRecord | null>(null);
+  const [draft, setDraft] = useState<CommunicationFormValues>(emptyForm);
+  const [formOpen, setFormOpen] = useState(false);
+  const recordsQuery = useCommunicationRecords(filters);
+  const saveRecord = useSaveCommunicationRecord();
+  const archiveRecord = useArchiveCommunicationRecord();
+
+  return (
+    <CommunicationHubView
+      rows={recordsQuery.data ?? []}
+      filters={filters}
+      draft={draft}
+      editingRecord={editingRecord}
+      formOpen={formOpen}
+      isLoading={recordsQuery.isLoading}
+      isSaving={saveRecord.isPending}
+      isArchiving={archiveRecord.isPending}
+      error={recordsQuery.error}
+      onFiltersChange={setFilters}
+      onDraftChange={setDraft}
+      onCreate={() => { setEditingRecord(null); setDraft(emptyForm); setFormOpen(true); }}
+      onEdit={(record) => { setEditingRecord(record); setDraft(formFromRecord(record)); setFormOpen(true); }}
+      onFormOpenChange={setFormOpen}
+      onSubmit={(values) => saveRecord.mutate({ id: editingRecord?.id, values }, { onSuccess: () => setFormOpen(false) })}
+      onArchive={(id) => archiveRecord.mutate(id)}
+      onRetry={() => void recordsQuery.refetch()}
+    />
+  );
 }
