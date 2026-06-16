@@ -109,7 +109,7 @@ As of 2026-06-07, the next v0.1 roadmap item is partially unblocked:
 - ⏸️ Remaining RPC migrations to apply (3 critical ones needed)
 - ⏸️ Vercel deployment verification (connector read-only access blocked)
 
-**For next continuation:** Read `docs/ai/CURRENT_EXECUTION_CONTEXT.md` first. Historical migration reconciliation evidence is archived at `docs/archive/v01/migration-reconciliation-status.md` and contains:
+**For next continuation:** Read `docs/ai/CURRENT_EXECUTION_CONTEXT.md` first. Old migration reconciliation evidence was removed from active docs and remains available through git history. It contained:
 - Complete drift inventory
 - RPC inventory (what exists vs what's missing)
 - Exact next steps (4 ordered actions)

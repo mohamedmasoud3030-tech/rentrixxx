@@ -22,7 +22,7 @@ Balances and arrears are derived through one canonical calculation path. Posted 
 
 ### ADR-005 — Constrained-beta navigation visibility
 
-Visible navigation follows the active snapshot in `docs/ai/ONBOARDING.md`. Routes must not be exposed as placeholders or dead navigation. The historical constrained-beta navigation ADR is archived at `docs/archive/decisions/ADR-005-constrained-beta-navigation.md`.
+Visible navigation follows the active snapshot in `docs/ai/ONBOARDING.md`. Routes must not be exposed as placeholders or dead navigation. The historical constrained-beta navigation ADR was removed from active docs and remains available through git history.
 
 ### ADR-006 — Approved planned modules stay single-office
 
@@ -30,7 +30,7 @@ Lands, leads, commissions, and internal communication are approved Rentrix modul
 
 ### ADR-007 — First-client v0.4 module scope
 
-Use `docs/FIRST_CLIENT_DELIVERY_PLAN.md` for current first-client sequencing. The historical v0.4 scope ADR is archived at `docs/archive/decisions/ADR-007-first-client-v04-module-scope.md`.
+Use `docs/FIRST_CLIENT_DELIVERY_PLAN.md` for current first-client sequencing. The historical v0.4 scope ADR was removed from active docs and remains available through git history.
 
 ## Open product decisions required
 
