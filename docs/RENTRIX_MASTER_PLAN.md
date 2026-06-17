@@ -66,7 +66,7 @@ Change Password
 
 ## 2. Current Repository Baseline
 
-Current baseline at this reconciliation:
+Current baseline at this refresh:
 
 | Area | Current state |
 | --- | --- |
@@ -78,7 +78,7 @@ Current baseline at this reconciliation:
 | Custom Access Token Hook | `DONE` by owner confirmation |
 | Authenticated ADMIN browser QA | `FINAL DELIVERY GATE — BLOCKED`; evidence file: `docs/ai/FINAL_DELIVERY_GATE_QA_EVIDENCE.md` |
 | Production GO/NO-GO | `BLOCKED`, pending B-1/B-2/B-3/B-4 live evidence |
-| Repo/docs stabilization | Ready after this PR's checks pass |
+| Repo/docs stabilization | `DONE` through PR #924; current production status remains BLOCKED by live/operator evidence |
 
 The latest local audit used current code, route registration, navigation, docs, and repository inventory. It did not use Supabase Cloud, Supabase MCP/API, Dashboard, live SQL, linked CLI, Preview branches, or Vercel.
 
@@ -162,9 +162,9 @@ Required B gates:
 
 If QA passes, close the final handover with GO evidence. If QA reveals bugs, open narrow fix PRs per bug and do not bundle unrelated roadmap work. If live/operator evidence is unavailable, keep the status BLOCKED.
 
-## 6. Next Repo-Only Phase
+## 6. Current Repo-Only Phase
 
-After the docs reconciliation PR:
+The current safe repo-only phase is v0.5 commercial hardening preparation:
 
 1. Keep the blocked final-delivery evidence current in `docs/ai/FINAL_DELIVERY_GATE_QA_EVIDENCE.md`.
 2. Keep v0.5 commercial hardening limited to repo-only planning/runbook preparation in `docs/ai/V05_COMMERCIAL_HARDENING_PREP.md`.
