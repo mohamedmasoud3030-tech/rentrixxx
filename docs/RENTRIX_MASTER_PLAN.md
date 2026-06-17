@@ -8,6 +8,8 @@ Use together with:
 AGENTS.md
 README.md
 docs/ai/CURRENT_EXECUTION_CONTEXT.md
+docs/ai/FINAL_DELIVERY_GATE_QA_EVIDENCE.md
+docs/ai/V05_COMMERCIAL_HARDENING_PREP.md
 docs/ai/ONBOARDING.md
 docs/FIRST_CLIENT_DELIVERY_PLAN.md
 docs/ai/AGENT_CAPABILITIES.md
@@ -74,9 +76,9 @@ Current baseline at this reconciliation:
 | Root-level SQL files | None found in the repository root |
 | Removed historical paths | `archive/recovery-reference/` and `understand-anything/` are not present in this checkout |
 | Custom Access Token Hook | `DONE` by owner confirmation |
-| Authenticated ADMIN browser QA | `FINAL DELIVERY GATE` |
-| Production GO/NO-GO | `FINAL DELIVERY GATE`, pending final handover QA |
-| Repo/docs stabilization | Ready after this PR's local checks pass |
+| Authenticated ADMIN browser QA | `FINAL DELIVERY GATE — BLOCKED`; evidence file: `docs/ai/FINAL_DELIVERY_GATE_QA_EVIDENCE.md` |
+| Production GO/NO-GO | `BLOCKED`, pending B-1/B-2/B-3/B-4 live evidence |
+| Repo/docs stabilization | Ready after this PR's checks pass |
 
 The latest local audit used current code, route registration, navigation, docs, and repository inventory. It did not use Supabase Cloud, Supabase MCP/API, Dashboard, live SQL, linked CLI, Preview branches, or Vercel.
 
@@ -130,10 +132,10 @@ Classify every non-complete item with exactly one of these statuses:
 
 | Item | Status | Current note |
 | --- | --- | --- |
-| Authenticated ADMIN browser QA | `FINAL DELIVERY GATE` | Final handover must verify login, protected routes, invoice -> payment -> receipt behavior, reports refresh, RTL/LTR, mobile, print, and operator-critical workflows. |
-| Production GO/NO-GO | `FINAL DELIVERY GATE` | Pending final handover QA; full production readiness must not be claimed before this closes. |
-| Mobile/physical-device print QA | `FINAL DELIVERY GATE` | Repository supports print styles/browser print, but device evidence is still required. |
-| Commercial hardening v0.5 | `PLANNED` | Starts after final delivery QA closes or records a NO-GO fix path. |
+| Authenticated ADMIN browser QA | `FINAL DELIVERY GATE — BLOCKED` | Final handover must verify login, protected routes, invoice -> payment -> receipt behavior, reports refresh, RTL/LTR, mobile, print, and operator-critical workflows. Evidence is tracked in `docs/ai/FINAL_DELIVERY_GATE_QA_EVIDENCE.md`. |
+| Production GO/NO-GO | `BLOCKED` | Pending B-1/B-2/B-3/B-4 live handover evidence; full production readiness must not be claimed before this closes. |
+| Mobile/physical-device print QA | `FINAL DELIVERY GATE — BLOCKED` | Repository supports print styles/browser print, but device evidence is still required. |
+| Commercial hardening v0.5 | `PLANNED / REPO-ONLY PREP` | Preparation is tracked in `docs/ai/V05_COMMERCIAL_HARDENING_PREP.md`; this does not imply Production GO. |
 | v1.0 commercial release | `PLANNED` | Depends on final delivery QA and commercial hardening. |
 | Dedicated generated receipt PDF file | `PLANNED` | Current receipt output is browser print from the payment-backed receipt detail page. |
 | Reports PDF export | `DEFERRED` | Current reports export CSV. |
@@ -148,25 +150,26 @@ Completed items that should not be reopened as missing: Custom Access Token Hook
 
 ## 5. Final Delivery Gate
 
-The final delivery gate is not a repo-stabilization blocker, but it is required before production GO:
+The final delivery gate is not a repo-stabilization blocker, but it is required before production GO. The current live gate status is **BLOCKED** and recorded in `docs/ai/FINAL_DELIVERY_GATE_QA_EVIDENCE.md`.
 
-1. Run authenticated ADMIN browser QA with real credentials.
-2. Verify protected routes and role-based navigation after login.
-3. Verify invoice -> payment -> receipt -> invoice status -> reports refresh.
-4. Verify receipt browser print and at least one mobile/physical-device print path.
-5. Verify Arabic RTL, English/LTR sanity, mobile drawer/bottom navigation, forms, dialogs, empty/error states, PWA behavior, and invalid-route fallback.
-6. Record explicit GO/NO-GO in current source-of-truth docs.
+Required B gates:
 
-If QA passes, close the final handover with GO evidence. If QA reveals bugs, open narrow fix PRs per bug and do not bundle unrelated roadmap work.
+1. B-1: run authenticated ADMIN browser QA with a real operator session.
+2. B-2: verify invoice -> payment -> receipt -> invoice status -> reports refresh in the live target.
+3. B-3: verify receipt browser print and mobile/physical-device print evidence, or explicitly record physical print as UNVERIFIED if it cannot be tested.
+4. B-4: verify allowed live writes and RLS behavior.
+5. Record explicit GO/NO-GO/BLOCKED in current source-of-truth docs.
+
+If QA passes, close the final handover with GO evidence. If QA reveals bugs, open narrow fix PRs per bug and do not bundle unrelated roadmap work. If live/operator evidence is unavailable, keep the status BLOCKED.
 
 ## 6. Next Repo-Only Phase
 
-After this docs-only reconciliation PR:
+After the docs reconciliation PR:
 
-1. Keep the repo/docs stabilization state current after local checks and PR review.
-2. Do not change migrations, schema, Supabase Cloud, Vercel, live SQL, or app code as part of docs reconciliation.
-3. Wait for final delivery QA evidence before claiming production readiness.
-4. Start v0.5 commercial hardening only after final delivery QA closes or records a clear NO-GO fix path.
+1. Keep the blocked final-delivery evidence current in `docs/ai/FINAL_DELIVERY_GATE_QA_EVIDENCE.md`.
+2. Keep v0.5 commercial hardening limited to repo-only planning/runbook preparation in `docs/ai/V05_COMMERCIAL_HARDENING_PREP.md`.
+3. Do not change migrations, schema, Supabase Cloud, Vercel, live SQL, or app code as part of docs preparation.
+4. Wait for final delivery QA evidence before claiming production readiness.
 
 ## 7. Release Status Model
 

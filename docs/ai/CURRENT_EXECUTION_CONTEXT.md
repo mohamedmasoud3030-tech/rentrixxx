@@ -23,7 +23,7 @@ Rentrix is also not approved for a general accounting ledger during stabilizatio
 
 ## Latest Merged Work Verified
 
-Current `main` HEAD at this reconciliation: `8129cb8 fix(ui): polish active page IA and states (#922)`.
+Current `main` HEAD at this reconciliation: `5b41fef docs: reconcile current repo state and roadmap (#923)`.
 
 ### ✅ مُنجز ومُطبَّق — live DB `nnggcnpcuomwfuupupwg`
 
@@ -52,7 +52,7 @@ Current `main` HEAD at this reconciliation: `8129cb8 fix(ui): polish active page
 
 **Live DB snapshot (2026-06-15) — verified:**
 
-```
+```text
 total migrations:                     101 (repo = DB — perfect match) ✅
 invoices.deleted_at:                  timestamptz ✅
 receipts.deleted_at:                  timestamptz ✅
@@ -83,8 +83,8 @@ financial_operation_idempotency RLS:  policy=false (internal only via SECURITY D
 ### Final delivery gates still open
 
 - **Custom Access Token Hook registration:** `DONE` by owner confirmation. It is not a current repo-stabilization blocker.
-- **Authenticated ADMIN browser QA:** `FINAL DELIVERY GATE`. It must verify login, protected routes, invoice -> payment -> receipt behavior, reports refresh, RTL/LTR, mobile, print, and critical operator workflows before production GO.
-- **Production GO/NO-GO:** `FINAL DELIVERY GATE`. Final GO remains pending final handover QA; do not claim full production readiness before that evidence exists.
+- **Authenticated ADMIN browser QA:** `FINAL DELIVERY GATE — BLOCKED`. Repo-only evidence is strong, but live operator browser evidence is unavailable. Evidence is recorded in `docs/ai/FINAL_DELIVERY_GATE_QA_EVIDENCE.md`.
+- **Production GO/NO-GO:** `BLOCKED`. B-1 live operator browser session, B-2 payment-to-receipt E2E live, B-3 mobile/physical-device print QA, and B-4 live write/RLS confirmation remain open until a human operator supplies evidence.
 
 ## Core MVP Systems
 
@@ -166,25 +166,25 @@ Do not claim production readiness until the final delivery gates close with fres
 
 - ~~Live Supabase migration-state reconciliation~~ **✅ حُلَّت** — 101 migrations، repo = DB perfect match (PR #910, PR #911).
 - Custom Access Token Hook registration is **DONE** by owner confirmation and is not a current repo-stabilization blocker.
-- Authenticated ADMIN browser/manual QA is a **FINAL DELIVERY GATE**. It remains pending operator handover evidence.
-- Production GO/NO-GO is a **FINAL DELIVERY GATE** and remains pending final handover QA.
+- Authenticated ADMIN browser/manual QA is a **FINAL DELIVERY GATE — BLOCKED** and is tracked in `docs/ai/FINAL_DELIVERY_GATE_QA_EVIDENCE.md`.
+- Production GO/NO-GO is **BLOCKED** until B-1/B-2/B-3/B-4 live evidence closes.
 - ~~`find_payment_account_id(text)` account-resolution~~ **✅ حُلَّت** — `cash=1111`, `receivable=1201` مؤكَّدان live (PR #896, PR #910).
 - ~~`void_receipt_atomic` PGRST202 mismatch~~ **✅ حُلَّت** — overload `(jsonb)` مضافة (PR #910). Frontend لا يحتاج تغييراً.
 - ~~`post_receipt_atomic` callable by authenticated~~ **✅ حُلَّت** — REVOKE authenticated (PR #911).
 - ~~`financial_operation_idempotency` grants/RLS gap~~ **✅ حُلَّت** — policy `false` + SECURITY DEFINER functions تكتب عبر postgres ✅.
-- Canonical balance-model behavior: invoice outstanding, arrears, reports, receipt projection, and payment posting are consistent in repository evidence; full E2E verification under authenticated session remains a final delivery gate.
+- Canonical balance-model behavior: invoice outstanding, arrears, reports, receipt projection, and payment posting are consistent in repository evidence; full E2E verification under authenticated session remains blocked by missing live operator evidence.
 - Reports/KPI definitions documented in `docs/ai/REPORTING_DEFINITIONS.md`; metric validation against live data pending.
 - Print/PDF readiness documented in `docs/ai/PRINT_AND_EXPORT_READINESS.md`; invoice PDF, expense PDF, contract PDF, Reports CSV filename/BOM, and receipt browser print are implemented in repo evidence. Dedicated generated receipt PDF and mobile/physical-device print QA remain open.
-- Current repo/docs stabilization is ready after this PR's local checks pass; full production readiness is not claimed before final delivery QA.
+- Current repo/docs stabilization is ready after this PR's checks pass; full production readiness is not claimed before final delivery QA.
 
 ## Incomplete / Planned / Deferred Work
 
 | Item | Status | Current note |
 | --- | --- | --- |
-| Authenticated ADMIN browser QA | `FINAL DELIVERY GATE` | Required during final handover; not a repo-stabilization blocker. |
-| Production GO/NO-GO | `FINAL DELIVERY GATE` | Pending final handover QA. |
-| Mobile/physical-device print QA | `FINAL DELIVERY GATE` | Required before full production-readiness claims. |
-| Commercial hardening v0.5 | `PLANNED` | Starts after final delivery QA closes or identifies a fix path. |
+| Authenticated ADMIN browser QA | `FINAL DELIVERY GATE — BLOCKED` | Required during final handover; tracked in `docs/ai/FINAL_DELIVERY_GATE_QA_EVIDENCE.md`. |
+| Production GO/NO-GO | `BLOCKED` | Pending final handover QA evidence for B-1/B-2/B-3/B-4. |
+| Mobile/physical-device print QA | `FINAL DELIVERY GATE — BLOCKED` | Required before full production-readiness claims. |
+| Commercial hardening v0.5 | `PLANNED / REPO-ONLY PREP` | Preparation tracked in `docs/ai/V05_COMMERCIAL_HARDENING_PREP.md`; does not imply Production GO. |
 | v1.0 commercial release | `PLANNED` | Depends on final delivery QA and commercial hardening. |
 | External communication sending | `OUT OF SCOPE` | `/communication` is an internal log only. |
 | General accounting ledger | `OUT OF SCOPE` | `/accounting` remains a redirect to `/financials`. |
@@ -197,9 +197,10 @@ Do not claim production readiness until the final delivery gates close with fres
 
 ## Current Next PR Order
 
-1. Finish this docs-only reconciliation PR and keep it limited to source-of-truth documentation.
-2. If final delivery QA reveals bugs, open narrow fix PRs per bug, no bundled changes.
-3. After final delivery QA closes, start the planned commercial hardening v0.5 documentation and runbook work.
+1. Merge the blocked final-delivery evidence and v0.5 commercial-hardening preparation PR.
+2. Keep live final-delivery QA parked as BLOCKED until a human operator supplies B-1/B-2/B-3/B-4 evidence.
+3. If final delivery QA later reveals bugs, open narrow fix PRs per bug, no bundled changes.
+4. Continue v0.5 commercial hardening as repo-only planning/runbook work until live QA evidence allows a production GO/NO-GO update.
 
 Do not open new DB/migration PRs without a confirmed repo or QA bug — the DB layer is treated as stable from current repository evidence.
 
@@ -217,7 +218,7 @@ High-level classification:
 - Missing or intentionally not exposed in active UI: reports PDF export, dedicated generated receipt PDF, owner-settlement statements, external communication sends, general ledger/accounting screens, and SaaS/multi-tenant behavior.
 - Blocked / unsafe to touch now: live Supabase/Vercel mutations, new DB/migration work without a confirmed bug, and product expansion beyond the single-office path.
 
-Recommended final delivery phase: record authenticated ADMIN browser QA, payment-to-receipt E2E evidence, RTL/mobile/PWA/print smoke evidence, and GO/NO-GO status. Do not start random feature PRs before that evidence phase.
+Recommended final delivery phase remains blocked: record authenticated ADMIN browser QA, payment-to-receipt E2E evidence, RTL/mobile/PWA/print smoke evidence, and GO/NO-GO status only when a human operator can supply live evidence. Do not start random feature PRs before that evidence phase.
 
 ## Known Contradictions Resolved
 

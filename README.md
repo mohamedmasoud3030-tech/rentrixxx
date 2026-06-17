@@ -15,7 +15,7 @@ Read in this order:
 5. `docs/ai/AGENT_CAPABILITIES.md`
 6. `docs/ai/GIT_TOOLING_POLICY.md`
 
-`docs/ai/CURRENT_EXECUTION_CONTEXT.md` is the single current execution source of truth for scope, blockers, contradictions, next PR order, and future-agent rules. `docs/ai/ONBOARDING.md` contains the current application snapshot and the full reading sequence. `docs/RENTRIX_MASTER_PLAN.md` defines the final product shape, current release, ordered releases, and next ready item. `docs/ai/AGENT_CAPABILITIES.md` maps tasks to skills and project additions. `docs/ai/GIT_TOOLING_POLICY.md` defines how branch, diff, PR, CI, and merge tools must be used.
+`docs/ai/CURRENT_EXECUTION_CONTEXT.md` is the single current execution source of truth for scope, blockers, contradictions, next PR order, and future-agent rules. `docs/ai/FINAL_DELIVERY_GATE_QA_EVIDENCE.md` records the currently BLOCKED live handover evidence gates. `docs/ai/V05_COMMERCIAL_HARDENING_PREP.md` defines repo-only v0.5 preparation without claiming Production GO. `docs/ai/ONBOARDING.md` contains the current application snapshot and the full reading sequence. `docs/RENTRIX_MASTER_PLAN.md` defines the final product shape, current release, ordered releases, and next ready item. `docs/ai/AGENT_CAPABILITIES.md` maps tasks to skills and project additions. `docs/ai/GIT_TOOLING_POLICY.md` defines how branch, diff, PR, CI, and merge tools must be used.
 
 ## Docs map
 
@@ -23,7 +23,7 @@ Read first: `AGENTS.md`, `README.md`, `docs/ai/CURRENT_EXECUTION_CONTEXT.md`, `d
 
 Active policy docs: `docs/ai/domain-rules.md`, `docs/ai/engineering-policy.md`, `docs/ai/security-policy.md`, `docs/ai/release-policy.md`, `docs/ai/testing-guide.md`, and `docs/decisions/README.md`.
 
-Technical references: `docs/ai/PRINT_AND_EXPORT_READINESS.md`, `docs/ai/REPORTING_DEFINITIONS.md`, `docs/ai/SECURE_OPERATOR_RUNBOOK.md`, `docs/ROOT_LAYOUT.md`, `docs/ai/AGENT_CAPABILITIES.md`, and `docs/ai/GIT_TOOLING_POLICY.md`.
+Technical references: `docs/ai/FINAL_DELIVERY_GATE_QA_EVIDENCE.md`, `docs/ai/V05_COMMERCIAL_HARDENING_PREP.md`, `docs/ai/PRINT_AND_EXPORT_READINESS.md`, `docs/ai/REPORTING_DEFINITIONS.md`, `docs/ai/SECURE_OPERATOR_RUNBOOK.md`, `docs/ROOT_LAYOUT.md`, `docs/ai/AGENT_CAPABILITIES.md`, and `docs/ai/GIT_TOOLING_POLICY.md`.
 
 Old reports, audits, evidence packs, superseded indexes, and release-thread notes were removed from active repository docs to keep the docs map small. Use git history when historical material is needed, and do not copy old status forward without verifying it against active code, migrations, and current source-of-truth docs.
 
@@ -118,9 +118,9 @@ For schema or RLS changes, also run the repository-approved Supabase validation 
 
 ## Incomplete / Planned / Deferred Work
 
-The Custom Access Token Hook is `DONE` by owner confirmation and is not a current repo-stabilization blocker. Authenticated ADMIN browser QA, mobile/physical-device print QA, and the final production GO/NO-GO remain `FINAL DELIVERY GATE` items for handover evidence. Full production readiness must not be claimed before that final QA closes.
+The Custom Access Token Hook is `DONE` by owner confirmation and is not a current repo-stabilization blocker. Authenticated ADMIN browser QA, mobile/physical-device print QA, and the final production GO/NO-GO are currently `BLOCKED` by missing live/operator evidence and tracked in `docs/ai/FINAL_DELIVERY_GATE_QA_EVIDENCE.md`. Full production readiness must not be claimed before that final QA closes.
 
-Commercial hardening v0.5 and v1.0 commercial release are `PLANNED` after final delivery QA. External communication sending, a general accounting ledger, accounting-grade tax finality, SaaS multi-tenancy, and blind legacy restoration are `OUT OF SCOPE` unless a later reviewed product decision changes the boundary. Owner settlement/payout workflow is `NEEDS OWNER DECISION`. Dedicated generated receipt PDF remains `PLANNED`; current receipts use browser print.
+Commercial hardening v0.5 is now repo-only preparation in `docs/ai/V05_COMMERCIAL_HARDENING_PREP.md`; it does not imply Production GO. v1.0 commercial release remains `PLANNED`. External communication sending, a general accounting ledger, accounting-grade tax finality, SaaS multi-tenancy, and blind legacy restoration are `OUT OF SCOPE` unless a later reviewed product decision changes the boundary. Owner settlement/payout workflow is `NEEDS OWNER DECISION`. Dedicated generated receipt PDF remains `PLANNED`; current receipts use browser print.
 
 ## Historical references
 
