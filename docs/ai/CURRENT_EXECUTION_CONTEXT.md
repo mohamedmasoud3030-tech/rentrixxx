@@ -23,7 +23,7 @@ Rentrix is also not approved for a general accounting ledger during stabilizatio
 
 ## Latest Merged Work Verified
 
-Current `main` HEAD at this reconciliation: `5b41fef docs: reconcile current repo state and roadmap (#923)`.
+Latest roadmap merge recorded at this refresh: `564c4ce docs: prepare v0.5 commercial hardening (#924)`.
 
 ### ✅ مُنجز ومُطبَّق — live DB `nnggcnpcuomwfuupupwg`
 
@@ -175,7 +175,7 @@ Do not claim production readiness until the final delivery gates close with fres
 - Canonical balance-model behavior: invoice outstanding, arrears, reports, receipt projection, and payment posting are consistent in repository evidence; full E2E verification under authenticated session remains blocked by missing live operator evidence.
 - Reports/KPI definitions documented in `docs/ai/REPORTING_DEFINITIONS.md`; metric validation against live data pending.
 - Print/PDF readiness documented in `docs/ai/PRINT_AND_EXPORT_READINESS.md`; invoice PDF, expense PDF, contract PDF, Reports CSV filename/BOM, and receipt browser print are implemented in repo evidence. Dedicated generated receipt PDF and mobile/physical-device print QA remain open.
-- Current repo/docs stabilization is ready after this PR's checks pass; full production readiness is not claimed before final delivery QA.
+- Repo/docs stabilization, blocked final-delivery evidence, and v0.5 prep docs are merged through PR #924; full production readiness is not claimed before final delivery QA.
 
 ## Incomplete / Planned / Deferred Work
 
@@ -197,10 +197,9 @@ Do not claim production readiness until the final delivery gates close with fres
 
 ## Current Next PR Order
 
-1. Merge the blocked final-delivery evidence and v0.5 commercial-hardening preparation PR.
-2. Keep live final-delivery QA parked as BLOCKED until a human operator supplies B-1/B-2/B-3/B-4 evidence.
+1. Keep live final-delivery QA parked as BLOCKED until a human operator supplies B-1/B-2/B-3/B-4 evidence.
+2. Continue v0.5 commercial hardening as repo-only planning/runbook work until live QA evidence allows a production GO/NO-GO update.
 3. If final delivery QA later reveals bugs, open narrow fix PRs per bug, no bundled changes.
-4. Continue v0.5 commercial hardening as repo-only planning/runbook work until live QA evidence allows a production GO/NO-GO update.
 
 Do not open new DB/migration PRs without a confirmed repo or QA bug — the DB layer is treated as stable from current repository evidence.
 
