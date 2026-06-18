@@ -25,6 +25,21 @@ function count(value: number) {
   return value.toLocaleString(companyLocale);
 }
 
+
+// Translate the most common English/raw property-type inputs that legacy
+// data may have into Arabic, without auto-translating arbitrary user
+// input. Anything not in the map is shown verbatim so users still see
+// what they typed.
+const propertyTypeAliases: Readonly<Record<string, string>> = {
+  'building': 'مبنى',
+  'Building': 'مبنى',
+  'BUILDING': 'مبنى',
+};
+
+function translatePropertyType(value: string): string {
+  const trimmed = value.trim();
+  return propertyTypeAliases[trimmed] ?? trimmed;
+}
 function InfoItem({ label, value }: Readonly<{ label: string; value: string }>) {
   return (
     <div className="rounded-2xl border border-border bg-background p-4">
@@ -77,7 +92,7 @@ export function PropertyDetailPage() {
           <CardDescription>البيانات الأساسية للعقار مع معلومات المالك وقيم الشراء والتقييم.</CardDescription>
         </CardHeader>
         <CardContent className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-          <InfoItem label="النوع" value={property.type} />
+          <InfoItem label="النوع" value={translatePropertyType(property.type)} />
           <div className="rounded-2xl border border-border bg-background p-4">
             <p className="text-xs font-bold text-muted-foreground">الحالة</p>
             <div className="mt-2"><StatusBadge tone={propertyStatusTone[property.status]}>{propertyStatusLabels[property.status]}</StatusBadge></div>

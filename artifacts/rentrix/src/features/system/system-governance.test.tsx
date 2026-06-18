@@ -71,16 +71,17 @@ describe('system and governance route authorization', () => {
 
   it('exposes governance surfaces in navigation from v0.3 onwards', () => {
     const systemItems: readonly NavItem[] = navGroups
-      .find(([sectionTitle]) => sectionTitle === 'التشغيل والنظام')?.[1] ?? [];
+      .find(([sectionTitle]) => sectionTitle === 'إدارة النظام')?.[1] ?? [];
+    const settingsItems: readonly NavItem[] = navGroups
+      .find(([sectionTitle]) => sectionTitle === 'الإعدادات')?.[1] ?? [];
     const adminContext = { userId: 'user-1', email: 'admin@example.com', role: 'ADMIN' as const };
-    const userContext = { userId: 'user-2', email: 'user@example.com', role: 'USER' as const };
     const systemRoutes = systemItems.map(([to]) => to);
 
-    expect(systemRoutes).toEqual(expect.arrayContaining(['/maintenance', '/audit-log', '/data-integrity', '/system', '/change-password', '/settings']));
+    expect(systemRoutes).toEqual(expect.arrayContaining(['/audit-log', '/data-integrity', '/system']));
     expect(systemRoutes).toContain('/audit-log');
     expect(systemRoutes).toContain('/data-integrity');
-    expect(systemItems.filter(([, , , , permission]) => canShowNavigationItem(adminContext, permission)).map(([to]) => to)).toEqual(expect.arrayContaining(['/change-password', '/settings']));
-    expect(systemItems.filter(([, , , , permission]) => canShowNavigationItem(userContext, permission)).map(([to]) => to)).toEqual(expect.arrayContaining(['/change-password']));
+    expect(systemRoutes).not.toContain('/change-password');
+    expect(settingsItems.filter(([, , , , permission]) => canShowNavigationItem(adminContext, permission)).map(([to]) => to)).toEqual(expect.arrayContaining(['/settings']));
   });
 });
 

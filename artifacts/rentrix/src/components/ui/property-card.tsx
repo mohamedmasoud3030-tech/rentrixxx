@@ -5,6 +5,13 @@ interface PropertyCardProps {
   id: string;
   title: string;
   address?: string | null;
+  /**
+   * Total number of units attached to the property.
+   * - `undefined` (not provided by the caller) means the list view does not
+   *   have a safe source for this count, so we render a neutral label
+   *   instead of a misleading "0/0".
+   * - `0` is an honest "we have data, the property has no units".
+   */
   unitCount?: number;
   occupiedUnits?: number;
   monthlyRent?: number;
@@ -17,21 +24,38 @@ const statusStyles: Record<string, { dot: string; label: string; bg: string }> =
   active:       { dot: 'bg-emerald-500', label: 'نشط',      bg: 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300' },
   inactive:     { dot: 'bg-slate-400',   label: 'غير نشط',  bg: 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300' },
   maintenance:  { dot: 'bg-amber-500',   label: 'صيانة',    bg: 'bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300' },
-  sold:         { dot: 'bg-sky-500',     label: 'مباع',     bg: 'bg-sky-50 text-sky-700 dark:bg-sky-950/40 dark:text-sky-300' },
+  sold:         { dot: 'bg-sky-500',     label: 'مباع',     bg: 'bg-sky-50 text-sky-700 dark:bg-sky-300/40 dark:text-sky-300' },
 };
+
+// Public helper so other call sites can render the same neutral label
+// without re-deriving the rule from props.
+export function formatPropertyUnitSummary(unitCount: number | undefined, occupiedUnits: number | undefined): {
+  text: string;
+  hasCount: boolean;
+} {
+  if (unitCount === undefined) {
+    return { text: 'الوحدات غير محسوبة هنا', hasCount: false };
+  }
+  if (unitCount === 0) {
+    return { text: '0 وحدة', hasCount: true };
+  }
+  const occupied = occupiedUnits ?? 0;
+  return { text: `${occupied}/${unitCount} وحدة`, hasCount: true };
+}
 
 export function PropertyCard({
   title,
   address,
-  unitCount = 0,
-  occupiedUnits = 0,
+  unitCount,
+  occupiedUnits,
   monthlyRent,
   status,
   onClick,
   formatMoney,
 }: PropertyCardProps) {
   const s = statusStyles[status] ?? statusStyles['inactive']!;
-  const occupancyRate = unitCount > 0 ? Math.round((occupiedUnits / unitCount) * 100) : 0;
+  const { text: unitsText, hasCount } = formatPropertyUnitSummary(unitCount, occupiedUnits);
+  const occupancyRate = hasCount && unitCount! > 0 ? Math.round((occupiedUnits! / unitCount!) * 100) : 0;
 
   return (
     <button
@@ -66,11 +90,12 @@ export function PropertyCard({
       <div className="mt-3 flex items-center gap-4 border-t border-border/40 pt-3">
         <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
           <DoorOpen className="size-3.5" />
-          <span className="font-semibold text-foreground">{occupiedUnits}/{unitCount}</span>
-          <span>وحدة</span>
+          <span className={cn('font-semibold', hasCount ? 'text-foreground' : 'text-muted-foreground')}>
+            {unitsText}
+          </span>
         </div>
 
-        {unitCount > 0 && (
+        {hasCount && unitCount! > 0 && (
           <div className="flex-1">
             {/* Occupancy bar */}
             <div className="h-1.5 rounded-full bg-muted overflow-hidden">

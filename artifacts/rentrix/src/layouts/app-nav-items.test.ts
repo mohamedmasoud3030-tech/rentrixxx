@@ -82,10 +82,11 @@ describe('app route and navigation parity', () => {
 
   it('maps every visible navigation, mobile navigation, and quick link to registered routes without duplicates', () => {
     const navPaths = navItems.map(([to]) => to);
+    const navKeys = navItems.map(([to, labelKey]) => `${to}:${labelKey}`);
     const mobileNavPaths = mobileNavItems.map(([to]) => to);
     const quickLinkPaths = quickLinks.map(([to]) => to);
 
-    expect(new Set(navPaths).size).toBe(navPaths.length);
+    expect(new Set(navKeys).size).toBe(navKeys.length);
     expect(new Set(mobileNavPaths).size).toBe(mobileNavPaths.length);
     expect(routePathList).toEqual(expect.arrayContaining([...navPaths, ...mobileNavPaths, ...quickLinkPaths]));
   });

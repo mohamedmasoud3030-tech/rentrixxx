@@ -13,67 +13,86 @@ export function NavigationLinks({
   onNavigate,
 }: Readonly<{ authorization: AuthorizationContext | null; expanded: boolean; sharedLabel: SharedLabel; onNavigate?: () => void }>) {
   return (
-    <div className="space-y-5">
-      {navGroups.map(([sectionTitle, items]) => (
-        <section key={sectionTitle} className="space-y-1">
-          {expanded ? (
-            <p className="px-3 pb-1 text-[10px] font-black tracking-[0.14em] text-sidebar-foreground/45">
-              {sectionTitle}
-            </p>
-          ) : null}
-          {items.map(([to, labelKey, description, Icon, permission]) => {
-            const isLocked = permission && !canAccessRoute(authorization, permission);
-            const isHidden = !canShowNavigationItem(authorization, permission);
-            
-            if (isHidden && !isLocked) return null;
+    <div className="space-y-4">
+      {navGroups.map(([sectionTitle, items]) => {
+        const visibleItems = items.filter(([, , , , permission]) => {
+          if (canShowNavigationItem(authorization, permission)) return true;
+          if (permission && !canAccessRoute(authorization, permission)) return true;
+          return false;
+        });
+        if (visibleItems.length === 0) return null;
 
-            if (isLocked) {
+        return (
+          <section key={sectionTitle} className="space-y-1.5">
+            {expanded ? (
+              <div className="flex items-center gap-2 px-3 pb-1">
+                <span aria-hidden="true" className="inline-block size-1.5 rounded-full bg-primary/70" />
+                <p className="text-[10px] font-black tracking-[0.16em] text-sidebar-foreground/55">
+                  {sectionTitle}
+                </p>
+              </div>
+            ) : (
+              <div aria-hidden="true" className="mx-3 mb-1 h-px bg-white/10" />
+            )}
+            {items.map(([to, labelKey, description, Icon, permission]) => {
+              const isLocked = permission && !canAccessRoute(authorization, permission);
+              const isHidden = !canShowNavigationItem(authorization, permission);
+
+              if (isHidden && !isLocked) return null;
+
+              if (isLocked) {
+                return (
+                  <div
+                    key={`${to}:${labelKey}`}
+                    className="group flex min-h-11 items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.03] px-3 py-2 text-sidebar-foreground/55 opacity-70"
+                    title={`${sharedLabel(labelKey)} — تتطلب صلاحية`}
+                  >
+                    <Icon className="size-5 shrink-0" />
+                    {expanded ? (
+                      <span className="min-w-0 flex-1">
+                        <div className="flex items-center gap-1.5">
+                          <span className="block truncate text-[13px] font-bold">{sharedLabel(labelKey)}</span>
+                          <Lock className="size-3 shrink-0 text-amber-600/80" />
+                        </div>
+                        <span className="block truncate text-[10px] font-bold text-sidebar-foreground/45">
+                          {description}
+                        </span>
+                      </span>
+                    ) : null}
+                  </div>
+                );
+              }
+
               return (
-                <div
-                  key={to}
-                  className="group flex min-h-12 items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.03] px-3 py-2.5 text-sidebar-foreground/50 opacity-60 cursor-not-allowed"
-                  title={`${sharedLabel(labelKey)} — تتطلب صلاحية`}
+                <Link
+                  key={`${to}:${labelKey}`}
+                  to={to}
+                  onClick={onNavigate}
+                  aria-label={sharedLabel(labelKey)}
+                  title={expanded ? undefined : sharedLabel(labelKey)}
+                  activeOptions={{ exact: to === '/' }}
+                  className={cn(
+                    'group relative flex min-h-11 items-center gap-3 rounded-2xl px-3 py-2 text-sidebar-foreground transition-all',
+                    'hover:-translate-y-0.5 hover:bg-white/10 hover:text-white',
+                    '[&.active]:bg-primary [&.active]:text-primary-foreground [&.active]:shadow-[0_8px_22px_-12px_rgba(0,0,0,0.55)]',
+                    '[&.active]:before:absolute [&.active]:before:-end-1 [&.active]:before:top-1/2 [&.active]:before:size-2 [&.active]:before:-translate-y-1/2 [&.active]:before:rounded-full [&.active]:before:bg-white',
+                  )}
                 >
-                  <Icon className="size-5 shrink-0" />
+                  <Icon className="size-5 shrink-0 transition-transform group-hover:scale-110" />
                   {expanded ? (
-                    <span className="min-w-0 flex-1">
-                      <div className="flex items-center gap-1.5">
-                        <span className="block truncate text-[13px] font-bold">{sharedLabel(labelKey)}</span>
-                        <Lock className="size-3 shrink-0 text-amber-600/70" />
-                      </div>
-                      <span className="block truncate text-[10px] font-bold text-sidebar-foreground/40">
+                    <span className="min-w-0">
+                      <span className="block truncate text-[13px] font-black">{sharedLabel(labelKey)}</span>
+                      <span className="block truncate text-[10px] font-bold text-sidebar-foreground/55 group-hover:text-white/75 [&.active]:text-primary-foreground/85">
                         {description}
                       </span>
                     </span>
                   ) : null}
-                </div>
+                </Link>
               );
-            }
-
-            return (
-              <Link
-                key={to}
-                to={to}
-                onClick={onNavigate}
-                aria-label={sharedLabel(labelKey)}
-                title={expanded ? undefined : sharedLabel(labelKey)}
-                activeOptions={{ exact: to === '/' }}
-                className="group flex min-h-12 items-center gap-3 rounded-2xl border border-transparent px-3 py-2.5 text-sidebar-foreground transition-all hover:-translate-y-0.5 hover:border-white/10 hover:bg-sidebar-accent hover:text-white [&.active]:border-white/15 [&.active]:bg-primary [&.active]:text-primary-foreground"
-              >
-                <Icon className="size-5 shrink-0 transition-transform group-hover:scale-110" />
-                {expanded ? (
-                  <span className="min-w-0">
-                    <span className="block truncate text-[13px] font-black">{sharedLabel(labelKey)}</span>
-                    <span className="block truncate text-[10px] font-bold text-sidebar-foreground/50 group-hover:text-white/70">
-                      {description}
-                    </span>
-                  </span>
-                ) : null}
-              </Link>
-            );
-          })}
-        </section>
-      ))}
+            })}
+          </section>
+        );
+      })}
     </div>
   );
 }

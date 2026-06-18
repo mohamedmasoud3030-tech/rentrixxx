@@ -51,26 +51,44 @@ describe('ReportsPage shaping helpers', () => {
     ]);
   });
 
-  it('preserves the occupancy chart shape from current unit service rows', () => {
+  it('falls back to an unnamed placeholder with short id helper when no property title is supplied', () => {
     expect(buildOccupancyRows([
       { property_id: 'alpha_property', status: 'occupied' },
       { property_id: 'alpha_property', status: 'available' },
       { property_id: 'alpha_property', status: 'maintenance' },
       { property_id: 'beta_property', status: 'occupied' },
     ])).toEqual([
-      { property: 'alpha_pr', occupied: 1, vacant: 2 },
-      { property: 'beta_pro', occupied: 1, vacant: 0 },
+      { property: 'عقار بدون اسم', propertyId: 'alpha_property', shortPropertyId: 'alpha_pr', hasTitle: false, occupied: 1, vacant: 2 },
+      { property: 'عقار بدون اسم', propertyId: 'beta_property', shortPropertyId: 'beta_pro', hasTitle: false, occupied: 1, vacant: 0 },
+    ]);
+  });
+
+  it('uses the property title and orders titled rows first when titles are supplied', () => {
+    expect(buildOccupancyRows(
+      [
+        { property_id: 'alpha_property', status: 'occupied' },
+        { property_id: 'beta_property', status: 'occupied' },
+        { property_id: 'gamma_property', status: 'maintenance' },
+      ],
+      [
+        { id: 'beta_property', title: 'برج النخيل' },
+        { id: 'gamma_property', title: '   ' }, // blank titles are ignored
+      ],
+    )).toEqual([
+      { property: 'برج النخيل', propertyId: 'beta_property', shortPropertyId: 'beta_pro', hasTitle: true, occupied: 1, vacant: 0 },
+      { property: 'عقار بدون اسم', propertyId: 'alpha_property', shortPropertyId: 'alpha_pr', hasTitle: false, occupied: 1, vacant: 0 },
+      { property: 'عقار بدون اسم', propertyId: 'gamma_property', shortPropertyId: 'gamma_pr', hasTitle: false, occupied: 0, vacant: 1 },
     ]);
   });
 
   it('builds aging bucket chart rows in the requested display order', () => {
     expect(buildAgingBucketChartRows({
-      current: { label: 'Current', total: 20, invoiceCount: 2 },
-      days_90_plus: { label: '90+', total: 300, invoiceCount: 3 },
+      current: { label: 'غير متأخر', total: 20, invoiceCount: 2 },
+      days_90_plus: { label: 'أكثر من 90 يوم', total: 300, invoiceCount: 3 },
     }, ['current', 'days_1_30', 'days_90_plus'])).toEqual([
-      { bucket: 'Current', total: 20, invoiceCount: 2 },
+      { bucket: 'غير متأخر', total: 20, invoiceCount: 2 },
       { bucket: 'days_1_30', total: 0, invoiceCount: 0 },
-      { bucket: '90+', total: 300, invoiceCount: 3 },
+      { bucket: 'أكثر من 90 يوم', total: 300, invoiceCount: 3 },
     ]);
   });
 
