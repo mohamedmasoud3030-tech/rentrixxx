@@ -1,81 +1,88 @@
-# Rentrix Agent Instructions
+# Rentrix Agent Entry Point
 
-## Start here
+Primary entrypoint for Codex CLI and generic coding agents.
 
-1. Read `README.md`.
-2. Read `docs/ai/ONBOARDING.md` for the current application snapshot and canonical reading order.
-3. Read `docs/RENTRIX_MASTER_PLAN.md` for the active release, the next ready item, and the ordered path to `v1.0`.
-4. Read `docs/ai/AGENT_CAPABILITIES.md` and load only the skills relevant to the task.
-5. Read `docs/ai/GIT_TOOLING_POLICY.md` before branch, pull-request, CI, or merge work.
-6. Inspect the repository root and the active app under `artifacts/rentrix/` before changing code.
+## Codex operating model
 
-Use actual code and migrations as the source of truth. Prefer `rg` and `rg --files` for search. Do not infer active behavior from historical reports, recovery folders, or old pull requests.
+Codex CLI agents must follow the operating model from:
 
-## Root boundary
+```text
+https://github.com/shanraisshan/codex-cli-best-practice
+```
 
-- Treat `artifacts/rentrix/`, `lib/`, and `supabase/` as the canonical runtime boundary.
-- Treat `artifacts/rentrix-promo/` as the retained optional promotional artifact.
-- `archive/recovery-reference/` and `understand-anything/` are not present in the current repository checkout. Treat references to them as removed historical references, not active runtime paths.
-- Treat `.agents/`, `.agent-skills/`, `.ai/`, and `.codex/vendor/` as agent-tooling layers, not runtime code.
-- Read `docs/ROOT_LAYOUT.md` before creating a new top-level folder or moving files between root categories.
-- **`.migration-backup/` and `artifacts/rentrix/legacy-src/` no longer exist** (removed in PR #805). Do not reference them.
+Apply that model through the Rentrix-specific rules in:
+
+```text
+docs/ai/AGENT_OPERATING_PROTOCOL.md
+docs/ai/CODEX_AGENT_GUIDE.md
+```
+
+Claude Code agents should start from `CLAUDE.md` instead.
+
+## Required reading before edits
+
+Read these files before non-trivial repository changes:
+
+1. `README.md`
+2. `docs/ai/CURRENT_EXECUTION_CONTEXT.md`
+3. `docs/ai/ONBOARDING.md`
+4. `docs/RENTRIX_MASTER_PLAN.md`
+5. `docs/ai/AGENT_OPERATING_PROTOCOL.md`
+6. `docs/ai/CODEX_AGENT_GUIDE.md`
+7. `docs/ai/AGENT_CAPABILITIES.md`
+8. `docs/ai/GIT_TOOLING_POLICY.md`
+9. `.ai/workflows/README.md`
+
+Use actual code and migrations as the source of truth. Prefer `rg` and `rg --files`.
+
+## Runtime boundary
+
+Canonical runtime paths:
+
+```text
+artifacts/rentrix/
+lib/
+supabase/
+```
+
+The active app is `artifacts/rentrix/`. Preserve TanStack Router, React Query, Supabase, PWA, RTL, and i18n direction.
+
+Agent tooling paths such as `.agents/`, `.agent-skills/`, `.ai/`, and `.codex/vendor/` are not runtime code.
 
 ## Product boundary
 
-Rentrix is a focused single-office property operations system. It is Arabic-first with RTL support and must remain safe for English/LTR usage.
+Rentrix is Arabic-first, safe for English/LTR usage, and single-office only.
 
-Do not reintroduce SaaS multi-tenancy. Do not wire a general accounting ledger during stabilization. Do not expand scope while performing audits, repairs, or release-readiness work.
+Do not introduce SaaS multi-tenancy, organizations, memberships, subscriptions, or organization-scoped runtime behavior.
 
-The current visible constrained-beta navigation and planned/deferred classifications are documented in `docs/ai/ONBOARDING.md`. Do not describe live visible modules as deferred, and do not re-expose or delete deferred routes casually.
+Do not introduce a general accounting ledger, accounting finality, profit, net income, payout readiness, or owner settlement claims unless the feature is fully implemented, calculation-backed, verified, and explicitly approved.
 
 ## Domain invariants
 
 - A property owns units.
 - A contract references exactly one unit and one tenant.
-- A payment belongs to exactly one contract. Standalone payments are not allowed.
+- A payment belongs to exactly one contract.
 - A receipt is generated only from a posted payment.
 - Active contracts for the same unit must not overlap.
-- Orphan chains are not allowed: each unit has a property, each contract has a unit and tenant, each payment has a contract, and each property expense has a property.
-- Posted payments are immutable. Corrections use reversal and replacement.
+- Orphan chains are not allowed.
+- Posted payments are immutable.
+- Corrections use reversal and replacement.
 - Outstanding balance is derived through one canonical calculation path and is never edited manually.
 
-## Active architecture constraints
+## Execution rules
 
-- The active application is `artifacts/rentrix/`.
-- Keep the current TanStack Router, React Query, Supabase, PWA, RTL, and i18n direction.
-- Do not restore legacy `useApp`, `AppContext`, `dataService`, local database flows, or `react-router-dom` into the active app.
-- Reuse historical recovery notes only from git history or a reviewed restored reference after comparing them against current architecture and adapting deliberately.
-- Treat migrations, RLS policies, auth boundaries, environment handling, and financial posting behavior as sensitive surfaces.
+- Follow the documented next phase in `docs/RENTRIX_MASTER_PLAN.md`.
+- Work as one coherent phase-sized task; do not scatter micro-tasks.
+- Use one coherent branch and one pull request per phase.
+- Keep changes narrow and preserve dirty worktrees.
+- Do not use Supabase Cloud, Vercel production, live SQL, or production configuration without explicit approval.
+- Do not ask for secrets, tokens, passwords, admin credentials, Supabase keys, or Vercel keys in chat.
+- Prefer local verification and report verification honestly.
+- For branch, pull-request, CI, and merge work, follow `docs/ai/GIT_TOOLING_POLICY.md`.
 
-## Known release blockers and closed tech debt
+## Verification
 
-- `useProperties.ts` / `use-properties.ts` and `useUnits.ts` / `use-units.ts` duplicate hook pairs were consolidated in v0.2. Current canonical hooks are `use-properties.ts` and `use-units.ts`.
-- `database.ts` now includes `public.audit_log`; the audit service uses the generated database type directly.
-- Custom Access Token Hook registration is `DONE` by owner confirmation. Authenticated ADMIN browser/manual QA and production GO/NO-GO are `FINAL DELIVERY GATE` items, not current repo-stabilization blockers. Old migration reconciliation reports were removed from active docs and remain available through git history.
-
-## Skills and workflows
-
-- Select one primary workflow from `.ai/workflows/README.md` before implementation.
-- For continuation requests, use the roadmap-continuation workflow and select the first ready item automatically.
-- For non-trivial tasks, consult `.codex/vendor/addy-agent-skills/skills/using-agent-skills/SKILL.md`, then load only task-relevant skills.
-- Use `docs/ai/AGENT_CAPABILITIES.md` as the task-to-skill map.
-- Do not edit upstream skill or plugin files directly.
-- Do not import agent-tooling files into the production bundle.
-- If a referenced vendored skill is missing locally, run the documented sync script once when network access is available. Otherwise report the exact blocker.
-
-## Git working rules
-
-Follow `docs/ai/GIT_TOOLING_POLICY.md`.
-
-- Preserve dirty worktrees.
-- Keep branches, commits, and pull requests narrow.
-- Read branch state, diff, patches, and fresh CI evidence before merging.
-- Avoid destructive Git operations unless a documented branch refresh is required.
-- Report exact blockers instead of guessing or retrying undocumented connector paths.
-
-## Required verification
-
-For runtime pull requests, use the current GitHub Actions gate defined in `.github/workflows/ci.yml`:
+For runtime pull requests, use the current GitHub Actions gate from `.github/workflows/ci.yml`:
 
 ```bash
 pnpm install --frozen-lockfile
@@ -87,13 +94,4 @@ pnpm --filter ./artifacts/rentrix test
 pnpm --filter ./artifacts/rentrix run test:financials
 ```
 
-For schema or RLS changes, also run the repository-approved database validation flow when the required local or preview Supabase environment is available.
-
-## Selected references
-
-- Current snapshot: `docs/ai/ONBOARDING.md`
-- Ordered roadmap: `docs/RENTRIX_MASTER_PLAN.md`
-- Skill inventory: `docs/ai/AGENT_CAPABILITIES.md`
-- Git policy: `docs/ai/GIT_TOOLING_POLICY.md`
-- Root cleanup policy: `docs/ROOT_LAYOUT.md`
-- Connector operations reference: `.agents/skills/connector-operator/SKILL.md`
+For docs-only changes, run focused documentation checks such as `git diff --check` and targeted file inspection unless runtime behavior changed.
