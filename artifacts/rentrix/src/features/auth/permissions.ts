@@ -28,6 +28,13 @@ export type AuthorizationContext = Readonly<{
   role: AuthorizationRole;
 }>;
 
+export type AuthorizationDiagnostics = Readonly<{
+  resolvedRole: AuthorizationRole | null;
+  hasUserRoleMetadata: boolean;
+  hasRoleMetadata: boolean;
+  metadataMismatch: boolean;
+}>;
+
 type AuthorizationUserLike = Pick<User, 'id' | 'email' | 'app_metadata'>;
 
 const knownRoles = new Set<string>(authorizationRoles);
@@ -70,7 +77,24 @@ export function normalizeRole(role: unknown): AuthorizationRole | null {
 }
 
 export function getRoleFromUser(user: AuthorizationUserLike | null | undefined): AuthorizationRole | null {
- return normalizeRole(user?.app_metadata?.user_role ?? user?.app_metadata?.role);
+  return normalizeRole(user?.app_metadata?.user_role ?? user?.app_metadata?.role);
+}
+
+export function getAuthorizationDiagnosticsFromUser(user: AuthorizationUserLike | null | undefined): AuthorizationDiagnostics {
+  const userRole = user?.app_metadata?.user_role;
+  const role = user?.app_metadata?.role;
+  const resolvedRole = getRoleFromUser(user);
+
+  return {
+    resolvedRole,
+    hasUserRoleMetadata: userRole !== undefined && userRole !== null,
+    hasRoleMetadata: role !== undefined && role !== null,
+    metadataMismatch: Boolean(user?.id) && !resolvedRole,
+  };
+}
+
+export function getAuthorizationDiagnosticsFromSession(session: Pick<Session, 'user'> | null | undefined): AuthorizationDiagnostics {
+  return getAuthorizationDiagnosticsFromUser(session?.user);
 }
 
 export function getAuthorizationContextFromUser(user: AuthorizationUserLike | null | undefined): AuthorizationContext | null {

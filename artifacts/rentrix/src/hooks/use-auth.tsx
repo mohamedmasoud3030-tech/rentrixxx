@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useMemo, useState, type PropsWithChildren } from 'react';
 import type { Session, User } from '@supabase/supabase-js';
-import { getAuthorizationContextFromSession, type AuthorizationContext } from '@/features/auth/permissions';
+import { getAuthorizationContextFromSession, getAuthorizationDiagnosticsFromSession, type AuthorizationContext, type AuthorizationDiagnostics } from '@/features/auth/permissions';
 import { supabase } from '@/integrations/supabase/client';
 import { getCurrentSession, signInWithEmail, signOut } from '@/services/auth-service';
 import { router } from '@/app/router';
@@ -9,6 +9,7 @@ type AuthContextValue = {
   session: Session | null;
   user: User | null;
   authorization: AuthorizationContext | null;
+  authorizationDiagnostics: AuthorizationDiagnostics;
   isLoading: boolean;
   isAuthenticated: boolean;
   login: (email: string, password: string) => Promise<void>;
@@ -74,11 +75,25 @@ export function AuthProvider({ children }: PropsWithChildren) {
     };
   }, []);
 
+  const authorizationDiagnostics = useMemo(() => getAuthorizationDiagnosticsFromSession(session), [session]);
+
+  useEffect(() => {
+    if (!import.meta.env.DEV || !authorizationDiagnostics.metadataMismatch) return;
+
+    console.warn('Rentrix authorization role metadata is missing or unrecognized.', {
+      resolvedRole: authorizationDiagnostics.resolvedRole,
+      hasAppMetadataUserRole: authorizationDiagnostics.hasUserRoleMetadata,
+      hasAppMetadataRole: authorizationDiagnostics.hasRoleMetadata,
+      requiredMetadata: 'app_metadata.user_role = "ADMIN" or app_metadata.role = "ADMIN"',
+    });
+  }, [authorizationDiagnostics]);
+
   const value = useMemo<AuthContextValue>(
     () => ({
       session,
       user: session?.user ?? null,
       authorization: getAuthorizationContextFromSession(session),
+      authorizationDiagnostics,
       isLoading,
       isAuthenticated: Boolean(session),
       login: async (email, password) => {
@@ -90,7 +105,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
         setSession(null);
       },
     }),
-    [isLoading, session],
+    [authorizationDiagnostics, isLoading, session],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

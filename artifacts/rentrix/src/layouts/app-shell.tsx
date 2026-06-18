@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import { Bell, ChevronLeft, LogOut, Menu, Moon, Search, ShieldCheck, Sun, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
-import type { AuthorizationContext } from '@/features/auth/permissions';
+import type { AuthorizationContext, AuthorizationDiagnostics } from '@/features/auth/permissions';
 import { useAuth } from '@/hooks/use-auth';
 import { getAppLanguageState, translateSharedLabel } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
@@ -42,12 +42,14 @@ function Brand({ expanded }: Readonly<{ expanded: boolean }>) {
 
 function MobileNavigationDrawer({
   authorization,
+  authorizationDiagnostics,
   sharedLabel,
   onClose,
   onLogout,
   onQuickLink,
 }: Readonly<{
   authorization: AuthorizationContext | null;
+  authorizationDiagnostics: AuthorizationDiagnostics;
   sharedLabel: SharedLabel;
   onClose: () => void;
   onLogout: () => void;
@@ -77,8 +79,14 @@ function MobileNavigationDrawer({
           {authorization === null && (
             <div className="mb-4 rounded-2xl border border-amber-600/30 bg-amber-50/10 px-3 py-2.5">
               <p className="text-xs font-bold text-amber-600/90">الصلاحيات غير مكتملة</p>
-              <p className="mt-1 text-[11px] font-bold text-amber-600/80">سجّل خروج ثم ادخل مرة أخرى</p>
-              <p className="mt-2 text-[10px] text-amber-600/70">إذا استمرت المشكلة فحسابك لا يحتوي صلاحيات الدور</p>
+              <p className="mt-1 text-[11px] font-bold text-amber-600/80">
+                الدور الحالي: {authorizationDiagnostics.resolvedRole ?? 'غير محدد'}
+              </p>
+              <p className="mt-2 text-[10px] font-bold text-amber-600/75">
+                app_metadata.user_role: {authorizationDiagnostics.hasUserRoleMetadata ? 'موجود' : 'غير موجود'} · app_metadata.role:{' '}
+                {authorizationDiagnostics.hasRoleMetadata ? 'موجود' : 'غير موجود'}
+              </p>
+              <p className="mt-2 text-[10px] text-amber-600/70">إعداد ADMIN يتطلب app_metadata.user_role = "ADMIN" أو app_metadata.role = "ADMIN".</p>
             </div>
           )}
           <NavigationLinks authorization={authorization} expanded sharedLabel={sharedLabel} onNavigate={onClose} />
@@ -98,7 +106,7 @@ function MobileNavigationDrawer({
 export function AppShell() {
   const router = useRouter();
   const matches = useMatches();
-  const { authorization, logout, user } = useAuth();
+  const { authorization, authorizationDiagnostics, logout, user } = useAuth();
   const { sidebarCollapsed, theme, toggleSidebar, setTheme, syncStatus, lastSyncedAt } = useUiStore();
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [quickActionsOpen, setQuickActionsOpen] = useState(false);
@@ -152,7 +160,14 @@ export function AppShell() {
       </a>
 
       {mobileNavOpen ? (
-        <MobileNavigationDrawer authorization={authorization} sharedLabel={sharedLabel} onClose={() => setMobileNavOpen(false)} onLogout={handleLogout} onQuickLink={navigateToQuickLink} />
+        <MobileNavigationDrawer
+          authorization={authorization}
+          authorizationDiagnostics={authorizationDiagnostics}
+          sharedLabel={sharedLabel}
+          onClose={() => setMobileNavOpen(false)}
+          onLogout={handleLogout}
+          onQuickLink={navigateToQuickLink}
+        />
       ) : null}
 
       <aside className={cn('fixed inset-y-0 right-0 z-30 hidden overflow-hidden border-l border-sidebar-border bg-sidebar text-sidebar-foreground shadow-sidebar transition-all duration-300 lg:flex lg:flex-col', sidebarCollapsed ? 'w-20' : 'w-80')}>
