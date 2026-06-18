@@ -20,12 +20,14 @@ import {
 import {
   useAgedReceivablesReport,
   useDailyCollectionReport,
+  useExpenseBreakdownReport,
   useFinancialCashflowReport,
   useFinancialPeriodSummaryReport,
   useOverdueInvoicesReport,
 } from '@/features/financials/reports/useFinancialReports';
+import { useAllUnits } from '@/features/units/use-units';
 import { buildCsv, withUtf8Bom, type CsvRow } from '@/lib/csvExport';
-import { buildAgingBucketChartRows, buildPaymentsTrendRows, buildRentRollRows, createReceiptPrintHref } from './reports-page.helpers';
+import { buildAgingBucketChartRows, buildOccupancyRows, buildPaymentsTrendRows, buildRentRollRows, createReceiptPrintHref } from './reports-page.helpers';
 
 export { escapeCsvValue } from '@/lib/csvExport';
 
@@ -47,6 +49,9 @@ const supportedReportNames = [
   'الفواتير المتأخرة',
   'تقادم الذمم',
   'التحصيل اليومي',
+  'تحليل المصروفات',
+  'الإشغال',
+  'كشوف الحساب التشغيلية',
 ];
 const agingBucketKeys: Array<AgedReceivablesBucket['key']> = ['current', 'days_1_30', 'days_31_60', 'days_61_90', 'days_90_plus'];
 const contractStatusLabels: Record<ContractListItem['status'], string> = {
@@ -55,6 +60,7 @@ const contractStatusLabels: Record<ContractListItem['status'], string> = {
   expired: 'منتهي',
   terminated: 'منهى',
 };
+const expiringContractWindowDays = 60;
 
 export function toDateInputValue(date: Date) {
   const year = date.getFullYear();
@@ -119,6 +125,34 @@ function toDailyCollectionCsv(rows: DailyCollectionReportRow[]): CsvRow[] {
     check: row.methodTotals.check,
     other: row.methodTotals.other,
   }));
+}
+
+function addDays(date: Date, days: number) {
+  const nextDate = new Date(date);
+  nextDate.setDate(nextDate.getDate() + days);
+  return nextDate;
+}
+
+function toDateOnlyTimestamp(value: string) {
+  return Date.parse(`${value}T00:00:00.000Z`);
+}
+
+function buildExpiringContractsRows(contracts: ContractListItem[], fromDate: Date) {
+  const todayValue = toDateInputValue(fromDate);
+  const cutoffValue = toDateInputValue(addDays(fromDate, expiringContractWindowDays));
+
+  return contracts
+    .filter((contract) => contract.status === 'active' && contract.end_date >= todayValue && contract.end_date <= cutoffValue)
+    .sort((a, b) => a.end_date.localeCompare(b.end_date))
+    .slice(0, 12)
+    .map((contract) => ({
+      contractId: contract.id,
+      tenantName: contract.people?.full_name ?? '—',
+      propertyTitle: contract.properties?.title ?? '—',
+      unitNumber: contract.units?.unit_number ?? '—',
+      endDate: contract.end_date,
+      daysRemaining: Math.max(0, Math.ceil((toDateOnlyTimestamp(contract.end_date) - toDateOnlyTimestamp(todayValue)) / (24 * 60 * 60 * 1000))),
+    }));
 }
 
 function SafeAnchor({ href, label }: SafeLinkProps) {
@@ -578,6 +612,192 @@ function DailyCollectionSection({ rows, receiptRows, isLoading }: Readonly<{
   );
 }
 
+function ExpenseBreakdownSection({ report, isLoading }: Readonly<{
+  report: NonNullable<ReturnType<typeof useExpenseBreakdownReport>['data']> | undefined;
+  isLoading: boolean;
+}>) {
+  const categoryRows = report?.byCategory ?? [];
+  const propertyRows = report?.byProperty ?? [];
+
+  return (
+    <ReportCard
+      title="6. تحليل المصروفات"
+      description="تفصيل المصروفات المسجلة حسب التصنيف والعقار من تقرير المصروفات الموجود."
+      action={<Button variant="secondary" onClick={() => downloadCsv(buildReportCsvFilename('expense-breakdown'), [...categoryRows, ...propertyRows])}>تصدير CSV</Button>}
+      isLoading={isLoading}
+    >
+      <div className="grid gap-3 p-4 md:grid-cols-3">
+        <MetricCard label="إجمالي المصروفات" value={formatMoney(report?.totalExpenses ?? 0)} helper={`${report?.expensesCount ?? 0} مصروفات`} tone="red" />
+        <MetricCard label="تصنيفات المصروفات" value={(categoryRows.length).toLocaleString('ar')} helper="حسب category المحفوظ" tone="gold" />
+        <MetricCard label="عقارات بها مصروفات" value={(propertyRows.length).toLocaleString('ar')} helper="حسب property_id المحفوظ" tone="blue" />
+      </div>
+      <div className="grid gap-4 p-4 pt-0 lg:grid-cols-2">
+        <div className="rounded-2xl border bg-background/80 p-3">
+          <p className="mb-2 font-black">حسب التصنيف</p>
+          <div className="space-y-2">
+            {categoryRows.map((row) => (
+              <div key={row.category} className="flex items-center justify-between gap-3 rounded-xl bg-muted/30 p-3 text-sm">
+                <span>{row.category} · {row.count.toLocaleString('ar')}</span>
+                <span className="font-black" dir="ltr">{formatMoney(row.total)}</span>
+              </div>
+            ))}
+            {categoryRows.length === 0 ? <p className="text-sm text-muted-foreground">لا توجد مصروفات في الفترة المحددة.</p> : null}
+          </div>
+        </div>
+        <div className="rounded-2xl border bg-background/80 p-3">
+          <p className="mb-2 font-black">حسب العقار</p>
+          <div className="space-y-2">
+            {propertyRows.map((row) => (
+              <div key={row.propertyId} className="flex items-center justify-between gap-3 rounded-xl bg-muted/30 p-3 text-sm">
+                <span>{row.propertyTitle ?? formatShortId(row.propertyId)} · {row.count.toLocaleString('ar')}</span>
+                <span className="font-black" dir="ltr">{formatMoney(row.total)}</span>
+              </div>
+            ))}
+            {propertyRows.length === 0 ? <p className="text-sm text-muted-foreground">لا توجد مصروفات مرتبطة بعقارات في الفترة المحددة.</p> : null}
+          </div>
+        </div>
+      </div>
+    </ReportCard>
+  );
+}
+
+function OccupancyAndExpirySection({ occupancyRows, expiringRows, isLoading }: Readonly<{
+  occupancyRows: ReturnType<typeof buildOccupancyRows>;
+  expiringRows: ReturnType<typeof buildExpiringContractsRows>;
+  isLoading: boolean;
+}>) {
+  return (
+    <ReportCard
+      title="7. الإشغال والعقود القريبة"
+      description="مؤشر إشغال من الوحدات الحالية وتنبيه عقود تنتهي قريباً من بيانات العقود الموجودة."
+      isLoading={isLoading}
+    >
+      <div className="grid gap-4 p-4 lg:grid-cols-2">
+        <div className="rounded-2xl border bg-background/80 p-3">
+          <p className="mb-2 font-black">الإشغال حسب العقار</p>
+          <div className="space-y-2">
+            {occupancyRows.map((row) => (
+              <div key={row.property} className="rounded-xl bg-muted/30 p-3 text-sm">
+                <div className="mb-2 flex items-center justify-between gap-3">
+                  <span className="font-bold">عقار {row.property}</span>
+                  <span className="text-muted-foreground">{(row.occupied + row.vacant).toLocaleString('ar')} وحدة</span>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <MetricCard label="مشغولة" value={row.occupied.toLocaleString('ar')} helper="من حالة الوحدة" tone="green" />
+                  <MetricCard label="شاغرة/أخرى" value={row.vacant.toLocaleString('ar')} helper="غير occupied" tone="gold" />
+                </div>
+              </div>
+            ))}
+            {occupancyRows.length === 0 ? <p className="text-sm text-muted-foreground">لا توجد وحدات متاحة لحساب الإشغال.</p> : null}
+          </div>
+        </div>
+        <div className="rounded-2xl border bg-background/80 p-3">
+          <p className="mb-2 font-black">عقود تنتهي خلال {expiringContractWindowDays} يوم</p>
+          <div className="space-y-2">
+            {expiringRows.map((row) => (
+              <div key={row.contractId} className="rounded-xl bg-muted/30 p-3 text-sm">
+                <div className="flex items-center justify-between gap-3">
+                  <SafeAnchor href={`/contracts/${encodeURIComponent(row.contractId)}`} label={formatShortId(row.contractId)} />
+                  <StatusBadge tone={row.daysRemaining <= 15 ? 'red' : 'gold'}>{row.daysRemaining.toLocaleString('ar')} يوم</StatusBadge>
+                </div>
+                <p className="mt-2 font-medium">{row.tenantName}</p>
+                <p className="text-muted-foreground">{row.propertyTitle} · {row.unitNumber} · {formatDate(row.endDate)}</p>
+              </div>
+            ))}
+            {expiringRows.length === 0 ? <p className="text-sm text-muted-foreground">لا توجد عقود نشطة تنتهي قريباً ضمن البيانات الحالية.</p> : null}
+          </div>
+        </div>
+      </div>
+    </ReportCard>
+  );
+}
+
+function StatementsSection({ agedReport, receiptRows, financialSummary, expenseBreakdown, dailyRows, isLoading }: Readonly<{
+  agedReport: NonNullable<ReturnType<typeof useAgedReceivablesReport>['data']> | undefined;
+  receiptRows: Array<{ id: string; receipt_number: string; payment_date: string; amount: number; tenant_name: string | null }>;
+  financialSummary: NonNullable<ReturnType<typeof useFinancialPeriodSummaryReport>['data']> | undefined;
+  expenseBreakdown: NonNullable<ReturnType<typeof useExpenseBreakdownReport>['data']> | undefined;
+  dailyRows: DailyCollectionReportRow[];
+  isLoading: boolean;
+}>) {
+  const tenantRows = (agedReport?.rows ?? []).slice(0, 6);
+  const ownerMovementRows = (expenseBreakdown?.byProperty ?? []).slice(0, 6);
+  const totalCollections = dailyRows.reduce((total, row) => total + row.totalPaid, 0);
+
+  return (
+    <div id="statements">
+      <ReportCard
+        title="8. كشوف الحساب"
+        description="كشوف حركة تشغيلية للقراءة فقط. لا تعرض أرصدة جارية ولا تسويات نهائية ولا دفتر أستاذ محاسبي."
+        isLoading={isLoading}
+      >
+        <div className="grid gap-4 p-4 xl:grid-cols-3">
+          <div className="rounded-2xl border bg-background/80 p-4">
+            <div className="mb-3">
+              <p className="font-black">كشف حساب المستأجر</p>
+              <p className="text-xs text-muted-foreground">يعرض الذمم والمتأخرات من تقرير receivables، مع أحدث إيصالات متاحة من سجل الإيصالات.</p>
+            </div>
+            <div className="space-y-2">
+              {tenantRows.map((row) => (
+                <div key={row.contractId} className="rounded-xl bg-muted/30 p-3 text-sm">
+                  <p className="font-medium">{row.tenantName ?? 'مستأجر غير محدد'}</p>
+                  <div className="mt-1 flex items-center justify-between gap-2">
+                    <span className="text-muted-foreground">ذمم</span>
+                    <span className="font-black" dir="ltr">{formatMoney(row.totalOutstanding)}</span>
+                  </div>
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-muted-foreground">متأخر</span>
+                    <span className="font-black text-destructive" dir="ltr">{formatMoney(row.totalOverdue)}</span>
+                  </div>
+                </div>
+              ))}
+              {tenantRows.length === 0 ? <p className="text-sm text-muted-foreground">لا توجد ذمم مستأجرين حسب تاريخ as-of.</p> : null}
+              {receiptRows.slice(0, 3).map((receipt) => (
+                <a key={receipt.id} className="block rounded-xl border p-3 text-sm hover:border-primary/40" href={createReceiptPrintHref(receipt.id)}>
+                  {receipt.receipt_number} · {receipt.tenant_name ?? '—'} · <span dir="ltr">{formatMoney(receipt.amount)}</span>
+                </a>
+              ))}
+            </div>
+          </div>
+
+          <div className="rounded-2xl border bg-background/80 p-4">
+            <div className="mb-3">
+              <p className="font-black">ملخص حركة المالك</p>
+              <p className="text-xs text-muted-foreground">ملخص حركة عقار مدعوم بالمصروفات والعقود الظاهرة فقط، وليس كشف تسوية مالك.</p>
+            </div>
+            <div className="space-y-2">
+              {ownerMovementRows.map((row) => (
+                <div key={row.propertyId} className="rounded-xl bg-muted/30 p-3 text-sm">
+                  <p className="font-medium">{row.propertyTitle ?? formatShortId(row.propertyId)}</p>
+                  <div className="mt-1 flex items-center justify-between gap-2">
+                    <span className="text-muted-foreground">مصروفات مسجلة</span>
+                    <span className="font-black" dir="ltr">{formatMoney(row.total)}</span>
+                  </div>
+                  <p className="text-xs text-muted-foreground">{row.count.toLocaleString('ar')} حركة مصروفات في الفترة</p>
+                </div>
+              ))}
+              {ownerMovementRows.length === 0 ? <p className="text-sm text-muted-foreground">لا توجد حركة مصروفات عقارية للفترة المحددة.</p> : null}
+            </div>
+          </div>
+
+          <div className="rounded-2xl border bg-background/80 p-4">
+            <div className="mb-3">
+              <p className="font-black">ملخص حركة المكتب</p>
+              <p className="text-xs text-muted-foreground">ملخص تحصيلات وفواتير ومصروفات للفترة، وليس قائمة دخل أو دفتر حسابات.</p>
+            </div>
+            <div className="grid gap-2">
+              <MetricCard label="فواتير الفترة" value={formatMoney(financialSummary?.invoiced ?? 0)} helper={`${financialSummary?.invoicesCount ?? 0} فواتير`} tone="blue" />
+              <MetricCard label="تحصيلات الفترة" value={formatMoney(totalCollections)} helper={`${financialSummary?.paymentsCount ?? 0} مدفوعات`} tone="green" />
+              <MetricCard label="مصروفات الفترة" value={formatMoney(financialSummary?.expenses ?? 0)} helper={`${financialSummary?.expensesCount ?? 0} مصروفات`} tone="red" />
+              <MetricCard label="صافي حركة نقدية تشغيلية" value={formatMoney(financialSummary?.netCash ?? 0)} helper="تحصيلات ناقص مصروفات مسجلة فقط" tone={(financialSummary?.netCash ?? 0) >= 0 ? 'green' : 'red'} />
+            </div>
+          </div>
+        </div>
+      </ReportCard>
+    </div>
+  );
+}
+
 export function ReportsPage() {
   const [filters, setFilters] = useState<FilterState>(() => getCurrentMonthFilters());
   const financialFilters = useMemo(() => ({ dateFrom: filters.from, dateTo: filters.to }), [filters.from, filters.to]);
@@ -586,12 +806,16 @@ export function ReportsPage() {
   const financialSummaryQuery = useFinancialPeriodSummaryReport(financialFilters);
   const financialCashflowQuery = useFinancialCashflowReport(financialFilters);
   const dailyCollectionQuery = useDailyCollectionReport(financialFilters);
+  const expenseBreakdownQuery = useExpenseBreakdownReport(financialFilters);
   const overdueInvoicesQuery = useOverdueInvoicesReport(arrearsFilters);
   const agedReceivablesQuery = useAgedReceivablesReport(arrearsFilters);
   const contractsQuery = useContracts({ status: 'all' });
+  const unitsQuery = useAllUnits();
   const receiptsQuery = useReceipts({ limit: latestReceiptLimit });
 
   const rentRollRows = useMemo(() => buildRentRollRows(contractsQuery.data ?? [], contractStatusLabels), [contractsQuery.data]);
+  const occupancyRows = useMemo(() => buildOccupancyRows(unitsQuery.data ?? []), [unitsQuery.data]);
+  const expiringRows = useMemo(() => buildExpiringContractsRows(contractsQuery.data ?? [], new Date()), [contractsQuery.data]);
   const paymentsTrendRows = useMemo(() => buildPaymentsTrendRows({
     dailyCollections: dailyCollectionQuery.data?.rows,
     overdueInvoices: overdueInvoicesQuery.data?.rows,
@@ -609,16 +833,20 @@ export function ReportsPage() {
   const isLoading = financialSummaryQuery.isLoading
     || financialCashflowQuery.isLoading
     || dailyCollectionQuery.isLoading
+    || expenseBreakdownQuery.isLoading
     || overdueInvoicesQuery.isLoading
     || agedReceivablesQuery.isLoading
     || contractsQuery.isLoading
+    || unitsQuery.isLoading
     || receiptsQuery.isLoading;
   const firstError = financialSummaryQuery.error
     ?? financialCashflowQuery.error
     ?? dailyCollectionQuery.error
+    ?? expenseBreakdownQuery.error
     ?? overdueInvoicesQuery.error
     ?? agedReceivablesQuery.error
     ?? contractsQuery.error
+    ?? unitsQuery.error
     ?? receiptsQuery.error;
 
   return (
@@ -647,6 +875,20 @@ export function ReportsPage() {
       />
       <AgedReceivablesSection report={agedReceivablesQuery.data} isLoading={agedReceivablesQuery.isLoading} />
       <DailyCollectionSection rows={dailyCollectionQuery.data?.rows ?? []} receiptRows={receiptRows} isLoading={dailyCollectionQuery.isLoading || receiptsQuery.isLoading} />
+      <ExpenseBreakdownSection report={expenseBreakdownQuery.data} isLoading={expenseBreakdownQuery.isLoading} />
+      <OccupancyAndExpirySection
+        occupancyRows={occupancyRows}
+        expiringRows={expiringRows}
+        isLoading={unitsQuery.isLoading || contractsQuery.isLoading}
+      />
+      <StatementsSection
+        agedReport={agedReceivablesQuery.data}
+        receiptRows={receiptRows}
+        financialSummary={financialSummaryQuery.data}
+        expenseBreakdown={expenseBreakdownQuery.data}
+        dailyRows={dailyCollectionQuery.data?.rows ?? []}
+        isLoading={agedReceivablesQuery.isLoading || receiptsQuery.isLoading || financialSummaryQuery.isLoading || expenseBreakdownQuery.isLoading || dailyCollectionQuery.isLoading}
+      />
     </div>
   );
 }

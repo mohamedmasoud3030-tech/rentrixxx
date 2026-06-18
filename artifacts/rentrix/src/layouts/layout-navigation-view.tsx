@@ -30,7 +30,7 @@ export function NavigationLinks({
             if (isLocked) {
               return (
                 <div
-                  key={to}
+                  key={`${to}:${labelKey}`}
                   className="group flex min-h-12 items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.03] px-3 py-2.5 text-sidebar-foreground/50 opacity-60 cursor-not-allowed"
                   title={`${sharedLabel(labelKey)} — تتطلب صلاحية`}
                 >
@@ -52,7 +52,7 @@ export function NavigationLinks({
 
             return (
               <Link
-                key={to}
+                key={`${to}:${labelKey}`}
                 to={to}
                 onClick={onNavigate}
                 aria-label={sharedLabel(labelKey)}

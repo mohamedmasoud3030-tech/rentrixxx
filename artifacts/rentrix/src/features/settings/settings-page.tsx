@@ -1,10 +1,13 @@
 import { useEffect, useMemo, useRef, useState, type ChangeEvent, type FormEvent } from 'react';
+import { Link } from '@tanstack/react-router';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
+import { StatusBadge } from '@/components/ui/status-badge';
+import { useAuth } from '@/hooks/use-auth';
 import { formatCompanyDate, formatCompanyMoney } from '@/lib/companyFormatters';
 import {
   normalizeCompanyLocale,
@@ -209,6 +212,7 @@ function CompanySettingsPreviewCard({ draft, formattedPreviewDate, formattedPrev
 
 export function SettingsPage() {
   const { theme, setTheme } = useUiStore();
+  const { authorization, authorizationDiagnostics, user } = useAuth();
   const companySettingsQuery = useCompanySettings();
   const updateCompanySettingsMutation = useUpdateCompanySettings();
   const [baseDraft, setBaseDraft] = useState<CompanySettingsDraft | null>(null);
@@ -362,9 +366,16 @@ export function SettingsPage() {
   }
 
   return <div className="grid gap-4" dir={pageLanguage.direction} lang={pageLanguage.locale}>
+    <Card className="border-primary/10 bg-gradient-to-br from-primary/10 via-card to-card">
+      <CardHeader>
+        <CardTitle className="text-2xl font-black">إعدادات المكتب</CardTitle>
+        <CardDescription>مركز تحكم واحد للإعدادات المحفوظة، هوية المستندات، الأمان، وتفضيلات النظام.</CardDescription>
+      </CardHeader>
+    </Card>
+
     <Card>
       <CardHeader>
-        <CardTitle>ملف الشركة</CardTitle>
+        <CardTitle>بيانات المكتب</CardTitle>
         <CardDescription>هذه الإعدادات محفوظة ومستمرة في قاعدة البيانات وتُستخدم كمرجع لتنسيق بيانات الشركة.</CardDescription>
       </CardHeader>
       <CardContent>
@@ -380,46 +391,6 @@ export function SettingsPage() {
             <FormField label="البريد الإلكتروني" field="email" draft={draft} errors={errors} disabled={isSaving} type="email" placeholder="email@example.com" onChange={handleDraftChange} />
             <FormField label="المدينة" field="city" draft={draft} errors={errors} disabled={isSaving} onChange={handleDraftChange} />
             <SelectField label="الدولة" field="country" draft={draft} errors={errors} disabled={isSaving} options={countryOptions} onChange={handleDraftChange} />
-            <SelectField label="العملة" field="currency" draft={draft} errors={errors} disabled={isSaving} options={currencyOptions} onChange={handleDraftChange} />
-            <SelectField label="المحلية" field="locale" draft={draft} errors={errors} disabled={isSaving} options={localeOptions} onChange={handleDraftChange} />
-            <SelectField label="المنطقة الزمنية" field="timezone" draft={draft} errors={errors} disabled={isSaving} options={timezoneOptions} onChange={handleDraftChange} />
-            <SelectField label="صيغة التاريخ" field="date_format" draft={draft} errors={errors} disabled={isSaving} options={dateFormatOptions} onChange={handleDraftChange} />
-            <SelectField label="صيغة الأرقام" field="number_format" draft={draft} errors={errors} disabled={isSaving} options={numberFormatOptions} onChange={handleDraftChange} />
-            <FormField label="رابط الشعار" field="logo_url" draft={draft} errors={errors} disabled={isSaving} type="url" placeholder="https://example.com/logo.png" onChange={handleDraftChange} />
-            <FormField label="بادئة الفواتير" field="invoice_prefix" draft={draft} errors={errors} disabled={isSaving} onChange={handleDraftChange} />
-            <FormField label="بادئة العقود" field="contract_prefix" draft={draft} errors={errors} disabled={isSaving} onChange={handleDraftChange} />
-            <FormField label="بادئة الإيصالات" field="receipt_prefix" draft={draft} errors={errors} disabled={isSaving} onChange={handleDraftChange} />
-            <FormField label="ضريبة القيمة المضافة الافتراضية %" field="default_vat_rate" draft={draft} errors={errors} disabled={isSaving} type="number" onChange={handleDraftChange} />
-          </div>
-
-          <div className="grid gap-3 rounded-2xl border bg-muted/20 p-4 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
-            <label className="space-y-2 text-sm font-medium text-foreground">
-              <span>رفع شعار الشركة</span>
-              <Input type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml" disabled={isSaving} onChange={handleLogoFileChange} />
-              <span className="block text-xs text-muted-foreground">سيتم حفظ الشعار كقيمة مضمنة صغيرة للحفاظ على المعاينة والمستندات بدون إعداد Storage إضافي.</span>
-            </label>
-
-            <div className="space-y-2 text-sm font-medium text-foreground">
-              <span>تفضيلات الإشعارات</span>
-              <label className="flex items-center gap-2 rounded-xl border bg-background/70 p-3">
-                <input
-                  type="checkbox"
-                  checked={draft.notification_email_enabled === 'true'}
-                  disabled={isSaving}
-                  onChange={(event) => handleDraftChange('notification_email_enabled', String(event.target.checked))}
-                />
-                <span>تفعيل إشعارات البريد الإلكتروني</span>
-              </label>
-              <label className="flex items-center gap-2 rounded-xl border bg-background/70 p-3">
-                <input
-                  type="checkbox"
-                  checked={draft.notification_sms_enabled === 'true'}
-                  disabled={isSaving}
-                  onChange={(event) => handleDraftChange('notification_sms_enabled', String(event.target.checked))}
-                />
-                <span>تفعيل إشعارات الرسائل النصية</span>
-              </label>
-            </div>
           </div>
 
           <label className="space-y-1 text-sm font-medium text-foreground">
@@ -433,6 +404,91 @@ export function SettingsPage() {
             {errors.address ? <span className="block text-xs text-destructive">{errors.address}</span> : null}
           </label>
 
+          <section className="space-y-3 rounded-2xl border bg-muted/20 p-4" aria-labelledby="identity-printing-title">
+            <div>
+              <h3 id="identity-printing-title" className="text-base font-black">الهوية والطباعة</h3>
+              <p className="text-sm text-muted-foreground">القيم التي تظهر في معاينات المستندات والتنسيق العام.</p>
+            </div>
+            <div className="grid gap-3 md:grid-cols-2">
+              <SelectField label="العملة" field="currency" draft={draft} errors={errors} disabled={isSaving} options={currencyOptions} onChange={handleDraftChange} />
+              <SelectField label="المحلية" field="locale" draft={draft} errors={errors} disabled={isSaving} options={localeOptions} onChange={handleDraftChange} />
+              <SelectField label="المنطقة الزمنية" field="timezone" draft={draft} errors={errors} disabled={isSaving} options={timezoneOptions} onChange={handleDraftChange} />
+              <SelectField label="صيغة التاريخ" field="date_format" draft={draft} errors={errors} disabled={isSaving} options={dateFormatOptions} onChange={handleDraftChange} />
+              <SelectField label="صيغة الأرقام" field="number_format" draft={draft} errors={errors} disabled={isSaving} options={numberFormatOptions} onChange={handleDraftChange} />
+              <FormField label="رابط الشعار" field="logo_url" draft={draft} errors={errors} disabled={isSaving} type="url" placeholder="https://example.com/logo.png" onChange={handleDraftChange} />
+            </div>
+            <label className="space-y-2 text-sm font-medium text-foreground">
+              <span>رفع شعار الشركة</span>
+              <Input type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml" disabled={isSaving} onChange={handleLogoFileChange} />
+              <span className="block text-xs text-muted-foreground">سيتم حفظ الشعار كقيمة مضمنة صغيرة للحفاظ على المعاينة والمستندات بدون إعداد Storage إضافي.</span>
+            </label>
+          </section>
+
+          <section className="space-y-3 rounded-2xl border bg-muted/20 p-4" aria-labelledby="contracts-invoices-title">
+            <div>
+              <h3 id="contracts-invoices-title" className="text-base font-black">العقود والفواتير</h3>
+              <p className="text-sm text-muted-foreground">بادئات المستندات والضريبة الافتراضية المحفوظة.</p>
+            </div>
+            <div className="grid gap-3 md:grid-cols-2">
+              <FormField label="بادئة الفواتير" field="invoice_prefix" draft={draft} errors={errors} disabled={isSaving} onChange={handleDraftChange} />
+              <FormField label="بادئة العقود" field="contract_prefix" draft={draft} errors={errors} disabled={isSaving} onChange={handleDraftChange} />
+              <FormField label="بادئة الإيصالات" field="receipt_prefix" draft={draft} errors={errors} disabled={isSaving} onChange={handleDraftChange} />
+              <FormField label="ضريبة القيمة المضافة الافتراضية %" field="default_vat_rate" draft={draft} errors={errors} disabled={isSaving} type="number" onChange={handleDraftChange} />
+            </div>
+          </section>
+
+          <section className="space-y-3 rounded-2xl border bg-muted/20 p-4" aria-labelledby="notifications-followup-title">
+            <div>
+              <h3 id="notifications-followup-title" className="text-base font-black">الإشعارات والمتابعة</h3>
+              <p className="text-sm text-muted-foreground">تفضيلات الإشعارات الموجودة حالياً في سجل إعدادات المكتب.</p>
+            </div>
+            <div className="grid gap-3 md:grid-cols-2">
+              <label className="flex items-center gap-2 rounded-xl border bg-background/70 p-3 text-sm font-medium">
+                <input
+                  type="checkbox"
+                  checked={draft.notification_email_enabled === 'true'}
+                  disabled={isSaving}
+                  onChange={(event) => handleDraftChange('notification_email_enabled', String(event.target.checked))}
+                />
+                <span>تفعيل إشعارات البريد الإلكتروني</span>
+              </label>
+              <label className="flex items-center gap-2 rounded-xl border bg-background/70 p-3 text-sm font-medium">
+                <input
+                  type="checkbox"
+                  checked={draft.notification_sms_enabled === 'true'}
+                  disabled={isSaving}
+                  onChange={(event) => handleDraftChange('notification_sms_enabled', String(event.target.checked))}
+                />
+                <span>تفعيل إشعارات الرسائل النصية</span>
+              </label>
+            </div>
+          </section>
+
+          <section className="grid gap-3 rounded-2xl border bg-muted/20 p-4 md:grid-cols-[minmax(0,1fr)_auto]" aria-labelledby="account-security-title">
+            <div>
+              <h3 id="account-security-title" className="text-base font-black">الأمان والحساب</h3>
+              <p className="text-sm text-muted-foreground">معلومات الحساب الحالي من جلسة الدخول وصلاحيات العرض الحالية.</p>
+              <dl className="mt-3 grid gap-2 text-sm md:grid-cols-2">
+                <PreviewField label="البريد الإلكتروني للمستخدم" value={user?.email ?? 'غير متاح'} muted={!user?.email} />
+                <PreviewField label="الدور resolved role" value={authorization?.role ?? authorizationDiagnostics.resolvedRole ?? 'غير محدد'} muted={!authorization?.role && !authorizationDiagnostics.resolvedRole} />
+                <PreviewField label="حالة بيانات الدور" value={authorizationDiagnostics.metadataMismatch ? 'تحتاج مراجعة metadata' : 'صالحة حسب الجلسة'} muted={authorizationDiagnostics.metadataMismatch} />
+                <PreviewField label="حالة الجلسة" value={user ? 'نشطة' : 'غير متاحة'} muted={!user} />
+              </dl>
+            </div>
+            <div className="flex flex-col items-start justify-center gap-2">
+              <StatusBadge tone={authorizationDiagnostics.metadataMismatch ? 'gold' : 'green'}>{authorizationDiagnostics.metadataMismatch ? 'تحذير صلاحيات' : 'جلسة آمنة'}</StatusBadge>
+              <Button asChild variant="secondary"><Link to="/change-password">تغيير كلمة المرور</Link></Button>
+            </div>
+          </section>
+
+          <section className="space-y-3 rounded-2xl border bg-muted/20 p-4" aria-labelledby="system-data-title">
+            <div>
+              <h3 id="system-data-title" className="text-base font-black">النظام والبيانات</h3>
+              <p className="text-sm text-muted-foreground">تفضيلات التطبيق المحلية ومعاينة أثر إعدادات المكتب على العرض.</p>
+            </div>
+            <AppPreferencesCard lang={pageLanguage.language} theme={theme} onLanguageChange={handleDefaultLanguageChange} onToggleTheme={handleToggleTheme} />
+          </section>
+
           <CompanySettingsPreviewCard draft={draft} formattedPreviewDate={formattedPreviewDate} formattedPreviewMoney={formattedPreviewMoney} />
 
           <div className="flex flex-wrap items-center gap-3">
@@ -442,7 +498,5 @@ export function SettingsPage() {
         </form>
       </CardContent>
     </Card>
-
-    <AppPreferencesCard lang={pageLanguage.language} theme={theme} onLanguageChange={handleDefaultLanguageChange} onToggleTheme={handleToggleTheme} />
   </div>;
 }
