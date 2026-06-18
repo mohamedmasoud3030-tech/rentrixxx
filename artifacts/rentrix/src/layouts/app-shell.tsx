@@ -1,6 +1,6 @@
 import { Outlet, useMatches, useRouter } from '@tanstack/react-router';
 import { useEffect, useState } from 'react';
-import { Bell, ChevronLeft, LogOut, Menu, Moon, Search, ShieldCheck, Sun, X } from 'lucide-react';
+import { Bell, ChevronLeft, LogOut, Menu, Moon, Search, ShieldAlert, ShieldCheck, Sun, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import type { AuthorizationContext } from '@/features/auth/permissions';
@@ -40,6 +40,15 @@ function Brand({ expanded }: Readonly<{ expanded: boolean }>) {
   );
 }
 
+function AuthorizationWarning() {
+  return (
+    <div role="alert" className="mx-3 mt-3 flex items-start gap-2 rounded-xl border border-amber-400/30 bg-amber-400/10 px-3 py-2.5 text-amber-200">
+      <ShieldAlert className="mt-0.5 size-4 shrink-0" />
+      <p className="text-[11px] font-bold leading-5">الصلاحيات غير مكتملة — أعد تسجيل الدخول إذا لم تظهر كل الصفحات</p>
+    </div>
+  );
+}
+
 function MobileNavigationDrawer({
   authorization,
   sharedLabel,
@@ -65,19 +74,20 @@ function MobileNavigationDrawer({
   return (
     <dialog open aria-modal="true" aria-label="القائمة الرئيسية" className="fixed inset-0 z-[90] m-0 h-dvh w-full max-w-none overflow-hidden border-0 bg-transparent p-0 lg:hidden">
       <button type="button" className="absolute inset-0 bg-slate-950/60 backdrop-blur-[2px]" aria-label="إغلاق القائمة" onClick={onClose} />
-      <aside className="animate-panel-in absolute inset-y-0 end-0 flex w-[min(22rem,92vw)] flex-col overflow-hidden border-s border-sidebar-border bg-sidebar text-sidebar-foreground shadow-sidebar">
+      <aside className="animate-panel-in absolute inset-y-0 end-0 flex w-[min(20rem,90vw)] flex-col overflow-hidden border-s border-sidebar-border bg-sidebar text-sidebar-foreground shadow-sidebar">
         <div className="h-[3px] w-full bg-accent" />
-        <div className="flex min-h-24 items-center justify-between gap-3 border-b border-white/10 px-4 py-4">
+        <div className="flex min-h-16 items-center justify-between gap-3 border-b border-white/10 px-4 py-3">
           <Brand expanded />
           <Button autoFocus variant="ghost" className="size-10 shrink-0 px-0 text-sidebar-foreground hover:bg-sidebar-accent hover:text-white" onClick={onClose} aria-label="إغلاق القائمة">
             <X className="size-5" />
           </Button>
         </div>
-        <nav className="sidebar-scroll min-h-0 flex-1 overflow-y-auto p-3">
-          <NavigationLinks authorization={authorization} expanded sharedLabel={sharedLabel} onNavigate={onClose} wrapText />
+        {authorization === null ? <AuthorizationWarning /> : null}
+        <nav className="sidebar-scroll min-h-0 flex-1 overflow-y-auto p-2.5">
+          <NavigationLinks authorization={authorization} expanded sharedLabel={sharedLabel} onNavigate={onClose} wrapText mode="mobile" />
           <WorkspaceCard compact onQuickLink={onQuickLink} />
         </nav>
-        <div className="border-t border-white/10 p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
+        <div className="border-t border-white/10 p-2.5 pb-[calc(0.625rem+env(safe-area-inset-bottom))]">
           <Button variant="ghost" className="min-h-11 w-full justify-start gap-3 text-sidebar-foreground hover:bg-sidebar-accent hover:text-white" onClick={onLogout}>
             <LogOut className="size-5" />
             <span>{sharedLabel('logout')}</span>
