@@ -18,7 +18,7 @@ export function NavigationLinks({
       {navGroups.map(([sectionTitle, items]) => (
         <section key={sectionTitle} className="space-y-1">
           {expanded ? (
-            <p className="px-3 pb-1 text-[10px] font-black tracking-[0.14em] text-sidebar-foreground/45">
+            <p className="px-3 pb-1 text-[10px] font-black tracking-[0.14em] uppercase text-sidebar-foreground/60">
               {sectionTitle}
             </p>
           ) : null}
@@ -46,7 +46,7 @@ export function NavigationLinks({
                 ) : (
                   <span
                     aria-hidden="true"
-                    className="pointer-events-none absolute right-[calc(100%+0.75rem)] top-1/2 z-50 hidden min-w-52 -translate-y-1/2 rounded-2xl border border-white/10 bg-sidebar px-3 py-2 text-right text-sidebar-foreground opacity-0 shadow-2xl transition-all group-hover:block group-hover:translate-x-0 group-hover:opacity-100 group-focus-visible:block group-focus-visible:opacity-100"
+                    className="pointer-events-none absolute end-[calc(100%+0.75rem)] top-1/2 z-50 hidden min-w-52 -translate-y-1/2 rounded-2xl border border-white/10 bg-sidebar px-3 py-2 text-right text-sidebar-foreground opacity-0 shadow-2xl transition-all group-hover:block group-hover:opacity-100 group-focus-visible:block group-focus-visible:opacity-100"
                   >
                     <span className="block text-[12px] font-black text-white">{sharedLabel(labelKey)}</span>
                     <span className="mt-0.5 block text-[10px] font-bold leading-5 text-sidebar-foreground/65">{description}</span>
