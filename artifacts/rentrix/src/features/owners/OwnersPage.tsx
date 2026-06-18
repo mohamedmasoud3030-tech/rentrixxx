@@ -176,7 +176,11 @@ function OwnerWorkspaceRowView({ row, selectedOwnerId, onEditOwner, onSelectOwne
   const isSelected = row.owner.id === selectedOwnerId;
   return (
     <TableRow className={isSelected ? 'bg-primary/5' : undefined}>
-      <TableCell><button type="button" className="text-right font-black hover:text-primary" onClick={() => onSelectOwner(row.owner.id)}>{getOwnerDisplayLabel(row.owner)}</button>{row.owner.display_name ? <div className="text-xs text-muted-foreground">{row.owner.full_name}</div> : null}</TableCell>
+      <TableCell>
+        <button type="button" className="text-right font-black hover:text-primary" onClick={() => onSelectOwner(row.owner.id)}>{getOwnerDisplayLabel(row.owner)}</button>
+        {row.owner.display_name ? <div className="text-xs text-muted-foreground">{row.owner.full_name}</div> : null}
+        <div className="text-[10px] font-bold text-muted-foreground/70 mt-0.5" dir="ltr">معرّف السجل: #{row.owner.id.slice(0, 8)}</div>
+      </TableCell>
       <TableCell><OwnerContact owner={row.owner} /></TableCell>
       <TableCell>{row.propertyCount.toLocaleString('ar')}</TableCell>
       <TableCell><OwnerPropertyLinks row={row} /></TableCell>

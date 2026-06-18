@@ -240,11 +240,11 @@ function matchesExpenseFilters(expense: ExpenseReportRow, filters: ExpenseBreakd
 }
 
 const agingBucketLabels: Record<AgingBucketKey, string> = {
-  current: 'Current / not overdue',
-  days_1_30: '1-30 days',
-  days_31_60: '31-60 days',
-  days_61_90: '61-90 days',
-  days_90_plus: '90+ days',
+  current: 'غير متأخر',
+  days_1_30: '1–30 يوم',
+  days_31_60: '31–60 يوم',
+  days_61_90: '61–90 يوم',
+  days_90_plus: 'أكثر من 90 يوم',
 };
 
 const agingBucketOrder: AgingBucketKey[] = ['current', 'days_1_30', 'days_31_60', 'days_61_90', 'days_90_plus'];

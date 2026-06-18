@@ -3,7 +3,18 @@ import type { DailyCollectionReportRow, OverdueInvoicesReport } from '@/features
 import type { Unit } from '@/types/domain';
 
 export type AgingBucketChartRow = { bucket: string; total: number; invoiceCount: number };
-export type OccupancyChartRow = { property: string; occupied: number; vacant: number };
+export type OccupancyChartRow = {
+  /** Display label — property title when available, otherwise 'عقار بدون اسم'. */
+  property: string;
+  /** Raw, full property id. Used as a small helper text under the label. */
+  propertyId: string;
+  /** Short id (first 8 chars) used as a tiny secondary helper when no title. */
+  shortPropertyId: string;
+  /** Whether the row is showing the title or the unnamed fallback. */
+  hasTitle: boolean;
+  occupied: number;
+  vacant: number;
+};
 export type PaymentsTrendRow = { month: string; collections: number; overdue: number };
 export type RentRollReportRow = {
   contractId: string;
@@ -36,20 +47,48 @@ export function createReceiptPrintHref(receiptId: string) {
   return `/receipts?receiptId=${encodeURIComponent(receiptId)}`;
 }
 
-export function buildOccupancyRows(units: Pick<Unit, 'property_id' | 'status'>[] = []): OccupancyChartRow[] {
+export function buildOccupancyRows(
+  units: Pick<Unit, 'property_id' | 'status'>[] = [],
+  properties: ReadonlyMap<string, string> | readonly { id: string; title: string | null }[] = new Map(),
+): OccupancyChartRow[] {
+  const titleById: ReadonlyMap<string, string> =
+    properties instanceof Map
+      ? properties
+      : new Map(
+          (properties as readonly { id: string; title: string | null }[])
+            .map((p) => [p.id, (p.title ?? '').trim()] as const)
+            .filter(([, title]) => title.length > 0),
+        );
+
   const rowsByProperty = new Map<string, OccupancyChartRow>();
 
   for (const unit of units) {
-    const row = rowsByProperty.get(unit.property_id) ?? { property: unit.property_id.slice(0, 8), occupied: 0, vacant: 0 };
-    if (unit.status === 'occupied') {
-      row.occupied += 1;
-    } else {
-      row.vacant += 1;
+    const id = unit.property_id;
+    const title = titleById.get(id);
+    const hasTitle = Boolean(title);
+    const existing = rowsByProperty.get(id);
+    if (existing) {
+      if (unit.status === 'occupied') existing.occupied += 1;
+      else existing.vacant += 1;
+      continue;
     }
-    rowsByProperty.set(unit.property_id, row);
+    const row: OccupancyChartRow = {
+      property: hasTitle ? title! : 'عقار بدون اسم',
+      propertyId: id,
+      shortPropertyId: id.slice(0, 8),
+      hasTitle,
+      occupied: unit.status === 'occupied' ? 1 : 0,
+      vacant: unit.status === 'occupied' ? 0 : 1,
+    };
+    rowsByProperty.set(id, row);
   }
 
-  return Array.from(rowsByProperty.values()).sort((a, b) => a.property.localeCompare(b.property));
+  // Prefer titled rows first, then sort titled rows by Arabic title; untitled
+  // rows sort by short id so the order is stable.
+  return Array.from(rowsByProperty.values()).sort((a, b) => {
+    if (a.hasTitle !== b.hasTitle) return a.hasTitle ? -1 : 1;
+    return a.property.localeCompare(b.property, 'ar') || a.shortPropertyId.localeCompare(b.shortPropertyId);
+  });
 }
 
 export function buildPaymentsTrendRows(params: {

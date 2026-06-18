@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
 import { Bar, BarChart, CartesianGrid, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { AlertTriangle, ArrowUpLeft, BarChart3, Building2, CalendarClock, ClipboardList, FileSpreadsheet, Inbox, RefreshCcw, WalletCards, ReceiptText } from 'lucide-react';
@@ -30,6 +31,8 @@ import { useAllUnits } from '@/features/units/use-units';
 import { buildCsv, withUtf8Bom, type CsvRow } from '@/lib/csvExport';
 import { cn } from '@/lib/utils';
 import { buildAgingBucketChartRows, buildOccupancyRows, buildPaymentsTrendRows, buildRentRollRows, createReceiptPrintHref } from './reports-page.helpers';
+import { supabase } from '@/integrations/supabase/client';
+import type { Property } from '@/types/domain';
 
 export { escapeCsvValue } from '@/lib/csvExport';
 
@@ -648,7 +651,7 @@ function ExpensesSection({ report, isLoading }: Readonly<{
       <div className="grid gap-3 p-4 sm:grid-cols-3">
         <KpiCard label="إجمالي المصروفات" value={formatMoney(report?.totalExpenses ?? 0)} icon={WalletCards} accent="rose" sub={`${report?.expensesCount ?? 0} مصروفات`} />
         <KpiCard label="تصنيفات المصروفات" value={(categoryRows.length).toLocaleString('ar')} icon={ClipboardList} accent="amber" sub="حسب category المحفوظ" />
-        <KpiCard label="عقارات بها مصروفات" value={(propertyRows.length).toLocaleString('ar')} icon={Building2} accent="sky" sub="حسب property_id المحفوظ" />
+        <KpiCard label="عقارات بها مصروفات" value={(propertyRows.length).toLocaleString('ar')} icon={Building2} accent="sky" sub="حسب معرّف العقار المحفوظ" />
       </div>
       <div className="grid gap-4 p-4 pt-0 lg:grid-cols-2">
         <div className="rounded-2xl border bg-background/80 p-3">
@@ -703,9 +706,14 @@ function OccupancySection({ occupancyRows, expiringRows, isLoading }: Readonly<{
           </p>
           <div className="space-y-2">
             {occupancyRows.map((row) => (
-              <div key={row.property} className="rounded-xl bg-muted/30 p-3 text-sm">
+              <div key={row.propertyId} className="rounded-xl bg-muted/30 p-3 text-sm">
                 <div className="mb-2 flex items-center justify-between gap-3">
-                  <span className="font-bold">عقار {row.property}</span>
+                  <div className="min-w-0">
+                    <span className="font-bold">{row.property}</span>
+                    {!row.hasTitle && row.shortPropertyId ? (
+                      <span className="ms-2 text-[10px] text-muted-foreground/70" dir="ltr">#{row.shortPropertyId}</span>
+                    ) : null}
+                  </div>
                   <span className="text-muted-foreground">{(row.occupied + row.vacant).toLocaleString('ar')} وحدة</span>
                 </div>
                 <div className="grid grid-cols-2 gap-2">
@@ -876,9 +884,17 @@ export function ReportsPage() {
   const contractsQuery = useContracts({ status: 'all' });
   const unitsQuery = useAllUnits();
   const receiptsQuery = useReceipts({ limit: latestReceiptLimit });
+  const propertyTitlesQuery = usePropertyTitles();
+  const propertyTitlesById = useMemo(
+    () => new Map((propertyTitlesQuery.data ?? []).map((row) => [row.id, row.title] as const)),
+    [propertyTitlesQuery.data],
+  );
 
   const rentRollRows = useMemo(() => buildRentRollRows(contractsQuery.data ?? [], contractStatusLabels), [contractsQuery.data]);
-  const occupancyRows = useMemo(() => buildOccupancyRows(unitsQuery.data ?? []), [unitsQuery.data]);
+  const occupancyRows = useMemo(
+    () => buildOccupancyRows(unitsQuery.data ?? [], propertyTitlesById),
+    [unitsQuery.data, propertyTitlesById],
+  );
   const expiringRows = useMemo(() => buildExpiringContractsRows(contractsQuery.data ?? [], new Date()), [contractsQuery.data]);
   const paymentsTrendRows = useMemo(() => buildPaymentsTrendRows({
     dailyCollections: dailyCollectionQuery.data?.rows,
@@ -981,4 +997,26 @@ export function ReportsPage() {
       />
     </div>
   );
+}
+
+// Tiny inline hook that fetches just `id` and `title` for every non-deleted
+// property so the occupancy section in /reports can render a friendly name
+// instead of "عقار <sliced id>". Safe to keep this minimal — we do not
+// touch any other backend read here.
+function usePropertyTitles() {
+  return useQuery({
+    queryKey: ['reports', 'propertyTitles'],
+    queryFn: async (): Promise<Array<{ id: string; title: string }>> => {
+      const { data, error } = await supabase
+        .from('properties')
+        .select('id, title')
+        .is('deleted_at', null)
+        .returns<Array<Pick<Property, 'id' | 'title'>>>();
+      if (error) throw error;
+      return (data ?? [])
+        .map((row) => ({ id: row.id, title: (row.title ?? '').trim() }))
+        .filter((row) => row.title.length > 0);
+    },
+    staleTime: 60_000,
+  });
 }

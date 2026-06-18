@@ -55,7 +55,7 @@ export function buildExpensesCsv(expenses: readonly Expense[], propertyRows: rea
   ]);
 
   return [
-    'date,property,category,amount,description',
+    'التاريخ,العقار,التصنيف,المبلغ,الوصف',
     ...rows.map((row) => row.map(escapeCsvCell).join(',')),
   ].join('\n');
 }

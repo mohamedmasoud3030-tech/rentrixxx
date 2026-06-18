@@ -36,7 +36,7 @@ describe('buildExpensesCsv', () => {
     } as Expense;
 
     expect(buildExpensesCsv([expense], [property])).toBe([
-      'date,property,category,amount,description',
+      'التاريخ,العقار,التصنيف,المبلغ,الوصف',
       '"2026-06-13","برج \\"النيل\\"","صيانة",1250.5,"مصعد, دور 2"',
     ].join('\n'));
   });
