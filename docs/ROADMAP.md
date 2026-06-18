@@ -1,8 +1,8 @@
 # Rentrix Development Roadmap
 
-**One source of truth for development phases, current work, and status.**
+**Navigation guide to phase status. For authoritative roadmap, see `docs/RENTRIX_MASTER_PLAN.md`.**
 
-Use with: [`RENTRIX_MASTER_PLAN.md`](./RENTRIX_MASTER_PLAN.md) for full context, [`FIRST_CLIENT_DELIVERY_PLAN.md`](./FIRST_CLIENT_DELIVERY_PLAN.md) for client scope.
+Use with: [`docs/FINAL_PRODUCT_BLUEPRINT.md`](./FINAL_PRODUCT_BLUEPRINT.md) (product definition), [`docs/RENTRIX_MASTER_PLAN.md`](./RENTRIX_MASTER_PLAN.md) (execution roadmap), [`docs/ai/CURRENT_EXECUTION_CONTEXT.md`](./ai/CURRENT_EXECUTION_CONTEXT.md) (next work).
 
 ---
 

@@ -2,14 +2,17 @@
 
 ## Start here
 
-1. Read `QUICK_STATUS.md` (2-minute overview if you're new).
-2. Read `README.md`.
-3. Read `docs/ROADMAP.md` (current phase status and phase clarity).
-4. Read `docs/ai/ONBOARDING.md` for the current application snapshot and canonical reading order.
-5. Read `docs/RENTRIX_MASTER_PLAN.md` for the active release, the next ready item, and the ordered path to `v1.0`.
-6. Read `docs/ai/AGENT_CAPABILITIES.md` and load only the skills relevant to the task.
-7. Read `docs/ai/GIT_TOOLING_POLICY.md` before branch, pull-request, CI, or merge work.
-8. Inspect the repository root and the active app under `artifacts/rentrix/` before changing code.
+**Authoritative sources first:**
+
+1. Read `docs/FINAL_PRODUCT_BLUEPRINT.md` (what you're building)
+2. Read `docs/RENTRIX_MASTER_PLAN.md` (execution roadmap)
+3. Read `docs/ai/CURRENT_EXECUTION_CONTEXT.md` (what to work on NOW)
+4. Read `AGENTS.md` (agent rules and boundaries)
+
+**Then agent-type specific:**
+
+- Codex agents: read `docs/ai/AGENT_OPERATING_PROTOCOL.md` then `docs/ai/CODEX_AGENT_GUIDE.md`
+- Claude agents: read `docs/ai/CLAUDE_AGENT_GUIDE.md`
 
 Use actual code and migrations as the source of truth. Prefer `rg` and `rg --files` for search. Do not infer active behavior from historical reports, recovery folders, or old pull requests.
 

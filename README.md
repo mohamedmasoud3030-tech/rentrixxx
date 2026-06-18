@@ -6,23 +6,34 @@ The active application is intentionally focused. SaaS multi-tenancy and accounti
 
 ## Start here
 
-Read in this order:
+**Authoritative sources:**
 
-1. `AGENTS.md`
-2. `docs/ROADMAP.md` (current phase status + quick phase overview)
-3. `docs/ai/CURRENT_EXECUTION_CONTEXT.md`
-4. `docs/ai/ONBOARDING.md`
-5. `docs/RENTRIX_MASTER_PLAN.md`
-6. `docs/ai/AGENT_CAPABILITIES.md`
-7. `docs/ai/GIT_TOOLING_POLICY.md`
+1. **What is Rentrix v1.0?** → `docs/FINAL_PRODUCT_BLUEPRINT.md`
+2. **What's the execution roadmap?** → `docs/RENTRIX_MASTER_PLAN.md`
+3. **What do I work on next?** → `docs/ai/CURRENT_EXECUTION_CONTEXT.md`
+
+**Then read in this order:**
+
+1. `AGENTS.md` (agent rules)
+2. `README.md` (repo structure)
+3. `docs/ai/ONBOARDING.md` (current app snapshot)
+4. `docs/ai/AGENT_OPERATING_PROTOCOL.md` or `docs/ai/CLAUDE_AGENT_GUIDE.md` (your agent type)
 
 `docs/ai/CURRENT_EXECUTION_CONTEXT.md` is the single current execution source of truth for scope, blockers, contradictions, next PR order, and future-agent rules. `docs/ai/FINAL_DELIVERY_GATE_QA_EVIDENCE.md` records the currently BLOCKED live handover evidence gates. `docs/ai/V05_COMMERCIAL_HARDENING_PREP.md` defines repo-only v0.5 preparation without claiming Production GO. `docs/ai/ONBOARDING.md` contains the current application snapshot and the full reading sequence. `docs/RENTRIX_MASTER_PLAN.md` defines the final product shape, current release, ordered releases, and next ready item. `docs/ai/AGENT_CAPABILITIES.md` maps tasks to skills and project additions. `docs/ai/GIT_TOOLING_POLICY.md` defines how branch, diff, PR, CI, and merge tools must be used.
 
 ## Docs map
 
-**Quick entry:** `docs/ROADMAP.md` — phases, current work, status at a glance.
+**Authoritative sources (read first):**
 
-Read first: `AGENTS.md`, `README.md`, `docs/ROADMAP.md`, `docs/ai/CURRENT_EXECUTION_CONTEXT.md`, `docs/RENTRIX_MASTER_PLAN.md`, `docs/FIRST_CLIENT_DELIVERY_PLAN.md`, and `docs/ai/ONBOARDING.md`.
+- `docs/FINAL_PRODUCT_BLUEPRINT.md` — what Rentrix v1.0 is supposed to become
+- `docs/RENTRIX_MASTER_PLAN.md` — how to release and current baseline
+- `docs/ai/CURRENT_EXECUTION_CONTEXT.md` — what to work on right now
+
+**Navigation & reference:**
+
+- `QUICK_STATUS.md` — quick summary for new agents (points to above)
+- `docs/ROADMAP.md` — phase navigation aid (points to above)
+- `docs/INDEX.md` — which docs to read when (points to above)
 
 Active policy docs: `docs/ai/domain-rules.md`, `docs/ai/engineering-policy.md`, `docs/ai/security-policy.md`, `docs/ai/release-policy.md`, `docs/ai/testing-guide.md`, and `docs/decisions/README.md`.
 

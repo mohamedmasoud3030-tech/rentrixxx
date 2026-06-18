@@ -1,6 +1,6 @@
 # Rentrix Documentation Index
 
-**One source of truth for what each document contains and when to read it.**
+**Navigation guide: which documents to read and when. Not authoritative for roadmap (see `docs/RENTRIX_MASTER_PLAN.md`), product (see `docs/FINAL_PRODUCT_BLUEPRINT.md`), or execution (see `docs/ai/CURRENT_EXECUTION_CONTEXT.md`).**
 
 ---
 
