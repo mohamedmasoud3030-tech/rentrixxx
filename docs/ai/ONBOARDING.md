@@ -8,7 +8,7 @@ For reporting or document-output work, also read `docs/ai/REPORTING_DEFINITIONS.
 
 ## Docs map
 
-Read first: `AGENTS.md`, `README.md`, `docs/ai/CURRENT_EXECUTION_CONTEXT.md`, `docs/RENTRIX_MASTER_PLAN.md`, `docs/FIRST_CLIENT_DELIVERY_PLAN.md`, and this onboarding snapshot.
+Read first: `QUICK_STATUS.md` (if new), `AGENTS.md`, `README.md`, `docs/ROADMAP.md`, `docs/ai/CURRENT_EXECUTION_CONTEXT.md`, `docs/RENTRIX_MASTER_PLAN.md`, `docs/FIRST_CLIENT_DELIVERY_PLAN.md`, and this onboarding snapshot.
 
 Active policy docs: `docs/ai/domain-rules.md`, `docs/ai/engineering-policy.md`, `docs/ai/security-policy.md`, `docs/ai/release-policy.md`, `docs/ai/testing-guide.md`, and `docs/decisions/README.md`.
 
