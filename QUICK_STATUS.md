@@ -1,6 +1,6 @@
 # Rentrix Quick Status
 
-**Read this first if you're a new agent starting work.**
+**Fast summary for new agents. Not authoritative — see `docs/FINAL_PRODUCT_BLUEPRINT.md`, `docs/RENTRIX_MASTER_PLAN.md`, and `docs/ai/CURRENT_EXECUTION_CONTEXT.md` for the real story.**
 
 ---
 
@@ -50,8 +50,9 @@
 
 | What | Where |
 |------|-------|
-| **Read first** | `docs/ROADMAP.md` (this roadmap, updated) |
-| **Full context** | `docs/RENTRIX_MASTER_PLAN.md` |
+| **Authoritative roadmap** | `docs/RENTRIX_MASTER_PLAN.md` |
+| **Product blueprint** | `docs/FINAL_PRODUCT_BLUEPRINT.md` |
+| **Current execution** | `docs/ai/CURRENT_EXECUTION_CONTEXT.md` |
 | **Code structure** | `docs/ROOT_LAYOUT.md` |
 | **Agent rules** | `AGENTS.md` |
 | **Current snapshot** | `docs/ai/ONBOARDING.md` |
@@ -75,11 +76,12 @@
 
 ## Getting Started
 
-1. Clone the repo (or `cd` to existing clone)
-2. Read `AGENTS.md` + `docs/ROADMAP.md`
-3. Read `docs/RENTRIX_MASTER_PLAN.md` for full context
-4. Check `docs/ai/CURRENT_EXECUTION_CONTEXT.md` for current blockers/scope
-5. Start work from `main` branch
+1. Read `AGENTS.md` (agent rules)
+2. Read `docs/FINAL_PRODUCT_BLUEPRINT.md` (what Rentrix is)
+3. Read `docs/RENTRIX_MASTER_PLAN.md` (execution roadmap)
+4. Read `docs/ai/CURRENT_EXECUTION_CONTEXT.md` (what to work on)
+5. Read `docs/ai/ONBOARDING.md` (current app state)
+6. Start work from `main` branch
 
 ---
 
