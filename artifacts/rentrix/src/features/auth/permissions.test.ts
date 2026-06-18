@@ -6,6 +6,7 @@ import {
   canAccessRoute,
   canShowNavigationItem,
   getAuthorizationContextFromUser,
+  getAuthorizationDiagnosticsFromUser,
   hasRole,
   normalizeRole,
 } from './permissions';
@@ -101,6 +102,44 @@ describe('canonical authorization permissions', () => {
     expect(getAuthorizationContextFromUser(userWithRole(null))).toBeNull();
     expect(getAuthorizationContextFromUser({ ...userWithRole('ADMIN'), id: '' })).toBeNull();
     expect(normalizeRole(undefined)).toBeNull();
+  });
+
+  it('reports safe authorization diagnostics without granting missing role metadata', () => {
+    const diagnostics = getAuthorizationDiagnosticsFromUser({
+      id: 'user-1',
+      email: 'admin@example.com',
+      app_metadata: {},
+    });
+
+    expect(getAuthorizationContextFromUser({ id: 'user-1', email: 'admin@example.com', app_metadata: {} })).toBeNull();
+    expect(diagnostics).toEqual({
+      resolvedRole: null,
+      hasUserRoleMetadata: false,
+      hasRoleMetadata: false,
+      metadataMismatch: true,
+    });
+  });
+
+  it('reports which accepted app metadata role field resolved authorization', () => {
+    expect(getAuthorizationDiagnosticsFromUser(userWithRole('ADMIN'))).toEqual({
+      resolvedRole: 'ADMIN',
+      hasUserRoleMetadata: true,
+      hasRoleMetadata: false,
+      metadataMismatch: false,
+    });
+
+    expect(
+      getAuthorizationDiagnosticsFromUser({
+        id: 'user-1',
+        email: 'admin@example.com',
+        app_metadata: { role: 'ADMIN' },
+      }),
+    ).toEqual({
+      resolvedRole: 'ADMIN',
+      hasUserRoleMetadata: false,
+      hasRoleMetadata: true,
+      metadataMismatch: false,
+    });
   });
 
   it('does not depend on historical AppContext or React Router', () => {
