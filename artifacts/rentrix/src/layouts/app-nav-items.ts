@@ -6,6 +6,21 @@ export type NavItem = readonly [to: string, labelKey: string, description: strin
 export type MobileNavItem = readonly [to: string, labelKey: string, Icon: LucideIcon, permission?: AppPermission];
 export type NavGroup = readonly [sectionTitle: string, items: readonly NavItem[]];
 
+/**
+ * The primary sidebar / mobile drawer navigation.
+ *
+ * Design rules (PR #929 polish):
+ *  - Group titles are short, scannable, and never wrap on mobile.
+ *  - Each entry opens a real, distinct route. We never show two sidebar items
+ *    that point to the same route without a real tab / deep-link behavior.
+ *    `/reports` and "Statements" therefore collapse into a single entry
+ *    "مركز التقارير والكشوف" — the Reports page itself renders the
+ *    التقارير and كشوف الحساب sections.
+ *  - Change Password stays out of the sidebar; it lives in the
+ *    الأمان والحساب section of /settings (see settings-page.tsx).
+ *  - ADMIN routes are visible to ADMIN via the same `permission` gating the
+ *    route itself uses; we never hide them from users who can access them.
+ */
 export const navGroups = [
   ['الرئيسية', [['/', 'dashboard', 'ملخص الأداء اليومي', LayoutDashboard]]],
   ['العقارات والوحدات', [
@@ -18,7 +33,7 @@ export const navGroups = [
     ['/owners', 'owners', 'إدارة ملفات الملاك وعلاقات الملكية', UserRoundCog, 'owners.hub.view'],
     ['/tenants', 'tenants', 'بيانات المستأجرين', Users],
   ]],
-  ['التأجير والتشغيل', [
+  ['التشغيل', [
     ['/contracts', 'contracts', 'العقود والتجديدات', FileText],
     ['/maintenance', 'maintenance', 'طلبات الصيانة والمتابعة', Wrench, 'maintenance.view'],
     ['/communication', 'communication', 'سجل التواصل الداخلي والمتابعات', MessageSquareText, 'communication.view'],
@@ -30,15 +45,19 @@ export const navGroups = [
     ['/arrears', 'arrears', 'متابعة المبالغ المتأخرة', ClipboardList],
   ]],
   ['التقارير والكشوف', [
-    ['/reports', 'reports', 'مركز التقارير التشغيلية', BarChart3],
-    ['/reports', 'statements', 'كشوف حركة للقراءة فقط بدون دفتر أستاذ', ReceiptText],
+    [
+      '/reports',
+      'reportsAndStatements',
+      'تحصيلات، متأخرات، إشغال، وكشوف قراءة فقط',
+      BarChart3,
+    ],
   ]],
   ['المبيعات', [
     ['/leads', 'leads', 'مصادر العملاء المحتملين والتحويلات', ContactRound, 'leads.view'],
     ['/commissions', 'commissions', 'تتبع عمولات المكتب كحالة تشغيلية فقط', BadgeDollarSign, 'commissions.view'],
   ]],
   ['الإعدادات', [
-    ['/settings', 'settings', 'إعدادات المكتب والأمان والحساب', Settings, 'settings.manage'],
+    ['/settings', 'settings', 'مركز تحكم المكتب، الهوية، الأمان، والحساب', Settings, 'settings.manage'],
   ]],
   ['إدارة النظام', [
     ['/audit-log', 'auditLog', 'سجل أحداث الحوكمة قراءة فقط', ListChecks, 'audit.view'],

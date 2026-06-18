@@ -49,6 +49,7 @@ const sharedTranslationEntries = [
   ['accounting', 'المحاسبة', 'Accounting'],
   ['reports', 'التقارير', 'Reports'],
   ['statements', 'كشوف الحساب', 'Statements'],
+  ['reportsAndStatements', 'مركز التقارير والكشوف', 'Reports & statements'],
   ['maintenance', 'الصيانة', 'Maintenance'],
   ['system', 'النظام', 'System'],
   ['auditLog', 'سجل التدقيق', 'Audit log'],
