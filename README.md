@@ -9,17 +9,20 @@ The active application is intentionally focused. SaaS multi-tenancy and accounti
 Read in this order:
 
 1. `AGENTS.md`
-2. `docs/ai/CURRENT_EXECUTION_CONTEXT.md`
-3. `docs/ai/ONBOARDING.md`
-4. `docs/RENTRIX_MASTER_PLAN.md`
-5. `docs/ai/AGENT_CAPABILITIES.md`
-6. `docs/ai/GIT_TOOLING_POLICY.md`
+2. `docs/ROADMAP.md` (current phase status + quick phase overview)
+3. `docs/ai/CURRENT_EXECUTION_CONTEXT.md`
+4. `docs/ai/ONBOARDING.md`
+5. `docs/RENTRIX_MASTER_PLAN.md`
+6. `docs/ai/AGENT_CAPABILITIES.md`
+7. `docs/ai/GIT_TOOLING_POLICY.md`
 
 `docs/ai/CURRENT_EXECUTION_CONTEXT.md` is the single current execution source of truth for scope, blockers, contradictions, next PR order, and future-agent rules. `docs/ai/FINAL_DELIVERY_GATE_QA_EVIDENCE.md` records the currently BLOCKED live handover evidence gates. `docs/ai/V05_COMMERCIAL_HARDENING_PREP.md` defines repo-only v0.5 preparation without claiming Production GO. `docs/ai/ONBOARDING.md` contains the current application snapshot and the full reading sequence. `docs/RENTRIX_MASTER_PLAN.md` defines the final product shape, current release, ordered releases, and next ready item. `docs/ai/AGENT_CAPABILITIES.md` maps tasks to skills and project additions. `docs/ai/GIT_TOOLING_POLICY.md` defines how branch, diff, PR, CI, and merge tools must be used.
 
 ## Docs map
 
-Read first: `AGENTS.md`, `README.md`, `docs/ai/CURRENT_EXECUTION_CONTEXT.md`, `docs/RENTRIX_MASTER_PLAN.md`, `docs/FIRST_CLIENT_DELIVERY_PLAN.md`, and `docs/ai/ONBOARDING.md`.
+**Quick entry:** `docs/ROADMAP.md` — phases, current work, status at a glance.
+
+Read first: `AGENTS.md`, `README.md`, `docs/ROADMAP.md`, `docs/ai/CURRENT_EXECUTION_CONTEXT.md`, `docs/RENTRIX_MASTER_PLAN.md`, `docs/FIRST_CLIENT_DELIVERY_PLAN.md`, and `docs/ai/ONBOARDING.md`.
 
 Active policy docs: `docs/ai/domain-rules.md`, `docs/ai/engineering-policy.md`, `docs/ai/security-policy.md`, `docs/ai/release-policy.md`, `docs/ai/testing-guide.md`, and `docs/decisions/README.md`.
 
