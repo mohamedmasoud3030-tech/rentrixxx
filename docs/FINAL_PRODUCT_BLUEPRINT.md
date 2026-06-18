@@ -1,338 +1,384 @@
 # Rentrix Final Product Blueprint
 
-**What Rentrix is designed to become. Not the execution roadmap — see `docs/RENTRIX_MASTER_PLAN.md` for that.**
+**Defines what Rentrix v1.0 is designed to become. It is not the execution roadmap.**
+
+Execution authority stays in `docs/RENTRIX_MASTER_PLAN.md`.
+Current execution status stays in `docs/ai/CURRENT_EXECUTION_CONTEXT.md`.
+Final QA evidence stays in `docs/ai/FINAL_DELIVERY_GATE_QA_EVIDENCE.md`.
 
 ---
 
-## A. Product North Star
+## 1. Product North Star
 
-Rentrix is an **Arabic-first, mobile-first, single-office real estate operations system** designed to help property offices manage daily operations with speed, clarity, trust, and professional output.
+Rentrix is an **Arabic-first, mobile-first, single-office real estate operations system** for property offices that need to run daily work faster, collect payments with less confusion, produce professional documents, and see operational risk before it becomes a dispute.
 
-It is purpose-built for:
-- Real estate agents and property managers in the Middle East and Gulf region
-- Offices managing multiple properties and units
-- Fast invoice → payment → receipt workflows
-- Clear visibility into outstanding payments and arrears
-- Professional PDF/CSV reporting without accounting-grade ledger claims
-- Mobile-friendly office workflows with responsive design
-- Daily dashboard visibility for operators
-- Audit and data-integrity evidence for trust
+The v1.0 product should feel like a practical office operating system, not a generic SaaS dashboard. It must help an office answer these questions quickly:
 
-It is **explicitly not**:
-- A multi-tenant SaaS platform
-- An accounting-grade general ledger
-- An HR or payroll system
-- A communication provider (WhatsApp, SMS, email)
-- A settlement or payout automation system
+- What properties and units do we manage?
+- Which units are occupied, vacant, or under maintenance?
+- Which contracts are active, expiring, overdue, or risky?
+- Who owes money, how much, and since when?
+- Which invoice became which posted payment and which receipt?
+- What can be printed or exported for a tenant, owner, or manager today?
+- What changed, who changed it, and can we trust the data?
+
+### Primary customer
+
+Small and medium real-estate offices in Arabic-first markets, especially offices that manage multiple properties and units but do not need SaaS multi-tenancy, a general accounting ledger, or complex enterprise setup.
+
+### Product promise
+
+Rentrix should make a real office look more professional in front of tenants and owners, reduce lost payment evidence, and give the operator a clear next action every day.
 
 ---
 
-## B. Final v1.0 Application Map
+## 2. Final v1.0 Application Map
 
-The complete Rentrix v1.0 application includes the following modules:
+The final Rentrix v1.0 application contains these module groups.
 
 ### Core Operations
-- **Dashboard** — daily summaries, KPI cards, quick actions
-- **Properties** — property inventory, details, units, owners
-- **Units** — unit inventory, status, occupancy, rent
-- **People** — global contact/person registry
-- **Tenants** — tenant records linked to contracts
-- **Owners** — owner records and property relationships
-- **Owners Hub** — owner-specific summaries and statements
 
-### Approved Growth Modules
-- **Lands** — undeveloped property tracking
-- **Leads** — potential tenant/property pipelines
-- **Commissions** — agent/staff earnings tracking
-- **Communication** — internal audit log of office communications
+- **Dashboard** — daily operational command center, KPI cards, risk alerts, quick actions.
+- **Properties** — property inventory, ownership context, unit/expense/maintenance access.
+- **Units** — occupancy, rent, unit status, linked contracts.
+- **People** — shared contact/person registry.
+- **Tenants** — tenant records linked to contracts and payments.
+- **Owners** — owner records linked to properties.
+- **Owners Hub** — owner-facing summaries without settlement or payout claims.
+- **Contracts** — lease lifecycle: create, active, expiring, renewal, termination, status clarity.
+- **Maintenance** — maintenance records tied to properties/units.
 
 ### Financial Operations
-- **Contracts** — lease agreements with renewal/termination workflow
-- **Financials / Payments** — core payment hub
-- **Invoices** — rent invoicing
-- **Receipts** — payment receipts (payment-backed)
-- **Expenses** — property and office expenses
-- **Arrears** — outstanding payment visibility
-- **Reports** — financial summaries, owner statements, arrears reports
 
-### Evidence & Governance
-- **Maintenance** — property maintenance records and scheduling
-- **Audit Log** — read-only audit trail of data changes
-- **Data Integrity** — schema validation and constraint checks
-- **Settings** — office configuration and preferences
-- **System Governance** — role-based access and permissions
-- **Change Password** — user credential management
+- **Financials / Payments** — payment recording hub.
+- **Invoices** — rent invoices and payment state.
+- **Receipts** — payment-backed receipts only.
+- **Expenses** — property and office expense recording and export.
+- **Arrears** — outstanding balance visibility and aging context.
+
+### Reports & Evidence
+
+- **Reports** — operational financial summaries and read-only statement areas.
+- **Print / PDF / CSV outputs** — professional outputs only where implemented and verified.
+- **Receipt browser print** — current receipt proof path until a dedicated receipt PDF is approved and implemented.
+- **Audit and data-integrity evidence** — proof that operational data is traceable and trustworthy.
+
+### Approved Growth Modules
+
+- **Lands** — land and undeveloped property tracking.
+- **Leads** — pipeline for property/tenant opportunities.
+- **Commissions** — commission tracking/reporting only; no payroll or payout automation.
+- **Communication** — internal communication log only; no external WhatsApp/SMS/email sending.
+
+### Governance & Settings
+
+- **Settings** — office profile, branding, numbering, notification preferences, print identity.
+- **Change Password** — account security flow.
+- **Audit Log** — authorized read-only audit visibility.
+- **Data Integrity** — authorized validation and consistency visibility.
+- **System Governance** — authorized operational controls and diagnostics.
 
 ---
 
-## C. Full Application Mermaid Diagram
+## 3. Full Application Diagram
 
 ```mermaid
-graph TB
-  A["Rentrix v1.0<br/>Arabic-First Mobile-First<br/>Single-Office Real Estate"]
-  
-  A --> Core["Core Operations"]
-  A --> Fin["Financial Operations"]
-  A --> Reports["Reports & Evidence"]
-  A --> Growth["Approved Growth"]
-  A --> Gov["Governance & Settings"]
-  
-  Core --> C1["Dashboard"]
-  Core --> C2["Properties"]
-  Core --> C3["Units"]
-  Core --> C4["People"]
-  Core --> C5["Tenants"]
-  Core --> C6["Owners<br/>Owners Hub"]
-  
-  Fin --> F1["Contracts"]
-  Fin --> F2["Financials/Payments"]
-  Fin --> F3["Invoices"]
-  Fin --> F4["Receipts"]
-  Fin --> F5["Expenses"]
-  Fin --> F6["Arrears"]
-  
-  Reports --> R1["Reports"]
-  Reports --> R2["Maintenance"]
-  Reports --> R3["Audit Log<br/>Data Integrity"]
-  
-  Growth --> G1["Lands"]
-  Growth --> G2["Leads"]
-  Growth --> G3["Commissions"]
-  Growth --> G4["Communication"]
-  
-  Gov --> S1["Settings"]
-  Gov --> S2["System Governance"]
-  Gov --> S3["Change Password"]
+flowchart TB
+  Rentrix["Rentrix v1.0<br/>Arabic-first • Mobile-first • Single-office"]
+
+  Rentrix --> Core["Core Operations"]
+  Rentrix --> Finance["Financial Operations"]
+  Rentrix --> Evidence["Reports & Evidence"]
+  Rentrix --> Growth["Approved Growth Modules"]
+  Rentrix --> Governance["Governance & Settings"]
+
+  Core --> Dashboard["Dashboard"]
+  Core --> Properties["Properties"]
+  Core --> Units["Units"]
+  Core --> People["People"]
+  Core --> Tenants["Tenants"]
+  Core --> Owners["Owners"]
+  Core --> OwnersHub["Owners Hub"]
+  Core --> Contracts["Contracts"]
+  Core --> Maintenance["Maintenance"]
+
+  Finance --> Payments["Financials / Payments"]
+  Finance --> Invoices["Invoices"]
+  Finance --> Receipts["Receipts"]
+  Finance --> Expenses["Expenses"]
+  Finance --> Arrears["Arrears"]
+
+  Evidence --> Reports["Reports"]
+  Evidence --> Statements["Read-only summaries / statements"]
+  Evidence --> PrintExport["Print / PDF / CSV evidence"]
+  Evidence --> AuditEvidence["Audit / Data Integrity evidence"]
+
+  Growth --> Lands["Lands"]
+  Growth --> Leads["Leads"]
+  Growth --> Commissions["Commissions"]
+  Growth --> Communication["Internal Communication Log"]
+
+  Governance --> Settings["Settings"]
+  Governance --> ChangePassword["Change Password"]
+  Governance --> AuditLog["Audit Log"]
+  Governance --> DataIntegrity["Data Integrity"]
+  Governance --> System["System Governance"]
 ```
 
 ---
 
-## D. Canonical Business Flow Diagram
+## 4. Canonical Business Flow
 
 ```mermaid
-graph LR
-  P["Property"]
-  U["Unit"]
-  T["Tenant"]
-  C["Contract"]
-  I["Invoice"]
-  Pay["Posted Payment"]
-  R["Receipt"]
-  O["Owner"]
-  E["Expense"]
-  M["Maintenance"]
-  Reports["Reports<br/>Arrears"]
-  
-  P --> U
-  P --> E
-  P --> M
-  T --> C
-  O --> P
-  U --> C
-  C --> I
-  I --> Pay
-  Pay --> R
-  Pay --> Reports
-  I --> Reports
-  
-  style P fill:#e1f5ff
-  style T fill:#f3e5f5
-  style O fill:#f3e5f5
-  style C fill:#fff3e0
-  style I fill:#fff3e0
-  style Pay fill:#f1f8e9
-  style R fill:#f1f8e9
-  style Reports fill:#e0f2f1
+flowchart LR
+  Property["Property"] --> Unit["Unit"]
+  Unit --> Contract["Contract"]
+  Tenant["Tenant"] --> Contract
+  Owner["Owner"] --> Property
+
+  Contract --> Invoice["Invoice"]
+  Invoice --> Payment["Posted Payment"]
+  Payment --> Receipt["Receipt"]
+
+  Receipt --> Reports["Reports / Evidence"]
+  Payment --> Arrears["Arrears refresh"]
+  Invoice --> Arrears
+
+  Property --> Expense["Expense"]
+  Property --> Maintenance["Maintenance Record"]
+  Expense --> Reports
+  Maintenance --> Dashboard["Dashboard / follow-up"]
 ```
 
----
+### Non-negotiable domain rules
 
-## E. Market Explosion Plan
-
-What makes Rentrix commercially strong:
-
-### Language & Culture
-- **Arabic-first design** — native RTL, Arabic UX conventions, cultural context
-- **English/LTR functional** — not a second-class afterthought
-
-### Mobile & Workflow
-- **Mobile-friendly office workflows** — agents on property, on phone, in car
-- **Responsive card-grid on mobile** — not just scaled-down desktop
-- **Fast collection flow** — invoice → payment → receipt in minutes
-- **Daily operator dashboard** — what matters most, right now
-
-### Professional Output
-- **Print-ready receipts** — office branding, QR codes, signature lines
-- **PDF statements** — owner statements, tenant receipts
-- **CSV exports** — integration with accounting offices, email distribution
-- **Professional templates** — not generic SaaS styling
-
-### Financial Visibility
-- **Clear arrears visibility** — who owes, how much, how late
-- **Owner/tenant summaries** — without accounting-grade claims
-- **Payment confirmation** — receipt = trust
-- **Audit trail** — who changed what, when
-
-### Operational Trust
-- **Safe financial wording** — "posted payment," "outstanding," not "profit," "net income," "balance sheet"
-- **Single-office simplicity** — no subscription tiers, no org setup, no user invites
-- **Practical onboarding** — 5-minute setup, clear next action per page
-- **Evidence for regulators** — audit log, data integrity checks
-
-### Competitive Edge
-- **Real-estate-specific** — not a generic accounting tool
-- **Operator-focused** — not accountant-focused
-- **Fast & responsive** — not bloated SaaS UI
-- **Trust-first design** — financial clarity over features
+- A property owns units.
+- A contract references one unit and one tenant.
+- A payment belongs to one contract/invoice flow; standalone payments are not allowed.
+- A receipt is generated only from a posted payment.
+- Active contracts for the same unit must not overlap.
+- Posted payments are immutable; corrections use reversal/replacement patterns.
+- Outstanding balance is calculated, not manually edited.
 
 ---
 
-## F. Fixed Release Train to v1.0
+## 5. Market Breakout Strategy
 
-Remaining major release objectives (verify against current `docs/RENTRIX_MASTER_PLAN.md` for any updates):
+Rentrix can win by being the fastest and clearest Arabic-first operating system for a real-estate office. The goal is not to look like a large enterprise ERP; the goal is to make the daily operator faster and the office more trusted.
 
-### v0.5: Commercial Hardening
-- **Objective:** Prepare code, documentation, and runbooks for first commercial use
-- **Scope:** RLS hardening, payment atomicity, audit readiness, runbook creation
-- **Not included:** New modules, UI redesign, mobile-first rewrite
-- **Exit:** All RLS grants verified, atomic RPCs tested, runbooks documented
+### 5.1 Day-one value
 
-### v0.6: UI Consistency & Mobile Polish
-- **Objective:** Ensure UI is consistent and mobile-usable across all visible pages
-- **Scope:** Responsive layouts, card grids, touch targets, RTL verification
-- **Not included:** New pages, accounting features, SaaS organization
-- **Exit:** Mobile manual QA pass, desktop consistency verified
+A first customer should see value in the first session:
 
-### v0.7: Reports, Statements, Export Polish
-- **Objective:** Solidify financial report output without accounting-grade claims
-- **Scope:** Report formatting, PDF/CSV export, owner statements, arrears clarity
-- **Not included:** General ledger, tax forms, profit calculations, settlement workflows
-- **Exit:** Sample reports printed and verified, CSV import/export working
+- Add property and units.
+- Add tenant/owner.
+- Create contract.
+- Generate invoice.
+- Record payment.
+- Print/share receipt evidence.
+- See arrears and dashboard refresh.
 
-### v0.8: Operator QA Readiness
-- **Objective:** Stabilize and bug-fix for live operator testing
-- **Scope:** Bug fixes, performance tuning, missing error messages, edge case handling
-- **Not included:** New features, architectural changes, data migration
-- **Exit:** QA backlog zero, documented known limitations recorded
+This workflow is the product's commercial wedge. Every release must protect it.
 
-### v0.9: Final Delivery Gate Evidence
-- **Objective:** Collect and verify final gates before GO/NO-GO
-- **Scope:** B-1 (browser QA), B-2 (invoice flow), B-3 (mobile print), B-4 (live writes)
-- **Not included:** Feature additions, customer customization
-- **Exit:** All gates documented, GO/NO-GO decision made
+### 5.2 Arabic-first advantage
 
-### v1.0: First Commercial Release
-- **Objective:** Release to first production customer
-- **Scope:** Customer onboarding, live support, bug fixes
-- **Not included:** New modules, architectural changes
-- **Exit:** Customer running live, no critical blockers, support established
+- Native RTL layout, not translated LTR screens.
+- Arabic financial labels that avoid accounting false claims.
+- Office-friendly wording: collected, outstanding, arrears, expenses, receipt, contract.
+- English/LTR remains safe for mixed offices, but Arabic is the lead experience.
+
+### 5.3 Mobile-first operator advantage
+
+- Cards on phone, tables on desktop.
+- Clear touch targets.
+- Bottom/drawer navigation that exposes real work, not hidden modules.
+- Fast create/edit flows that work while the operator is away from the desk.
+- Every page should answer: what happened, what is risky, what is the next action?
+
+### 5.4 Trust and evidence advantage
+
+- Payment-backed receipts.
+- Print-ready documents where implemented.
+- CSV exports that preserve Arabic compatibility.
+- Audit log and data-integrity visibility.
+- Clear blocked/unverified QA status before production claims.
+
+### 5.5 Simplicity advantage
+
+Rentrix intentionally avoids SaaS setup complexity:
+
+- No organizations.
+- No membership/invitation model.
+- No subscription tiers in the product workflow.
+- No general ledger UI.
+- No owner payout automation.
+
+That makes the first-client path simpler, cheaper, and faster to support.
+
+### 5.6 Demo moments that should sell the product
+
+The v1.0 demo should be built around these moments:
+
+1. Dashboard opens in Arabic and immediately shows today's work.
+2. The operator finds a unit and contract quickly.
+3. A payment is recorded and the receipt appears with professional evidence.
+4. Arrears and reports reflect the change.
+5. The office can show owner/tenant summaries without pretending to be an accounting ledger.
+6. The admin can see audit/data-integrity evidence when trust is questioned.
+
+### 5.7 What “market-ready” means
+
+Rentrix is market-ready only when the product is easy to explain, safe to operate, and proven through final delivery gates. It is not market-ready merely because repository checks pass.
 
 ---
 
-## G. Final Delivery Gates
+## 6. Fixed Release Train to v1.0
 
-These gates must be complete before production GO:
+This release train describes the intended path. If it conflicts with `docs/RENTRIX_MASTER_PLAN.md`, the master plan wins and this file must be updated.
+
+### v0.5 — Commercial Hardening Preparation
+
+- **Objective:** Prepare the product, docs, checklists, and runbooks for commercial readiness review.
+- **Scope:** Repo-only planning, final QA evidence structure, operator checklist, support/runbook notes, status clarity, contradiction cleanup.
+- **Not included:** App code changes, Supabase Cloud work, migrations, RLS changes, RPC changes, Vercel production changes, new features.
+- **Exit criteria:** Docs clearly show blocked gates, current phase, product boundaries, and operator-run evidence needed for GO/NO-GO.
+
+### v0.6 — UI Consistency and Mobile Polish
+
+- **Objective:** Make all active pages feel like one coherent product.
+- **Scope:** Consistent cards, tabs, dialogs, forms, empty states, mobile drawer/bottom navigation, RTL spacing, table/card parity, clear page purpose.
+- **Not included:** New modules, ledger features, SaaS features, production DB changes.
+- **Exit criteria:** Active pages pass a UI consistency checklist on mobile and desktop, with no hidden/dead approved modules.
+
+### v0.7 — Reports, Statements, and Output Polish
+
+- **Objective:** Make reports and office outputs useful, professional, and safe.
+- **Scope:** Improve existing report clarity, CSV/print/PDF surfaces that are already implemented or explicitly approved, statement wording, export naming, Arabic compatibility, print guidance.
+- **Not included:** Accounting-grade P&L, balance sheet, tax finality, owner settlement/payout documents, or unapproved dedicated receipt/report PDF work.
+- **Exit criteria:** Operator can produce trustworthy outputs without any false accounting or settlement claim.
+
+### v0.8 — Operator QA Readiness
+
+- **Objective:** Freeze feature expansion and stabilize for real operator testing.
+- **Scope:** Bug fixes only, error-state clarity, permission-state clarity, performance/route sanity, edge-case handling, known limitations.
+- **Not included:** New feature lanes, major architecture changes, DB redesign, provider integrations.
+- **Exit criteria:** Known QA checklist is complete enough for a live ADMIN session; unresolved risks are explicit.
+
+### v0.9 — Final Delivery Gate Evidence
+
+- **Objective:** Collect or record final delivery evidence for production GO/NO-GO.
+- **Scope:** B-1/B-2/B-3/B-4 evidence, screenshots/recordings/operator notes where available, explicit UNVERIFIED entries where evidence cannot be collected.
+- **Not included:** Feature additions or scope expansion during evidence collection.
+- **Exit criteria:** Final status is explicitly GO, NO-GO, or BLOCKED with evidence.
+
+### v1.0 — First Commercial Release
+
+- **Objective:** Release the first customer-ready Rentrix version.
+- **Scope:** Production handover, support notes, onboarding path, issue triage, bug-fix policy.
+- **Not included:** New roadmap expansion after handover unless separately approved.
+- **Exit criteria:** First operator can run the core chain in production and the support path is clear.
+
+---
+
+## 7. Final Delivery Gates
+
+Production readiness cannot be claimed before these gates are complete or explicitly recorded as blocked/unverified.
 
 ### B-1: Authenticated ADMIN Browser QA
-- Verify logged-in ADMIN can use all visible pages
-- Test core workflows: invoice → payment → receipt
-- Verify Arabic RTL rendering and navigation
-- Record evidence: screenshots, screen recordings, test notes
+
+- Login with an ADMIN operator session.
+- Verify protected routes and refresh behavior.
+- Check Arabic RTL and English/LTR sanity.
+- Verify dashboard, navigation, settings, reports, and core workflow access.
 
 ### B-2: Invoice → Payment → Receipt → Reports Refresh
-- Create invoice → create payment → generate receipt
-- Verify payment status updates contract
-- Verify reports reflect changes
-- Test with multiple properties, units, contracts
-- Record evidence: output screenshots, report samples
 
-### B-3: Mobile/Device Print QA or Explicit Unverified Recording
-- If testing on physical device: print receipt to PDF, verify formatting
-- If not tested: **explicitly record** "mobile print verification pending live test"
-- Do not claim "mobile print verified" if untested
-- Record evidence or explicit unverified status
+- Start from a real or controlled invoice.
+- Record payment through the approved workflow.
+- Verify receipt generation.
+- Verify invoice/payment status and reports/arrears refresh.
+- Record evidence.
 
-### B-4: Live Database Writes and RLS Behavior
-- Verify authenticated users can POST/PATCH/DELETE
-- Verify RLS prevents unauthorized access
-- Verify role claims prevent unprivileged writes
-- Test with multiple roles (ADMIN, MANAGER, USER)
-- Record evidence: mutation results, RLS logs, role verification
+### B-3: Mobile / Physical-device Print QA
 
-**Production readiness CANNOT be claimed until all gates are complete and documented.**
+- Test receipt browser print and relevant document outputs on a physical device where possible.
+- If not possible, record physical print as UNVERIFIED rather than claiming success.
+
+### B-4: Live Allowed Writes and RLS Behavior
+
+- Verify allowed writes under authenticated roles.
+- Verify unauthorized roles fail safely.
+- Confirm role/permission behavior with evidence.
 
 ---
 
-## H. Out-of-Scope Boundaries
+## 8. Commercial Boundaries
 
-The following are explicitly NOT part of Rentrix and must not be added without separate approval:
+### In scope for v1.0
 
-### Organization & Multi-Tenancy
-- ❌ Multiple organizations per database
-- ❌ Memberships, invitations, or subscriptions
-- ❌ Organization-scoped data isolation
-- ✅ Single office, single ownership model
+- Single-office property operations.
+- Arabic-first operational UI.
+- Property/unit/tenant/owner/contract workflows.
+- Invoice/payment/receipt/arrears workflows.
+- Operational reports and safe summaries.
+- Approved lands/leads/commissions/internal communication modules.
+- Governance and evidence visibility.
 
-### Accounting
-- ❌ General ledger with GL accounts and journals
-- ❌ Double-entry bookkeeping automation
-- ❌ Accounting-grade P&L, balance sheet, or tax finality
-- ❌ Profit, net income, or GAAP compliance claims
-- ✅ Invoice-based operational summary only
+### Out of scope unless separately approved
 
-### Settlement & Payout
-- ❌ Owner settlement or payout automation
-- ❌ Commission payroll calculation
-- ❌ Tax withholding or deduction logic
-- ✅ Commission tracking and reporting only (manual settlement by office)
-
-### External Communication
-- ❌ WhatsApp, SMS, or email sending to tenants/owners
-- ❌ Notification delivery integration
-- ❌ Automated message templates
-- ✅ Internal office communication log only (audit trail)
-
-### Production Changes Without Approval
-- ❌ Supabase schema mutations without reviewed migration
-- ❌ RLS policy changes without security review
-- ❌ RPC or SECURITY DEFINER function changes without testing
-- ❌ Vercel deployment changes without staging verification
-- ❌ Environment variable or configuration changes without runbook
+- Shared-database SaaS multi-tenancy.
+- Organizations, memberships, invitations, subscriptions, or org-scoped runtime behavior.
+- General accounting ledger.
+- Accounting-grade P&L, balance sheet, tax finality, profit, net income, or GAAP/IFRS claims.
+- Owner settlement or payout automation.
+- Commission payroll automation.
+- External WhatsApp/SMS/email sending.
+- Production Supabase/Vercel changes without explicit approval and runbook evidence.
 
 ---
 
-## I. Agent Instructions for Maintaining This Blueprint
+## 9. Page Experience Standard
 
-**For Codex and Claude agents:**
+Every active page should satisfy this product standard before v1.0:
 
-1. **Do not invent new phases.** If you see a need for a new release phase, document the rationale in the PR body and update `docs/RENTRIX_MASTER_PLAN.md` with explicit approval reasoning.
-
-2. **Do not create competing roadmap documents.** Only `docs/RENTRIX_MASTER_PLAN.md` may claim roadmap authority. Use this blueprint to describe what you're building toward, not to claim execution authority.
-
-3. **Do not treat quick summaries as authoritative.** `QUICK_STATUS.md`, `docs/ROADMAP.md`, and other pointers are navigation aids. They must link to `docs/RENTRIX_MASTER_PLAN.md` and `docs/ai/CURRENT_EXECUTION_CONTEXT.md` for authoritative status.
-
-4. **Update status only when merged PRs or verified evidence change reality.** Do not speculate about future phases or assume completion.
-
-5. **Use active code and current docs as source of truth.** If a doc claims X but the code does Y, inspect the code, update the doc, and explain the mismatch in the PR.
-
-6. **Keep one coherent PR per phase.** Do not fragment a release phase across 10 scattered PRs. Use feature branches that represent complete work.
-
-7. **Preserve out-of-scope boundaries.** If a feature request conflicts with section H, document why it conflicts and raise the issue for explicit approval before implementing.
+- Clear Arabic title and purpose.
+- Primary action visible when allowed.
+- Search/filter/sort where operationally useful.
+- Loading, empty, filtered-empty, permission-denied, write-failed, and retry states.
+- Mobile card layout and desktop table/detail layout where appropriate.
+- RTL-safe spacing and icons.
+- Safe financial wording.
+- No placeholder modules in approved navigation.
+- No fake metrics.
+- No unexplained dead actions.
 
 ---
 
-## Relationship to Other Documents
+## 10. Agent Maintenance Rules
 
-- **`docs/RENTRIX_MASTER_PLAN.md`** — defines HOW to release, what gates exist, current execution baseline
-- **`docs/ai/CURRENT_EXECUTION_CONTEXT.md`** — defines what is BLOCKED RIGHT NOW and what to work on next
-- **`docs/FINAL_PRODUCT_BLUEPRINT.md`** (this file) — defines WHAT the final product looks like
-- **`QUICK_STATUS.md`** — quick summary for new agents (points to the above three)
-- **`docs/ROADMAP.md`** — navigation guide only (points to the above three)
+Future Codex, Claude, or generic agents must follow these rules:
 
-If you are confused about what to build, read this file.
-If you are confused about when to release, read `docs/RENTRIX_MASTER_PLAN.md`.
-If you are confused about what to work on RIGHT NOW, read `docs/ai/CURRENT_EXECUTION_CONTEXT.md`.
+1. Do not invent new release lanes.
+2. Do not create competing roadmap documents.
+3. Treat `docs/RENTRIX_MASTER_PLAN.md` as the roadmap authority.
+4. Treat this file as final product shape only.
+5. Treat `QUICK_STATUS.md`, `docs/ROADMAP.md`, and `docs/INDEX.md` as navigation or summary aids only.
+6. Update current status only when merged PRs or verified evidence change reality.
+7. Keep one coherent PR per phase or bug fix.
+8. Do not expand scope while final delivery gates are blocked.
+9. Use active code and migrations to resolve factual disputes.
+10. Report blockers honestly instead of weakening product boundaries.
 
 ---
 
-**Last updated:** June 18, 2026 | **Authority:** Product definition document (not execution) | **Next review:** After each major phase closure
+## 11. Relationship to Other Documents
+
+- `docs/RENTRIX_MASTER_PLAN.md` — roadmap authority, release gates, current execution model.
+- `docs/ai/CURRENT_EXECUTION_CONTEXT.md` — immediate state, blockers, next repo-only work.
+- `docs/ai/FINAL_DELIVERY_GATE_QA_EVIDENCE.md` — final QA evidence status.
+- `docs/FINAL_PRODUCT_BLUEPRINT.md` — final product definition and commercial shape.
+- `QUICK_STATUS.md` — short non-authoritative snapshot.
+- `docs/ROADMAP.md` — navigation pointer only.
+- `docs/INDEX.md` — documentation map only.
+
+If a future agent is unsure what to build, use this file for product shape, then use `docs/RENTRIX_MASTER_PLAN.md` and `docs/ai/CURRENT_EXECUTION_CONTEXT.md` for the executable next step.
