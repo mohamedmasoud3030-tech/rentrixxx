@@ -27,12 +27,14 @@ The repo-only checks below are useful baseline evidence. They do not replace liv
 
 | Check | Result | Date |
 |---|---|---|
-| `pnpm --filter ./artifacts/rentrix run typecheck` | 0 errors | 2026-06-17 |
-| `pnpm --filter ./artifacts/rentrix test` | 149/149 passed | 2026-06-17 |
-| `pnpm --filter ./artifacts/rentrix run build` | Passed | 2026-06-17 |
+| `pnpm --filter ./artifacts/rentrix run typecheck` | 0 errors | 2026-06-18 |
+| `pnpm --filter ./artifacts/rentrix test` | 152/152 passed (25 test files) | 2026-06-18 |
+| `pnpm --filter ./artifacts/rentrix run build` | Passed; 117 precache entries; 2797.75 KiB | 2026-06-18 |
 | Routes confirmed | `/lands`, `/leads`, `/commissions`, `/communication` visible with permission guards | 2026-06-17 |
+| Mobile list pages | All major list pages (Contracts, People, Units, Receipts, Owners) have card/table responsive layouts | 2026-06-18 |
 | Print wiring confirmed | Receipt browser print wiring and core document PDF generation confirmed in repo evidence | 2026-06-17 |
 | Migration chain | 101 repo migrations = 101 live DB migrations in prior evidence | 2026-06-15 |
+| Documentation authority | Unified in PR #932 — MASTER_PLAN is sole authoritative roadmap | 2026-06-18 |
 
 ## Pending Live Smoke Scope
 
