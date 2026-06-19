@@ -9,23 +9,27 @@
 - **Arabic-first** property operations system for single real-estate offices
 - **Core flow:** Property → Unit → Contract → Tenant → Invoice → Payment → Receipt
 - **Single office only** — no SaaS, no multi-tenancy, no shared databases
-- **Status:** v0.3 closed, Mobile UX Phase 2 in progress
+- **Status:** Mobile UX Phase 2 complete; v0.5 commercial hardening in prep; production BLOCKED on live QA
 
 ---
 
-## Current Work (June 18, 2026)
+## Current State (2026-06-18)
+
+**For authoritative status, see `docs/ai/CURRENT_EXECUTION_CONTEXT.md`.**
 
 | Item | Status |
 |------|--------|
-| **Mobile UX Phase 2** | In progress — responsive list pages (cards on mobile, tables on desktop) |
-| **Production Ready?** | ❌ NO — blocked on final QA evidence (B-1/B-2/B-3/B-4) |
-| **Latest merged** | PR #927 (auth drawer polish) |
-| **Database** | Supabase `nnggcnpcuomwfuupupwg` (ap-southeast-1) |
+| **Mobile UX Phase 2** | ✅ Complete (PRs #852–#856, #927) |
+| **Documentation authority** | ✅ Unified (PR #932) |
+| **Production Ready?** | ❌ BLOCKED — live QA evidence (B-1/B-2/B-3/B-4) not yet collected |
+| **Latest merged** | PR #932 (docs: final product blueprint + roadmap authority) |
+| **Repo baseline** | typecheck ✅ · 152 tests ✅ · build ✅ (2026-06-18) |
+| **Database** | Supabase `nnggcnpcuomwfuupupwg` (ap-southeast-1) — stable |
 | **Active branch** | `main` |
 
 ---
 
-## What's Done This Phase (Mobile UX Phase 2)
+## What's Done (Mobile UX Phase 2)
 
 - ✅ ContractsListPage (PR #852)
 - ✅ PeopleListPage (PR #853)
@@ -33,16 +37,17 @@
 - ✅ ReceiptsPage (PR #855)
 - ✅ OwnersPage (PR #856)
 - ✅ Mobile auth drawer polish (PR #927)
-
-**Not yet:** ReportsPage (4 financial tables — complex, deferred)
+- ✅ ReportsPage deferred (complex — 4 financial tables)
 
 ---
 
 ## Next Work
 
-1. **Phase 2.1** — Mobile nav & UX refinement (bottom tabs, touch targets)
-2. **Phase 3** — Advanced modules (Leads, Communications, Commissions, AI) — **deferred**
-3. **v0.4** — CRM modules — **way future**
+See `docs/ai/CURRENT_EXECUTION_CONTEXT.md` for current next PR order.
+
+1. **Live QA** — B-1/B-2/B-3/B-4 evidence (requires human operator)
+2. **v0.5 hardening** — operator runbooks, QA scripts, onboarding docs (repo-only)
+3. **ReportsPage mobile** — 4 financial tables responsive (when prioritised)
 
 ---
 
@@ -135,4 +140,4 @@ See `docs/ai/FINAL_DELIVERY_GATE_QA_EVIDENCE.md` for details.
 
 ---
 
-**Last updated:** June 18, 2026 | **Status:** Mobile UX Phase 2 in progress
+**Last updated:** June 18, 2026 | **Status:** Mobile UX Phase 2 complete; v0.5 hardening in prep; production BLOCKED

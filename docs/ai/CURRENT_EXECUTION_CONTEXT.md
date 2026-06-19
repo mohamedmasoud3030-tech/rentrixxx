@@ -23,7 +23,38 @@ Rentrix is also not approved for a general accounting ledger during stabilizatio
 
 ## Latest Merged Work Verified
 
-Latest roadmap merge recorded at this refresh: `564c4ce docs: prepare v0.5 commercial hardening (#924)`.
+Latest roadmap merge recorded at this refresh: `6cb393e docs: add final product blueprint and unify roadmap authority (#932)`.
+
+### ✅ UI & Docs — PRs #925–#932 (post-#924)
+
+| PR | التغيير | الحالة |
+|---|---|---|
+| PR #925 | Sidebar repair + Lands page aligned with dashboard | ✅ merged |
+| PR #926 | Mobile drawer module visibility repair | ✅ merged |
+| PR #927 | Mobile drawer locked-row UX + authorization warning | ✅ merged |
+| PR #928 | Admin role resolution mismatch surfaced and documented | ✅ merged |
+| PR #929 | Mobile business value improvements (dashboard, settings, reports) | ✅ merged |
+| PR #930 | Separate Codex and Claude agent guidance docs | ✅ merged |
+| PR #931 | Roadmap clarity + agent onboarding (QUICK_STATUS, ROADMAP, INDEX) | ✅ merged |
+| PR #932 | Final product blueprint + unified roadmap authority resolution | ✅ merged |
+
+### Mobile UX Phase 2 — All List Pages Complete
+
+| PR | الصفحة | الحالة |
+|---|---|---|
+| PR #852 | ContractsListPage — card grid (mobile) + table (desktop) | ✅ merged |
+| PR #853 | PeopleListPage — PersonCard + responsive layout | ✅ merged |
+| PR #854 | UnitsList — UnitCard + responsive layout | ✅ merged |
+| PR #855 | ReceiptsPage — ReceiptCard + responsive layout | ✅ merged |
+| PR #856 | OwnersPage — OwnerCard + responsive layout | ✅ merged |
+
+### Repo-Only Evidence Baseline — 2026-06-18
+
+```text
+pnpm typecheck:    0 errors ✅
+pnpm test:         152/152 passed (25 test files) ✅
+pnpm build:        Passed; 117 precache entries; 2797.75 KiB ✅
+```
 
 ### ✅ مُنجز ومُطبَّق — live DB `nnggcnpcuomwfuupupwg`
 
@@ -198,10 +229,24 @@ Do not claim production readiness until the final delivery gates close with fres
 ## Current Next PR Order
 
 1. Keep live final-delivery QA parked as BLOCKED until a human operator supplies B-1/B-2/B-3/B-4 evidence.
-2. Continue v0.5 commercial hardening as repo-only planning/runbook work until live QA evidence allows a production GO/NO-GO update.
-3. If final delivery QA later reveals bugs, open narrow fix PRs per bug, no bundled changes.
+2. Continue v0.5 commercial hardening as repo-only planning/runbook work: operator onboarding checklist, QA scripts, runbooks.
+3. **Mobile UX Phase 2 remaining:** ReportsPage (4 financial tables — complex layout, deferred until UI polish pass).
+4. If final delivery QA later reveals bugs, open narrow fix PRs per bug, no bundled changes.
 
 Do not open new DB/migration PRs without a confirmed repo or QA bug — the DB layer is treated as stable from current repository evidence.
+
+## Documentation Authority (Post-#932)
+
+The following authority hierarchy is now canonical:
+
+| Question | Authoritative Source |
+|---|---|
+| What is Rentrix v1.0? | `docs/FINAL_PRODUCT_BLUEPRINT.md` |
+| Execution roadmap and phases? | `docs/RENTRIX_MASTER_PLAN.md` |
+| What to work on right now? | This file (`docs/ai/CURRENT_EXECUTION_CONTEXT.md`) |
+| Navigation/pointers only | `docs/ROADMAP.md`, `docs/INDEX.md`, `QUICK_STATUS.md` |
+
+No navigation or pointer document may claim roadmap authority. Only `docs/RENTRIX_MASTER_PLAN.md` holds execution authority.
 
 ## Latest Repository-Only Code-Reality Audit
 
