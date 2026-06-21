@@ -1,7 +1,65 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { createElement } from 'react';
+import { renderToStaticMarkup } from 'react-dom/server';
 import type { ContractListItem } from '@/features/contracts/services/contractService';
+
+const reportsPageMocks = vi.hoisted(() => ({
+  propertyTitlesQuery: { data: [], error: null as Error | null, isLoading: false },
+  financialSummaryQuery: { data: { invoiced: 0, paid: 0, outstanding: 0, expenses: 0, netCash: 0 }, error: null as Error | null, isLoading: false },
+  financialCashflowQuery: { data: { rows: [] }, error: null as Error | null, isLoading: false },
+  dailyCollectionQuery: { data: { rows: [] }, error: null as Error | null, isLoading: false },
+  expenseBreakdownQuery: { data: { rows: [], totalExpenses: 0 }, error: null as Error | null, isLoading: false },
+  overdueInvoicesQuery: { data: { rows: [] }, error: null as Error | null, isLoading: false },
+  agedReceivablesQuery: { data: { buckets: {}, totalOutstanding: 0, invoiceCount: 0 }, error: null as Error | null, isLoading: false },
+  contractsQuery: { data: [], error: null as Error | null, isLoading: false },
+  unitsQuery: { data: [], error: null as Error | null, isLoading: false },
+  receiptsQuery: { data: [], error: null as Error | null, isLoading: false },
+}));
+
+vi.mock('@tanstack/react-query', () => ({
+  useQuery: () => reportsPageMocks.propertyTitlesQuery,
+}));
+
+vi.mock('@tanstack/react-router', () => ({
+  Link: ({ children, to, href }: { children: unknown; to?: string; href?: string }) => createElement('a', { href: to ?? href ?? '#' }, children),
+}));
+
+vi.mock('@/features/contracts/useContracts', () => ({
+  useContracts: () => reportsPageMocks.contractsQuery,
+}));
+
+vi.mock('@/features/financials/receipts/useReceipts', () => ({
+  useReceipts: () => reportsPageMocks.receiptsQuery,
+}));
+
+vi.mock('@/features/financials/reports/useFinancialReports', () => ({
+  useAgedReceivablesReport: () => reportsPageMocks.agedReceivablesQuery,
+  useDailyCollectionReport: () => reportsPageMocks.dailyCollectionQuery,
+  useExpenseBreakdownReport: () => reportsPageMocks.expenseBreakdownQuery,
+  useFinancialCashflowReport: () => reportsPageMocks.financialCashflowQuery,
+  useFinancialPeriodSummaryReport: () => reportsPageMocks.financialSummaryQuery,
+  useOverdueInvoicesReport: () => reportsPageMocks.overdueInvoicesQuery,
+}));
+
+vi.mock('@/features/units/use-units', () => ({
+  useAllUnits: () => reportsPageMocks.unitsQuery,
+}));
+
 import { buildAgingBucketChartRows, buildOccupancyRows, buildPaymentsTrendRows, buildRentRollRows, createReceiptPrintHref } from './reports-page.helpers';
-import { buildReportCsvFilename, escapeCsvValue, toDateInputValue } from './reports-page';
+import { buildReportCsvFilename, escapeCsvValue, ReportsPage, toDateInputValue } from './reports-page';
+
+function resetReportsPageMocks() {
+  reportsPageMocks.propertyTitlesQuery = { data: [], error: null, isLoading: false };
+  reportsPageMocks.financialSummaryQuery = { data: { invoiced: 0, paid: 0, outstanding: 0, expenses: 0, netCash: 0 }, error: null, isLoading: false };
+  reportsPageMocks.financialCashflowQuery = { data: { rows: [] }, error: null, isLoading: false };
+  reportsPageMocks.dailyCollectionQuery = { data: { rows: [] }, error: null, isLoading: false };
+  reportsPageMocks.expenseBreakdownQuery = { data: { rows: [], totalExpenses: 0 }, error: null, isLoading: false };
+  reportsPageMocks.overdueInvoicesQuery = { data: { rows: [] }, error: null, isLoading: false };
+  reportsPageMocks.agedReceivablesQuery = { data: { buckets: {}, totalOutstanding: 0, invoiceCount: 0 }, error: null, isLoading: false };
+  reportsPageMocks.contractsQuery = { data: [], error: null, isLoading: false };
+  reportsPageMocks.unitsQuery = { data: [], error: null, isLoading: false };
+  reportsPageMocks.receiptsQuery = { data: [], error: null, isLoading: false };
+}
 
 function createContract(overrides: Partial<ContractListItem>): ContractListItem {
   return {
@@ -31,6 +89,7 @@ function createContract(overrides: Partial<ContractListItem>): ContractListItem 
 describe('ReportsPage shaping helpers', () => {
   afterEach(() => {
     vi.useRealTimers();
+    resetReportsPageMocks();
   });
 
   it('combines canonical daily collection and overdue invoice rows by month', () => {
@@ -154,5 +213,27 @@ describe('ReportsPage shaping helpers', () => {
     expect(buildReportCsvFilename('overdue-invoices')).toBe('overdue-invoices-2026-06-16.csv');
     expect(buildReportCsvFilename('aged-receivables')).toBe('aged-receivables-2026-06-16.csv');
     expect(buildReportCsvFilename('daily-collection')).toBe('daily-collection-2026-06-16.csv');
+  });
+});
+
+describe('ReportsPage query aggregation', () => {
+  afterEach(() => {
+    resetReportsPageMocks();
+  });
+
+  it('joins property title loading into the reports loading state', () => {
+    reportsPageMocks.propertyTitlesQuery = { data: [], error: null, isLoading: true };
+
+    const html = renderToStaticMarkup(createElement(ReportsPage));
+
+    expect(html).toContain('جارٍ تحميل هذا التقرير');
+  });
+
+  it('joins property title failures into the reports error banner', () => {
+    reportsPageMocks.propertyTitlesQuery = { data: [], error: new Error('property title failure'), isLoading: false };
+
+    const html = renderToStaticMarkup(createElement(ReportsPage));
+
+    expect(html).toContain('property title failure');
   });
 });

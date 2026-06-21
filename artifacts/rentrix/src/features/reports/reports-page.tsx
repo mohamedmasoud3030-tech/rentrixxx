@@ -30,7 +30,7 @@ import {
 import { useAllUnits } from '@/features/units/use-units';
 import { buildCsv, withUtf8Bom, type CsvRow } from '@/lib/csvExport';
 import { cn } from '@/lib/utils';
-import { buildAgingBucketChartRows, buildOccupancyRows, buildPaymentsTrendRows, buildRentRollRows, createReceiptPrintHref } from './reports-page.helpers';
+import { buildAgingBucketChartRows, buildOccupancyRows, buildRentRollRows, createReceiptPrintHref } from './reports-page.helpers';
 import { supabase } from '@/integrations/supabase/client';
 import type { Property } from '@/types/domain';
 
@@ -896,10 +896,6 @@ export function ReportsPage() {
     [unitsQuery.data, propertyTitlesById],
   );
   const expiringRows = useMemo(() => buildExpiringContractsRows(contractsQuery.data ?? [], new Date()), [contractsQuery.data]);
-  const paymentsTrendRows = useMemo(() => buildPaymentsTrendRows({
-    dailyCollections: dailyCollectionQuery.data?.rows,
-    overdueInvoices: overdueInvoicesQuery.data?.rows,
-  }), [dailyCollectionQuery.data?.rows, overdueInvoicesQuery.data?.rows]);
   const receiptRows = useMemo(() => (receiptsQuery.data ?? [])
     .filter((receipt) => isWithinDateRange(receipt.payment_date, filters))
     .map((receipt) => ({
@@ -910,11 +906,6 @@ export function ReportsPage() {
       tenant_name: receipt.tenant_name,
     })), [filters, receiptsQuery.data]);
 
-  // paymentsTrendRows is still useful as a private signal of which months have
-  // data, but the visible chart only renders for the overview section so we
-  // intentionally don't surface the combined collections/overdue chart.
-  void paymentsTrendRows;
-
   const isLoading = financialSummaryQuery.isLoading
     || financialCashflowQuery.isLoading
     || dailyCollectionQuery.isLoading
@@ -923,7 +914,8 @@ export function ReportsPage() {
     || agedReceivablesQuery.isLoading
     || contractsQuery.isLoading
     || unitsQuery.isLoading
-    || receiptsQuery.isLoading;
+    || receiptsQuery.isLoading
+    || propertyTitlesQuery.isLoading;
   const firstError = financialSummaryQuery.error
     ?? financialCashflowQuery.error
     ?? dailyCollectionQuery.error
@@ -932,7 +924,8 @@ export function ReportsPage() {
     ?? agedReceivablesQuery.error
     ?? contractsQuery.error
     ?? unitsQuery.error
-    ?? receiptsQuery.error;
+    ?? receiptsQuery.error
+    ?? propertyTitlesQuery.error;
 
   const handleJumpToSection = (id: ReportSectionId) => {
     setActiveSection(id);
@@ -947,7 +940,7 @@ export function ReportsPage() {
 
   return (
     <div className="space-y-5 pb-6" dir="rtl">
-      <ReportsHero summary={financialSummaryQuery.data} today={today} isLoading={financialSummaryQuery.isLoading} />
+      <ReportsHero summary={financialSummaryQuery.data} today={today} isLoading={isLoading} />
 
       <FiltersPanel
         filters={filters}
@@ -985,7 +978,7 @@ export function ReportsPage() {
       <OccupancySection
         occupancyRows={occupancyRows}
         expiringRows={expiringRows}
-        isLoading={unitsQuery.isLoading || contractsQuery.isLoading}
+        isLoading={unitsQuery.isLoading || contractsQuery.isLoading || propertyTitlesQuery.isLoading}
       />
       <StatementsSection
         agedReport={agedReceivablesQuery.data}

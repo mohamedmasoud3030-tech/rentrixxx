@@ -9,13 +9,6 @@ interface OwnerCardProps {
   email?: string | null;
   propertyCount: number;
   activeContractCount: number;
-  /**
-   * Optional explicit short id to render under the name. When two owners
-   * share the same name/phone/email in the database we want the user to
-   * see that these are separate records — so we surface a short helper
-   * id on the card. The underlying data is never merged.
-   */
-  shortId?: string | null;
   onClick?: () => void;
 }
 
@@ -31,10 +24,9 @@ export function OwnerCard({
   email,
   propertyCount,
   activeContractCount,
-  shortId,
   onClick,
 }: OwnerCardProps) {
-  const visibleShortId = (shortId ?? id ?? '').slice(0, 8);
+  const visibleShortId = id ? formatOwnerShortId(id) : null;
   return (
     <button
       type="button"
@@ -56,7 +48,7 @@ export function OwnerCard({
             {fullName && <p className="text-[11px] text-muted-foreground truncate mt-0.5">{fullName}</p>}
             {visibleShortId ? (
               <p className="text-[10px] font-bold text-muted-foreground/70 mt-0.5" dir="ltr">
-                معرّف السجل: {formatOwnerShortId(visibleShortId)}
+                معرّف السجل: {visibleShortId}
               </p>
             ) : null}
           </div>

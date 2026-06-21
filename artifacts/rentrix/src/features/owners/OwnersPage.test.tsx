@@ -1,5 +1,6 @@
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
+import { OwnerCard } from '@/components/ui/owner-card';
 import { OwnerDetailView } from './components/owner-detail-view';
 import type { Owner, OwnerDetailSnapshot, PropertyWithOwners } from './ownerService';
 
@@ -78,5 +79,20 @@ describe('Owner detail recovery states', () => {
 
   it('renders the owner detail unavailable state', () => {
     expect(renderToStaticMarkup(<OwnerDetailView state={{ status: 'unavailable', reason: 'schema unavailable' }} />)).toContain('schema unavailable');
+  });
+});
+
+describe('OwnerCard', () => {
+  it('renders the short record id from the owner id', () => {
+    const html = renderToStaticMarkup(
+      <OwnerCard
+        id="1234567890abcdef"
+        displayName="مالك موثق"
+        propertyCount={0}
+        activeContractCount={0}
+      />,
+    );
+
+    expect(html).toContain('معرّف السجل: #12345678');
   });
 });
