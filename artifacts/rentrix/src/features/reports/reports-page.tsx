@@ -70,6 +70,7 @@ const reportSections = [
   { id: 'expenses',      label: 'المصروفات',         icon: ClipboardList  },
   { id: 'occupancy',     label: 'الإشغال والعقود',   icon: Building2      },
   { id: 'statements',    label: 'كشوف الحساب',       icon: FileSpreadsheet },
+  { id: 'metrics',       label: 'المؤشرات الرئيسية',  icon: BarChart3      },
 ] as const;
 
 type ReportSectionId = (typeof reportSections)[number]['id'];

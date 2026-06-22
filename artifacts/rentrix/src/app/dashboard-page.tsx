@@ -220,6 +220,7 @@ function KpiGrid({ snapshot, isLoading, settings }: Readonly<{
       icon: Building2,
       accent: 'sky' as const,
       sub: `${snapshot?.operational.units ?? 0} وحدة إجمالاً`,
+      description: 'إجمالي الأصول العقارية',
     },
     {
       label: 'نسبة الإشغال',
@@ -229,6 +230,7 @@ function KpiGrid({ snapshot, isLoading, settings }: Readonly<{
       sub: `${snapshot?.operational.occupiedUnits ?? 0} مشغولة`,
       trend: (snapshot?.operational.occupancyRate ?? 0) >= 80 ? 'up' as const : 'neutral' as const,
       trendValue: `${snapshot?.operational.occupancyRate ?? 0}%`,
+      description: 'معدل استقرار المحفظة',
     },
     {
       label: 'المتأخرات',
@@ -238,6 +240,7 @@ function KpiGrid({ snapshot, isLoading, settings }: Readonly<{
       sub: `${snapshot?.arrears.overdueInvoiceCount ?? 0} فاتورة`,
       trend: (snapshot?.arrears.totalOverdue ?? 0) > 0 ? 'down' as const : 'neutral' as const,
       trendValue: money(settings, snapshot?.arrears.totalOverdue ?? 0),
+      description: 'أموال معلقة للتحصيل',
     },
     {
       label: 'عقود تنتهي قريباً',
@@ -247,6 +250,7 @@ function KpiGrid({ snapshot, isLoading, settings }: Readonly<{
       sub: `خلال ${dashboardWindowDays} يوم`,
       trend: (snapshot?.operational.expiringContracts30Days ?? 0) > 0 ? 'down' as const : 'neutral' as const,
       trendValue: `${snapshot?.operational.expiringContracts30Days ?? 0}`,
+      description: 'عقود بحاجة للتجديد',
     },
   ];
 
