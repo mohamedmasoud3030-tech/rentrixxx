@@ -6,10 +6,12 @@ import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { PageHero } from '@/components/ui/page-hero';
 import { useProperties } from '@/features/properties/use-properties';
 import { cn } from '@/lib/utils';
 import { ArrearsWorkspaceSection } from './components/arrears-workspace-section';
 import { ExpensesSection, type ExpenseFormValues } from './components/expenses-section';
+import { formatMoney } from './components/financials-formatters';
 import { FinancialReportsPreviewSection } from './components/financial-reports-preview-section';
 import { InvoiceWorkspaceSection } from './components/invoice-workspace-section';
 import { OPERATIONAL_EXPENSE_CATEGORIES, type OperationalExpenseFilterValues } from './expenses/operational-expenses';
@@ -94,21 +96,30 @@ export function FinancialsPage() {
   };
 
   return (
-    <div className="space-y-6" dir="rtl">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <p className="text-sm font-black text-primary">مركز التحصيل</p>
-          <h2 className="text-3xl font-black tracking-tight">المالية</h2>
-          <p className="mt-1 max-w-2xl text-sm leading-7 text-muted-foreground">
-            تبويبات مختصرة للفواتير والإيصالات والمصاريف حتى لا تظهر كل أدوات التحصيل مكدسة على شاشة واحدة، خصوصاً على الجوال.
-          </p>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <Button variant="secondary" asChild><Link to="/invoices">صفحة الفواتير</Link></Button>
-          <Button variant="secondary" asChild><Link to="/receipts">سجل الإيصالات</Link></Button>
-          <Button variant="secondary" asChild><Link to="/expenses">صفحة المصاريف</Link></Button>
-        </div>
-      </div>
+    <div className="space-y-5 pb-24 sm:pb-6" dir="rtl">
+      <PageHero
+        eyebrow="الماليات والتحصيل"
+        title="المالية"
+        description="تبويبات مختصرة للفواتير والإيصالات والمصاريف حتى لا تظهر أدوات التحصيل مكدسة على شاشة واحدة، خصوصاً على الجوال."
+        icon={WalletCards}
+        primaryMetric={formatMoney(collectionReport.data?.paid)}
+        primaryLabel="محصل ضمن الفترة"
+        secondaryMetric={expenses.length}
+        secondaryLabel="مصروفات معروضة"
+        isLoading={collectionReport.isLoading}
+        accent="emerald"
+        pills={[
+          { label: `${propertyRows.length} عقار متاح`, tone: propertyRows.length > 0 ? 'sky' : 'slate', icon: FileText },
+          { label: financialTabs.find(([tab]) => tab === activeTab)?.[1] ?? 'الفواتير', tone: 'emerald', icon: WalletCards },
+        ]}
+        action={(
+          <div className="grid w-full gap-2 sm:w-auto sm:grid-cols-3">
+            <Button variant="secondary" asChild><Link to="/invoices">صفحة الفواتير</Link></Button>
+            <Button variant="secondary" asChild><Link to="/receipts">سجل الإيصالات</Link></Button>
+            <Button variant="secondary" asChild><Link to="/expenses">صفحة المصاريف</Link></Button>
+          </div>
+        )}
+      />
 
       <FinancialReportsPreviewSection
         reportFilters={reportFilters}

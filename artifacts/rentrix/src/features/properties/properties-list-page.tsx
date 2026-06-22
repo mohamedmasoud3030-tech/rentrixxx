@@ -11,6 +11,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { PropertyCard } from '@/components/ui/property-card';
+import { PageHero } from '@/components/ui/page-hero';
 import { defaultCompanyLocalSettings } from '@/lib/companySettings';
 import { formatCompanyMoney } from '@/lib/companyFormatters';
 import { propertyStatusLabels, propertyStatusValues } from './property-schema';
@@ -48,25 +49,37 @@ export function PropertiesListPage() {
   };
 
   const properties = propertiesQuery.data?.rows ?? [];
+  const activeCount = properties.filter((property) => property.status === 'active').length;
 
   return (
     <>
-    <div className="space-y-5">
-      {/* Header */}
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h2 className="text-xl font-black">العقارات</h2>
-          <p className="text-sm text-muted-foreground">إدارة العقارات والوحدات المرتبطة</p>
-        </div>
-        <Button className="rounded-2xl gap-2" onClick={() => { setEditPropertyId(undefined); setModalOpen(true); }}>
-          <Plus className="size-4" />إضافة عقار
-        </Button>
-      </div>
+    <div className="space-y-5 pb-24 sm:pb-6" dir="rtl">
+      <PageHero
+        eyebrow="المحفظة"
+        title="العقارات"
+        description="إدارة العقارات والوحدات المرتبطة من مساحة واحدة متسقة مع لوحة التحكم."
+        icon={Building2}
+        primaryMetric={propertiesQuery.data?.count ?? properties.length}
+        primaryLabel="إجمالي العقارات"
+        secondaryMetric={activeCount}
+        secondaryLabel="عقارات نشطة في الصفحة"
+        isLoading={propertiesQuery.isLoading}
+        accent="sky"
+        pills={[
+          { label: hasFilterValues ? 'فلاتر مفعّلة' : 'كل السجلات', tone: hasFilterValues ? 'amber' : 'slate', icon: List },
+          { label: `${properties.length} معروضة`, tone: 'sky', icon: Grid3x3 },
+        ]}
+        action={(
+          <Button className="rounded-2xl bg-white text-slate-900 hover:bg-white/90" onClick={() => { setEditPropertyId(undefined); setModalOpen(true); }}>
+            <Plus className="me-2 size-4" />إضافة عقار
+          </Button>
+        )}
+      />
 
       {/* Filters + View Toggle */}
       <Card className="rounded-2xl">
         <CardContent className="pt-4 pb-4">
-          <div className="flex gap-2">
+          <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_9rem_auto]">
             <Input
               aria-label="بحث العقارات"
               value={search}
@@ -78,7 +91,7 @@ export function PropertiesListPage() {
               aria-label="الحالة"
               value={status}
               onChange={(e) => { setStatus(e.target.value as PropertyStatusFilter); setPage(1); }}
-              className="w-36 rounded-xl"
+              className="rounded-xl"
             >
               <option value="all">كل الحالات</option>
               {propertyStatusValues.map((s) => <option key={s} value={s}>{propertyStatusLabels[s]}</option>)}

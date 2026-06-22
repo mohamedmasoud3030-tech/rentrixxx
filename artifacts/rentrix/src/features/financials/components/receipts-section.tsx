@@ -95,8 +95,7 @@ export function ReceiptsSection({
                   <div className="flex gap-2 border-t pt-2">
                     {onPrintReceipt && (
                       <Button
-                        variant="outline"
-                        size="sm"
+                        variant="secondary"
                         className="h-8"
                         onClick={() => onPrintReceipt(receipt.id)}
                         title="طباعة الإيصال"
@@ -107,8 +106,7 @@ export function ReceiptsSection({
                     )}
                     {onExportReceipt && (
                       <Button
-                        variant="outline"
-                        size="sm"
+                        variant="secondary"
                         className="h-8"
                         onClick={() => onExportReceipt(receipt.id)}
                         title="تنزيل PDF"

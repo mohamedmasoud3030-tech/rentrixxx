@@ -6,6 +6,7 @@ import { RouteLoadingState } from '@/components/loading-state';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import { PageHero } from '@/components/ui/page-hero';
 import { Select } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
 import { StatusBadge } from '@/components/ui/status-badge';
@@ -93,15 +94,24 @@ export function UnitsPage() {
   const { occupiedCount, availableCount, expectedRent } = summarizeUnitsForUnitsPage(units);
 
   return (
-    <div className="space-y-6" dir="rtl">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <p className="text-sm font-black text-primary">إدارة الوحدات</p>
-          <h2 className="text-3xl font-black tracking-tight">الوحدات</h2>
-          <p className="mt-1 max-w-2xl text-sm leading-7 text-muted-foreground">عرض تشغيلي لكل الوحدات المسجلة مع روابط مباشرة للعقارات، مع إبقاء إضافة وتعديل الوحدات داخل صفحة العقار المرتبط.</p>
-        </div>
-        <Button asChild><Link to="/properties"><Building2 className="ml-2 size-4" />العقارات</Link></Button>
-      </div>
+    <div className="space-y-5 pb-24 sm:pb-6" dir="rtl">
+      <PageHero
+        eyebrow="المحفظة"
+        title="الوحدات"
+        description="عرض تشغيلي لكل الوحدات المسجلة مع روابط مباشرة للعقارات، مع إبقاء الإضافة والتعديل داخل صفحة العقار."
+        icon={DoorOpen}
+        primaryMetric={units.length.toLocaleString(locale)}
+        primaryLabel="إجمالي الوحدات"
+        secondaryMetric={formatCompanyMoney(defaultCompanyLocalSettings, expectedRent)}
+        secondaryLabel="إيجار متوقع"
+        isLoading={unitsQuery.isLoading || propertiesQuery.isLoading}
+        accent="sky"
+        pills={[
+          { label: `${occupiedCount.toLocaleString(locale)} مشغولة`, tone: occupiedCount > 0 ? 'emerald' : 'slate', icon: Home },
+          { label: `${availableCount.toLocaleString(locale)} متاحة`, tone: availableCount > 0 ? 'amber' : 'slate', icon: DoorOpen },
+        ]}
+        action={<Button className="bg-white text-slate-900 hover:bg-white/90" asChild><Link to="/properties"><Building2 className="me-2 size-4" />العقارات</Link></Button>}
+      />
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <UnitMetric label="إجمالي الوحدات" value={units.length.toLocaleString(locale)} helper="كل الوحدات النشطة" icon={DoorOpen} />

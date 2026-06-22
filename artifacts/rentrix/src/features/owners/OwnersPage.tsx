@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { EmptyState } from '@/components/empty-state';
 import { Input } from '@/components/ui/input';
 import { OwnerCard } from '@/components/ui/owner-card';
+import { PageHero } from '@/components/ui/page-hero';
 import { ResponsiveFormOverlay } from '@/components/ui/responsive-form-overlay';
 import { Skeleton } from '@/components/ui/skeleton';
 import { StatusBadge } from '@/components/ui/status-badge';
@@ -353,8 +354,23 @@ export function OwnersPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-3"><div><h2 className="text-xl font-black">إدارة الملاك</h2><p className="text-sm text-muted-foreground">إدارة علاقات ملكية العقارات بشكل منفصل عن الحسابات والتسويات المالية.</p></div><Button onClick={openCreateForm}><Plus className="ml-2 size-4" />إضافة مالك</Button></div>
+    <div className="space-y-5 pb-24 sm:pb-6" dir="rtl">
+      <PageHero
+        eyebrow="الأطراف والعلاقات"
+        title="إدارة الملاك"
+        description="إدارة علاقات ملكية العقارات بشكل منفصل عن الحسابات والتسويات المالية."
+        icon={Users}
+        primaryMetric={summary.totalOwners.toLocaleString('ar')}
+        primaryLabel="إجمالي الملاك"
+        secondaryMetric={summary.linkedPropertiesCount.toLocaleString('ar')}
+        secondaryLabel="عقارات مرتبطة"
+        accent="primary"
+        pills={[
+          { label: `${summary.activeOwners.toLocaleString('ar')} نشط`, tone: summary.activeOwners > 0 ? 'emerald' : 'slate', icon: Users },
+          { label: `${summary.propertiesWithoutLinkedOwner.toLocaleString('ar')} بلا علاقة`, tone: summary.propertiesWithoutLinkedOwner > 0 ? 'amber' : 'slate', icon: LinkIcon },
+        ]}
+        action={<Button className="bg-white text-slate-900 hover:bg-white/90" onClick={openCreateForm}><Plus className="me-2 size-4" />إضافة مالك</Button>}
+      />
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4"><SummaryCard label="إجمالي الملاك" value={summary.totalOwners} icon={Users} /><SummaryCard label="الملاك النشطون" value={summary.activeOwners} icon={Users} /><SummaryCard label="عقارات مرتبطة" value={summary.linkedPropertiesCount} icon={Building2} /><SummaryCard label="عقارات بلا علاقة مالك" value={summary.propertiesWithoutLinkedOwner} icon={LinkIcon} /></div>
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1.1fr)_minmax(24rem,0.9fr)]">
         <Card className="overflow-hidden"><CardHeader><CardTitle>مساحة عمل الملاك</CardTitle><CardDescription>ملخص آمن من بيانات الملاك والعقارات والعقود الحالية بدون أرصدة أو تسويات افتراضية.</CardDescription></CardHeader><CardContent><OwnerWorkspaceTable rows={filteredOwnerRows} search={ownerSearch} selectedOwner={selectedOwner} onCreateOwner={openCreateForm} onEditOwner={openEditForm} onSearchChange={setOwnerSearch} onSelectOwner={setSelectedOwnerId} /></CardContent></Card>
