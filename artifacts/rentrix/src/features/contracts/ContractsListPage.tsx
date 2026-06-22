@@ -1,5 +1,5 @@
 import { Link, useNavigate } from '@tanstack/react-router';
-import { AlertTriangle, CalendarClock, ChevronDown, ChevronUp, Download, Edit, Eye, FileText, Plus, Search, Trash2, WalletCards } from 'lucide-react';
+import { AlertTriangle, CalendarClock, ChevronDown, ChevronUp, Download, Edit, Eye, FileText, Plus, Search, Trash2, WalletCards, Printer } from 'lucide-react';
 import { Fragment, useMemo, useState, type ReactNode } from 'react';
 import { ContractFormModal } from './contract-form-modal';
 import { EmptyState } from '@/components/empty-state';
@@ -17,6 +17,7 @@ import { contractStatusLabels, contractStatusTone, contractStatusValues, payment
 import { useCompanySettingsContract } from '../settings/useCompanySettings';
 import { useContracts, useSoftDeleteContract } from './useContracts';
 import type { ContractListItem, ContractStatusFilter } from './services/contractService';
+import { exportContractToPdf } from '@/services/pdfService';
 
 const filterLabels: Record<ContractStatusFilter, string> = { all: 'الكل', draft: 'مسودة', active: 'نشط', expired: 'منتهي', terminated: 'ملغي' };
 
@@ -129,6 +130,34 @@ export function ContractsListPage() {
     setStatus('all');
     setSearchTerm('');
     setExpiringOnly(false);
+  };
+
+  const onPrintContract = (contractId: string) => {
+    const contract = contractsQuery.data?.find(c => c.id === contractId);
+    if (!contract) return;
+    
+    exportContractToPdf(contract, {
+      settings: { general: { company: { name: 'Rentrix' } } },
+      contracts: contractsQuery.data ?? [],
+      tenants: [],
+      units: [],
+      properties: [],
+    });
+    
+    setTimeout(() => window.print(), 500);
+  };
+
+  const onExportContractPdf = (contractId: string) => {
+    const contract = contractsQuery.data?.find(c => c.id === contractId);
+    if (!contract) return;
+    
+    exportContractToPdf(contract, {
+      settings: { general: { company: { name: 'Rentrix' } } },
+      contracts: contractsQuery.data ?? [],
+      tenants: [],
+      units: [],
+      properties: [],
+    });
   };
 
   return (
@@ -247,6 +276,14 @@ export function ContractsListPage() {
                     <p className="px-1 text-xs font-bold text-amber-700">ينتهي خلال {daysUntilEnd} يوم</p>
                   ) : null}
                   <div className="flex items-center justify-end gap-2 px-1">
+                    <Button variant="outline" size="sm" className="h-9" onClick={() => onPrintContract(contract.id)} title="طباعة العقد">
+                      <Printer className="size-3.5 ml-1" />
+                      طباعة
+                    </Button>
+                    <Button variant="outline" size="sm" className="h-9" onClick={() => onExportContractPdf(contract.id)} title="تنزيل PDF">
+                      <Download className="size-3.5 ml-1" />
+                      PDF
+                    </Button>
                     <Button variant="secondary" className="min-h-11 rounded-xl px-3 text-xs gap-1.5" onClick={() => { setEditContractId(contract.id); setModalOpen(true); }}>
                       <Edit className="size-3.5" />تعديل
                     </Button>
@@ -318,6 +355,12 @@ export function ContractsListPage() {
                               <Link to="/contracts/$contractId" params={{ contractId: contract.id }} aria-label={`عرض تفاصيل العقد ${getContractNumber(contract)}`}>
                                 <Eye className="size-4" />
                               </Link>
+                            </Button>
+                            <Button variant="outline" className="min-h-11 px-3" onClick={() => onPrintContract(contract.id)} title="طباعة العقد">
+                              <Printer className="size-4" />
+                            </Button>
+                            <Button variant="outline" className="min-h-11 px-3" onClick={() => onExportContractPdf(contract.id)} title="تنزيل PDF">
+                              <Download className="size-4" />
                             </Button>
                             <Button variant="secondary" className="min-h-11 px-3" onClick={() => { setEditContractId(contract.id); setModalOpen(true); }}>
                               <Edit className="size-4" />
