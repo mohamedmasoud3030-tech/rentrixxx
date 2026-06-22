@@ -278,11 +278,11 @@ function QuickActions() {
           return (
             <Link key={action.to} to={action.to} className="shrink-0">
               <div className={cn(
-                'flex flex-col items-center gap-2 rounded-2xl p-3.5 min-w-[72px] transition-all',
+                'flex flex-col items-center justify-center gap-2 rounded-2xl p-4 min-h-[56px] min-w-[56px] transition-all',
                 'hover:scale-105 active:scale-95 border border-border/50',
                 action.accent,
               )}>
-                <Icon className="size-5" />
+                <Icon className="size-6" />
                 <span className="text-[11px] font-bold text-center leading-tight whitespace-nowrap">{action.label}</span>
               </div>
             </Link>
@@ -331,12 +331,12 @@ function ExpiringContractsSection({ rows, isLoading, settings }: Readonly<{
                       <p className="text-xs text-muted-foreground mt-0.5 truncate">{row.location}</p>
                     </div>
                     <span className={cn(
-                      'shrink-0 flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-bold',
+                      'shrink-0 flex items-center justify-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-bold min-h-[32px]',
                       urgency === 'rose'    && 'bg-rose-100 text-rose-700 dark:bg-rose-950/50 dark:text-rose-300',
                       urgency === 'amber'   && 'bg-amber-100 text-amber-700 dark:bg-amber-950/50 dark:text-amber-300',
                       urgency === 'emerald' && 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300',
                     )}>
-                      <Clock className="size-3" />
+                      <Clock className="size-4" />
                       {row.daysRemaining} يوم
                     </span>
                   </div>
