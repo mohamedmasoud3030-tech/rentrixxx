@@ -221,6 +221,30 @@ export function InvoiceWorkspaceSection() {
     });
   };
 
+  const onPrintInvoice = (invoiceId: string) => {
+    const invoice = invoices.find(inv => inv.id === invoiceId);
+    if (!invoice || !invoiceDetail) return;
+    
+    // Trigger print after PDF is generated
+    exportInvoiceToPdf(invoice as unknown as Invoice, {
+      settings: { general: { company: { name: 'Rentrix' } } },
+      ...contractContextForDocument(selectedInvoiceContract),
+    });
+    
+    // Open print dialog after short delay to allow PDF to render
+    setTimeout(() => window.print(), 500);
+  };
+
+  const onExportInvoiceList = (invoiceId: string) => {
+    const invoice = invoices.find(inv => inv.id === invoiceId);
+    if (!invoice) return;
+    
+    exportInvoiceToPdf(invoice as unknown as Invoice, {
+      settings: { general: { company: { name: 'Rentrix' } } },
+      ...contractContextForDocument(selectedInvoiceContract),
+    });
+  };
+
   return (
     <>
       <InvoiceListSection
@@ -238,6 +262,8 @@ export function InvoiceWorkspaceSection() {
         onInvoiceSearchChange={setInvoiceSearch}
         onGenerateInvoices={() => setGenerateDialogOpen(true)}
         onSelectInvoice={setSelectedInvoiceId}
+        onPrintInvoice={onPrintInvoice}
+        onExportInvoice={onExportInvoiceList}
       />
 
       <GenerateInvoicesDialog
