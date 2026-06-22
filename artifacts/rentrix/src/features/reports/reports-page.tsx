@@ -316,13 +316,13 @@ function SectionNav({ activeId, onJump }: Readonly<{ activeId: ReportSectionId; 
             onClick={() => onJump(section.id)}
             aria-current={isActive ? 'true' : undefined}
             className={cn(
-              'flex shrink-0 items-center gap-2 rounded-full border px-3 py-2 text-[12px] font-black transition',
+              'flex shrink-0 items-center gap-2 rounded-full border px-4 py-2.5 text-[13px] font-black transition min-h-11',
               isActive
-                ? 'border-primary/40 bg-primary text-primary-foreground shadow-sm'
+                ? 'border-primary bg-primary text-primary-foreground shadow-md scale-[1.02]'
                 : 'border-border bg-card text-muted-foreground hover:border-primary/30 hover:text-foreground',
             )}
           >
-            <section.icon className="size-3.5" />
+            <section.icon className="size-4" />
             {section.label}
           </button>
         );
@@ -344,7 +344,6 @@ function OverviewSection({ summary, cashflowRows, isLoading }: Readonly<{
 
   return (
     <ReportCard
-      id="overview"
       title="نظرة عامة على الفترة"
       description="ملخص الفواتير والتحصيل والمصروفات المسجلة للفترة المحددة."
       action={<Button variant="secondary" onClick={() => downloadCsv(buildReportCsvFilename('financial-summary'), toFinancialSummaryCsv(report))}><FileSpreadsheet className="ml-2 size-4" />تصدير CSV</Button>}
@@ -393,7 +392,6 @@ function CollectionsSection({ rows, receiptRows, rentRollRows, isLoading }: Read
   return (
     <div className="space-y-4">
       <ReportCard
-        id="collections"
         title="التحصيل اليومي للفترة"
         description="تفصيل يومي للتحصيل مع تفصيل طرق الدفع لكل يوم."
         action={<Button variant="secondary" onClick={() => downloadCsv(buildReportCsvFilename('daily-collection'), toDailyCollectionCsv(rows))}><FileSpreadsheet className="ml-2 size-4" />تصدير CSV</Button>}
@@ -550,7 +548,6 @@ function OverdueSection({ rows, agedReport, isLoading }: Readonly<{
   return (
     <div className="space-y-4">
       <ReportCard
-        id="overdue"
         title="الفواتير المتأخرة حسب as-of"
         description="الفواتير المتأخرة المحسوبة من خدمة arrears الحالية حسب تاريخ الاحتساب."
         action={<Button variant="secondary" onClick={() => downloadCsv(buildReportCsvFilename('overdue-invoices'), rows)}><FileSpreadsheet className="ml-2 size-4" />تصدير CSV</Button>}
@@ -643,7 +640,6 @@ function ExpensesSection({ report, isLoading }: Readonly<{
 
   return (
     <ReportCard
-      id="expenses"
       title="تحليل المصروفات للفترة"
       description="تفصيل المصروفات حسب التصنيف والعقار من تقرير المصروفات الموجود."
       action={<Button variant="secondary" onClick={() => downloadCsv(buildReportCsvFilename('expense-breakdown'), [...categoryRows, ...propertyRows])}><FileSpreadsheet className="ml-2 size-4" />تصدير CSV</Button>}
@@ -694,7 +690,6 @@ function OccupancySection({ occupancyRows, expiringRows, isLoading }: Readonly<{
 }>) {
   return (
     <ReportCard
-      id="occupancy"
       title="الإشغال والعقود القريبة من الانتهاء"
       description="مؤشر إشغال الوحدات الحالية، وتنبيه عقود تنتهي خلال 60 يوم."
       isLoading={isLoading}
@@ -776,7 +771,7 @@ function StatementsSection({ agedReport, receiptRows, financialSummary, expenseB
   const totalReceiptsCount = receiptRows.length;
 
   return (
-    <div id="statements" className="space-y-4">
+    <div className="space-y-4">
       <Card className="scroll-mt-28 border-border/60 bg-muted/20">
         <CardHeader className="px-4 py-3 sm:px-5">
           <CardTitle className="text-sm font-black">كشوف الحساب</CardTitle>
@@ -937,11 +932,6 @@ export function ReportsPage() {
 
   const handleJumpToSection = (id: ReportSectionId) => {
     setActiveSection(id);
-    if (typeof window === 'undefined') return;
-    const target = document.getElementById(id);
-    if (target) {
-      target.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }
   };
 
   const today = getTodayLocalDateString();
@@ -966,36 +956,48 @@ export function ReportsPage() {
         </Card>
       ) : null}
 
-      <OverviewSection
-        summary={financialSummaryQuery.data}
-        cashflowRows={financialCashflowQuery.data?.rows ?? []}
-        isLoading={financialSummaryQuery.isLoading || financialCashflowQuery.isLoading}
-      />
-      <CollectionsSection
-        rows={dailyCollectionQuery.data?.rows ?? []}
-        receiptRows={receiptRows}
-        rentRollRows={rentRollRows}
-        isLoading={dailyCollectionQuery.isLoading || receiptsQuery.isLoading || contractsQuery.isLoading}
-      />
-      <OverdueSection
-        rows={overdueInvoicesQuery.data?.rows ?? []}
-        agedReport={agedReceivablesQuery.data}
-        isLoading={overdueInvoicesQuery.isLoading || agedReceivablesQuery.isLoading}
-      />
-      <ExpensesSection report={expenseBreakdownQuery.data} isLoading={expenseBreakdownQuery.isLoading} />
-      <OccupancySection
-        occupancyRows={occupancyRows}
-        expiringRows={expiringRows}
-        isLoading={unitsQuery.isLoading || contractsQuery.isLoading}
-      />
-      <StatementsSection
-        agedReport={agedReceivablesQuery.data}
-        receiptRows={receiptRows}
-        financialSummary={financialSummaryQuery.data}
-        expenseBreakdown={expenseBreakdownQuery.data}
-        dailyRows={dailyCollectionQuery.data?.rows ?? []}
-        isLoading={agedReceivablesQuery.isLoading || receiptsQuery.isLoading || financialSummaryQuery.isLoading || expenseBreakdownQuery.isLoading || dailyCollectionQuery.isLoading}
-      />
+      <div role="tabpanel" id="overview" hidden={activeSection !== 'overview'}>
+        <OverviewSection
+          summary={financialSummaryQuery.data}
+          cashflowRows={financialCashflowQuery.data?.rows ?? []}
+          isLoading={financialSummaryQuery.isLoading || financialCashflowQuery.isLoading}
+        />
+      </div>
+      <div role="tabpanel" id="collections" hidden={activeSection !== 'collections'}>
+        <CollectionsSection
+          rows={dailyCollectionQuery.data?.rows ?? []}
+          receiptRows={receiptRows}
+          rentRollRows={rentRollRows}
+          isLoading={dailyCollectionQuery.isLoading || receiptsQuery.isLoading || contractsQuery.isLoading}
+        />
+      </div>
+      <div role="tabpanel" id="overdue" hidden={activeSection !== 'overdue'}>
+        <OverdueSection
+          rows={overdueInvoicesQuery.data?.rows ?? []}
+          agedReport={agedReceivablesQuery.data}
+          isLoading={overdueInvoicesQuery.isLoading || agedReceivablesQuery.isLoading}
+        />
+      </div>
+      <div role="tabpanel" id="expenses" hidden={activeSection !== 'expenses'}>
+        <ExpensesSection report={expenseBreakdownQuery.data} isLoading={expenseBreakdownQuery.isLoading} />
+      </div>
+      <div role="tabpanel" id="occupancy" hidden={activeSection !== 'occupancy'}>
+        <OccupancySection
+          occupancyRows={occupancyRows}
+          expiringRows={expiringRows}
+          isLoading={unitsQuery.isLoading || contractsQuery.isLoading}
+        />
+      </div>
+      <div role="tabpanel" id="statements" hidden={activeSection !== 'statements'}>
+        <StatementsSection
+          agedReport={agedReceivablesQuery.data}
+          receiptRows={receiptRows}
+          financialSummary={financialSummaryQuery.data}
+          expenseBreakdown={expenseBreakdownQuery.data}
+          dailyRows={dailyCollectionQuery.data?.rows ?? []}
+          isLoading={agedReceivablesQuery.isLoading || receiptsQuery.isLoading || financialSummaryQuery.isLoading || expenseBreakdownQuery.isLoading || dailyCollectionQuery.isLoading}
+        />
+      </div>
     </div>
   );
 }
