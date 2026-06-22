@@ -73,7 +73,7 @@ describe('system and governance route authorization', () => {
     const systemItems: readonly NavItem[] = navGroups
       .find(([sectionTitle]) => sectionTitle === 'إدارة النظام')?.[1] ?? [];
     const settingsItems: readonly NavItem[] = navGroups
-      .find(([sectionTitle]) => sectionTitle === 'الإعدادات')?.[1] ?? [];
+      .find(([sectionTitle]) => sectionTitle === 'الإعدادات والحساب')?.[1] ?? [];
     const adminContext = { userId: 'user-1', email: 'admin@example.com', role: 'ADMIN' as const };
     const systemRoutes = systemItems.map(([to]) => to);
 
