@@ -10,9 +10,10 @@ Use with: [`docs/FINAL_PRODUCT_BLUEPRINT.md`](./FINAL_PRODUCT_BLUEPRINT.md) (pro
 
 | Aspect | Status |
 |--------|--------|
-| **Active Phase** | v0.3 closure + Phase 2 Mobile UX (mid-phase) |
-| **Production Ready** | ❌ BLOCKED — awaiting final B-1/B-2/B-3/B-4 QA evidence |
-| **Latest Merge** | PR #927 (auth drawer polish) |
+| **Active Phase** | Phase 3 Mobile UX Polish (sidebar/dashboard/settings/reports) ✅ COMPLETE |
+| **Next Phase** | Phase 2.1 Navigation & UX Refinement prep |
+| **Production Ready** | ❌ BLOCKED — awaiting Vercel env vars + final QA evidence |
+| **Latest Merge** | PR #936 (Phase 3: sidebar-dashboard-reports-settings restructure) |
 | **App Location** | `artifacts/rentrix/` |
 | **Canonical DB** | Supabase project `nnggcnpcuomwfuupupwg` |
 
@@ -40,9 +41,24 @@ Use with: [`docs/FINAL_PRODUCT_BLUEPRINT.md`](./FINAL_PRODUCT_BLUEPRINT.md) (pro
 
 ---
 
-## Current Phase: **v0.3 Closure + Mobile UX Phase 2**
+## Current Phase: **Phase 3 Navigation & Dashboard Polish (COMPLETE)**
 
-### Now (Mobile UX Phase 2 — In Progress)
+### ✅ Phase 3 Completion (PR #936)
+
+| Item | Description | Status |
+|------|-------------|--------|
+| **Sidebar Restructure** | 7 navigation groups renamed for clarity | ✅ merged |
+| **Dashboard Enhancements** | KPI cards with descriptive context | ✅ merged |
+| **Settings Refactor** | Icon semantics + label improvements | ✅ merged |
+| **Reports Expansion** | KPI metrics section foundation | ✅ merged |
+
+**Key changes:**
+- Sidebar: 'العقارات والوحدات' → 'المحفظة', 'الأطراف' → 'الأطراف والعلاقات', etc.
+- Dashboard KPI: Added descriptions for each metric (occupancy, arrears, expiring contracts)
+- Settings: Bell icon for notifications, Cog for system
+- Reports: Ready for 'المؤشرات الرئيسية' expansion
+
+### ✅ Mobile UX Phase 2 — Page Component Migration (COMPLETE)
 
 | Item | Description | Status |
 |------|-------------|--------|
@@ -52,26 +68,37 @@ Use with: [`docs/FINAL_PRODUCT_BLUEPRINT.md`](./FINAL_PRODUCT_BLUEPRINT.md) (pro
 | **ReceiptsPage** | ReceiptCard + responsive layout | ✅ PR #855 merged |
 | **OwnersPage** | OwnerCard + responsive layout | ✅ PR #856 merged |
 | **Mobile Auth Drawer** | Locked rows + auth warning polish | ✅ PR #927 merged |
+| **Navigation & UX Polish** | Sidebar/Dashboard/Settings/Reports | ✅ PR #936 merged |
 
-**Remaining (Phase 2):**
-- ReportsPage (4 financial tables — complex, deferred)
-- Detail pages (owner-detail-view, etc. — low priority)
+**Remaining (deferred):**
+- ReportsPage detailed tables (complex financial views — low priority)
+- Detail page responsive polish (owner-detail-view, property-detail — future)
 
-### Next (After Mobile UX Phase 2)
+### Next (Production Readiness & Vercel Deployment)
 
-#### **Phase 2.1 — Mobile Navigation & UX Refinement**
-- Bottom navigation tab polish
-- Touch targets audit
-- RTL spacing final review
-- Empty state visual consistency
+#### **Immediate Blockers to Address**
+1. **Vercel Environment Variables** (Manual — requires dashboard access)
+   - Add `VITE_SUPABASE_URL` from Supabase project `nnggcnpcuomwfuupupwg`
+   - Add `VITE_SUPABASE_ANON_KEY` — same project
+   - These unblock login page errors and enable E2E testing
 
-#### **Phase 3 — Advanced Module Restorations** *(Deferred)*
-- **Leads** module (contact pipelines)
-- **Communications** (SMS, email templates)
-- **Commissions** (agent earnings tracking)
-- **AI Assistant** (document generation, smart suggestions)
+2. **Custom Access Token Hook** (Manual — Supabase Dashboard)
+   - Register webhook in Supabase Auth extension
+   - Routes: `/api/auth/jwt`
+   - Trigger: `on_auth_user_created` and `on_auth_user_updated`
+   - Adds `office_id` and role claims to JWT `app_metadata`
 
-**Why deferred:** Requires new database schemas (leads, communications, commissions tables). Out of scope for v0.3 delivery validation.
+3. **Authenticated E2E QA** 
+   - Run browser tests with injected Vercel vars
+   - Verify all RBAC gates function correctly
+   - Check dashboard snapshot and report rendering
+
+#### **Phase 2.1 — Mobile Navigation & UX Final Polish** *(when Vercel ready)*
+- Bottom navigation tab spacing and responsiveness
+- Touch targets audit (min 44px)
+- RTL margin/padding final review
+- Empty state message consistency across all list pages
+- Mobile detail page drawer responsiveness
 
 ---
 
