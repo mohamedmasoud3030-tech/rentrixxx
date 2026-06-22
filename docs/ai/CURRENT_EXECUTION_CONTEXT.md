@@ -23,9 +23,41 @@ Rentrix is also not approved for a general accounting ledger during stabilizatio
 
 ## Latest Merged Work Verified
 
-Latest roadmap merge recorded at this refresh: `6cb393e docs: add final product blueprint and unify roadmap authority (#932)`.
+Latest roadmap merge recorded at this refresh: `ddc7918 feat(ui): sidebar-dashboard-reports-settings restructure (#936)`.
 
-### ✅ UI & Docs — PRs #925–#932 (post-#924)
+### ✅ UI/UX Phase 3 — Navigation & Dashboard Restructure (PR #936)
+
+| المرحلة | الموضوع | الحالة |
+|---|---|---|
+| Sidebar | Navigation group restructuring for clarity | ✅ merged |
+| Dashboard | KPI card descriptive labels + context | ✅ merged |
+| Settings | Icon and label improvements | ✅ merged |
+| Reports | Key Performance Indicator section prep | ✅ merged |
+
+**Changes:**
+- Sidebar: Renamed 7 navigation groups for better intent signaling
+  - 'العقارات والوحدات' → 'المحفظة'
+  - 'الأطراف' → 'الأطراف والعلاقات'
+  - 'التشغيل' → 'التشغيل والصيانة'
+  - 'الماليات' → 'الماليات والتحصيل'
+  - 'التقارير والكشوف' → 'التقارير والتحليلات'
+  - 'المبيعات' → 'المبيعات والعمولات'
+  - 'الإعدادات' → 'الإعدادات والحساب'
+
+- Dashboard: Enhanced KPI cards with descriptive context
+  - Properties: 'إجمالي الأصول العقارية'
+  - Occupancy: 'معدل استقرار المحفظة'
+  - Arrears: 'أموال معلقة للتحصيل'
+  - Expiring: 'عقود بحاجة للتجديد'
+
+- Settings: Better icon semantics
+  - Notifications: Sparkles → Bell
+  - System: Lock → Cog
+  - Label: 'الإشعارات والمتابعة' → 'الإشعارات والتنبيهات'
+
+- Reports: Added 'المؤشرات الرئيسية' (KPI metrics) section foundation
+
+### ✅ UI & Docs — PRs #925–#934 (post-#924)
 
 | PR | التغيير | الحالة |
 |---|---|---|
@@ -37,6 +69,7 @@ Latest roadmap merge recorded at this refresh: `6cb393e docs: add final product 
 | PR #930 | Separate Codex and Claude agent guidance docs | ✅ merged |
 | PR #931 | Roadmap clarity + agent onboarding (QUICK_STATUS, ROADMAP, INDEX) | ✅ merged |
 | PR #932 | Final product blueprint + unified roadmap authority resolution | ✅ merged |
+| PR #936 | Phase 3: Sidebar/Dashboard/Settings/Reports restructure | ✅ merged |
 
 ### Mobile UX Phase 2 — All List Pages Complete
 
