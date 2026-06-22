@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { KpiCard } from '@/components/ui/kpi-card';
+import { SectionTabPanel, SectionTabs } from '@/components/ui/section-tabs';
 import { Skeleton } from '@/components/ui/skeleton';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -304,32 +305,6 @@ function FiltersPanel({ filters, onChange, onResetCurrentMonth }: Readonly<{
   );
 }
 
-function SectionNav({ activeId, onJump }: Readonly<{ activeId: ReportSectionId; onJump: (id: ReportSectionId) => void }>) {
-  return (
-    <nav aria-label="أقسام التقارير" className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-      {reportSections.map((section) => {
-        const isActive = activeId === section.id;
-        return (
-          <button
-            key={section.id}
-            type="button"
-            onClick={() => onJump(section.id)}
-            aria-current={isActive ? 'true' : undefined}
-            className={cn(
-              'flex shrink-0 items-center gap-2 rounded-full border px-4 py-2.5 text-[13px] font-black transition min-h-11',
-              isActive
-                ? 'border-primary bg-primary text-primary-foreground shadow-md scale-[1.02]'
-                : 'border-border bg-card text-muted-foreground hover:border-primary/30 hover:text-foreground',
-            )}
-          >
-            <section.icon className="size-4" />
-            {section.label}
-          </button>
-        );
-      })}
-    </nav>
-  );
-}
 
 // ── Overview section: نظرة عامة ───────────────────────────────────────────────
 //
@@ -946,7 +921,7 @@ export function ReportsPage() {
         onResetCurrentMonth={() => setFilters(getCurrentMonthFilters())}
       />
 
-      <SectionNav activeId={activeSection} onJump={handleJumpToSection} />
+      <SectionTabs items={reportSections} activeId={activeSection} onChange={handleJumpToSection} ariaLabel="أقسام التقارير" />
 
       {firstError ? (
         <Card>
@@ -956,39 +931,39 @@ export function ReportsPage() {
         </Card>
       ) : null}
 
-      <div role="tabpanel" id="overview" hidden={activeSection !== 'overview'}>
+      <SectionTabPanel id="overview" activeId={activeSection}>
         <OverviewSection
           summary={financialSummaryQuery.data}
           cashflowRows={financialCashflowQuery.data?.rows ?? []}
           isLoading={financialSummaryQuery.isLoading || financialCashflowQuery.isLoading}
         />
-      </div>
-      <div role="tabpanel" id="collections" hidden={activeSection !== 'collections'}>
+      </SectionTabPanel>
+      <SectionTabPanel id="collections" activeId={activeSection}>
         <CollectionsSection
           rows={dailyCollectionQuery.data?.rows ?? []}
           receiptRows={receiptRows}
           rentRollRows={rentRollRows}
           isLoading={dailyCollectionQuery.isLoading || receiptsQuery.isLoading || contractsQuery.isLoading}
         />
-      </div>
-      <div role="tabpanel" id="overdue" hidden={activeSection !== 'overdue'}>
+      </SectionTabPanel>
+      <SectionTabPanel id="overdue" activeId={activeSection}>
         <OverdueSection
           rows={overdueInvoicesQuery.data?.rows ?? []}
           agedReport={agedReceivablesQuery.data}
           isLoading={overdueInvoicesQuery.isLoading || agedReceivablesQuery.isLoading}
         />
-      </div>
-      <div role="tabpanel" id="expenses" hidden={activeSection !== 'expenses'}>
+      </SectionTabPanel>
+      <SectionTabPanel id="expenses" activeId={activeSection}>
         <ExpensesSection report={expenseBreakdownQuery.data} isLoading={expenseBreakdownQuery.isLoading} />
-      </div>
-      <div role="tabpanel" id="occupancy" hidden={activeSection !== 'occupancy'}>
+      </SectionTabPanel>
+      <SectionTabPanel id="occupancy" activeId={activeSection}>
         <OccupancySection
           occupancyRows={occupancyRows}
           expiringRows={expiringRows}
           isLoading={unitsQuery.isLoading || contractsQuery.isLoading}
         />
-      </div>
-      <div role="tabpanel" id="statements" hidden={activeSection !== 'statements'}>
+      </SectionTabPanel>
+      <SectionTabPanel id="statements" activeId={activeSection}>
         <StatementsSection
           agedReport={agedReceivablesQuery.data}
           receiptRows={receiptRows}
@@ -997,7 +972,7 @@ export function ReportsPage() {
           dailyRows={dailyCollectionQuery.data?.rows ?? []}
           isLoading={agedReceivablesQuery.isLoading || receiptsQuery.isLoading || financialSummaryQuery.isLoading || expenseBreakdownQuery.isLoading || dailyCollectionQuery.isLoading}
         />
-      </div>
+      </SectionTabPanel>
     </div>
   );
 }

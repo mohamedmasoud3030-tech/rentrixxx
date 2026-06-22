@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
+import { SectionTabPanel, SectionTabs } from '@/components/ui/section-tabs';
 import { Textarea } from '@/components/ui/textarea';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -20,7 +21,6 @@ import {
 } from '@/lib/companySettings';
 import { supportedCurrencies } from '@/lib/formatters';
 import { getAppLanguageState } from '@/lib/i18n';
-import { cn } from '@/lib/utils';
 import { useUiStore } from '@/store/ui-store';
 import { useCompanySettings, useUpdateCompanySettings } from './useCompanySettings';
 import {
@@ -133,32 +133,6 @@ const settingsSections = [
 
 type SettingsSectionId = (typeof settingsSections)[number]['id'];
 
-function SectionNav({ activeId, onJump }: Readonly<{ activeId: SettingsSectionId; onJump: (id: SettingsSectionId) => void }>) {
-  return (
-    <nav aria-label="أقسام الإعدادات" className="-mx-1 mb-2 flex gap-2 overflow-x-auto px-1 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-      {settingsSections.map((section) => {
-        const isActive = activeId === section.id;
-        return (
-          <button
-            key={section.id}
-            type="button"
-            onClick={() => onJump(section.id)}
-            aria-current={isActive ? 'true' : undefined}
-            className={cn(
-              'flex shrink-0 items-center gap-2 rounded-full border px-4 py-2.5 text-[13px] font-black transition min-h-11',
-              isActive
-                ? 'border-primary bg-primary text-primary-foreground shadow-md scale-[1.02]'
-                : 'border-border bg-card text-muted-foreground hover:border-primary/30 hover:text-foreground',
-            )}
-          >
-            <section.icon className="size-4" />
-            {section.label}
-          </button>
-        );
-      })}
-    </nav>
-  );
-}
 
 type SectionCardProps = Readonly<{
   id: SettingsSectionId;
@@ -434,7 +408,7 @@ export function SettingsPage() {
         ]}
       />
 
-      <SectionNav activeId={activeSection} onJump={handleJumpToSection} />
+      <SectionTabs items={settingsSections} activeId={activeSection} onChange={handleJumpToSection} ariaLabel="أقسام الإعدادات" />
 
       <form className="space-y-4" onSubmit={handleSubmit}>
         <SectionCard id="office" activeId={activeSection} title="بيانات المكتب" subtitle="الهوية الأساسية وبيانات التواصل المرتبطة بقوالب المستندات.">
