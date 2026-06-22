@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type ChangeEvent, type FormEvent } from 'react';
 import { Link } from '@tanstack/react-router';
-import { Building2, FileSignature, KeyRound, Lock, RefreshCcw, Save, ShieldCheck, Sparkles } from 'lucide-react';
+import { Building2, FileSignature, KeyRound, Lock, RefreshCcw, Save, ShieldCheck, Sparkles, Cog, Bell, User } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -123,12 +123,12 @@ function PreviewField({ label, value, muted = false }: PreviewFieldProps) {
 // section card is anchored by its id and renders only the persisted,
 // editable fields. Non-persisted preferences stay informational.
 const settingsSections = [
-  { id: 'office',      label: 'بيانات المكتب',        icon: Building2    },
-  { id: 'identity',    label: 'الهوية والطباعة',      icon: FileSignature },
-  { id: 'documents',   label: 'العقود والفواتير',     icon: FileSignature },
-  { id: 'notifications', label: 'الإشعارات والمتابعة', icon: Sparkles     },
-  { id: 'security',    label: 'الأمان والحساب',       icon: ShieldCheck  },
-  { id: 'system',      label: 'النظام والبيانات',     icon: Lock         },
+  { id: 'office',      label: 'بيانات المكتب',        icon: Building2      },
+  { id: 'identity',    label: 'الهوية والطباعة',      icon: FileSignature  },
+  { id: 'documents',   label: 'العقود والفواتير',     icon: FileSignature  },
+  { id: 'notifications', label: 'الإشعارات والتنبيهات', icon: Bell          },
+  { id: 'security',    label: 'الأمان والحساب',       icon: ShieldCheck    },
+  { id: 'system',      label: 'النظام والبيانات',     icon: Cog           },
 ] as const;
 
 type SettingsSectionId = (typeof settingsSections)[number]['id'];

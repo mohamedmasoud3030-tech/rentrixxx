@@ -23,28 +23,28 @@ export type NavGroup = readonly [sectionTitle: string, items: readonly NavItem[]
  */
 export const navGroups = [
   ['الرئيسية', [['/', 'dashboard', 'ملخص الأداء اليومي', LayoutDashboard]]],
-  ['العقارات والوحدات', [
+  ['المحفظة', [
     ['/properties', 'properties', 'ملفات العقارات والأصول', Building2],
     ['/units', 'units', 'كل الوحدات وحالات الإشغال', DoorOpen],
     ['/lands', 'lands', 'إدارة قطع الأراضي ومتابعة حالتها', MapPinned, 'lands.view'],
   ]],
-  ['الأطراف', [
+  ['الأطراف والعلاقات', [
     ['/people', 'people', 'دليل جهات التعامل', Users],
     ['/owners', 'owners', 'إدارة ملفات الملاك وعلاقات الملكية', UserRoundCog, 'owners.hub.view'],
     ['/tenants', 'tenants', 'بيانات المستأجرين', Users],
   ]],
-  ['التشغيل', [
+  ['التشغيل والصيانة', [
     ['/contracts', 'contracts', 'العقود والتجديدات', FileText],
     ['/maintenance', 'maintenance', 'طلبات الصيانة والمتابعة', Wrench, 'maintenance.view'],
     ['/communication', 'communication', 'سجل التواصل الداخلي والمتابعات', MessageSquareText, 'communication.view'],
   ]],
-  ['الماليات', [
+  ['الماليات والتحصيل', [
     ['/invoices', 'invoices', 'الفواتير المستحقة', ReceiptText],
     ['/receipts', 'collectionsReceipts', 'التحصيلات والإيصالات', ReceiptText],
     ['/expenses', 'expenses', 'مصاريف العقارات التشغيلية', WalletCards],
     ['/arrears', 'arrears', 'متابعة المبالغ المتأخرة', ClipboardList],
   ]],
-  ['التقارير والكشوف', [
+  ['التقارير والتحليلات', [
     [
       '/reports',
       'reportsAndStatements',
@@ -52,11 +52,11 @@ export const navGroups = [
       BarChart3,
     ],
   ]],
-  ['المبيعات', [
+  ['المبيعات والعمولات', [
     ['/leads', 'leads', 'مصادر العملاء المحتملين والتحويلات', ContactRound, 'leads.view'],
     ['/commissions', 'commissions', 'تتبع عمولات المكتب كحالة تشغيلية فقط', BadgeDollarSign, 'commissions.view'],
   ]],
-  ['الإعدادات', [
+  ['الإعدادات والحساب', [
     ['/settings', 'settings', 'مركز تحكم المكتب، الهوية، الأمان، والحساب', Settings, 'settings.manage'],
   ]],
   ['إدارة النظام', [
