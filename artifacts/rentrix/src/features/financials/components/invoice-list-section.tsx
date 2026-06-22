@@ -1,4 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Download, Printer } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { getSafeRemainingAmount } from '../financialMath';
 import type { InvoiceListItem, InvoiceStatusFilter, InvoiceSummary } from '../invoices/invoiceService';
@@ -21,6 +23,8 @@ type InvoiceListSectionProps = {
   onInvoiceSearchChange: (search: string) => void;
   onGenerateInvoices: () => void;
   onSelectInvoice: (invoiceId: string) => void;
+  onPrintInvoice?: (invoiceId: string) => void;
+  onExportInvoice?: (invoiceId: string) => void;
 };
 
 export function InvoiceListSection({
@@ -38,6 +42,8 @@ export function InvoiceListSection({
   onInvoiceSearchChange,
   onGenerateInvoices,
   onSelectInvoice,
+  onPrintInvoice,
+  onExportInvoice,
 }: InvoiceListSectionProps) {
   return (
     <Card>
@@ -68,40 +74,73 @@ export function InvoiceListSection({
             const rowRemaining = getSafeRemainingAmount(invoice.amount, invoice.paid_amount);
             const isSelected = selectedInvoiceId === invoice.id;
             return (
-              <button
+              <div
                 key={invoice.id}
                 className={cn(
-                  'grid w-full gap-3 rounded-2xl border p-4 text-start transition hover:border-primary/60 hover:bg-muted/40 md:grid-cols-[1.2fr_1fr_1fr_1fr_1fr_auto]',
-                  isSelected ? 'border-primary bg-primary/5 ring-2 ring-primary/20' : 'bg-background',
+                  'flex flex-col gap-3 rounded-2xl border p-4 transition',
+                  isSelected ? 'border-primary bg-primary/5 ring-2 ring-primary/20' : 'bg-background hover:border-primary/60 hover:bg-muted/40',
                 )}
-                onClick={() => onSelectInvoice(invoice.id)}
-                aria-pressed={isSelected}
-                aria-label={`عرض تفاصيل الفاتورة ${invoice.id.slice(0, 8)}`}
               >
-                <span>
-                  <span className="block text-xs text-muted-foreground">رقم الفاتورة</span>
-                  <span className="font-black">#{invoice.id.slice(0, 8)}</span>
-                </span>
-                <span>
-                  <span className="block text-xs text-muted-foreground">تاريخ الاستحقاق</span>
-                  <span>{formatDate(invoice.due_date)}</span>
-                </span>
-                <span>
-                  <span className="block text-xs text-muted-foreground">الإجمالي</span>
-                  <span>{formatMoney(invoice.amount)}</span>
-                </span>
-                <span>
-                  <span className="block text-xs text-muted-foreground">المدفوع</span>
-                  <span>{formatMoney(invoice.paid_amount)}</span>
-                </span>
-                <span>
-                  <span className="block text-xs text-muted-foreground">المتبقي</span>
-                  <span>{formatMoney(rowRemaining)}</span>
-                </span>
-                <span className="inline-flex h-fit rounded-full bg-secondary px-3 py-1 text-xs font-bold text-secondary-foreground">
-                  {formatInvoiceStatusLabel(invoice.status)}
-                </span>
-              </button>
+                <button
+                  className="w-full text-start grid gap-3 md:grid-cols-[1.2fr_1fr_1fr_1fr_1fr_auto]"
+                  onClick={() => onSelectInvoice(invoice.id)}
+                  aria-pressed={isSelected}
+                  aria-label={`عرض تفاصيل الفاتورة ${invoice.id.slice(0, 8)}`}
+                >
+                  <span>
+                    <span className="block text-xs text-muted-foreground">رقم الفاتورة</span>
+                    <span className="font-black">#{invoice.id.slice(0, 8)}</span>
+                  </span>
+                  <span>
+                    <span className="block text-xs text-muted-foreground">تاريخ الاستحقاق</span>
+                    <span>{formatDate(invoice.due_date)}</span>
+                  </span>
+                  <span>
+                    <span className="block text-xs text-muted-foreground">الإجمالي</span>
+                    <span>{formatMoney(invoice.amount)}</span>
+                  </span>
+                  <span>
+                    <span className="block text-xs text-muted-foreground">المدفوع</span>
+                    <span>{formatMoney(invoice.paid_amount)}</span>
+                  </span>
+                  <span>
+                    <span className="block text-xs text-muted-foreground">المتبقي</span>
+                    <span>{formatMoney(rowRemaining)}</span>
+                  </span>
+                  <span className="inline-flex h-fit rounded-full bg-secondary px-3 py-1 text-xs font-bold text-secondary-foreground">
+                    {formatInvoiceStatusLabel(invoice.status)}
+                  </span>
+                </button>
+
+                {(onPrintInvoice || onExportInvoice) && (
+                  <div className="flex gap-2 border-t pt-2">
+                    {onPrintInvoice && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-8"
+                        onClick={() => onPrintInvoice(invoice.id)}
+                        title="طباعة الفاتورة"
+                      >
+                        <Printer className="size-4 ml-1" />
+                        طباعة
+                      </Button>
+                    )}
+                    {onExportInvoice && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-8"
+                        onClick={() => onExportInvoice(invoice.id)}
+                        title="تنزيل PDF"
+                      >
+                        <Download className="size-4 ml-1" />
+                        PDF
+                      </Button>
+                    )}
+                  </div>
+                )}
+              </div>
             );
           })}
         </div>
