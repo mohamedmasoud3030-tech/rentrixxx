@@ -145,13 +145,13 @@ function SectionNav({ activeId, onJump }: Readonly<{ activeId: SettingsSectionId
             onClick={() => onJump(section.id)}
             aria-current={isActive ? 'true' : undefined}
             className={cn(
-              'flex shrink-0 items-center gap-2 rounded-full border px-3 py-2 text-[12px] font-black transition',
+              'flex shrink-0 items-center gap-2 rounded-full border px-4 py-2.5 text-[13px] font-black transition min-h-11',
               isActive
-                ? 'border-primary/40 bg-primary text-primary-foreground shadow-sm'
+                ? 'border-primary bg-primary text-primary-foreground shadow-md scale-[1.02]'
                 : 'border-border bg-card text-muted-foreground hover:border-primary/30 hover:text-foreground',
             )}
           >
-            <section.icon className="size-3.5" />
+            <section.icon className="size-4" />
             {section.label}
           </button>
         );
@@ -162,14 +162,15 @@ function SectionNav({ activeId, onJump }: Readonly<{ activeId: SettingsSectionId
 
 type SectionCardProps = Readonly<{
   id: SettingsSectionId;
+  activeId: SettingsSectionId;
   title: string;
   subtitle: string;
   children: React.ReactNode;
 }>;
 
-function SectionCard({ id, title, subtitle, children }: SectionCardProps) {
+function SectionCard({ id, activeId, title, subtitle, children }: SectionCardProps) {
   return (
-    <Card id={id} className="scroll-mt-28 border-border/60">
+    <Card id={id} role="tabpanel" hidden={activeId !== id} className="scroll-mt-28 border-border/60">
       <CardHeader className="space-y-1 border-b border-border/60 bg-muted/20 px-4 py-3 sm:px-5">
         <CardTitle className="text-sm font-black">{title}</CardTitle>
         <p className="text-[11px] font-bold text-muted-foreground">{subtitle}</p>
@@ -368,11 +369,6 @@ export function SettingsPage() {
 
   const handleJumpToSection = (id: SettingsSectionId) => {
     setActiveSection(id);
-    if (typeof window === 'undefined') return;
-    const target = document.getElementById(id);
-    if (target) {
-      target.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }
   };
 
   if (companySettingsQuery.isError) {
@@ -441,7 +437,7 @@ export function SettingsPage() {
       <SectionNav activeId={activeSection} onJump={handleJumpToSection} />
 
       <form className="space-y-4" onSubmit={handleSubmit}>
-        <SectionCard id="office" title="بيانات المكتب" subtitle="الهوية الأساسية وبيانات التواصل المرتبطة بقوالب المستندات.">
+        <SectionCard id="office" activeId={activeSection} title="بيانات المكتب" subtitle="الهوية الأساسية وبيانات التواصل المرتبطة بقوالب المستندات.">
           <div className="rounded-xl border border-primary/20 bg-primary/5 p-3 text-xs text-primary">
             الإعدادات هنا مرتبطة بسجل إعدادات الشركة المحفوظ، وليست حالة محلية مؤقتة.
           </div>
@@ -467,7 +463,7 @@ export function SettingsPage() {
           </label>
         </SectionCard>
 
-        <SectionCard id="identity" title="الهوية والطباعة" subtitle="العملة، اللغة، الشعار، وصيغ الأرقام والتواريخ المعتمدة في المستندات.">
+        <SectionCard id="identity" activeId={activeSection} title="الهوية والطباعة" subtitle="العملة، اللغة، الشعار، وصيغ الأرقام والتواريخ المعتمدة في المستندات.">
           <div className="grid gap-3 md:grid-cols-2">
             <SelectField label="العملة" field="currency" draft={draft} errors={errors} disabled={isSaving} options={currencyOptions} onChange={handleDraftChange} />
             <SelectField label="المحلية" field="locale" draft={draft} errors={errors} disabled={isSaving} options={localeOptions} onChange={handleDraftChange} />
@@ -502,7 +498,7 @@ export function SettingsPage() {
           </div>
         </SectionCard>
 
-        <SectionCard id="documents" title="العقود والفواتير" subtitle="بادئات المستندات والضريبة الافتراضية المطبّقة على الفواتير والعقود الجديدة.">
+        <SectionCard id="documents" activeId={activeSection} title="العقود والفواتير" subtitle="بادئات المستندات والضريبة الافتراضية المطبّقة على الفواتير والعقود الجديدة.">
           <div className="grid gap-3 md:grid-cols-2">
             <FormField label="بادئة الفواتير" field="invoice_prefix" draft={draft} errors={errors} disabled={isSaving} onChange={handleDraftChange} />
             <FormField label="بادئة العقود" field="contract_prefix" draft={draft} errors={errors} disabled={isSaving} onChange={handleDraftChange} />
@@ -511,7 +507,7 @@ export function SettingsPage() {
           </div>
         </SectionCard>
 
-        <SectionCard id="notifications" title="الإشعارات والمتابعة" subtitle="تفضيلات الإشعارات المسجلة حالياً. تُحفظ في سجل إعدادات المكتب.">
+        <SectionCard id="notifications" activeId={activeSection} title="الإشعارات والمتابعة" subtitle="تفضيلات الإشعارات المسجلة حالياً. تُحفظ في سجل إعدادات المكتب.">
           <div className="grid gap-3 md:grid-cols-2">
             <label className="flex items-center gap-2 rounded-xl border bg-background/70 p-3 text-sm font-medium">
               <input
@@ -537,7 +533,7 @@ export function SettingsPage() {
           </p>
         </SectionCard>
 
-        <SectionCard id="security" title="الأمان والحساب" subtitle="معلومات الجلسة الحالية وصلاحيات العرض. تغيير كلمة المرور منفصل ومؤمَّن.">
+        <SectionCard id="security" activeId={activeSection} title="الأمان والحساب" subtitle="معلومات الجلسة الحالية وصلاحيات العرض. تغيير كلمة المرور منفصل ومؤمَّن.">
           <div className="grid gap-3 md:grid-cols-2">
             <PreviewField label="البريد الإلكتروني للمستخدم" value={user?.email ?? 'غير متاح'} muted={!user?.email} />
             <PreviewField
@@ -567,7 +563,7 @@ export function SettingsPage() {
           </div>
         </SectionCard>
 
-        <SectionCard id="system" title="النظام والبيانات" subtitle="تفضيلات التطبيق المحلية (السمة، لغة الواجهة). المعاينة أدناه توضح أثر الإعدادات على العرض.">
+        <SectionCard id="system" activeId={activeSection} title="النظام والبيانات" subtitle="تفضيلات التطبيق المحلية (السمة، لغة الواجهة). المعاينة أدناه توضح أثر الإعدادات على العرض.">
           <div className="grid gap-3 rounded-2xl border bg-muted/20 p-3 md:grid-cols-[1fr_auto] md:items-center">
             <div>
               <p className="text-sm font-black">تفضيلات الواجهة</p>
