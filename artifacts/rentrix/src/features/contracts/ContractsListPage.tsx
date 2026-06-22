@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { ContractCard } from '@/components/ui/contract-card';
 import { Input } from '@/components/ui/input';
+import { PageHero } from '@/components/ui/page-hero';
 import { Skeleton } from '@/components/ui/skeleton';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -162,23 +163,35 @@ export function ContractsListPage() {
 
   return (
     <>
-    <div className="space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <p className="text-sm font-black text-primary">مرحلة 2B</p>
-          <h2 className="text-3xl font-black">العقود</h2>
-          <p className="text-sm text-muted-foreground">إدارة دورة العقد من مسودة إلى نشط ثم منتهي أو ملغي.</p>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <Button variant="secondary" onClick={() => exportContractsCsv(filteredContracts)} disabled={!filteredContracts.length}>
-            <Download className="me-2 size-4" />
-            تصدير CSV
-          </Button>
-          <Button onClick={() => { setEditContractId(undefined); setModalOpen(true); }}>
-            <Plus className="me-2 size-4" />إنشاء عقد
-          </Button>
-        </div>
-      </div>
+    <div className="space-y-5 pb-24 sm:pb-6" dir="rtl">
+      <PageHero
+        eyebrow="التشغيل والصيانة"
+        title="العقود"
+        description="إدارة دورة العقد من مسودة إلى نشط ثم منتهي أو ملغي، مع تحذير واضح للعقود القريبة من الانتهاء."
+        icon={FileText}
+        primaryMetric={listSummary.total}
+        primaryLabel="إجمالي العقود"
+        secondaryMetric={formatContractMoney(companySettings, listSummary.rentTotal)}
+        secondaryLabel="إجمالي الإيجارات"
+        isLoading={contractsQuery.isLoading}
+        accent={listSummary.expiringSoon > 0 ? 'amber' : 'primary'}
+        pills={[
+          { label: `${listSummary.active} نشطة`, tone: listSummary.active > 0 ? 'emerald' : 'slate', icon: WalletCards },
+          { label: `${listSummary.expiringSoon} تنتهي قريباً`, tone: listSummary.expiringSoon > 0 ? 'amber' : 'slate', icon: CalendarClock },
+          { label: hasActiveFilters ? 'فلاتر مفعّلة' : 'كل العقود', tone: hasActiveFilters ? 'sky' : 'slate', icon: Search },
+        ]}
+        action={(
+          <div className="grid w-full gap-2 sm:w-auto sm:grid-cols-2">
+            <Button variant="secondary" onClick={() => exportContractsCsv(filteredContracts)} disabled={!filteredContracts.length}>
+              <Download className="me-2 size-4" />
+              تصدير CSV
+            </Button>
+            <Button className="bg-white text-slate-900 hover:bg-white/90" onClick={() => { setEditContractId(undefined); setModalOpen(true); }}>
+              <Plus className="me-2 size-4" />إنشاء عقد
+            </Button>
+          </div>
+        )}
+      />
 
       <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
         <SummaryCard label="إجمالي العقود" value={String(listSummary.total)} description="كل العقود المحملة حسب فلتر الحالة الحالي." icon={FileText} />
@@ -188,17 +201,17 @@ export function ContractsListPage() {
       </div>
 
       <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-        <div className="flex flex-wrap gap-2">
+        <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1 lg:mx-0 lg:flex-wrap lg:overflow-visible lg:px-0 lg:pb-0">
           {filters.map((item) => (
-            <Button key={item} variant={status === item ? 'primary' : 'secondary'} onClick={() => setStatus(item)}>
+            <Button key={item} variant={status === item ? 'primary' : 'secondary'} className="shrink-0" onClick={() => setStatus(item)}>
               {filterLabels[item]}
             </Button>
           ))}
-          <Button variant={expiringOnly ? 'primary' : 'secondary'} onClick={() => setExpiringOnly((current) => !current)}>
+          <Button variant={expiringOnly ? 'primary' : 'secondary'} className="shrink-0" onClick={() => setExpiringOnly((current) => !current)}>
             <AlertTriangle className="me-2 size-4" />
             تنتهي خلال 30 يوم
           </Button>
-          {hasActiveFilters ? <Button variant="ghost" onClick={resetFilters}>مسح الفلاتر</Button> : null}
+          {hasActiveFilters ? <Button variant="ghost" className="shrink-0" onClick={resetFilters}>مسح الفلاتر</Button> : null}
         </div>
         <div className="relative w-full lg:max-w-md">
           <Search className="absolute start-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
@@ -276,11 +289,11 @@ export function ContractsListPage() {
                     <p className="px-1 text-xs font-bold text-amber-700">ينتهي خلال {daysUntilEnd} يوم</p>
                   ) : null}
                   <div className="flex items-center justify-end gap-2 px-1">
-                    <Button variant="outline" size="sm" className="h-9" onClick={() => onPrintContract(contract.id)} title="طباعة العقد">
+                    <Button variant="secondary" className="h-9" onClick={() => onPrintContract(contract.id)} title="طباعة العقد">
                       <Printer className="size-3.5 ml-1" />
                       طباعة
                     </Button>
-                    <Button variant="outline" size="sm" className="h-9" onClick={() => onExportContractPdf(contract.id)} title="تنزيل PDF">
+                    <Button variant="secondary" className="h-9" onClick={() => onExportContractPdf(contract.id)} title="تنزيل PDF">
                       <Download className="size-3.5 ml-1" />
                       PDF
                     </Button>
@@ -356,10 +369,10 @@ export function ContractsListPage() {
                                 <Eye className="size-4" />
                               </Link>
                             </Button>
-                            <Button variant="outline" className="min-h-11 px-3" onClick={() => onPrintContract(contract.id)} title="طباعة العقد">
+                            <Button variant="secondary" className="min-h-11 px-3" onClick={() => onPrintContract(contract.id)} title="طباعة العقد">
                               <Printer className="size-4" />
                             </Button>
-                            <Button variant="outline" className="min-h-11 px-3" onClick={() => onExportContractPdf(contract.id)} title="تنزيل PDF">
+                            <Button variant="secondary" className="min-h-11 px-3" onClick={() => onExportContractPdf(contract.id)} title="تنزيل PDF">
                               <Download className="size-4" />
                             </Button>
                             <Button variant="secondary" className="min-h-11 px-3" onClick={() => { setEditContractId(contract.id); setModalOpen(true); }}>

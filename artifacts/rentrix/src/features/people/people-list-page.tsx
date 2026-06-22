@@ -1,4 +1,4 @@
-import { Edit, Plus, Trash2 } from 'lucide-react';
+import { Edit, Plus, Trash2, Users } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { PersonFormModal } from './person-form-modal';
 import { EmptyState } from '@/components/empty-state';
@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { PersonCard } from '@/components/ui/person-card';
+import { PageHero } from '@/components/ui/page-hero';
 import { Select } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -26,6 +27,8 @@ export function PeopleListPage() {
   const peopleQuery = usePeople(params);
   const deleteMutation = useSoftDeletePerson();
   const totalPages = Math.max(1, Math.ceil((peopleQuery.data?.count ?? 0) / pageSize));
+  const rows = peopleQuery.data?.rows ?? [];
+  const hasFilters = search.trim().length > 0 || type !== 'all';
 
   const handleArchivePerson = async (personId: string) => {
     setArchiveError(null);
@@ -38,14 +41,28 @@ export function PeopleListPage() {
 
   return (
     <>
-    <div className="space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h2 className="text-xl font-black">الأشخاص</h2>
-          <p className="text-sm text-muted-foreground">جدول موحد للمستأجرين والملاك وجهات الاتصال.</p>
-        </div>
-        <Button onClick={() => { setEditPersonId(undefined); setModalOpen(true); }}><Plus className="ml-2 size-4" />إضافة شخص</Button>
-      </div>
+    <div className="space-y-5 pb-24 sm:pb-6" dir="rtl">
+      <PageHero
+        eyebrow="الأطراف والعلاقات"
+        title="الأشخاص"
+        description="دليل موحد للمستأجرين والملاك وجهات الاتصال بنفس لغة لوحة التحكم التشغيلية."
+        icon={Users}
+        primaryMetric={peopleQuery.data?.count ?? rows.length}
+        primaryLabel="إجمالي الأشخاص"
+        secondaryMetric={rows.length}
+        secondaryLabel="سجلات معروضة"
+        isLoading={peopleQuery.isLoading}
+        accent="primary"
+        pills={[
+          { label: hasFilters ? 'بحث أو تصفية مفعّلة' : 'كل الأنواع', tone: hasFilters ? 'amber' : 'slate', icon: Users },
+          { label: `صفحة ${page} من ${totalPages}`, tone: 'sky' },
+        ]}
+        action={(
+          <Button className="bg-white text-slate-900 hover:bg-white/90" onClick={() => { setEditPersonId(undefined); setModalOpen(true); }}>
+            <Plus className="me-2 size-4" />إضافة شخص
+          </Button>
+        )}
+      />
 
       <Card>
         <CardContent className="grid gap-3 pt-6 md:grid-cols-[1fr_14rem]">
@@ -77,11 +94,11 @@ export function PeopleListPage() {
             />
           </div>
         </Card>
-      ) : peopleQuery.data?.rows.length ? (
+      ) : rows.length ? (
         <>
           {/* Mobile card view */}
           <div className="grid gap-3 sm:grid-cols-2 md:hidden">
-            {peopleQuery.data.rows.map((person) => (
+            {rows.map((person) => (
               <div key={person.id} className="space-y-1.5">
                 <PersonCard
                   id={person.id}
@@ -126,7 +143,7 @@ export function PeopleListPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {peopleQuery.data.rows.map((person) => (
+                  {rows.map((person) => (
                     <TableRow key={person.id}>
                       <TableCell>
                         <div className="font-black">{person.full_name}</div>

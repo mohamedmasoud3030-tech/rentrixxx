@@ -7,6 +7,7 @@ import { z } from 'zod';
 import { EmptyState } from '@/components/empty-state';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { PageHero } from '@/components/ui/page-hero';
 import { useProperties } from '@/features/properties/use-properties';
 import { defaultCompanyLocalSettings } from '@/lib/companySettings';
 import { formatCompanyMoney, getCompanyLocale } from '@/lib/companyFormatters';
@@ -73,18 +74,29 @@ export function ExpensesPage() {
   };
 
   return (
-    <div className="space-y-6" dir="rtl">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <p className="text-sm font-black text-primary">المصاريف التشغيلية</p>
-          <h2 className="text-3xl font-black tracking-tight">المصاريف</h2>
-          <p className="mt-1 max-w-2xl text-sm leading-7 text-muted-foreground">تسجيل ومراجعة مصاريف العقارات من مصدر البيانات الحالي مع فلاتر للعقار والتصنيف والتاريخ.</p>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <Button variant="secondary" asChild><Link to="/financials"><ArrowRight className="ml-2 size-4" />المالية</Link></Button>
-          <Button variant="secondary" asChild><Link to="/reports"><ReceiptText className="ml-2 size-4" />التقارير</Link></Button>
-        </div>
-      </div>
+    <div className="space-y-5 pb-24 sm:pb-6" dir="rtl">
+      <PageHero
+        eyebrow="الماليات والتحصيل"
+        title="المصاريف"
+        description="تسجيل ومراجعة مصاريف العقارات من مصدر البيانات الحالي مع فلاتر للعقار والتصنيف والتاريخ."
+        icon={WalletCards}
+        primaryMetric={formatCompanyMoney(defaultCompanyLocalSettings, summary.visibleAmount)}
+        primaryLabel="إجمالي المصاريف"
+        secondaryMetric={summary.visibleCount.toLocaleString(locale)}
+        secondaryLabel="سجل ضمن الفلاتر"
+        isLoading={expensesQuery.isLoading}
+        accent="rose"
+        pills={[
+          { label: `${summary.byPropertyCount.toLocaleString(locale)} عقار متأثر`, tone: summary.byPropertyCount > 0 ? 'sky' : 'slate', icon: WalletCards },
+          { label: `${summary.byCategoryCount.toLocaleString(locale)} تصنيف`, tone: summary.byCategoryCount > 0 ? 'amber' : 'slate', icon: CalendarDays },
+        ]}
+        action={(
+          <div className="grid w-full gap-2 sm:w-auto sm:grid-cols-2">
+            <Button variant="secondary" asChild><Link to="/financials"><ArrowRight className="ml-2 size-4" />المالية</Link></Button>
+            <Button variant="secondary" asChild><Link to="/reports"><ReceiptText className="ml-2 size-4" />التقارير</Link></Button>
+          </div>
+        )}
+      />
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <ExpenseMetric label="عدد المصاريف" value={summary.visibleCount.toLocaleString(locale)} helper="ضمن الفلاتر الحالية" icon={ReceiptText} />

@@ -6,6 +6,7 @@ import { EmptyState } from '@/components/empty-state';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import { PageHero } from '@/components/ui/page-hero';
 import { Skeleton } from '@/components/ui/skeleton';
 import type { TenantWorkspaceRow } from './tenantWorkspaceService';
 import { useTenantWorkspace } from './useTenantWorkspace';
@@ -148,23 +149,26 @@ export function TenantsPage() {
   const tenantsQuery = useTenantWorkspace(params);
   const rows = tenantsQuery.data?.rows ?? [];
   const totalPages = Math.max(1, Math.ceil((tenantsQuery.data?.count ?? 0) / pageSize));
+  const withActiveContracts = rows.filter((tenant) => tenant.activeContractCount > 0).length;
 
   return (
-    <div className="space-y-6" dir="rtl">
-      <Card className="overflow-hidden border-primary/10 bg-gradient-to-l from-primary/10 via-background to-background">
-        <CardContent className="flex flex-col gap-4 p-6 md:flex-row md:items-center md:justify-between">
-          <div className="space-y-2">
-            <div className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-xs font-black text-primary"><Users className="size-4" />مساحة عمل مسترجعة</div>
-            <div>
-              <h2 className="text-2xl font-black">المستأجرين</h2>
-              <p className="text-sm text-muted-foreground">عرض مستقل للمستأجرين مبني بأمان على بيانات الأشخاص والعقود والفواتير الحالية.</p>
-            </div>
-          </div>
-          <div className="rounded-2xl border border-border bg-card px-4 py-3 text-sm font-bold text-muted-foreground">
-            إجمالي النتائج: <span className="text-foreground">{tenantsQuery.data?.count ?? 0}</span>
-          </div>
-        </CardContent>
-      </Card>
+    <div className="space-y-5 pb-24 sm:pb-6" dir="rtl">
+      <PageHero
+        eyebrow="الأطراف والعلاقات"
+        title="المستأجرون"
+        description="عرض مستقل مبني بأمان على بيانات الأشخاص والعقود والفواتير الحالية."
+        icon={Users}
+        primaryMetric={tenantsQuery.data?.count ?? rows.length}
+        primaryLabel="إجمالي المستأجرين"
+        secondaryMetric={withActiveContracts}
+        secondaryLabel="لديهم عقود نشطة"
+        isLoading={tenantsQuery.isLoading}
+        accent="emerald"
+        pills={[
+          { label: search.trim() ? 'بحث مفعّل' : 'كل المستأجرين', tone: search.trim() ? 'amber' : 'slate', icon: Search },
+          { label: `صفحة ${page} من ${totalPages}`, tone: 'sky' },
+        ]}
+      />
 
       <Card>
         <CardContent className="pt-6">
