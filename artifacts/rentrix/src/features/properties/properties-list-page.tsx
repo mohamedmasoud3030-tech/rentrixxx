@@ -5,6 +5,7 @@ import { PropertyFormModal } from './property-form-modal';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { EmptyState } from '@/components/empty-state';
+import { EntityCell } from '@/components/ui/entity-cell';
 import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -204,7 +205,7 @@ export function PropertiesListPage() {
               {properties.map((p) => (
                 <TableRow key={p.id}>
                   <TableCell>
-                    <p className="font-bold">{p.title ?? '—'}</p>
+                    <EntityCell icon={Building2} title={p.title ?? '—'} />
                   </TableCell>
                   <TableCell>
                     <StatusBadge tone={propertyStatusTone[p.status as keyof typeof propertyStatusTone] ?? 'gray'}>

@@ -1,9 +1,10 @@
-import { Archive, Edit, Plus } from 'lucide-react';
+import { Archive, DoorOpen, Edit, Plus } from 'lucide-react';
 import { useState } from 'react';
 import type { UseQueryResult } from '@tanstack/react-query';
 import { EmptyState } from '@/components/empty-state';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { EntityCell } from '@/components/ui/entity-cell';
 import { Skeleton } from '@/components/ui/skeleton';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -123,7 +124,6 @@ export function UnitsList({ propertyId, unitsQuery }: Readonly<{ propertyId: str
                 <TableHeader>
                   <TableRow>
                     <TableHead>رقم الوحدة</TableHead>
-                    <TableHead>الدور</TableHead>
                     <TableHead>الحالة</TableHead>
                     <TableHead>الإيجار</TableHead>
                     <TableHead>ملاحظات</TableHead>
@@ -133,8 +133,9 @@ export function UnitsList({ propertyId, unitsQuery }: Readonly<{ propertyId: str
                 <TableBody>
                   {unitsQuery.data.map((unit) => (
                     <TableRow key={unit.id}>
-                      <TableCell className="font-black">{unit.unit_number}</TableCell>
-                      <TableCell>{unit.floor ?? '—'}</TableCell>
+                      <TableCell>
+                        <EntityCell icon={DoorOpen} title={`وحدة ${unit.unit_number}`} subtitle={unit.floor ? `الدور: ${unit.floor}` : null} />
+                      </TableCell>
                       <TableCell><StatusBadge tone={unitStatusTone[unit.status]}>{unitStatusLabels[unit.status]}</StatusBadge></TableCell>
                       <TableCell dir="ltr" className="font-bold">{money(unit.rent_amount)}</TableCell>
                       <TableCell>{unit.notes ?? '—'}</TableCell>

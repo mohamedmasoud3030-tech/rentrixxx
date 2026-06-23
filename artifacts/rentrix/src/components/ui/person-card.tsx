@@ -12,7 +12,7 @@ interface PersonCardProps {
   onClick?: () => void;
 }
 
-const typeMap: Record<string, { label: string; bg: string; text: string; icon: typeof User }> = {
+export const personTypeMap: Record<string, { label: string; bg: string; text: string; icon: typeof User }> = {
   tenant:  { label: 'مستأجر',    bg: 'bg-primary/10',                              text: 'text-primary',                              icon: User },
   owner:   { label: 'مالك',      bg: 'bg-emerald-100 dark:bg-emerald-950/50',      text: 'text-emerald-700 dark:text-emerald-300',     icon: Briefcase },
   contact: { label: 'جهة اتصال', bg: 'bg-slate-100 dark:bg-slate-800',             text: 'text-slate-600 dark:text-slate-300',         icon: Contact },
@@ -27,7 +27,7 @@ export function PersonCard({
   address,
   onClick,
 }: PersonCardProps) {
-  const t = typeMap[type] ?? typeMap['contact']!;
+  const t = personTypeMap[type] ?? personTypeMap['contact']!;
   const Icon = t.icon;
 
   return (
