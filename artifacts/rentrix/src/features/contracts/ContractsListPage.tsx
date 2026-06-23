@@ -1,11 +1,12 @@
 import { Link, useNavigate } from '@tanstack/react-router';
-import { AlertTriangle, CalendarClock, ChevronDown, ChevronUp, Download, Edit, Eye, FileText, Plus, Search, Trash2, WalletCards, Printer } from 'lucide-react';
+import { AlertTriangle, CalendarClock, ChevronDown, ChevronUp, Download, Edit, Eye, FileText, Plus, Search, Trash2, User, WalletCards, Printer } from 'lucide-react';
 import { Fragment, useMemo, useState, type ReactNode } from 'react';
 import { ContractFormModal } from './contract-form-modal';
 import { EmptyState } from '@/components/empty-state';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { ContractCard } from '@/components/ui/contract-card';
+import { EntityCell } from '@/components/ui/entity-cell';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
 import { StatusBadge } from '@/components/ui/status-badge';
@@ -341,7 +342,7 @@ export function ContractsListPage() {
                           <p className="font-black">{getContractNumber(contract)}</p>
                           {expiringSoon ? <p className="mt-1 text-xs font-bold text-amber-700">ينتهي خلال {daysUntilEnd} يوم</p> : null}
                         </TableCell>
-                        <TableCell>{contract.people?.full_name ?? '—'}</TableCell>
+                        <TableCell><EntityCell icon={User} title={contract.people?.full_name ?? '—'} /></TableCell>
                         <TableCell>{contract.units?.unit_number ?? contract.properties?.title ?? '—'}</TableCell>
                         <TableCell>{formatContractDate(companySettings, contract.start_date)}</TableCell>
                         <TableCell>{formatContractDate(companySettings, contract.end_date)}</TableCell>

@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from 're
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { EmptyState } from '@/components/empty-state';
+import { EntityCell } from '@/components/ui/entity-cell';
 import { Input } from '@/components/ui/input';
 import { OwnerCard } from '@/components/ui/owner-card';
 import { ResponsiveFormOverlay } from '@/components/ui/responsive-form-overlay';
@@ -177,9 +178,12 @@ function OwnerWorkspaceRowView({ row, selectedOwnerId, onEditOwner, onSelectOwne
   return (
     <TableRow className={isSelected ? 'bg-primary/5' : undefined}>
       <TableCell>
-        <button type="button" className="text-right font-black hover:text-primary" onClick={() => onSelectOwner(row.owner.id)}>{getOwnerDisplayLabel(row.owner)}</button>
-        {row.owner.display_name ? <div className="text-xs text-muted-foreground">{row.owner.full_name}</div> : null}
-        <div className="text-[10px] font-bold text-muted-foreground/70 mt-0.5" dir="ltr">معرّف السجل: #{row.owner.id.slice(0, 8)}</div>
+        <EntityCell
+          icon={Users}
+          title={<button type="button" className="hover:text-primary" onClick={() => onSelectOwner(row.owner.id)}>{getOwnerDisplayLabel(row.owner)}</button>}
+          subtitle={row.owner.display_name ? row.owner.full_name : null}
+          meta={<span dir="ltr">معرّف السجل: #{row.owner.id.slice(0, 8)}</span>}
+        />
       </TableCell>
       <TableCell><OwnerContact owner={row.owner} /></TableCell>
       <TableCell>{row.propertyCount.toLocaleString('ar')}</TableCell>

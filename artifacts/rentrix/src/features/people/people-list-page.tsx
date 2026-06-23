@@ -4,11 +4,13 @@ import { PersonFormModal } from './person-form-modal';
 import { EmptyState } from '@/components/empty-state';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { EntityCell } from '@/components/ui/entity-cell';
 import { Input } from '@/components/ui/input';
-import { PersonCard } from '@/components/ui/person-card';
+import { PersonCard, personTypeMap } from '@/components/ui/person-card';
 import { Select } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { cn } from '@/lib/utils';
 import { personTypeLabels, personTypeValues } from './person-schema';
 import type { PersonTypeFilter } from './people-service';
 import { usePeople, useSoftDeletePerson } from './use-people';
@@ -129,10 +131,18 @@ export function PeopleListPage() {
                   {peopleQuery.data.rows.map((person) => (
                     <TableRow key={person.id}>
                       <TableCell>
-                        <div className="font-black">{person.full_name}</div>
-                        <div className="text-xs text-muted-foreground">{person.address ?? '—'}</div>
+                        <EntityCell
+                          icon={personTypeMap[person.type]?.icon ?? personTypeMap['contact']!.icon}
+                          tone={person.type === 'owner' ? 'emerald' : person.type === 'contact' ? 'slate' : 'primary'}
+                          title={person.full_name}
+                          subtitle={person.address}
+                        />
                       </TableCell>
-                      <TableCell>{personTypeLabels[person.type]}</TableCell>
+                      <TableCell>
+                        <span className={cn('inline-flex rounded-full px-2.5 py-0.5 text-[11px] font-bold', (personTypeMap[person.type] ?? personTypeMap['contact']!).bg, (personTypeMap[person.type] ?? personTypeMap['contact']!).text)}>
+                          {personTypeLabels[person.type]}
+                        </span>
+                      </TableCell>
                       <TableCell>{person.phone ?? '—'}</TableCell>
                       <TableCell dir="ltr" className="text-right">{person.email ?? '—'}</TableCell>
                       <TableCell>{person.national_id ?? '—'}</TableCell>
