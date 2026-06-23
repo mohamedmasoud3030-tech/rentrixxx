@@ -1,5 +1,6 @@
 import { Calendar, Clock, User } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { StatusBadge } from './status-badge';
 
 interface ContractCardProps {
   id: string;
@@ -15,11 +16,11 @@ interface ContractCardProps {
   formatDate?: (v: string) => string;
 }
 
-const statusMap: Record<string, { label: string; bg: string; text: string }> = {
-  ACTIVE:      { label: 'نشط',     bg: 'bg-emerald-100 dark:bg-emerald-950/50', text: 'text-emerald-700 dark:text-emerald-300' },
-  EXPIRED:     { label: 'منتهي',   bg: 'bg-rose-100 dark:bg-rose-950/50',       text: 'text-rose-700 dark:text-rose-300' },
-  TERMINATED:  { label: 'مُنهى',   bg: 'bg-slate-100 dark:bg-slate-800',        text: 'text-slate-600 dark:text-slate-300' },
-  DRAFT:       { label: 'مسودة',   bg: 'bg-amber-100 dark:bg-amber-950/50',     text: 'text-amber-700 dark:text-amber-300' },
+const statusMap: Record<string, { label: string; tone: 'blue' | 'green' | 'red' | 'gray' | 'gold' }> = {
+  ACTIVE:      { label: 'نشط',    tone: 'green' },
+  EXPIRED:     { label: 'منتهي',  tone: 'gold' },
+  TERMINATED:  { label: 'مُنهى',  tone: 'red' },
+  DRAFT:       { label: 'مسودة',  tone: 'gray' },
 };
 
 export function ContractCard({
@@ -59,9 +60,7 @@ export function ContractCard({
             <p className="text-[11px] text-muted-foreground truncate mt-0.5">{location}</p>
           </div>
         </div>
-        <span className={cn('shrink-0 rounded-full px-2.5 py-0.5 text-[11px] font-bold', s.bg, s.text)}>
-          {s.label}
-        </span>
+        <StatusBadge tone={s.tone} className="shrink-0">{s.label}</StatusBadge>
       </div>
 
       {/* Stats */}

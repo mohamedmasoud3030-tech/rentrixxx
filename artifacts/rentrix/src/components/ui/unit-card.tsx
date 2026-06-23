@@ -1,5 +1,6 @@
 import { DoorOpen, TrendingUp } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { StatusBadge } from './status-badge';
 
 interface UnitCardProps {
   id: string;
@@ -12,11 +13,11 @@ interface UnitCardProps {
   formatMoney?: (v: number) => string;
 }
 
-const statusMap: Record<string, { label: string; bg: string; text: string }> = {
-  available:   { label: 'متاحة',     bg: 'bg-emerald-100 dark:bg-emerald-950/50', text: 'text-emerald-700 dark:text-emerald-300' },
-  occupied:    { label: 'مشغولة',    bg: 'bg-blue-100 dark:bg-blue-950/50',       text: 'text-blue-700 dark:text-blue-300' },
-  maintenance: { label: 'صيانة',    bg: 'bg-amber-100 dark:bg-amber-950/50',     text: 'text-amber-700 dark:text-amber-300' },
-  reserved:    { label: 'محجوزة',    bg: 'bg-slate-100 dark:bg-slate-800',        text: 'text-slate-600 dark:text-slate-300' },
+const statusMap: Record<string, { label: string; tone: 'blue' | 'green' | 'red' | 'gray' | 'gold' }> = {
+  available:   { label: 'متاحة',  tone: 'green' },
+  occupied:    { label: 'مشغولة', tone: 'blue' },
+  maintenance: { label: 'صيانة',  tone: 'gold' },
+  reserved:    { label: 'محجوزة', tone: 'gray' },
 };
 
 export function UnitCard({
@@ -51,9 +52,7 @@ export function UnitCard({
             {floor && <p className="text-[11px] text-muted-foreground mt-0.5">الدور: {floor}</p>}
           </div>
         </div>
-        <span className={cn('shrink-0 rounded-full px-2.5 py-0.5 text-[11px] font-bold', s.bg, s.text)}>
-          {s.label}
-        </span>
+        <StatusBadge tone={s.tone} className="shrink-0">{s.label}</StatusBadge>
       </div>
 
       {/* Details row */}

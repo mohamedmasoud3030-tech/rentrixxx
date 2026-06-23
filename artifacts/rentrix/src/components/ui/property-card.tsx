@@ -1,5 +1,6 @@
 import { Building2, DoorOpen, TrendingUp } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { StatusBadge } from './status-badge';
 
 interface PropertyCardProps {
   id: string;
@@ -20,11 +21,11 @@ interface PropertyCardProps {
   formatMoney?: (v: number) => string;
 }
 
-const statusStyles: Record<string, { dot: string; label: string; bg: string }> = {
-  active:       { dot: 'bg-emerald-500', label: 'نشط',      bg: 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300' },
-  inactive:     { dot: 'bg-slate-400',   label: 'غير نشط',  bg: 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300' },
-  maintenance:  { dot: 'bg-amber-500',   label: 'صيانة',    bg: 'bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300' },
-  sold:         { dot: 'bg-sky-500',     label: 'مباع',     bg: 'bg-sky-50 text-sky-700 dark:bg-sky-300/40 dark:text-sky-300' },
+const statusStyles: Record<string, { label: string; tone: 'blue' | 'green' | 'red' | 'gray' | 'gold' }> = {
+  active:       { label: 'نشط',      tone: 'green' },
+  inactive:     { label: 'غير نشط',  tone: 'gray' },
+  maintenance:  { label: 'صيانة',    tone: 'gold' },
+  sold:         { label: 'مباع',     tone: 'blue' },
 };
 
 // Public helper so other call sites can render the same neutral label
@@ -74,10 +75,7 @@ export function PropertyCard({
         </div>
 
         {/* Status badge */}
-        <span className={cn('rounded-full px-2.5 py-1 text-[11px] font-bold flex items-center gap-1.5', s.bg)}>
-          <span className={cn('size-1.5 rounded-full', s.dot)} />
-          {s.label}
-        </span>
+        <StatusBadge tone={s.tone} dot>{s.label}</StatusBadge>
       </div>
 
       {/* Title & address */}
