@@ -44,6 +44,9 @@ export function FileAttachmentField({
     setUploading(true);
     try {
       const ext = file.name.split('.').pop() ?? 'bin';
+      if (ext.includes('..')) {
+        throw new Error('Invalid file extension');
+      }
       const path = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
       const { error: uploadError } = await supabase.storage
         .from('attachments')
