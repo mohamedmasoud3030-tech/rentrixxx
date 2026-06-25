@@ -2,12 +2,10 @@ minimumReleaseAge: 1440
 minimumReleaseAgeExclude:
   - '@replit/*'
   - stripe-replit-sync
-
 packages:
   - artifacts/rentrix
   - lib/api-client-react
   - lib/db
-
 catalog:
   '@replit/vite-plugin-cartographer': ^0.5.1
   '@replit/vite-plugin-dev-banner': ^0.1.1
@@ -29,3 +27,5 @@ catalog:
   vite: ^7.3.2
   wouter: ^3.3.5
   zod: ^3.25.76
+overrides:
+  dompurify@<=3.4.11: 3.4.11
