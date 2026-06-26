@@ -17,7 +17,7 @@ vi.mock('@tanstack/react-router', () => ({
 }));
 
 const contractsMocks = vi.hoisted(() => ({
-  contractsQuery: { data: [] as unknown[], error: null as Error | null, isError: false, isLoading: false, refetch: vi.fn() },
+  contractsQuery: { data: { rows: [] as unknown[], count: 0 }, error: null as Error | null, isError: false, isLoading: false, refetch: vi.fn() },
   deleteMutation: { isPending: false, mutate: vi.fn() },
 }));
 
@@ -28,7 +28,7 @@ vi.mock('./useContracts', () => ({
 
 describe('ContractsListPage load states', () => {
   beforeEach(() => {
-    contractsMocks.contractsQuery.data = [];
+    contractsMocks.contractsQuery.data = { rows: [], count: 0 };
     contractsMocks.contractsQuery.error = null;
     contractsMocks.contractsQuery.isError = false;
     contractsMocks.contractsQuery.isLoading = false;

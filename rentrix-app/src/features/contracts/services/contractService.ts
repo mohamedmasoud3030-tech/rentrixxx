@@ -13,7 +13,15 @@ export type ContractDetail = ContractListItem & {
   renewed_from: Pick<Contract, 'id' | 'start_date' | 'end_date' | 'rent_amount' | 'status'> | null;
 };
 
-export type ContractListParams = { status: ContractStatusFilter };
+export type ContractListParams = {
+  status: ContractStatusFilter;
+  page: number;
+  pageSize: number;
+};
+export type PaginatedContracts = {
+  rows: ContractListItem[];
+  count: number;
+};
 type ContractInsert = Database['public']['Tables']['contracts']['Insert'];
 type ContractUpdate = Database['public']['Tables']['contracts']['Update'];
 export type RenewalResult = { status: 'renewed'; old_contract_id: string; new_contract_id: string };
@@ -23,12 +31,19 @@ const contractSelect =
 const contractDetailSelect =
   '*, properties:property_id(id,title,address), units:unit_id(id,unit_number,floor,status,rent_amount), people:tenant_id(id,full_name,phone,email,national_id), renewed_from:renewed_from_id(id,start_date,end_date,rent_amount,status)';
 
-export async function listContracts(params: ContractListParams): Promise<ContractListItem[]> {
-  let query = supabase.from('contracts').select(contractSelect).is('deleted_at', null).order('created_at', { ascending: false });
+export async function listContracts(params: ContractListParams): Promise<PaginatedContracts> {
+  const from = (params.page - 1) * params.pageSize;
+  const to = from + params.pageSize - 1;
+  let query = supabase
+    .from('contracts')
+    .select(contractSelect, { count: 'exact' })
+    .is('deleted_at', null)
+    .order('created_at', { ascending: false })
+    .range(from, to);
   if (params.status !== 'all') query = query.eq('status', params.status);
-  const { data, error } = await query.returns<ContractListItem[]>();
+  const { data, count, error } = await query.returns<ContractListItem[]>();
   if (error) throw error;
-  return data ?? [];
+  return { rows: data ?? [], count: count ?? 0 };
 }
 
 export async function getContract(contractId: string): Promise<ContractDetail> {

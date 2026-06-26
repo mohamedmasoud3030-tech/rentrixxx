@@ -50,7 +50,7 @@ export function ReportsPage() {
   const expenseBreakdownQuery = useExpenseBreakdownReport(financialFilters);
   const overdueInvoicesQuery = useOverdueInvoicesReport(arrearsFilters);
   const agedReceivablesQuery = useAgedReceivablesReport(arrearsFilters);
-  const contractsQuery = useContracts({ status: 'all' });
+  const contractsQuery = useContracts({ status: 'all', page: 1, pageSize: 1000 });
   const unitsQuery = useAllUnits();
   const receiptsQuery = useReceipts({ limit: latestReceiptLimit });
   const propertyTitlesQuery = usePropertyTitles();
@@ -59,9 +59,10 @@ export function ReportsPage() {
     [propertyTitlesQuery.data],
   );
 
-  const rentRollRows = useMemo(() => buildRentRollRows(contractsQuery.data ?? [], contractStatusLabels), [contractsQuery.data]);
+  const contracts = contractsQuery.data?.rows ?? [];
+  const rentRollRows = useMemo(() => buildRentRollRows(contracts, contractStatusLabels), [contracts]);
   const occupancyRows = useMemo(() => buildOccupancyRows(unitsQuery.data ?? [], propertyTitlesById), [unitsQuery.data, propertyTitlesById]);
-  const expiringRows = useMemo(() => buildExpiringContractsRows(contractsQuery.data ?? [], new Date()), [contractsQuery.data]);
+  const expiringRows = useMemo(() => buildExpiringContractsRows(contracts, new Date()), [contracts]);
   const paymentsTrendRows = useMemo(() => buildPaymentsTrendRows({
     dailyCollections: dailyCollectionQuery.data?.rows,
     overdueInvoices: overdueInvoicesQuery.data?.rows,

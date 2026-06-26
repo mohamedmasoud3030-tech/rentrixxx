@@ -148,7 +148,7 @@ export function InvoiceWorkspaceSection() {
   const postPayment = usePostPayment();
   const receiptsQuery = useReceipts({ limit: 10 });
   const receiptQuery = useReceipt(selectedReceiptId);
-  const contractsQuery = useContracts({ status: 'all' });
+  const contractsQuery = useContracts({ status: 'all', page: 1, pageSize: 1000 });
 
   const invoices = invoicesQuery.data ?? [];
   const summary = useMemo(() => summarizeInvoices(invoices), [invoices]);
@@ -166,7 +166,7 @@ export function InvoiceWorkspaceSection() {
   const isPaymentDisabled = quickPaySubmitRef.current || postPayment.isPending || remaining <= 0 || Boolean(amountValidationMessage);
   const hasInvoiceFilter = status !== 'all' || invoiceSearch.trim().length > 0;
   const selectedInvoiceContract = useMemo(
-    () => contractsQuery.data?.find((contract) => contract.id === invoiceDetail?.contract_id),
+    () => contractsQuery.data?.rows.find((contract) => contract.id === invoiceDetail?.contract_id),
     [contractsQuery.data, invoiceDetail?.contract_id],
   );
   const canExportInvoiceDocument = Boolean(invoiceDetail && selectedInvoiceContract);
