@@ -6,7 +6,7 @@ Use this map before creating, moving, importing, or deleting files. It defines t
 
 ```text
 rentrixxx/
-├── artifacts/rentrix/          # Active React application
+├── rentrix-app/                # Active React application
 ├── lib/                        # Shared workspace libraries
 └── supabase/                   # Canonical backend assets and migrations
 ```
@@ -16,13 +16,13 @@ These paths define the shipped product. Runtime code may depend only on approved
 ### Allowed dependency direction
 
 ```text
-artifacts/rentrix/src/
-    ├── may import from artifacts/rentrix/src/
+rentrix-app/src/
+    ├── may import from rentrix-app/src/
     ├── may import approved workspace packages from lib/
     └── may call Supabase APIs represented by canonical assets under supabase/
 
 lib/
-    └── must not import feature UI or route modules from artifacts/rentrix/
+    └── must not import feature UI or route modules from rentrix-app/
 
 supabase/
     └── must not depend on frontend source files
@@ -33,7 +33,7 @@ Do not create a parallel application, router, state layer, or financial-calculat
 ## 2. Active Application Structure
 
 ```text
-artifacts/rentrix/
+rentrix-app/
 ├── src/
 │   ├── app/                    # App-level composition and auth shell
 │   ├── components/             # Shared presentational components and UI primitives
@@ -118,7 +118,7 @@ Current agent capability ownership is documented in:
 docs/ai/AGENT_CAPABILITIES.md
 ```
 
-## 6. Scripts and Root Configuration
+## 6. Scripts and Deployment Configuration
 
 ```text
 scripts/                        # Repository automation and approved sync helpers
@@ -126,7 +126,7 @@ package.json                    # Root pnpm scripts
 pnpm-workspace.yaml             # Workspace membership
 tsconfig.json                   # Root TypeScript project
 tsconfig.base.json              # Shared TypeScript defaults
-vercel.json                     # Authoritative root deployment config
+rentrix-app/vercel.json         # Authoritative Vercel configuration
 sonar-project.properties        # Static-analysis scope
 .replit                         # Local launcher only
 .gitignore                      # Generated-file exclusion policy
@@ -134,7 +134,7 @@ sonar-project.properties        # Static-analysis scope
 
 ### Root-configuration rules
 
-- `vercel.json` is authoritative for root deployment.
+- `rentrix-app/vercel.json` is the only Vercel configuration. The Vercel project uses `rentrix-app` as its root directory.
 - `.replit` may launch local development only; it must not define product architecture.
 - Add a root script only when repository-wide execution needs it.
 - Put environment-local generated state in ignored paths, not in Git.
