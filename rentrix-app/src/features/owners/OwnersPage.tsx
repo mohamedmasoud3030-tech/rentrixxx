@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from 're
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { EmptyState } from '@/components/empty-state';
+import { PageHeader } from '@/components/layout/page-header';
 import { EntityCell } from '@/components/ui/entity-cell';
 import { Input } from '@/components/ui/input';
 import { KpiCard } from '@/components/ui/kpi-card';
@@ -399,14 +400,11 @@ export function OwnersPage() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h2 className="text-xl font-black">إدارة الملاك</h2>
-          <p className="text-sm text-muted-foreground">إدارة علاقات ملكية العقارات بشكل منفصل عن الحسابات والتسويات المالية.</p>
-        </div>
-        <Button onClick={openCreateForm}><Plus className="me-2 size-4" />إضافة مالك</Button>
-      </div>
+      <PageHeader
+        title="إدارة الملاك"
+        description="إدارة علاقات ملكية العقارات بشكل منفصل عن الحسابات والتسويات المالية."
+        action={<Button onClick={openCreateForm}><Plus className="me-2 size-4" />إضافة مالك</Button>}
+      />
 
       {/* KPI grid */}
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">

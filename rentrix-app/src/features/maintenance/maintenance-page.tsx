@@ -8,6 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { EmptyState } from '@/components/empty-state';
 import { FileAttachmentField } from '@/components/ui/file-attachment-field';
 import { Input } from '@/components/ui/input';
+import { PageHeader } from '@/components/layout/page-header';
 import { Select } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
 import { StatusBadge } from '@/components/ui/status-badge';
@@ -145,6 +146,16 @@ export function MaintenancePage() {
 
   return (
     <div className="space-y-6" dir="rtl">
+      <PageHeader
+        title="طلبات الصيانة"
+        description="تتبع وإدارة طلبات الصيانة لجميع العقارات والوحدات."
+        action={
+          <Button type="button" onClick={() => setShowForm((v) => !v)}>
+            <PlusCircle className="me-2 size-4" />
+            {showForm ? 'إلغاء' : 'طلب صيانة جديد'}
+          </Button>
+        }
+      />
       {/* Summary cards */}
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         {summaryCards.map((card) => {
@@ -167,9 +178,8 @@ export function MaintenancePage() {
         })}
       </div>
 
-      {/* Filters + add button */}
-      <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-        <div className="grid gap-3 sm:grid-cols-3">
+      {/* Filters */}
+      <div className="grid gap-3 sm:grid-cols-3">
           <Select value={String(statusFilter)} onChange={(e) => setStatusFilter(e.target.value as MaintenanceStatusFilter)}>
             <option value="all">كل الحالات</option>
             <option value="open">مفتوح</option>
@@ -188,11 +198,6 @@ export function MaintenancePage() {
             <option value="">كل العقارات</option>
             {properties.map((p) => <option key={p.id} value={p.id}>{p.title}</option>)}
           </Select>
-        </div>
-        <Button type="button" onClick={() => setShowForm((v) => !v)}>
-          <PlusCircle className="me-2 size-4" />
-          {showForm ? 'إلغاء' : 'طلب صيانة جديد'}
-        </Button>
       </div>
 
       {/* Create form */}
