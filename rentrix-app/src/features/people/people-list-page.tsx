@@ -11,6 +11,7 @@ import { SearchInput } from '@/components/ui/search-input';
 import { Select } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { useDebounce } from '@/hooks/useDebounce';
 import { cn } from '@/lib/utils';
 import { personTypeLabels, personTypeValues } from './person-schema';
 import type { PersonTypeFilter } from './people-service';
@@ -25,8 +26,9 @@ export function PeopleListPage() {
   const [modalOpen, setModalOpen] = useState(false);
   const [editPersonId, setEditPersonId] = useState<string | undefined>();
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const debouncedSearch = useDebounce(search, 300);
 
-  const params = useMemo(() => ({ search, type, page, pageSize }), [page, search, type]);
+  const params = useMemo(() => ({ search: debouncedSearch, type, page, pageSize }), [page, debouncedSearch, type]);
   const peopleQuery = usePeople(params);
   const deleteMutation = useSoftDeletePerson();
   const totalPages = Math.max(1, Math.ceil((peopleQuery.data?.count ?? 0) / pageSize));
