@@ -18,8 +18,8 @@ Run the smallest relevant test set while editing, then run the applicable full g
 Examples:
 
 ```bash
-pnpm --filter ./artifacts/rentrix exec vitest run --config vite.config.ts <targeted-test-files>
-pnpm --filter ./artifacts/rentrix run typecheck:test
+pnpm --filter ./rentrix-app exec vitest run --config vite.config.ts <targeted-test-files>
+pnpm --filter ./rentrix-app run typecheck:test
 ```
 
 ## Full runtime pull-request gate
@@ -31,16 +31,16 @@ pnpm install --frozen-lockfile
 pnpm typecheck
 pnpm lint
 pnpm build
-pnpm --filter ./artifacts/rentrix run typecheck:test
-pnpm --filter ./artifacts/rentrix test
-pnpm --filter ./artifacts/rentrix run test:financials
+pnpm --filter ./rentrix-app run typecheck:test
+pnpm --filter ./rentrix-app test
+pnpm --filter ./rentrix-app run test:financials
 ```
 
 When a local checkout exists, also run:
 
 ```bash
 git diff --check
-rg "useApp|AppContext|dataService|react-router-dom" artifacts/rentrix/src -n || true
+rg "useApp|AppContext|dataService|react-router-dom" rentrix-app/src -n || true
 ```
 
 ## Documentation-only and agent-guidance pull requests
