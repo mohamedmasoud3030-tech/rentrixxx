@@ -1,11 +1,14 @@
 import { Link, useSearch } from '@tanstack/react-router';
-import { ArrowRight, Ban, CalendarDays, Printer, ReceiptText, Search, WalletCards } from 'lucide-react';
+import { ArrowRight, Ban, CalendarDays, Printer, ReceiptText, WalletCards } from 'lucide-react';
 import { useDeferredValue, useMemo, useState } from 'react';
 import { EmptyState } from '@/components/empty-state';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
+import { KpiCard } from '@/components/ui/kpi-card';
 import { ReceiptCard } from '@/components/ui/receipt-card';
+import { SearchInput } from '@/components/ui/search-input';
 import { Select } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
 import { StatusBadge } from '@/components/ui/status-badge';
@@ -41,20 +44,70 @@ function createVoidRequestId() {
   return globalThis.crypto?.randomUUID?.() ?? `void-${Date.now()}`;
 }
 
-function ReceiptMetric({ label, value, helper, icon: Icon }: Readonly<{ label: string; value: string; helper: string; icon: typeof ReceiptText }>) {
+// ─── void dialog ─────────────────────────────────────────────────────────────
+
+interface VoidDialogState {
+  receipt: ReceiptRecord | null;
+  reason: string;
+}
+
+function VoidReceiptDialog({
+  state,
+  isLoading,
+  onClose,
+  onConfirm,
+  onReasonChange,
+}: Readonly<{
+  state: VoidDialogState;
+  isLoading: boolean;
+  onClose: () => void;
+  onConfirm: () => void;
+  onReasonChange: (reason: string) => void;
+}>) {
   return (
-    <Card className="border-primary/10 bg-gradient-to-br from-card via-card to-primary/5">
-      <CardContent className="flex items-center justify-between gap-4 p-5">
-        <div>
-          <p className="text-xs font-black text-muted-foreground">{label}</p>
-          <p className="mt-2 text-2xl font-black">{value}</p>
-          <p className="mt-1 text-xs text-muted-foreground">{helper}</p>
+    <Dialog open={Boolean(state.receipt)} onOpenChange={(open) => { if (!open) onClose(); }}>
+      <DialogContent className="max-w-sm gap-0 p-6">
+        <div className="mb-4 flex items-center gap-3">
+          <div className="grid size-10 place-items-center rounded-2xl bg-rose-100 text-rose-600 dark:bg-rose-950/40 dark:text-rose-400">
+            <Ban className="size-5" />
+          </div>
+          <div>
+            <DialogTitle className="text-base font-black">
+              {`إلغاء الإيصال ${state.receipt?.receipt_number ?? ''}`}
+            </DialogTitle>
+            <DialogDescription className="mt-0.5 text-sm text-muted-foreground">
+              أدخل سبب الإلغاء لتوثيق العملية.
+            </DialogDescription>
+          </div>
         </div>
-        <div className="grid size-12 place-items-center rounded-2xl bg-primary/10 text-primary"><Icon className="size-6" /></div>
-      </CardContent>
-    </Card>
+        <div className="mb-4 space-y-2">
+          <label className="block text-sm font-bold">سبب الإلغاء <span className="text-destructive">*</span></label>
+          <Input
+            value={state.reason}
+            onChange={(e) => onReasonChange(e.target.value)}
+            placeholder="مثال: خطأ في المبلغ، دفعة مكررة..."
+            autoFocus
+          />
+          {!state.reason.trim() && (
+            <p className="text-xs text-destructive">السبب مطلوب لإتمام الإلغاء</p>
+          )}
+        </div>
+        <div className="flex justify-end gap-2 pt-2">
+          <Button variant="ghost" onClick={onClose} disabled={isLoading}>إلغاء</Button>
+          <Button
+            variant="danger"
+            onClick={onConfirm}
+            disabled={isLoading || !state.reason.trim()}
+          >
+            {isLoading ? 'جارٍ الإلغاء...' : 'تأكيد الإلغاء'}
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }
+
+// ─── main content ────────────────────────────────────────────────────────────
 
 function ReceiptsHistoryContent() {
   const { authorization } = useAuth();
@@ -63,6 +116,8 @@ function ReceiptsHistoryContent() {
   const [method, setMethod] = useState<MethodFilter>('all');
   const [from, setFrom] = useState('');
   const [to, setTo] = useState('');
+  const [voidDialog, setVoidDialog] = useState<VoidDialogState>({ receipt: null, reason: '' });
+
   const deferredQuery = useDeferredValue(query.trim().toLowerCase());
   const receiptsQuery = useReceipts({ limit: 100 });
   const selectedDetailQuery = useReceipt(selectedReceiptId);
@@ -76,21 +131,24 @@ function ReceiptsHistoryContent() {
       && (method === 'all' || receipt.payment_method === method)
       && isWithinDate(receipt, from, to);
   }), [deferredQuery, from, method, receipts, to]);
+
   const totalAmount = filteredReceipts.reduce((total, receipt) => total + receipt.amount, 0);
   const selectedReceipt = selectedDetailQuery.data;
-  const handleVoidReceipt = (receipt: ReceiptRecord) => {
-    const reason = globalThis.prompt?.(`سبب إلغاء الإيصال ${receipt.receipt_number}`)?.trim();
-    if (!reason) return;
 
-    voidReceiptMutation.mutate({
-      receipt_id: receipt.id,
-      reason,
-      request_id: createVoidRequestId(),
-    });
+  const openVoidDialog = (receipt: ReceiptRecord) => setVoidDialog({ receipt, reason: '' });
+  const closeVoidDialog = () => setVoidDialog({ receipt: null, reason: '' });
+
+  const handleConfirmVoid = () => {
+    if (!voidDialog.receipt || !voidDialog.reason.trim()) return;
+    voidReceiptMutation.mutate(
+      { receipt_id: voidDialog.receipt.id, reason: voidDialog.reason.trim(), request_id: createVoidRequestId() },
+      { onSettled: closeVoidDialog },
+    );
   };
 
   return (
     <div className="space-y-6" dir="rtl">
+      {/* Header */}
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <p className="text-sm font-black text-primary">سجل التحصيل</p>
@@ -103,75 +161,87 @@ function ReceiptsHistoryContent() {
         </div>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <ReceiptMetric label="الإيصالات المعروضة" value={filteredReceipts.length.toLocaleString('ar-SA')} helper="ضمن الفلاتر الحالية" icon={ReceiptText} />
-        <ReceiptMetric label="إجمالي التحصيل" value={formatMoney(totalAmount)} helper="من الإيصالات المعروضة" icon={WalletCards} />
-        <ReceiptMetric label="أحدث النتائج" value={receipts.length.toLocaleString('ar-SA')} helper="آخر 100 إيصال" icon={CalendarDays} />
-        <ReceiptMetric label="الإيصال المحدد" value={selectedReceipt?.receipt_number ?? '—'} helper="جاهز للعرض والطباعة" icon={Printer} />
+      {/* KPI grid */}
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <KpiCard label="الإيصالات المعروضة" value={filteredReceipts.length} sub="ضمن الفلاتر الحالية" icon={ReceiptText} accent="primary" />
+        <KpiCard label="إجمالي التحصيل" value={formatMoney(totalAmount)} sub="من الإيصالات المعروضة" icon={WalletCards} accent="emerald" />
+        <KpiCard label="أحدث النتائج" value={receipts.length} sub="آخر 100 إيصال" icon={CalendarDays} accent="sky" />
+        <KpiCard label="الإيصال المحدد" value={selectedReceipt?.receipt_number ?? '—'} sub="جاهز للعرض والطباعة" icon={Printer} accent="violet" />
       </div>
 
+      {/* Filters */}
       <Card>
         <CardHeader>
           <CardTitle>فلاتر الإيصالات</CardTitle>
           <CardDescription>ابحث برقم الإيصال أو رقم المرجع أو اسم المستأجر أو العقار.</CardDescription>
         </CardHeader>
         <CardContent className="grid gap-3 md:grid-cols-2 xl:grid-cols-5">
-          <label className="space-y-1 text-sm font-bold xl:col-span-2">
-            <span>بحث</span>
-            <div className="relative">
-              <Search className="pointer-events-none absolute end-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-              <Input className="pe-9" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="رقم الإيصال REC-، المرجع، المستأجر، العقار" />
-            </div>
-          </label>
+          <div className="xl:col-span-2">
+            <SearchInput
+              value={query}
+              onChange={setQuery}
+              placeholder="رقم الإيصال REC-، المرجع، المستأجر، العقار"
+            />
+          </div>
           <label className="space-y-1 text-sm font-bold">
             <span>طريقة الدفع</span>
-            <Select value={method} onChange={(event) => setMethod(event.target.value as MethodFilter)}>
+            <Select value={method} onChange={(e) => setMethod(e.target.value as MethodFilter)}>
               <option value="all">كل الطرق</option>
               {Object.entries(paymentMethodLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
             </Select>
           </label>
-          <label className="space-y-1 text-sm font-bold"><span>من تاريخ</span><Input type="date" value={from} onChange={(event) => setFrom(event.target.value)} /></label>
-          <label className="space-y-1 text-sm font-bold"><span>إلى تاريخ</span><Input type="date" value={to} onChange={(event) => setTo(event.target.value)} /></label>
+          <label className="space-y-1 text-sm font-bold"><span>من تاريخ</span><Input type="date" value={from} onChange={(e) => setFrom(e.target.value)} /></label>
+          <label className="space-y-1 text-sm font-bold"><span>إلى تاريخ</span><Input type="date" value={to} onChange={(e) => setTo(e.target.value)} /></label>
         </CardContent>
       </Card>
 
+      {/* Results */}
       <Card>
         <CardHeader>
           <CardTitle>تاريخ الإيصالات</CardTitle>
           <CardDescription>اختر إيصالاً لعرض تفاصيله وروابط الطباعة.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          {receiptsQuery.isLoading ? <div className="space-y-3">{Array.from({ length: 5 }, (_, index) => <Skeleton key={index} className="h-14" />)}</div> : null}
-          {receiptsQuery.isError ? <EmptyState title="تعذر تحميل الإيصالات" description={getErrorMessage(receiptsQuery.error, 'أعد المحاولة بعد لحظات.')} role="alert" ariaLive="assertive" /> : null}
-          {!receiptsQuery.isLoading && !receiptsQuery.isError && filteredReceipts.length === 0 ? <EmptyState title="لا توجد إيصالات مطابقة" description="غيّر البحث أو الفلاتر لعرض إيصالات أخرى." /> : null}
-          
-          {filteredReceipts.length > 0 ? (
+          {receiptsQuery.isLoading && (
+            <div className="space-y-3">{Array.from({ length: 5 }, (_, i) => <Skeleton key={i} className="h-14" />)}</div>
+          )}
+          {receiptsQuery.isError && (
+            <EmptyState title="تعذر تحميل الإيصالات" description={getErrorMessage(receiptsQuery.error, 'أعد المحاولة بعد لحظات.')} role="alert" ariaLive="assertive" />
+          )}
+          {!receiptsQuery.isLoading && !receiptsQuery.isError && filteredReceipts.length === 0 && (
+            <EmptyState title="لا توجد إيصالات مطابقة" description="غيّر البحث أو الفلاتر لعرض إيصالات أخرى." />
+          )}
+
+          {filteredReceipts.length > 0 && (
             <>
               {/* Mobile cards */}
               <div className="grid gap-3 sm:grid-cols-2 md:hidden">
                 {filteredReceipts.map((receipt) => (
-                  <ReceiptCard
-                    key={receipt.id}
-                    id={receipt.id}
-                    receiptNumber={receipt.receipt_number}
-                    paymentDate={receipt.payment_date}
-                    amount={receipt.amount}
-                    paymentMethod={paymentMethodLabels[receipt.payment_method] ?? receipt.payment_method}
-                    context={formatReceiptContext(receipt)}
-                    invoiceId={formatShortId(receipt.invoice_id)}
-                    status={receipt.status}
-                    onClick={() => setSelectedReceiptId(receipt.id)}
-                    formatDate={formatDate}
-                    formatMoney={formatMoney}
-                  />
-                ))}
-              </div>
-              <div className="grid gap-2 md:hidden">
-                {filteredReceipts.map((receipt) => (
-                  <div key={`${receipt.id}-actions`} className="flex flex-wrap gap-2 rounded-2xl border border-border/70 bg-muted/20 p-3">
-                    <Button variant="secondary" className="min-h-10 px-3" onClick={() => setSelectedReceiptId(receipt.id)}>عرض</Button>
-                    <Button variant="secondary" className="min-h-10 px-3" asChild><a href={createReceiptPrintHref(receipt.id)}><Printer className="me-2 size-4" />طباعة</a></Button>
-                    {canVoidReceipt ? <Button variant="danger" className="min-h-10 px-3" onClick={() => handleVoidReceipt(receipt)} disabled={voidReceiptMutation.isPending}><Ban className="me-2 size-4" />إلغاء</Button> : null}
+                  <div key={receipt.id} className="space-y-1.5">
+                    <ReceiptCard
+                      id={receipt.id}
+                      receiptNumber={receipt.receipt_number}
+                      paymentDate={receipt.payment_date}
+                      amount={receipt.amount}
+                      paymentMethod={paymentMethodLabels[receipt.payment_method] ?? receipt.payment_method}
+                      context={formatReceiptContext(receipt)}
+                      invoiceId={formatShortId(receipt.invoice_id)}
+                      status={receipt.status}
+                      onClick={() => setSelectedReceiptId(receipt.id)}
+                      formatDate={formatDate}
+                      formatMoney={formatMoney}
+                    />
+                    <div className="flex flex-wrap gap-2 px-1">
+                      <Button variant="secondary" size="sm" className="h-9" onClick={() => setSelectedReceiptId(receipt.id)}>عرض</Button>
+                      <Button variant="secondary" size="sm" className="h-9" asChild>
+                        <a href={createReceiptPrintHref(receipt.id)}><Printer className="me-1 size-3.5" />طباعة</a>
+                      </Button>
+                      {canVoidReceipt && (
+                        <Button variant="danger" size="sm" className="h-9" onClick={() => openVoidDialog(receipt)} disabled={voidReceiptMutation.isPending}>
+                          <Ban className="me-1 size-3.5" />إلغاء
+                        </Button>
+                      )}
+                    </div>
                   </div>
                 ))}
               </div>
@@ -204,8 +274,14 @@ function ReceiptsHistoryContent() {
                         <TableCell>
                           <div className="flex flex-wrap gap-2">
                             <Button variant="secondary" className="min-h-10 px-3" onClick={() => setSelectedReceiptId(receipt.id)}>عرض</Button>
-                            <Button variant="secondary" className="min-h-10 px-3" asChild><a href={createReceiptPrintHref(receipt.id)}><Printer className="me-2 size-4" />طباعة</a></Button>
-                            {canVoidReceipt ? <Button variant="danger" className="min-h-10 px-3" onClick={() => handleVoidReceipt(receipt)} disabled={voidReceiptMutation.isPending}><Ban className="me-2 size-4" />إلغاء</Button> : null}
+                            <Button variant="secondary" className="min-h-10 px-3" asChild>
+                              <a href={createReceiptPrintHref(receipt.id)}><Printer className="me-2 size-4" />طباعة</a>
+                            </Button>
+                            {canVoidReceipt && (
+                              <Button variant="danger" className="min-h-10 px-3" onClick={() => openVoidDialog(receipt)} disabled={voidReceiptMutation.isPending}>
+                                <Ban className="me-2 size-4" />إلغاء
+                              </Button>
+                            )}
                           </div>
                         </TableCell>
                       </TableRow>
@@ -214,7 +290,7 @@ function ReceiptsHistoryContent() {
                 </Table>
               </div>
             </>
-          ) : null}
+          )}
 
           <ReceiptDetailCard
             selectedReceiptId={selectedReceiptId}
@@ -225,6 +301,15 @@ function ReceiptsHistoryContent() {
           />
         </CardContent>
       </Card>
+
+      {/* Void confirmation dialog */}
+      <VoidReceiptDialog
+        state={voidDialog}
+        isLoading={voidReceiptMutation.isPending}
+        onClose={closeVoidDialog}
+        onConfirm={handleConfirmVoid}
+        onReasonChange={(reason) => setVoidDialog((v) => ({ ...v, reason }))}
+      />
     </div>
   );
 }
@@ -232,6 +317,5 @@ function ReceiptsHistoryContent() {
 export function ReceiptsPage() {
   const searchParams = useSearch({ strict: false }) as Record<string, unknown>;
   const receiptIdFromSearch = getReceiptIdFromSearch(searchParams);
-
   return receiptIdFromSearch ? <ReceiptDetailPage /> : <ReceiptsHistoryContent />;
 }

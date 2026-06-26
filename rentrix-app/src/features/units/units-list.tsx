@@ -4,6 +4,7 @@ import type { UseQueryResult } from '@tanstack/react-query';
 import { EmptyState } from '@/components/empty-state';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { EntityCell } from '@/components/ui/entity-cell';
 import { Skeleton } from '@/components/ui/skeleton';
 import { StatusBadge } from '@/components/ui/status-badge';
@@ -33,27 +34,11 @@ export function UnitsList({ propertyId, unitsQuery }: Readonly<{ propertyId: str
   const [archiveCandidate, setArchiveCandidate] = useState<Unit | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
 
-  const openForCreate = () => {
-    setEditingUnit(null);
-    setArchiveCandidate(null);
-    setModalOpen(true);
-  };
-
-  const openForEdit = (unit: Unit) => {
-    setEditingUnit(unit);
-    setArchiveCandidate(null);
-    setModalOpen(true);
-  };
-
-  const requestArchiveUnit = (unit: Unit) => {
-    setArchiveCandidate(unit);
-  };
-
-  const confirmArchiveUnit = () => {
+  const openForCreate = () => { setEditingUnit(null); setModalOpen(true); };
+  const openForEdit = (unit: Unit) => { setEditingUnit(unit); setModalOpen(true); };
+  const confirmArchive = () => {
     if (!archiveCandidate) return;
-    deleteMutation.mutate(archiveCandidate.id, {
-      onSuccess: () => setArchiveCandidate(null),
-    });
+    deleteMutation.mutate(archiveCandidate.id, { onSettled: () => setArchiveCandidate(null) });
   };
 
   return (
@@ -63,23 +48,12 @@ export function UnitsList({ propertyId, unitsQuery }: Readonly<{ propertyId: str
           <CardTitle>الوحدات</CardTitle>
           <CardDescription>إدارة وحدات العقار الحالي فقط.</CardDescription>
         </div>
-        {!unitsQuery.isError ? <Button onClick={openForCreate}><Plus className="me-2 size-4" />إضافة وحدة</Button> : null}
+        {!unitsQuery.isError ? <Button onClick={openForCreate}><Plus className="ml-2 size-4" />إضافة وحدة</Button> : null}
       </CardHeader>
       <CardContent className="space-y-4">
-        {archiveCandidate ? (
-          <div className="rounded-2xl border border-destructive/30 bg-destructive/5 p-4">
-            <p className="font-black">تأكيد أرشفة الوحدة {archiveCandidate.unit_number}</p>
-            <p className="mt-1 text-sm text-muted-foreground">ستبقى بيانات الوحدة محفوظة كسجل أرشيفي ولن تظهر ضمن الوحدات النشطة.</p>
-            <div className="mt-3 flex flex-wrap gap-2">
-              <Button variant="danger" onClick={confirmArchiveUnit} disabled={deleteMutation.isPending}>تأكيد الأرشفة</Button>
-              <Button variant="secondary" onClick={() => setArchiveCandidate(null)} disabled={deleteMutation.isPending}>إلغاء</Button>
-            </div>
-          </div>
-        ) : null}
-
         {unitsQuery.isLoading ? (
           <div className="space-y-3">
-            {Array.from({ length: 4 }, (_, index) => <Skeleton key={index} className="h-14" />)}
+            {Array.from({ length: 4 }, (_, i) => <Skeleton key={i} className="h-14" />)}
           </div>
         ) : unitsQuery.isError ? (
           <EmptyState
@@ -105,15 +79,21 @@ export function UnitsList({ propertyId, unitsQuery }: Readonly<{ propertyId: str
                     onClick={() => openForEdit(unit)}
                     formatMoney={(value) => formatCompanyMoney(defaultCompanyLocalSettings, value)}
                   />
-                  <Button
-                    variant="danger"
-                    className="w-full h-9 rounded-xl text-xs gap-1.5"
-                    aria-label="أرشفة الوحدة"
-                    onClick={() => requestArchiveUnit(unit)}
-                    disabled={deleteMutation.isPending}
-                  >
-                    <Archive className="size-3.5" />أرشفة
-                  </Button>
+                  <div className="flex gap-2 px-1">
+                    <Button variant="secondary" size="sm" className="h-9 flex-1" onClick={() => openForEdit(unit)}>
+                      <Edit className="me-1 size-3.5" />تعديل
+                    </Button>
+                    <Button
+                      variant="danger"
+                      size="sm"
+                      className="h-9 flex-1"
+                      aria-label="أرشفة الوحدة"
+                      onClick={() => setArchiveCandidate(unit)}
+                      disabled={deleteMutation.isPending}
+                    >
+                      <Archive className="me-1 size-3.5" />أرشفة
+                    </Button>
+                  </div>
                 </div>
               ))}
             </div>
@@ -136,13 +116,23 @@ export function UnitsList({ propertyId, unitsQuery }: Readonly<{ propertyId: str
                       <TableCell>
                         <EntityCell icon={DoorOpen} title={`وحدة ${unit.unit_number}`} subtitle={unit.floor ? `الدور: ${unit.floor}` : null} />
                       </TableCell>
-                      <TableCell><StatusBadge tone={unitStatusTone[unit.status]}>{unitStatusLabels[unit.status]}</StatusBadge></TableCell>
+                      <TableCell>
+                        <StatusBadge tone={unitStatusTone[unit.status]}>{unitStatusLabels[unit.status]}</StatusBadge>
+                      </TableCell>
                       <TableCell dir="ltr" className="font-bold">{money(unit.rent_amount)}</TableCell>
                       <TableCell>{unit.notes ?? '—'}</TableCell>
                       <TableCell>
                         <div className="flex gap-2">
                           <Button variant="secondary" className="min-h-9 px-3" onClick={() => openForEdit(unit)}><Edit className="size-4" /></Button>
-                          <Button variant="danger" className="min-h-9 px-3" aria-label="أرشفة الوحدة" onClick={() => requestArchiveUnit(unit)} disabled={deleteMutation.isPending}><Archive className="size-4" /></Button>
+                          <Button
+                            variant="danger"
+                            className="min-h-9 px-3"
+                            aria-label="أرشفة الوحدة"
+                            onClick={() => setArchiveCandidate(unit)}
+                            disabled={deleteMutation.isPending}
+                          >
+                            <Archive className="size-4" />
+                          </Button>
                         </div>
                       </TableCell>
                     </TableRow>
@@ -155,7 +145,18 @@ export function UnitsList({ propertyId, unitsQuery }: Readonly<{ propertyId: str
           <EmptyState title="لا توجد وحدات" description="أضف الوحدات التابعة لهذا العقار من هنا." action={<Button onClick={openForCreate}>إضافة وحدة</Button>} />
         )}
       </CardContent>
+
       <UnitFormModal propertyId={propertyId} unit={editingUnit} open={modalOpen} onOpenChange={setModalOpen} />
+
+      <ConfirmDialog
+        open={Boolean(archiveCandidate)}
+        onOpenChange={(open) => { if (!open) setArchiveCandidate(null); }}
+        title={`أرشفة الوحدة ${archiveCandidate?.unit_number ?? ''}؟`}
+        description="ستبقى بيانات الوحدة محفوظة كسجل أرشيفي ولن تظهر ضمن الوحدات النشطة."
+        confirmLabel="تأكيد الأرشفة"
+        isLoading={deleteMutation.isPending}
+        onConfirm={confirmArchive}
+      />
     </Card>
   );
 }
