@@ -1,19 +1,20 @@
 name: Refresh workspace lockfile
 
 on:
-  push:
-    branches: [fix-pdf-printing]
-    paths:
-      - pnpm-workspace.yaml
+  pull_request:
+    branches: [main]
 
 permissions:
   contents: write
 
 jobs:
   refresh:
+    if: github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
       - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v4
         with:
@@ -30,4 +31,4 @@ jobs:
           git config user.email "bot@rentrix.app"
           git add pnpm-lock.yaml
           git commit -m "chore: refresh workspace lockfile"
-          git push
+          git push origin "HEAD:${{ github.event.pull_request.head.ref }}"
