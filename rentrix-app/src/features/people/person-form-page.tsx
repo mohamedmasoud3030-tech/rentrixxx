@@ -1,6 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Link, useParams, useRouter } from '@tanstack/react-router';
-import { ArrowRight } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { RouteLoadingState } from '@/components/loading-state';
@@ -72,7 +72,7 @@ export function PersonFormPage() {
           <CardTitle>{isEdit ? 'تعديل شخص' : 'إضافة شخص'}</CardTitle>
           <CardDescription>الجدول موحد للمستأجرين والملاك وجهات الاتصال.</CardDescription>
         </div>
-        <Button variant="secondary" asChild><Link to="/people"><ArrowRight className="me-2 size-4" />العودة</Link></Button>
+        <Button variant="secondary" asChild><Link to="/people"><ArrowLeft className="me-2 size-4" />العودة</Link></Button>
       </CardHeader>
       <CardContent>
         <form

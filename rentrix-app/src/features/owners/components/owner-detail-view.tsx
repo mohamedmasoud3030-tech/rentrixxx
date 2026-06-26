@@ -1,4 +1,4 @@
-import { ArrowRight, Building2, DoorOpen, FileText, UserRoundCog, WalletCards } from 'lucide-react';
+import { ArrowLeft, Building2, DoorOpen, FileText, UserRoundCog, WalletCards } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { EmptyState } from '@/components/empty-state';
@@ -30,7 +30,7 @@ export function OwnerDetailView({ state }: Readonly<{ state: OwnerDetailState }>
 
   return (
     <section className="space-y-6">
-      <Button asChild variant="ghost" className="gap-2"><a href="/owners"><ArrowRight className="size-4" />عودة إلى إدارة الملاك</a></Button>
+      <Button asChild variant="ghost" className="gap-2"><a href="/owners"><ArrowLeft className="size-4" />عودة إلى إدارة الملاك</a></Button>
       <Card>
         <CardHeader className="gap-3">
           <div className="flex size-12 items-center justify-center rounded-2xl bg-primary/10 text-primary"><UserRoundCog className="size-6" /></div>

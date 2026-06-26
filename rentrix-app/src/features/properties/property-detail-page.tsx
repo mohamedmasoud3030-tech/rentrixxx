@@ -1,5 +1,5 @@
 import { Link, useParams } from '@tanstack/react-router';
-import { ArrowRight, Edit } from 'lucide-react';
+import { ArrowLeft, Edit } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { EmptyState } from '@/components/empty-state';
@@ -81,7 +81,7 @@ export function PropertyDetailPage() {
           <p className="mt-1 text-sm text-muted-foreground">{property.address}</p>
         </div>
         <div className="flex gap-2">
-          <Button variant="secondary" asChild><Link to="/properties"><ArrowRight className="me-2 size-4" />العودة</Link></Button>
+          <Button variant="secondary" asChild><Link to="/properties"><ArrowLeft className="me-2 size-4" />العودة</Link></Button>
           <Button asChild><Link to="/properties/$propertyId/edit" params={{ propertyId }}><Edit className="me-2 size-4" />تعديل</Link></Button>
         </div>
       </div>

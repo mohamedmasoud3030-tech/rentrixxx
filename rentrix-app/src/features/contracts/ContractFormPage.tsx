@@ -1,7 +1,7 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Link, useNavigate, useParams } from '@tanstack/react-router';
 import { useQuery } from '@tanstack/react-query';
-import { ArrowRight } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
 import { useEffect } from 'react';
 import { useForm, useWatch } from 'react-hook-form';
 import { Button } from '@/components/ui/button';
@@ -60,7 +60,7 @@ export function ContractFormPage() {
     <Card>
       <CardHeader className="flex flex-row items-start justify-between gap-3">
         <div><CardTitle className="text-3xl">{isEdit ? 'تعديل عقد' : 'إنشاء عقد'}</CardTitle><CardDescription>العقد رقم، المستأجر، الوحدة، التواريخ، قيمة الإيجار، الحالة، والملاحظات.</CardDescription></div>
-        <Button variant="secondary" asChild><Link to="/contracts"><ArrowRight className="me-2 size-4" />العودة</Link></Button>
+        <Button variant="secondary" asChild><Link to="/contracts"><ArrowLeft className="me-2 size-4" />العودة</Link></Button>
       </CardHeader>
       <CardContent>
         <form className="grid gap-5 md:grid-cols-2" onSubmit={form.handleSubmit(async (values) => { const payload = contractSchema.parse(values); const unitIssue = getContractUnitSelectionIssue({ units: unitsQuery.data ?? [], propertyId: payload.property_id, unitId: payload.unit_id, currentLinkedUnitId }); if (unitIssue) { form.setError('unit_id', { type: 'validate', message: unitIssue }); return; } if (isEdit && contractId) await updateMutation.mutateAsync(payload); else await createMutation.mutateAsync(payload); await navigate({ to: '/contracts' }); })}>

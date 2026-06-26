@@ -1,6 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Link } from '@tanstack/react-router';
-import { ArrowRight, Banknote, CalendarDays, ReceiptText, WalletCards } from 'lucide-react';
+import { ArrowLeft, Banknote, CalendarDays, ReceiptText, WalletCards } from 'lucide-react';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
@@ -81,7 +81,7 @@ export function ExpensesPage() {
           <p className="mt-1 max-w-2xl text-sm leading-7 text-muted-foreground">تسجيل ومراجعة مصاريف العقارات من مصدر البيانات الحالي مع فلاتر للعقار والتصنيف والتاريخ.</p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <Button variant="secondary" asChild><Link to="/financials"><ArrowRight className="me-2 size-4" />المالية</Link></Button>
+          <Button variant="secondary" asChild><Link to="/financials"><ArrowLeft className="me-2 size-4" />المالية</Link></Button>
           <Button variant="secondary" asChild><Link to="/reports"><ReceiptText className="me-2 size-4" />التقارير</Link></Button>
         </div>
       </div>

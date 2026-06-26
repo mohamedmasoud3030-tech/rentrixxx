@@ -1,6 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Link, useParams, useRouter } from '@tanstack/react-router';
-import { ArrowRight } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { Button } from '@/components/ui/button';
@@ -79,7 +79,7 @@ export function PropertyFormPage() {
           <CardTitle>{isEdit ? 'تعديل عقار' : 'إضافة عقار جديد'}</CardTitle>
           <CardDescription>أدخل بيانات العقار الأساسية. اسم المالك هنا للعرض الخفيف فقط وليس ربط ملكية أو حسابات ملاك.</CardDescription>
         </div>
-        <Button variant="secondary" asChild><Link to="/properties"><ArrowRight className="me-2 size-4" />العودة</Link></Button>
+        <Button variant="secondary" asChild><Link to="/properties"><ArrowLeft className="me-2 size-4" />العودة</Link></Button>
       </CardHeader>
       <CardContent>
         <form
