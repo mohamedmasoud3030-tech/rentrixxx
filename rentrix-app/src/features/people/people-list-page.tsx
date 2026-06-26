@@ -1,5 +1,6 @@
 import { Edit, Plus, Trash2 } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { toast } from 'sonner';
 import { PersonFormModal } from './person-form-modal';
 import { EmptyState } from '@/components/empty-state';
 import { Button } from '@/components/ui/button';
@@ -32,6 +33,12 @@ export function PeopleListPage() {
   const peopleQuery = usePeople(params);
   const deleteMutation = useSoftDeletePerson();
   const totalPages = Math.max(1, Math.ceil((peopleQuery.data?.count ?? 0) / pageSize));
+
+  useEffect(() => {
+    if (peopleQuery.isError && peopleQuery.isPending === false) {
+      toast.error('تعذر تحميل الأشخاص — إعادة المحاولة...');
+    }
+  }, [peopleQuery.isError, peopleQuery.isPending]);
 
   const openEdit = (id: string) => { setEditPersonId(id); setModalOpen(true); };
   const openCreate = () => { setEditPersonId(undefined); setModalOpen(true); };
