@@ -6,7 +6,7 @@ import { AuthRouteComponent } from '@/routes/_auth';
 import { ProtectedRouteComponent } from '@/routes/_protected';
 import type { AppPermission } from '@/features/auth/permissions';
 import { assertSessionPermission } from '@/features/auth/route-guards';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/lib/supabase';
 
 const rootRoute = createRootRoute({
   component: RootRouteComponent,

@@ -1,4 +1,4 @@
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/lib/supabase';
 import type { Database } from '@/types/database';
 import type { Property } from '@/types/domain';
 import type { PropertyPayload } from './property-schema';

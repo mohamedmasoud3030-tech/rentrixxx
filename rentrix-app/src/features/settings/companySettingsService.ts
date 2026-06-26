@@ -1,4 +1,4 @@
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/lib/supabase';
 import { normalizeCompanyLocale, normalizeCompanyLogoUrl, normalizeCountry, normalizeTimezone } from '@/lib/companySettings';
 import { normalizeCurrency } from '@/lib/formatters';
 import { handleSupabaseError } from '@/lib/supabase-error';

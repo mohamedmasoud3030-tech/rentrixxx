@@ -1,4 +1,4 @@
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/lib/supabase';
 import { getSafeRemainingAmount, sumFinancialValues } from '@/features/financials/financialMath';
 import { getTodayLocalDateString } from '@/features/financials/financials-date-utils';
 import { handleSupabaseError } from '@/lib/supabase-error';

@@ -1,4 +1,4 @@
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/lib/supabase';
 import { getTodayLocalDateString } from '@/features/financials/financials-date-utils';
 import type { Contract, Invoice, Person, Property, Unit } from '@/types/domain';
 

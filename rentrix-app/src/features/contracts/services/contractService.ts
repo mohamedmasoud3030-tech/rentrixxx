@@ -1,4 +1,4 @@
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/lib/supabase';
 import type { Database } from '@/types/database';
 import type { Contract, Person, Property, Unit } from '@/types/domain';
 import type { ContractPayload, RenewalPayload } from '../contractSchema';

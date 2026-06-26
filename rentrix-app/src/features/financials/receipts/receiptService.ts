@@ -1,4 +1,4 @@
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/lib/supabase';
 import type { Contract, Invoice, Payment, Person, Property, Unit } from '@/types/domain';
 
 export type ReceiptListParams = { limit?: number };

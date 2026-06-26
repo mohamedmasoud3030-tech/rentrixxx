@@ -1,4 +1,4 @@
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/lib/supabase';
 import { env } from '@/lib/env';
 import type { AuditLogRecord, AuditLogResult } from '../types';
 import type { Database } from '@/types/database';

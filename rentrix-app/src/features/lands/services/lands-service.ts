@@ -1,4 +1,4 @@
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/lib/supabase';
 import { handleSupabaseError } from '@/lib/supabase-error';
 import type { Database } from '@/types/database';
 import type { LandFilters, LandFormValues, LandRecord } from '../types';
