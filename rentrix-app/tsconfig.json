@@ -1,5 +1,5 @@
 {
-  "extends": "../../tsconfig.base.json",
+  "extends": "../tsconfig.base.json",
   "include": [
     "src/**/*.ts",
     "src/**/*.tsx",
@@ -36,7 +36,7 @@
   },
   "references": [
     {
-      "path": "../../lib/api-client-react"
+      "path": "../lib/api-client-react"
     }
   ]
 }
