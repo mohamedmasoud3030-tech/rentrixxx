@@ -3,6 +3,16 @@ import { getContractNumber } from '../contractListExport';
 import { getContractRemainingDays, parseContractDisplayDate } from '../contractDisplayFormatters';
 import type { ContractListItem, ContractStatusFilter } from '../services/contractService';
 
+/**
+ * Normalize Arabic text **for search/comparison only** — never use for display.
+ *
+ * Transformations:
+ * - Strip diacritics (tashkeel)
+ * - Normalize Alef variants (أإآ → ا) and Alef Maqsura (ى → ي)
+ * - Normalize Teh Marbuta (ة → ه) so "فاطمة" matches "فاطمه" queries
+ * - Collapse whitespace and trim
+ * - Normalize Arabic-Indic / Extended Arabic-Indic digits to ASCII
+ */
 export function normalizeSearchText(value: string) {
   return value
     .toLowerCase()

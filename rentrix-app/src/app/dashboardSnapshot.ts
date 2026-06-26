@@ -9,7 +9,7 @@ import {
   type FinancialPeriodSummaryReport,
   type OverdueInvoicesReport,
 } from '@/features/financials/reports/financialReportsService';
-import { listContracts, type ContractListItem } from '@/features/contracts/services/contractService';
+import type { ContractListItem } from '@/features/contracts/services/contractService';
 import { getDashboardOverview, type DashboardOverview } from './dashboardService';
 
 export type DashboardPeriod = {
@@ -152,23 +152,21 @@ export async function getDashboardSnapshot(date = new Date()): Promise<Dashboard
   const periodFilters = { dateFrom: period.dateFrom, dateTo: period.dateTo };
   const arrearsFilters = { asOf: period.asOf };
 
-  const [overview, periodSummary, overdueInvoices, arrearsSummary, agedReceivables, activeContracts] = await Promise.all([
+  const [overview, periodSummary, overdueInvoices, arrearsSummary, agedReceivables] = await Promise.all([
     getDashboardOverview(date),
     getFinancialPeriodSummaryReport(periodFilters),
     getOverdueInvoicesReport(arrearsFilters),
     getArrearsSummaryReport(arrearsFilters),
     getAgedReceivablesReport(arrearsFilters),
-    listContracts({ status: 'active', page: 1, pageSize: 1000 }),
   ]);
-  const activeContractRows = activeContracts.rows;
 
   return {
     period,
     overview,
     financial: summarizeDashboardFinancialMetrics(periodSummary),
-    operational: summarizeDashboardOperationalMetrics(overview, activeContractRows),
+    operational: summarizeDashboardOperationalMetrics(overview, []),
     arrears: summarizeDashboardArrearsMetrics({ overdueInvoices, arrearsSummary, agedReceivables }),
-    activeContracts: activeContractRows,
+    activeContracts: [],
     deferred: dashboardDeferredMetrics,
   };
 }
