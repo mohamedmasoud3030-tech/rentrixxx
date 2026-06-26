@@ -1,5 +1,5 @@
 import { Edit, Plus, Trash2 } from 'lucide-react';
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { PersonFormModal } from './person-form-modal';
 import { EmptyState } from '@/components/empty-state';
@@ -35,14 +35,17 @@ export function PeopleListPage() {
   const totalPages = Math.max(1, Math.ceil((peopleQuery.data?.count ?? 0) / pageSize));
 
   // Show error toast once per error occurrence (not on every retry attempt)
+  // Show error toast once per error occurrence, not on every retry
   const errorToastShownRef = useRef(false);
-  if (peopleQuery.isError && !errorToastShownRef.current) {
-    errorToastShownRef.current = true;
-    toast.error('تعذر تحميل الأشخاص');
-  }
-  if (!peopleQuery.isError) {
-    errorToastShownRef.current = false;
-  }
+  useEffect(() => {
+    if (peopleQuery.isError && !errorToastShownRef.current) {
+      errorToastShownRef.current = true;
+      toast.error('تعذر تحميل الأشخاص');
+    }
+    if (!peopleQuery.isError) {
+      errorToastShownRef.current = false;
+    }
+  }, [peopleQuery.isError]);
 
   const openEdit = (id: string) => { setEditPersonId(id); setModalOpen(true); };
   const openCreate = () => { setEditPersonId(undefined); setModalOpen(true); };

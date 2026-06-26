@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { ContractFilters } from './components/ContractFilters';
 import { ContractKpiGrid } from './components/ContractKpiGrid';
 import { ContractListHeader } from './components/ContractListHeader';
@@ -59,15 +59,17 @@ export function ContractsListPage() {
     status,
   });
 
-  // Show error toast once per error occurrence (not on every retry attempt)
+  // Show error toast once per error occurrence, not on every retry
   const errorToastShownRef = useRef(false);
-  if (contractsQuery.isError && !errorToastShownRef.current) {
-    errorToastShownRef.current = true;
-    toast.error('تعذر تحميل العقود');
-  }
-  if (!contractsQuery.isError) {
-    errorToastShownRef.current = false;
-  }
+  useEffect(() => {
+    if (contractsQuery.isError && !errorToastShownRef.current) {
+      errorToastShownRef.current = true;
+      toast.error('تعذر تحميل العقود');
+    }
+    if (!contractsQuery.isError) {
+      errorToastShownRef.current = false;
+    }
+  }, [contractsQuery.isError]);
 
   const openCreate = () => { setEditContractId(undefined); setModalOpen(true); };
   const openEdit = (id: string) => { setEditContractId(id); setModalOpen(true); };
