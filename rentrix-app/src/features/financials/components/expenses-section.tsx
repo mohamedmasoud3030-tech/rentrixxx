@@ -8,6 +8,7 @@ import { FileAttachmentField } from '@/components/ui/file-attachment-field';
 import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
+import { useCompanySettingsContract } from '@/features/settings/useCompanySettings';
 import { escapeCsvValue, withUtf8Bom } from '@/lib/csvExport';
 import { exportExpenseToPdf } from '@/services/pdfService';
 import type { Expense, Property } from '@/types/domain';
@@ -74,12 +75,16 @@ export function ExpensesSection({ expenses, propertyRows, filters, onFiltersChan
   const propertyById = new Map(propertyRows.map((property) => [property.id, property]));
   const summary = summarizeOperationalExpenses(expenses);
   const hasFilters = Boolean(filters.propertyId || filters.category || filters.from || filters.to);
+  const companySettings = useCompanySettingsContract();
   const clearFilters = () => onFiltersChange({ propertyId: '', category: '', from: '', to: '' });
   const exportVisibleExpenses = () => downloadCsv(`rentrix-expenses-${getTodayLocalDateString()}.csv`, buildExpensesCsv(expenses, propertyRows));
   const exportExpenseVoucher = (expense: Expense) => {
     const property = propertyById.get(expense.property_id);
     exportExpenseToPdf(expense, {
-      settings: { general: { company: { name: 'Rentrix' } } },
+      settings: {
+        general: { company: { name: companySettings.companyName } },
+        operational: { currency: companySettings.defaultCurrency },
+      },
       contracts: [],
       tenants: [],
       units: [],
@@ -99,7 +104,6 @@ export function ExpensesSection({ expenses, propertyRows, filters, onFiltersChan
       <CardContent className="space-y-4">
         <p className="text-sm text-muted-foreground">تكلفة طلبات الصيانة في قسم الصيانة تبقى تقديرية ولا يتم تحويلها تلقائياً إلى مصروف.</p>
 
-        {/* Summary strip */}
         <div className="grid gap-2 rounded-xl border border-border bg-muted/30 p-3 text-sm sm:grid-cols-2 lg:grid-cols-4">
           <p>عدد المصاريف: <strong>{summary.visibleCount}</strong></p>
           <p>الإجمالي: <strong>{formatMoney(summary.visibleAmount)}</strong></p>
@@ -107,7 +111,6 @@ export function ExpensesSection({ expenses, propertyRows, filters, onFiltersChan
           <p>التصنيفات: <strong>{summary.byCategoryCount}</strong></p>
         </div>
 
-        {/* Filters */}
         <div className="grid gap-3 rounded-2xl border border-border bg-muted/20 p-3 sm:grid-cols-2 lg:grid-cols-4">
           <label className="space-y-1 text-sm font-bold">
             <span>العقار</span>
@@ -134,7 +137,6 @@ export function ExpensesSection({ expenses, propertyRows, filters, onFiltersChan
           {hasFilters ? <Button variant="secondary" className="sm:col-span-2 lg:col-span-4" onClick={clearFilters}>مسح الفلاتر</Button> : null}
         </div>
 
-        {/* Expense list */}
         {expenses.length === 0 ? (
           <EmptyState
             title={hasFilters ? 'لا توجد مصاريف مطابقة' : 'لا توجد مصاريف بعد'}
@@ -155,7 +157,6 @@ export function ExpensesSection({ expenses, propertyRows, filters, onFiltersChan
           </div>
         )}
 
-        {/* Create form */}
         <form className="grid gap-3 rounded-2xl border border-border p-4 sm:grid-cols-2" onSubmit={expenseForm.handleSubmit(onCreateExpense)}>
           <Select {...expenseForm.register('property_id')}>
             <option value="">اختر العقار</option>
