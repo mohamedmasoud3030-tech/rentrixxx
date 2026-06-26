@@ -4,6 +4,7 @@ import { Download } from 'lucide-react';
 import { EmptyState } from '@/components/empty-state';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { DataTable } from '@/components/ui/data-table';
 import { FileAttachmentField } from '@/components/ui/file-attachment-field';
 import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
@@ -87,8 +88,10 @@ export function ExpensesSection({ expenses, propertyRows, filters, onFiltersChan
     });
   };
 
+  const errors = expenseForm.formState.errors;
+
   return (
-    <Card className="rounded-2xl">
+    <Card>
       <CardHeader className="gap-3 sm:flex sm:flex-row sm:items-start sm:justify-between">
         <div>
           <CardTitle>المصاريف التشغيلية</CardTitle>
@@ -99,7 +102,6 @@ export function ExpensesSection({ expenses, propertyRows, filters, onFiltersChan
       <CardContent className="space-y-4">
         <p className="text-sm text-muted-foreground">تكلفة طلبات الصيانة في قسم الصيانة تبقى تقديرية ولا يتم تحويلها تلقائياً إلى مصروف.</p>
 
-        {/* Summary strip */}
         <div className="grid gap-2 rounded-xl border border-border bg-muted/30 p-3 text-sm sm:grid-cols-2 lg:grid-cols-4">
           <p>عدد المصاريف: <strong>{summary.visibleCount}</strong></p>
           <p>الإجمالي: <strong>{formatMoney(summary.visibleAmount)}</strong></p>
@@ -107,7 +109,6 @@ export function ExpensesSection({ expenses, propertyRows, filters, onFiltersChan
           <p>التصنيفات: <strong>{summary.byCategoryCount}</strong></p>
         </div>
 
-        {/* Filters */}
         <div className="grid gap-3 rounded-2xl border border-border bg-muted/20 p-3 sm:grid-cols-2 lg:grid-cols-4">
           <label className="space-y-1 text-sm font-bold">
             <span>العقار</span>
@@ -134,14 +135,16 @@ export function ExpensesSection({ expenses, propertyRows, filters, onFiltersChan
           {hasFilters ? <Button variant="secondary" className="sm:col-span-2 lg:col-span-4" onClick={clearFilters}>مسح الفلاتر</Button> : null}
         </div>
 
-        {/* Expense list */}
-        {expenses.length === 0 ? (
-          <EmptyState
-            title={hasFilters ? 'لا توجد مصاريف مطابقة' : 'لا توجد مصاريف بعد'}
-            description={hasFilters ? 'غيّر الفلاتر أو امسحها لعرض نتائج أخرى.' : 'سجّل أول مصروف تشغيلي من النموذج أدناه.'}
-          />
-        ) : (
-          <div className="divide-y divide-border rounded-xl border border-border">
+        <DataTable
+          isEmpty={expenses.length === 0}
+          emptyState={(
+            <EmptyState
+              title={hasFilters ? 'لا توجد مصاريف مطابقة' : 'لا توجد مصاريف بعد'}
+              description={hasFilters ? 'غيّر الفلاتر أو امسحها لعرض نتائج أخرى.' : 'سجّل أول مصروف تشغيلي من النموذج أدناه.'}
+            />
+          )}
+        >
+          <div className="divide-y divide-border">
             {expenses.map((expense) => (
               <div key={expense.id} className="grid gap-1 px-4 py-3 text-sm sm:grid-cols-[7rem_1fr_auto_auto] sm:items-center sm:gap-3">
                 <span className="text-muted-foreground">{formatDate(expense.expense_date)}</span>
@@ -153,19 +156,18 @@ export function ExpensesSection({ expenses, propertyRows, filters, onFiltersChan
               </div>
             ))}
           </div>
-        )}
+        </DataTable>
 
-        {/* Create form */}
-        <form className="grid gap-3 rounded-2xl border border-border p-4 sm:grid-cols-2" onSubmit={expenseForm.handleSubmit(onCreateExpense)}>
-          <Select {...expenseForm.register('property_id')}>
+        <form className="grid gap-3 rounded-2xl border border-border p-4 sm:grid-cols-2" onSubmit={expenseForm.handleSubmit(onCreateExpense)} noValidate>
+          <Select hasError={Boolean(errors.property_id)} aria-describedby={errors.property_id ? 'expense-property-error' : undefined} {...expenseForm.register('property_id')}>
             <option value="">اختر العقار</option>
             {propertyRows.map((p) => <option key={p.id} value={p.id}>{p.title}</option>)}
           </Select>
-          <Select {...expenseForm.register('category')}>
+          <Select hasError={Boolean(errors.category)} aria-describedby={errors.category ? 'expense-category-error' : undefined} {...expenseForm.register('category')}>
             {OPERATIONAL_EXPENSE_CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
           </Select>
-          <Input type="number" min="0.01" step="0.01" placeholder="المبلغ" {...expenseForm.register('amount')} />
-          <Input type="date" {...expenseForm.register('expense_date')} />
+          <Input hasError={Boolean(errors.amount)} aria-describedby={errors.amount ? 'expense-amount-error' : undefined} type="number" min="0.01" step="0.01" placeholder="المبلغ" {...expenseForm.register('amount')} />
+          <Input hasError={Boolean(errors.expense_date)} aria-describedby={errors.expense_date ? 'expense-date-error' : undefined} type="date" {...expenseForm.register('expense_date')} />
           <div className="sm:col-span-2">
             <Textarea placeholder="الوصف (اختياري)" className="min-h-16" {...expenseForm.register('description')} />
           </div>
@@ -178,8 +180,14 @@ export function ExpensesSection({ expenses, propertyRows, filters, onFiltersChan
               )}
             />
           </div>
-          <Button type="submit" disabled={isCreateExpensePending} className="sm:col-span-2">
-            {isCreateExpensePending ? 'جارٍ الحفظ...' : 'إضافة مصروف'}
+          <div className="sm:col-span-2 space-y-1" aria-live="polite">
+            {errors.property_id ? <p id="expense-property-error" className="text-xs font-bold text-destructive">{errors.property_id.message}</p> : null}
+            {errors.category ? <p id="expense-category-error" className="text-xs font-bold text-destructive">{errors.category.message}</p> : null}
+            {errors.amount ? <p id="expense-amount-error" className="text-xs font-bold text-destructive">{errors.amount.message}</p> : null}
+            {errors.expense_date ? <p id="expense-date-error" className="text-xs font-bold text-destructive">{errors.expense_date.message}</p> : null}
+          </div>
+          <Button type="submit" isLoading={isCreateExpensePending} className="sm:col-span-2">
+            إضافة مصروف
           </Button>
         </form>
       </CardContent>
