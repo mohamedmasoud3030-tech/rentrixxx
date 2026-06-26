@@ -185,7 +185,7 @@ export function AppShell() {
         </div>
       </aside>
 
-      <div className={cn('w-full transition-all duration-300 lg:pr-80', sidebarCollapsed && 'lg:pr-20')}>
+      <div className={cn('w-full transition-all duration-300 lg:pe-80', sidebarCollapsed && 'lg:pe-20')}>
         <header className="sticky top-0 z-20 border-b border-border bg-background/82 backdrop-blur-2xl">
           <div className="flex min-h-16 items-center gap-2 px-3 py-2 sm:min-h-20 sm:px-5">
             <Button variant="ghost" className="size-10 shrink-0 px-0 lg:hidden" onClick={() => setMobileNavOpen(true)} aria-label="فتح القائمة"><Menu className="size-5" /></Button>
