@@ -1,6 +1,8 @@
 // UI primitives — import from here for clean paths
 export { Button } from "./button";
-export { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./card";
+export { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "./card";
+export { DetailFields, type DetailField } from "./detail-fields";
+export { FormSection } from "./form-section";
 export { Input } from "./input";
 export { Select } from "./select";
 export { Skeleton } from "./skeleton";

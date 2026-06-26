@@ -11,7 +11,7 @@ import { KpiCard } from '@/components/ui/kpi-card';
 import { OwnerCard } from '@/components/ui/owner-card';
 import { ResponsiveFormOverlay } from '@/components/ui/responsive-form-overlay';
 import { SearchInput } from '@/components/ui/search-input';
-import { Skeleton } from '@/components/ui/skeleton';
+import { AsyncContentState } from '@/components/async-content-state';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Textarea } from '@/components/ui/textarea';
@@ -384,17 +384,17 @@ export function OwnersPage() {
     await Promise.all([ownersQuery.refetch(), propertiesQuery.refetch(), activeContractsQuery.refetch()]);
   };
 
-  if (ownersQuery.isLoading || propertiesQuery.isLoading || activeContractsQuery.isLoading) {
-    return <div className="space-y-4">{Array.from({ length: 5 }, (_, i) => <Skeleton key={i} className="h-24" />)}</div>;
-  }
-
-  if (hasLoadError) {
+  if (ownersQuery.isLoading || propertiesQuery.isLoading || activeContractsQuery.isLoading || hasLoadError) {
     return (
-      <EmptyState
-        title="تعذر تحميل مساحة عمل الملاك"
-        description={getOwnerPageErrorMessage(firstLoadError, 'حدث خطأ غير متوقع أثناء تحميل الملاك والعقارات المرتبطة.')}
-        action={<Button type="button" onClick={retryOwnerWorkspace}>إعادة المحاولة</Button>}
-      />
+      <AsyncContentState
+        status={ownersQuery.isLoading || propertiesQuery.isLoading || activeContractsQuery.isLoading ? 'loading' : 'error'}
+        error={firstLoadError}
+        errorTitle="تعذر تحميل مساحة عمل الملاك"
+        errorFallbackMessage={getOwnerPageErrorMessage(firstLoadError, 'حدث خطأ غير متوقع أثناء تحميل الملاك والعقارات المرتبطة.')}
+        errorAction={<Button type="button" onClick={retryOwnerWorkspace}>إعادة المحاولة</Button>}
+      >
+        {null}
+      </AsyncContentState>
     );
   }
 

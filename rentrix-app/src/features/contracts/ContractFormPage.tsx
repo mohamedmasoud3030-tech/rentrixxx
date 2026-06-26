@@ -1,11 +1,12 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Link, useNavigate, useParams } from '@tanstack/react-router';
+import { useNavigate, useParams, Link } from '@tanstack/react-router';
 import { useQuery } from '@tanstack/react-query';
-import { ArrowLeft } from 'lucide-react';
 import { useEffect } from 'react';
 import { useForm, useWatch } from 'react-hook-form';
+import { EntityDetailHeader } from '@/components/layout/entity-detail-header';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
+import { FormSection } from '@/components/ui/form-section';
 import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
@@ -57,26 +58,31 @@ export function ContractFormPage() {
   const submitting = createMutation.isPending || updateMutation.isPending;
 
   return (
-    <Card>
-      <CardHeader className="flex flex-row items-start justify-between gap-3">
-        <div><CardTitle className="text-3xl">{isEdit ? 'تعديل عقد' : 'إنشاء عقد'}</CardTitle><CardDescription>العقد رقم، المستأجر، الوحدة، التواريخ، قيمة الإيجار، الحالة، والملاحظات.</CardDescription></div>
-        <Button variant="secondary" asChild><Link to="/contracts"><ArrowLeft className="me-2 size-4" />العودة</Link></Button>
-      </CardHeader>
-      <CardContent>
-        <form className="grid gap-5 md:grid-cols-2" onSubmit={form.handleSubmit(async (values) => { const payload = contractSchema.parse(values); const unitIssue = getContractUnitSelectionIssue({ units: unitsQuery.data ?? [], propertyId: payload.property_id, unitId: payload.unit_id, currentLinkedUnitId }); if (unitIssue) { form.setError('unit_id', { type: 'validate', message: unitIssue }); return; } if (isEdit && contractId) await updateMutation.mutateAsync(payload); else await createMutation.mutateAsync(payload); await navigate({ to: '/contracts' }); })}>
-          <label className="grid gap-2 text-sm font-bold">العقار<Select {...form.register('property_id')}><option value="">اختر العقار</option>{propertiesQuery.data?.rows.map((property) => <option key={property.id} value={property.id}>{property.title}</option>)}</Select>{fieldError(form.formState.errors.property_id?.message)}</label>
-          <label className="grid gap-2 text-sm font-bold">الوحدة<Select {...form.register('unit_id')} disabled={!propertyId}><option value="">اختر الوحدة</option>{unitsQuery.data?.map((unit) => <option key={unit.id} value={unit.id} disabled={!isUnitSelectableForContract({ unit, currentLinkedUnitId })}>{buildContractUnitOptionLabel({ unit, property: selectedProperty })}</option>)}</Select>{fieldError(form.formState.errors.unit_id?.message)}</label>
-          <label className="grid gap-2 text-sm font-bold">المستأجر<Select {...form.register('tenant_id')}><option value="">اختر المستأجر</option>{peopleQuery.data?.rows.map((person) => <option key={person.id} value={person.id}>{person.full_name}</option>)}</Select>{fieldError(form.formState.errors.tenant_id?.message)}</label>
-          <label className="grid gap-2 text-sm font-bold">الحالة<Select {...form.register('status')}>{contractStatusValues.map((status) => <option key={status} value={status}>{contractStatusLabels[status]}</option>)}</Select>{fieldError(form.formState.errors.status?.message)}</label>
-          <label className="grid gap-2 text-sm font-bold">تاريخ البداية<Input type="date" {...form.register('start_date')} />{fieldError(form.formState.errors.start_date?.message)}</label>
-          <label className="grid gap-2 text-sm font-bold">تاريخ النهاية<Input type="date" {...form.register('end_date')} />{fieldError(form.formState.errors.end_date?.message)}</label>
-          <label className="grid gap-2 text-sm font-bold">قيمة الإيجار<Input type="number" step="0.01" min="0.01" {...form.register('rent_amount')} />{fieldError(form.formState.errors.rent_amount?.message)}</label>
-          <label className="grid gap-2 text-sm font-bold">دورة السداد<Select {...form.register('payment_cycle')}>{paymentCycleValues.map((cycle) => <option key={cycle} value={cycle}>{paymentCycleLabels[cycle]}</option>)}</Select>{fieldError(form.formState.errors.payment_cycle?.message)}</label>
-          <label className="grid gap-2 text-sm font-bold md:col-span-2">سبب الإلغاء<Textarea {...form.register('cancellation_reason')} placeholder="يظهر عند إلغاء العقد" /></label>
-          <label className="grid gap-2 text-sm font-bold md:col-span-2">ملاحظات<Textarea {...form.register('notes')} placeholder="ملاحظات العقد" /></label>
-          <div className="flex justify-end gap-3 md:col-span-2"><Button variant="secondary" asChild><Link to="/contracts">إلغاء</Link></Button><Button type="submit" disabled={submitting}>{submitting ? 'جار الحفظ...' : 'حفظ العقد'}</Button></div>
-        </form>
-      </CardContent>
-    </Card>
+    <div className="space-y-6">
+      <EntityDetailHeader
+        title={isEdit ? 'تعديل عقد' : 'إنشاء عقد'}
+        subtitle="العقد رقم، المستأجر، الوحدة، التواريخ، قيمة الإيجار، الحالة، والملاحظات."
+        backTo="/contracts"
+      />
+      <Card>
+        <CardContent className="pt-6">
+          <FormSection>
+            <form className="grid gap-5 md:grid-cols-2" onSubmit={form.handleSubmit(async (values) => { const payload = contractSchema.parse(values); const unitIssue = getContractUnitSelectionIssue({ units: unitsQuery.data ?? [], propertyId: payload.property_id, unitId: payload.unit_id, currentLinkedUnitId }); if (unitIssue) { form.setError('unit_id', { type: 'validate', message: unitIssue }); return; } if (isEdit && contractId) await updateMutation.mutateAsync(payload); else await createMutation.mutateAsync(payload); await navigate({ to: '/contracts' }); })}>
+              <label className="grid gap-2 text-sm font-bold">العقار<Select {...form.register('property_id')}><option value="">اختر العقار</option>{propertiesQuery.data?.rows.map((property) => <option key={property.id} value={property.id}>{property.title}</option>)}</Select>{fieldError(form.formState.errors.property_id?.message)}</label>
+              <label className="grid gap-2 text-sm font-bold">الوحدة<Select {...form.register('unit_id')} disabled={!propertyId}><option value="">اختر الوحدة</option>{unitsQuery.data?.map((unit) => <option key={unit.id} value={unit.id} disabled={!isUnitSelectableForContract({ unit, currentLinkedUnitId })}>{buildContractUnitOptionLabel({ unit, property: selectedProperty })}</option>)}</Select>{fieldError(form.formState.errors.unit_id?.message)}</label>
+              <label className="grid gap-2 text-sm font-bold">المستأجر<Select {...form.register('tenant_id')}><option value="">اختر المستأجر</option>{peopleQuery.data?.rows.map((person) => <option key={person.id} value={person.id}>{person.full_name}</option>)}</Select>{fieldError(form.formState.errors.tenant_id?.message)}</label>
+              <label className="grid gap-2 text-sm font-bold">الحالة<Select {...form.register('status')}>{contractStatusValues.map((status) => <option key={status} value={status}>{contractStatusLabels[status]}</option>)}</Select>{fieldError(form.formState.errors.status?.message)}</label>
+              <label className="grid gap-2 text-sm font-bold">تاريخ البداية<Input type="date" {...form.register('start_date')} />{fieldError(form.formState.errors.start_date?.message)}</label>
+              <label className="grid gap-2 text-sm font-bold">تاريخ النهاية<Input type="date" {...form.register('end_date')} />{fieldError(form.formState.errors.end_date?.message)}</label>
+              <label className="grid gap-2 text-sm font-bold">قيمة الإيجار<Input type="number" step="0.01" min="0.01" {...form.register('rent_amount')} />{fieldError(form.formState.errors.rent_amount?.message)}</label>
+              <label className="grid gap-2 text-sm font-bold">دورة السداد<Select {...form.register('payment_cycle')}>{paymentCycleValues.map((cycle) => <option key={cycle} value={cycle}>{paymentCycleLabels[cycle]}</option>)}</Select>{fieldError(form.formState.errors.payment_cycle?.message)}</label>
+              <label className="grid gap-2 text-sm font-bold md:col-span-2">سبب الإلغاء<Textarea {...form.register('cancellation_reason')} placeholder="يظهر عند إلغاء العقد" /></label>
+              <label className="grid gap-2 text-sm font-bold md:col-span-2">ملاحظات<Textarea {...form.register('notes')} placeholder="ملاحظات العقد" /></label>
+              <div className="flex justify-end gap-3 md:col-span-2"><Button variant="secondary" asChild><Link to="/contracts">إلغاء</Link></Button><Button type="submit" disabled={submitting}>{submitting ? 'جار الحفظ...' : 'حفظ العقد'}</Button></div>
+            </form>
+          </FormSection>
+        </CardContent>
+      </Card>
+    </div>
   );
 }
