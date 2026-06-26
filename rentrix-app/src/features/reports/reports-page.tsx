@@ -297,7 +297,7 @@ function FiltersPanel({ filters, onChange, onResetCurrentMonth }: Readonly<{
             <Input type="date" value={filters.asOf} onChange={(event) => onChange({ ...filters, asOf: event.target.value })} />
           </label>
           <div className="flex items-end">
-            <Button className="w-full" onClick={onResetCurrentMonth} variant="secondary"><RefreshCcw className="ml-2 size-4" />الشهر الحالي</Button>
+            <Button className="w-full" onClick={onResetCurrentMonth} variant="secondary"><RefreshCcw className="me-2 size-4" />الشهر الحالي</Button>
           </div>
         </div>
       </CardHeader>
@@ -321,7 +321,7 @@ function OverviewSection({ summary, cashflowRows, isLoading }: Readonly<{
     <ReportCard
       title="نظرة عامة على الفترة"
       description="ملخص الفواتير والتحصيل والمصروفات المسجلة للفترة المحددة."
-      action={<Button variant="secondary" onClick={() => downloadCsv(buildReportCsvFilename('financial-summary'), toFinancialSummaryCsv(report))}><FileSpreadsheet className="ml-2 size-4" />تصدير CSV</Button>}
+      action={<Button variant="secondary" onClick={() => downloadCsv(buildReportCsvFilename('financial-summary'), toFinancialSummaryCsv(report))}><FileSpreadsheet className="me-2 size-4" />تصدير CSV</Button>}
       isLoading={isLoading}
     >
       <div className="grid gap-3 p-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -369,7 +369,7 @@ function CollectionsSection({ rows, receiptRows, rentRollRows, isLoading }: Read
       <ReportCard
         title="التحصيل اليومي للفترة"
         description="تفصيل يومي للتحصيل مع تفصيل طرق الدفع لكل يوم."
-        action={<Button variant="secondary" onClick={() => downloadCsv(buildReportCsvFilename('daily-collection'), toDailyCollectionCsv(rows))}><FileSpreadsheet className="ml-2 size-4" />تصدير CSV</Button>}
+        action={<Button variant="secondary" onClick={() => downloadCsv(buildReportCsvFilename('daily-collection'), toDailyCollectionCsv(rows))}><FileSpreadsheet className="me-2 size-4" />تصدير CSV</Button>}
         isLoading={isLoading}
       >
         {/* Mobile cards */}
@@ -449,7 +449,7 @@ function CollectionsSection({ rows, receiptRows, rentRollRows, isLoading }: Read
       <ReportCard
         title="قائمة العقود الإيجارية (Rent Roll)"
         description="عقود الإيجار الحالية فقط، مع روابط آمنة لتفاصيل العقود."
-        action={<Button variant="secondary" onClick={() => downloadCsv(buildReportCsvFilename('rent-roll'), rentRollRows)}><FileSpreadsheet className="ml-2 size-4" />تصدير CSV</Button>}
+        action={<Button variant="secondary" onClick={() => downloadCsv(buildReportCsvFilename('rent-roll'), rentRollRows)}><FileSpreadsheet className="me-2 size-4" />تصدير CSV</Button>}
         isLoading={isLoading}
       >
         {/* Mobile cards */}
@@ -525,7 +525,7 @@ function OverdueSection({ rows, agedReport, isLoading }: Readonly<{
       <ReportCard
         title="الفواتير المتأخرة حسب as-of"
         description="الفواتير المتأخرة المحسوبة من خدمة arrears الحالية حسب تاريخ الاحتساب."
-        action={<Button variant="secondary" onClick={() => downloadCsv(buildReportCsvFilename('overdue-invoices'), rows)}><FileSpreadsheet className="ml-2 size-4" />تصدير CSV</Button>}
+        action={<Button variant="secondary" onClick={() => downloadCsv(buildReportCsvFilename('overdue-invoices'), rows)}><FileSpreadsheet className="me-2 size-4" />تصدير CSV</Button>}
         isLoading={isLoading}
       >
         {/* Mobile cards */}
@@ -580,7 +580,7 @@ function OverdueSection({ rows, agedReport, isLoading }: Readonly<{
       <ReportCard
         title="تقادم الذمم حسب الفئة العمرية"
         description="ملخص أعمار الذمم والفواتير المتراكمة في كل فئة عمرية."
-        action={<Button variant="secondary" onClick={() => downloadCsv(buildReportCsvFilename('aged-receivables'), bucketRows.map((row) => ({ bucket: row.bucket, total: row.total, invoiceCount: row.invoiceCount })))}><FileSpreadsheet className="ml-2 size-4" />تصدير CSV</Button>}
+        action={<Button variant="secondary" onClick={() => downloadCsv(buildReportCsvFilename('aged-receivables'), bucketRows.map((row) => ({ bucket: row.bucket, total: row.total, invoiceCount: row.invoiceCount })))}><FileSpreadsheet className="me-2 size-4" />تصدير CSV</Button>}
         isLoading={isLoading}
       >
         <div className="grid gap-3 p-4 sm:grid-cols-2 lg:grid-cols-5">
@@ -617,7 +617,7 @@ function ExpensesSection({ report, isLoading }: Readonly<{
     <ReportCard
       title="تحليل المصروفات للفترة"
       description="تفصيل المصروفات حسب التصنيف والعقار من تقرير المصروفات الموجود."
-      action={<Button variant="secondary" onClick={() => downloadCsv(buildReportCsvFilename('expense-breakdown'), [...categoryRows, ...propertyRows])}><FileSpreadsheet className="ml-2 size-4" />تصدير CSV</Button>}
+      action={<Button variant="secondary" onClick={() => downloadCsv(buildReportCsvFilename('expense-breakdown'), [...categoryRows, ...propertyRows])}><FileSpreadsheet className="me-2 size-4" />تصدير CSV</Button>}
       isLoading={isLoading}
     >
       <div className="grid gap-3 p-4 sm:grid-cols-3">

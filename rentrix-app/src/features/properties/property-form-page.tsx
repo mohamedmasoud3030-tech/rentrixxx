@@ -79,7 +79,7 @@ export function PropertyFormPage() {
           <CardTitle>{isEdit ? 'تعديل عقار' : 'إضافة عقار جديد'}</CardTitle>
           <CardDescription>أدخل بيانات العقار الأساسية. اسم المالك هنا للعرض الخفيف فقط وليس ربط ملكية أو حسابات ملاك.</CardDescription>
         </div>
-        <Button variant="secondary" asChild><Link to="/properties"><ArrowRight className="ml-2 size-4" />العودة</Link></Button>
+        <Button variant="secondary" asChild><Link to="/properties"><ArrowRight className="me-2 size-4" />العودة</Link></Button>
       </CardHeader>
       <CardContent>
         <form

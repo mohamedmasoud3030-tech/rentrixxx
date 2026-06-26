@@ -46,7 +46,7 @@ export function PeopleListPage() {
             <h2 className="text-xl font-black">الأشخاص</h2>
             <p className="text-sm text-muted-foreground">جدول موحد للمستأجرين والملاك وجهات الاتصال.</p>
           </div>
-          <Button onClick={openCreate}><Plus className="ml-2 size-4" />إضافة شخص</Button>
+          <Button onClick={openCreate}><Plus className="me-2 size-4" />إضافة شخص</Button>
         </div>
 
         <Card>
