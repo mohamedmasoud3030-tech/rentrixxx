@@ -11,17 +11,29 @@ import { buildContractsCsvBlob, buildContractsCsvFilename } from './contractList
 import { useCompanySettingsContract } from '../settings/useCompanySettings';
 import { useContractFilters } from './hooks/useContractFilters';
 import { useContracts, useSoftDeleteContract } from './useContracts';
+import { toast } from 'sonner';
 import type { ContractListItem, ContractStatusFilter } from './services/contractService';
 
 function exportContractsCsv(contracts: ContractListItem[]) {
-  const url = URL.createObjectURL(buildContractsCsvBlob(contracts));
-  const link = document.createElement('a');
-  link.href = url;
-  link.download = buildContractsCsvFilename(new Date());
-  document.body.append(link);
-  link.click();
-  link.remove();
-  URL.revokeObjectURL(url);
+  try {
+    const url = URL.createObjectURL(buildContractsCsvBlob(contracts));
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = buildContractsCsvFilename(new Date());
+
+    try {
+      link.click();
+    } catch {
+      const click = document.createEvent('MouseEvents');
+      click.initEvent('click', true, true);
+      link.dispatchEvent(click);
+    }
+
+    setTimeout(() => URL.revokeObjectURL(url), 100);
+  } catch (error) {
+    console.error('Failed to export contracts CSV:', error);
+    toast.error('تعذر تصدير الملف');
+  }
 }
 
 export function ContractsListPage() {
