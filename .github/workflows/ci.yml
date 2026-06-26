@@ -29,14 +29,14 @@ jobs:
       - run: pnpm typecheck
       - run: pnpm lint
       - run: pnpm build
-      - run: pnpm --filter ./artifacts/rentrix run typecheck:test
-      - run: pnpm --filter ./artifacts/rentrix test
+      - run: pnpm --filter ./rentrix-app run typecheck:test
+      - run: pnpm --filter ./rentrix-app test
       - name: Run financial tests
         id: financial-tests
         shell: bash
         run: |
           set +e
-          pnpm --filter ./artifacts/rentrix run test:financials > /tmp/rentrix-financial-tests.log 2>&1
+          pnpm --filter ./rentrix-app run test:financials > /tmp/rentrix-financial-tests.log 2>&1
           status=$?
           echo "status=$status" >> "$GITHUB_OUTPUT"
           tail -n 160 /tmp/rentrix-financial-tests.log
