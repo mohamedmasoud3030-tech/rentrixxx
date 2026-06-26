@@ -31,7 +31,7 @@ export function useUpdateContract(contractId: string) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (payload: ContractPayload) => updateContract(contractId, payload),
-    onSuccess: async () => { await Promise.all([queryClient.invalidateQueries({ queryKey: contractKeys.lists() }), queryClient.invalidateQueries({ queryKey: contractKeys.detail(contractId) })]); toast.success('تم تحديث العقد بنجاح'); },
+    onSuccess: async () => { await queryClient.invalidateQueries({ queryKey: contractKeys.lists() }); queryClient.removeQueries({ queryKey: contractKeys.detail(contractId) }); toast.success('تم تحديث العقد بنجاح'); },
     onError: (error) => toast.error(error instanceof Error ? error.message : 'تعذر تحديث العقد'),
   });
 }
@@ -40,7 +40,7 @@ export function useSoftDeleteContract() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (contractId: string) => softDeleteContract(contractId),
-    onSuccess: async () => { await queryClient.invalidateQueries({ queryKey: contractKeys.all }); toast.success('تم حذف العقد أرشيفياً'); },
+    onSuccess: async (_data, contractId) => { await queryClient.invalidateQueries({ queryKey: contractKeys.lists() }); queryClient.removeQueries({ queryKey: contractKeys.detail(contractId) }); toast.success('تم حذف العقد أرشيفياً'); },
     onError: (error) => toast.error(error instanceof Error ? error.message : 'تعذر حذف العقد'),
   });
 }
@@ -49,7 +49,7 @@ export function useRenewContract(contractId: string) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (payload: RenewalPayload) => renewContract(contractId, payload),
-    onSuccess: async () => { await queryClient.invalidateQueries({ queryKey: contractKeys.all }); toast.success('تم تجديد العقد وإنشاء عقد جديد'); },
+    onSuccess: async () => { await queryClient.invalidateQueries({ queryKey: contractKeys.lists() }); queryClient.removeQueries({ queryKey: contractKeys.detail(contractId) }); toast.success('تم تجديد العقد وإنشاء عقد جديد'); },
     onError: (error) => toast.error(error instanceof Error ? error.message : 'تعذر تجديد العقد'),
   });
 }
