@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { PageStateCard, WriteErrorCard } from '@/components/page-state-card';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { InlineStatCard } from '@/components/ui/inline-stat-card';
 import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
 import { StatusBadge } from '@/components/ui/status-badge';
@@ -47,7 +48,7 @@ export function LeadsView(props: Props) {
           <div><CardTitle className="flex items-center gap-2"><ContactRound className="size-5" /> العملاء المحتملون</CardTitle><CardDescription>تسجيل مصادر العملاء وحالة المتابعة وربط التحويل لاحقاً بجهات التعامل المناسبة.</CardDescription></div>
           <Button onClick={onCreate}><Plus className="me-2 size-4" />إضافة عميل محتمل</Button>
         </CardHeader>
-        <CardContent className="grid gap-3 sm:grid-cols-3"><Summary label="إجمالي العملاء" value={String(rows.length)} /><Summary label="قيد المتابعة" value={String(openLeads)} /><Summary label="محولون" value={String(rows.filter((row) => row.status === 'converted').length)} /></CardContent>
+        <CardContent className="grid gap-3 sm:grid-cols-3"><InlineStatCard label="إجمالي العملاء" value={String(rows.length)} /><InlineStatCard label="قيد المتابعة" value={String(openLeads)} /><InlineStatCard label="محولون" value={String(rows.filter((row) => row.status === 'converted').length)} /></CardContent>
       </Card>
 
       <Card><CardContent className="grid gap-3 pt-6 md:grid-cols-[1fr_12rem_12rem]"><Input value={filters.query} onChange={(event) => onFiltersChange({ ...filters, query: event.target.value })} placeholder="بحث بالاسم، الهاتف، البريد، نوع الوحدة" aria-label="بحث العملاء المحتملين" /><Select value={filters.status} onChange={(event) => onFiltersChange({ ...filters, status: event.target.value })}><option value="all">كل الحالات</option>{Object.entries(statusLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</Select><Select value={filters.source} onChange={(event) => onFiltersChange({ ...filters, source: event.target.value })}><option value="all">كل المصادر</option>{Object.entries(sourceLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</Select></CardContent></Card>
@@ -77,10 +78,6 @@ export function LeadsView(props: Props) {
       </Dialog>
     </section>
   );
-}
-
-function Summary({ label, value }: Readonly<{ label: string; value: string }>) {
-  return <div className="rounded-2xl border bg-background/70 p-4"><p className="text-xs font-bold text-muted-foreground">{label}</p><p className="mt-1 text-2xl font-black">{value}</p></div>;
 }
 
 function Field({ label, children }: Readonly<{ label: string; children: ReactNode }>) {

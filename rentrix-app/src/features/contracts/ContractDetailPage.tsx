@@ -4,6 +4,7 @@ import { ArrowLeft, CalendarDays, Edit, RefreshCw, ShieldAlert, WalletCards } fr
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { EmptyState } from '@/components/empty-state';
+import { PageHeader } from '@/components/layout/page-header';
 import { RouteLoadingState } from '@/components/loading-state';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -91,10 +92,18 @@ export function ContractDetailPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div><p className="text-sm font-black text-primary">العقد رقم #{contract.id.slice(0, 8)}</p><h2 className="text-3xl font-black">تفاصيل العقد</h2><p className="text-sm text-muted-foreground">عرض كامل للعقد وسجل مراحله.</p></div>
-        <div className="flex gap-2"><Button variant="secondary" asChild><Link to="/contracts"><ArrowLeft className="me-2 size-4" />العودة</Link></Button><Button variant="secondary" disabled={!renewalAllowed} onClick={() => { form.reset(getRenewalDefaults(contract)); setOpen(true); }}><RefreshCw className="me-2 size-4" />تجديد</Button><Button variant="secondary" onClick={exportContractPdf}>تصدير PDF</Button><Button asChild><Link to="/contracts/$contractId/edit" params={{ contractId }}><Edit className="me-2 size-4" />تعديل</Link></Button></div>
-      </div>
+      <PageHeader
+        title="تفاصيل العقد"
+        description={`العقد رقم #${contract.id.slice(0, 8)} — عرض كامل للعقد وسجل مراحله.`}
+        action={
+          <div className="flex gap-2">
+            <Button variant="secondary" asChild><Link to="/contracts"><ArrowLeft className="me-2 size-4" />العودة</Link></Button>
+            <Button variant="secondary" disabled={!renewalAllowed} onClick={() => { form.reset(getRenewalDefaults(contract)); setOpen(true); }}><RefreshCw className="me-2 size-4" />تجديد</Button>
+            <Button variant="secondary" onClick={exportContractPdf}>تصدير PDF</Button>
+            <Button asChild><Link to="/contracts/$contractId/edit" params={{ contractId }}><Edit className="me-2 size-4" />تعديل</Link></Button>
+          </div>
+        }
+      />
 
       <Card><CardHeader><CardTitle>بيانات العقد</CardTitle><CardDescription>الحقول الأساسية وربط العقار والوحدة والمستأجر.</CardDescription></CardHeader><CardContent className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">{details.map(([label, value]) => <Info key={label} label={label} value={value} />)}<div className="rounded-2xl border border-border bg-background p-4"><p className="text-xs font-bold text-muted-foreground">الحالة</p><div className="mt-2"><StatusBadge tone={contractStatusTone[contract.status]}>{contractStatusLabels[contract.status]}</StatusBadge></div></div><Info label="سبب الإلغاء" value={contract.status === 'terminated' ? contract.cancellation_reason?.trim() || '—' : 'غير مطبق'} /><div className="rounded-2xl border border-border bg-background p-4 md:col-span-2"><p className="text-xs font-bold text-muted-foreground">ملاحظات</p><p className="mt-1 leading-7">{contract.notes ?? '—'}</p></div></CardContent></Card>
 
