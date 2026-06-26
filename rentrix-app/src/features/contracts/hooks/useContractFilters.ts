@@ -6,9 +6,12 @@ import type { ContractListItem, ContractStatusFilter } from '../services/contrac
 export function normalizeSearchText(value: string) {
   return value
     .toLowerCase()
+    .trim()
     .replace(/[\u064B-\u065F\u0670\u06D6-\u06ED]/g, '')
     .replace(/[أإآ]/g, 'ا')
     .replace(/ى/g, 'ي')
+    .replace(/ة/g, 'ه')
+    .replace(/\s+/g, ' ')
     .replace(/[٠-٩]/g, (d) => String(d.charCodeAt(0) - 0x0660))
     .replace(/[۰-۹]/g, (d) => String(d.charCodeAt(0) - 0x06f0));
 }
@@ -41,7 +44,7 @@ export function useContractFilters({
   searchTerm: string;
   status: ContractStatusFilter;
 }) {
-  const normalizedSearch = normalizeSearchText(searchTerm.trim());
+  const normalizedSearch = normalizeSearchText(searchTerm);
 
   const filteredContracts = useMemo(() => {
     const contractList = contracts ?? [];
