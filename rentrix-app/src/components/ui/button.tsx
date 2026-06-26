@@ -3,12 +3,10 @@ import type { ButtonHTMLAttributes, ReactNode } from 'react';
 import { cn } from '@/lib/utils';
 
 type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger' | 'outline';
-type ButtonSize = 'sm' | 'md' | 'lg';
 
 type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
   asChild?: boolean;
   variant?: ButtonVariant;
-  size?: ButtonSize;
   children: ReactNode;
 };
 
@@ -20,20 +18,13 @@ const variants: Record<ButtonVariant, string> = {
   outline: 'border border-input bg-background text-foreground hover:bg-accent hover:text-accent-foreground',
 };
 
-const sizes: Record<ButtonSize, string> = {
-  sm: 'min-h-9 rounded-lg px-3 py-1.5 text-xs',
-  md: 'min-h-11 rounded-xl px-4 py-2 text-sm',
-  lg: 'min-h-12 rounded-xl px-5 py-3 text-base',
-};
-
-export function Button({ asChild = false, className, variant = 'primary', size = 'md', type = 'button', ...props }: ButtonProps) {
+export function Button({ asChild = false, className, variant = 'primary', type = 'button', ...props }: ButtonProps) {
   const Component = asChild ? Slot : 'button';
   return (
     <Component
       className={cn(
-        'pressable inline-flex cursor-pointer items-center justify-center font-bold shadow-sm outline-none focus-visible:ring-4 focus-visible:ring-primary/20 disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50',
+        'pressable inline-flex min-h-11 cursor-pointer items-center justify-center rounded-xl px-4 py-2 text-sm font-bold shadow-sm outline-none focus-visible:ring-4 focus-visible:ring-primary/20 disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50',
         variants[variant],
-        sizes[size],
         className,
       )}
       type={asChild ? undefined : type}
