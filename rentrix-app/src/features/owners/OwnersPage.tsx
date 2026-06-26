@@ -1,13 +1,15 @@
 import { Link } from '@tanstack/react-router';
-import { Building2, Eye, LinkIcon, Pencil, Plus, Search, Users } from 'lucide-react';
+import { Building2, Eye, LinkIcon, Pencil, Plus, Users } from 'lucide-react';
 import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { EmptyState } from '@/components/empty-state';
 import { EntityCell } from '@/components/ui/entity-cell';
 import { Input } from '@/components/ui/input';
+import { KpiCard } from '@/components/ui/kpi-card';
 import { OwnerCard } from '@/components/ui/owner-card';
 import { ResponsiveFormOverlay } from '@/components/ui/responsive-form-overlay';
+import { SearchInput } from '@/components/ui/search-input';
 import { Skeleton } from '@/components/ui/skeleton';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -44,30 +46,34 @@ import {
   type PropertyOwnershipLinkFormValues,
 } from './ownerUiHelpers';
 
+// ─── local types & helpers ───────────────────────────────────────────────────
+
 type FieldProps = Readonly<{ label: string; children: ReactNode }>;
+type EditingPropertyOwnerLink = Readonly<{ id: string; propertyId: string; ownerId: string }>;
+type LinkedPropertyItem = Readonly<{ property: PropertyWithOwners; links: PropertyOwner[] }>;
 
 function Field({ label, children }: FieldProps) {
   return <label className="space-y-2 text-sm font-bold"><span>{label}</span>{children}</label>;
 }
 
-type SummaryCardProps = Readonly<{ label: string; value: number; icon: typeof Users }>;
-type EditingPropertyOwnerLink = Readonly<{ id: string; propertyId: string; ownerId: string }>;
-type LinkedPropertyItem = Readonly<{ property: PropertyWithOwners; links: PropertyOwner[] }>;
-
 function getOwnerPageErrorMessage(error: unknown, fallback: string): string {
   return error instanceof Error ? error.message : fallback;
 }
 
-function SummaryCard({ label, value, icon: Icon }: SummaryCardProps) {
-  return (
-    <Card className="overflow-hidden">
-      <CardContent className="flex items-center justify-between gap-4 pt-6">
-        <div><p className="text-sm font-bold text-muted-foreground">{label}</p><p className="mt-2 text-3xl font-black">{value.toLocaleString('ar')}</p></div>
-        <div className="grid size-12 place-items-center rounded-2xl bg-primary/10 text-primary"><Icon className="size-6" /></div>
-      </CardContent>
-    </Card>
-  );
+function getLinkedPropertiesForOwner(owner: Owner | null, properties: PropertyWithOwners[]): LinkedPropertyItem[] {
+  if (!owner) return [];
+  return properties
+    .map((property) => ({ property, links: property.property_owners.filter((link) => link.owner_id === owner.id && isActivePropertyOwnerLink(link)) }))
+    .filter((item) => item.links.length > 0);
 }
+
+function getAvailablePropertiesForLink(owner: Owner | null, properties: PropertyWithOwners[], editingLink: EditingPropertyOwnerLink | null): PropertyWithOwners[] {
+  if (!owner) return [];
+  if (editingLink) return properties.filter((p) => p.id === editingLink.propertyId);
+  return properties.filter((p) => !p.property_owners.some((link) => link.owner_id === owner.id && isActivePropertyOwnerLink(link)));
+}
+
+// ─── sub-components ──────────────────────────────────────────────────────────
 
 type OwnerFormDialogProps = Readonly<{ owner: Owner | null; open: boolean; onOpenChange: (open: boolean) => void }>;
 
@@ -80,84 +86,55 @@ function OwnerFormDialog({ owner, open, onOpenChange }: OwnerFormDialogProps) {
   const isPending = createOwner.isPending || updateOwner.isPending;
 
   useEffect(() => {
-    if (open) {
-      setValues(ownerToFormValues(owner));
-      setError(null);
-    }
+    if (open) { setValues(ownerToFormValues(owner)); setError(null); }
   }, [open, owner]);
 
-  const setField = <FieldName extends keyof OwnerFormValues>(field: FieldName, value: OwnerFormValues[FieldName]) => {
-    setValues((current) => ({ ...current, [field]: value }));
+  const setField = <K extends keyof OwnerFormValues>(field: K, value: OwnerFormValues[K]) => {
+    setValues((cur) => ({ ...cur, [field]: value }));
     setError(null);
   };
 
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
     const validationError = validateOwnerForm(values);
-    if (validationError) {
-      setError(validationError);
-      return;
-    }
-
+    if (validationError) { setError(validationError); return; }
     const payload = {
-      full_name: values.full_name,
-      display_name: values.display_name,
-      phone: values.phone,
-      email: values.email,
-      national_id: values.national_id,
-      tax_number: values.tax_number,
-      address: values.address,
-      notes: values.notes,
-      is_active: values.is_active,
+      full_name: values.full_name, display_name: values.display_name, phone: values.phone,
+      email: values.email, national_id: values.national_id, tax_number: values.tax_number,
+      address: values.address, notes: values.notes, is_active: values.is_active,
     };
-
     try {
       if (owner) await updateOwner.mutateAsync(payload);
       else await createOwner.mutateAsync(payload);
       onOpenChange(false);
-    } catch (mutationError) {
-      setError(mutationError instanceof Error ? mutationError.message : 'تعذر حفظ بيانات المالك. تحقق من الصلاحيات وحاول مرة أخرى.');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'تعذر حفظ بيانات المالك. تحقق من الصلاحيات وحاول مرة أخرى.');
     }
   };
 
   return (
-    <ResponsiveFormOverlay
-      open={open}
-      onOpenChange={onOpenChange}
-      title={isEditing ? 'تعديل بيانات المالك' : 'إضافة مالك'}
-      description="بيانات تعريفية خفيفة للملاك بدون إضافة أرصدة أو تسويات مالية."
-      className="max-w-2xl"
-    >
-        <form className="grid gap-4" onSubmit={handleSubmit}>
-          {error ? <div className="rounded-2xl border border-destructive/20 bg-destructive/10 p-3 text-sm font-bold text-destructive">{error}</div> : null}
-          <div className="grid gap-4 md:grid-cols-2">
-            <Field label="اسم المالك *"><Input value={values.full_name} onChange={(event) => setField('full_name', event.target.value)} /></Field>
-            <Field label="الاسم المختصر"><Input value={values.display_name} onChange={(event) => setField('display_name', event.target.value)} /></Field>
-            <Field label="الهاتف"><Input value={values.phone} onChange={(event) => setField('phone', event.target.value)} /></Field>
-            <Field label="البريد الإلكتروني"><Input dir="ltr" value={values.email} onChange={(event) => setField('email', event.target.value)} /></Field>
-            <Field label="الرقم المدني"><Input value={values.national_id} onChange={(event) => setField('national_id', event.target.value)} /></Field>
-            <Field label="الرقم الضريبي"><Input value={values.tax_number} onChange={(event) => setField('tax_number', event.target.value)} /></Field>
-          </div>
-          <Field label="العنوان"><Textarea value={values.address} onChange={(event) => setField('address', event.target.value)} /></Field>
-          <Field label="ملاحظات"><Textarea value={values.notes} onChange={(event) => setField('notes', event.target.value)} /></Field>
-          <OwnerCheckbox checked={values.is_active} label="مالك نشط" onCheckedChange={(checked) => setField('is_active', checked)} />
-          <div className="safe-bottom-overlay -mx-4 flex flex-col-reverse gap-3 border-t border-border/60 px-4 pt-4 sm:mx-0 sm:flex-row sm:justify-end sm:border-0 sm:px-0 sm:pb-0"><Button type="button" variant="secondary" onClick={() => onOpenChange(false)}>إلغاء</Button><Button type="submit" disabled={isPending}>{isEditing ? 'حفظ التعديلات' : 'إنشاء المالك'}</Button></div>
-        </form>
+    <ResponsiveFormOverlay open={open} onOpenChange={onOpenChange} title={isEditing ? 'تعديل بيانات المالك' : 'إضافة مالك'} description="بيانات تعريفية خفيفة للملاك بدون إضافة أرصدة أو تسويات مالية." className="max-w-2xl">
+      <form className="grid gap-4" onSubmit={handleSubmit}>
+        {error ? <div className="rounded-2xl border border-destructive/20 bg-destructive/10 p-3 text-sm font-bold text-destructive">{error}</div> : null}
+        <div className="grid gap-4 md:grid-cols-2">
+          <Field label="اسم المالك *"><Input value={values.full_name} onChange={(e) => setField('full_name', e.target.value)} /></Field>
+          <Field label="الاسم المختصر"><Input value={values.display_name} onChange={(e) => setField('display_name', e.target.value)} /></Field>
+          <Field label="الهاتف"><Input value={values.phone} onChange={(e) => setField('phone', e.target.value)} /></Field>
+          <Field label="البريد الإلكتروني"><Input dir="ltr" value={values.email} onChange={(e) => setField('email', e.target.value)} /></Field>
+          <Field label="الرقم المدني"><Input value={values.national_id} onChange={(e) => setField('national_id', e.target.value)} /></Field>
+          <Field label="الرقم الضريبي"><Input value={values.tax_number} onChange={(e) => setField('tax_number', e.target.value)} /></Field>
+        </div>
+        <Field label="العنوان"><Textarea value={values.address} onChange={(e) => setField('address', e.target.value)} /></Field>
+        <Field label="ملاحظات"><Textarea value={values.notes} onChange={(e) => setField('notes', e.target.value)} /></Field>
+        <OwnerCheckbox checked={values.is_active} label="مالك نشط" onCheckedChange={(checked) => setField('is_active', checked)} />
+        <div className="safe-bottom-overlay -mx-4 flex flex-col-reverse gap-3 border-t border-border/60 px-4 pt-4 sm:mx-0 sm:flex-row sm:justify-end sm:border-0 sm:px-0 sm:pb-0">
+          <Button type="button" variant="secondary" onClick={() => onOpenChange(false)}>إلغاء</Button>
+          <Button type="submit" disabled={isPending}>{isEditing ? 'حفظ التعديلات' : 'إنشاء المالك'}</Button>
+        </div>
+      </form>
     </ResponsiveFormOverlay>
   );
 }
-
-type OwnerWorkspaceTableProps = Readonly<{
-  rows: OwnerWorkspaceRow[];
-  search: string;
-  selectedOwner: Owner | null;
-  onCreateOwner: () => void;
-  onEditOwner: (owner: Owner) => void;
-  onSearchChange: (search: string) => void;
-  onSelectOwner: (ownerId: string) => void;
-}>;
-
-type OwnerWorkspaceRowProps = Readonly<{ row: OwnerWorkspaceRow; selectedOwnerId: string | null; onEditOwner: (owner: Owner) => void; onSelectOwner: (ownerId: string) => void }>;
 
 function OwnerContact({ owner }: Readonly<{ owner: Owner }>) {
   return <div className="space-y-1 text-sm"><div dir="ltr" className="text-right">{owner.phone ?? '—'}</div><div dir="ltr" className="text-right text-muted-foreground">{owner.email ?? '—'}</div></div>;
@@ -165,13 +142,15 @@ function OwnerContact({ owner }: Readonly<{ owner: Owner }>) {
 
 function OwnerPropertyLinks({ row }: Readonly<{ row: OwnerWorkspaceRow }>) {
   if (!row.properties.length) return <span className="text-muted-foreground">—</span>;
-  return <div className="flex flex-wrap gap-2">{row.properties.map((property) => <Button key={`${row.owner.id}-${property.id}`} variant="secondary" className="min-h-8 px-3 text-xs" asChild><Link to="/properties/$propertyId" params={{ propertyId: property.id }}>{property.title}</Link></Button>)}</div>;
+  return <div className="flex flex-wrap gap-2">{row.properties.map((p) => <Button key={`${row.owner.id}-${p.id}`} variant="secondary" className="min-h-8 px-3 text-xs" asChild><Link to="/properties/$propertyId" params={{ propertyId: p.id }}>{p.title}</Link></Button>)}</div>;
 }
 
 function OwnershipSummary({ row }: Readonly<{ row: OwnerWorkspaceRow }>) {
   if (!row.properties.length) return <span className="text-muted-foreground">—</span>;
-  return <div className="space-y-1 text-xs text-muted-foreground">{row.properties.map((property) => <div key={`${row.owner.id}-${property.id}-ownership`}>{getOwnerPropertyOwnershipLabel(property)}</div>)}</div>;
+  return <div className="space-y-1 text-xs text-muted-foreground">{row.properties.map((p) => <div key={`${row.owner.id}-${p.id}-ownership`}>{getOwnerPropertyOwnershipLabel(p)}</div>)}</div>;
 }
+
+type OwnerWorkspaceRowProps = Readonly<{ row: OwnerWorkspaceRow; selectedOwnerId: string | null; onEditOwner: (owner: Owner) => void; onSelectOwner: (ownerId: string) => void }>;
 
 function OwnerWorkspaceRowView({ row, selectedOwnerId, onEditOwner, onSelectOwner }: OwnerWorkspaceRowProps) {
   const isSelected = row.owner.id === selectedOwnerId;
@@ -190,54 +169,113 @@ function OwnerWorkspaceRowView({ row, selectedOwnerId, onEditOwner, onSelectOwne
       <TableCell><OwnerPropertyLinks row={row} /></TableCell>
       <TableCell><OwnershipSummary row={row} /></TableCell>
       <TableCell>{row.activeContractCount > 0 ? row.activeContractCount.toLocaleString('ar') : '—'}</TableCell>
-      <TableCell><div className="flex flex-wrap gap-2"><Button type="button" variant="secondary" className="min-h-9 px-3" onClick={() => onSelectOwner(row.owner.id)}><Eye className="ml-1 size-4" />العلاقات</Button><Button type="button" variant="secondary" className="min-h-9 px-3" onClick={() => onEditOwner(row.owner)}><Pencil className="ml-1 size-4" />تعديل</Button></div></TableCell>
+      <TableCell>
+        <div className="flex flex-wrap gap-2">
+          <Button type="button" variant="secondary" className="min-h-9 px-3" onClick={() => onSelectOwner(row.owner.id)}><Eye className="ml-1 size-4" />العلاقات</Button>
+          <Button type="button" variant="secondary" className="min-h-9 px-3" onClick={() => onEditOwner(row.owner)}><Pencil className="ml-1 size-4" />تعديل</Button>
+        </div>
+      </TableCell>
     </TableRow>
   );
 }
 
-function OwnerTableContent({ rows, selectedOwner, onEditOwner, onSelectOwner }: Omit<OwnerWorkspaceTableProps, 'search' | 'onCreateOwner' | 'onSearchChange'>) {
-  return (
-    <>
-      {/* Mobile cards */}
-      <div className="grid gap-3 sm:grid-cols-2 md:hidden">
-        {rows.map((row) => (
-          <OwnerCard
-            key={row.owner.id}
-            id={row.owner.id}
-            displayName={getOwnerDisplayLabel(row.owner)}
-            fullName={row.owner.full_name}
-            phone={row.owner.phone}
-            email={row.owner.email}
-            propertyCount={row.propertyCount}
-            activeContractCount={row.activeContractCount}
-            onClick={() => onSelectOwner(row.owner.id)}
-          />
-        ))}
-      </div>
-
-      {/* Desktop table */}
-      <div className="hidden overflow-x-auto md:block">
-        <Table>
-          <TableHeader><TableRow><TableHead>اسم المالك</TableHead><TableHead>الهاتف والإيميل</TableHead><TableHead>عدد العقارات</TableHead><TableHead>أسماء العقارات</TableHead><TableHead>نسبة الملكية/الدور</TableHead><TableHead>العقود النشطة</TableHead><TableHead>روابط آمنة</TableHead></TableRow></TableHeader>
-          <TableBody>{rows.map((row) => <OwnerWorkspaceRowView key={row.owner.id} row={row} selectedOwnerId={selectedOwner?.id ?? null} onEditOwner={onEditOwner} onSelectOwner={onSelectOwner} />)}</TableBody>
-        </Table>
-      </div>
-    </>
-  );
-}
+type OwnerWorkspaceTableProps = Readonly<{
+  rows: OwnerWorkspaceRow[];
+  search: string;
+  selectedOwner: Owner | null;
+  onCreateOwner: () => void;
+  onEditOwner: (owner: Owner) => void;
+  onSearchChange: (search: string) => void;
+  onSelectOwner: (ownerId: string) => void;
+}>;
 
 function OwnerWorkspaceTable({ rows, search, selectedOwner, onCreateOwner, onEditOwner, onSearchChange, onSelectOwner }: OwnerWorkspaceTableProps) {
   const hasSearch = Boolean(search.trim());
-  const emptyState = <EmptyState title={hasSearch ? 'لا توجد نتائج مطابقة' : 'لا يوجد ملاك'} description={hasSearch ? 'جرّب البحث باسم أو هاتف أو بريد أو اسم عقار آخر.' : 'أضف أول مالك لبدء ربطه بالعقارات.'} action={hasSearch ? undefined : <Button onClick={onCreateOwner}>إضافة مالك</Button>} />;
+  const emptyState = (
+    <EmptyState
+      title={hasSearch ? 'لا توجد نتائج مطابقة' : 'لا يوجد ملاك'}
+      description={hasSearch ? 'جرّب البحث باسم أو هاتف أو بريد أو اسم عقار آخر.' : 'أضف أول مالك لبدء ربطه بالعقارات.'}
+      action={hasSearch ? undefined : <Button onClick={onCreateOwner}>إضافة مالك</Button>}
+    />
+  );
 
-  return <div className="space-y-4"><div className="relative"><Search className="pointer-events-none absolute right-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" /><Input className="pr-10" value={search} onChange={(event) => onSearchChange(event.target.value)} placeholder="بحث باسم المالك أو الهاتف أو الإيميل أو العقار" /></div>{rows.length > 0 ? <OwnerTableContent rows={rows} selectedOwner={selectedOwner} onEditOwner={onEditOwner} onSelectOwner={onSelectOwner} /> : emptyState}</div>;
+  return (
+    <div className="space-y-4">
+      <SearchInput
+        value={search}
+        onChange={onSearchChange}
+        placeholder="بحث باسم المالك أو الهاتف أو الإيميل أو العقار"
+      />
+      {rows.length > 0 ? (
+        <>
+          {/* Mobile cards */}
+          <div className="grid gap-3 sm:grid-cols-2 md:hidden">
+            {rows.map((row) => (
+              <OwnerCard
+                key={row.owner.id}
+                id={row.owner.id}
+                displayName={getOwnerDisplayLabel(row.owner)}
+                fullName={row.owner.full_name}
+                phone={row.owner.phone}
+                email={row.owner.email}
+                propertyCount={row.propertyCount}
+                activeContractCount={row.activeContractCount}
+                onClick={() => onSelectOwner(row.owner.id)}
+              />
+            ))}
+          </div>
+          {/* Desktop table */}
+          <div className="hidden overflow-x-auto md:block">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>اسم المالك</TableHead>
+                  <TableHead>الهاتف والإيميل</TableHead>
+                  <TableHead>عدد العقارات</TableHead>
+                  <TableHead>أسماء العقارات</TableHead>
+                  <TableHead>نسبة الملكية/الدور</TableHead>
+                  <TableHead>العقود النشطة</TableHead>
+                  <TableHead>روابط آمنة</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {rows.map((row) => (
+                  <OwnerWorkspaceRowView key={row.owner.id} row={row} selectedOwnerId={selectedOwner?.id ?? null} onEditOwner={onEditOwner} onSelectOwner={onSelectOwner} />
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        </>
+      ) : emptyState}
+    </div>
+  );
 }
 
-type OwnerRelationshipsListProps = Readonly<{ linkedProperties: LinkedPropertyItem[]; endLinkPending: boolean; onEditLink: (link: PropertyOwner) => void; onEndLink: (link: PropertyOwner) => void }>;
-
-function OwnerRelationshipsList({ linkedProperties, endLinkPending, onEditLink, onEndLink }: OwnerRelationshipsListProps) {
+function OwnerRelationshipsList({ linkedProperties, endLinkPending, onEditLink, onEndLink }: Readonly<{ linkedProperties: LinkedPropertyItem[]; endLinkPending: boolean; onEditLink: (link: PropertyOwner) => void; onEndLink: (link: PropertyOwner) => void }>) {
   if (!linkedProperties.length) return <p className="rounded-2xl border border-dashed border-border p-4 text-sm text-muted-foreground">لا توجد عقارات مرتبطة بهذا المالك بعد.</p>;
-  return linkedProperties.map(({ property, links }) => links.map((link) => <div key={link.id} className="rounded-2xl border border-border bg-muted/25 p-4"><div className="flex items-start justify-between gap-3"><div><p className="font-black">{property.title}</p><p className="text-xs text-muted-foreground">{property.address}</p></div><StatusBadge tone={link.is_primary ? 'blue' : 'gray'}>{link.is_primary ? 'أساسي' : 'ثانوي'}</StatusBadge></div><div className="mt-3 grid gap-2 text-sm text-muted-foreground sm:grid-cols-3"><span>نسبة الملكية: <b className="text-foreground">{link.ownership_percentage}%</b></span><span>من: <b className="text-foreground">{link.starts_on ?? '—'}</b></span><span>إلى: <b className="text-foreground">{link.ends_on ?? '—'}</b></span></div><div className="mt-4 flex flex-wrap gap-2"><Button type="button" variant="secondary" className="min-h-9 px-3" onClick={() => onEditLink(link)}>تعديل العلاقة</Button><Button type="button" variant="danger" className="min-h-9 px-3" disabled={endLinkPending} onClick={() => onEndLink(link)}>إنهاء العلاقة</Button></div></div>));
+  return (
+    <>
+      {linkedProperties.map(({ property, links }) =>
+        links.map((link) => (
+          <div key={link.id} className="rounded-2xl border border-border bg-muted/25 p-4">
+            <div className="flex items-start justify-between gap-3">
+              <div><p className="font-black">{property.title}</p><p className="text-xs text-muted-foreground">{property.address}</p></div>
+              <StatusBadge tone={link.is_primary ? 'blue' : 'gray'}>{link.is_primary ? 'أساسي' : 'ثانوي'}</StatusBadge>
+            </div>
+            <div className="mt-3 grid gap-2 text-sm text-muted-foreground sm:grid-cols-3">
+              <span>نسبة الملكية: <b className="text-foreground">{link.ownership_percentage}%</b></span>
+              <span>من: <b className="text-foreground">{link.starts_on ?? '—'}</b></span>
+              <span>إلى: <b className="text-foreground">{link.ends_on ?? '—'}</b></span>
+            </div>
+            <div className="mt-4 flex flex-wrap gap-2">
+              <Button type="button" variant="secondary" className="min-h-9 px-3" onClick={() => onEditLink(link)}>تعديل العلاقة</Button>
+              <Button type="button" variant="danger" className="min-h-9 px-3" disabled={endLinkPending} onClick={() => onEndLink(link)}>إنهاء العلاقة</Button>
+            </div>
+          </div>
+        ))
+      )}
+    </>
+  );
 }
 
 type OwnershipLinkFormProps = Readonly<{
@@ -248,7 +286,7 @@ type OwnershipLinkFormProps = Readonly<{
   isSaving: boolean;
   onCancelEdit: () => void;
   onSubmit: (event: FormEvent) => void;
-  onValueChange: <FieldName extends keyof PropertyOwnershipLinkFormValues>(field: FieldName, value: PropertyOwnershipLinkFormValues[FieldName]) => void;
+  onValueChange: <K extends keyof PropertyOwnershipLinkFormValues>(field: K, value: PropertyOwnershipLinkFormValues[K]) => void;
 }>;
 
 function OwnershipLinkForm({ values, availableProperties, editingLink, error, isSaving, onCancelEdit, onSubmit, onValueChange }: OwnershipLinkFormProps) {
@@ -258,27 +296,22 @@ function OwnershipLinkForm({ values, availableProperties, editingLink, error, is
       <h3 className="font-black">{isEditing ? 'تعديل علاقة الملكية' : 'ربط عقار'}</h3>
       <p className="mt-1 text-sm text-muted-foreground">{isEditing ? 'تحديث نسبة الملكية والحالة والتواريخ بدون إنشاء سجل مالي.' : 'إضافة علاقة ملكية بسيطة بدون إنشاء سجل مالي.'}</p>
       {error ? <div className="mt-3 rounded-2xl border border-destructive/20 bg-destructive/10 p-3 text-sm font-bold text-destructive">{error}</div> : null}
-      <div className="mt-4 grid gap-3 sm:grid-cols-[1fr_8rem]"><OwnerPropertySelect value={values.property_id} onValueChange={(propertyId) => onValueChange('property_id', propertyId)} disabled={isEditing || !availableProperties.length} properties={availableProperties} /><Input type="number" min="0.01" max="100" step="0.01" value={values.ownership_percentage} onChange={(event) => onValueChange('ownership_percentage', event.target.value)} aria-label="نسبة الملكية" /></div>
-      <div className="mt-3 grid gap-3 sm:grid-cols-2"><Field label="تاريخ البداية"><Input type="date" value={values.starts_on} onChange={(event) => onValueChange('starts_on', event.target.value)} /></Field><Field label="تاريخ النهاية"><Input type="date" value={values.ends_on} onChange={(event) => onValueChange('ends_on', event.target.value)} /></Field></div>
+      <div className="mt-4 grid gap-3 sm:grid-cols-[1fr_8rem]">
+        <OwnerPropertySelect value={values.property_id} onValueChange={(propertyId) => onValueChange('property_id', propertyId)} disabled={isEditing || !availableProperties.length} properties={availableProperties} />
+        <Input type="number" min="0.01" max="100" step="0.01" value={values.ownership_percentage} onChange={(e) => onValueChange('ownership_percentage', e.target.value)} aria-label="نسبة الملكية" />
+      </div>
+      <div className="mt-3 grid gap-3 sm:grid-cols-2">
+        <Field label="تاريخ البداية"><Input type="date" value={values.starts_on} onChange={(e) => onValueChange('starts_on', e.target.value)} /></Field>
+        <Field label="تاريخ النهاية"><Input type="date" value={values.ends_on} onChange={(e) => onValueChange('ends_on', e.target.value)} /></Field>
+      </div>
       <OwnerCheckbox checked={values.is_primary} label="مالك أساسي" onCheckedChange={(checked) => onValueChange('is_primary', checked)} className="mt-3 flex items-center gap-3 rounded-2xl border border-border bg-muted/30 p-3 text-sm font-bold" />
       <Button className="mt-3 w-full" type="submit" disabled={!values.property_id || isSaving}>{isEditing ? 'حفظ علاقة الملكية' : 'ربط المالك بالعقار'}</Button>
-      {isEditing ? <Button className="mt-2 w-full" type="button" variant="secondary" onClick={onCancelEdit}>إلغاء التعديل</Button> : null}
+      {isEditing && <Button className="mt-2 w-full" type="button" variant="secondary" onClick={onCancelEdit}>إلغاء التعديل</Button>}
     </form>
   );
 }
 
-function getLinkedPropertiesForOwner(owner: Owner | null, properties: PropertyWithOwners[]): LinkedPropertyItem[] {
-  if (!owner) return [];
-  return properties
-    .map((property) => ({ property, links: property.property_owners.filter((link) => link.owner_id === owner.id && isActivePropertyOwnerLink(link)) }))
-    .filter((item) => item.links.length > 0);
-}
-
-function getAvailablePropertiesForLink(owner: Owner | null, properties: PropertyWithOwners[], editingLink: EditingPropertyOwnerLink | null): PropertyWithOwners[] {
-  if (!owner) return [];
-  if (editingLink) return properties.filter((property) => property.id === editingLink.propertyId);
-  return properties.filter((property) => !property.property_owners.some((link) => link.owner_id === owner.id && isActivePropertyOwnerLink(link)));
-}
+// ─── main page ───────────────────────────────────────────────────────────────
 
 export function OwnersPage() {
   const ownersQuery = useOwners();
@@ -296,11 +329,11 @@ export function OwnersPage() {
 
   const owners = ownersQuery.data ?? [];
   const properties = propertiesQuery.data ?? [];
-  const propertyIds = useMemo(() => properties.map((property) => property.id), [properties]);
+  const propertyIds = useMemo(() => properties.map((p) => p.id), [properties]);
   const activeContractsQuery = useOwnerActiveContracts(propertyIds);
   const activeContracts = activeContractsQuery.data ?? [];
   const isSavingLink = linkMutation.isPending || updateLinkMutation.isPending;
-  const selectedOwner = owners.find((owner) => owner.id === selectedOwnerId) ?? owners[0] ?? null;
+  const selectedOwner = owners.find((o) => o.id === selectedOwnerId) ?? owners[0] ?? null;
   const summary = useMemo(() => summarizeOwners(owners, properties), [owners, properties]);
   const ownerWorkspaceRows = useMemo(() => buildOwnerWorkspaceRows(owners, properties, activeContracts), [activeContracts, owners, properties]);
   const filteredOwnerRows = useMemo(() => filterOwnerWorkspaceRows(ownerWorkspaceRows, ownerSearch), [ownerSearch, ownerWorkspaceRows]);
@@ -313,8 +346,14 @@ export function OwnersPage() {
 
   const openCreateForm = () => { setEditingOwner(null); setFormOpen(true); };
   const openEditForm = (owner: Owner) => { setEditingOwner(owner); setFormOpen(true); };
-  const setLinkField = <FieldName extends keyof PropertyOwnershipLinkFormValues>(field: FieldName, value: PropertyOwnershipLinkFormValues[FieldName]) => { setLinkFormValues((current) => ({ ...current, [field]: value })); setLinkFormError(null); };
-  const beginEditLink = (link: PropertyOwner) => { setEditingLink({ id: link.id, propertyId: link.property_id, ownerId: link.owner_id }); setLinkFormValues(propertyOwnerLinkToFormValues(link)); setLinkFormError(null); };
+  const setLinkField = <K extends keyof PropertyOwnershipLinkFormValues>(field: K, value: PropertyOwnershipLinkFormValues[K]) => {
+    setLinkFormValues((cur) => ({ ...cur, [field]: value })); setLinkFormError(null);
+  };
+  const beginEditLink = (link: PropertyOwner) => {
+    setEditingLink({ id: link.id, propertyId: link.property_id, ownerId: link.owner_id });
+    setLinkFormValues(propertyOwnerLinkToFormValues(link));
+    setLinkFormError(null);
+  };
   const resetLinkForm = () => { setEditingLink(null); setLinkFormValues(emptyPropertyOwnershipLinkFormValues); setLinkFormError(null); };
   const handleEndPropertyOwnership = async (link: PropertyOwner) => {
     try {
@@ -344,7 +383,9 @@ export function OwnersPage() {
     await Promise.all([ownersQuery.refetch(), propertiesQuery.refetch(), activeContractsQuery.refetch()]);
   };
 
-  if (ownersQuery.isLoading || propertiesQuery.isLoading || activeContractsQuery.isLoading) return <div className="space-y-4">{Array.from({ length: 5 }, (_, index) => <Skeleton key={index} className="h-24" />)}</div>;
+  if (ownersQuery.isLoading || propertiesQuery.isLoading || activeContractsQuery.isLoading) {
+    return <div className="space-y-4">{Array.from({ length: 5 }, (_, i) => <Skeleton key={i} className="h-24" />)}</div>;
+  }
 
   if (hasLoadError) {
     return (
@@ -358,12 +399,61 @@ export function OwnersPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-3"><div><h2 className="text-xl font-black">إدارة الملاك</h2><p className="text-sm text-muted-foreground">إدارة علاقات ملكية العقارات بشكل منفصل عن الحسابات والتسويات المالية.</p></div><Button onClick={openCreateForm}><Plus className="ml-2 size-4" />إضافة مالك</Button></div>
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4"><SummaryCard label="إجمالي الملاك" value={summary.totalOwners} icon={Users} /><SummaryCard label="الملاك النشطون" value={summary.activeOwners} icon={Users} /><SummaryCard label="عقارات مرتبطة" value={summary.linkedPropertiesCount} icon={Building2} /><SummaryCard label="عقارات بلا علاقة مالك" value={summary.propertiesWithoutLinkedOwner} icon={LinkIcon} /></div>
-      <div className="grid gap-6 xl:grid-cols-[minmax(0,1.1fr)_minmax(24rem,0.9fr)]">
-        <Card className="overflow-hidden"><CardHeader><CardTitle>مساحة عمل الملاك</CardTitle><CardDescription>ملخص آمن من بيانات الملاك والعقارات والعقود الحالية بدون أرصدة أو تسويات افتراضية.</CardDescription></CardHeader><CardContent><OwnerWorkspaceTable rows={filteredOwnerRows} search={ownerSearch} selectedOwner={selectedOwner} onCreateOwner={openCreateForm} onEditOwner={openEditForm} onSearchChange={setOwnerSearch} onSelectOwner={setSelectedOwnerId} /></CardContent></Card>
-        <Card><CardHeader><CardTitle>علاقات الملكية</CardTitle><CardDescription>{selectedOwner ? `العقارات المرتبطة بـ ${getOwnerDisplayLabel(selectedOwner)}` : 'اختر مالكاً لعرض علاقات الملكية.'}</CardDescription></CardHeader><CardContent className="space-y-5">{selectedOwner ? <><div className="space-y-3"><OwnerRelationshipsList linkedProperties={linkedProperties} endLinkPending={unlinkMutation.isPending} onEditLink={beginEditLink} onEndLink={handleEndPropertyOwnership} /></div><OwnershipLinkForm values={linkFormValues} availableProperties={availableProperties} editingLink={editingLink} error={linkFormError} isSaving={isSavingLink} onCancelEdit={resetLinkForm} onSubmit={handleLinkProperty} onValueChange={setLinkField} /></> : null}</CardContent></Card>
+      {/* Header */}
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h2 className="text-xl font-black">إدارة الملاك</h2>
+          <p className="text-sm text-muted-foreground">إدارة علاقات ملكية العقارات بشكل منفصل عن الحسابات والتسويات المالية.</p>
+        </div>
+        <Button onClick={openCreateForm}><Plus className="ml-2 size-4" />إضافة مالك</Button>
       </div>
+
+      {/* KPI grid */}
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <KpiCard label="إجمالي الملاك" value={summary.totalOwners} icon={Users} accent="primary" />
+        <KpiCard label="الملاك النشطون" value={summary.activeOwners} icon={Users} accent="emerald" />
+        <KpiCard label="عقارات مرتبطة" value={summary.linkedPropertiesCount} icon={Building2} accent="sky" />
+        <KpiCard label="عقارات بلا مالك" value={summary.propertiesWithoutLinkedOwner} icon={LinkIcon} accent="amber" />
+      </div>
+
+      {/* Workspace */}
+      <div className="grid gap-6 xl:grid-cols-[minmax(0,1.1fr)_minmax(24rem,0.9fr)]">
+        <Card className="overflow-hidden">
+          <CardHeader>
+            <CardTitle>مساحة عمل الملاك</CardTitle>
+            <CardDescription>ملخص آمن من بيانات الملاك والعقارات والعقود الحالية بدون أرصدة أو تسويات افتراضية.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <OwnerWorkspaceTable
+              rows={filteredOwnerRows}
+              search={ownerSearch}
+              selectedOwner={selectedOwner}
+              onCreateOwner={openCreateForm}
+              onEditOwner={openEditForm}
+              onSearchChange={setOwnerSearch}
+              onSelectOwner={setSelectedOwnerId}
+            />
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>علاقات الملكية</CardTitle>
+            <CardDescription>{selectedOwner ? `العقارات المرتبطة بـ ${getOwnerDisplayLabel(selectedOwner)}` : 'اختر مالكاً لعرض علاقات الملكية.'}</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-5">
+            {selectedOwner ? (
+              <>
+                <div className="space-y-3">
+                  <OwnerRelationshipsList linkedProperties={linkedProperties} endLinkPending={unlinkMutation.isPending} onEditLink={beginEditLink} onEndLink={handleEndPropertyOwnership} />
+                </div>
+                <OwnershipLinkForm values={linkFormValues} availableProperties={availableProperties} editingLink={editingLink} error={linkFormError} isSaving={isSavingLink} onCancelEdit={resetLinkForm} onSubmit={handleLinkProperty} onValueChange={setLinkField} />
+              </>
+            ) : null}
+          </CardContent>
+        </Card>
+      </div>
+
       <OwnerFormDialog owner={editingOwner} open={formOpen} onOpenChange={setFormOpen} />
     </div>
   );
