@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { ContractFilters } from './components/ContractFilters';
 import { ContractKpiGrid } from './components/ContractKpiGrid';
 import { ContractListHeader } from './components/ContractListHeader';
@@ -20,15 +20,7 @@ function exportContractsCsv(contracts: ContractListItem[]) {
     const link = document.createElement('a');
     link.href = url;
     link.download = buildContractsCsvFilename(new Date());
-
-    try {
-      link.click();
-    } catch {
-      const click = document.createEvent('MouseEvents');
-      click.initEvent('click', true, true);
-      link.dispatchEvent(click);
-    }
-
+    link.click();
     setTimeout(() => URL.revokeObjectURL(url), 100);
   } catch (error) {
     console.error('Failed to export contracts CSV:', error);
@@ -47,12 +39,18 @@ export function ContractsListPage() {
   const [page, setPage] = useState(1);
   const pageSize = 10;
 
-  const params = useMemo(() => ({ status, page, pageSize }), [status, page]);
+  // When search or expiringOnly is active, fetch all rows so client-side
+  // filtering works across the full dataset — not just the current page.
+  const hasClientFilter = Boolean(searchTerm.trim()) || expiringOnly;
+  const params = useMemo(
+    () => ({ status, page: hasClientFilter ? 1 : page, pageSize: hasClientFilter ? 5000 : pageSize }),
+    [status, page, hasClientFilter],
+  );
   const contractsQuery = useContracts(params);
   const companySettings = useCompanySettingsContract();
   const deleteMutation = useSoftDeleteContract();
   const contracts = contractsQuery.data?.rows ?? [];
-  const totalPages = Math.max(1, Math.ceil((contractsQuery.data?.count ?? 0) / pageSize));
+  const totalPages = hasClientFilter ? 1 : Math.max(1, Math.ceil((contractsQuery.data?.count ?? 0) / pageSize));
 
   const { filteredContracts, hasActiveFilters, hasContracts } = useContractFilters({
     contracts,
@@ -61,11 +59,15 @@ export function ContractsListPage() {
     status,
   });
 
-  useEffect(() => {
-    if (contractsQuery.isError && contractsQuery.isPending === false) {
-      toast.error('تعذر تحميل العقود — إعادة المحاولة...');
-    }
-  }, [contractsQuery.isError, contractsQuery.isPending]);
+  // Show error toast once per error occurrence (not on every retry attempt)
+  const errorToastShownRef = useRef(false);
+  if (contractsQuery.isError && !errorToastShownRef.current) {
+    errorToastShownRef.current = true;
+    toast.error('تعذر تحميل العقود');
+  }
+  if (!contractsQuery.isError) {
+    errorToastShownRef.current = false;
+  }
 
   const openCreate = () => { setEditContractId(undefined); setModalOpen(true); };
   const openEdit = (id: string) => { setEditContractId(id); setModalOpen(true); };
@@ -118,25 +120,27 @@ export function ContractsListPage() {
           setExpandedId={setExpandedId}
         />
 
-        <div className="flex items-center justify-between text-sm text-muted-foreground">
-          <span>الصفحة {page} من {totalPages}</span>
-          <div className="flex gap-2">
-            <Button
-              variant="secondary"
-              disabled={page <= 1}
-              onClick={() => setPage((value) => Math.max(1, value - 1))}
-            >
-              السابق
-            </Button>
-            <Button
-              variant="secondary"
-              disabled={page >= totalPages}
-              onClick={() => setPage((value) => Math.min(totalPages, value + 1))}
-            >
-              التالي
-            </Button>
+        {!hasClientFilter && totalPages > 1 && (
+          <div className="flex items-center justify-between text-sm text-muted-foreground">
+            <span>الصفحة {page} من {totalPages}</span>
+            <div className="flex gap-2">
+              <Button
+                variant="secondary"
+                disabled={page <= 1}
+                onClick={() => setPage((value) => Math.max(1, value - 1))}
+              >
+                السابق
+              </Button>
+              <Button
+                variant="secondary"
+                disabled={page >= totalPages}
+                onClick={() => setPage((value) => Math.min(totalPages, value + 1))}
+              >
+                التالي
+              </Button>
+            </div>
           </div>
-        </div>
+        )}
       </div>
 
       <ContractFormModal open={modalOpen} onClose={closeModal} contractId={editContractId} />
