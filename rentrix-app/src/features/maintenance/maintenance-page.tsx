@@ -190,7 +190,7 @@ export function MaintenancePage() {
           </Select>
         </div>
         <Button type="button" onClick={() => setShowForm((v) => !v)}>
-          <PlusCircle className="ml-2 size-4" />
+          <PlusCircle className="me-2 size-4" />
           {showForm ? 'إلغاء' : 'طلب صيانة جديد'}
         </Button>
       </div>

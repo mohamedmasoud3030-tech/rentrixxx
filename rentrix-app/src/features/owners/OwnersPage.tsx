@@ -171,8 +171,8 @@ function OwnerWorkspaceRowView({ row, selectedOwnerId, onEditOwner, onSelectOwne
       <TableCell>{row.activeContractCount > 0 ? row.activeContractCount.toLocaleString('ar') : '—'}</TableCell>
       <TableCell>
         <div className="flex flex-wrap gap-2">
-          <Button type="button" variant="secondary" className="min-h-9 px-3" onClick={() => onSelectOwner(row.owner.id)}><Eye className="ml-1 size-4" />العلاقات</Button>
-          <Button type="button" variant="secondary" className="min-h-9 px-3" onClick={() => onEditOwner(row.owner)}><Pencil className="ml-1 size-4" />تعديل</Button>
+          <Button type="button" variant="secondary" className="min-h-9 px-3" onClick={() => onSelectOwner(row.owner.id)}><Eye className="me-1 size-4" />العلاقات</Button>
+          <Button type="button" variant="secondary" className="min-h-9 px-3" onClick={() => onEditOwner(row.owner)}><Pencil className="me-1 size-4" />تعديل</Button>
         </div>
       </TableCell>
     </TableRow>
@@ -405,7 +405,7 @@ export function OwnersPage() {
           <h2 className="text-xl font-black">إدارة الملاك</h2>
           <p className="text-sm text-muted-foreground">إدارة علاقات ملكية العقارات بشكل منفصل عن الحسابات والتسويات المالية.</p>
         </div>
-        <Button onClick={openCreateForm}><Plus className="ml-2 size-4" />إضافة مالك</Button>
+        <Button onClick={openCreateForm}><Plus className="me-2 size-4" />إضافة مالك</Button>
       </div>
 
       {/* KPI grid */}

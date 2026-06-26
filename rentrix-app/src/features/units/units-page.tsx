@@ -84,7 +84,7 @@ export function UnitsPage() {
           <h2 className="text-3xl font-black tracking-tight">الوحدات</h2>
           <p className="mt-1 max-w-2xl text-sm leading-7 text-muted-foreground">عرض تشغيلي لكل الوحدات المسجلة مع روابط مباشرة للعقارات، مع إبقاء إضافة وتعديل الوحدات داخل صفحة العقار المرتبط.</p>
         </div>
-        <Button asChild><Link to="/properties"><Building2 className="ml-2 size-4" />العقارات</Link></Button>
+        <Button asChild><Link to="/properties"><Building2 className="me-2 size-4" />العقارات</Link></Button>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">

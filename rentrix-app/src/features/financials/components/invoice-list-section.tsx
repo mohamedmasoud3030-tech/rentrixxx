@@ -122,7 +122,7 @@ export function InvoiceListSection({
                         onClick={() => onPrintInvoice(invoice.id)}
                         title="طباعة الفاتورة"
                       >
-                        <Printer className="size-4 ml-1" />
+                        <Printer className="size-4 me-1" />
                         طباعة
                       </Button>
                     )}
@@ -134,7 +134,7 @@ export function InvoiceListSection({
                         onClick={() => onExportInvoice(invoice.id)}
                         title="تنزيل PDF"
                       >
-                        <Download className="size-4 ml-1" />
+                        <Download className="size-4 me-1" />
                         PDF
                       </Button>
                     )}
