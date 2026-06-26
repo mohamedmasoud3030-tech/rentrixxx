@@ -11,7 +11,12 @@ export const contractKeys = {
 };
 
 export function useContracts(params: ContractListParams) {
-  return useQuery({ queryKey: contractKeys.list(params), queryFn: () => listContracts(params) });
+  return useQuery({
+    queryKey: contractKeys.list(params),
+    queryFn: () => listContracts(params),
+    retry: 2,
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
+  });
 }
 
 export function useContract(contractId: string) {

@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { ContractFilters } from './components/ContractFilters';
 import { ContractKpiGrid } from './components/ContractKpiGrid';
 import { ContractListHeader } from './components/ContractListHeader';
@@ -60,6 +60,12 @@ export function ContractsListPage() {
     searchTerm,
     status,
   });
+
+  useEffect(() => {
+    if (contractsQuery.isError && contractsQuery.isPending === false) {
+      toast.error('تعذر تحميل العقود — إعادة المحاولة...');
+    }
+  }, [contractsQuery.isError, contractsQuery.isPending]);
 
   const openCreate = () => { setEditContractId(undefined); setModalOpen(true); };
   const openEdit = (id: string) => { setEditContractId(id); setModalOpen(true); };
