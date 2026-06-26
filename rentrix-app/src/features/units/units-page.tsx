@@ -2,6 +2,7 @@ import { Link } from '@tanstack/react-router';
 import { Building2, DoorOpen, Home } from 'lucide-react';
 import { useDeferredValue, useMemo, useState } from 'react';
 import { EmptyState } from '@/components/empty-state';
+import { PageHeader } from '@/components/layout/page-header';
 import { RouteLoadingState } from '@/components/loading-state';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -78,14 +79,11 @@ export function UnitsPage() {
 
   return (
     <div className="space-y-6" dir="rtl">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <p className="text-sm font-black text-primary">إدارة الوحدات</p>
-          <h2 className="text-3xl font-black tracking-tight">الوحدات</h2>
-          <p className="mt-1 max-w-2xl text-sm leading-7 text-muted-foreground">عرض تشغيلي لكل الوحدات المسجلة مع روابط مباشرة للعقارات، مع إبقاء إضافة وتعديل الوحدات داخل صفحة العقار المرتبط.</p>
-        </div>
-        <Button asChild><Link to="/properties"><Building2 className="me-2 size-4" />العقارات</Link></Button>
-      </div>
+      <PageHeader
+        title="الوحدات"
+        description="عرض تشغيلي لكل الوحدات المسجلة مع روابط مباشرة للعقارات، مع إبقاء إضافة وتعديل الوحدات داخل صفحة العقار المرتبط."
+        action={<Button asChild><Link to="/properties"><Building2 className="me-2 size-4" />العقارات</Link></Button>}
+      />
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <KpiCard label="إجمالي الوحدات" value={units.length.toLocaleString(locale)} sub="كل الوحدات النشطة" icon={DoorOpen} accent="primary" />

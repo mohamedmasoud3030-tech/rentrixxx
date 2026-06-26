@@ -4,7 +4,9 @@ import { Button } from '@/components/ui/button';
 import { PageStateCard, WriteErrorCard } from '@/components/page-state-card';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { InlineStatCard } from '@/components/ui/inline-stat-card';
 import { Input } from '@/components/ui/input';
+import { PageHeader } from '@/components/layout/page-header';
 import { Select } from '@/components/ui/select';
 import { StatusBadge } from '@/components/ui/status-badge';
 import type { CommissionFilters, CommissionFormValues, CommissionRecord } from '../types';
@@ -46,13 +48,16 @@ export function CommissionsView(props: Props) {
 
   return (
     <section className="space-y-5">
-      <Card className="border-primary/10 bg-gradient-to-l from-primary/10 via-card to-card">
-        <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div><CardTitle className="flex items-center gap-2"><BadgeDollarSign className="size-5" /> العمولات</CardTitle><CardDescription>تتبع تشغيلي لعمولات المكتب والوسطاء حسب الحالة والمصدر، ولا يعتمد صرفاً أو مطابقة مالية.</CardDescription></div>
-          <Button onClick={onCreate}><Plus className="me-2 size-4" />إضافة عمولة</Button>
-        </CardHeader>
-        <CardContent className="grid gap-3 sm:grid-cols-3"><Summary label="إجمالي السجلات" value={String(rows.length)} /><Summary label="قيد المراجعة/التتبع" value={money(pendingTotal)} /><Summary label="مسجلة كمدفوعة" value={money(paidTotal)} /></CardContent>
-      </Card>
+      <PageHeader
+        title="العمولات"
+        description="تتبع تشغيلي لعمولات المكتب والوسطاء حسب الحالة والمصدر، ولا يعتمد صرفاً أو مطابقة مالية."
+        action={<Button onClick={onCreate}><Plus className="me-2 size-4" />إضافة عمولة</Button>}
+      />
+      <div className="grid gap-3 sm:grid-cols-3">
+        <InlineStatCard label="إجمالي السجلات" value={String(rows.length)} />
+        <InlineStatCard label="قيد المراجعة/التتبع" value={money(pendingTotal)} />
+        <InlineStatCard label="مسجلة كمدفوعة" value={money(paidTotal)} />
+      </div>
 
       <Card><CardContent className="grid gap-3 pt-6 md:grid-cols-[1fr_12rem_12rem]"><Input value={filters.query} onChange={(event) => onFiltersChange({ ...filters, query: event.target.value })} placeholder="بحث بالموظف، المصدر، النوع" aria-label="بحث العمولات" /><Select value={filters.status} onChange={(event) => onFiltersChange({ ...filters, status: event.target.value })}><option value="all">كل الحالات</option>{Object.entries(statusLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</Select><Select value={filters.type} onChange={(event) => onFiltersChange({ ...filters, type: event.target.value })}><option value="all">كل الأنواع</option>{Object.entries(typeLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</Select></CardContent></Card>
 
@@ -81,9 +86,6 @@ export function CommissionsView(props: Props) {
   );
 }
 
-function Summary({ label, value }: Readonly<{ label: string; value: string }>) {
-  return <div className="rounded-2xl border bg-background/70 p-4"><p className="text-xs font-bold text-muted-foreground">{label}</p><p className="mt-1 text-2xl font-black">{value}</p></div>;
-}
 
 function Field({ label, children }: Readonly<{ label: string; children: ReactNode }>) {
   return <label className="grid gap-2 text-sm font-bold">{label}{children}</label>;

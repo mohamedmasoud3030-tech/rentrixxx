@@ -2,6 +2,7 @@ import { Link, useSearch } from '@tanstack/react-router';
 import { ArrowRight, Ban, CalendarDays, Printer, ReceiptText, WalletCards } from 'lucide-react';
 import { useDeferredValue, useMemo, useState } from 'react';
 import { EmptyState } from '@/components/empty-state';
+import { PageHeader } from '@/components/layout/page-header';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog';
@@ -148,18 +149,16 @@ function ReceiptsHistoryContent() {
 
   return (
     <div className="space-y-6" dir="rtl">
-      {/* Header */}
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <p className="text-sm font-black text-primary">سجل التحصيل</p>
-          <h2 className="text-3xl font-black tracking-tight">الإيصالات</h2>
-          <p className="mt-1 max-w-2xl text-sm leading-7 text-muted-foreground">مراجعة إيصالات الدفعات المنشورة، فتح تفاصيل الإيصال، واستخدام أمر الطباعة عند الحاجة.</p>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <Button variant="secondary" asChild><Link to="/financials"><ArrowRight className="me-2 size-4" />المالية</Link></Button>
-          {selectedReceiptId ? <Button asChild><a href={createReceiptPrintHref(selectedReceiptId)}><Printer className="me-2 size-4" />طباعة المحدد</a></Button> : null}
-        </div>
-      </div>
+      <PageHeader
+        title="الإيصالات"
+        description="مراجعة إيصالات الدفعات المنشورة، فتح تفاصيل الإيصال، واستخدام أمر الطباعة عند الحاجة."
+        action={
+          <div className="flex flex-wrap gap-2">
+            <Button variant="secondary" asChild><Link to="/financials"><ArrowRight className="me-2 size-4" />المالية</Link></Button>
+            {selectedReceiptId ? <Button asChild><a href={createReceiptPrintHref(selectedReceiptId)}><Printer className="me-2 size-4" />طباعة المحدد</a></Button> : null}
+          </div>
+        }
+      />
 
       {/* KPI grid */}
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
