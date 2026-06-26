@@ -15,11 +15,11 @@ const baseModel: UnifiedDocumentModel = {
 describe('collectDocumentTextChunks', () => {
   it('does not inject default signature labels into Arabic detection chunks', () => {
     const chunks = collectDocumentTextChunks(baseModel);
-    expect(chunks.join(' ')).not.toContain('توقيع');
+    expect(chunks.join(' ')).not.toContain('\u062a\u0648\u0642\u064a\u0639');
   });
 
   it('keeps actual Arabic content in chunks', () => {
-    const model: UnifiedDocumentModel = { ...baseModel, header: { ...baseModel.header, title: 'عقد إيجار' } };
+    const model: UnifiedDocumentModel = { ...baseModel, header: { ...baseModel.header, title: '\u0639\u0642\u062f \u0625\u064a\u062c\u0627\u0631' } };
     const chunks = collectDocumentTextChunks(model);
     expect(chunks.some((chunk) => /[\u0600-\u06FF]/.test(chunk))).toBe(true);
   });
@@ -28,34 +28,14 @@ describe('collectDocumentTextChunks', () => {
     const db = {
       settings: { general: { company: { name: 'Rentrix' } }, operational: { currency: 'OMR' } },
       contracts: [{ id: 'contract-1', tenant_id: 'tenant-1', unit_id: 'unit-1', property_id: 'property-1', start_date: '2026-01-01', end_date: '2026-12-31', rent_amount: 100, payment_cycle: 'monthly', status: 'active', cancellation_reason: null, renewed_from_id: null, notes: null, attachment_url: null, created_at: '2026-01-01', updated_at: '2026-01-01', deleted_at: null }],
-      tenants: [{ id: 'tenant-1', full_name: 'أحمد علي', phone: null, email: null, national_id: null, type: 'tenant', address: null, notes: null, created_at: '2026-01-01', updated_at: '2026-01-01', deleted_at: null }],
+      tenants: [{ id: 'tenant-1', full_name: '\u0623\u062d\u0645\u062f \u0639\u0644\u064a', phone: null, email: null, national_id: null, type: 'tenant', address: null, notes: null, created_at: '2026-01-01', updated_at: '2026-01-01', deleted_at: null }],
       units: [{ id: 'unit-1', property_id: 'property-1', name: null, unit_number: 'A-1', floor: null, status: 'occupied', rent_amount: 100, notes: null, created_at: '2026-01-01', updated_at: '2026-01-01', deleted_at: null }],
-      properties: [{ id: 'property-1', title: 'برج النيل', type: 'residential', address: 'القاهرة', owner_name: null, purchase_value: null, current_value: null, status: 'active', notes: null, created_at: '2026-01-01', updated_at: '2026-01-01', deleted_at: null }],
+      properties: [{ id: 'property-1', title: '\u0628\u0631\u062c \u0627\u0644\u0646\u064a\u0644', type: 'residential', address: '\u0627\u0644\u0642\u0627\u0647\u0631\u0629', owner_name: null, purchase_value: null, current_value: null, status: 'active', notes: null, created_at: '2026-01-01', updated_at: '2026-01-01', deleted_at: null }],
     };
     const invoice = documentEngine.build({ type: 'invoice', payload: { invoice: { id: 'invoice-1', contract_id: 'contract-1', issue_date: '2026-06-01', due_date: '2026-06-30', amount: 100, paid_amount: 25, status: 'PARTIALLY_PAID', notes: null, created_at: '2026-06-01', updated_at: '2026-06-01', deleted_at: null }, db } });
-    const expense = documentEngine.build({ type: 'expense_voucher', payload: { expense: { id: 'expense-1', property_id: 'property-1', category: 'صيانة', amount: 50, expense_date: '2026-06-15', description: 'مصعد', attachment_url: null, created_at: '2026-06-15', updated_at: '2026-06-15', deleted_at: null }, db } });
+    const expense = documentEngine.build({ type: 'expense_voucher', payload: { expense: { id: 'expense-1', property_id: 'property-1', category: '\u0635\u064a\u0627\u0646\u0629', amount: 50, expense_date: '2026-06-15', description: '\u0645\u0635\u0639\u062f', attachment_url: null, created_at: '2026-06-15', updated_at: '2026-06-15', deleted_at: null }, db } });
 
-    expect(collectDocumentTextChunks(invoice)).toEqual(expect.arrayContaining(['فاتورة', 'المستأجر', 'المتبقي']));
-    expect(collectDocumentTextChunks(expense)).toEqual(expect.arrayContaining(['سند مصروف', 'العقار', 'برج النيل']));
-  });
-
-  it('builds every financial statement document type', () => {
-    const settings = { general: { company: { name: 'شركة الاختبار' } }, operational: { currency: 'OMR' } };
-    const trialBalance = documentEngine.build({
-      type: 'trial_balance',
-      payload: { trial: { lines: [{ no: '101', name: 'النقدية', debit: 100, credit: 0 }], totalDebit: 100, totalCredit: 100 }, settings, endDate: '2026-06-30' },
-    });
-    const incomeStatement = documentEngine.build({
-      type: 'income_statement',
-      payload: { pnlData: { totalRevenue: 100, totalExpense: 25, netIncome: 75, revenues: [{ label: 'إيجارات', amount: 100 }], expenses: [{ label: 'صيانة', amount: 25 }] }, settings, dateRange: '2026-06-01 إلى 2026-06-30' },
-    });
-    const balanceSheet = documentEngine.build({
-      type: 'balance_sheet',
-      payload: { data: { assets: [{ label: 'نقدية', amount: 100 }], liabilities: [{ label: 'دائنون', amount: 25 }], equity: [{ label: 'رأس المال', amount: 75 }], totalAssets: 100, totalLiabilities: 25, totalEquity: 75 }, settings, date: '2026-06-30' },
-    });
-
-    expect(trialBalance.tables[0].rows).toEqual([['101', 'النقدية', '100.000 OMR', '0.000 OMR']]);
-    expect(incomeStatement.tables.map((table) => table.title)).toEqual(['الإيرادات', 'المصروفات']);
-    expect(balanceSheet.tables.map((table) => table.title)).toEqual(['الأصول', 'الالتزامات', 'حقوق الملكية']);
+    expect(collectDocumentTextChunks(invoice)).toEqual(expect.arrayContaining(['\u0641\u0627\u062a\u0648\u0631\u0629', '\u0627\u0644\u0645\u0633\u062a\u0623\u062c\u0631', '\u0627\u0644\u0645\u062a\u0628\u0642\u064a']));
+    expect(collectDocumentTextChunks(expense)).toEqual(expect.arrayContaining(['\u0633\u0646\u062f \u0645\u0635\u0631\u0648\u0641', '\u0627\u0644\u0639\u0642\u0627\u0631', '\u0628\u0631\u062c \u0627\u0644\u0646\u064a\u0644']));
   });
 });

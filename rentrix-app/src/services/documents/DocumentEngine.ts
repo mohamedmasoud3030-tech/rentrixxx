@@ -4,14 +4,6 @@ import type { DocumentRequest, SignatureRole, UnifiedDocumentModel } from './typ
 
 type Settings = { general?: { company?: { name?: string; address?: string; phone?: string } }; operational?: { currency?: string } };
 type AppLikeDb = { settings: Settings; contracts: Contract[]; tenants: Person[]; units: Unit[]; properties: Property[]; receipts?: Receipt[] };
-type TrialBalanceInput = { lines: Array<{ no: string; name: string; debit: number; credit: number }>; totalDebit: number; totalCredit: number };
-type PdfRow = { label: string; amount: number };
-type IncomeStatementInput = { totalRevenue: number; totalExpense: number; netIncome: number; revenues: PdfRow[]; expenses: PdfRow[] };
-type BalanceSheetInput = { assets: PdfRow[]; liabilities: PdfRow[]; equity: PdfRow[]; totalAssets: number; totalLiabilities: number; totalEquity: number };
-
-type TrialBalancePayload = { trial: TrialBalanceInput; settings: Settings; endDate: string };
-type IncomeStatementPayload = { pnlData: IncomeStatementInput; settings: Settings; dateRange: string };
-type BalanceSheetPayload = { data: BalanceSheetInput; settings: Settings; date: string };
 
 const fmtDate = (v?: string | null) => (v ? new Date(v).toLocaleDateString('en-GB') : '-');
 const fmtDateTime = (v?: string | null) => (v ? new Date(v).toLocaleString('en-GB') : '-');
@@ -24,28 +16,28 @@ const baseHeader = (s: Settings, title: string, dateValue?: string, documentNo?:
   companyPhone: s.general?.company?.phone,
   title,
   documentNo,
-  dateLabel: 'التاريخ',
+  dateLabel: '\u0627\u0644\u062a\u0627\u0631\u064a\u062e',
   dateValue,
   currency: currencyOf(s),
 });
 
 const formatDocumentValue = (value: unknown): string => {
-  if (value == null) return '—';
+  if (value == null) return '\u2014';
   if (typeof value === 'string') return value;
   if (typeof value === 'number' || typeof value === 'boolean' || typeof value === 'bigint') return String(value);
-  if (value instanceof Date) return Number.isNaN(value.getTime()) ? '—' : value.toISOString();
+  if (value instanceof Date) return Number.isNaN(value.getTime()) ? '\u2014' : value.toISOString();
   if (Array.isArray(value) || typeof value === 'object') {
     try {
       return JSON.stringify(value);
     } catch {
-      return '—';
+      return '\u2014';
     }
   }
-  return '—';
+  return '\u2014';
 };
 
 const kpi = (label: string, value: unknown) => ({ label, value: formatDocumentValue(value) });
-const footer = (signatures: SignatureRole[]) => ({ signatures, companyStampLabel: 'ختم الشركة' });
+const footer = (signatures: SignatureRole[]) => ({ signatures, companyStampLabel: '\u062e\u062a\u0645 \u0627\u0644\u0634\u0631\u0643\u0629' });
 const fileName = (prefix: string, id: string | null, fallback: string) => `${prefix}_${id || fallback}`;
 
 const resolveContractContext = (db: AppLikeDb, contractId: string | null) => {
@@ -68,12 +60,6 @@ class DocumentEngine {
       case 'expense_voucher':
       case 'payment':
         return this.buildExpense(request.payload as { expense: Expense; db: AppLikeDb });
-      case 'trial_balance':
-        return this.buildTrialBalance(request.payload as TrialBalancePayload);
-      case 'income_statement':
-        return this.buildIncomeStatement(request.payload as IncomeStatementPayload);
-      case 'balance_sheet':
-        return this.buildBalanceSheet(request.payload as BalanceSheetPayload);
       default:
         throw new Error(`Unsupported document type: ${request.type}`);
     }
@@ -87,22 +73,22 @@ class DocumentEngine {
 
     return {
       type: 'invoice',
-      header: baseHeader(db.settings, 'فاتورة', fmtDate(invoice.due_date), invoice.id.slice(0, 8)),
+      header: baseHeader(db.settings, '\u0641\u0627\u062a\u0648\u0631\u0629', fmtDate(invoice.due_date), invoice.id.slice(0, 8)),
       kpis: [
-        kpi('المستأجر', tenant?.full_name),
-        kpi('الوحدة', `${property?.title || '-'} / ${unit?.unit_number || '-'}`),
-        kpi('الحالة', invoice.status),
+        kpi('\u0627\u0644\u0645\u0633\u062a\u0623\u062c\u0631', tenant?.full_name),
+        kpi('\u0627\u0644\u0648\u062d\u062f\u0629', `${property?.title || '-'} / ${unit?.unit_number || '-'}`),
+        kpi('\u0627\u0644\u062d\u0627\u0644\u0629', invoice.status),
       ],
       tables: [
         TableGenerator.build(
-          ['الوصف', 'المبلغ'],
+          ['\u0627\u0644\u0648\u0635\u0641', '\u0627\u0644\u0645\u0628\u0644\u063a'],
           [
-            ['قيمة الفاتورة', toMoney(invoice.amount || 0, db.settings)],
-            ['الضريبة', toMoney(0, db.settings)],
-            ['المدفوع', toMoney(paid, db.settings)],
-            ['المتبقي', toMoney(remaining, db.settings)],
+            ['\u0642\u064a\u0645\u0629 \u0627\u0644\u0641\u0627\u062a\u0648\u0631\u0629', toMoney(invoice.amount || 0, db.settings)],
+            ['\u0627\u0644\u0636\u0631\u064a\u0628\u0629', toMoney(0, db.settings)],
+            ['\u0627\u0644\u0645\u062f\u0641\u0648\u0639', toMoney(paid, db.settings)],
+            ['\u0627\u0644\u0645\u062a\u0628\u0642\u064a', toMoney(remaining, db.settings)],
           ],
-          ['الإجمالي', toMoney(total, db.settings)],
+          ['\u0627\u0644\u0625\u062c\u0645\u0627\u0644\u064a', toMoney(total, db.settings)],
         ),
       ],
       footer: footer(['tenant', 'accountant', 'general_manager']),
@@ -117,21 +103,21 @@ class DocumentEngine {
 
     return {
       type: 'contract',
-      header: baseHeader(db.settings, 'عقد إيجار', fmtDate(contract.start_date), contract.id.slice(0, 8)),
+      header: baseHeader(db.settings, '\u0639\u0642\u062f \u0625\u064a\u062c\u0627\u0631', fmtDate(contract.start_date), contract.id.slice(0, 8)),
       kpis: [
-        kpi('المستأجر', tenant?.full_name),
-        kpi('الوحدة', `${property?.title || '-'} / ${unit?.unit_number || '-'}`),
-        kpi('الحالة', contract.status),
+        kpi('\u0627\u0644\u0645\u0633\u062a\u0623\u062c\u0631', tenant?.full_name),
+        kpi('\u0627\u0644\u0648\u062d\u062f\u0629', `${property?.title || '-'} / ${unit?.unit_number || '-'}`),
+        kpi('\u0627\u0644\u062d\u0627\u0644\u0629', contract.status),
       ],
       tables: [
         TableGenerator.build(
-          ['الحقل', 'القيمة'],
+          ['\u0627\u0644\u062d\u0642\u0644', '\u0627\u0644\u0642\u064a\u0645\u0629'],
           [
-            ['تاريخ البداية', fmtDate(contract.start_date)],
-            ['تاريخ النهاية', fmtDate(contract.end_date)],
-            ['قيمة الإيجار', toMoney(contract.rent_amount || 0, db.settings)],
-            ['التأمين', toMoney(0, db.settings)],
-            ['دورة السداد', String(contract.payment_cycle || '-')],
+            ['\u062a\u0627\u0631\u064a\u062e \u0627\u0644\u0628\u062f\u0627\u064a\u0629', fmtDate(contract.start_date)],
+            ['\u062a\u0627\u0631\u064a\u062e \u0627\u0644\u0646\u0647\u0627\u064a\u0629', fmtDate(contract.end_date)],
+            ['\u0642\u064a\u0645\u0629 \u0627\u0644\u0625\u064a\u062c\u0627\u0631', toMoney(contract.rent_amount || 0, db.settings)],
+            ['\u0627\u0644\u062a\u0623\u0645\u064a\u0646', toMoney(0, db.settings)],
+            ['\u062f\u0648\u0631\u0629 \u0627\u0644\u0633\u062f\u0627\u062f', String(contract.payment_cycle || '-')],
           ],
         ),
       ],
@@ -146,22 +132,22 @@ class DocumentEngine {
 
     return {
       type: 'receipt',
-      header: baseHeader(db.settings, 'إيصال استقبال', fmtDate(receipt.payment_date), receipt.id.slice(0, 8)),
+      header: baseHeader(db.settings, '\u0625\u064a\u0635\u0627\u0644 \u0627\u0633\u062a\u0642\u0628\u0627\u0644', fmtDate(receipt.payment_date), receipt.id.slice(0, 8)),
       kpis: [
-        kpi('المستأجر', tenant?.full_name || 'N/A'),
-        kpi('الوحدة', property ? `${property.title} / ${unit?.unit_number || '-'}` : 'N/A'),
-        kpi('طريقة الدفع', receipt.payment_method),
+        kpi('\u0627\u0644\u0645\u0633\u062a\u0623\u062c\u0631', tenant?.full_name || 'N/A'),
+        kpi('\u0627\u0644\u0648\u062d\u062f\u0629', property ? `${property.title} / ${unit?.unit_number || '-'}` : 'N/A'),
+        kpi('\u0637\u0631\u064a\u0642\u0629 \u0627\u0644\u062f\u0641\u0639', receipt.payment_method),
       ],
       tables: [
         TableGenerator.build(
-          ['الحقل', 'القيمة'],
+          ['\u0627\u0644\u062d\u0642\u0644', '\u0627\u0644\u0642\u064a\u0645\u0629'],
           [
-            ['المبلغ المستقبل', toMoney(receipt.amount || 0, db.settings)],
-            ['طريقة الدفع', receipt.payment_method],
-            ['رقم المرجع', receipt.reference_number || '-'],
-            ['الملاحظات', receipt.notes || '-'],
+            ['\u0627\u0644\u0645\u0628\u0644\u063a \u0627\u0644\u0645\u0633\u062a\u0642\u0628\u0644', toMoney(receipt.amount || 0, db.settings)],
+            ['\u0637\u0631\u064a\u0642\u0629 \u0627\u0644\u062f\u0641\u0639', receipt.payment_method],
+            ['\u0631\u0642\u0645 \u0627\u0644\u0645\u0631\u062c\u0639', receipt.reference_number || '-'],
+            ['\u0627\u0644\u0645\u0644\u0627\u062d\u0638\u0627\u062a', receipt.notes || '-'],
           ],
-          ['الإجمالي', toMoney(receipt.amount || 0, db.settings)],
+          ['\u0627\u0644\u0625\u062c\u0645\u0627\u0644\u064a', toMoney(receipt.amount || 0, db.settings)],
         ),
       ],
       footer: footer(['accountant', 'general_manager']),
@@ -174,105 +160,25 @@ class DocumentEngine {
 
     return {
       type: 'expense_voucher',
-      header: baseHeader(db.settings, 'سند مصروف', fmtDateTime(expense.expense_date), expense.id.slice(0, 8)),
+      header: baseHeader(db.settings, '\u0633\u0646\u062f \u0645\u0635\u0631\u0648\u0641', fmtDateTime(expense.expense_date), expense.id.slice(0, 8)),
       kpis: [
-        kpi('التصنيف', expense.category),
-        kpi('العقار', property?.title),
-        kpi('الحالة', '-'),
+        kpi('\u0627\u0644\u062a\u0635\u0646\u064a\u0641', expense.category),
+        kpi('\u0627\u0644\u0639\u0642\u0627\u0631', property?.title),
+        kpi('\u0627\u0644\u062d\u0627\u0644\u0629', '-'),
       ],
       tables: [
         TableGenerator.build(
-          ['الحقل', 'القيمة'],
+          ['\u0627\u0644\u062d\u0642\u0644', '\u0627\u0644\u0642\u064a\u0645\u0629'],
           [
-            ['المبلغ', toMoney(expense.amount || 0, db.settings)],
-            ['الضريبة', toMoney(0, db.settings)],
-            ['المرجع', '-'],
-            ['الملاحظات', expense.description || '-'],
+            ['\u0627\u0644\u0645\u0628\u0644\u063a', toMoney(expense.amount || 0, db.settings)],
+            ['\u0627\u0644\u0636\u0631\u064a\u0628\u0629', toMoney(0, db.settings)],
+            ['\u0627\u0644\u0645\u0631\u062c\u0639', '-'],
+            ['\u0627\u0644\u0645\u0644\u0627\u062d\u0638\u0627\u062a', expense.description || '-'],
           ],
         ),
       ],
       footer: footer(['accountant', 'general_manager']),
       fileName: fileName('expense', expense.id.slice(0, 8), expense.id),
-    };
-  }
-
-  private buildTrialBalance({ trial, settings, endDate }: TrialBalancePayload): UnifiedDocumentModel {
-    return {
-      type: 'trial_balance',
-      header: baseHeader(settings, 'ميزان المراجعة', fmtDate(endDate)),
-      kpis: [
-        kpi('إجمالي المدين', toMoney(trial.totalDebit, settings)),
-        kpi('إجمالي الدائن', toMoney(trial.totalCredit, settings)),
-      ],
-      tables: [
-        TableGenerator.build(
-          ['رقم الحساب', 'اسم الحساب', 'مدين', 'دائن'],
-          trial.lines.map((line) => [line.no, line.name, toMoney(line.debit, settings), toMoney(line.credit, settings)]),
-          ['الإجمالي', '', toMoney(trial.totalDebit, settings), toMoney(trial.totalCredit, settings)],
-        ),
-      ],
-      footer: footer(['accountant', 'general_manager']),
-      fileName: fileName('trial-balance', endDate, 'report'),
-    };
-  }
-
-  private buildIncomeStatement({ pnlData, settings, dateRange }: IncomeStatementPayload): UnifiedDocumentModel {
-    return {
-      type: 'income_statement',
-      header: baseHeader(settings, 'قائمة الدخل', dateRange),
-      kpis: [
-        kpi('إجمالي الإيرادات', toMoney(pnlData.totalRevenue, settings)),
-        kpi('إجمالي المصروفات', toMoney(pnlData.totalExpense, settings)),
-        kpi('صافي الدخل', toMoney(pnlData.netIncome, settings)),
-      ],
-      tables: [
-        {
-          ...TableGenerator.build(
-            ['البند', 'المبلغ'],
-            pnlData.revenues.map((row) => [row.label, toMoney(row.amount, settings)]),
-            ['إجمالي الإيرادات', toMoney(pnlData.totalRevenue, settings)],
-          ),
-          title: 'الإيرادات',
-        },
-        {
-          ...TableGenerator.build(
-            ['البند', 'المبلغ'],
-            pnlData.expenses.map((row) => [row.label, toMoney(row.amount, settings)]),
-            ['إجمالي المصروفات', toMoney(pnlData.totalExpense, settings)],
-          ),
-          title: 'المصروفات',
-        },
-      ],
-      footer: footer(['accountant', 'general_manager']),
-      fileName: fileName('income-statement', dateRange, 'report'),
-    };
-  }
-
-  private buildBalanceSheet({ data, settings, date }: BalanceSheetPayload): UnifiedDocumentModel {
-    const buildSection = (title: string, rows: PdfRow[], totalLabel: string, total: number) => ({
-      ...TableGenerator.build(
-        ['البند', 'المبلغ'],
-        rows.map((row) => [row.label, toMoney(row.amount, settings)]),
-        [totalLabel, toMoney(total, settings)],
-      ),
-      title,
-    });
-
-    return {
-      type: 'balance_sheet',
-      header: baseHeader(settings, 'الميزانية العمومية', fmtDate(date)),
-      kpis: [
-        kpi('إجمالي الأصول', toMoney(data.totalAssets, settings)),
-        kpi('إجمالي الالتزامات', toMoney(data.totalLiabilities, settings)),
-        kpi('إجمالي حقوق الملكية', toMoney(data.totalEquity, settings)),
-      ],
-      tables: [
-        buildSection('الأصول', data.assets, 'إجمالي الأصول', data.totalAssets),
-        buildSection('الالتزامات', data.liabilities, 'إجمالي الالتزامات', data.totalLiabilities),
-        buildSection('حقوق الملكية', data.equity, 'إجمالي حقوق الملكية', data.totalEquity),
-      ],
-      footer: footer(['accountant', 'general_manager']),
-      fileName: fileName('balance-sheet', date, 'report'),
     };
   }
 }
