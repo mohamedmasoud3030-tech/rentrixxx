@@ -4,6 +4,7 @@ import type { UseQueryResult } from '@tanstack/react-query';
 import { EmptyState } from '@/components/empty-state';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { DataTable } from '@/components/ui/data-table';
 import { EntityCell } from '@/components/ui/entity-cell';
 import { Skeleton } from '@/components/ui/skeleton';
 import { StatusBadge } from '@/components/ui/status-badge';
@@ -71,7 +72,7 @@ export function UnitsList({ propertyId, unitsQuery }: Readonly<{ propertyId: str
             <p className="font-black">تأكيد أرشفة الوحدة {archiveCandidate.unit_number}</p>
             <p className="mt-1 text-sm text-muted-foreground">ستبقى بيانات الوحدة محفوظة كسجل أرشيفي ولن تظهر ضمن الوحدات النشطة.</p>
             <div className="mt-3 flex flex-wrap gap-2">
-              <Button variant="danger" onClick={confirmArchiveUnit} disabled={deleteMutation.isPending}>تأكيد الأرشفة</Button>
+              <Button variant="danger" isLoading={deleteMutation.isPending} onClick={confirmArchiveUnit}>تأكيد الأرشفة</Button>
               <Button variant="secondary" onClick={() => setArchiveCandidate(null)} disabled={deleteMutation.isPending}>إلغاء</Button>
             </div>
           </div>
@@ -91,7 +92,6 @@ export function UnitsList({ propertyId, unitsQuery }: Readonly<{ propertyId: str
           />
         ) : unitsQuery.data?.length ? (
           <>
-            {/* Mobile cards */}
             <div className="grid gap-3 sm:grid-cols-2 md:hidden">
               {unitsQuery.data.map((unit) => (
                 <div key={unit.id} className="space-y-1.5">
@@ -107,7 +107,7 @@ export function UnitsList({ propertyId, unitsQuery }: Readonly<{ propertyId: str
                   />
                   <Button
                     variant="danger"
-                    className="w-full h-9 rounded-xl text-xs gap-1.5"
+                    className="h-9 w-full rounded-xl text-xs"
                     aria-label="أرشفة الوحدة"
                     onClick={() => requestArchiveUnit(unit)}
                     disabled={deleteMutation.isPending}
@@ -118,8 +118,7 @@ export function UnitsList({ propertyId, unitsQuery }: Readonly<{ propertyId: str
               ))}
             </div>
 
-            {/* Desktop table */}
-            <div className="hidden overflow-x-auto rounded-2xl border border-border md:block">
+            <DataTable className="hidden md:block" aria-label="جدول وحدات العقار">
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -149,7 +148,7 @@ export function UnitsList({ propertyId, unitsQuery }: Readonly<{ propertyId: str
                   ))}
                 </TableBody>
               </Table>
-            </div>
+            </DataTable>
           </>
         ) : (
           <EmptyState title="لا توجد وحدات" description="أضف الوحدات التابعة لهذا العقار من هنا." action={<Button onClick={openForCreate}>إضافة وحدة</Button>} />
