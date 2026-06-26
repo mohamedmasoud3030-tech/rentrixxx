@@ -4,10 +4,11 @@ import { useMemo, useState } from 'react';
 import { PropertyFormModal } from './property-form-modal';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { EmptyState } from '@/components/empty-state';
 import { EntityCell } from '@/components/ui/entity-cell';
-import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
+import { SearchInput } from '@/components/ui/search-input';
 import { Skeleton } from '@/components/ui/skeleton';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -35,6 +36,7 @@ export function PropertiesListPage() {
   const [viewMode, setViewMode] = useState<'cards' | 'table'>(() =>
     window.innerWidth < 768 ? 'cards' : 'table',
   );
+  const [archiveTarget, setArchiveTarget] = useState<{ id: string; title: string } | null>(null);
   const params = useMemo(() => ({ search, status, page, pageSize }), [page, search, status]);
   const propertiesQuery = useProperties(params);
   const deleteMutation = useSoftDeleteProperty();
@@ -42,10 +44,10 @@ export function PropertiesListPage() {
   const totalPages = Math.max(1, Math.ceil((propertiesQuery.data?.count ?? 0) / pageSize));
   const hasFilterValues = search.trim().length > 0 || status !== 'all';
 
-  const handleArchiveProperty = async (propertyId: string, title: string) => {
-    const shouldArchive = globalThis.confirm(`سيتم أرشفة العقار "${title}" وإخفاؤه من القوائم النشطة. هل تريد المتابعة؟`);
-    if (!shouldArchive) return;
-    await deleteMutation.mutateAsync(propertyId);
+  const handleArchiveProperty = async () => {
+    if (!archiveTarget) return;
+    await deleteMutation.mutateAsync(archiveTarget.id);
+    setArchiveTarget(null);
   };
 
   const properties = propertiesQuery.data?.rows ?? [];
@@ -68,12 +70,11 @@ export function PropertiesListPage() {
       <Card className="rounded-2xl">
         <CardContent className="pt-4 pb-4">
           <div className="flex gap-2">
-            <Input
-              aria-label="بحث العقارات"
+            <SearchInput
               value={search}
-              onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+              onChange={(value) => { setSearch(value); setPage(1); }}
               placeholder="بحث بالاسم أو العنوان..."
-              className="rounded-xl"
+              className="flex-1"
             />
             <Select
               aria-label="الحالة"
@@ -168,7 +169,7 @@ export function PropertiesListPage() {
                 <button
                   type="button"
                   className="grid size-7 place-items-center rounded-xl bg-background/90 shadow-sm border border-border text-muted-foreground hover:text-rose-600 transition-colors"
-                  onClick={() => handleArchiveProperty(p.id, p.title ?? 'عقار')}
+                  onClick={() => setArchiveTarget({ id: p.id, title: p.title ?? 'عقار' })}
                 >
                   <Trash2 className="size-3.5" />
                 </button>
@@ -180,7 +181,7 @@ export function PropertiesListPage() {
                 <Button variant="secondary" className="min-h-11 rounded-xl px-2 text-xs" onClick={() => { setEditPropertyId(p.id); setModalOpen(true); }}>
                   <Edit className="size-3.5" />تعديل
                 </Button>
-                <Button variant="danger" className="min-h-11 rounded-xl px-2 text-xs" onClick={() => handleArchiveProperty(p.id, p.title ?? 'عقار')}>
+                <Button variant="danger" className="min-h-11 rounded-xl px-2 text-xs" onClick={() => setArchiveTarget({ id: p.id, title: p.title ?? 'عقار' })}>
                   <Trash2 className="size-3.5" />أرشفة
                 </Button>
               </div>
@@ -224,7 +225,7 @@ export function PropertiesListPage() {
                       <button
                         type="button"
                         className="min-h-11 rounded-xl px-2 text-xs border border-border text-muted-foreground hover:text-rose-600 hover:border-rose-300 transition-colors"
-                        onClick={() => handleArchiveProperty(p.id, p.title ?? 'عقار')}
+                        onClick={() => setArchiveTarget({ id: p.id, title: p.title ?? 'عقار' })}
                       >
                         <Trash2 className="size-3" />
                       </button>
@@ -264,6 +265,15 @@ export function PropertiesListPage() {
       open={modalOpen}
       onClose={() => { setModalOpen(false); setEditPropertyId(undefined); }}
       propertyId={editPropertyId}
+    />
+    <ConfirmDialog
+      open={Boolean(archiveTarget)}
+      onOpenChange={(open) => { if (!open) setArchiveTarget(null); }}
+      title={`أرشفة العقار "${archiveTarget?.title ?? ''}"؟`}
+      description="سيتم إخفاء العقار من القوائم النشطة. يمكن التراجع عن هذا لاحقاً من سجل الأرشيف."
+      confirmLabel="أرشفة"
+      isLoading={deleteMutation.isPending}
+      onConfirm={handleArchiveProperty}
     />
     </>
   );

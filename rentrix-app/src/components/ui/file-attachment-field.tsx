@@ -44,7 +44,8 @@ export function FileAttachmentField({
     setUploading(true);
     try {
       const ext = file.name.split('.').pop() ?? 'bin';
-      const path = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+      const uniqueId = globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Date.now().toString(36)}`;
+      const path = `${Date.now()}-${uniqueId}.${ext}`;
       const { error: uploadError } = await supabase.storage
         .from('attachments')
         .upload(path, file, { upsert: false });

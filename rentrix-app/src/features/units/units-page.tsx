@@ -1,11 +1,12 @@
 import { Link } from '@tanstack/react-router';
-import { Building2, DoorOpen, Home, Search } from 'lucide-react';
+import { Building2, DoorOpen, Home } from 'lucide-react';
 import { useDeferredValue, useMemo, useState } from 'react';
 import { EmptyState } from '@/components/empty-state';
 import { RouteLoadingState } from '@/components/loading-state';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
+import { KpiCard } from '@/components/ui/kpi-card';
+import { SearchInput } from '@/components/ui/search-input';
 import { Select } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
 import { StatusBadge } from '@/components/ui/status-badge';
@@ -44,23 +45,6 @@ export function summarizeUnitsForUnitsPage(units: Unit[]) {
 
 function buildPropertyMap(properties: Property[]) {
   return new Map(properties.map((property) => [property.id, property]));
-}
-
-function UnitMetric({ label, value, helper, icon: Icon }: Readonly<{ label: string; value: string; helper: string; icon: typeof DoorOpen }>) {
-  return (
-    <Card className="overflow-hidden border-primary/10 bg-gradient-to-br from-card via-card to-primary/5">
-      <CardContent className="flex items-center justify-between gap-4 p-5">
-        <div>
-          <p className="text-xs font-black text-muted-foreground">{label}</p>
-          <p className="mt-2 text-2xl font-black">{value}</p>
-          <p className="mt-1 text-xs text-muted-foreground">{helper}</p>
-        </div>
-        <div className="grid size-12 place-items-center rounded-2xl bg-primary/10 text-primary">
-          <Icon className="size-6" />
-        </div>
-      </CardContent>
-    </Card>
-  );
 }
 
 export function UnitsPage() {
@@ -104,10 +88,10 @@ export function UnitsPage() {
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <UnitMetric label="إجمالي الوحدات" value={units.length.toLocaleString(locale)} helper="كل الوحدات النشطة" icon={DoorOpen} />
-        <UnitMetric label="الوحدات المشغولة" value={occupiedCount.toLocaleString(locale)} helper="حسب حالة الوحدة" icon={Home} />
-        <UnitMetric label="الوحدات المتاحة" value={availableCount.toLocaleString(locale)} helper="جاهزة للتأجير" icon={DoorOpen} />
-        <UnitMetric label="إجمالي الإيجار المتوقع" value={formatCompanyMoney(defaultCompanyLocalSettings, expectedRent)} helper="من قيم الإيجار المسجلة" icon={Building2} />
+        <KpiCard label="إجمالي الوحدات" value={units.length.toLocaleString(locale)} sub="كل الوحدات النشطة" icon={DoorOpen} accent="primary" />
+        <KpiCard label="الوحدات المشغولة" value={occupiedCount.toLocaleString(locale)} sub="حسب حالة الوحدة" icon={Home} accent="sky" />
+        <KpiCard label="الوحدات المتاحة" value={availableCount.toLocaleString(locale)} sub="جاهزة للتأجير" icon={DoorOpen} accent="emerald" />
+        <KpiCard label="إجمالي الإيجار المتوقع" value={formatCompanyMoney(defaultCompanyLocalSettings, expectedRent)} sub="من قيم الإيجار المسجلة" icon={Building2} accent="amber" />
       </div>
 
       <Card>
@@ -118,10 +102,7 @@ export function UnitsPage() {
         <CardContent className="grid gap-3 md:grid-cols-2 xl:grid-cols-5">
           <label className="space-y-1 text-sm font-bold xl:col-span-2">
             <span>بحث</span>
-            <div className="relative">
-              <Search className="pointer-events-none absolute right-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-              <Input className="pr-9" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="رقم الوحدة، الدور، العقار" />
-            </div>
+            <SearchInput value={search} onChange={setSearch} placeholder="رقم الوحدة، الدور، العقار" />
           </label>
           <label className="space-y-1 text-sm font-bold">
             <span>العقار</span>
