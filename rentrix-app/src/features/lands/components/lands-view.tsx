@@ -1,8 +1,8 @@
 import { Archive, Edit, MapPinned, Plus, RotateCcw, Layers, TrendingUp, Tag } from 'lucide-react';
 import type { ReactNode } from 'react';
+import { AsyncContentState } from '@/components/async-content-state';
 import { Button } from '@/components/ui/button';
 import { DataErrorScreen } from '@/components/data-error-screen';
-import { EmptyState } from '@/components/empty-state';
 import { KpiCard } from '@/components/ui/kpi-card';
 import { WriteErrorCard } from '@/components/page-state-card';
 import { Card, CardContent } from '@/components/ui/card';
@@ -222,38 +222,19 @@ export function LandsView(props: Props) {
         />
       ) : null}
 
-      {/* Loading skeleton list */}
-      {isLoading ? (
-        <div className="space-y-3">
-          {Array.from({ length: 3 }).map((_, i) => (
-            <Skeleton key={i} className="h-24 rounded-2xl" />
-          ))}
-        </div>
-      ) : null}
-
-      {/* Empty state */}
-      {!isLoading && !error && rows.length === 0 ? (
-        <EmptyState
-          title={hasFilters ? 'لا توجد أراضٍ ضمن الفلاتر الحالية' : 'لا توجد سجلات أراضٍ بعد'}
-          description={
-            hasFilters
-              ? 'غيّر البحث أو الحالة لعرض سجلات أراضٍ أخرى.'
-              : 'أضف أول سجل أرض تشغيلي عند توفر بيانات قطعة أرض حقيقية.'
-          }
-          action={
-            !hasFilters ? (
-              <Button onClick={onCreate}>
-                <Plus className="me-2 size-4" />إضافة سجل أرض
-              </Button>
-            ) : undefined
-          }
-        />
-      ) : null}
-
       {/* Land list */}
-      {!isLoading && rows.length > 0 ? (
+      <AsyncContentState
+        status={isLoading ? 'loading' : error ? 'error' : rows.length === 0 ? 'empty' : 'ready'}
+        error={error}
+        errorTitle="تعذر تحميل الأراضي"
+        errorFallbackMessage="راجع الاتصال والصلاحيات ثم أعد المحاولة."
+        errorAction={<Button variant="secondary" onClick={onRetry} className="rounded-2xl"><RotateCcw className="me-2 size-4" />إعادة المحاولة</Button>}
+        emptyTitle={hasFilters ? 'لا توجد أراضٍ ضمن الفلاتر الحالية' : 'لا توجد سجلات أراضٍ بعد'}
+        emptyDescription={hasFilters ? 'غيّر البحث أو الحالة لعرض سجلات أراضٍ أخرى.' : 'أضف أول سجل أرض تشغيلي عند توفر بيانات قطعة أرض حقيقية.'}
+        emptyAction={!hasFilters ? <Button onClick={onCreate}><Plus className="me-2 size-4" />إضافة سجل أرض</Button> : undefined}
+      >
         <LandRows rows={rows} isArchiving={isArchiving} onEdit={onEdit} onArchive={onArchive} />
-      ) : null}
+      </AsyncContentState>
 
       {/* Form dialog */}
       <Dialog open={formOpen} onOpenChange={onFormOpenChange}>

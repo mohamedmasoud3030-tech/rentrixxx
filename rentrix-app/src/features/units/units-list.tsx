@@ -58,7 +58,7 @@ export function UnitsList({ propertyId, unitsQuery }: Readonly<{ propertyId: str
           <>
             {/* Mobile cards */}
             <div className="grid gap-3 sm:grid-cols-2 md:hidden">
-              {unitsQuery.data.map((unit) => (
+              {(unitsQuery.data ?? []).map((unit) => (
                 <div key={unit.id} className="space-y-1.5">
                   <UnitCard
                     id={unit.id}
@@ -102,7 +102,7 @@ export function UnitsList({ propertyId, unitsQuery }: Readonly<{ propertyId: str
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {unitsQuery.data.map((unit) => (
+                  {(unitsQuery.data ?? []).map((unit) => (
                     <TableRow key={unit.id}>
                       <TableCell>
                         <EntityCell icon={DoorOpen} title={`وحدة ${unit.unit_number}`} subtitle={unit.floor ? `الدور: ${unit.floor}` : null} />

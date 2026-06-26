@@ -1,9 +1,9 @@
 import { Link, useParams } from '@tanstack/react-router';
-import { ArrowLeft, Edit } from 'lucide-react';
+import { Edit } from 'lucide-react';
+import { AsyncContentState } from '@/components/async-content-state';
+import { EntityDetailHeader } from '@/components/layout/entity-detail-header';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { EmptyState } from '@/components/empty-state';
-import { RouteLoadingState } from '@/components/loading-state';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { UnitsList } from '@/features/units/units-list';
 import { useUnits } from '@/features/units/use-units';
@@ -55,36 +55,33 @@ export function PropertyDetailPage() {
   const propertyQuery = useProperty(propertyId);
   const unitsQuery = useUnits(propertyId);
 
-  if (propertyQuery.isLoading) return <RouteLoadingState />;
-  if (propertyQuery.isError) {
-    return (
-      <EmptyState
-        title="تعذر تحميل العقار"
-        description={propertyQuery.error instanceof Error ? propertyQuery.error.message : 'تحقق من الصلاحيات أو الاتصال ثم أعد المحاولة.'}
-        role="alert"
-        ariaLive="assertive"
-        action={<Button onClick={() => propertyQuery.refetch()}>إعادة المحاولة</Button>}
-      />
-    );
-  }
-  if (!propertyQuery.data) return <EmptyState title="العقار غير موجود" description="ربما تم حذف العقار أو لا تملك صلاحية الوصول إليه." />;
-
   const property = propertyQuery.data;
-  const unitSummary = summarizePropertyUnits(unitsQuery.data ?? []);
 
   return (
+    <AsyncContentState
+      status={propertyQuery.isLoading ? 'loading' : propertyQuery.isError ? 'error' : !property ? 'empty' : 'ready'}
+      error={propertyQuery.error}
+      errorTitle="تعذر تحميل العقار"
+      errorAction={<Button onClick={() => propertyQuery.refetch()}>إعادة المحاولة</Button>}
+      emptyTitle="العقار غير موجود"
+      emptyDescription="ربما تم حذف العقار أو لا تملك صلاحية الوصول إليه."
+    >
+    {property && (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <p className="text-sm font-bold text-primary">تفاصيل العقار</p>
-          <h2 className="text-2xl font-black">{property.title}</h2>
-          <p className="mt-1 text-sm text-muted-foreground">{property.address}</p>
-        </div>
-        <div className="flex gap-2">
-          <Button variant="secondary" asChild><Link to="/properties"><ArrowLeft className="me-2 size-4" />العودة</Link></Button>
-          <Button asChild><Link to="/properties/$propertyId/edit" params={{ propertyId }}><Edit className="me-2 size-4" />تعديل</Link></Button>
-        </div>
-      </div>
+      <EntityDetailHeader
+        title={property.title ?? 'عقار'}
+        subtitle={property.address ?? undefined}
+        backTo="/properties"
+        backLabel="العقارات"
+        status={<StatusBadge tone={propertyStatusTone[property.status]}>{propertyStatusLabels[property.status]}</StatusBadge>}
+        actions={
+          <Button asChild>
+            <Link to="/properties/$propertyId/edit" params={{ propertyId }}>
+              <Edit className="me-2 size-4" />تعديل
+            </Link>
+          </Button>
+        }
+      />
 
       <Card>
         <CardHeader>
@@ -114,16 +111,20 @@ export function PropertyDetailPage() {
           <CardDescription>مؤشرات قراءة فقط محسوبة من الوحدات المسجلة لهذا العقار.</CardDescription>
         </CardHeader>
         <CardContent className="grid gap-4 md:grid-cols-2 xl:grid-cols-6">
-          <InfoItem label="إجمالي الوحدات" value={count(unitSummary.totalUnits)} />
-          <InfoItem label="الوحدات المتاحة" value={count(unitSummary.availableUnits)} />
-          <InfoItem label="الوحدات المشغولة" value={count(unitSummary.occupiedUnits)} />
-          <InfoItem label="وحدات الصيانة" value={count(unitSummary.maintenanceUnits)} />
-          <InfoItem label="الوحدات المحجوزة" value={count(unitSummary.reservedUnits)} />
-          <InfoItem label="إجمالي الإيجار المتوقع" value={formatCompanyMoney(defaultCompanyLocalSettings, unitSummary.expectedRentTotal)} />
+          {(() => { const unitSummary = summarizePropertyUnits(unitsQuery.data ?? []); return (<>
+            <InfoItem label="إجمالي الوحدات" value={count(unitSummary.totalUnits)} />
+            <InfoItem label="الوحدات المتاحة" value={count(unitSummary.availableUnits)} />
+            <InfoItem label="الوحدات المشغولة" value={count(unitSummary.occupiedUnits)} />
+            <InfoItem label="وحدات الصيانة" value={count(unitSummary.maintenanceUnits)} />
+            <InfoItem label="الوحدات المحجوزة" value={count(unitSummary.reservedUnits)} />
+            <InfoItem label="إجمالي الإيجار المتوقع" value={formatCompanyMoney(defaultCompanyLocalSettings, unitSummary.expectedRentTotal)} />
+          </>); })()}
         </CardContent>
       </Card>
 
       <UnitsList propertyId={property.id} unitsQuery={unitsQuery} />
     </div>
+    )}
+    </AsyncContentState>
   );
 }

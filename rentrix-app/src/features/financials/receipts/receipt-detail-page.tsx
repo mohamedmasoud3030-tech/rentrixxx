@@ -1,11 +1,11 @@
 import { Link, useSearch } from '@tanstack/react-router';
-import { ArrowRight, Printer, ReceiptText } from 'lucide-react';
-import { EmptyState } from '@/components/empty-state';
+import { Printer, ReceiptText } from 'lucide-react';
+import { AsyncContentState } from '@/components/async-content-state';
+import { EntityDetailHeader } from '@/components/layout/entity-detail-header';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Skeleton } from '@/components/ui/skeleton';
 import { defaultCompanyLocalSettings } from '@/lib/companySettings';
-import { formatDate, formatMoney, formatShortId, getErrorMessage } from '../components/financials-formatters';
+import { formatDate, formatMoney, formatShortId } from '../components/financials-formatters';
 import { paymentMethodLabels } from '../components/receipt-formatters';
 import type { ReceiptRecord } from './receiptService';
 import { useReceipt } from './useReceipts';
@@ -84,28 +84,17 @@ function ReceiptPrintDocument({ receipt }: Readonly<{ receipt: ReceiptRecord }>)
 function ReceiptDetailContent({ receiptId }: Readonly<{ receiptId: string }>) {
   const receiptQuery = useReceipt(receiptId);
 
-  if (receiptQuery.isLoading) {
-    return (
-      <Card>
-        <CardContent className="space-y-4 p-6" role="status" aria-live="polite" aria-label="جارٍ تحميل الإيصال">
-          <Skeleton className="h-24 rounded-2xl" />
-          <div className="grid gap-3 md:grid-cols-2">
-            {Array.from({ length: 6 }, (_, index) => <Skeleton key={index} className="h-24 rounded-2xl" />)}
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  if (receiptQuery.isError) {
-    return <EmptyState title="تعذر تحميل الإيصال" description={getErrorMessage(receiptQuery.error, 'أعد المحاولة بعد لحظات.')} role="alert" ariaLive="assertive" />;
-  }
-
-  if (receiptQuery.data === undefined) {
-    return <EmptyState title="الإيصال غير موجود" description="ربما تم حذف الإيصال أو لا تملك صلاحية الوصول إليه." />;
-  }
-
-  return <ReceiptPrintDocument receipt={receiptQuery.data} />;
+  return (
+    <AsyncContentState
+      status={receiptQuery.isLoading ? 'loading' : receiptQuery.isError ? 'error' : receiptQuery.data === undefined ? 'empty' : 'ready'}
+      error={receiptQuery.error}
+      errorTitle="تعذر تحميل الإيصال"
+      emptyTitle="الإيصال غير موجود"
+      emptyDescription="ربما تم حذف الإيصال أو لا تملك صلاحية الوصول إليه."
+    >
+      {receiptQuery.data && <ReceiptPrintDocument receipt={receiptQuery.data} />}
+    </AsyncContentState>
+  );
 }
 
 function getReceiptIdFromSearch(search: Record<string, unknown>) {
@@ -119,16 +108,14 @@ export function ReceiptDetailPage() {
 
   return (
     <div className="space-y-6 print:bg-white" dir="rtl">
-      <div className="flex flex-wrap items-start justify-between gap-3 print:hidden">
-        <div>
-          <p className="text-sm font-black text-primary">Receipt #{receiptId ? receiptId.slice(0, 8) : '—'}</p>
-          <h2 className="text-3xl font-black">عرض إيصال الدفع</h2>
-          <p className="text-sm text-muted-foreground">عرض جاهز للطباعة بدون إضافة اعتماد PDF جديد.</p>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <Button variant="secondary" asChild><Link to="/financials"><ArrowRight className="me-2 size-4" />العودة للمالية</Link></Button>
-          <Button onClick={() => globalThis.print()}><Printer className="me-2 size-4" />طباعة</Button>
-        </div>
+      <div className="print:hidden">
+        <EntityDetailHeader
+          title="عرض إيصال الدفع"
+          subtitle={`Receipt #${receiptId ? receiptId.slice(0, 8) : '—'}`}
+          backTo="/financials"
+          backLabel="المالية"
+          actions={<Button onClick={() => globalThis.print()}><Printer className="me-2 size-4" />طباعة</Button>}
+        />
       </div>
 
       <ReceiptDetailContent receiptId={receiptId} />
