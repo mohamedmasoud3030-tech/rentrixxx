@@ -1,6 +1,7 @@
 import { renderToStaticMarkup } from 'react-dom/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ContractsListPage } from './ContractsListPage';
+import { normalizeSearchText } from './hooks/useContractFilters';
 
 vi.mock('../settings/useCompanySettings', async () => {
   const { testCompanySettingsContract } = await import('../../test/companySettingsContractMock');
@@ -50,5 +51,29 @@ describe('ContractsListPage load states', () => {
 
     expect(html).toContain('لا توجد عقود');
     expect(html).toContain('إنشاء عقد');
+  });
+});
+
+describe('normalizeSearchText', () => {
+  it('removes diacritics', () => {
+    expect(normalizeSearchText('فَاطِمَة')).toBe('فاطمه');
+  });
+
+  it('normalizes Alef variations', () => {
+    expect(normalizeSearchText('إحمد')).toBe('احمد');
+  });
+
+  it('normalizes Teh Marbuta', () => {
+    expect(normalizeSearchText('جميلة')).toBe('جميله');
+  });
+
+  it('converts Arabic and Persian digits', () => {
+    expect(normalizeSearchText('١٢٣')).toBe('123');
+    expect(normalizeSearchText('۱۲۳')).toBe('123');
+  });
+
+  it('handles mixed content and whitespace', () => {
+    expect(normalizeSearchText('  أَحْمَد  ')).toBe('احمد');
+    expect(normalizeSearchText('عقد   رقم')).toBe('عقد رقم');
   });
 });
