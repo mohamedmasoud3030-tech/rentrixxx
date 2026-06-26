@@ -1,7 +1,7 @@
 import { Link, useSearch } from '@tanstack/react-router';
 import { ArrowRight, Ban, CalendarDays, Printer, ReceiptText, WalletCards } from 'lucide-react';
 import { useDeferredValue, useMemo, useState } from 'react';
-import { EmptyState } from '@/components/empty-state';
+import { AsyncContentState } from '@/components/async-content-state';
 import { PageHeader } from '@/components/layout/page-header';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -201,15 +201,18 @@ function ReceiptsHistoryContent() {
           <CardDescription>اختر إيصالاً لعرض تفاصيله وروابط الطباعة.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          {receiptsQuery.isLoading && (
-            <div className="space-y-3">{Array.from({ length: 5 }, (_, i) => <Skeleton key={i} className="h-14" />)}</div>
-          )}
-          {receiptsQuery.isError && (
-            <EmptyState title="تعذر تحميل الإيصالات" description={getErrorMessage(receiptsQuery.error, 'أعد المحاولة بعد لحظات.')} role="alert" ariaLive="assertive" />
-          )}
-          {!receiptsQuery.isLoading && !receiptsQuery.isError && filteredReceipts.length === 0 && (
-            <EmptyState title="لا توجد إيصالات مطابقة" description="غيّر البحث أو الفلاتر لعرض إيصالات أخرى." />
-          )}
+          <AsyncContentState
+            status={
+              receiptsQuery.isLoading ? 'loading'
+              : receiptsQuery.isError ? 'error'
+              : filteredReceipts.length === 0 ? 'empty'
+              : 'ready'
+            }
+            error={receiptsQuery.error}
+            errorTitle="تعذر تحميل الإيصالات"
+            emptyTitle="لا توجد إيصالات مطابقة"
+            emptyDescription="غيّر البحث أو الفلاتر لعرض إيصالات أخرى."
+          >
 
           {filteredReceipts.length > 0 && (
             <>
@@ -290,6 +293,8 @@ function ReceiptsHistoryContent() {
               </div>
             </>
           )}
+
+          </AsyncContentState>
 
           <ReceiptDetailCard
             selectedReceiptId={selectedReceiptId}

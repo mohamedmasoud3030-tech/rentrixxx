@@ -2,14 +2,13 @@ import { Link, useNavigate } from '@tanstack/react-router';
 import { Building2, Edit, Eye, Grid3x3, List, Plus, Trash2 } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { PropertyFormModal } from './property-form-modal';
+import { AsyncContentState } from '@/components/async-content-state';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
-import { EmptyState } from '@/components/empty-state';
 import { EntityCell } from '@/components/ui/entity-cell';
 import { Select } from '@/components/ui/select';
 import { SearchInput } from '@/components/ui/search-input';
-import { Skeleton } from '@/components/ui/skeleton';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { PropertyCard } from '@/components/ui/property-card';
@@ -106,41 +105,27 @@ export function PropertiesListPage() {
         </CardContent>
       </Card>
 
-      {/* Loading */}
-      {propertiesQuery.isLoading && (
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {Array.from({ length: 6 }, (_, i) => <Skeleton key={i} className="h-40 rounded-2xl" />)}
-        </div>
-      )}
-
-      {/* Error */}
-      {!propertiesQuery.isLoading && propertiesQuery.isError && (
-        <EmptyState
-          title="تعذر تحميل قائمة العقارات"
-          description="حدث خطأ أثناء تحميل البيانات."
-          role="alert"
-          ariaLive="assertive"
-          action={<Button onClick={() => propertiesQuery.refetch()} className="rounded-2xl">إعادة المحاولة</Button>}
-        />
-      )}
-
-      {/* Empty */}
-      {!propertiesQuery.isLoading && !propertiesQuery.isError && properties.length === 0 && (
-        <div className="rounded-3xl border border-dashed border-border p-10 text-center">
-          <Building2 className="mx-auto size-10 text-muted-foreground/30 mb-3" />
-          <p className="font-bold text-muted-foreground">
-            {hasFilterValues ? 'لا توجد نتائج مطابقة للبحث' : 'لم تُضف عقارات بعد'}
-          </p>
-          {!hasFilterValues && (
-            <Button className="mt-4 rounded-2xl" onClick={() => { setEditPropertyId(undefined); setModalOpen(true); }}>
-              إضافة أول عقار
-            </Button>
-          )}
-        </div>
-      )}
+      <AsyncContentState
+        status={
+          propertiesQuery.isLoading ? 'loading'
+          : propertiesQuery.isError ? 'error'
+          : properties.length === 0 ? 'empty'
+          : 'ready'
+        }
+        error={propertiesQuery.error}
+        errorTitle="تعذر تحميل قائمة العقارات"
+        errorAction={<Button onClick={() => propertiesQuery.refetch()} className="rounded-2xl">إعادة المحاولة</Button>}
+        emptyTitle={hasFilterValues ? 'لا توجد نتائج مطابقة للبحث' : 'لم تُضف عقارات بعد'}
+        emptyDescription={hasFilterValues ? 'جرّب تغيير عوامل البحث أو إزالة الفلتر.' : 'ابدأ بإضافة أول عقار لك.'}
+        emptyAction={!hasFilterValues ? (
+          <Button className="rounded-2xl" onClick={() => { setEditPropertyId(undefined); setModalOpen(true); }}>
+            <Building2 className="me-2 size-4" />إضافة أول عقار
+          </Button>
+        ) : undefined}
+      >
 
       {/* Cards view (mobile default + optional on desktop) */}
-      {!propertiesQuery.isLoading && !propertiesQuery.isError && properties.length > 0 && (viewMode === 'cards') && (
+      {(viewMode === 'cards') && (
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {properties.map((p) => (
             <div key={p.id} className="relative group">
@@ -191,7 +176,7 @@ export function PropertiesListPage() {
       )}
 
       {/* Table view (desktop optional) */}
-      {!propertiesQuery.isLoading && !propertiesQuery.isError && properties.length > 0 && viewMode === 'table' && (
+      {viewMode === 'table' && (
         <Card className="overflow-hidden rounded-2xl">
           <Table>
             <TableHeader>
@@ -238,8 +223,10 @@ export function PropertiesListPage() {
         </Card>
       )}
 
+      </AsyncContentState>
+
       {/* Pagination */}
-      {totalPages > 1 && (
+      {!propertiesQuery.isLoading && !propertiesQuery.isError && totalPages > 1 && (
         <div className="flex items-center justify-center gap-2">
           <Button
             variant="secondary"

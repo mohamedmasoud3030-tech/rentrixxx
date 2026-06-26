@@ -1,16 +1,14 @@
 import { Link } from '@tanstack/react-router';
 import { FileText, Mail, Phone, ReceiptText, ShieldCheck, TriangleAlert, Users } from 'lucide-react';
 import { useMemo, useState } from 'react';
-import { EmptyState } from '@/components/empty-state';
+import { AsyncContentState } from '@/components/async-content-state';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { SearchInput } from '@/components/ui/search-input';
-import { Skeleton } from '@/components/ui/skeleton';
 import type { TenantWorkspaceRow } from './tenantWorkspaceService';
 import { useTenantWorkspace } from './useTenantWorkspace';
 
 const pageSize = 10;
-const tenantSkeletonKeys = ['tenant-skeleton-1', 'tenant-skeleton-2', 'tenant-skeleton-3', 'tenant-skeleton-4'] as const;
 
 function valueOrDash(value: string | number | null | undefined) {
   return value === null || value === undefined || value === '' ? '—' : String(value);
@@ -91,10 +89,18 @@ function TenantCard({ tenant }: Readonly<{ tenant: TenantWorkspaceRow }>) {
 }
 
 function TenantWorkspaceContent({ isError, isLoading, onRetry, rows }: Readonly<{ isError: boolean; isLoading: boolean; onRetry: () => void; rows: TenantWorkspaceRow[] }>) {
-  if (isLoading) return <div className="space-y-3">{tenantSkeletonKeys.map((key) => <Skeleton key={key} className="h-48" />)}</div>;
-  if (isError) return <Card><CardContent className="p-6"><EmptyState title="تعذر تحميل المستأجرين" description="حدث خطأ أثناء تحميل بيانات المستأجرين. إعادة المحاولة آمنة ولا تغير البيانات." role="alert" ariaLive="assertive" action={<Button onClick={onRetry}>إعادة المحاولة</Button>} /></CardContent></Card>;
-  if (rows.length > 0) return <div className="grid gap-4">{rows.map((tenant) => <TenantCard key={tenant.person.id} tenant={tenant} />)}</div>;
-  return <Card><CardContent className="p-6"><EmptyState title="لا توجد سجلات مستأجرين" description="سيظهر هنا أي شخص مصنف كمستأجر من نموذج الأشخاص الحالي." /></CardContent></Card>;
+  return (
+    <AsyncContentState
+      status={isLoading ? 'loading' : isError ? 'error' : rows.length === 0 ? 'empty' : 'ready'}
+      errorTitle="تعذر تحميل المستأجرين"
+      errorFallbackMessage="حدث خطأ أثناء تحميل بيانات المستأجرين. إعادة المحاولة آمنة ولا تغير البيانات."
+      errorAction={<Button onClick={onRetry}>إعادة المحاولة</Button>}
+      emptyTitle="لا توجد سجلات مستأجرين"
+      emptyDescription="سيظهر هنا أي شخص مصنف كمستأجر من نموذج الأشخاص الحالي."
+    >
+      <div className="grid gap-4">{rows.map((tenant) => <TenantCard key={tenant.person.id} tenant={tenant} />)}</div>
+    </AsyncContentState>
+  );
 }
 
 export function TenantsPage() {
