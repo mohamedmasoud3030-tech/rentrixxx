@@ -22,21 +22,39 @@ jobs:
       - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: 24
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm supabase:migration-evidence
-      - run: pnpm typecheck
+      - name: Run typecheck
+        id: typecheck
+        shell: bash
+        run: |
+          set +e
+          pnpm typecheck > /tmp/rentrix-typecheck.log 2>&1
+          status=$?
+          echo "status=$status" >> "$GITHUB_OUTPUT"
+          tail -n 200 /tmp/rentrix-typecheck.log
+          exit 0
+      - name: Upload typecheck diagnostics
+        if: steps.typecheck.outputs.status != '0'
+        uses: actions/upload-artifact@v4
+        with:
+          name: rentrix-typecheck-diagnostics
+          path: /tmp/rentrix-typecheck.log
+      - name: Fail on typecheck errors
+        if: steps.typecheck.outputs.status != '0'
+        run: exit 1
       - run: pnpm lint
       - run: pnpm build
-      - run: pnpm --filter ./artifacts/rentrix run typecheck:test
-      - run: pnpm --filter ./artifacts/rentrix test
+      - run: pnpm --filter ./rentrix-app run typecheck:test
+      - run: pnpm --filter ./rentrix-app test
       - name: Run financial tests
         id: financial-tests
         shell: bash
         run: |
           set +e
-          pnpm --filter ./artifacts/rentrix run test:financials > /tmp/rentrix-financial-tests.log 2>&1
+          pnpm --filter ./rentrix-app run test:financials > /tmp/rentrix-financial-tests.log 2>&1
           status=$?
           echo "status=$status" >> "$GITHUB_OUTPUT"
           tail -n 160 /tmp/rentrix-financial-tests.log

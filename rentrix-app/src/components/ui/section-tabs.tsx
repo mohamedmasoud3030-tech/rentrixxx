@@ -10,7 +10,7 @@ export type SectionTabItem<TId extends string> = Readonly<{
 type SectionTabsProps<TId extends string> = Readonly<{
   items: ReadonlyArray<SectionTabItem<TId>>;
   activeId: TId;
-  onChange: (id: TId) => void;
+  onChange: (id: NoInfer<TId>) => void;
   ariaLabel: string;
 }>;
 

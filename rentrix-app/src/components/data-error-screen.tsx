@@ -4,7 +4,7 @@ import { getEnvDiagnostics, parseSupabaseDiagnostics } from '@/lib/runtime-diagn
 
 type DataErrorScreenProps = {
   title: string;
-  fallbackMessage: string;
+  fallbackMessage?: string;
   error?: unknown;
 };
 

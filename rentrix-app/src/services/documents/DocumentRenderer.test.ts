@@ -38,4 +38,24 @@ describe('collectDocumentTextChunks', () => {
     expect(collectDocumentTextChunks(invoice)).toEqual(expect.arrayContaining(['فاتورة', 'المستأجر', 'المتبقي']));
     expect(collectDocumentTextChunks(expense)).toEqual(expect.arrayContaining(['سند مصروف', 'العقار', 'برج النيل']));
   });
+
+  it('builds every financial statement document type', () => {
+    const settings = { general: { company: { name: 'شركة الاختبار' } }, operational: { currency: 'OMR' } };
+    const trialBalance = documentEngine.build({
+      type: 'trial_balance',
+      payload: { trial: { lines: [{ no: '101', name: 'النقدية', debit: 100, credit: 0 }], totalDebit: 100, totalCredit: 100 }, settings, endDate: '2026-06-30' },
+    });
+    const incomeStatement = documentEngine.build({
+      type: 'income_statement',
+      payload: { pnlData: { totalRevenue: 100, totalExpense: 25, netIncome: 75, revenues: [{ label: 'إيجارات', amount: 100 }], expenses: [{ label: 'صيانة', amount: 25 }] }, settings, dateRange: '2026-06-01 إلى 2026-06-30' },
+    });
+    const balanceSheet = documentEngine.build({
+      type: 'balance_sheet',
+      payload: { data: { assets: [{ label: 'نقدية', amount: 100 }], liabilities: [{ label: 'دائنون', amount: 25 }], equity: [{ label: 'رأس المال', amount: 75 }], totalAssets: 100, totalLiabilities: 25, totalEquity: 75 }, settings, date: '2026-06-30' },
+    });
+
+    expect(trialBalance.tables[0].rows).toEqual([['101', 'النقدية', '100.000 OMR', '0.000 OMR']]);
+    expect(incomeStatement.tables.map((table) => table.title)).toEqual(['الإيرادات', 'المصروفات']);
+    expect(balanceSheet.tables.map((table) => table.title)).toEqual(['الأصول', 'الالتزامات', 'حقوق الملكية']);
+  });
 });

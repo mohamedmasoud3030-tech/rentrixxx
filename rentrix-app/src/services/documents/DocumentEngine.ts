@@ -4,6 +4,14 @@ import type { DocumentRequest, SignatureRole, UnifiedDocumentModel } from './typ
 
 type Settings = { general?: { company?: { name?: string; address?: string; phone?: string } }; operational?: { currency?: string } };
 type AppLikeDb = { settings: Settings; contracts: Contract[]; tenants: Person[]; units: Unit[]; properties: Property[]; receipts?: Receipt[] };
+type TrialBalanceInput = { lines: Array<{ no: string; name: string; debit: number; credit: number }>; totalDebit: number; totalCredit: number };
+type PdfRow = { label: string; amount: number };
+type IncomeStatementInput = { totalRevenue: number; totalExpense: number; netIncome: number; revenues: PdfRow[]; expenses: PdfRow[] };
+type BalanceSheetInput = { assets: PdfRow[]; liabilities: PdfRow[]; equity: PdfRow[]; totalAssets: number; totalLiabilities: number; totalEquity: number };
+
+type TrialBalancePayload = { trial: TrialBalanceInput; settings: Settings; endDate: string };
+type IncomeStatementPayload = { pnlData: IncomeStatementInput; settings: Settings; dateRange: string };
+type BalanceSheetPayload = { data: BalanceSheetInput; settings: Settings; date: string };
 
 const fmtDate = (v?: string | null) => (v ? new Date(v).toLocaleDateString('en-GB') : '-');
 const fmtDateTime = (v?: string | null) => (v ? new Date(v).toLocaleString('en-GB') : '-');
@@ -60,6 +68,12 @@ class DocumentEngine {
       case 'expense_voucher':
       case 'payment':
         return this.buildExpense(request.payload as { expense: Expense; db: AppLikeDb });
+      case 'trial_balance':
+        return this.buildTrialBalance(request.payload as TrialBalancePayload);
+      case 'income_statement':
+        return this.buildIncomeStatement(request.payload as IncomeStatementPayload);
+      case 'balance_sheet':
+        return this.buildBalanceSheet(request.payload as BalanceSheetPayload);
       default:
         throw new Error(`Unsupported document type: ${request.type}`);
     }
@@ -179,6 +193,86 @@ class DocumentEngine {
       ],
       footer: footer(['accountant', 'general_manager']),
       fileName: fileName('expense', expense.id.slice(0, 8), expense.id),
+    };
+  }
+
+  private buildTrialBalance({ trial, settings, endDate }: TrialBalancePayload): UnifiedDocumentModel {
+    return {
+      type: 'trial_balance',
+      header: baseHeader(settings, 'ميزان المراجعة', fmtDate(endDate)),
+      kpis: [
+        kpi('إجمالي المدين', toMoney(trial.totalDebit, settings)),
+        kpi('إجمالي الدائن', toMoney(trial.totalCredit, settings)),
+      ],
+      tables: [
+        TableGenerator.build(
+          ['رقم الحساب', 'اسم الحساب', 'مدين', 'دائن'],
+          trial.lines.map((line) => [line.no, line.name, toMoney(line.debit, settings), toMoney(line.credit, settings)]),
+          ['الإجمالي', '', toMoney(trial.totalDebit, settings), toMoney(trial.totalCredit, settings)],
+        ),
+      ],
+      footer: footer(['accountant', 'general_manager']),
+      fileName: fileName('trial-balance', endDate, 'report'),
+    };
+  }
+
+  private buildIncomeStatement({ pnlData, settings, dateRange }: IncomeStatementPayload): UnifiedDocumentModel {
+    return {
+      type: 'income_statement',
+      header: baseHeader(settings, 'قائمة الدخل', dateRange),
+      kpis: [
+        kpi('إجمالي الإيرادات', toMoney(pnlData.totalRevenue, settings)),
+        kpi('إجمالي المصروفات', toMoney(pnlData.totalExpense, settings)),
+        kpi('صافي الدخل', toMoney(pnlData.netIncome, settings)),
+      ],
+      tables: [
+        {
+          ...TableGenerator.build(
+            ['البند', 'المبلغ'],
+            pnlData.revenues.map((row) => [row.label, toMoney(row.amount, settings)]),
+            ['إجمالي الإيرادات', toMoney(pnlData.totalRevenue, settings)],
+          ),
+          title: 'الإيرادات',
+        },
+        {
+          ...TableGenerator.build(
+            ['البند', 'المبلغ'],
+            pnlData.expenses.map((row) => [row.label, toMoney(row.amount, settings)]),
+            ['إجمالي المصروفات', toMoney(pnlData.totalExpense, settings)],
+          ),
+          title: 'المصروفات',
+        },
+      ],
+      footer: footer(['accountant', 'general_manager']),
+      fileName: fileName('income-statement', dateRange, 'report'),
+    };
+  }
+
+  private buildBalanceSheet({ data, settings, date }: BalanceSheetPayload): UnifiedDocumentModel {
+    const buildSection = (title: string, rows: PdfRow[], totalLabel: string, total: number) => ({
+      ...TableGenerator.build(
+        ['البند', 'المبلغ'],
+        rows.map((row) => [row.label, toMoney(row.amount, settings)]),
+        [totalLabel, toMoney(total, settings)],
+      ),
+      title,
+    });
+
+    return {
+      type: 'balance_sheet',
+      header: baseHeader(settings, 'الميزانية العمومية', fmtDate(date)),
+      kpis: [
+        kpi('إجمالي الأصول', toMoney(data.totalAssets, settings)),
+        kpi('إجمالي الالتزامات', toMoney(data.totalLiabilities, settings)),
+        kpi('إجمالي حقوق الملكية', toMoney(data.totalEquity, settings)),
+      ],
+      tables: [
+        buildSection('الأصول', data.assets, 'إجمالي الأصول', data.totalAssets),
+        buildSection('الالتزامات', data.liabilities, 'إجمالي الالتزامات', data.totalLiabilities),
+        buildSection('حقوق الملكية', data.equity, 'إجمالي حقوق الملكية', data.totalEquity),
+      ],
+      footer: footer(['accountant', 'general_manager']),
+      fileName: fileName('balance-sheet', date, 'report'),
     };
   }
 }

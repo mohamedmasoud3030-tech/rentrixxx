@@ -18,7 +18,7 @@ Use actual code and migrations as the source of truth. Prefer `rg` and `rg --fil
 
 ## Root boundary
 
-- Treat `artifacts/rentrix/`, `lib/`, and `supabase/` as the canonical runtime boundary.
+- Treat `rentrix-app/`, `lib/`, and `supabase/` as the canonical runtime boundary.
 - Treat `artifacts/rentrix-promo/` as the retained optional promotional artifact.
 - `archive/recovery-reference/` and `understand-anything/` are not present in the current repository checkout. Treat references to them as removed historical references, not active runtime paths.
 - Treat `.agents/`, `.agent-skills/`, `.ai/`, and `.codex/vendor/` as agent-tooling layers, not runtime code.
@@ -46,7 +46,7 @@ The current visible constrained-beta navigation and planned/deferred classificat
 
 ## Active architecture constraints
 
-- The active application is `artifacts/rentrix/`.
+- The active application is `rentrix-app/`.
 - Keep the current TanStack Router, React Query, Supabase, PWA, RTL, and i18n direction.
 - Do not restore legacy `useApp`, `AppContext`, `dataService`, local database flows, or `react-router-dom` into the active app.
 - Reuse historical recovery notes only from git history or a reviewed restored reference after comparing them against current architecture and adapting deliberately.
@@ -87,9 +87,9 @@ pnpm install --frozen-lockfile
 pnpm typecheck
 pnpm lint
 pnpm build
-pnpm --filter ./artifacts/rentrix run typecheck:test
-pnpm --filter ./artifacts/rentrix test
-pnpm --filter ./artifacts/rentrix run test:financials
+pnpm --filter ./rentrix-app run typecheck:test
+pnpm --filter ./rentrix-app test
+pnpm --filter ./rentrix-app run test:financials
 ```
 
 For schema or RLS changes, also run the repository-approved database validation flow when the required local or preview Supabase environment is available.

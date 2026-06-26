@@ -10,9 +10,9 @@
   "scripts": {
     "preinstall": "sh -c 'rm -f package-lock.json yarn.lock; case \"$npm_config_user_agent\" in pnpm/*) ;; *) echo \"Use pnpm instead\" >&2; exit 1 ;; esac'",
     "install:clean": "pnpm install --frozen-lockfile",
-    "build": "pnpm -r --if-present run build",
-    "typecheck": "tsc -b && pnpm -r --filter ./artifacts/rentrix --if-present run typecheck",
-    "lint": "pnpm -r --filter ./artifacts/rentrix --if-present run lint",
+    "build": "pnpm --filter @workspace/rentrix run build",
+    "typecheck": "tsc -b && pnpm --filter @workspace/rentrix run typecheck",
+    "lint": "pnpm --filter @workspace/rentrix run lint",
     "supabase:migration-evidence": "bash scripts/collect-supabase-migration-evidence.sh"
   },
   "devDependencies": {
