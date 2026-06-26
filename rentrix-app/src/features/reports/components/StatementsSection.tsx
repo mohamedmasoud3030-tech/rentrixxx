@@ -1,0 +1,122 @@
+import { Inbox, WalletCards } from 'lucide-react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { KpiCard } from '@/components/ui/kpi-card';
+import { Skeleton } from '@/components/ui/skeleton';
+import { formatMoney, formatShortId } from '@/features/financials/components/financials-formatters';
+import type { DailyCollectionReportRow } from '@/features/financials/reports/financialReportsService';
+import { useAgedReceivablesReport, useExpenseBreakdownReport, useFinancialPeriodSummaryReport } from '@/features/financials/reports/useFinancialReports';
+import { createReceiptPrintHref } from '../reports-page.helpers';
+
+export function StatementsSection({ agedReport, receiptRows, financialSummary, expenseBreakdown, dailyRows, isLoading }: Readonly<{
+  agedReport: NonNullable<ReturnType<typeof useAgedReceivablesReport>['data']> | undefined;
+  receiptRows: Array<{ id: string; receipt_number: string; payment_date: string; amount: number; tenant_name: string | null }>;
+  financialSummary: NonNullable<ReturnType<typeof useFinancialPeriodSummaryReport>['data']> | undefined;
+  expenseBreakdown: NonNullable<ReturnType<typeof useExpenseBreakdownReport>['data']> | undefined;
+  dailyRows: DailyCollectionReportRow[];
+  isLoading: boolean;
+}>) {
+  const tenantRows = (agedReport?.rows ?? []).slice(0, 6);
+  const ownerMovementRows = (expenseBreakdown?.byProperty ?? []).slice(0, 6);
+  const totalCollections = dailyRows.reduce((total, row) => total + row.totalPaid, 0);
+  const totalExpenses = financialSummary?.expenses ?? 0;
+  const totalInvoiced = financialSummary?.invoiced ?? 0;
+  const totalOutstanding = financialSummary?.outstanding ?? 0;
+  const totalPayments = financialSummary?.paymentsCount ?? 0;
+  const totalInvoicesCount = financialSummary?.invoicesCount ?? 0;
+  const totalExpensesCount = financialSummary?.expensesCount ?? 0;
+  const totalReceiptsCount = receiptRows.length;
+
+  return (
+    <div className="space-y-4">
+      <Card className="scroll-mt-28 border-border/60 bg-muted/20">
+        <CardHeader className="px-4 py-3 sm:px-5">
+          <CardTitle className="text-sm font-black">كشوف الحساب</CardTitle>
+          <CardDescription>
+            كشوف حركة تشغيلية للقراءة فقط. لا تعرض هذه الصفحة أرصدة جارية ولا تسويات نهائية ولا دفتر أستاذ محاسبي.
+            إذا لم تتوفر بيانات كافية، تظهر رسالة توضيح بدلاً من أرقام مُقدَّرة.
+          </CardDescription>
+        </CardHeader>
+      </Card>
+
+      <div className="grid gap-4 lg:grid-cols-3">
+        <Card className="border-border/60">
+          <CardHeader className="border-b border-border/60 bg-muted/20 px-4 py-3 sm:px-5">
+            <CardTitle className="text-sm font-black">كشف حساب المستأجر</CardTitle>
+            <CardDescription>ذمم ومتأخرات المستأجرين من تقرير receivables، مع أحدث إيصالات متاحة من السجل.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-2 p-4 sm:p-5">
+            {isLoading ? (
+              <Skeleton className="h-32" />
+            ) : tenantRows.length === 0 ? (
+              <div className="flex min-h-24 items-center gap-3 rounded-xl border border-dashed bg-background/70 p-3 text-sm text-muted-foreground">
+                <Inbox className="size-5 text-muted-foreground/70" />
+                لا توجد ذمم مستأجرين حسب تاريخ as-of.
+              </div>
+            ) : (
+              tenantRows.map((row) => (
+                <div key={row.contractId} className="rounded-xl bg-muted/30 p-3 text-sm">
+                  <p className="font-medium">{row.tenantName ?? 'مستأجر غير محدد'}</p>
+                  <div className="mt-1 flex items-center justify-between gap-2">
+                    <span className="text-muted-foreground">ذمم</span>
+                    <span className="font-black" dir="ltr">{formatMoney(row.totalOutstanding)}</span>
+                  </div>
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-muted-foreground">متأخر</span>
+                    <span className="font-black text-destructive" dir="ltr">{formatMoney(row.totalOverdue)}</span>
+                  </div>
+                  <p className="mt-1 text-xs text-muted-foreground">{row.invoiceCount.toLocaleString('ar')} فواتير مرتبطة</p>
+                </div>
+              ))
+            )}
+            {receiptRows.slice(0, 3).map((receipt) => (
+              <a key={`receipt-${receipt.id}`} className="block rounded-xl border p-3 text-sm hover:border-primary/40" href={createReceiptPrintHref(receipt.id)}>
+                {receipt.receipt_number} · {receipt.tenant_name ?? '—'} · <span dir="ltr">{formatMoney(receipt.amount)}</span>
+              </a>
+            ))}
+          </CardContent>
+        </Card>
+
+        <Card className="border-border/60">
+          <CardHeader className="border-b border-border/60 bg-muted/20 px-4 py-3 sm:px-5">
+            <CardTitle className="text-sm font-black">ملخص حركة المالك</CardTitle>
+            <CardDescription>ملخص حركة عقار مدعوم بالمصروفات المرتبطة به. ليس كشف تسوية مالك.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-2 p-4 sm:p-5">
+            {isLoading ? (
+              <Skeleton className="h-32" />
+            ) : ownerMovementRows.length === 0 ? (
+              <div className="flex min-h-24 items-center gap-3 rounded-xl border border-dashed bg-background/70 p-3 text-sm text-muted-foreground">
+                <Inbox className="size-5 text-muted-foreground/70" />
+                لا توجد حركة مصروفات عقارية للفترة المحددة، ولا تتوفر بيانات مالك تفصيلية بعد.
+              </div>
+            ) : (
+              ownerMovementRows.map((row) => (
+                <div key={row.propertyId} className="rounded-xl bg-muted/30 p-3 text-sm">
+                  <p className="font-medium">{row.propertyTitle ?? formatShortId(row.propertyId)}</p>
+                  <div className="mt-1 flex items-center justify-between gap-2">
+                    <span className="text-muted-foreground">مصروفات مسجلة</span>
+                    <span className="font-black" dir="ltr">{formatMoney(row.total)}</span>
+                  </div>
+                  <p className="text-xs text-muted-foreground">{row.count.toLocaleString('ar')} حركة مصروفات في الفترة</p>
+                </div>
+              ))
+            )}
+          </CardContent>
+        </Card>
+
+        <Card className="border-border/60">
+          <CardHeader className="border-b border-border/60 bg-muted/20 px-4 py-3 sm:px-5">
+            <CardTitle className="text-sm font-black">ملخص حركة المكتب</CardTitle>
+            <CardDescription>ملخص فواتير وتحصيلات ومصروفات للفترة، وليس قائمة دخل أو دفتر حسابات.</CardDescription>
+          </CardHeader>
+          <CardContent className="grid gap-2 p-4 sm:p-5">
+            <KpiCard label="فواتير الفترة" value={formatMoney(totalInvoiced)} icon={WalletCards} accent="sky" sub={`${totalInvoicesCount} فواتير`} compact />
+            <KpiCard label="تحصيلات الفترة" value={formatMoney(totalCollections)} icon={WalletCards} accent="emerald" sub={`${totalPayments} مدفوعات`} compact />
+            <KpiCard label="مصروفات الفترة" value={formatMoney(totalExpenses)} icon={WalletCards} accent="rose" sub={`${totalExpensesCount} مصروفات`} compact />
+            <KpiCard label="رصيد مستحق (قراءة فقط)" value={formatMoney(totalOutstanding)} icon={WalletCards} accent="amber" sub={`${totalReceiptsCount} إيصالات متاحة للطباعة`} compact />
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
+}
