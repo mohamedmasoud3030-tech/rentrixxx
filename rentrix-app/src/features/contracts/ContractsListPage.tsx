@@ -6,6 +6,7 @@ import { EmptyState } from '@/components/empty-state';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { ContractCard } from '@/components/ui/contract-card';
+import { DataTable } from '@/components/ui/data-table';
 import { EntityCell } from '@/components/ui/entity-cell';
 import { Skeleton } from '@/components/ui/skeleton';
 import { StatusBadge } from '@/components/ui/status-badge';
@@ -21,8 +22,6 @@ import { contractStatusLabels, contractStatusTone, contractStatusValues, payment
 import { useCompanySettingsContract } from '../settings/useCompanySettings';
 import { useContracts, useSoftDeleteContract } from './useContracts';
 import type { ContractListItem, ContractStatusFilter } from './services/contractService';
-
-// ─── pure helpers (no side-effects) ────────────────────────────────────────
 
 const filterLabels: Record<ContractStatusFilter, string> = {
   all: 'الكل',
@@ -43,11 +42,11 @@ function isExpiringSoon(contract: ContractListItem) {
 
 function summarizeContracts(contracts: ContractListItem[]) {
   return contracts.reduce(
-    (s, c) => ({
-      total: s.total + 1,
-      active: s.active + (c.status === 'active' ? 1 : 0),
-      expiringSoon: s.expiringSoon + (isExpiringSoon(c) ? 1 : 0),
-      rentTotal: s.rentTotal + (Number.isFinite(c.rent_amount) ? c.rent_amount : 0),
+    (summary, contract) => ({
+      total: summary.total + 1,
+      active: summary.active + (contract.status === 'active' ? 1 : 0),
+      expiringSoon: summary.expiringSoon + (isExpiringSoon(contract) ? 1 : 0),
+      rentTotal: summary.rentTotal + (Number.isFinite(contract.rent_amount) ? contract.rent_amount : 0),
     }),
     { total: 0, active: 0, expiringSoon: 0, rentTotal: 0 },
   );
@@ -59,8 +58,8 @@ function normalizeSearchText(value: string) {
     .replace(/[\u064B-\u065F\u0670\u06D6-\u06ED]/g, '')
     .replace(/[أإآ]/g, 'ا')
     .replace(/ى/g, 'ي')
-    .replace(/[٠-٩]/g, (d) => String(d.charCodeAt(0) - 0x0660))
-    .replace(/[۰-۹]/g, (d) => String(d.charCodeAt(0) - 0x06f0));
+    .replace(/[٠-٩]/g, (digit) => String(digit.charCodeAt(0) - 0x0660))
+    .replace(/[۰-۹]/g, (digit) => String(digit.charCodeAt(0) - 0x06f0));
 }
 
 function getSearchText(contract: ContractListItem) {
@@ -82,8 +81,6 @@ function exportContractsCsv(contracts: ContractListItem[]) {
   URL.revokeObjectURL(url);
 }
 
-// ─── sub-components ─────────────────────────────────────────────────────────
-
 function DetailBox({ label, children }: { label: string; children: ReactNode }) {
   return (
     <div className="rounded-2xl border border-border bg-background p-4">
@@ -92,8 +89,6 @@ function DetailBox({ label, children }: { label: string; children: ReactNode }) 
     </div>
   );
 }
-
-// ─── main page ───────────────────────────────────────────────────────────────
 
 export function ContractsListPage() {
   const navigate = useNavigate();
@@ -112,19 +107,17 @@ export function ContractsListPage() {
 
   const filters: ContractStatusFilter[] = ['all', ...contractStatusValues];
   const normalizedSearch = normalizeSearchText(searchTerm.trim());
-
   const filteredContracts = useMemo(() => {
     const contracts = contractsQuery.data ?? [];
-    return contracts.filter((c) => {
-      const matchesSearch = !normalizedSearch || getSearchText(c).includes(normalizedSearch);
-      const matchesExpiry = !expiringOnly || isExpiringSoon(c);
+    return contracts.filter((contract) => {
+      const matchesSearch = !normalizedSearch || getSearchText(contract).includes(normalizedSearch);
+      const matchesExpiry = !expiringOnly || isExpiringSoon(contract);
       return matchesSearch && matchesExpiry;
     });
   }, [contractsQuery.data, expiringOnly, normalizedSearch]);
 
   const listSummary = useMemo(() => summarizeContracts(contractsQuery.data ?? []), [contractsQuery.data]);
   const visibleSummary = useMemo(() => summarizeContracts(filteredContracts), [filteredContracts]);
-
   const hasContracts = Boolean(contractsQuery.data?.length);
   const hasActiveFilters = status !== 'all' || Boolean(searchTerm.trim()) || expiringOnly;
 
@@ -136,12 +129,11 @@ export function ContractsListPage() {
     if (deleteId) deleteMutation.mutate(deleteId, { onSettled: () => setDeleteId(null) });
   };
 
-  const filterOptions = filters.map((f) => ({ value: f, label: filterLabels[f] }));
+  const filterOptions = filters.map((filter) => ({ value: filter, label: filterLabels[filter] }));
 
   return (
     <>
       <div className="space-y-6">
-        {/* Header */}
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <h2 className="text-3xl font-black">العقود</h2>
@@ -149,16 +141,12 @@ export function ContractsListPage() {
           </div>
           <div className="flex flex-wrap gap-2">
             <Button variant="secondary" onClick={() => exportContractsCsv(filteredContracts)} disabled={!filteredContracts.length}>
-              <Download className="me-2 size-4" />
-              تصدير CSV
+              <Download className="me-2 size-4" />تصدير CSV
             </Button>
-            <Button onClick={openCreate}>
-              <Plus className="me-2 size-4" />إنشاء عقد
-            </Button>
+            <Button onClick={openCreate}><Plus className="me-2 size-4" />إنشاء عقد</Button>
           </div>
         </div>
 
-        {/* KPI grid */}
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
           <KpiCard label="إجمالي العقود" value={listSummary.total} sub="حسب فلتر الحالة الحالي" icon={FileText} accent="primary" />
           <KpiCard label="العقود النشطة" value={listSummary.active} sub="من إجمالي العقود المحملة" icon={WalletCards} accent="emerald" />
@@ -166,41 +154,24 @@ export function ContractsListPage() {
           <KpiCard label="إيجار الظاهرة" value={formatContractMoney(companySettings, visibleSummary.rentTotal)} sub="بعد البحث والفلاتر" icon={WalletCards} accent="sky" />
         </div>
 
-        {/* Filters + search */}
         <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex flex-wrap items-center gap-2">
             <FilterTabs options={filterOptions} value={status} onChange={setStatus} />
-            <Button
-              variant={expiringOnly ? 'primary' : 'secondary'}
-              onClick={() => setExpiringOnly((v) => !v)}
-              className="shrink-0"
-            >
-              <AlertTriangle className="me-2 size-4" />
-              تنتهي خلال 30 يوم
+            <Button variant={expiringOnly ? 'primary' : 'secondary'} onClick={() => setExpiringOnly((value) => !value)} className="shrink-0">
+              <AlertTriangle className="me-2 size-4" />تنتهي خلال 30 يوم
             </Button>
-            {hasActiveFilters && (
-              <Button variant="ghost" onClick={resetFilters}>مسح الفلاتر</Button>
-            )}
+            {hasActiveFilters ? <Button variant="ghost" onClick={resetFilters}>مسح الفلاتر</Button> : null}
           </div>
-          <SearchInput
-            value={searchTerm}
-            onChange={setSearchTerm}
-            placeholder="بحث باسم المستأجر، الوحدة، العقار، أو رقم العقد"
-            className="w-full lg:max-w-md"
-          />
+          <SearchInput value={searchTerm} onChange={setSearchTerm} placeholder="بحث باسم المستأجر، الوحدة، العقار، أو رقم العقد" className="w-full lg:max-w-md" />
         </div>
 
-        {/* Loading */}
-        {contractsQuery.isLoading && (
+        {contractsQuery.isLoading ? (
           <Card className="overflow-hidden">
-            <div className="space-y-3 p-6">
-              {Array.from({ length: 6 }, (_, i) => <Skeleton key={i} className="h-14" />)}
-            </div>
+            <div className="space-y-3 p-6">{Array.from({ length: 6 }, (_, index) => <Skeleton key={index} className="h-14" />)}</div>
           </Card>
-        )}
+        ) : null}
 
-        {/* Error */}
-        {!contractsQuery.isLoading && contractsQuery.isError && (
+        {!contractsQuery.isLoading && contractsQuery.isError ? (
           <Card className="overflow-hidden">
             <div className="p-6">
               <EmptyState
@@ -210,10 +181,9 @@ export function ContractsListPage() {
               />
             </div>
           </Card>
-        )}
+        ) : null}
 
-        {/* Empty state */}
-        {!contractsQuery.isLoading && !contractsQuery.isError && !filteredContracts.length && (
+        {!contractsQuery.isLoading && !contractsQuery.isError && !filteredContracts.length ? (
           <Card className="overflow-hidden">
             <div className="p-6">
               {hasContracts ? (
@@ -222,21 +192,15 @@ export function ContractsListPage() {
                 <EmptyState
                   title="لا توجد عقود"
                   description="ابدأ بإنشاء أول عقد وربطه بالعقار والوحدة والمستأجر."
-                  action={
-                    <Button onClick={openCreate}>
-                      <FileText className="me-2 size-4" />إنشاء عقد
-                    </Button>
-                  }
+                  action={<Button onClick={openCreate}><FileText className="me-2 size-4" />إنشاء عقد</Button>}
                 />
               )}
             </div>
           </Card>
-        )}
+        ) : null}
 
-        {/* Results */}
-        {!contractsQuery.isLoading && !contractsQuery.isError && filteredContracts.length > 0 && (
+        {!contractsQuery.isLoading && !contractsQuery.isError && filteredContracts.length > 0 ? (
           <>
-            {/* ── Mobile card view ── */}
             <div className="grid gap-3 sm:grid-cols-2 md:hidden">
               {filteredContracts.map((contract) => {
                 const expiringSoon = isExpiringSoon(contract);
@@ -253,152 +217,116 @@ export function ContractsListPage() {
                       monthlyRent={contract.rent_amount}
                       status={contract.status.toUpperCase()}
                       onClick={() => navigate({ to: '/contracts/$contractId', params: { contractId: contract.id } })}
-                      formatMoney={(v) => formatContractMoney(companySettings, v)}
-                      formatDate={(v) => formatContractDate(companySettings, v)}
+                      formatMoney={(value) => formatContractMoney(companySettings, value)}
+                      formatDate={(value) => formatContractDate(companySettings, value)}
                     />
-                    {expiringSoon && (
-                      <p className="px-1 text-xs font-bold text-amber-700">ينتهي خلال {daysUntilEnd} يوم</p>
-                    )}
+                    {expiringSoon ? <p className="px-1 text-xs font-bold text-amber-700">ينتهي خلال {daysUntilEnd} يوم</p> : null}
                     <div className="flex items-center justify-end gap-2 px-1">
-                      <Button variant="secondary" size="sm" className="h-9" onClick={() => openEdit(contract.id)}>
-                        <Edit className="size-3.5 me-1" />تعديل
-                      </Button>
-                      <Button
-                        variant="danger"
-                        size="sm"
-                        className="h-9"
-                        aria-label={`حذف العقد ${getContractNumber(contract)}`}
-                        onClick={() => setDeleteId(contract.id)}
-                      >
-                        <Trash2 className="size-3.5 me-1" />حذف
-                      </Button>
+                      <Button variant="secondary" className="h-9" onClick={() => openEdit(contract.id)}><Edit className="me-1 size-3.5" />تعديل</Button>
+                      <Button variant="danger" className="h-9" aria-label={`حذف العقد ${getContractNumber(contract)}`} onClick={() => setDeleteId(contract.id)}><Trash2 className="me-1 size-3.5" />حذف</Button>
                     </div>
                   </div>
                 );
               })}
             </div>
 
-            {/* ── Desktop table view ── */}
-            <Card className="hidden overflow-hidden md:block">
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="w-12">تفاصيل</TableHead>
-                      <TableHead>العقد رقم</TableHead>
-                      <TableHead>المستأجر</TableHead>
-                      <TableHead>الوحدة</TableHead>
-                      <TableHead>تاريخ البداية</TableHead>
-                      <TableHead>تاريخ النهاية</TableHead>
-                      <TableHead>قيمة الإيجار</TableHead>
-                      <TableHead>الحالة</TableHead>
-                      <TableHead className="w-52">إجراءات</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredContracts.map((contract) => {
-                      const isExpanded = expandedId === contract.id;
-                      const expiringSoon = isExpiringSoon(contract);
-                      const daysUntilEnd = getDaysUntilEnd(contract);
-                      return (
-                        <Fragment key={contract.id}>
-                          <TableRow className={cn(expiringSoon && 'bg-amber-50/60 dark:bg-amber-950/20')}>
-                            <TableCell>
-                              <Button
-                                variant="ghost"
-                                className="min-h-9 px-3"
-                                aria-label={isExpanded ? 'إخفاء تفاصيل العقد' : 'عرض تفاصيل العقد'}
-                                onClick={() => setExpandedId((cur) => (cur === contract.id ? null : contract.id))}
-                              >
-                                {isExpanded ? <ChevronUp className="size-4" /> : <ChevronDown className="size-4" />}
+            <DataTable className="hidden md:block" aria-label="جدول العقود">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="w-12">تفاصيل</TableHead>
+                    <TableHead>العقد رقم</TableHead>
+                    <TableHead>المستأجر</TableHead>
+                    <TableHead>الوحدة</TableHead>
+                    <TableHead>تاريخ البداية</TableHead>
+                    <TableHead>تاريخ النهاية</TableHead>
+                    <TableHead>قيمة الإيجار</TableHead>
+                    <TableHead>الحالة</TableHead>
+                    <TableHead className="w-52">إجراءات</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredContracts.map((contract) => {
+                    const isExpanded = expandedId === contract.id;
+                    const expiringSoon = isExpiringSoon(contract);
+                    const daysUntilEnd = getDaysUntilEnd(contract);
+                    return (
+                      <Fragment key={contract.id}>
+                        <TableRow className={cn(expiringSoon && 'bg-amber-50/60 dark:bg-amber-950/20')}>
+                          <TableCell>
+                            <Button
+                              variant="ghost"
+                              className="min-h-9 px-3"
+                              aria-label={isExpanded ? 'إخفاء تفاصيل العقد' : 'عرض تفاصيل العقد'}
+                              onClick={() => setExpandedId((current) => (current === contract.id ? null : contract.id))}
+                            >
+                              {isExpanded ? <ChevronUp className="size-4" /> : <ChevronDown className="size-4" />}
+                            </Button>
+                          </TableCell>
+                          <TableCell>
+                            <p className="font-black">{getContractNumber(contract)}</p>
+                            {expiringSoon ? <p className="mt-1 text-xs font-bold text-amber-700">ينتهي خلال {daysUntilEnd} يوم</p> : null}
+                          </TableCell>
+                          <TableCell><EntityCell icon={User} title={contract.people?.full_name ?? '—'} /></TableCell>
+                          <TableCell>{contract.units?.unit_number ?? contract.properties?.title ?? '—'}</TableCell>
+                          <TableCell>{formatContractDate(companySettings, contract.start_date)}</TableCell>
+                          <TableCell>{formatContractDate(companySettings, contract.end_date)}</TableCell>
+                          <TableCell>{formatContractMoney(companySettings, contract.rent_amount)}</TableCell>
+                          <TableCell><StatusBadge tone={contractStatusTone[contract.status]}>{contractStatusLabels[contract.status]}</StatusBadge></TableCell>
+                          <TableCell onClick={(event) => event.stopPropagation()}>
+                            <div className="flex flex-wrap gap-2">
+                              <Button variant="secondary" className="min-h-11 px-3" asChild>
+                                <Link to="/contracts/$contractId" params={{ contractId: contract.id }} aria-label={`عرض تفاصيل العقد ${getContractNumber(contract)}`}><Eye className="size-4" /></Link>
                               </Button>
-                            </TableCell>
-                            <TableCell>
-                              <p className="font-black">{getContractNumber(contract)}</p>
-                              {expiringSoon && (
-                                <p className="mt-1 text-xs font-bold text-amber-700">ينتهي خلال {daysUntilEnd} يوم</p>
-                              )}
-                            </TableCell>
-                            <TableCell><EntityCell icon={User} title={contract.people?.full_name ?? '—'} /></TableCell>
-                            <TableCell>{contract.units?.unit_number ?? contract.properties?.title ?? '—'}</TableCell>
-                            <TableCell>{formatContractDate(companySettings, contract.start_date)}</TableCell>
-                            <TableCell>{formatContractDate(companySettings, contract.end_date)}</TableCell>
-                            <TableCell>{formatContractMoney(companySettings, contract.rent_amount)}</TableCell>
-                            <TableCell>
-                              <StatusBadge tone={contractStatusTone[contract.status]}>{contractStatusLabels[contract.status]}</StatusBadge>
-                            </TableCell>
-                            <TableCell onClick={(e) => e.stopPropagation()}>
-                              <div className="flex flex-wrap gap-2">
-                                <Button variant="secondary" className="min-h-11 px-3" asChild>
-                                  <Link to="/contracts/$contractId" params={{ contractId: contract.id }} aria-label={`عرض تفاصيل العقد ${getContractNumber(contract)}`}>
-                                    <Eye className="size-4" />
-                                  </Link>
-                                </Button>
-                                <Button variant="secondary" className="min-h-11 px-3" onClick={() => openEdit(contract.id)}>
-                                  <Edit className="size-4" />
-                                </Button>
-                                <Button
-                                  variant="danger"
-                                  className="min-h-11 px-3"
-                                  aria-label={`حذف العقد ${getContractNumber(contract)}`}
-                                  onClick={() => setDeleteId(contract.id)}
-                                >
-                                  <Trash2 className="size-4" />
-                                </Button>
+                              <Button variant="secondary" className="min-h-11 px-3" onClick={() => openEdit(contract.id)}><Edit className="size-4" /></Button>
+                              <Button variant="danger" className="min-h-11 px-3" aria-label={`حذف العقد ${getContractNumber(contract)}`} onClick={() => setDeleteId(contract.id)}><Trash2 className="size-4" /></Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+
+                        {isExpanded ? (
+                          <TableRow>
+                            <TableCell colSpan={9} className="bg-muted/30 p-4">
+                              <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
+                                <DetailBox label="بيانات المستأجر">
+                                  <p className="font-bold">{contract.people?.full_name ?? '—'}</p>
+                                  <p className="text-muted-foreground">هاتف: {contract.people?.phone ?? '—'}</p>
+                                  <p className="text-muted-foreground">بريد: {contract.people?.email ?? '—'}</p>
+                                  <p className="text-muted-foreground">هوية: {contract.people?.national_id ?? '—'}</p>
+                                </DetailBox>
+                                <DetailBox label="بيانات الوحدة والعقار">
+                                  <p className="font-bold">{contract.units?.unit_number ?? '—'} / {contract.properties?.title ?? '—'}</p>
+                                  <p className="text-muted-foreground">الدور: {contract.units?.floor ?? '—'}</p>
+                                  <p className="text-muted-foreground">العنوان: {contract.properties?.address ?? '—'}</p>
+                                </DetailBox>
+                                <DetailBox label="قيمة الإيجار">
+                                  <p className="text-lg font-black" dir="ltr">{formatContractMoney(companySettings, contract.rent_amount)}</p>
+                                  <p className="text-muted-foreground">دورة السداد: {paymentCycleLabels[contract.payment_cycle]}</p>
+                                </DetailBox>
+                                <DetailBox label="فترة العقد">
+                                  <p>{formatContractDate(companySettings, contract.start_date)} ← {formatContractDate(companySettings, contract.end_date)}</p>
+                                  <p className="text-muted-foreground">رقم العقد: {getContractNumber(contract)}</p>
+                                  {expiringSoon ? <p className="font-bold text-amber-700">تنبيه: العقد ينتهي خلال {daysUntilEnd} يوم.</p> : null}
+                                </DetailBox>
+                                <DetailBox label="الحالة">
+                                  <StatusBadge tone={contractStatusTone[contract.status]}>{contractStatusLabels[contract.status]}</StatusBadge>
+                                  <p className={cn('mt-2 text-muted-foreground', contract.units?.status === 'occupied' && 'text-primary')}>حالة الوحدة: {contract.units?.status ?? '—'}</p>
+                                </DetailBox>
                               </div>
                             </TableCell>
                           </TableRow>
-
-                          {isExpanded && (
-                            <TableRow>
-                              <TableCell colSpan={9} className="bg-muted/30 p-4">
-                                <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
-                                  <DetailBox label="بيانات المستأجر">
-                                    <p className="font-bold">{contract.people?.full_name ?? '—'}</p>
-                                    <p className="text-muted-foreground">هاتف: {contract.people?.phone ?? '—'}</p>
-                                    <p className="text-muted-foreground">بريد: {contract.people?.email ?? '—'}</p>
-                                    <p className="text-muted-foreground">هوية: {contract.people?.national_id ?? '—'}</p>
-                                  </DetailBox>
-                                  <DetailBox label="بيانات الوحدة والعقار">
-                                    <p className="font-bold">{contract.units?.unit_number ?? '—'} / {contract.properties?.title ?? '—'}</p>
-                                    <p className="text-muted-foreground">الدور: {contract.units?.floor ?? '—'}</p>
-                                    <p className="text-muted-foreground">العنوان: {contract.properties?.address ?? '—'}</p>
-                                  </DetailBox>
-                                  <DetailBox label="قيمة الإيجار">
-                                    <p className="text-lg font-black" dir="ltr">{formatContractMoney(companySettings, contract.rent_amount)}</p>
-                                    <p className="text-muted-foreground">دورة السداد: {paymentCycleLabels[contract.payment_cycle]}</p>
-                                  </DetailBox>
-                                  <DetailBox label="فترة العقد">
-                                    <p>{formatContractDate(companySettings, contract.start_date)} ← {formatContractDate(companySettings, contract.end_date)}</p>
-                                    <p className="text-muted-foreground">رقم العقد: {getContractNumber(contract)}</p>
-                                    {expiringSoon && (
-                                      <p className="font-bold text-amber-700">تنبيه: العقد ينتهي خلال {daysUntilEnd} يوم.</p>
-                                    )}
-                                  </DetailBox>
-                                  <DetailBox label="الحالة">
-                                    <StatusBadge tone={contractStatusTone[contract.status]}>{contractStatusLabels[contract.status]}</StatusBadge>
-                                    <p className={cn('mt-2 text-muted-foreground', contract.units?.status === 'occupied' && 'text-primary')}>
-                                      حالة الوحدة: {contract.units?.status ?? '—'}
-                                    </p>
-                                  </DetailBox>
-                                </div>
-                              </TableCell>
-                            </TableRow>
-                          )}
-                        </Fragment>
-                      );
-                    })}
-                  </TableBody>
-                </Table>
-              </div>
-            </Card>
+                        ) : null}
+                      </Fragment>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </DataTable>
           </>
-        )}
+        ) : null}
       </div>
 
-      {/* Modals */}
       <ContractFormModal open={modalOpen} onClose={closeModal} contractId={editContractId} />
-
       <ConfirmDialog
         open={Boolean(deleteId)}
         onOpenChange={(open) => { if (!open) setDeleteId(null); }}
