@@ -1,28 +1,35 @@
 import { ArrowLeft, Building2, DoorOpen, FileText, UserRoundCog, WalletCards } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { AsyncContentState } from '@/components/async-content-state';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { EmptyState } from '@/components/empty-state';
-import { Skeleton } from '@/components/ui/skeleton';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { formatMoney } from '@/features/financials/components/financials-formatters';
 import { getOwnerDisplayName } from '../ownerService';
 import type { OwnerDetailState } from '../types';
 
-function getErrorMessage(error: unknown): string {
-  return error instanceof Error ? error.message : 'تعذر تحميل ملف المالك.';
-}
-
 export function OwnerDetailView({ state }: Readonly<{ state: OwnerDetailState }>) {
-  if (state.status === 'loading') {
-    return <section aria-label="جار تحميل ملف المالك" className="space-y-4"><Skeleton className="h-40 rounded-3xl" /><Skeleton className="h-64 rounded-3xl" /></section>;
-  }
+  // Derive AsyncContentState status from the discriminated union
+  const asyncStatus =
+    state.status === 'loading' ? 'loading' :
+    state.status === 'error' ? 'error' :
+    state.status === 'unavailable' ? 'empty' :
+    'ready';
 
-  if (state.status === 'error') {
-    return <Card role="alert" className="border-destructive/30 bg-destructive/5"><CardHeader><CardTitle>تعذر تحميل ملف المالك</CardTitle><CardDescription>{getErrorMessage(state.error)}</CardDescription></CardHeader><CardContent><Button type="button" onClick={() => globalThis.location.reload()}>إعادة المحاولة</Button></CardContent></Card>;
-  }
-
-  if (state.status === 'unavailable') {
-    return <Card role="alert"><CardHeader><CardTitle>ملف المالك غير متاح بأمان</CardTitle><CardDescription>{state.reason}</CardDescription></CardHeader></Card>;
+  if (asyncStatus !== 'ready') {
+    return (
+      <AsyncContentState
+        status={asyncStatus}
+        error={state.status === 'error' ? state.error : undefined}
+        errorTitle="تعذر تحميل ملف المالك"
+        errorFallbackMessage="تعذر تحميل ملف المالك."
+        errorAction={<Button type="button" onClick={() => globalThis.location.reload()}>إعادة المحاولة</Button>}
+        emptyTitle="ملف المالك غير متاح بأمان"
+        emptyDescription={state.status === 'unavailable' ? state.reason : 'تعذر تحميل ملف المالك.'}
+      >
+        {null}
+      </AsyncContentState>
+    );
   }
 
   const { owner, properties, units, contracts, financialSummary } = state.snapshot;

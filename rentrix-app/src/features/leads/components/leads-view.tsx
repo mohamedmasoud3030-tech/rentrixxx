@@ -1,7 +1,8 @@
-import { Archive, ContactRound, Edit, Plus, RotateCcw } from 'lucide-react';
+import { ContactRound, Edit, Archive, Plus } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
-import { PageStateCard, WriteErrorCard } from '@/components/page-state-card';
+import { AsyncContentState } from '@/components/async-content-state';
+import { WriteErrorCard } from '@/components/page-state-card';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { InlineStatCard } from '@/components/ui/inline-stat-card';
@@ -41,6 +42,8 @@ export function LeadsView(props: Props) {
   const openLeads = rows.filter((row) => !['converted', 'lost', 'archived'].includes(row.status ?? '')).length;
   const hasFilters = filters.query.trim().length > 0 || filters.status !== 'all' || filters.source !== 'all';
 
+  const listStatus = isLoading ? 'loading' : error ? 'error' : rows.length === 0 ? 'empty' : 'ready';
+
   return (
     <section className="space-y-5">
       <Card className="border-primary/10 bg-gradient-to-l from-primary/10 via-card to-card">
@@ -53,11 +56,20 @@ export function LeadsView(props: Props) {
 
       <Card><CardContent className="grid gap-3 pt-6 md:grid-cols-[1fr_12rem_12rem]"><Input value={filters.query} onChange={(event) => onFiltersChange({ ...filters, query: event.target.value })} placeholder="بحث بالاسم، الهاتف، البريد، نوع الوحدة" aria-label="بحث العملاء المحتملين" /><Select value={filters.status} onChange={(event) => onFiltersChange({ ...filters, status: event.target.value })}><option value="all">كل الحالات</option>{Object.entries(statusLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</Select><Select value={filters.source} onChange={(event) => onFiltersChange({ ...filters, source: event.target.value })}><option value="all">كل المصادر</option>{Object.entries(sourceLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</Select></CardContent></Card>
 
-      {error ? <ErrorCard message="تعذر تحميل العملاء المحتملين" onRetry={onRetry} /> : null}
       {writeError ? <WriteErrorCard message={writeError instanceof Error ? writeError.message : 'تعذر حفظ التغيير على العميل المحتمل. راجع الصلاحيات أو الاتصال ثم حاول مرة أخرى.'} /> : null}
-      {isLoading ? <PageStateCard title="جارٍ تحميل العملاء المحتملين..." /> : null}
-      {!isLoading && !error && rows.length === 0 ? <PageStateCard title={hasFilters ? 'لا يوجد عملاء محتملون ضمن الفلاتر الحالية' : 'لا يوجد عملاء محتملون بعد'} description={hasFilters ? 'غيّر البحث أو الحالة أو المصدر لعرض عملاء محتملين آخرين.' : 'أضف أول عميل محتمل من بيانات تواصل حقيقية؛ لن ينشئ النظام مستأجراً أو مالكاً تلقائياً.'} action={hasFilters ? undefined : <Button onClick={onCreate}>إضافة عميل محتمل</Button>} /> : null}
-      {rows.length > 0 ? <LeadRows rows={rows} isArchiving={isArchiving} onEdit={onEdit} onArchive={onArchive} /> : null}
+
+      <AsyncContentState
+        status={listStatus}
+        error={error}
+        errorTitle="تعذر تحميل العملاء المحتملين"
+        errorFallbackMessage="راجع الاتصال والصلاحيات ثم أعد المحاولة."
+        errorAction={<Button variant="secondary" onClick={onRetry}>إعادة المحاولة</Button>}
+        emptyTitle={hasFilters ? 'لا يوجد عملاء محتملون ضمن الفلاتر الحالية' : 'لا يوجد عملاء محتملون بعد'}
+        emptyDescription={hasFilters ? 'غيّر البحث أو الحالة أو المصدر لعرض عملاء محتملين آخرين.' : 'أضف أول عميل محتمل من بيانات تواصل حقيقية؛ لن ينشئ النظام مستأجراً أو مالكاً تلقائياً.'}
+        emptyAction={hasFilters ? undefined : <Button onClick={onCreate}>إضافة عميل محتمل</Button>}
+      >
+        <LeadRows rows={rows} isArchiving={isArchiving} onEdit={onEdit} onArchive={onArchive} />
+      </AsyncContentState>
 
       <Dialog open={formOpen} onOpenChange={onFormOpenChange}>
         <DialogContent className="max-h-[calc(100dvh-2rem)] overflow-y-auto sm:max-w-2xl">
@@ -82,10 +94,6 @@ export function LeadsView(props: Props) {
 
 function Field({ label, children }: Readonly<{ label: string; children: ReactNode }>) {
   return <label className="grid gap-2 text-sm font-bold">{label}{children}</label>;
-}
-
-function ErrorCard({ message, onRetry }: Readonly<{ message: string; onRetry: () => void }>) {
-  return <Card role="alert"><CardHeader><CardTitle>{message}</CardTitle><CardDescription>راجع الاتصال والصلاحيات ثم أعد المحاولة.</CardDescription><Button variant="secondary" onClick={onRetry}><RotateCcw className="me-2 size-4" />إعادة المحاولة</Button></CardHeader></Card>;
 }
 
 function LeadRows({ rows, isArchiving, onEdit, onArchive }: Readonly<{ rows: LeadRecord[]; isArchiving: boolean; onEdit: (row: LeadRecord) => void; onArchive: (id: string) => void }>) {
