@@ -7,6 +7,7 @@ import { z } from 'zod';
 import { EmptyState } from '@/components/empty-state';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { KpiCard } from '@/components/ui/kpi-card';
 import { useProperties } from '@/features/properties/use-properties';
 import { defaultCompanyLocalSettings } from '@/lib/companySettings';
 import { formatCompanyMoney, getCompanyLocale } from '@/lib/companyFormatters';
@@ -24,20 +25,7 @@ const expenseSchema = z.object({
   attachment_url: z.string().nullable().optional(),
 });
 
-function ExpenseMetric({ label, value, helper, icon: Icon }: Readonly<{ label: string; value: string; helper: string; icon: typeof WalletCards }>) {
-  return (
-    <Card className="border-primary/10 bg-gradient-to-br from-card via-card to-primary/5">
-      <CardContent className="flex items-center justify-between gap-4 p-5">
-        <div>
-          <p className="text-xs font-black text-muted-foreground">{label}</p>
-          <p className="mt-2 text-2xl font-black">{value}</p>
-          <p className="mt-1 text-xs text-muted-foreground">{helper}</p>
-        </div>
-        <div className="grid size-12 place-items-center rounded-2xl bg-primary/10 text-primary"><Icon className="size-6" /></div>
-      </CardContent>
-    </Card>
-  );
-}
+
 
 export function toLocalDateInputValue(date: Date = new Date()) {
   return getTodayLocalDateString(date);
@@ -87,10 +75,10 @@ export function ExpensesPage() {
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <ExpenseMetric label="عدد المصاريف" value={summary.visibleCount.toLocaleString(locale)} helper="ضمن الفلاتر الحالية" icon={ReceiptText} />
-        <ExpenseMetric label="إجمالي المبلغ" value={formatCompanyMoney(defaultCompanyLocalSettings, summary.visibleAmount)} helper="للمصاريف المعروضة" icon={Banknote} />
-        <ExpenseMetric label="العقارات المتأثرة" value={summary.byPropertyCount.toLocaleString(locale)} helper="عقارات لديها مصاريف" icon={WalletCards} />
-        <ExpenseMetric label="التصنيفات" value={summary.byCategoryCount.toLocaleString(locale)} helper="تصنيفات مستخدمة" icon={CalendarDays} />
+        <KpiCard label="عدد المصاريف" value={summary.visibleCount.toLocaleString(locale)} sub="ضمن الفلاتر الحالية" icon={ReceiptText} accent="primary" />
+        <KpiCard label="إجمالي المبلغ" value={formatCompanyMoney(defaultCompanyLocalSettings, summary.visibleAmount)} sub="للمصاريف المعروضة" icon={Banknote} accent="primary" />
+        <KpiCard label="العقارات المتأثرة" value={summary.byPropertyCount.toLocaleString(locale)} sub="عقارات لديها مصاريف" icon={WalletCards} accent="primary" />
+        <KpiCard label="التصنيفات" value={summary.byCategoryCount.toLocaleString(locale)} sub="تصنيفات مستخدمة" icon={CalendarDays} accent="primary" />
       </div>
 
       {propertiesQuery.isError ? <EmptyState title="تعذر تحميل العقارات" description="يمكنك إعادة المحاولة بعد لحظات قبل تسجيل مصروف جديد." role="alert" ariaLive="assertive" /> : null}
