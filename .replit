@@ -9,21 +9,21 @@ args = ["pnpm", "store", "prune"]
 env = { "CI" = "true" }
 
 [workflows]
-runButton = "artifacts/rentrix: web"
+runButton = "rentrix-app: web"
 
 [[workflows.workflow]]
-name = "artifacts/rentrix: web"
+name = "rentrix-app: web"
 author = "agent"
 mode = "sequential"
 
 [workflows.workflow.metadata]
 outputType = "webview"
-artifactId = "artifacts/rentrix"
+artifactId = "rentrix-app"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
 args = "pnpm --filter @workspace/rentrix run dev"
-cwd = "./artifacts/rentrix"
+cwd = "./rentrix-app"
 waitForPort = 19004
 router = "path"
 
