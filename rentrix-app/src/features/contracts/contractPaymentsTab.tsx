@@ -1,4 +1,5 @@
 import { FileText, LockKeyhole, ReceiptText, WalletCards } from 'lucide-react';
+import { KpiCard } from '@/components/ui/kpi-card';
 import { EmptyState } from '@/components/empty-state';
 import { Button } from '@/components/ui/button';
 import {
@@ -50,43 +51,18 @@ function getPaymentsErrorMessage(error: unknown): string {
     : 'تعذر تحميل مدفوعات وفواتير العقد.';
 }
 
-function SnapshotMetric({
-  label,
-  value,
-}: Readonly<{ label: string; value: string }>) {
-  return (
-    <div className="rounded-2xl border border-border bg-background p-4 shadow-sm">
-      <p className="text-xs font-bold text-muted-foreground">{label}</p>
-      <p className="mt-2 text-lg font-black">{value}</p>
-    </div>
-  );
-}
+
 
 function ContractPaymentsSummary({
   snapshot,
 }: Readonly<{ snapshot: ContractPaymentsSnapshot }>) {
   return (
-    <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-5">
-      <SnapshotMetric
-        label="عدد الفواتير"
-        value={snapshot.summary.invoiceCount.toLocaleString('ar')}
-      />
-      <SnapshotMetric
-        label="عدد الدفعات"
-        value={snapshot.summary.paymentCount.toLocaleString('ar')}
-      />
-      <SnapshotMetric
-        label="إجمالي الفواتير"
-        value={formatDefaultCompanyMoney(snapshot.summary.totalInvoiced)}
-      />
-      <SnapshotMetric
-        label="إجمالي المدفوع"
-        value={formatDefaultCompanyMoney(snapshot.summary.totalPaid)}
-      />
-      <SnapshotMetric
-        label="المتبقي"
-        value={formatDefaultCompanyMoney(snapshot.summary.totalRemaining)}
-      />
+    <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+      <KpiCard label="عدد الفواتير" value={snapshot.summary.invoiceCount.toLocaleString('ar')} icon={ReceiptText} accent="primary" compact />
+      <KpiCard label="عدد الدفعات" value={snapshot.summary.paymentCount.toLocaleString('ar')} icon={WalletCards} accent="sky" compact />
+      <KpiCard label="إجمالي الفواتير" value={formatDefaultCompanyMoney(snapshot.summary.totalInvoiced)} icon={WalletCards} accent="primary" compact />
+      <KpiCard label="إجمالي المدفوع" value={formatDefaultCompanyMoney(snapshot.summary.totalPaid)} icon={WalletCards} accent="emerald" compact />
+      <KpiCard label="المتبقي" value={formatDefaultCompanyMoney(snapshot.summary.totalRemaining)} icon={WalletCards} accent="amber" compact />
     </div>
   );
 }
