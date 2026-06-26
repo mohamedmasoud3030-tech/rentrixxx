@@ -1,6 +1,6 @@
 import { Link, useNavigate, useParams } from '@tanstack/react-router';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { ArrowRight, CalendarDays, Edit, RefreshCw, ShieldAlert, WalletCards } from 'lucide-react';
+import { ArrowLeft, CalendarDays, Edit, RefreshCw, ShieldAlert, WalletCards } from 'lucide-react';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { EmptyState } from '@/components/empty-state';
@@ -271,7 +271,7 @@ export function ContractDetailPage() {
           <p className="text-sm text-muted-foreground">عرض كامل للعقد وسجل مراحله.</p>
         </div>
         <div className="flex gap-2">
-          <Button variant="secondary" asChild><Link to="/contracts"><ArrowRight className="me-2 size-4" />العودة</Link></Button>
+          <Button variant="secondary" asChild><Link to="/contracts"><ArrowLeft className="me-2 size-4" />العودة</Link></Button>
           <Button variant="secondary" onClick={() => openRenewalDialog(contract)} disabled={!renewalAllowed}><RefreshCw className="me-2 size-4" />تجديد</Button>
           <Button variant="secondary" onClick={exportContractPdf}>تصدير PDF</Button>
           <Button asChild><Link to="/contracts/$contractId/edit" params={{ contractId }}><Edit className="me-2 size-4" />تعديل</Link></Button>
