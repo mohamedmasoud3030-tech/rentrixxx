@@ -44,7 +44,7 @@ Old reports, audits, evidence packs, superseded indexes, and release-thread note
 ## Canonical runtime
 
 ```text
-artifacts/rentrix/
+rentrix-app/
 ```
 
 Shared workspace libraries live under `lib/`, and canonical database assets live under `supabase/`.
@@ -55,7 +55,7 @@ Do not treat recovery notes, promotional artifacts, generated analysis, or agent
 
 ```text
 rentrixxx/
-├── artifacts/rentrix/          # Active React application
+├── rentrix-app/                # Active React application
 ├── lib/                        # Shared workspace libraries
 ├── supabase/                   # Canonical migrations and backend assets
 ├── docs/                       # Active product, engineering, policy, and technical references
@@ -88,7 +88,7 @@ Use `docs/ai/ONBOARDING.md` as the current source for the exact route snapshot a
 ## Root configuration
 
 - `package.json` and `pnpm-workspace.yaml` define the workspace boundary.
-- `vercel.json` is the authoritative root deployment configuration.
+- `rentrix-app/vercel.json` is the authoritative deployment configuration for the Vercel project rooted at `rentrix-app`.
 - `sonar-project.properties` limits static analysis to shipped sources.
 - `.replit` is a local launcher only and must not define product architecture.
 
@@ -103,7 +103,7 @@ pnpm install --frozen-lockfile
 Run the application:
 
 ```bash
-pnpm --filter ./artifacts/rentrix run dev
+pnpm --filter ./rentrix-app run dev
 ```
 
 ## Verification
@@ -115,9 +115,9 @@ pnpm install --frozen-lockfile
 pnpm typecheck
 pnpm lint
 pnpm build
-pnpm --filter ./artifacts/rentrix run typecheck:test
-pnpm --filter ./artifacts/rentrix test
-pnpm --filter ./artifacts/rentrix run test:financials
+pnpm --filter ./rentrix-app run typecheck:test
+pnpm --filter ./rentrix-app test
+pnpm --filter ./rentrix-app run test:financials
 ```
 
 For schema or RLS changes, also run the repository-approved Supabase validation flow when a required local or preview Supabase environment is available.
