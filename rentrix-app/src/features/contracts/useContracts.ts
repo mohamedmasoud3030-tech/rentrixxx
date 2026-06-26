@@ -54,7 +54,12 @@ export function useRenewContract(contractId: string) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (payload: RenewalPayload) => renewContract(contractId, payload),
-    onSuccess: async () => { await queryClient.invalidateQueries({ queryKey: contractKeys.lists() }); queryClient.removeQueries({ queryKey: contractKeys.detail(contractId) }); toast.success('تم تجديد العقد وإنشاء عقد جديد'); },
+    onSuccess: async (_data, _payload, _ctx) => {
+      // Invalidate all contract lists so both the old (now expired) and the
+      // newly created contract appear without a manual refresh.
+      await queryClient.invalidateQueries({ queryKey: contractKeys.all });
+      toast.success('تم تجديد العقد وإنشاء عقد جديد');
+    },
     onError: (error) => toast.error(error instanceof Error ? error.message : 'تعذر تجديد العقد'),
   });
 }
