@@ -11,8 +11,8 @@
     "preinstall": "sh -c 'rm -f package-lock.json yarn.lock; case \"$npm_config_user_agent\" in pnpm/*) ;; *) echo \"Use pnpm instead\" >&2; exit 1 ;; esac'",
     "install:clean": "pnpm install --frozen-lockfile",
     "build": "pnpm -r --if-present run build",
-    "typecheck": "tsc -b && pnpm -r --filter ./artifacts/rentrix --if-present run typecheck",
-    "lint": "pnpm -r --filter ./artifacts/rentrix --if-present run lint",
+    "typecheck": "tsc -b && pnpm -r --filter ./rentrix-app --if-present run typecheck",
+    "lint": "pnpm -r --filter ./rentrix-app --if-present run lint",
     "supabase:migration-evidence": "bash scripts/collect-supabase-migration-evidence.sh"
   },
   "devDependencies": {

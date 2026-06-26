@@ -4,6 +4,7 @@ import { useDeferredValue, useMemo, useState } from 'react';
 import { EmptyState } from '@/components/empty-state';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { DataTable } from '@/components/ui/data-table';
 import { Input } from '@/components/ui/input';
 import { ReceiptCard } from '@/components/ui/receipt-card';
 import { Select } from '@/components/ui/select';
@@ -144,10 +145,9 @@ function ReceiptsHistoryContent() {
           {receiptsQuery.isLoading ? <div className="space-y-3">{Array.from({ length: 5 }, (_, index) => <Skeleton key={index} className="h-14" />)}</div> : null}
           {receiptsQuery.isError ? <EmptyState title="تعذر تحميل الإيصالات" description={getErrorMessage(receiptsQuery.error, 'أعد المحاولة بعد لحظات.')} role="alert" ariaLive="assertive" /> : null}
           {!receiptsQuery.isLoading && !receiptsQuery.isError && filteredReceipts.length === 0 ? <EmptyState title="لا توجد إيصالات مطابقة" description="غيّر البحث أو الفلاتر لعرض إيصالات أخرى." /> : null}
-          
+
           {filteredReceipts.length > 0 ? (
             <>
-              {/* Mobile cards */}
               <div className="grid gap-3 sm:grid-cols-2 md:hidden">
                 {filteredReceipts.map((receipt) => (
                   <ReceiptCard
@@ -176,8 +176,7 @@ function ReceiptsHistoryContent() {
                 ))}
               </div>
 
-              {/* Desktop table */}
-              <div className="hidden overflow-x-auto rounded-2xl border border-border md:block">
+              <DataTable className="hidden md:block" aria-label="جدول الإيصالات">
                 <Table>
                   <TableHeader>
                     <TableRow>
@@ -212,7 +211,7 @@ function ReceiptsHistoryContent() {
                     ))}
                   </TableBody>
                 </Table>
-              </div>
+              </DataTable>
             </>
           ) : null}
 

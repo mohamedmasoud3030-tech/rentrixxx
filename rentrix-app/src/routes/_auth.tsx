@@ -1,1 +1,1 @@
-export { AuthLayout as AuthRouteComponent } from '@/layouts/auth-layout';
+export { AuthLayout as AuthRouteComponent } from '@/components/layout/auth-layout';
