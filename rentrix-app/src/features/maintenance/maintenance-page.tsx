@@ -5,7 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { AlertCircle, CheckCircle2, Clock, Flame, PlusCircle, Wrench } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { EmptyState } from '@/components/empty-state';
+import { AsyncContentState } from '@/components/async-content-state';
 import { FileAttachmentField } from '@/components/ui/file-attachment-field';
 import { Input } from '@/components/ui/input';
 import { PageHeader } from '@/components/layout/page-header';
@@ -261,17 +261,14 @@ export function MaintenancePage() {
       )}
 
       {/* Requests list */}
-      {isLoading ? (
-        <div className="space-y-3">{Array.from({ length: 4 }, (_, i) => <Skeleton key={i} className="h-14 rounded-xl" />)}</div>
-      ) : hasLoadError ? (
-        <EmptyState
-          title="تعذر تحميل طلبات الصيانة"
-          description={getLoadErrorMessage(loadError, 'حدث خطأ غير متوقع.')}
-          action={<Button type="button" onClick={retryMaintenanceWorkspace}>إعادة المحاولة</Button>}
-        />
-      ) : filteredMaintenanceRows.length === 0 ? (
-        <EmptyState title="لا توجد طلبات صيانة" description="غيّر عوامل التصفية أو أضف طلب صيانة جديد للبدء." />
-      ) : (
+      <AsyncContentState
+        status={isLoading ? 'loading' : hasLoadError ? 'error' : filteredMaintenanceRows.length === 0 ? 'empty' : 'ready'}
+        error={loadError}
+        errorTitle="تعذر تحميل طلبات الصيانة"
+        errorAction={<Button type="button" onClick={retryMaintenanceWorkspace}>إعادة المحاولة</Button>}
+        emptyTitle="لا توجد طلبات صيانة"
+        emptyDescription="غيّر عوامل التصفية أو أضف طلب صيانة جديد للبدء."
+      >
         <>
           {/* Mobile cards */}
           <div className="grid gap-3 md:hidden">
@@ -375,7 +372,7 @@ export function MaintenancePage() {
             </Table>
           </div>
         </>
-      )}
+      </AsyncContentState>
     </div>
   );
 }

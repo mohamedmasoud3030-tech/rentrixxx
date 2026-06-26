@@ -1,12 +1,11 @@
 import { Archive, DoorOpen, Edit, Plus } from 'lucide-react';
 import { useState } from 'react';
 import type { UseQueryResult } from '@tanstack/react-query';
-import { EmptyState } from '@/components/empty-state';
+import { AsyncContentState } from '@/components/async-content-state';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { EntityCell } from '@/components/ui/entity-cell';
-import { Skeleton } from '@/components/ui/skeleton';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { UnitCard } from '@/components/ui/unit-card';
@@ -22,10 +21,6 @@ const unitStatusTone = { available: 'green', occupied: 'blue', maintenance: 'gol
 function money(value: number | null) {
   if (value === null) return '—';
   return formatCompanyMoney(defaultCompanyLocalSettings, value);
-}
-
-function getErrorMessage(error: unknown) {
-  return error instanceof Error ? error.message : 'أعد المحاولة بعد لحظات.';
 }
 
 export function UnitsList({ propertyId, unitsQuery }: Readonly<{ propertyId: string; unitsQuery: UseQueryResult<Unit[]> }>) {
@@ -51,19 +46,15 @@ export function UnitsList({ propertyId, unitsQuery }: Readonly<{ propertyId: str
         {!unitsQuery.isError ? <Button onClick={openForCreate}><Plus className="ml-2 size-4" />إضافة وحدة</Button> : null}
       </CardHeader>
       <CardContent className="space-y-4">
-        {unitsQuery.isLoading ? (
-          <div className="space-y-3">
-            {Array.from({ length: 4 }, (_, i) => <Skeleton key={i} className="h-14" />)}
-          </div>
-        ) : unitsQuery.isError ? (
-          <EmptyState
-            title="تعذر تحميل وحدات العقار"
-            description={getErrorMessage(unitsQuery.error)}
-            role="alert"
-            ariaLive="assertive"
-            action={<Button onClick={() => unitsQuery.refetch()}>إعادة المحاولة</Button>}
-          />
-        ) : unitsQuery.data?.length ? (
+        <AsyncContentState
+          status={unitsQuery.isLoading ? 'loading' : unitsQuery.isError ? 'error' : !unitsQuery.data?.length ? 'empty' : 'ready'}
+          error={unitsQuery.error}
+          errorTitle="تعذر تحميل وحدات العقار"
+          errorAction={<Button onClick={() => unitsQuery.refetch()}>إعادة المحاولة</Button>}
+          emptyTitle="لا توجد وحدات"
+          emptyDescription="أضف الوحدات التابعة لهذا العقار من هنا."
+          emptyAction={<Button onClick={openForCreate}>إضافة وحدة</Button>}
+        >
           <>
             {/* Mobile cards */}
             <div className="grid gap-3 sm:grid-cols-2 md:hidden">
@@ -141,9 +132,7 @@ export function UnitsList({ propertyId, unitsQuery }: Readonly<{ propertyId: str
               </Table>
             </div>
           </>
-        ) : (
-          <EmptyState title="لا توجد وحدات" description="أضف الوحدات التابعة لهذا العقار من هنا." action={<Button onClick={openForCreate}>إضافة وحدة</Button>} />
-        )}
+        </AsyncContentState>
       </CardContent>
 
       <UnitFormModal propertyId={propertyId} unit={editingUnit} open={modalOpen} onOpenChange={setModalOpen} />
