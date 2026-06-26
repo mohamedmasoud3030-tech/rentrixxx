@@ -1,6 +1,15 @@
 import type { ContractListItem } from '@/features/contracts/services/contractService';
-import type { DailyCollectionReportRow, OverdueInvoicesReport } from '@/features/financials/reports/financialReportsService';
-import type { Unit } from '@/types/domain';
+import type {
+  AgedReceivablesBucket,
+  DailyCollectionReportRow,
+  OverdueInvoicesReport,
+} from '@/features/financials/reports/financialReportsService';
+import type { Property, Unit } from '@/types/domain';
+import { buildCsv, withUtf8Bom, type CsvRow } from '@/lib/csvExport';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/lib/supabase';
+
+export type FilterState = Readonly<{ from: string; to: string; asOf: string }>;
 
 export type AgingBucketChartRow = { bucket: string; total: number; invoiceCount: number };
 export type OccupancyChartRow = {
@@ -28,6 +37,16 @@ export type RentRollReportRow = {
   endDate: string;
 };
 
+export const latestReceiptLimit = 100;
+export const expiringContractWindowDays = 60;
+export const agingBucketKeys: Array<AgedReceivablesBucket['key']> = ['current', 'days_1_30', 'days_31_60', 'days_61_90', 'days_90_plus'];
+export const contractStatusLabels: Record<ContractListItem['status'], string> = {
+  draft: 'مسودة',
+  active: 'نشط',
+  expired: 'منتهي',
+  terminated: 'منهى',
+};
+
 const paymentCycleLabels: Record<ContractListItem['payment_cycle'], string> = {
   monthly: 'شهري',
   quarterly: 'ربع سنوي',
@@ -45,6 +64,117 @@ function valueOrDash(value: string | null | undefined) {
 
 export function createReceiptPrintHref(receiptId: string) {
   return `/receipts?receiptId=${encodeURIComponent(receiptId)}`;
+}
+
+export function toDateInputValue(date: Date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+
+  return `${year}-${month}-${day}`;
+}
+
+export function getTodayLocalDateString() {
+  return toDateInputValue(new Date());
+}
+
+export function buildReportCsvFilename(reportSlug: string) {
+  return `${reportSlug}-${getTodayLocalDateString()}.csv`;
+}
+
+export function getCurrentMonthFilters(): FilterState {
+  const today = new Date();
+  const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
+  const todayValue = getTodayLocalDateString();
+
+  return {
+    from: toDateInputValue(firstDay),
+    to: todayValue,
+    asOf: todayValue,
+  };
+}
+
+export function downloadCsv(filename: string, rows: CsvRow[]) {
+  const blob = new Blob([withUtf8Bom(buildCsv(rows))], { type: 'text/csv;charset=utf-8;' });
+  const link = document.createElement('a');
+  const objectUrl = URL.createObjectURL(blob);
+  link.href = objectUrl;
+  link.download = filename;
+  link.click();
+  URL.revokeObjectURL(objectUrl);
+}
+
+export function isWithinDateRange(value: string, filters: FilterState) {
+  return value >= filters.from && value <= filters.to;
+}
+
+export function toFinancialSummaryCsv(summary: Readonly<{ invoiced: number; paid: number; outstanding: number; expenses: number; netCash: number }>): CsvRow[] {
+  return [
+    { metric: 'invoiced', amount: summary.invoiced },
+    { metric: 'paid', amount: summary.paid },
+    { metric: 'outstanding', amount: summary.outstanding },
+    { metric: 'expenses', amount: summary.expenses },
+    { metric: 'netCash', amount: summary.netCash },
+  ];
+}
+
+export function toDailyCollectionCsv(rows: DailyCollectionReportRow[]): CsvRow[] {
+  return rows.map((row) => ({
+    paymentDate: row.paymentDate,
+    totalPaid: row.totalPaid,
+    paymentsCount: row.paymentsCount,
+    cash: row.methodTotals.cash,
+    bankTransfer: row.methodTotals.bank_transfer,
+    card: row.methodTotals.card,
+    check: row.methodTotals.check,
+    other: row.methodTotals.other,
+  }));
+}
+
+function addDays(date: Date, days: number) {
+  const nextDate = new Date(date);
+  nextDate.setDate(nextDate.getDate() + days);
+  return nextDate;
+}
+
+function toDateOnlyTimestamp(value: string) {
+  return Date.parse(`${value}T00:00:00.000Z`);
+}
+
+export function buildExpiringContractsRows(contracts: ContractListItem[], fromDate: Date) {
+  const todayValue = toDateInputValue(fromDate);
+  const cutoffValue = toDateInputValue(addDays(fromDate, expiringContractWindowDays));
+
+  return contracts
+    .filter((contract) => contract.status === 'active' && contract.end_date >= todayValue && contract.end_date <= cutoffValue)
+    .sort((a, b) => a.end_date.localeCompare(b.end_date))
+    .slice(0, 12)
+    .map((contract) => ({
+      contractId: contract.id,
+      tenantName: contract.people?.full_name ?? '—',
+      propertyTitle: contract.properties?.title ?? '—',
+      unitNumber: contract.units?.unit_number ?? '—',
+      endDate: contract.end_date,
+      daysRemaining: Math.max(0, Math.ceil((toDateOnlyTimestamp(contract.end_date) - toDateOnlyTimestamp(todayValue)) / (24 * 60 * 60 * 1000))),
+    }));
+}
+
+export function usePropertyTitles() {
+  return useQuery({
+    queryKey: ['reports', 'propertyTitles'],
+    queryFn: async (): Promise<Array<{ id: string; title: string }>> => {
+      const { data, error } = await supabase
+        .from('properties')
+        .select('id, title')
+        .is('deleted_at', null)
+        .returns<Array<Pick<Property, 'id' | 'title'>>>();
+      if (error) throw error;
+      return (data ?? [])
+        .map((row) => ({ id: row.id, title: (row.title ?? '').trim() }))
+        .filter((row) => row.title.length > 0);
+    },
+    staleTime: 60_000,
+  });
 }
 
 export function buildOccupancyRows(
