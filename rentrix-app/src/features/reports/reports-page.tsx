@@ -32,7 +32,7 @@ import { useAllUnits } from '@/features/units/use-units';
 import { buildCsv, withUtf8Bom, type CsvRow } from '@/lib/csvExport';
 import { cn } from '@/lib/utils';
 import { buildAgingBucketChartRows, buildOccupancyRows, buildPaymentsTrendRows, buildRentRollRows, createReceiptPrintHref } from './reports-page.helpers';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/lib/supabase';
 import type { Property } from '@/types/domain';
 
 export { escapeCsvValue } from '@/lib/csvExport';

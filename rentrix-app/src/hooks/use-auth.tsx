@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useMemo, useState, type PropsWithChildren } from 'react';
 import type { Session, User } from '@supabase/supabase-js';
 import { getAuthorizationContextFromSession, getAuthorizationDiagnosticsFromSession, type AuthorizationContext, type AuthorizationDiagnostics } from '@/features/auth/permissions';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/lib/supabase';
 import { getCurrentSession, signInWithEmail, signOut } from '@/services/auth-service';
 import { router } from '@/app/router';
 

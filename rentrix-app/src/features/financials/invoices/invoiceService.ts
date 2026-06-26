@@ -1,4 +1,4 @@
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/lib/supabase';
 import type { Invoice, Payment } from '@/types/domain';
 import { getSafeRemainingAmount, toFinancialNumber } from '../financialMath';
 
