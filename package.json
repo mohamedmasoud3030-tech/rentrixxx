@@ -1,0 +1,26 @@
+{
+  "name": "rentrix-production-workspace",
+  "version": "1.0.0",
+  "license": "MIT",
+  "private": true,
+  "packageManager": "pnpm@10.11.1",
+  "engines": {
+    "pnpm": "10.11.1"
+  },
+  "scripts": {
+    "preinstall": "sh -c 'rm -f package-lock.json yarn.lock; case \"$npm_config_user_agent\" in pnpm/*) ;; *) echo \"Use pnpm instead\" >&2; exit 1 ;; esac'",
+    "install:clean": "pnpm install --frozen-lockfile",
+    "build": "pnpm -r --if-present run build",
+    "typecheck": "tsc -b && pnpm -r --filter ./rentrix-app --if-present run typecheck",
+    "lint": "pnpm -r --filter ./rentrix-app --if-present run lint",
+    "supabase:migration-evidence": "bash scripts/collect-supabase-migration-evidence.sh"
+  },
+  "devDependencies": {
+    "prettier": "^3.8.1",
+    "supabase": "^2.105.0",
+    "typescript": "~5.9.2"
+  },
+  "dependencies": {
+    "@vercel/speed-insights": "^2.0.0"
+  }
+}
