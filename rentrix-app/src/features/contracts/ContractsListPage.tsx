@@ -6,6 +6,7 @@ import { ContractListState } from './components/ContractListState';
 import { ContractResults } from './components/ContractResults';
 import { ContractFormModal } from './contract-form-modal';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
+import { Button } from '@/components/ui/button';
 import { buildContractsCsvBlob, buildContractsCsvFilename } from './contractListExport';
 import { useCompanySettingsContract } from '../settings/useCompanySettings';
 import { useContractFilters } from './hooks/useContractFilters';
@@ -31,15 +32,18 @@ export function ContractsListPage() {
   const [modalOpen, setModalOpen] = useState(false);
   const [editContractId, setEditContractId] = useState<string | undefined>();
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [page, setPage] = useState(1);
+  const pageSize = 10;
 
-  const params = useMemo(() => ({ status }), [status]);
+  const params = useMemo(() => ({ status, page, pageSize }), [status, page]);
   const contractsQuery = useContracts(params);
   const companySettings = useCompanySettingsContract();
   const deleteMutation = useSoftDeleteContract();
-  const contracts = contractsQuery.data ?? [];
+  const contracts = contractsQuery.data?.rows ?? [];
+  const totalPages = Math.max(1, Math.ceil((contractsQuery.data?.count ?? 0) / pageSize));
 
   const { filteredContracts, hasActiveFilters, hasContracts } = useContractFilters({
-    contracts: contractsQuery.data,
+    contracts,
     expiringOnly,
     searchTerm,
     status,
@@ -48,7 +52,7 @@ export function ContractsListPage() {
   const openCreate = () => { setEditContractId(undefined); setModalOpen(true); };
   const openEdit = (id: string) => { setEditContractId(id); setModalOpen(true); };
   const closeModal = () => { setModalOpen(false); setEditContractId(undefined); };
-  const resetFilters = () => { setStatus('all'); setSearchTerm(''); setExpiringOnly(false); };
+  const resetFilters = () => { setStatus('all'); setSearchTerm(''); setExpiringOnly(false); setPage(1); };
   const confirmDelete = () => {
     if (deleteId) deleteMutation.mutate(deleteId, { onSettled: () => setDeleteId(null) });
   };
@@ -69,9 +73,9 @@ export function ContractsListPage() {
           hasActiveFilters={hasActiveFilters}
           resetFilters={resetFilters}
           searchTerm={searchTerm}
-          setExpiringOnly={setExpiringOnly}
-          setSearchTerm={setSearchTerm}
-          setStatus={setStatus}
+          setExpiringOnly={(updater) => { setExpiringOnly(updater); setPage(1); }}
+          setSearchTerm={(value) => { setSearchTerm(value); setPage(1); }}
+          setStatus={(value) => { setStatus(value); setPage(1); }}
           status={status}
         />
 
@@ -95,6 +99,26 @@ export function ContractsListPage() {
           onEdit={openEdit}
           setExpandedId={setExpandedId}
         />
+
+        <div className="flex items-center justify-between text-sm text-muted-foreground">
+          <span>الصفحة {page} من {totalPages}</span>
+          <div className="flex gap-2">
+            <Button
+              variant="secondary"
+              disabled={page <= 1}
+              onClick={() => setPage((value) => Math.max(1, value - 1))}
+            >
+              السابق
+            </Button>
+            <Button
+              variant="secondary"
+              disabled={page >= totalPages}
+              onClick={() => setPage((value) => Math.min(totalPages, value + 1))}
+            >
+              التالي
+            </Button>
+          </div>
+        </div>
       </div>
 
       <ContractFormModal open={modalOpen} onClose={closeModal} contractId={editContractId} />

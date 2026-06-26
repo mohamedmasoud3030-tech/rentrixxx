@@ -158,16 +158,17 @@ export async function getDashboardSnapshot(date = new Date()): Promise<Dashboard
     getOverdueInvoicesReport(arrearsFilters),
     getArrearsSummaryReport(arrearsFilters),
     getAgedReceivablesReport(arrearsFilters),
-    listContracts({ status: 'active' }),
+    listContracts({ status: 'active', page: 1, pageSize: 1000 }),
   ]);
+  const activeContractRows = activeContracts.rows;
 
   return {
     period,
     overview,
     financial: summarizeDashboardFinancialMetrics(periodSummary),
-    operational: summarizeDashboardOperationalMetrics(overview, activeContracts),
+    operational: summarizeDashboardOperationalMetrics(overview, activeContractRows),
     arrears: summarizeDashboardArrearsMetrics({ overdueInvoices, arrearsSummary, agedReceivables }),
-    activeContracts,
+    activeContracts: activeContractRows,
     deferred: dashboardDeferredMetrics,
   };
 }
