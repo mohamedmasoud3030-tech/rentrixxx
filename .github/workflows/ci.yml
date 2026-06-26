@@ -26,7 +26,25 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm supabase:migration-evidence
-      - run: pnpm typecheck
+      - name: Run typecheck
+        id: typecheck
+        shell: bash
+        run: |
+          set +e
+          pnpm typecheck > /tmp/rentrix-typecheck.log 2>&1
+          status=$?
+          echo "status=$status" >> "$GITHUB_OUTPUT"
+          tail -n 200 /tmp/rentrix-typecheck.log
+          exit 0
+      - name: Upload typecheck diagnostics
+        if: steps.typecheck.outputs.status != '0'
+        uses: actions/upload-artifact@v4
+        with:
+          name: rentrix-typecheck-diagnostics
+          path: /tmp/rentrix-typecheck.log
+      - name: Fail on typecheck errors
+        if: steps.typecheck.outputs.status != '0'
+        run: exit 1
       - run: pnpm lint
       - run: pnpm build
       - run: pnpm --filter ./rentrix-app run typecheck:test
