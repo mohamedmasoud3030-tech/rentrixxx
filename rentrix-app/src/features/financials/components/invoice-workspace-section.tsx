@@ -4,8 +4,9 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useContracts } from '@/features/contracts/useContracts';
 import type { ContractListItem } from '@/features/contracts/services/contractService';
+import { useCompanySettingsContract } from '@/features/settings/useCompanySettings';
 import { exportInvoiceToPdf } from '@/services/pdfService';
-import type { Contract, Payment, Person, Property, Unit } from '@/types/domain';
+import type { Contract, Invoice, Payment, Person, Property, Unit } from '@/types/domain';
 import { getTodayLocalDateString, isValidDateInput } from '../financials-date-utils';
 import { getSafeRemainingAmount, toFinancialNumber } from '../financialMath';
 import { summarizeInvoices, type InvoiceDetail, type InvoiceStatusFilter } from '../invoices/invoiceService';
@@ -149,6 +150,7 @@ export function InvoiceWorkspaceSection() {
   const receiptsQuery = useReceipts({ limit: 10 });
   const receiptQuery = useReceipt(selectedReceiptId);
   const contractsQuery = useContracts({ status: 'all', page: 1, pageSize: 1000 });
+  const companySettings = useCompanySettingsContract();
 
   const invoices = invoicesQuery.data ?? [];
   const summary = useMemo(() => summarizeInvoices(invoices), [invoices]);
@@ -164,12 +166,13 @@ export function InvoiceWorkspaceSection() {
     [amount, amountValue, invoiceDetail, paymentDate, rawAmountValue, selectedInvoiceId],
   );
   const isPaymentDisabled = quickPaySubmitRef.current || postPayment.isPending || remaining <= 0 || Boolean(amountValidationMessage);
-  const hasInvoiceFilter = status !== 'all' || invoiceSearch.trim().length > 0;
-  const selectedInvoiceContract = useMemo(
-    () => contractsQuery.data?.rows.find((contract) => contract.id === invoiceDetail?.contract_id),
-    [contractsQuery.data, invoiceDetail?.contract_id],
+  const pdfSettings = {
+    general: { company: { name: companySettings.companyName } },
+    operational: { currency: companySettings.defaultCurrency },
+  };
+  const canExportInvoiceDocument = Boolean(
+    invoiceDetail && contractsQuery.data?.rows.some((contract) => contract.id === invoiceDetail.contract_id),
   );
-  const canExportInvoiceDocument = Boolean(invoiceDetail && selectedInvoiceContract);
 
   const onConfirmGenerateInvoices = () => {
     if (generate.isPending) return;
@@ -213,36 +216,33 @@ export function InvoiceWorkspaceSection() {
     );
   };
 
-  const onExportInvoicePdf = () => {
-    if (!invoiceDetail || !selectedInvoiceContract) return;
-    exportInvoiceToPdf(invoiceDetail, {
-      settings: { general: { company: { name: 'Rentrix' } } },
-      ...contractContextForDocument(selectedInvoiceContract),
+  const exportInvoiceDocument = (invoice: Invoice) => {
+    const contract = contractsQuery.data?.rows.find((candidate) => candidate.id === invoice.contract_id);
+    if (!contract) return;
+
+    exportInvoiceToPdf(invoice, {
+      settings: pdfSettings,
+      ...contractContextForDocument(contract),
     });
+  };
+
+  const onExportInvoicePdf = () => {
+    if (!invoiceDetail) return;
+    exportInvoiceDocument(invoiceDetail);
   };
 
   const onPrintInvoice = (invoiceId: string) => {
-    const invoice = invoices.find(inv => inv.id === invoiceId);
-    if (!invoice || !invoiceDetail) return;
-    
-    // Trigger print after PDF is generated
-    exportInvoiceToPdf(invoice as unknown as Invoice, {
-      settings: { general: { company: { name: 'Rentrix' } } },
-      ...contractContextForDocument(selectedInvoiceContract),
-    });
-    
-    // Open print dialog after short delay to allow PDF to render
-    setTimeout(() => window.print(), 500);
+    const invoice = invoices.find((candidate) => candidate.id === invoiceId);
+    if (!invoice) return;
+
+    exportInvoiceDocument(invoice);
   };
 
   const onExportInvoiceList = (invoiceId: string) => {
-    const invoice = invoices.find(inv => inv.id === invoiceId);
+    const invoice = invoices.find((candidate) => candidate.id === invoiceId);
     if (!invoice) return;
-    
-    exportInvoiceToPdf(invoice as unknown as Invoice, {
-      settings: { general: { company: { name: 'Rentrix' } } },
-      ...contractContextForDocument(selectedInvoiceContract),
-    });
+
+    exportInvoiceDocument(invoice);
   };
 
   return (
@@ -257,7 +257,7 @@ export function InvoiceWorkspaceSection() {
         isError={invoicesQuery.isError}
         error={invoicesQuery.error}
         isGenerating={generate.isPending}
-        hasInvoiceFilter={hasInvoiceFilter}
+        hasInvoiceFilter={status !== 'all' || invoiceSearch.trim().length > 0}
         onStatusChange={setStatus}
         onInvoiceSearchChange={setInvoiceSearch}
         onGenerateInvoices={() => setGenerateDialogOpen(true)}
