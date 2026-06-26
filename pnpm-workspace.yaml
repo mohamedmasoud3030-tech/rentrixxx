@@ -4,7 +4,7 @@ minimumReleaseAgeExclude:
   - stripe-replit-sync
 
 packages:
-  - artifacts/rentrix
+  - rentrix-app
   - lib/api-client-react
   - lib/db
 
