@@ -2,7 +2,6 @@
 -- Description: Adds the rpt_cash_flow function for financial reporting.
 
 CREATE OR REPLACE FUNCTION rpt_cash_flow(
-  p_org_id uuid,
   p_from_date date,
   p_to_date date
 ) RETURNS jsonb
@@ -19,15 +18,13 @@ BEGIN
   -- Calculate Receipts (from payments table)
   SELECT COALESCE(SUM(amount), 0) INTO v_receipts
   FROM public.payments
-  WHERE org_id = p_org_id
-    AND payment_date BETWEEN p_from_date AND p_to_date
+  WHERE payment_date BETWEEN p_from_date AND p_to_date
     AND deleted_at IS NULL;
 
   -- Calculate Expenses (from expenses table)
   SELECT COALESCE(SUM(amount), 0) INTO v_expenses
   FROM public.expenses
-  WHERE org_id = p_org_id 
-    AND expense_date BETWEEN p_from_date AND p_to_date
+  WHERE expense_date BETWEEN p_from_date AND p_to_date
     AND deleted_at IS NULL;
 
   v_operating := jsonb_build_object(
@@ -49,3 +46,6 @@ BEGIN
   );
 END;
 $$;
+
+REVOKE ALL ON FUNCTION public.rpt_cash_flow(date, date) FROM public, anon;
+GRANT EXECUTE ON FUNCTION public.rpt_cash_flow(date, date) TO authenticated;

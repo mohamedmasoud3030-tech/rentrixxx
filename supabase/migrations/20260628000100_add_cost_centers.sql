@@ -4,7 +4,6 @@
 -- 1. Create cost_centers table
 CREATE TABLE IF NOT EXISTS public.cost_centers (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  org_id uuid NOT NULL, -- Simplified link to company_settings (org_id is standard in Rentrix)
   name text NOT NULL,
   property_id uuid REFERENCES public.properties(id),
   parent_id uuid REFERENCES public.cost_centers(id),
@@ -34,22 +33,16 @@ END $$;
 ALTER TABLE public.cost_centers ENABLE ROW LEVEL SECURITY;
 
 -- 5. RLS Policies
--- SELECT for all app users in the same org
-CREATE POLICY "Users can view cost centers in their org" ON public.cost_centers
-  FOR SELECT USING (auth.uid() IN (SELECT user_id FROM public.user_roles WHERE org_id = cost_centers.org_id));
+CREATE POLICY "Users can view cost centers" ON public.cost_centers
+  FOR SELECT TO authenticated USING (public.is_app_user());
 
 -- INSERT/UPDATE/DELETE for admin/manager
 CREATE POLICY "Admins and managers can manage cost centers" ON public.cost_centers
-  FOR ALL USING (
-    auth.uid() IN (
-      SELECT user_id FROM public.user_roles 
-      WHERE org_id = cost_centers.org_id 
-      AND role IN ('admin', 'manager')
-    )
-  );
+  FOR ALL TO authenticated
+  USING (public.is_admin_or_manager())
+  WITH CHECK (public.is_admin_or_manager());
 
 -- 6. Indexes
-CREATE INDEX IF NOT EXISTS idx_cost_centers_org_id ON public.cost_centers(org_id);
 CREATE INDEX IF NOT EXISTS idx_cost_centers_property_id ON public.cost_centers(property_id);
 CREATE INDEX IF NOT EXISTS idx_cost_centers_parent_id ON public.cost_centers(parent_id);
 CREATE INDEX IF NOT EXISTS idx_expenses_cost_center_id ON public.expenses(cost_center_id);

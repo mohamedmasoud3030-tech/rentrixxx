@@ -26,6 +26,9 @@ export type CompanySettingsUpdatePayload = Partial<Pick<CompanySettingsRecord,
   | 'contract_prefix'
   | 'receipt_prefix'
   | 'default_vat_rate'
+  | 'vat_enabled'
+  | 'vat_rate'
+  | 'vat_registration_number'
   | 'notification_email_enabled'
   | 'notification_sms_enabled'
 >>;
@@ -60,6 +63,9 @@ const defaultCompanySettings: CompanySettingsRecord = {
   contract_prefix: 'CON',
   receipt_prefix: 'REC',
   default_vat_rate: 0,
+  vat_enabled: false,
+  vat_rate: 5,
+  vat_registration_number: null,
   notification_email_enabled: true,
   notification_sms_enabled: false,
   created_at: defaultTimestamps,
@@ -76,6 +82,7 @@ const nullableStringFields = [
   'city',
   'country',
   'logo_url',
+  'vat_registration_number',
 ] as const;
 
 const requiredStringFields = [
@@ -90,9 +97,9 @@ const requiredStringFields = [
   'receipt_prefix',
 ] as const;
 
-const numericFields = ['default_vat_rate'] as const;
+const numericFields = ['default_vat_rate', 'vat_rate'] as const;
 
-const booleanFields = ['notification_email_enabled', 'notification_sms_enabled'] as const;
+const booleanFields = ['vat_enabled', 'notification_email_enabled', 'notification_sms_enabled'] as const;
 
 const updateableFields = new Set<keyof CompanySettingsUpdatePayload>([
   ...nullableStringFields,

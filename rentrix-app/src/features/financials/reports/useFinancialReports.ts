@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import {
   getAgedReceivablesReport,
   getArrearsSummaryReport,
+  getCashFlowStatementReport,
   getCollectionSummaryReport,
   getDailyCollectionReport,
   getExpenseBreakdownReport,
@@ -12,6 +13,7 @@ import {
   getOverdueInvoicesReport,
   getOutstandingBalanceReport,
   getPaymentTotalsReport,
+  getVatReturnReport,
   type ArrearsReportFilters,
   type ExpenseBreakdownReportFilters,
   type FinancialReportFilters,
@@ -26,6 +28,8 @@ export const financialReportKeys = {
   dailyCollection: (filters: FinancialReportFilters) => [...financialReportKeys.all, 'dailyCollection', filters] as const,
   financialPeriodSummary: (filters: FinancialReportFilters) => [...financialReportKeys.all, 'financialPeriodSummary', filters] as const,
   financialCashflow: (filters: FinancialReportFilters) => [...financialReportKeys.all, 'financialCashflow', filters] as const,
+  cashFlowStatement: (filters: Pick<FinancialReportFilters, 'dateFrom' | 'dateTo'>) => [...financialReportKeys.all, 'cashFlowStatement', filters] as const,
+  vatReturn: (filters: Pick<FinancialReportFilters, 'dateFrom' | 'dateTo'>) => [...financialReportKeys.all, 'vatReturn', filters] as const,
   invoiceTotals: (filters: FinancialReportFilters) => [...financialReportKeys.all, 'invoiceTotals', filters] as const,
   paymentTotals: (filters: FinancialReportFilters) => [...financialReportKeys.all, 'paymentTotals', filters] as const,
   expenseTotals: (filters: FinancialReportFilters) => [...financialReportKeys.all, 'expenseTotals', filters] as const,
@@ -69,6 +73,22 @@ export function useFinancialCashflowReport(filters: FinancialReportFilters) {
   return useQuery({
     queryKey: financialReportKeys.financialCashflow(filters),
     queryFn: () => getFinancialCashflowReport(filters),
+    enabled: hasRequiredDateRange(filters),
+  });
+}
+
+export function useCashFlowStatementReport(filters: Pick<FinancialReportFilters, 'dateFrom' | 'dateTo'>) {
+  return useQuery({
+    queryKey: financialReportKeys.cashFlowStatement(filters),
+    queryFn: () => getCashFlowStatementReport(filters),
+    enabled: hasRequiredDateRange(filters),
+  });
+}
+
+export function useVatReturnReport(filters: Pick<FinancialReportFilters, 'dateFrom' | 'dateTo'>) {
+  return useQuery({
+    queryKey: financialReportKeys.vatReturn(filters),
+    queryFn: () => getVatReturnReport(filters),
     enabled: hasRequiredDateRange(filters),
   });
 }

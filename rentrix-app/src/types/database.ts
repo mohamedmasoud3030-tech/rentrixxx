@@ -26,6 +26,9 @@ export type Database = {
           contract_prefix: string;
           receipt_prefix: string;
           default_vat_rate: number;
+          vat_enabled: boolean | null;
+          vat_rate: number | null;
+          vat_registration_number: string | null;
           notification_email_enabled: boolean;
           notification_sms_enabled: boolean;
           created_at: string;
@@ -228,6 +231,7 @@ export type Database = {
           end_date: string;
           rent_amount: number;
           payment_cycle: 'monthly' | 'quarterly' | 'semi_annual' | 'annual';
+          payment_terms_id: string | null;
           status: 'draft' | 'active' | 'expired' | 'terminated';
           cancellation_reason: string | null;
           renewed_from_id: string | null;
@@ -249,6 +253,8 @@ export type Database = {
           due_date: string;
           amount: number;
           paid_amount: number;
+          tax_rate: number | null;
+          tax_amount: number;
           status: 'UNPAID' | 'PARTIALLY_PAID' | 'PAID' | 'OVERDUE' | 'VOID' | 'draft' | 'issued' | 'partial' | 'paid' | 'overdue' | 'void' | string;
           notes: string | null;
           created_at: string;
@@ -368,6 +374,7 @@ export type Database = {
           category: string;
           amount: number;
           expense_date: string;
+          cost_center_id: string | null;
           description: string | null;
           created_at: string;
           updated_at: string;
@@ -408,6 +415,37 @@ export type Database = {
         Update: Partial<Database['public']['Tables']['financial_operation_idempotency']['Insert']>;
         Relationships: [];
       };
+      cost_centers: {
+        Row: {
+          id: string;
+          name: string;
+          property_id: string | null;
+          parent_id: string | null;
+          is_active: boolean | null;
+          created_at: string | null;
+          updated_at: string | null;
+          deleted_at: string | null;
+        };
+        Insert: Partial<Database['public']['Tables']['cost_centers']['Row']> & Pick<Database['public']['Tables']['cost_centers']['Row'], 'name'>;
+        Update: Partial<Database['public']['Tables']['cost_centers']['Row']>;
+        Relationships: [];
+      };
+      payment_terms_templates: {
+        Row: {
+          id: string;
+          name: string;
+          installments: number | null;
+          interval_type: 'monthly' | 'quarterly' | 'biannual' | 'annual' | 'custom' | string | null;
+          notes: string | null;
+          is_active: boolean | null;
+          created_at: string | null;
+          updated_at: string | null;
+          deleted_at: string | null;
+        };
+        Insert: Partial<Database['public']['Tables']['payment_terms_templates']['Row']> & Pick<Database['public']['Tables']['payment_terms_templates']['Row'], 'name'>;
+        Update: Partial<Database['public']['Tables']['payment_terms_templates']['Row']>;
+        Relationships: [];
+      };
       users: {
         Row: {
           id: string;
@@ -444,6 +482,8 @@ export type Database = {
       };
       generate_invoices_from_active_contracts: { Args: Record<string, never>; Returns: number };
       rpt_financial_summary: { Args: { p_from: string; p_to: string }; Returns: { collected: number; expenses: number; net: number; revenue: number; net_income: number; overdue_amount: number; overdue_count: number; active_contracts: number; total_units: number; occupied_units: number; occupancy_rate: number; pending_invoices: number; period_from: string; period_to: string } };
+      rpt_cash_flow: { Args: { p_from_date: string; p_to_date: string }; Returns: Json };
+      rpt_vat_return: { Args: { p_from_date: string; p_to_date: string }; Returns: Json };
       void_receipt_atomic: {
         Args: { payload: Json };
         Returns: { success: boolean; voided_at: string };

@@ -135,6 +135,9 @@ describe('settingsForm helpers', () => {
       contract_prefix: '',
       receipt_prefix: '',
       default_vat_rate: -2,
+      vat_enabled: true,
+      vat_rate: 5,
+      vat_registration_number: null,
       notification_email_enabled: false,
       notification_sms_enabled: true,
     })).toMatchObject({

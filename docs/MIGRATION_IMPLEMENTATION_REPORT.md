@@ -1,13 +1,21 @@
 # Rentrix ERPNext Migration Implementation Report
 
 **Date:** 2026-06-28  
-**Status:** Phase 1 Complete - P0 & P1 Database Migrations Implemented  
+**Status:** Phase 1 Partially Connected - P0/P1 migrations aligned with Rentrix single-office schema; reporting services connected
 **Author:** Manus AI Agent  
 **Reference:** ERPNEXT_MIGRATION_PLAN.md
 
 ## Executive Summary
 
-This document records the implementation of the ERPNext migration plan for Rentrix, focusing on critical (P0) and important (P1) features required for production launch. All database migrations have been created and prepared for deployment according to the plan specifications.
+This document records the implementation of the ERPNext migration plan for Rentrix, focusing on critical (P0) and important (P1) features required for production launch. The current branch aligns the prepared migrations with the active Rentrix single-office schema and connects the first reporting RPCs to typed frontend services.
+
+## 2026-06-27 Follow-up
+
+- Corrected the new ERPNext-inspired migrations so they no longer assume `org_id`, `user_roles`, or `invoice_date`, which are not part of the current single-office runtime schema.
+- Kept `find_payment_account_id(text)` text-based and internal-only, matching the active `accounts(id text, no text)` model.
+- Connected `rpt_cash_flow(date, date)` and `rpt_vat_return(date, date)` through typed frontend service functions and React Query hooks.
+- Updated the generated Supabase database contract for VAT fields, cost centers, payment terms, and the new report RPCs.
+- Added unit coverage for Cash Flow and VAT JSON normalization.
 
 ## Completed Implementations
 
@@ -29,7 +37,7 @@ This document records the implementation of the ERPNext migration plan for Rentr
 - New `cost_centers` table with hierarchical support (`parent_id`).
 - Linkage to `properties` for per-property profitability tracking.
 - Foreign key relationships added to `expenses` and `journal_entries`.
-- RLS policies implemented to restrict access based on organization and user role.
+- RLS policies implemented through the current single-office `is_app_user()` / `is_admin_or_manager()` helpers.
 - Optimized with necessary indexes for performance.
 
 ---
@@ -59,19 +67,21 @@ This document records the implementation of the ERPNext migration plan for Rentr
 - Implemented `rpt_cash_flow` database function.
 - Calculates operating cash flow based on receipts and expenses.
 - Provides a structured JSON response for frontend consumption.
+- Connected to `financialReportsService.ts` and `useFinancialReports.ts`.
 
 ---
 
 ## Next Steps
 
 1. **Frontend Integration:**
-   - Update `database.ts` to reflect the new schema changes.
    - Implement UI components for Cost Center management in Settings.
    - Update the Expense and Invoice forms to include Cost Center and VAT selection.
    - Add the Cash Flow and VAT Return sections to the Financial Reports page.
 
 2. **Backend Services:**
-   - Update `costCenterService.ts` and `financialReportsService.ts` to call the new RPC functions.
+   - Add `costCenterService.ts` and payment-terms service/hooks.
+   - Extend invoice generation so payment terms can drive schedules after a narrow schema/RPC review.
 
 3. **Testing:**
    - Run integration tests to ensure the new migrations work seamlessly with the existing application logic.
+   - Run database validation against an approved local or preview Supabase environment before live apply.

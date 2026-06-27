@@ -25,6 +25,15 @@ Rentrix is also not approved for a general accounting ledger during stabilizatio
 
 Latest roadmap merge recorded at this refresh: `ddc7918 feat(ui): sidebar-dashboard-reports-settings restructure (#936)`.
 
+### In-flight local work — ERPNext-inspired engine connection
+
+Current branch follow-up work has started connecting the new ERPNext-inspired database phase without changing Rentrix's single-office/no-general-ledger boundary:
+
+- New migrations `20260628000000` through `20260628000400` are aligned to the active single-office schema instead of assuming `org_id`, `user_roles`, or `invoice_date`.
+- `database.ts` includes the new VAT, cost center, payment terms, and report RPC contracts.
+- `financialReportsService.ts` and `useFinancialReports.ts` expose typed Cash Flow and VAT Return loaders for later Reports UI sections.
+- Remaining work: Cost Center Settings CRUD, Expense cost-center field, VAT Settings UI, invoice VAT calculation/display, Payment Terms CRUD/contract integration, and Reports UI sections for Cash Flow/VAT Return.
+
 ### ✅ UI/UX Phase 3 — Navigation & Dashboard Restructure (PR #936)
 
 | المرحلة | الموضوع | الحالة |

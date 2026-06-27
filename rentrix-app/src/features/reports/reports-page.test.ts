@@ -13,6 +13,7 @@ function createContract(overrides: Partial<ContractListItem>): ContractListItem 
     end_date: '2026-12-31',
     rent_amount: 1200,
     payment_cycle: 'monthly',
+    payment_terms_id: null,
     status: 'active',
     cancellation_reason: null,
     renewed_from_id: null,

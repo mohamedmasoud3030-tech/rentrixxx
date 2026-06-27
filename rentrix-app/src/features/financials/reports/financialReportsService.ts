@@ -83,6 +83,25 @@ export type FinancialCashflowReport = {
   totalExpenses: number;
 };
 
+export type CashFlowStatementReport = {
+  period: { from: string | null; to: string | null };
+  operating: {
+    receipts: number;
+    expenses: number;
+    netOperating: number;
+  };
+  investing: { amount: number; note: string | null };
+  financing: { amount: number; note: string | null };
+  netChange: number;
+};
+
+export type VatReturnReport = {
+  period: { from: string | null; to: string | null };
+  totalSalesAmount: number;
+  totalTaxAmount: number;
+  invoiceCount: number;
+};
+
 export type ExpenseBreakdownReportFilters = FinancialReportFilters & {
   category?: string;
 };
@@ -824,6 +843,62 @@ function mapFromSettledContext<T>(result: PromiseSettledResult<Map<string, T>>):
   return result.status === 'fulfilled' ? result.value : new Map<string, T>();
 }
 
+function getJsonRecord(value: unknown): Record<string, unknown> {
+  return value && typeof value === 'object' && !Array.isArray(value) ? value as Record<string, unknown> : {};
+}
+
+function getJsonNumber(value: unknown): number {
+  return toFinancialNumber(typeof value === 'string' || typeof value === 'number' ? value : 0);
+}
+
+function getJsonString(value: unknown): string | null {
+  return typeof value === 'string' ? value : null;
+}
+
+export function normalizeCashFlowStatementReport(payload: unknown): CashFlowStatementReport {
+  const root = getJsonRecord(payload);
+  const period = getJsonRecord(root.period);
+  const operating = getJsonRecord(root.operating);
+  const investing = getJsonRecord(root.investing);
+  const financing = getJsonRecord(root.financing);
+
+  return {
+    period: {
+      from: getJsonString(period.from),
+      to: getJsonString(period.to),
+    },
+    operating: {
+      receipts: getJsonNumber(operating.receipts),
+      expenses: getJsonNumber(operating.expenses),
+      netOperating: getJsonNumber(operating.net_operating),
+    },
+    investing: {
+      amount: getJsonNumber(investing.amount),
+      note: getJsonString(investing.note),
+    },
+    financing: {
+      amount: getJsonNumber(financing.amount),
+      note: getJsonString(financing.note),
+    },
+    netChange: getJsonNumber(root.net_change),
+  };
+}
+
+export function normalizeVatReturnReport(payload: unknown): VatReturnReport {
+  const root = getJsonRecord(payload);
+  const period = getJsonRecord(root.period);
+
+  return {
+    period: {
+      from: getJsonString(period.from),
+      to: getJsonString(period.to),
+    },
+    totalSalesAmount: getJsonNumber(root.total_sales_amount),
+    totalTaxAmount: getJsonNumber(root.total_tax_amount),
+    invoiceCount: Math.trunc(getJsonNumber(root.invoice_count)),
+  };
+}
+
 async function loadArrearsContextMaps(invoices: ArrearsInvoiceRow[]): Promise<ArrearsContextMaps> {
   const contracts = invoices.map((invoice) => invoice.contracts).filter((contract): contract is ContractContext => Boolean(contract));
   const [tenantsResult, propertiesResult, unitsResult] = await Promise.allSettled([
@@ -885,6 +960,24 @@ export async function getFinancialCashflowReport(filters: FinancialReportFilters
   ]);
 
   return summarizeFinancialCashflowReport({ payments, expenses });
+}
+
+export async function getCashFlowStatementReport(filters: Pick<FinancialReportFilters, 'dateFrom' | 'dateTo'>): Promise<CashFlowStatementReport> {
+  const { data, error } = await supabase.rpc('rpt_cash_flow', {
+    p_from_date: filters.dateFrom,
+    p_to_date: filters.dateTo,
+  });
+  if (error) throw error;
+  return normalizeCashFlowStatementReport(data);
+}
+
+export async function getVatReturnReport(filters: Pick<FinancialReportFilters, 'dateFrom' | 'dateTo'>): Promise<VatReturnReport> {
+  const { data, error } = await supabase.rpc('rpt_vat_return', {
+    p_from_date: filters.dateFrom,
+    p_to_date: filters.dateTo,
+  });
+  if (error) throw error;
+  return normalizeVatReturnReport(data);
 }
 
 export async function getExpenseBreakdownReport(filters: ExpenseBreakdownReportFilters): Promise<ExpenseBreakdownReport> {
