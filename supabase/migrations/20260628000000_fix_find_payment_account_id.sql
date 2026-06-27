@@ -1,35 +1,20 @@
--- Migration: fix_find_payment_account_id
--- Description: Corrects the find_payment_account_id() function to maintain text-based account resolution
--- and eliminate UUID casting errors.
-
-CREATE OR REPLACE FUNCTION public.find_payment_account_id(account_role text)
-RETURNS text
-LANGUAGE plpgsql SECURITY DEFINER AS $$
-DECLARE
-  v_target_no text;
-  v_account_id text;
-BEGIN
-  CASE account_role
-    WHEN 'cash' THEN v_target_no := '1111';
-    WHEN 'receivable' THEN v_target_no := '1201';
-    ELSE RETURN NULL;
-  END CASE;
-
-  SELECT id INTO v_account_id
-  FROM public.accounts
-  WHERE no = v_target_no
-  LIMIT 1;
-
-  IF v_account_id IS NULL THEN
-    RAISE EXCEPTION 'Account not found for role: %', account_role;
-  END IF;
-
-  RETURN v_account_id;
-END;
-$$;
-
--- Revoke from public/authenticated, grant to postgres/service_role
-REVOKE ALL ON FUNCTION public.find_payment_account_id(text) FROM public;
-REVOKE ALL ON FUNCTION public.find_payment_account_id(text) FROM authenticated;
-GRANT EXECUTE ON FUNCTION public.find_payment_account_id(text) TO postgres;
-GRANT EXECUTE ON FUNCTION public.find_payment_account_id(text) TO service_role;
+-- Migration: fix_find_payment_account_id (SUPERSEDED — intentional no-op)
+--
+-- This migration was authored against the ERPNext migration plan (P0-A) without checking
+-- the live database first. The problem it describes ("find_payment_account_id miscasts
+-- 1111/1201 to uuid; cash-role regex matches more than one account") was already fixed and
+-- verified live by PR #896 (20260615000100_fix_invoice_payment_account_resolution) and
+-- hardened further by PR #911 (20260615000300, REVOKE anon). See
+-- docs/ai/CURRENT_EXECUTION_CONTEXT.md → "Known Contradictions Resolved".
+--
+-- The live function is a text-based lookup with schema-existence guards, a regex fallback,
+-- explicit ambiguity errors (RAISE EXCEPTION on multiple matches), and
+-- SET search_path TO 'public', 'pg_temp'. Re-applying the version originally drafted in this
+-- file would have been a REGRESSION: it had no search_path pin (security advisor finding) and
+-- used LIMIT 1 to silently pick an account on ambiguous matches instead of raising — reopening
+-- the exact bug class P0-A was meant to close.
+--
+-- Action: no-op. Nothing in production is changed by this migration. Left in the migration
+-- history (instead of deleted) so the file list matches what record_invoice_payment_atomic's
+-- changelog already documents, and so future agents don't re-attempt the same fix blind.
+SELECT 1;
