@@ -254,7 +254,7 @@ export type Database = {
           amount: number;
           paid_amount: number;
           tax_rate: number | null;
-          tax_amount: number;
+          tax_amount: number | null;
           status: 'UNPAID' | 'PARTIALLY_PAID' | 'PAID' | 'OVERDUE' | 'VOID' | 'draft' | 'issued' | 'partial' | 'paid' | 'overdue' | 'void' | string;
           notes: string | null;
           created_at: string;
