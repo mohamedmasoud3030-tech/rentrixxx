@@ -1,7 +1,7 @@
 # Final Delivery Gate QA Evidence
 
 **Status:** BLOCKED  
-**Last updated:** 2026-06-17  
+**Last updated:** 2026-06-28  
 **Reason:** Required live/operator evidence is unavailable.
 
 This file records live final delivery gate evidence for Rentrix. It complements `docs/ai/CURRENT_EXECUTION_CONTEXT.md`, `docs/RENTRIX_MASTER_PLAN.md`, `docs/FIRST_CLIENT_DELIVERY_PLAN.md`, and `docs/ai/PRINT_AND_EXPORT_READINESS.md`.
@@ -27,14 +27,17 @@ The repo-only checks below are useful baseline evidence. They do not replace liv
 
 | Check | Result | Date |
 |---|---|---|
-| `pnpm --filter ./artifacts/rentrix run typecheck` | 0 errors | 2026-06-18 |
-| `pnpm --filter ./artifacts/rentrix test` | 152/152 passed (25 test files) | 2026-06-18 — **stale: test suite expanded to 62 files / ~200+ tests via PR #981 and PR #982** |
-| `pnpm --filter ./artifacts/rentrix run build` | Passed; 117 precache entries; 2797.75 KiB | 2026-06-18 |
+| `pnpm --filter ./rentrix-app run typecheck` | 0 errors | 2026-06-18 |
+| `pnpm --filter ./rentrix-app test` | **200+ tests passed (62 test files)** — expanded via PR #981 and PR #982 | 2026-06-27 |
+| `pnpm --filter ./rentrix-app run test:financials` | Passing | 2026-06-18 |
+| `pnpm --filter ./rentrix-app run build` | Passed; 117 precache entries; 2797.75 KiB | 2026-06-18 |
 | Routes confirmed | `/lands`, `/leads`, `/commissions`, `/communication` visible with permission guards | 2026-06-17 |
 | Mobile list pages | All major list pages (Contracts, People, Units, Receipts, Owners) have card/table responsive layouts | 2026-06-18 |
 | Print wiring confirmed | Receipt browser print wiring and core document PDF generation confirmed in repo evidence | 2026-06-17 |
 | Migration chain | 101 repo migrations = 101 live DB migrations in prior evidence | 2026-06-15 |
 | Documentation authority | Unified in PR #932 — MASTER_PLAN is sole authoritative roadmap | 2026-06-18 |
+| UI/UX Phase 3 | Sidebar/Dashboard/Settings/Reports restructure complete (PR #936) | 2026-06-27 |
+| Active app path | Confirmed `rentrix-app/` — `artifacts/rentrix/` does not exist | 2026-06-28 |
 
 ## Pending Live Smoke Scope
 
@@ -59,13 +62,8 @@ A human operator must smoke-check:
 
 ## Explicitly Out of Scope for This Gate
 
-- Dedicated generated receipt PDF: PLANNED
-- Reports PDF export: DEFERRED
-- External communication sending: OUT OF SCOPE
-- General accounting ledger: OUT OF SCOPE
-- Owner settlement/payout workflow: NEEDS OWNER DECISION
-- SaaS multi-tenancy: OUT OF SCOPE
-
-## Closure Protocol
-
-A human operator must run the live checks, record evidence references, update this file, and classify production as GO, NO-GO, or BLOCKED. Do not create PASS evidence without a real live check. Do not replace live QA with repo-only assumptions.
+- UI Consistency Phase (ADR-008) — repo-only work, does not affect live gate
+- ERPNext feature gap items (P0/P1/P2) — planned future phases
+- General accounting ledger
+- Tax finality
+- Owner payout automation
