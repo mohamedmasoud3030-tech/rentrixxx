@@ -10,7 +10,7 @@ Rentrix is a focused, Arabic-first, mobile-first property operations system for 
 
 The active runtime architecture is:
 
-- `artifacts/rentrix/` active React application.
+- `rentrix-app/` active React application.
 - TanStack Router.
 - React Query.
 - Supabase direct-client data access.
