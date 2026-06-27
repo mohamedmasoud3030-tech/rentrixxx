@@ -16,6 +16,7 @@ import { ChevronDown, ChevronUp, ChevronsUpDown } from 'lucide-react';
 import { Fragment, type ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { DataErrorScreen } from '@/components/data-error-screen';
 import { EmptyState } from '@/components/empty-state';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -218,16 +219,11 @@ export function EntityTable<T>({
   // ── Error ────────────────────────────────────────────────
   if (error != null) {
     return (
-      <EmptyState
+      <DataErrorScreen
         title={errorTitle}
-        description="حدث خطأ أثناء تحميل البيانات."
-        role="alert"
-        ariaLive="assertive"
-        action={
-          onRetry ? (
-            <Button onClick={onRetry}>إعادة المحاولة</Button>
-          ) : undefined
-        }
+        error={error}
+        fallbackMessage={error instanceof Error ? error.message : undefined}
+        action={onRetry ? <Button onClick={onRetry}>إعادة المحاولة</Button> : undefined}
       />
     );
   }
