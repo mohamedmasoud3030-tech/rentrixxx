@@ -28,7 +28,7 @@ The repo-only checks below are useful baseline evidence. They do not replace liv
 | Check | Result | Date |
 |---|---|---|
 | `pnpm --filter ./artifacts/rentrix run typecheck` | 0 errors | 2026-06-18 |
-| `pnpm --filter ./artifacts/rentrix test` | 152/152 passed (25 test files) | 2026-06-18 |
+| `pnpm --filter ./artifacts/rentrix test` | 152/152 passed (25 test files) | 2026-06-18 — **stale: test suite expanded to 62 files / ~200+ tests via PR #981 and PR #982** |
 | `pnpm --filter ./artifacts/rentrix run build` | Passed; 117 precache entries; 2797.75 KiB | 2026-06-18 |
 | Routes confirmed | `/lands`, `/leads`, `/commissions`, `/communication` visible with permission guards | 2026-06-17 |
 | Mobile list pages | All major list pages (Contracts, People, Units, Receipts, Owners) have card/table responsive layouts | 2026-06-18 |

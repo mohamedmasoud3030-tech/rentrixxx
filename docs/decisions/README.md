@@ -36,6 +36,17 @@ Use `docs/FIRST_CLIENT_DELIVERY_PLAN.md` for current first-client sequencing. Th
 
 All list pages use `EntityTable` (replacing manual `Table` primitive usage and the unused `DataTable`). All person/owner display uses `EntityCard` (replacing `PersonCard` and `OwnerCard` over time). All list pages use `ListPage` scaffold. Full spec in `docs/decisions/ADR-008-unified-ui-components.md` and usage guide in `docs/ai/UI_COMPONENT_GUIDE.md`.
 
+### ADR-009 — Dead Code Removal: DataTable, layouts/ shims, lib/db, lib/api-client-react
+
+The following are confirmed dead code and must be removed in a dedicated cleanup PR:
+
+- `rentrix-app/src/components/shared/DataTable.tsx` — generic table component, zero usages in pages, replaced by `EntityTable` (ADR-008)
+- `rentrix-app/src/layouts/` folder — re-export shims only; `routes/_protected.tsx` and `routes/_auth.tsx` must be updated to import from `@/components/layout/` directly, then the shim folder deleted
+- `lib/db/` workspace package — Drizzle ORM setup, zero imports from app
+- `lib/api-client-react/` workspace package — HTTP client, zero imports from app
+
+These must not be deleted without first verifying `pnpm build` passes without them.
+
 ## Open product decisions required
 
 The following decisions still require explicit approval before implementation:

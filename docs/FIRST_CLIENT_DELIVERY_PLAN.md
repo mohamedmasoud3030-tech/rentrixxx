@@ -17,7 +17,7 @@ reports without violating the single-office, no-SaaS, no-general-ledger boundary
 
 | Area | Current state | Delivery implication |
 | --- | --- | --- |
-| Operational UI | Core visible workflows are implemented and polished enough for constrained-beta review. | UI work is no longer the first blocker. |
+| Operational UI | Core visible workflows are implemented and polished enough for constrained-beta review. UI Consistency Phase (ADR-008) is in progress — `EntityTable` + `EntityCard` unification ongoing. | UI work is not the delivery blocker but consistency improves operator confidence. |
 | Payment recording | Account resolution fixes are recorded as live-verified in `docs/ai/CURRENT_EXECUTION_CONTEXT.md`; authenticated browser E2E remains unverified. | Final delivery gate for first client. |
 | Migration chain | Current execution context reports the repo and live DB migration chain were reconciled after PR #910 and PR #911. | Re-verify only with approved read-only evidence before GO. |
 | Auth roles | Custom Access Token Hook registration is `DONE` by owner confirmation. | Not a current repo-stabilization blocker; ADMIN QA still must verify post-login behavior at final delivery. |
