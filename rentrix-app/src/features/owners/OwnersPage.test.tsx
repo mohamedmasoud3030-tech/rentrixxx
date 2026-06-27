@@ -47,7 +47,7 @@ const property: PropertyWithOwners = {
 
 describe('Owner detail recovery states', () => {
   it('renders the owner detail loading state', () => {
-    expect(renderToStaticMarkup(<OwnerDetailView state={{ status: 'loading' }} />)).toContain('جار تحميل ملف المالك');
+    expect(renderToStaticMarkup(<OwnerDetailView state={{ status: 'loading' }} />)).toContain('aria-label="جار التحميل"');
   });
 
   it('renders the owner detail surface', () => {

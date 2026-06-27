@@ -96,7 +96,6 @@ export function ReceiptsSection({
                     {onPrintReceipt && (
                       <Button
                         variant="outline"
-                        size="sm"
                         className="h-8"
                         onClick={() => onPrintReceipt(receipt.id)}
                         title="طباعة الإيصال"
@@ -108,7 +107,6 @@ export function ReceiptsSection({
                     {onExportReceipt && (
                       <Button
                         variant="outline"
-                        size="sm"
                         className="h-8"
                         onClick={() => onExportReceipt(receipt.id)}
                         title="تنزيل PDF"

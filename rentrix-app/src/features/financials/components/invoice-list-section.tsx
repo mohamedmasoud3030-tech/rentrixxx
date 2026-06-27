@@ -117,7 +117,6 @@ export function InvoiceListSection({
                     {onPrintInvoice && (
                       <Button
                         variant="outline"
-                        size="sm"
                         className="h-8"
                         onClick={() => onPrintInvoice(invoice.id)}
                         title="طباعة الفاتورة"
@@ -129,7 +128,6 @@ export function InvoiceListSection({
                     {onExportInvoice && (
                       <Button
                         variant="outline"
-                        size="sm"
                         className="h-8"
                         onClick={() => onExportInvoice(invoice.id)}
                         title="تنزيل PDF"

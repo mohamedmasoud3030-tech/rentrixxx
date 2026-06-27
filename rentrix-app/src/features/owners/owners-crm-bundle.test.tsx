@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
 import { canAccess, canShowNavigationItem, getAuthorizationContextFromUser } from '@/features/auth/permissions';
-import { navGroups, type NavItem } from '@/layouts/app-nav-items';
+import { navGroups, type NavItem } from '@/components/layout/app-nav-items';
 import { CommissionsView } from '@/features/commissions/components/commissions-view';
 import { CommunicationHubView } from '@/features/communication/components/communication-hub-view';
 import { LandsView } from '@/features/lands/components/lands-view';

@@ -34,7 +34,7 @@ describe('UnitsList load states', () => {
     const html = renderToStaticMarkup(<UnitsList propertyId="property-1" unitsQuery={unitsQuery} />);
 
     expect(html).toContain('تعذر تحميل وحدات العقار');
-    expect(html).toContain('permission denied for table units');
+    expect(html).toContain("إعداد الاتصال بقاعدة البيانات غير مكتمل.");
     expect(html).toContain('إعادة المحاولة');
     expect(html).not.toContain('لا توجد وحدات');
   });

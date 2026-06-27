@@ -9,23 +9,28 @@ import { getOwnerDisplayName } from '../ownerService';
 import type { OwnerDetailState } from '../types';
 
 export function OwnerDetailView({ state }: Readonly<{ state: OwnerDetailState }>) {
-  // Derive AsyncContentState status from the discriminated union
-  const asyncStatus =
-    state.status === 'loading' ? 'loading' :
-    state.status === 'error' ? 'error' :
-    state.status === 'unavailable' ? 'empty' :
-    'ready';
-
-  if (asyncStatus !== 'ready') {
+  if (state.status === 'loading') {
+    return <AsyncContentState status="loading">{null}</AsyncContentState>;
+  }
+  if (state.status === 'error') {
     return (
       <AsyncContentState
-        status={asyncStatus}
-        error={state.status === 'error' ? state.error : undefined}
+        status="error"
+        error={state.error}
         errorTitle="تعذر تحميل ملف المالك"
         errorFallbackMessage="تعذر تحميل ملف المالك."
         errorAction={<Button type="button" onClick={() => globalThis.location.reload()}>إعادة المحاولة</Button>}
+      >
+        {null}
+      </AsyncContentState>
+    );
+  }
+  if (state.status === 'unavailable') {
+    return (
+      <AsyncContentState
+        status="empty"
         emptyTitle="ملف المالك غير متاح بأمان"
-        emptyDescription={state.status === 'unavailable' ? state.reason : 'تعذر تحميل ملف المالك.'}
+        emptyDescription={state.reason}
       >
         {null}
       </AsyncContentState>
