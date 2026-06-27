@@ -187,3 +187,40 @@ Three additional defects were found and fixed before applying:
 - SonarCloud gate failing on `main` (Reliability B, Security C, 1 Hotspot) — separate task.
 - Cash Flow report has no CSV export — deferred per ERPNEXT_MIGRATION_PLAN.md.
 - Payment Terms do not expand into invoice schedules — deferred, documented as Future Narrow Enhancement.
+
+---
+
+## 2026-06-28 Task 3 — RPC Audit and record_invoice_payment_atomic Hardening
+
+**Auditor:** Claude (Staff Backend Engineer / Supabase Production Safety Reviewer)
+
+### Task 2 re-audit (000500/000600)
+
+| Check | Result |
+|---|---|
+| Duplicate columns in `company_settings` / `invoices` | ✅ None — `pg_attribute` query confirmed no duplicated attnames within either table |
+| Live migration versions for 000500/000600 | ✅ Present as `20260627234554` / `20260627234624` — applied cleanly |
+| Repo files `20260628000500` / `000600` vs live names | ✅ Naming divergence is cosmetic (repo uses `20260628*` prefix, live used apply-time timestamp) — no tracking gap |
+
+### Task 3 RPC audit results
+
+| Function | search_path | Grants | Logic | Finding |
+|---|---|---|---|---|
+| `find_payment_account_id` | ✅ `public, pg_temp` | ✅ `postgres`, `service_role` only | Raises on multiple matches, returns NULL on zero (correct — caller guards) | No changes needed |
+| `record_invoice_payment_atomic` | ✅ `public, pg_temp` | ✅ `authenticated`, `service_role` | Auth + role + advisory lock + idempotency all correct. **Defect:** `invoice_id` cast to `uuid` without format validation — cryptic Postgres error on malformed input | **Fixed** |
+| `rpt_cash_flow` | ✅ `public, pg_temp` | ✅ `authenticated`, `service_role` | Queries `payments.payment_date` + `expenses.expense_date` — both confirmed correct | No changes needed |
+| `rpt_vat_return` | ✅ `public, pg_temp` | ✅ `authenticated`, `service_role` | Queries `invoices.issue_date` — confirmed correct column | No changes needed |
+
+### Fix applied
+
+**Migration `20260628000700_harden_record_invoice_payment_invoice_id_validation`**
+
+- Added `v_invoice_id_raw text` variable to hold raw input before cast
+- UUID regex guard before `::uuid` cast: raises `'invoice_id is not a valid identifier: <value>'` on malformed input
+- Removed `(v_invoice->>'contract_id')::uuid` implicit cast — now uses text comparison directly matching `contracts.id text` column type
+- All auth, idempotency, advisory lock, account resolution, journal entry, and grant behavior preserved exactly
+- Verified live: `proconfig=[search_path=public, pg_temp]`, grants `authenticated`+`service_role`+`postgres` unchanged
+
+### Accounts confirmed unambiguous
+
+`find_payment_account_id` live data check: accounts `1111` (cash, unique) and `1201` (receivable, unique) — no ambiguity risk currently.
