@@ -1,7 +1,7 @@
 import { FileSpreadsheet, ReceiptText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { StatusBadge } from '@/components/ui/status-badge';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { EntityTable } from '@/components/ui/entity-table';
 import { formatDate, formatMoney, formatShortId } from '@/features/financials/components/financials-formatters';
 import type { DailyCollectionReportRow } from '@/features/financials/reports/financialReportsService';
 import { buildReportCsvFilename, downloadCsv, latestReceiptLimit, toDailyCollectionCsv } from '../reports-page.helpers';
@@ -44,34 +44,23 @@ export function CollectionsSection({ rows, receiptRows, rentRollRows, isLoading 
           {rows.length === 0 ? <p className="text-sm text-muted-foreground">لا توجد تحصيلات في الفترة المحددة.</p> : null}
         </div>
         {/* Desktop table */}
-        <div className="hidden overflow-x-auto md:block">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>التاريخ</TableHead>
-                <TableHead>الإجمالي</TableHead>
-                <TableHead>عدد المدفوعات</TableHead>
-                <TableHead>نقداً</TableHead>
-                <TableHead>تحويل</TableHead>
-                <TableHead>بطاقة</TableHead>
-                <TableHead>شيك</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {rows.map((row) => (
-                <TableRow key={row.paymentDate}>
-                  <TableCell>{formatDate(row.paymentDate)}</TableCell>
-                  <TableCell dir="ltr">{formatMoney(row.totalPaid)}</TableCell>
-                  <TableCell>{row.paymentsCount.toLocaleString('ar')}</TableCell>
-                  <TableCell dir="ltr">{formatMoney(row.methodTotals.cash)}</TableCell>
-                  <TableCell dir="ltr">{formatMoney(row.methodTotals.bank_transfer)}</TableCell>
-                  <TableCell dir="ltr">{formatMoney(row.methodTotals.card)}</TableCell>
-                  <TableCell dir="ltr">{formatMoney(row.methodTotals.check)}</TableCell>
-                </TableRow>
-              ))}
-              {rows.length === 0 ? <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground">لا توجد تحصيلات في الفترة المحددة.</TableCell></TableRow> : null}
-            </TableBody>
-          </Table>
+        <div className="hidden md:block px-4 pb-4">
+          <EntityTable
+            aria-label="جدول التحصيل اليومي"
+            rows={rows}
+            columns={[
+              { key: 'date', header: 'التاريخ', render: (row) => formatDate(row.paymentDate) },
+              { key: 'total', header: 'الإجمالي', render: (row) => <span dir="ltr">{formatMoney(row.totalPaid)}</span> },
+              { key: 'count', header: 'عدد المدفوعات', render: (row) => row.paymentsCount.toLocaleString('ar') },
+              { key: 'cash', header: 'نقداً', render: (row) => <span dir="ltr">{formatMoney(row.methodTotals.cash)}</span> },
+              { key: 'transfer', header: 'تحويل', render: (row) => <span dir="ltr">{formatMoney(row.methodTotals.bank_transfer)}</span> },
+              { key: 'card', header: 'بطاقة', render: (row) => <span dir="ltr">{formatMoney(row.methodTotals.card)}</span> },
+              { key: 'check', header: 'شيك', render: (row) => <span dir="ltr">{formatMoney(row.methodTotals.check)}</span> },
+            ]}
+            keyOf={(row) => row.paymentDate}
+            emptyTitle="لا توجد تحصيلات"
+            emptyDescription="لا توجد تحصيلات في الفترة المحددة."
+          />
         </div>
         <div className="border-t border-border/70 p-4">
           <div className="mb-3 flex items-center justify-between gap-3">
@@ -125,34 +114,23 @@ export function CollectionsSection({ rows, receiptRows, rentRollRows, isLoading 
           {rentRollRows.length === 0 ? <p className="text-sm text-muted-foreground">لا توجد عقود ضمن البيانات الحالية.</p> : null}
         </div>
         {/* Desktop table */}
-        <div className="hidden overflow-x-auto md:block">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>العقد</TableHead>
-                <TableHead>المستأجر</TableHead>
-                <TableHead>العقار/الوحدة</TableHead>
-                <TableHead>الإيجار</TableHead>
-                <TableHead>الدورة</TableHead>
-                <TableHead>الحالة</TableHead>
-                <TableHead>الفترة</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {rentRollRows.map((row) => (
-                <TableRow key={row.contractId}>
-                  <TableCell><SafeAnchor href={`/contracts/${encodeURIComponent(row.contractId)}`} label={formatShortId(row.contractId)} /></TableCell>
-                  <TableCell>{row.tenantName}</TableCell>
-                  <TableCell>{row.propertyTitle} · {row.unitNumber}</TableCell>
-                  <TableCell dir="ltr">{formatMoney(row.rentAmount)}</TableCell>
-                  <TableCell>{row.paymentCycle}</TableCell>
-                  <TableCell>{row.statusLabel}</TableCell>
-                  <TableCell>{formatDate(row.startDate)} — {formatDate(row.endDate)}</TableCell>
-                </TableRow>
-              ))}
-              {rentRollRows.length === 0 ? <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground">لا توجد عقود ضمن البيانات الحالية.</TableCell></TableRow> : null}
-            </TableBody>
-          </Table>
+        <div className="hidden md:block px-4 pb-4">
+          <EntityTable
+            aria-label="جدول عقود الإيجار"
+            rows={rentRollRows}
+            columns={[
+              { key: 'contract', header: 'العقد', render: (row) => <SafeAnchor href={`/contracts/${encodeURIComponent(row.contractId)}`} label={formatShortId(row.contractId)} /> },
+              { key: 'tenant', header: 'المستأجر', render: (row) => row.tenantName },
+              { key: 'property', header: 'العقار/الوحدة', render: (row) => `${row.propertyTitle} · ${row.unitNumber}` },
+              { key: 'rent', header: 'الإيجار', render: (row) => <span dir="ltr">{formatMoney(row.rentAmount)}</span> },
+              { key: 'cycle', header: 'الدورة', render: (row) => row.paymentCycle },
+              { key: 'status', header: 'الحالة', render: (row) => row.statusLabel },
+              { key: 'period', header: 'الفترة', render: (row) => `${formatDate(row.startDate)} — ${formatDate(row.endDate)}` },
+            ]}
+            keyOf={(row) => row.contractId}
+            emptyTitle="لا توجد عقود"
+            emptyDescription="لا توجد عقود ضمن البيانات الحالية."
+          />
         </div>
       </ReportCard>
     </div>

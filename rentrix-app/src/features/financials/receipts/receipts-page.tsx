@@ -13,7 +13,7 @@ import { SearchInput } from '@/components/ui/search-input';
 import { Select } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
 import { StatusBadge } from '@/components/ui/status-badge';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { EntityTable, type ColumnDef } from '@/components/ui/entity-table';
 import type { AuthorizationContext } from '@/features/auth/permissions';
 import { useAuth } from '@/hooks/use-auth';
 import { formatDate, formatMoney, formatShortId, getErrorMessage } from '../components/financials-formatters';
@@ -249,47 +249,36 @@ function ReceiptsHistoryContent() {
               </div>
 
               {/* Desktop table */}
-              <div className="hidden overflow-x-auto rounded-2xl border border-border md:block">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>رقم الإيصال</TableHead>
-                      <TableHead>تاريخ الدفع</TableHead>
-                      <TableHead>المبلغ</TableHead>
-                      <TableHead>طريقة الدفع</TableHead>
-                      <TableHead>الفاتورة</TableHead>
-                      <TableHead>السياق</TableHead>
-                      <TableHead>الحالة</TableHead>
-                      <TableHead>الإجراءات</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredReceipts.map((receipt) => (
-                      <TableRow key={receipt.id} className={selectedReceiptId === receipt.id ? 'bg-primary/5' : undefined}>
-                        <TableCell className="font-black">{receipt.receipt_number}</TableCell>
-                        <TableCell>{formatDate(receipt.payment_date)}</TableCell>
-                        <TableCell dir="ltr" className="font-bold">{formatMoney(receipt.amount)}</TableCell>
-                        <TableCell>{paymentMethodLabels[receipt.payment_method] ?? receipt.payment_method}</TableCell>
-                        <TableCell>{formatShortId(receipt.invoice_id)}</TableCell>
-                        <TableCell>{formatReceiptContext(receipt)}</TableCell>
-                        <TableCell><StatusBadge tone="green">{receiptStatusLabels[receipt.status] ?? receipt.status}</StatusBadge></TableCell>
-                        <TableCell>
-                          <div className="flex flex-wrap gap-2">
-                            <Button variant="secondary" className="min-h-10 px-3" onClick={() => setSelectedReceiptId(receipt.id)}>عرض</Button>
-                            <Button variant="secondary" className="min-h-10 px-3" asChild>
-                              <a href={createReceiptPrintHref(receipt.id)}><Printer className="me-2 size-4" />طباعة</a>
-                            </Button>
-                            {canVoidReceipt && (
-                              <Button variant="danger" className="min-h-10 px-3" onClick={() => openVoidDialog(receipt)} disabled={voidReceiptMutation.isPending}>
-                                <Ban className="me-2 size-4" />إلغاء
-                              </Button>
-                            )}
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+              <div className="hidden md:block">
+                <EntityTable
+                  aria-label="جدول الإيصالات"
+                  rows={filteredReceipts}
+                  columns={[
+                    { key: 'receipt_number', header: 'رقم الإيصال', render: (r) => <span className="font-black">{r.receipt_number}</span> },
+                    { key: 'payment_date', header: 'تاريخ الدفع', render: (r) => formatDate(r.payment_date) },
+                    { key: 'amount', header: 'المبلغ', render: (r) => <span dir="ltr" className="block font-bold">{formatMoney(r.amount)}</span> },
+                    { key: 'method', header: 'طريقة الدفع', render: (r) => paymentMethodLabels[r.payment_method] ?? r.payment_method },
+                    { key: 'invoice_id', header: 'الفاتورة', render: (r) => formatShortId(r.invoice_id) },
+                    { key: 'context', header: 'السياق', render: (r) => formatReceiptContext(r) },
+                    { key: 'status', header: 'الحالة', render: (r) => <StatusBadge tone="green">{receiptStatusLabels[r.status] ?? r.status}</StatusBadge> },
+                    { key: 'actions', header: 'الإجراءات', render: (r) => (
+                      <div className="flex flex-wrap gap-2" onClick={(e) => e.stopPropagation()}>
+                        <Button variant="secondary" className="min-h-10 px-3" onClick={() => setSelectedReceiptId(r.id)}>عرض</Button>
+                        <Button variant="secondary" className="min-h-10 px-3" asChild>
+                          <a href={createReceiptPrintHref(r.id)}><Printer className="me-2 size-4" />طباعة</a>
+                        </Button>
+                        {canVoidReceipt && (
+                          <Button variant="danger" className="min-h-10 px-3" onClick={() => openVoidDialog(r)} disabled={voidReceiptMutation.isPending}>
+                            <Ban className="me-2 size-4" />إلغاء
+                          </Button>
+                        )}
+                      </div>
+                    )},
+                  ] as ColumnDef<typeof filteredReceipts[number]>[]}
+                  keyOf={(r) => r.id}
+                  emptyTitle="لا توجد إيصالات"
+                  emptyDescription="لا توجد إيصالات تطابق معايير البحث الحالية."
+                />
               </div>
             </>
           )}

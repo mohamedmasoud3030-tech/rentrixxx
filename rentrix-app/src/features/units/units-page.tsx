@@ -9,9 +9,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { KpiCard } from '@/components/ui/kpi-card';
 import { SearchInput } from '@/components/ui/search-input';
 import { Select } from '@/components/ui/select';
-import { Skeleton } from '@/components/ui/skeleton';
 import { StatusBadge } from '@/components/ui/status-badge';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { EntityTable } from '@/components/ui/entity-table';
 import { useProperties } from '@/features/properties/use-properties';
 import { defaultCompanyLocalSettings } from '@/lib/companySettings';
 import { formatCompanyMoney, getCompanyLocale } from '@/lib/companyFormatters';
@@ -133,47 +132,36 @@ export function UnitsPage() {
           <CardDescription>{filteredUnits.length.toLocaleString(locale)} وحدة ضمن الفلاتر الحالية.</CardDescription>
         </CardHeader>
         <CardContent>
-          {unitsQuery.isLoading || propertiesQuery.isLoading ? (
-            <div className="space-y-3">{Array.from({ length: 5 }, (_, index) => <Skeleton key={index} className="h-14" />)}</div>
-          ) : null}
-          {unitsQuery.isError || propertiesQuery.isError ? <EmptyState title="تعذر تحميل الوحدات" description="أعد المحاولة بعد لحظات أو عدّل عوامل التصفية الحالية." role="alert" ariaLive="assertive" /> : null}
-          {!unitsQuery.isLoading && !propertiesQuery.isLoading && !unitsQuery.isError && !propertiesQuery.isError && filteredUnits.length === 0 ? (
-            <EmptyState title="لا توجد وحدات مطابقة" description="غيّر البحث أو الفلاتر لعرض وحدات أخرى، أو أضف وحدة من صفحة العقار المرتبط." action={<Button asChild><Link to="/properties">فتح العقارات</Link></Button>} />
-          ) : null}
-          {filteredUnits.length > 0 ? (
-            <div className="overflow-x-auto rounded-2xl border border-border">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>الوحدة</TableHead>
-                    <TableHead>العقار</TableHead>
-                    <TableHead>الدور</TableHead>
-                    <TableHead>الحالة</TableHead>
-                    <TableHead>الإيجار</TableHead>
-                    <TableHead>ملاحظات</TableHead>
-                    <TableHead>إجراء</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredUnits.map((unit) => {
-                    const unitStatus = getUnitPageStatus(unit);
-                    const property = propertyById.get(unit.property_id);
-                    return (
-                      <TableRow key={unit.id}>
-                        <TableCell className="font-black">{unit.unit_number}</TableCell>
-                        <TableCell>{property ? <Link className="font-bold text-primary hover:underline" to="/properties/$propertyId" params={{ propertyId: property.id }}>{property.title}</Link> : '—'}</TableCell>
-                        <TableCell>{unit.floor ?? '—'}</TableCell>
-                        <TableCell><StatusBadge tone={unitStatusTone[unitStatus]}>{unitStatusLabels[unitStatus]}</StatusBadge></TableCell>
-                        <TableCell dir="ltr" className="font-bold">{money(unit.rent_amount)}</TableCell>
-                        <TableCell>{unit.notes ?? '—'}</TableCell>
-                        <TableCell>{property ? <Button variant="secondary" asChild><Link to="/properties/$propertyId" params={{ propertyId: property.id }}>فتح العقار</Link></Button> : '—'}</TableCell>
-                      </TableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
-            </div>
-          ) : null}
+          <EntityTable
+            aria-label="جدول الوحدات"
+            rows={filteredUnits}
+            columns={[
+              { key: 'unit_number', header: 'الوحدة', render: (unit) => <span className="font-black">{unit.unit_number}</span> },
+              { key: 'property', header: 'العقار', render: (unit) => {
+                const property = propertyById.get(unit.property_id);
+                return property ? <Link className="font-bold text-primary hover:underline" to="/properties/$propertyId" params={{ propertyId: property.id }}>{property.title}</Link> : '—';
+              }},
+              { key: 'floor', header: 'الدور', render: (unit) => unit.floor ?? '—' },
+              { key: 'status', header: 'الحالة', render: (unit) => {
+                const unitStatus = getUnitPageStatus(unit);
+                return <StatusBadge tone={unitStatusTone[unitStatus]}>{unitStatusLabels[unitStatus]}</StatusBadge>;
+              }},
+              { key: 'rent', header: 'الإيجار', render: (unit) => <span dir="ltr" className="block font-bold">{money(unit.rent_amount)}</span> },
+              { key: 'notes', header: 'ملاحظات', render: (unit) => unit.notes ?? '—' },
+              { key: 'action', header: 'إجراء', render: (unit) => {
+                const property = propertyById.get(unit.property_id);
+                return property ? <Button variant="secondary" asChild><Link to="/properties/$propertyId" params={{ propertyId: property.id }}>فتح العقار</Link></Button> : '—';
+              }},
+            ]}
+            keyOf={(unit) => unit.id}
+            isLoading={unitsQuery.isLoading || propertiesQuery.isLoading}
+            error={(unitsQuery.isError || propertiesQuery.isError) ? new Error('تعذر تحميل الوحدات') : null}
+            errorTitle="تعذر تحميل الوحدات"
+            onRetry={() => { unitsQuery.refetch(); propertiesQuery.refetch(); }}
+            emptyTitle="لا توجد وحدات مطابقة"
+            emptyDescription="غيّر البحث أو الفلاتر لعرض وحدات أخرى، أو أضف وحدة من صفحة العقار المرتبط."
+            emptyAction={<Button asChild><Link to="/properties">فتح العقارات</Link></Button>}
+          />
         </CardContent>
       </Card>
     </div>

@@ -10,7 +10,7 @@ import { EntityCell } from '@/components/ui/entity-cell';
 import { Select } from '@/components/ui/select';
 import { SearchInput } from '@/components/ui/search-input';
 import { StatusBadge } from '@/components/ui/status-badge';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { EntityTable } from '@/components/ui/entity-table';
 import { PropertyCard } from '@/components/ui/property-card';
 import { defaultCompanyLocalSettings } from '@/lib/companySettings';
 import { formatCompanyMoney } from '@/lib/companyFormatters';
@@ -177,50 +177,36 @@ export function PropertiesListPage() {
 
       {/* Table view (desktop optional) */}
       {viewMode === 'table' && (
-        <Card className="overflow-hidden rounded-2xl">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>العقار</TableHead>
-                <TableHead>الحالة</TableHead>
-                <TableHead className="hidden sm:table-cell">العنوان</TableHead>
-                <TableHead className="hidden lg:table-cell">إجراء</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {properties.map((p) => (
-                <TableRow key={p.id}>
-                  <TableCell>
-                    <EntityCell icon={Building2} title={p.title ?? '—'} />
-                  </TableCell>
-                  <TableCell>
-                    <StatusBadge tone={propertyStatusTone[p.status as keyof typeof propertyStatusTone] ?? 'gray'}>
-                      {propertyStatusLabels[p.status as keyof typeof propertyStatusLabels] ?? p.status}
-                    </StatusBadge>
-                  </TableCell>
-                  <TableCell className="hidden sm:table-cell text-muted-foreground text-sm">{p.address ?? '—'}</TableCell>
-                  <TableCell className="hidden lg:table-cell">
-                    <div className="flex gap-2">
-                      <Button asChild variant="secondary" className="min-h-11 rounded-xl px-3 text-xs gap-1">
-                        <Link to="/properties/$propertyId" params={{ propertyId: p.id }}><Eye className="size-3" />عرض</Link>
-                      </Button>
-                      <Button variant="secondary" className="min-h-11 rounded-xl px-3 text-xs gap-1" onClick={() => { setEditPropertyId(p.id); setModalOpen(true); }}>
-                        <Edit className="size-3" />تعديل
-                      </Button>
-                      <button
-                        type="button"
-                        className="min-h-11 rounded-xl px-2 text-xs border border-border text-muted-foreground hover:text-rose-600 hover:border-rose-300 transition-colors"
-                        onClick={() => setArchiveTarget({ id: p.id, title: p.title ?? 'عقار' })}
-                      >
-                        <Trash2 className="size-3" />
-                      </button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </Card>
+        <EntityTable
+          aria-label="جدول العقارات"
+          rows={properties}
+          columns={[
+            { key: 'title', header: 'العقار', render: (p) => <EntityCell icon={Building2} title={p.title ?? '—'} /> },
+            { key: 'status', header: 'الحالة', render: (p) => (
+              <StatusBadge tone={propertyStatusTone[p.status as keyof typeof propertyStatusTone] ?? 'gray'}>
+                {propertyStatusLabels[p.status as keyof typeof propertyStatusLabels] ?? p.status}
+              </StatusBadge>
+            )},
+            { key: 'address', header: 'العنوان', render: (p) => <span className="text-muted-foreground text-sm">{p.address ?? '—'}</span> },
+            { key: 'actions', header: 'إجراء', render: (p) => (
+              <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
+                <Button asChild variant="secondary" className="min-h-11 rounded-xl px-3 text-xs gap-1">
+                  <Link to="/properties/$propertyId" params={{ propertyId: p.id }}><Eye className="size-3" />عرض</Link>
+                </Button>
+                <Button variant="secondary" className="min-h-11 rounded-xl px-3 text-xs gap-1" onClick={() => { setEditPropertyId(p.id); setModalOpen(true); }}>
+                  <Edit className="size-3" />تعديل
+                </Button>
+                <button type="button" className="min-h-11 rounded-xl px-2 text-xs border border-border text-muted-foreground hover:text-rose-600 hover:border-rose-300 transition-colors"
+                  onClick={() => setArchiveTarget({ id: p.id, title: p.title ?? 'عقار' })}>
+                  <Trash2 className="size-3" />
+                </button>
+              </div>
+            )},
+          ]}
+          keyOf={(p) => p.id}
+          emptyTitle="لا توجد عقارات"
+          emptyDescription="لا توجد عقارات تطابق معايير البحث الحالية."
+        />
       )}
 
       </AsyncContentState>

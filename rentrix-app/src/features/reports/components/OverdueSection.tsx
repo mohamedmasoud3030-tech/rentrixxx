@@ -2,7 +2,7 @@ import { AlertTriangle, FileSpreadsheet, WalletCards } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { KpiCard } from '@/components/ui/kpi-card';
 import { StatusBadge } from '@/components/ui/status-badge';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { EntityTable } from '@/components/ui/entity-table';
 import { formatDate, formatInvoiceStatusLabel, formatMoney, formatShortId } from '@/features/financials/components/financials-formatters';
 import type { OverdueInvoiceReportRow } from '@/features/financials/reports/financialReportsService';
 import { useAgedReceivablesReport } from '@/features/financials/reports/useFinancialReports';
@@ -43,34 +43,23 @@ export function OverdueSection({ rows, agedReport, isLoading }: Readonly<{
           {rows.length === 0 ? <p className="text-sm text-muted-foreground">لا توجد فواتير متأخرة حسب تاريخ as-of.</p> : null}
         </div>
         {/* Desktop table */}
-        <div className="hidden overflow-x-auto md:block">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>الفاتورة</TableHead>
-                <TableHead>العقد</TableHead>
-                <TableHead>المستأجر</TableHead>
-                <TableHead>الاستحقاق</TableHead>
-                <TableHead>أيام التأخير</TableHead>
-                <TableHead>المتبقي</TableHead>
-                <TableHead>الحالة</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {rows.map((row) => (
-                <TableRow key={row.invoiceId}>
-                  <TableCell><SafeAnchor href="/invoices" label={row.shortInvoiceId} /></TableCell>
-                  <TableCell><SafeAnchor href={`/contracts/${encodeURIComponent(row.contractId)}`} label={formatShortId(row.contractId)} /></TableCell>
-                  <TableCell>{row.tenantName ?? '—'}</TableCell>
-                  <TableCell>{formatDate(row.dueDate)}</TableCell>
-                  <TableCell>{row.daysOverdue.toLocaleString('ar')}</TableCell>
-                  <TableCell dir="ltr">{formatMoney(row.remainingAmount)}</TableCell>
-                  <TableCell>{formatInvoiceStatusLabel(row.status)}</TableCell>
-                </TableRow>
-              ))}
-              {rows.length === 0 ? <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground">لا توجد فواتير متأخرة حسب تاريخ as-of.</TableCell></TableRow> : null}
-            </TableBody>
-          </Table>
+        <div className="hidden md:block px-4 pb-4">
+          <EntityTable
+            aria-label="جدول الفواتير المتأخرة"
+            rows={rows}
+            columns={[
+              { key: 'invoice', header: 'الفاتورة', render: (row) => <SafeAnchor href="/invoices" label={row.shortInvoiceId} /> },
+              { key: 'contract', header: 'العقد', render: (row) => <SafeAnchor href={`/contracts/${encodeURIComponent(row.contractId)}`} label={formatShortId(row.contractId)} /> },
+              { key: 'tenant', header: 'المستأجر', render: (row) => row.tenantName ?? '—' },
+              { key: 'due_date', header: 'الاستحقاق', render: (row) => formatDate(row.dueDate) },
+              { key: 'days_overdue', header: 'أيام التأخير', render: (row) => row.daysOverdue.toLocaleString('ar') },
+              { key: 'remaining', header: 'المتبقي', render: (row) => <span dir="ltr">{formatMoney(row.remainingAmount)}</span> },
+              { key: 'status', header: 'الحالة', render: (row) => formatInvoiceStatusLabel(row.status) },
+            ]}
+            keyOf={(row) => row.invoiceId}
+            emptyTitle="لا توجد فواتير متأخرة"
+            emptyDescription="لا توجد فواتير متأخرة حسب تاريخ as-of."
+          />
         </div>
       </ReportCard>
 

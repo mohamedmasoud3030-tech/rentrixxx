@@ -2,43 +2,22 @@ import { FileText, LockKeyhole, ReceiptText, WalletCards } from 'lucide-react';
 import { KpiCard } from '@/components/ui/kpi-card';
 import { EmptyState } from '@/components/empty-state';
 import { Button } from '@/components/ui/button';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { EntityTable, type ColumnDef } from '@/components/ui/entity-table';
 import { StatusBadge } from '@/components/ui/status-badge';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
 import { formatDefaultCompanyMoney } from '@/lib/companyFormatters';
 import { invoiceStatusLabels } from '@/features/financials/components/invoice-status-labels';
 import { paymentMethodLabels } from '@/features/financials/components/receipt-formatters';
 import type { ContractPaymentsSnapshot } from './services/contractPaymentService';
 import { useContractPayments } from './useContractPayments';
 
-const arabicDateFormatter = new Intl.DateTimeFormat('ar', {
-  dateStyle: 'medium',
-});
+const arabicDateFormatter = new Intl.DateTimeFormat('ar', { dateStyle: 'medium' });
 const invoiceStatusTone: Record<string, string> = {
-  draft: 'gray',
-  issued: 'blue',
-  UNPAID: 'blue',
-  partial: 'gold',
-  PARTIALLY_PAID: 'gold',
-  paid: 'green',
-  PAID: 'green',
-  overdue: 'red',
-  OVERDUE: 'red',
-  void: 'gray',
-  VOID: 'gray',
+  draft: 'gray', issued: 'blue', UNPAID: 'blue',
+  partial: 'gold', PARTIALLY_PAID: 'gold',
+  paid: 'green', PAID: 'green',
+  overdue: 'red', OVERDUE: 'red',
+  void: 'gray', VOID: 'gray',
 };
 
 function formatDate(value: string): string {
@@ -46,16 +25,13 @@ function formatDate(value: string): string {
 }
 
 function getPaymentsErrorMessage(error: unknown): string {
-  return error instanceof Error
-    ? error.message
-    : 'تعذر تحميل مدفوعات وفواتير العقد.';
+  return error instanceof Error ? error.message : 'تعذر تحميل مدفوعات وفواتير العقد.';
 }
 
+type Invoice = ContractPaymentsSnapshot['invoices'][number];
+type Payment = ContractPaymentsSnapshot['payments'][number];
 
-
-function ContractPaymentsSummary({
-  snapshot,
-}: Readonly<{ snapshot: ContractPaymentsSnapshot }>) {
+function ContractPaymentsSummary({ snapshot }: Readonly<{ snapshot: ContractPaymentsSnapshot }>) {
   return (
     <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
       <KpiCard label="عدد الفواتير" value={snapshot.summary.invoiceCount.toLocaleString('ar')} icon={ReceiptText} accent="primary" compact />
@@ -67,118 +43,59 @@ function ContractPaymentsSummary({
   );
 }
 
-function ContractInvoicesTable({
-  snapshot,
-}: Readonly<{ snapshot: ContractPaymentsSnapshot }>) {
-  if (snapshot.invoices.length === 0) {
-    return (
-      <EmptyState
-        title="لا توجد فواتير مرتبطة"
-        description="لم يتم العثور على فواتير حالية لهذا العقد عبر مسار البيانات المعتمد."
-      />
-    );
-  }
+function ContractInvoicesTable({ snapshot }: Readonly<{ snapshot: ContractPaymentsSnapshot }>) {
+  const columns: ColumnDef<Invoice>[] = [
+    { key: 'id', header: 'الفاتورة', render: (inv) => <span className="font-mono text-xs font-bold">#{inv.id.slice(0, 8)}</span> },
+    { key: 'due_date', header: 'الاستحقاق', render: (inv) => formatDate(inv.due_date) },
+    {
+      key: 'status', header: 'الحالة',
+      render: (inv) => (
+        <StatusBadge tone={(invoiceStatusTone[inv.status ?? ''] ?? 'gray') as 'gray' | 'blue' | 'gold' | 'green' | 'red'}>
+          {invoiceStatusLabels[inv.status]}
+        </StatusBadge>
+      ),
+    },
+    { key: 'amount', header: 'المبلغ', render: (inv) => <span className="font-bold">{formatDefaultCompanyMoney(inv.amount)}</span> },
+    { key: 'paid_amount', header: 'المدفوع', render: (inv) => <span className="font-bold text-emerald-700 dark:text-emerald-200">{formatDefaultCompanyMoney(inv.paid_amount)}</span> },
+    { key: 'remaining', header: 'المتبقي', render: (inv) => <span className="font-bold">{formatDefaultCompanyMoney(inv.remaining_amount)}</span> },
+  ];
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-border bg-background">
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>الفاتورة</TableHead>
-            <TableHead>الاستحقاق</TableHead>
-            <TableHead>الحالة</TableHead>
-            <TableHead>المبلغ</TableHead>
-            <TableHead>المدفوع</TableHead>
-            <TableHead>المتبقي</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {snapshot.invoices.map((invoice) => (
-            <TableRow key={invoice.id}>
-              <TableCell className="font-mono text-xs font-bold">
-                #{invoice.id.slice(0, 8)}
-              </TableCell>
-              <TableCell>{formatDate(invoice.due_date)}</TableCell>
-              <TableCell>
-                <StatusBadge tone={(invoiceStatusTone[invoice.status ?? ''] ?? 'gray') as 'gray' | 'blue' | 'gold' | 'green' | 'red'}>
-                  {invoiceStatusLabels[invoice.status]}
-                </StatusBadge>
-              </TableCell>
-              <TableCell className="font-bold">
-                {formatDefaultCompanyMoney(invoice.amount)}
-              </TableCell>
-              <TableCell className="font-bold text-emerald-700 dark:text-emerald-200">
-                {formatDefaultCompanyMoney(invoice.paid_amount)}
-              </TableCell>
-              <TableCell className="font-bold">
-                {formatDefaultCompanyMoney(invoice.remaining_amount)}
-              </TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
-    </div>
+    <EntityTable
+      aria-label="جدول فواتير العقد"
+      rows={snapshot.invoices}
+      columns={columns}
+      keyOf={(inv) => inv.id}
+      emptyTitle="لا توجد فواتير مرتبطة"
+      emptyDescription="لم يتم العثور على فواتير حالية لهذا العقد عبر مسار البيانات المعتمد."
+    />
   );
 }
 
-function ContractPaymentsTable({
-  snapshot,
-}: Readonly<{ snapshot: ContractPaymentsSnapshot }>) {
-  if (snapshot.payments.length === 0) {
-    return (
-      <EmptyState
-        title="لا توجد دفعات مسجلة"
-        description="سيظهر هنا سجل الدفعات والإيصالات المرجعية عند توفر دفعات منشورة على فواتير هذا العقد."
-      />
-    );
-  }
+function ContractPaymentsTable({ snapshot }: Readonly<{ snapshot: ContractPaymentsSnapshot }>) {
+  const columns: ColumnDef<Payment>[] = [
+    { key: 'payment_date', header: 'تاريخ الدفع', render: (p) => formatDate(p.payment_date) },
+    { key: 'amount', header: 'المبلغ', render: (p) => <span className="font-bold">{formatDefaultCompanyMoney(p.amount)}</span> },
+    { key: 'method', header: 'طريقة الدفع', render: (p) => paymentMethodLabels[p.payment_method] },
+    { key: 'invoice_id', header: 'مرجع الفاتورة', render: (p) => <span className="font-mono text-xs font-bold">#{p.invoice_id.slice(0, 8)}</span> },
+    { key: 'receipt_ref', header: 'مرجع الإيصال', render: (p) => <span className="font-mono text-xs font-bold">{p.receipt_reference}</span> },
+    { key: 'ref_number', header: 'مرجع خارجي', render: (p) => p.reference_number ?? '—' },
+  ];
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-border bg-background">
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>تاريخ الدفع</TableHead>
-            <TableHead>المبلغ</TableHead>
-            <TableHead>طريقة الدفع</TableHead>
-            <TableHead>مرجع الفاتورة</TableHead>
-            <TableHead>مرجع الإيصال</TableHead>
-            <TableHead>مرجع خارجي</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {snapshot.payments.map((payment) => (
-            <TableRow key={payment.id}>
-              <TableCell>{formatDate(payment.payment_date)}</TableCell>
-              <TableCell className="font-bold">
-                {formatDefaultCompanyMoney(payment.amount)}
-              </TableCell>
-              <TableCell>
-                {paymentMethodLabels[payment.payment_method]}
-              </TableCell>
-              <TableCell className="font-mono text-xs font-bold">
-                #{payment.invoice_id.slice(0, 8)}
-              </TableCell>
-              <TableCell className="font-mono text-xs font-bold">
-                {payment.receipt_reference}
-              </TableCell>
-              <TableCell>{payment.reference_number ?? '—'}</TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
-    </div>
+    <EntityTable
+      aria-label="جدول دفعات العقد"
+      rows={snapshot.payments}
+      columns={columns}
+      keyOf={(p) => p.id}
+      emptyTitle="لا توجد دفعات مسجلة"
+      emptyDescription="سيظهر هنا سجل الدفعات والإيصالات المرجعية عند توفر دفعات منشورة على فواتير هذا العقد."
+    />
   );
 }
 
-export function ContractPaymentsTab({
-  contractId,
-}: Readonly<{ contractId: string }>) {
+export function ContractPaymentsTab({ contractId }: Readonly<{ contractId: string }>) {
   const paymentsQuery = useContractPayments(contractId);
-
-  const retryPayments = async () => {
-    await paymentsQuery.refetch();
-  };
 
   return (
     <Card className="overflow-hidden">
@@ -190,8 +107,7 @@ export function ContractPaymentsTab({
               تبويب مدفوعات العقد
             </CardTitle>
             <CardDescription>
-              عرض قراءة فقط للفواتير والدفعات ومراجع الإيصالات المرتبطة بهذا
-              العقد فقط.
+              عرض قراءة فقط للفواتير والدفعات ومراجع الإيصالات المرتبطة بهذا العقد فقط.
             </CardDescription>
           </div>
           <StatusBadge tone="gray">
@@ -202,45 +118,38 @@ export function ContractPaymentsTab({
       </CardHeader>
       <CardContent className="space-y-5 pt-6">
         <p className="rounded-2xl border border-border bg-background p-4 text-sm leading-7 text-muted-foreground">
-          هذا العرض لا ينشئ دفعات، ولا يصدر إيصالات، ولا يعدّل الفواتير. يتم عرض
-          السجلات الموجودة فقط من مسارات الفواتير والمدفوعات الحالية.
+          هذا العرض لا ينشئ دفعات، ولا يصدر إيصالات، ولا يعدّل الفواتير. يتم عرض السجلات الموجودة فقط من مسارات الفواتير والمدفوعات الحالية.
         </p>
 
-        {paymentsQuery.isLoading ? (
+        {paymentsQuery.isLoading && (
           <div className="rounded-2xl border border-dashed border-border p-6 text-sm font-bold text-muted-foreground">
             جاري تحميل مدفوعات العقد…
           </div>
-        ) : null}
-        {paymentsQuery.isError ? (
+        )}
+        {paymentsQuery.isError && (
           <EmptyState
             title="تعذر تحميل المدفوعات"
             description={getPaymentsErrorMessage(paymentsQuery.error)}
-            action={
-              <Button type="button" onClick={retryPayments}>
-                إعادة المحاولة
-              </Button>
-            }
+            action={<Button type="button" onClick={() => paymentsQuery.refetch()}>إعادة المحاولة</Button>}
           />
-        ) : null}
-        {paymentsQuery.data ? (
+        )}
+        {paymentsQuery.data && (
           <div className="space-y-5">
             <ContractPaymentsSummary snapshot={paymentsQuery.data} />
             <section className="space-y-3">
               <h3 className="flex items-center gap-2 text-lg font-black">
-                <FileText className="size-5 text-primary" />
-                الفواتير المرتبطة
+                <FileText className="size-5 text-primary" />الفواتير المرتبطة
               </h3>
               <ContractInvoicesTable snapshot={paymentsQuery.data} />
             </section>
             <section className="space-y-3">
               <h3 className="flex items-center gap-2 text-lg font-black">
-                <ReceiptText className="size-5 text-primary" />
-                الدفعات ومراجع الإيصالات
+                <ReceiptText className="size-5 text-primary" />الدفعات ومراجع الإيصالات
               </h3>
               <ContractPaymentsTable snapshot={paymentsQuery.data} />
             </section>
           </div>
-        ) : null}
+        )}
       </CardContent>
     </Card>
   );

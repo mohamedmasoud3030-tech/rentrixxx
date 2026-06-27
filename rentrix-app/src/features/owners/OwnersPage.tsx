@@ -13,7 +13,7 @@ import { ResponsiveFormOverlay } from '@/components/ui/responsive-form-overlay';
 import { SearchInput } from '@/components/ui/search-input';
 import { AsyncContentState } from '@/components/async-content-state';
 import { StatusBadge } from '@/components/ui/status-badge';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { EntityTable } from '@/components/ui/entity-table';
 import { Textarea } from '@/components/ui/textarea';
 import { OwnerCheckbox } from './OwnerCheckbox';
 import { OwnerPropertySelect } from './OwnerPropertySelect';
@@ -153,32 +153,7 @@ function OwnershipSummary({ row }: Readonly<{ row: OwnerWorkspaceRow }>) {
 
 type OwnerWorkspaceRowProps = Readonly<{ row: OwnerWorkspaceRow; selectedOwnerId: string | null; onEditOwner: (owner: Owner) => void; onSelectOwner: (ownerId: string) => void }>;
 
-function OwnerWorkspaceRowView({ row, selectedOwnerId, onEditOwner, onSelectOwner }: OwnerWorkspaceRowProps) {
-  const isSelected = row.owner.id === selectedOwnerId;
-  return (
-    <TableRow className={isSelected ? 'bg-primary/5' : undefined}>
-      <TableCell>
-        <EntityCell
-          icon={Users}
-          title={<button type="button" className="hover:text-primary" onClick={() => onSelectOwner(row.owner.id)}>{getOwnerDisplayLabel(row.owner)}</button>}
-          subtitle={row.owner.display_name ? row.owner.full_name : null}
-          meta={<span dir="ltr">معرّف السجل: #{row.owner.id.slice(0, 8)}</span>}
-        />
-      </TableCell>
-      <TableCell><OwnerContact owner={row.owner} /></TableCell>
-      <TableCell>{row.propertyCount.toLocaleString('ar')}</TableCell>
-      <TableCell><OwnerPropertyLinks row={row} /></TableCell>
-      <TableCell><OwnershipSummary row={row} /></TableCell>
-      <TableCell>{row.activeContractCount > 0 ? row.activeContractCount.toLocaleString('ar') : '—'}</TableCell>
-      <TableCell>
-        <div className="flex flex-wrap gap-2">
-          <Button type="button" variant="secondary" className="min-h-9 px-3" onClick={() => onSelectOwner(row.owner.id)}><Eye className="me-1 size-4" />العلاقات</Button>
-          <Button type="button" variant="secondary" className="min-h-9 px-3" onClick={() => onEditOwner(row.owner)}><Pencil className="me-1 size-4" />تعديل</Button>
-        </div>
-      </TableCell>
-    </TableRow>
-  );
-}
+// OwnerWorkspaceRowView removed — logic inlined into EntityTable columns below
 
 type OwnerWorkspaceTableProps = Readonly<{
   rows: OwnerWorkspaceRow[];
@@ -226,25 +201,35 @@ function OwnerWorkspaceTable({ rows, search, selectedOwner, onCreateOwner, onEdi
             ))}
           </div>
           {/* Desktop table */}
-          <div className="hidden overflow-x-auto md:block">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>اسم المالك</TableHead>
-                  <TableHead>الهاتف والإيميل</TableHead>
-                  <TableHead>عدد العقارات</TableHead>
-                  <TableHead>أسماء العقارات</TableHead>
-                  <TableHead>نسبة الملكية/الدور</TableHead>
-                  <TableHead>العقود النشطة</TableHead>
-                  <TableHead>روابط آمنة</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {rows.map((row) => (
-                  <OwnerWorkspaceRowView key={row.owner.id} row={row} selectedOwnerId={selectedOwner?.id ?? null} onEditOwner={onEditOwner} onSelectOwner={onSelectOwner} />
-                ))}
-              </TableBody>
-            </Table>
+          <div className="hidden md:block">
+            <EntityTable
+              aria-label="جدول الملاك"
+              rows={rows}
+              columns={[
+                { key: 'name', header: 'اسم المالك', render: (row) => (
+                  <EntityCell
+                    icon={Users}
+                    title={<button type="button" className="hover:text-primary" onClick={() => onSelectOwner(row.owner.id)}>{getOwnerDisplayLabel(row.owner)}</button>}
+                    subtitle={row.owner.display_name ? row.owner.full_name : null}
+                    meta={<span dir="ltr">معرّف السجل: #{row.owner.id.slice(0, 8)}</span>}
+                  />
+                )},
+                { key: 'contact', header: 'الهاتف والإيميل', render: (row) => <OwnerContact owner={row.owner} /> },
+                { key: 'property_count', header: 'عدد العقارات', render: (row) => row.propertyCount.toLocaleString('ar') },
+                { key: 'property_links', header: 'أسماء العقارات', render: (row) => <OwnerPropertyLinks row={row} /> },
+                { key: 'ownership', header: 'نسبة الملكية/الدور', render: (row) => <OwnershipSummary row={row} /> },
+                { key: 'contracts', header: 'العقود النشطة', render: (row) => row.activeContractCount > 0 ? row.activeContractCount.toLocaleString('ar') : '—' },
+                { key: 'actions', header: 'روابط آمنة', render: (row) => (
+                  <div className="flex flex-wrap gap-2" onClick={(e) => e.stopPropagation()}>
+                    <Button type="button" variant="secondary" className="min-h-9 px-3" onClick={() => onSelectOwner(row.owner.id)}><Eye className="me-1 size-4" />العلاقات</Button>
+                    <Button type="button" variant="secondary" className="min-h-9 px-3" onClick={() => onEditOwner(row.owner)}><Pencil className="me-1 size-4" />تعديل</Button>
+                  </div>
+                )},
+              ]}
+              keyOf={(row) => row.owner.id}
+              emptyTitle="لا يوجد ملاك"
+              emptyDescription="أضف أول مالك لبدء ربطه بالعقارات."
+            />
           </div>
         </>
       ) : emptyState}
