@@ -17,7 +17,7 @@ docs/ai/GIT_TOOLING_POLICY.md
 docs/ROOT_LAYOUT.md
 ```
 
-The active codebase remains the source of truth. If docs conflict with code, inspect the active app under `artifacts/rentrix/`, shared libraries under `lib/`, and canonical migrations under `supabase/migrations/`, then update docs to match current repo reality.
+The active codebase remains the source of truth. If docs conflict with code, inspect the active app under `rentrix-app/`, shared libraries under `lib/`, and canonical migrations under `supabase/migrations/`, then update docs to match current repo reality.
 
 ## 1. Final Product Shape
 
@@ -70,7 +70,7 @@ Current baseline at this refresh:
 
 | Area | Current state |
 | --- | --- |
-| Active app | `artifacts/rentrix/` |
+| Active app | `rentrix-app/` |
 | Workspace | `pnpm-workspace.yaml` and root `package.json` define a pnpm workspace |
 | Canonical migrations | `supabase/migrations/` |
 | Root-level SQL files | None found in the repository root |
@@ -84,7 +84,7 @@ The latest local audit used current code, route registration, navigation, docs, 
 
 ## 3. Navigation and Module Status
 
-Current route/navigation truth comes from `artifacts/rentrix/src/layouts/app-nav-items.ts`, `artifacts/rentrix/src/routeTree.ts`, and route files under `artifacts/rentrix/src/routes/`.
+Current route/navigation truth comes from `rentrix-app/src/layouts/app-nav-items.ts`, `rentrix-app/src/routeTree.ts`, and route files under `rentrix-app/src/routes/`.
 
 Desktop navigation currently exposes:
 
@@ -225,9 +225,9 @@ pnpm install --frozen-lockfile
 pnpm typecheck
 pnpm lint
 pnpm build
-pnpm --filter ./artifacts/rentrix run typecheck:test
-pnpm --filter ./artifacts/rentrix test
-pnpm --filter ./artifacts/rentrix run test:financials
+pnpm --filter ./rentrix-app run typecheck:test
+pnpm --filter ./rentrix-app test
+pnpm --filter ./rentrix-app run test:financials
 ```
 
 For docs-only reconciliation, run local repository checks that are available and relevant, including whitespace validation, current package scripts, and consistency searches. Do not use live Supabase, Vercel, preview branches, linked CLI, Dashboard, MCP/API, or live SQL for this docs-only work.
