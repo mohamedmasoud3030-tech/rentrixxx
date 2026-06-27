@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { useCompanySettingsContract } from '@/features/settings/useCompanySettings';
+import type { CostCenterRecord } from '@/features/settings/costCenterService';
 import { escapeCsvValue, withUtf8Bom } from '@/lib/csvExport';
 import { exportExpenseToPdf } from '@/services/pdfService';
 import type { Expense, Property } from '@/types/domain';
@@ -25,6 +26,7 @@ import { getTodayLocalDateString } from '../financials-date-utils';
 export type ExpenseFormValues = {
   property_id: string;
   category: OperationalExpenseCategory;
+  cost_center_id?: string;
   amount: number;
   expense_date: string;
   description?: string;
@@ -34,6 +36,7 @@ export type ExpenseFormValues = {
 type ExpensesSectionProps = Readonly<{
   expenses: Expense[];
   propertyRows: Property[];
+  costCenterRows: CostCenterRecord[];
   filters: OperationalExpenseFilterValues;
   onFiltersChange: (nextFilters: OperationalExpenseFilterValues) => void;
   expenseForm: UseFormReturn<ExpenseFormValues>;
@@ -52,11 +55,12 @@ export function buildExpensesCsv(expenses: readonly Expense[], propertyRows: rea
     buildExpensePropertyLabel(expense, propertyById),
     expense.category,
     expense.amount,
+    expense.cost_center_id ?? '',
     expense.description ?? '',
   ]);
 
   return [
-    'التاريخ,العقار,التصنيف,المبلغ,الوصف',
+    'التاريخ,العقار,التصنيف,المبلغ,مركز التكلفة,الوصف',
     ...rows.map((row) => row.map(escapeCsvCell).join(',')),
   ].join('\n');
 }
@@ -71,12 +75,13 @@ function downloadCsv(filename: string, csv: string) {
   URL.revokeObjectURL(url);
 }
 
-export function ExpensesSection({ expenses, propertyRows, filters, onFiltersChange, expenseForm, isCreateExpensePending, onCreateExpense }: ExpensesSectionProps) {
+export function ExpensesSection({ expenses, propertyRows, costCenterRows, filters, onFiltersChange, expenseForm, isCreateExpensePending, onCreateExpense }: ExpensesSectionProps) {
   const propertyById = new Map(propertyRows.map((property) => [property.id, property]));
+  const costCenterById = new Map(costCenterRows.map((costCenter) => [costCenter.id, costCenter]));
   const summary = summarizeOperationalExpenses(expenses);
-  const hasFilters = Boolean(filters.propertyId || filters.category || filters.from || filters.to);
+  const hasFilters = Boolean(filters.propertyId || filters.category || filters.costCenterId || filters.from || filters.to);
   const companySettings = useCompanySettingsContract();
-  const clearFilters = () => onFiltersChange({ propertyId: '', category: '', from: '', to: '' });
+  const clearFilters = () => onFiltersChange({ propertyId: '', category: '', costCenterId: '', from: '', to: '' });
   const exportVisibleExpenses = () => downloadCsv(`rentrix-expenses-${getTodayLocalDateString()}.csv`, buildExpensesCsv(expenses, propertyRows));
   const exportExpenseVoucher = (expense: Expense) => {
     const property = propertyById.get(expense.property_id);
@@ -111,7 +116,7 @@ export function ExpensesSection({ expenses, propertyRows, filters, onFiltersChan
           <p>التصنيفات: <strong>{summary.byCategoryCount}</strong></p>
         </div>
 
-        <div className="grid gap-3 rounded-2xl border border-border bg-muted/20 p-3 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-3 rounded-2xl border border-border bg-muted/20 p-3 sm:grid-cols-2 lg:grid-cols-5">
           <label className="space-y-1 text-sm font-bold">
             <span>العقار</span>
             <Select
@@ -132,9 +137,19 @@ export function ExpensesSection({ expenses, propertyRows, filters, onFiltersChan
               {OPERATIONAL_EXPENSE_CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
             </Select>
           </label>
+          <label className="space-y-1 text-sm font-bold">
+            <span>مركز التكلفة</span>
+            <Select
+              value={filters.costCenterId}
+              onChange={(e) => onFiltersChange({ ...filters, costCenterId: e.target.value })}
+            >
+              <option value="">كل مراكز التكلفة</option>
+              {costCenterRows.filter((costCenter) => costCenter.is_active !== false).map((costCenter) => <option key={costCenter.id} value={costCenter.id}>{costCenter.name}</option>)}
+            </Select>
+          </label>
           <label className="space-y-1 text-sm font-bold"><span>من تاريخ</span><Input type="date" value={filters.from} onChange={(e) => onFiltersChange({ ...filters, from: e.target.value })} /></label>
           <label className="space-y-1 text-sm font-bold"><span>إلى تاريخ</span><Input type="date" value={filters.to} onChange={(e) => onFiltersChange({ ...filters, to: e.target.value })} /></label>
-          {hasFilters ? <Button variant="secondary" className="sm:col-span-2 lg:col-span-4" onClick={clearFilters}>مسح الفلاتر</Button> : null}
+          {hasFilters ? <Button variant="secondary" className="sm:col-span-2 lg:col-span-5" onClick={clearFilters}>مسح الفلاتر</Button> : null}
         </div>
 
         {expenses.length === 0 ? (
@@ -147,7 +162,10 @@ export function ExpensesSection({ expenses, propertyRows, filters, onFiltersChan
             {expenses.map((expense) => (
               <div key={expense.id} className="grid gap-1 px-4 py-3 text-sm sm:grid-cols-[7rem_1fr_auto_auto] sm:items-center sm:gap-3">
                 <span className="text-muted-foreground">{formatDate(expense.expense_date)}</span>
-                <span className="min-w-0 truncate">{buildExpensePropertyLabel(expense, propertyById)} — {expense.category}</span>
+                <span className="min-w-0 truncate">
+                  {buildExpensePropertyLabel(expense, propertyById)} — {expense.category}
+                  {expense.cost_center_id ? ` — ${costCenterById.get(expense.cost_center_id)?.name ?? 'مركز تكلفة غير معروف'}` : ''}
+                </span>
                 <span className="font-bold tabular-nums">{formatMoney(expense.amount)}</span>
                 <Button type="button" variant="secondary" className="h-9 px-3 text-xs" onClick={() => exportExpenseVoucher(expense)}>
                   <Download className="me-2 size-4" />PDF
@@ -164,6 +182,10 @@ export function ExpensesSection({ expenses, propertyRows, filters, onFiltersChan
           </Select>
           <Select {...expenseForm.register('category')}>
             {OPERATIONAL_EXPENSE_CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
+          </Select>
+          <Select {...expenseForm.register('cost_center_id')}>
+            <option value="">بدون مركز تكلفة</option>
+            {costCenterRows.filter((costCenter) => costCenter.is_active !== false).map((costCenter) => <option key={costCenter.id} value={costCenter.id}>{costCenter.name}</option>)}
           </Select>
           <Input type="number" min="0.01" step="0.01" placeholder="المبلغ" {...expenseForm.register('amount')} />
           <Input type="date" {...expenseForm.register('expense_date')} />

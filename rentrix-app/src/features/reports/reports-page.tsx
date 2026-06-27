@@ -6,12 +6,15 @@ import { getErrorMessage } from '@/features/financials/components/financials-for
 import { useReceipts } from '@/features/financials/receipts/useReceipts';
 import {
   useAgedReceivablesReport,
+  useCashFlowStatementReport,
   useDailyCollectionReport,
   useExpenseBreakdownReport,
   useFinancialCashflowReport,
   useFinancialPeriodSummaryReport,
   useOverdueInvoicesReport,
+  useVatReturnReport,
 } from '@/features/financials/reports/useFinancialReports';
+import { useCostCenters } from '@/features/settings/useCostCenters';
 import { useAllUnits } from '@/features/units/use-units';
 import { CollectionsSection } from './components/CollectionsSection';
 import { ExpensesSection } from './components/ExpensesSection';
@@ -41,11 +44,13 @@ export { buildReportCsvFilename, getTodayLocalDateString, toDateInputValue } fro
 export function ReportsPage() {
   const [filters, setFilters] = useState(() => getCurrentMonthFilters());
   const [activeSection, setActiveSection] = useState<ReportSectionId>('overview');
-  const financialFilters = useMemo(() => ({ dateFrom: filters.from, dateTo: filters.to }), [filters.from, filters.to]);
+  const financialFilters = useMemo(() => ({ dateFrom: filters.from, dateTo: filters.to, costCenterId: filters.costCenterId || undefined }), [filters.costCenterId, filters.from, filters.to]);
   const arrearsFilters = useMemo(() => ({ asOf: filters.asOf }), [filters.asOf]);
 
   const financialSummaryQuery = useFinancialPeriodSummaryReport(financialFilters);
   const financialCashflowQuery = useFinancialCashflowReport(financialFilters);
+  const cashFlowStatementQuery = useCashFlowStatementReport(financialFilters);
+  const vatReturnQuery = useVatReturnReport(financialFilters);
   const dailyCollectionQuery = useDailyCollectionReport(financialFilters);
   const expenseBreakdownQuery = useExpenseBreakdownReport(financialFilters);
   const overdueInvoicesQuery = useOverdueInvoicesReport(arrearsFilters);
@@ -53,6 +58,7 @@ export function ReportsPage() {
   const contractsQuery = useContracts({ status: 'all', page: 1, pageSize: 1000 });
   const unitsQuery = useAllUnits();
   const receiptsQuery = useReceipts({ limit: latestReceiptLimit });
+  const costCentersQuery = useCostCenters();
   const propertyTitlesQuery = usePropertyTitles();
   const propertyTitlesById = useMemo(
     () => new Map((propertyTitlesQuery.data ?? []).map((row) => [row.id, row.title] as const)),
@@ -82,6 +88,8 @@ export function ReportsPage() {
 
   const firstError = financialSummaryQuery.error
     ?? financialCashflowQuery.error
+    ?? cashFlowStatementQuery.error
+    ?? vatReturnQuery.error
     ?? dailyCollectionQuery.error
     ?? expenseBreakdownQuery.error
     ?? overdueInvoicesQuery.error
@@ -96,7 +104,7 @@ export function ReportsPage() {
     <div className="space-y-5 pb-6" dir="rtl">
       <ReportsHero summary={financialSummaryQuery.data} today={today} isLoading={financialSummaryQuery.isLoading} />
 
-      <FiltersPanel filters={filters} onChange={setFilters} onResetCurrentMonth={() => setFilters(getCurrentMonthFilters())} />
+        <FiltersPanel filters={filters} costCenterRows={costCentersQuery.data ?? []} onChange={setFilters} onResetCurrentMonth={() => setFilters(getCurrentMonthFilters())} />
 
       <SectionTabs items={reportSections} activeId={activeSection} onChange={setActiveSection} ariaLabel="أقسام التقارير" />
 
@@ -124,7 +132,7 @@ export function ReportsPage() {
         <OccupancySection occupancyRows={occupancyRows} expiringRows={expiringRows} isLoading={unitsQuery.isLoading || contractsQuery.isLoading} />
       </SectionTabPanel>
       <SectionTabPanel id="statements" activeId={activeSection}>
-        <StatementsSection agedReport={agedReceivablesQuery.data} receiptRows={receiptRows} financialSummary={financialSummaryQuery.data} expenseBreakdown={expenseBreakdownQuery.data} dailyRows={dailyCollectionQuery.data?.rows ?? []} isLoading={agedReceivablesQuery.isLoading || receiptsQuery.isLoading || financialSummaryQuery.isLoading || expenseBreakdownQuery.isLoading || dailyCollectionQuery.isLoading} />
+        <StatementsSection agedReport={agedReceivablesQuery.data} receiptRows={receiptRows} financialSummary={financialSummaryQuery.data} expenseBreakdown={expenseBreakdownQuery.data} dailyRows={dailyCollectionQuery.data?.rows ?? []} cashFlowStatement={cashFlowStatementQuery.data} vatReturn={vatReturnQuery.data} isLoading={agedReceivablesQuery.isLoading || receiptsQuery.isLoading || financialSummaryQuery.isLoading || expenseBreakdownQuery.isLoading || dailyCollectionQuery.isLoading || cashFlowStatementQuery.isLoading || vatReturnQuery.isLoading} />
       </SectionTabPanel>
     </div>
   );

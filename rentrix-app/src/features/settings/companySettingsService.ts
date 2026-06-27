@@ -186,6 +186,8 @@ export function normalizeCompanySettingsRecord(value: Partial<CompanySettingsRec
   }
 
   normalized.default_vat_rate = normalizeVatRate(normalized.default_vat_rate);
+  normalized.vat_rate = normalizeVatRate(normalized.vat_rate);
+  normalized.vat_enabled = normalizeBoolean(normalized.vat_enabled, defaultCompanySettings.vat_enabled ?? false);
   normalized.notification_email_enabled = normalizeBoolean(normalized.notification_email_enabled, defaultCompanySettings.notification_email_enabled);
   normalized.notification_sms_enabled = normalizeBoolean(normalized.notification_sms_enabled, defaultCompanySettings.notification_sms_enabled);
 
@@ -214,8 +216,13 @@ export function normalizeCompanySettingsUpdatePayload(payload: CompanySettingsUp
       continue;
     }
 
-    if (key === 'default_vat_rate') {
-      normalized.default_vat_rate = normalizeVatRate(value);
+    if (key === 'default_vat_rate' || key === 'vat_rate') {
+      normalized[key] = normalizeVatRate(value);
+      continue;
+    }
+
+    if (key === 'vat_enabled') {
+      normalized.vat_enabled = normalizeBoolean(value, defaultCompanySettings.vat_enabled ?? false);
       continue;
     }
 

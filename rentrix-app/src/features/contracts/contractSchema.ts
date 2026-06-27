@@ -47,6 +47,7 @@ export const contractSchema = z.object({
   end_date: isoDate,
   rent_amount: money,
   payment_cycle: z.enum(paymentCycleValues, { required_error: 'دورة السداد مطلوبة' }),
+  payment_terms_id: z.string().uuid('اختر شرط سداد صحيح').or(z.literal('')).optional().transform((value) => value || null),
   status: z.enum(contractStatusValues, { required_error: 'الحالة مطلوبة' }),
   cancellation_reason: z.string().trim().optional().transform((value) => value || null),
   notes: z.string().trim().optional().transform((value) => value || null),

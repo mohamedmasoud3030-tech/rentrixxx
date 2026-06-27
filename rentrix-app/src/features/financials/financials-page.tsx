@@ -7,6 +7,7 @@ import { z } from 'zod';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { useProperties } from '@/features/properties/use-properties';
+import { useCostCenters } from '@/features/settings/useCostCenters';
 import { cn } from '@/lib/utils';
 import { ArrearsWorkspaceSection } from './components/arrears-workspace-section';
 import { ExpensesSection, type ExpenseFormValues } from './components/expenses-section';
@@ -20,6 +21,7 @@ import { useCollectionSummaryReport } from './reports/useFinancialReports';
 const expenseSchema = z.object({
   property_id: z.string().uuid('اختر العقار'),
   category: z.enum(OPERATIONAL_EXPENSE_CATEGORIES, { message: 'اختر التصنيف' }),
+  cost_center_id: z.string().optional(),
   amount: z.coerce.number().positive('المبلغ يجب أن يكون أكبر من صفر'),
   expense_date: z.string().min(1, 'اختر التاريخ'),
   description: z.string().optional(),
@@ -49,8 +51,9 @@ const financialTabs = [
 export function FinancialsPage() {
   const { data: properties } = useProperties({ page: 1, pageSize: 100, search: '', status: 'all' });
   const [activeTab, setActiveTab] = useState<FinancialsTab>('invoices');
-  const [filters, setFilters] = useState<OperationalExpenseFilterValues>({ propertyId: '', category: '', from: '', to: '' });
+  const [filters, setFilters] = useState<OperationalExpenseFilterValues>({ propertyId: '', category: '', costCenterId: '', from: '', to: '' });
   const { data: expenses = [] } = useExpenses(filters);
+  const { data: costCenterRows = [] } = useCostCenters();
   const reportFilters = useMemo(() => getCurrentMonthReportRange(), []);
   const collectionReport = useCollectionSummaryReport(reportFilters);
   const createExpense = useCreateExpense();
@@ -61,6 +64,7 @@ export function FinancialsPage() {
     defaultValues: {
       property_id: '',
       category: 'صيانة',
+      cost_center_id: '',
       amount: 0,
       expense_date: getTodayLocalDateString(),
       description: '',
@@ -73,6 +77,7 @@ export function FinancialsPage() {
       {
         property_id: values.property_id,
         category: values.category,
+        cost_center_id: values.cost_center_id?.trim() || null,
         amount: values.amount,
         expense_date: values.expense_date,
         description: values.description?.trim() ? values.description.trim() : null,
@@ -83,6 +88,7 @@ export function FinancialsPage() {
           expenseForm.reset({
             property_id: '',
             category: 'صيانة',
+            cost_center_id: '',
             amount: 0,
             expense_date: getTodayLocalDateString(),
             description: '',
@@ -159,6 +165,7 @@ export function FinancialsPage() {
               <ExpensesSection
                 expenses={expenses}
                 propertyRows={propertyRows}
+                costCenterRows={costCenterRows}
                 filters={filters}
                 onFiltersChange={setFilters}
                 expenseForm={expenseForm}

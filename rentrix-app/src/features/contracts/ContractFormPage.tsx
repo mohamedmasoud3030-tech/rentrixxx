@@ -13,6 +13,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { RouteLoadingState } from '@/components/loading-state';
 import { listPeople } from '@/features/people/people-service';
 import { listProperties } from '@/features/properties/property-service';
+import { usePaymentTerms } from '@/features/settings/usePaymentTerms';
 import { listUnitsByProperty } from '@/features/units/unit-service';
 import { buildContractUnitOptionLabel, getContractUnitSelectionIssue, isUnitSelectableForContract } from './contract-unit-options';
 import { contractSchema, contractStatusLabels, contractStatusValues, paymentCycleLabels, paymentCycleValues, type ContractFormValues } from './contractSchema';
@@ -29,11 +30,12 @@ export function ContractFormPage() {
   const updateMutation = useUpdateContract(contractId ?? '');
   const form = useForm<ContractFormValues>({
     resolver: zodResolver(contractSchema),
-    defaultValues: { property_id: '', unit_id: '', tenant_id: '', start_date: '', end_date: '', rent_amount: 0, payment_cycle: 'monthly', status: 'draft', cancellation_reason: '', notes: '' },
+    defaultValues: { property_id: '', unit_id: '', tenant_id: '', start_date: '', end_date: '', rent_amount: 0, payment_cycle: 'monthly', payment_terms_id: '', status: 'draft', cancellation_reason: '', notes: '' },
   });
   const propertyId = useWatch({ control: form.control, name: 'property_id' });
   const propertiesQuery = useQuery({ queryKey: ['contracts', 'properties-options'], queryFn: () => listProperties({ search: '', status: 'all', page: 1, pageSize: 200 }) });
   const peopleQuery = useQuery({ queryKey: ['contracts', 'tenant-options'], queryFn: () => listPeople({ search: '', type: 'tenant', page: 1, pageSize: 200 }) });
+  const paymentTermsQuery = usePaymentTerms();
   const unitsQuery = useQuery({ queryKey: ['contracts', 'unit-options', propertyId], queryFn: () => listUnitsByProperty(propertyId || ''), enabled: Boolean(propertyId) });
   const selectedProperty = propertiesQuery.data?.rows.find((property) => property.id === propertyId);
   const currentLinkedUnitId = isEdit ? contractQuery.data?.unit_id ?? null : null;
@@ -48,6 +50,7 @@ export function ContractFormPage() {
       end_date: contractQuery.data.end_date,
       rent_amount: contractQuery.data.rent_amount,
       payment_cycle: contractQuery.data.payment_cycle,
+      payment_terms_id: contractQuery.data.payment_terms_id ?? '',
       status: contractQuery.data.status,
       cancellation_reason: contractQuery.data.cancellation_reason ?? '',
       notes: contractQuery.data.notes ?? '',
@@ -76,6 +79,7 @@ export function ContractFormPage() {
               <label className="grid gap-2 text-sm font-bold">تاريخ النهاية<Input type="date" {...form.register('end_date')} />{fieldError(form.formState.errors.end_date?.message)}</label>
               <label className="grid gap-2 text-sm font-bold">قيمة الإيجار<Input type="number" step="0.01" min="0.01" {...form.register('rent_amount')} />{fieldError(form.formState.errors.rent_amount?.message)}</label>
               <label className="grid gap-2 text-sm font-bold">دورة السداد<Select {...form.register('payment_cycle')}>{paymentCycleValues.map((cycle) => <option key={cycle} value={cycle}>{paymentCycleLabels[cycle]}</option>)}</Select>{fieldError(form.formState.errors.payment_cycle?.message)}</label>
+              <label className="grid gap-2 text-sm font-bold">شرط السداد<Select {...form.register('payment_terms_id')}><option value="">بدون قالب شروط</option>{(paymentTermsQuery.data ?? []).filter((term) => term.is_active !== false).map((term) => <option key={term.id} value={term.id}>{term.name}</option>)}</Select>{fieldError(form.formState.errors.payment_terms_id?.message)}</label>
               <label className="grid gap-2 text-sm font-bold md:col-span-2">سبب الإلغاء<Textarea {...form.register('cancellation_reason')} placeholder="يظهر عند إلغاء العقد" /></label>
               <label className="grid gap-2 text-sm font-bold md:col-span-2">ملاحظات<Textarea {...form.register('notes')} placeholder="ملاحظات العقد" /></label>
               <div className="flex justify-end gap-3 md:col-span-2"><Button variant="secondary" asChild><Link to="/contracts">إلغاء</Link></Button><Button type="submit" disabled={submitting}>{submitting ? 'جار الحفظ...' : 'حفظ العقد'}</Button></div>

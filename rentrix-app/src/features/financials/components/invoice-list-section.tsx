@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Download, Printer } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { getSafeRemainingAmount } from '../financialMath';
-import type { InvoiceListItem, InvoiceStatusFilter, InvoiceSummary } from '../invoices/invoiceService';
+import { getInvoiceGrossAmount, type InvoiceListItem, type InvoiceStatusFilter, type InvoiceSummary } from '../invoices/invoiceService';
 import { formatDate, formatInvoiceStatusLabel, formatMoney, getErrorMessage } from './financials-formatters';
 import { InvoiceFilters } from './invoice-filters';
 import { InvoiceSummaryCards } from './invoice-summary-cards';
@@ -71,7 +71,8 @@ export function InvoiceListSection({
             </div>
           ) : null}
           {!isLoading && !isError && invoices.map((invoice) => {
-            const rowRemaining = getSafeRemainingAmount(invoice.amount, invoice.paid_amount);
+            const grossAmount = getInvoiceGrossAmount(invoice);
+            const rowRemaining = getSafeRemainingAmount(grossAmount, invoice.paid_amount);
             const isSelected = selectedInvoiceId === invoice.id;
             return (
               <div
@@ -96,8 +97,9 @@ export function InvoiceListSection({
                     <span>{formatDate(invoice.due_date)}</span>
                   </span>
                   <span>
-                    <span className="block text-xs text-muted-foreground">الإجمالي</span>
-                    <span>{formatMoney(invoice.amount)}</span>
+                    <span className="block text-xs text-muted-foreground">الإجمالي شامل VAT</span>
+                    <span>{formatMoney(grossAmount)}</span>
+                    {invoice.tax_amount ? <span className="block text-[11px] text-muted-foreground">VAT {formatMoney(invoice.tax_amount)}</span> : null}
                   </span>
                   <span>
                     <span className="block text-xs text-muted-foreground">المدفوع</span>

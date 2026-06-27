@@ -10,6 +10,7 @@ export type FinancialReportFilters = {
   propertyId?: string;
   tenantId?: string;
   contractId?: string;
+  costCenterId?: string;
   status?: FinancialReportStatus;
 };
 
@@ -199,11 +200,11 @@ export type ArrearsSummaryReport = {
 };
 
 type ContractContext = Pick<Contract, 'id' | 'property_id' | 'tenant_id'> & { unit_id?: Contract['unit_id'] };
-type InvoiceReportRow = Pick<Invoice, 'id' | 'contract_id' | 'issue_date' | 'due_date' | 'amount' | 'paid_amount' | 'status' | 'deleted_at'> & {
+type InvoiceReportRow = Pick<Invoice, 'id' | 'contract_id' | 'issue_date' | 'due_date' | 'amount' | 'paid_amount' | 'status' | 'deleted_at'> & Partial<Pick<Invoice, 'tax_amount'>> & {
   contracts?: ContractContext | null;
 };
 type PaymentReportRow = Pick<Payment, 'id' | 'invoice_id' | 'amount' | 'payment_date' | 'payment_method' | 'deleted_at'>;
-type ExpenseReportRow = Pick<Expense, 'id' | 'property_id' | 'category' | 'amount' | 'expense_date' | 'deleted_at'>;
+type ExpenseReportRow = Pick<Expense, 'id' | 'property_id' | 'category' | 'amount' | 'expense_date' | 'cost_center_id' | 'deleted_at'>;
 type PropertyContext = Pick<Property, 'id' | 'title'>;
 type PersonContext = Pick<Person, 'id' | 'full_name'>;
 type UnitContext = Pick<Unit, 'id' | 'unit_number'>;
@@ -255,6 +256,7 @@ function matchesExpenseFilters(expense: ExpenseReportRow, filters: ExpenseBreakd
   if (!isWithinDateRange(expense.expense_date, filters)) return false;
   if (filters.propertyId && expense.property_id !== filters.propertyId) return false;
   if (filters.category && expense.category !== filters.category) return false;
+  if (filters.costCenterId && expense.cost_center_id !== filters.costCenterId) return false;
   return true;
 }
 
@@ -307,7 +309,7 @@ export function filterInvoicesForArrearsReport(invoices: InvoiceReportRow[], fil
   return invoices.filter((invoice) => {
     if (invoice.deleted_at) return false;
     if (!isReceivableInvoiceStatus(invoice.status)) return false;
-    if (getSafeRemainingAmount(invoice.amount, invoice.paid_amount) <= 0) return false;
+    if (getInvoiceReportRemainingAmount(invoice) <= 0) return false;
     return matchesInvoiceContext(invoice, filters);
   });
 }
@@ -371,9 +373,9 @@ function buildOverdueInvoiceRow(invoice: ArrearsInvoiceRow, asOf: string, contex
     ...getArrearsEntityContextFields(invoice, contexts),
     dueDate: invoice.due_date,
     daysOverdue: calculateDaysOverdue(invoice.due_date, asOf),
-    amount: toFinancialNumber(invoice.amount),
+    amount: getInvoiceReportGrossAmount(invoice),
     paidAmount: toFinancialNumber(invoice.paid_amount),
-    remainingAmount: getSafeRemainingAmount(invoice.amount, invoice.paid_amount),
+    remainingAmount: getInvoiceReportRemainingAmount(invoice),
     status: invoice.status,
   };
 }
@@ -424,7 +426,7 @@ export function summarizeAgedReceivablesReport(
   const receivableInvoices = filterInvoicesForArrearsReport(invoices, filters);
 
   for (const invoice of receivableInvoices) {
-    const remainingAmount = getSafeRemainingAmount(invoice.amount, invoice.paid_amount);
+    const remainingAmount = getInvoiceReportRemainingAmount(invoice);
     const bucketKey = getAgingBucketKey(invoice.due_date, filters.asOf);
     addToAgingBucket(buckets, bucketKey, remainingAmount);
 
@@ -458,9 +460,9 @@ export function summarizeArrearsSummaryReport(invoices: ArrearsInvoiceRow[], fil
 
   return {
     asOf: filters.asOf,
-    totalOverdue: sumFinancialValues(overdueInvoices.map((invoice) => getSafeRemainingAmount(invoice.amount, invoice.paid_amount))),
+    totalOverdue: sumFinancialValues(overdueInvoices.map((invoice) => getInvoiceReportRemainingAmount(invoice))),
     overdueInvoiceCount: overdueInvoices.length,
-    over90Amount: sumFinancialValues(over90Invoices.map((invoice) => getSafeRemainingAmount(invoice.amount, invoice.paid_amount))),
+    over90Amount: sumFinancialValues(over90Invoices.map((invoice) => getInvoiceReportRemainingAmount(invoice))),
     over90InvoiceCount: over90Invoices.length,
     averageDaysOverdue: daysOverdueValues.length > 0
       ? toFinancialNumber(sumFinancialValues(daysOverdueValues) / daysOverdueValues.length)
@@ -468,11 +470,11 @@ export function summarizeArrearsSummaryReport(invoices: ArrearsInvoiceRow[], fil
   };
 }
 
-export function summarizeInvoiceTotals(invoices: Pick<InvoiceReportRow, 'amount' | 'paid_amount'>[]): InvoiceTotalsReport {
+export function summarizeInvoiceTotals(invoices: Array<Pick<InvoiceReportRow, 'amount' | 'paid_amount'> & Partial<Pick<InvoiceReportRow, 'tax_amount'>>>): InvoiceTotalsReport {
   return {
-    totalAmount: sumFinancialValues(invoices.map((invoice) => invoice.amount)),
+    totalAmount: sumFinancialValues(invoices.map((invoice) => getInvoiceReportGrossAmount(invoice))),
     totalPaid: sumFinancialValues(invoices.map((invoice) => invoice.paid_amount)),
-    totalOutstanding: sumFinancialValues(invoices.map((invoice) => getSafeRemainingAmount(invoice.amount, invoice.paid_amount))),
+    totalOutstanding: sumFinancialValues(invoices.map((invoice) => getInvoiceReportRemainingAmount(invoice))),
     invoicesCount: invoices.length,
   };
 }
@@ -491,10 +493,10 @@ export function summarizeExpenseTotals(expenses: Pick<ExpenseReportRow, 'amount'
   };
 }
 
-export function summarizeOutstandingBalance(invoices: Pick<InvoiceReportRow, 'amount' | 'paid_amount'>[]): OutstandingBalanceReport {
-  const outstandingInvoices = invoices.filter((invoice) => getSafeRemainingAmount(invoice.amount, invoice.paid_amount) > 0);
+export function summarizeOutstandingBalance(invoices: Array<Pick<InvoiceReportRow, 'amount' | 'paid_amount'> & Partial<Pick<InvoiceReportRow, 'tax_amount'>>>): OutstandingBalanceReport {
+  const outstandingInvoices = invoices.filter((invoice) => getInvoiceReportRemainingAmount(invoice) > 0);
   return {
-    totalOutstanding: sumFinancialValues(outstandingInvoices.map((invoice) => getSafeRemainingAmount(invoice.amount, invoice.paid_amount))),
+    totalOutstanding: sumFinancialValues(outstandingInvoices.map((invoice) => getInvoiceReportRemainingAmount(invoice))),
     invoicesCount: outstandingInvoices.length,
   };
 }
@@ -753,6 +755,7 @@ async function loadExpenses(filters: ExpenseBreakdownReportFilters): Promise<Exp
 
   if (filters.propertyId) query = query.eq('property_id', filters.propertyId);
   if (filters.category) query = query.eq('category', filters.category);
+  if (filters.costCenterId) query = query.eq('cost_center_id', filters.costCenterId);
 
   const { data, error } = await query.returns<ExpenseReportRow[]>();
   if (error) throw error;
@@ -853,6 +856,14 @@ function getJsonNumber(value: unknown): number {
 
 function getJsonString(value: unknown): string | null {
   return typeof value === 'string' ? value : null;
+}
+
+function getInvoiceReportGrossAmount(invoice: Pick<InvoiceReportRow, 'amount'> & Partial<Pick<InvoiceReportRow, 'tax_amount'>>): number {
+  return toFinancialNumber(invoice.amount) + toFinancialNumber(invoice.tax_amount);
+}
+
+function getInvoiceReportRemainingAmount(invoice: Pick<InvoiceReportRow, 'amount' | 'paid_amount'> & Partial<Pick<InvoiceReportRow, 'tax_amount'>>): number {
+  return getSafeRemainingAmount(getInvoiceReportGrossAmount(invoice), invoice.paid_amount);
 }
 
 export function normalizeCashFlowStatementReport(payload: unknown): CashFlowStatementReport {

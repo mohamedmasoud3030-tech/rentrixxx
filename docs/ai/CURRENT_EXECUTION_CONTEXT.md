@@ -31,9 +31,10 @@ Current branch follow-up work has started connecting the new ERPNext-inspired da
 
 - New migrations `20260628000000` through `20260628000400` are aligned to the active single-office schema instead of assuming `org_id`, `user_roles`, or `invoice_date`.
 - `database.ts` includes the new VAT, cost center, payment terms, and report RPC contracts.
-- `financialReportsService.ts` and `useFinancialReports.ts` expose typed Cash Flow and VAT Return loaders for later Reports UI sections.
+- `financialReportsService.ts` and `useFinancialReports.ts` expose typed Cash Flow and VAT Return loaders, and the Reports statements section now displays both RPC summaries.
 - Cost Center Settings CRUD is implemented through `costCenterService.ts`, `useCostCenters.ts`, and the Settings `مراكز التكلفة` section.
-- Remaining work: Expense cost-center field, income/report filtering by cost center, VAT Settings UI, invoice VAT calculation/display, Payment Terms CRUD/contract integration, and Reports UI sections for Cash Flow/VAT Return.
+- Expense cost-center tagging/filtering, VAT Settings UI, invoice VAT display/calculation, Payment Terms CRUD/contract integration, and Reports UI sections for Cash Flow/VAT Return are wired in the active app.
+- Remaining non-repo work: database validation against an approved local/preview Supabase environment and the final delivery live-operator QA gates below.
 
 ### ✅ UI/UX Phase 3 — Navigation & Dashboard Restructure (PR #936)
 
