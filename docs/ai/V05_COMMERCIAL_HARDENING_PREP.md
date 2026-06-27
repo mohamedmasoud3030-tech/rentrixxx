@@ -20,7 +20,7 @@ Allowed now:
 - Browser/device support notes.
 - Arabic RTL/mobile acceptance checklist.
 - Release rollback expectations.
-- **UI Consistency Phase (ADR-008):** `EntityTable` + `EntityCard` + `ListPage` enforcement — repo-only UI work, no schema/DB changes.
+- **UI Consistency Phase (ADR-008):** `EntityTable` + `EntityCard` + `ListPage` enforcement — repo-only UI work, no schema/DB changes. **Status: In Progress — see `docs/ai/CODEBASE_AUDIT_2026-06-27.md`.**
 
 Not allowed in this phase without a separate approved product decision:
 
