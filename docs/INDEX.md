@@ -46,6 +46,7 @@
 | **`docs/ROOT_LAYOUT.md`** | Folder structure, ownership, dependency rules | Before moving files or creating new folders |
 | **`docs/ai/AGENT_CAPABILITIES.md`** | What agents can do, task-to-skill mapping | When unsure about task scope |
 | **`docs/ai/GIT_TOOLING_POLICY.md`** | Branch naming, PR conventions, merge rules | Before git operations |
+| **`docs/ai/CODEBASE_AUDIT_2026-06-27.md`** | Full component/engine/tech-debt audit — what exists, what's dead, what needs building, priority order | Before starting any new component or refactor work |
 | **`docs/ai/UI_COMPONENT_GUIDE.md`** | Unified table/card component system, dual-view pattern, adoption status | Before any UI/list page work |
 | **`docs/ai/PRINT_AND_EXPORT_READINESS.md`** | Print/PDF state, export formats, known limitations | Before receipt/export work |
 | **`docs/ai/REPORTING_DEFINITIONS.md`** | Report definitions, metrics, calculations | Before reports work |
