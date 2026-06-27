@@ -14,7 +14,7 @@ Use with: [`docs/FINAL_PRODUCT_BLUEPRINT.md`](./FINAL_PRODUCT_BLUEPRINT.md) (pro
 | **Next Phase** | Phase 2.1 Navigation & UX Refinement prep |
 | **Production Ready** | ❌ BLOCKED — awaiting Vercel env vars + final QA evidence |
 | **Latest Merge** | PR #936 (Phase 3: sidebar-dashboard-reports-settings restructure) |
-| **App Location** | `artifacts/rentrix/` |
+| **App Location** | `rentrix-app/` |
 | **Canonical DB** | Supabase project `nnggcnpcuomwfuupupwg` |
 
 ---
