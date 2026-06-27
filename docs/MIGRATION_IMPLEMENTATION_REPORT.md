@@ -16,6 +16,7 @@ This document records the implementation of the ERPNext migration plan for Rentr
 - Connected `rpt_cash_flow(date, date)` and `rpt_vat_return(date, date)` through typed frontend service functions and React Query hooks.
 - Updated the generated Supabase database contract for VAT fields, cost centers, payment terms, and the new report RPCs.
 - Added unit coverage for Cash Flow and VAT JSON normalization.
+- Added Cost Center Settings CRUD through a typed service, React Query hooks, and a Settings section.
 
 ## Completed Implementations
 
@@ -74,13 +75,13 @@ This document records the implementation of the ERPNext migration plan for Rentr
 ## Next Steps
 
 1. **Frontend Integration:**
-   - Implement UI components for Cost Center management in Settings.
    - Update the Expense and Invoice forms to include Cost Center and VAT selection.
    - Add the Cash Flow and VAT Return sections to the Financial Reports page.
 
 2. **Backend Services:**
-   - Add `costCenterService.ts` and payment-terms service/hooks.
+   - Add payment-terms service/hooks.
    - Extend invoice generation so payment terms can drive schedules after a narrow schema/RPC review.
+   - Add cost-center filtering to the relevant reporting path after expense tagging ships.
 
 3. **Testing:**
    - Run integration tests to ensure the new migrations work seamlessly with the existing application logic.
