@@ -6,7 +6,7 @@ const supabaseMock = vi.hoisted(() => ({
   rpc: vi.fn(),
 }));
 
-vi.mock('@/integrations/supabase/client', () => ({
+vi.mock('@/lib/supabase', () => ({
   supabase: supabaseMock,
 }));
 
