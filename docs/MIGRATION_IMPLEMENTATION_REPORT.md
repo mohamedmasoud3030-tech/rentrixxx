@@ -141,3 +141,49 @@ Three additional defects were found and fixed before applying:
 
 2. **Future Narrow Enhancement:**
    - Extend invoice generation so payment terms can drive schedules after a schema/RPC review. The current app stores and selects payment terms on contracts but does not expand them into an accounting-grade schedule.
+
+---
+
+## 2026-06-28 Task 2 — Live Verification and Schema Gap Fixes
+
+**Auditor:** Claude (Senior Release Engineer)
+**Scope:** Read-only live verification of all Task 1 risks, then targeted forward-only fixes for confirmed gaps.
+
+### Live DB verification results
+
+| Object | Expected | Actual | Status |
+|---|---|---|---|
+| `cost_centers` table | text PK, text FKs, RLS | ✅ Exact match | OK |
+| `payment_terms_templates` table | text PK, text FKs, RLS | ✅ Exact match | OK |
+| `expenses.cost_center_id` | text FK nullable | ✅ Confirmed | OK |
+| `journal_entries.cost_center_id` | text FK nullable | ✅ Confirmed | OK |
+| `contracts.payment_terms_id` | text FK nullable | ✅ Confirmed | OK |
+| `company_settings.vat_enabled/rate/registration_number` | present | ✅ Confirmed | OK |
+| `invoices.tax_rate` | numeric DEFAULT 0 nullable | ✅ Confirmed | OK |
+| `rpt_cash_flow` | SECURITY DEFINER, callable | ✅ Returns well-formed JSON | OK |
+| `rpt_vat_return` | SECURITY DEFINER, callable | ✅ Returns well-formed JSON | OK |
+| `find_payment_account_id` | SECURITY DEFINER | ✅ Untouched, no-op confirmed | OK |
+| `company_settings.contract_prefix` | NOT NULL text 'CON' | ❌ **Missing** | **FIXED** |
+| `company_settings.default_vat_rate` | NOT NULL numeric 5.0 | ❌ **Missing** | **FIXED** |
+| `company_settings.notification_email_enabled` | NOT NULL boolean false | ❌ **Missing** | **FIXED** |
+| `company_settings.notification_sms_enabled` | NOT NULL boolean false | ❌ **Missing** | **FIXED** |
+| `invoices.tax_amount` | nullable, DEFAULT 0 | DEFAULT was NULL, existing NULLs | **FIXED** |
+| `database.ts` `tax_amount` type | `number \| null` | Was declared `number` (non-null) | **FIXED** |
+
+### Migrations applied to live DB (2026-06-28)
+
+- `20260628000500_fix_company_settings_missing_columns_and_invoice_tax_default` — applied via Supabase MCP
+- `20260628000600_fix_company_settings_notification_columns` — applied via Supabase MCP
+
+### Repo changes
+
+- `supabase/migrations/20260628000500_*.sql` — new file matching live-applied migration
+- `supabase/migrations/20260628000600_*.sql` — new file matching live-applied migration
+- `rentrix-app/src/types/database.ts` — `invoices.tax_amount` corrected to `number | null`
+
+### Remaining known gaps (not in scope for this task)
+
+- `journal_entries` table has no TypeScript `Row` type in `database.ts` — cost_center_id is invisible to typed queries. Tracked for a future types refresh PR.
+- SonarCloud gate failing on `main` (Reliability B, Security C, 1 Hotspot) — separate task.
+- Cash Flow report has no CSV export — deferred per ERPNEXT_MIGRATION_PLAN.md.
+- Payment Terms do not expand into invoice schedules — deferred, documented as Future Narrow Enhancement.
