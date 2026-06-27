@@ -71,12 +71,11 @@ export function UnitsList({ propertyId, unitsQuery }: Readonly<{ propertyId: str
                     formatMoney={(value) => formatCompanyMoney(defaultCompanyLocalSettings, value)}
                   />
                   <div className="flex gap-2 px-1">
-                    <Button variant="secondary" size="sm" className="h-9 flex-1" onClick={() => openForEdit(unit)}>
+                    <Button variant="secondary" className="h-9 flex-1" onClick={() => openForEdit(unit)}>
                       <Edit className="me-1 size-3.5" />تعديل
                     </Button>
                     <Button
                       variant="danger"
-                      size="sm"
                       className="h-9 flex-1"
                       aria-label="أرشفة الوحدة"
                       onClick={() => setArchiveCandidate(unit)}

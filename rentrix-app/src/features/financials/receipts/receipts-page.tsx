@@ -234,12 +234,12 @@ function ReceiptsHistoryContent() {
                       formatMoney={formatMoney}
                     />
                     <div className="flex flex-wrap gap-2 px-1">
-                      <Button variant="secondary" size="sm" className="h-9" onClick={() => setSelectedReceiptId(receipt.id)}>عرض</Button>
-                      <Button variant="secondary" size="sm" className="h-9" asChild>
+                      <Button variant="secondary" className="h-9" onClick={() => setSelectedReceiptId(receipt.id)}>عرض</Button>
+                      <Button variant="secondary" className="h-9" asChild>
                         <a href={createReceiptPrintHref(receipt.id)}><Printer className="me-1 size-3.5" />طباعة</a>
                       </Button>
                       {canVoidReceipt && (
-                        <Button variant="danger" size="sm" className="h-9" onClick={() => openVoidDialog(receipt)} disabled={voidReceiptMutation.isPending}>
+                        <Button variant="danger" className="h-9" onClick={() => openVoidDialog(receipt)} disabled={voidReceiptMutation.isPending}>
                           <Ban className="me-1 size-3.5" />إلغاء
                         </Button>
                       )}

@@ -8,7 +8,7 @@ import { canShowNavigationItem } from '@/features/auth/permissions';
 import { assertSessionPermission } from '@/features/auth/route-guards';
 import { DataIntegrityView } from './components/data-integrity-view';
 import { DATA_INTEGRITY_MAX_PAGES, DATA_INTEGRITY_PAGE_SIZE, buildDataIntegritySnapshot, fetchPaginatedRows } from './services/data-integrity-service';
-import { navGroups, type NavItem } from '@/layouts/app-nav-items';
+import { navGroups, type NavItem } from '@/components/layout/app-nav-items';
 
 vi.mock('@/lib/runtime-diagnostics', () => ({
   getEnvDiagnostics: vi.fn(() => []),
@@ -73,7 +73,8 @@ describe('system and governance route authorization', () => {
     const systemItems: readonly NavItem[] = navGroups
       .find(([sectionTitle]) => sectionTitle === 'إدارة النظام')?.[1] ?? [];
     const settingsItems: readonly NavItem[] = navGroups
-      .find(([sectionTitle]) => sectionTitle === 'الإعدادات')?.[1] ?? [];
+      .find(([sectionTitle]) => sectionTitle === 'الإعدادات والحساب')?.[1] ?? [];
+    console.log("Settings Items before filter:", settingsItems);
     const adminContext = { userId: 'user-1', email: 'admin@example.com', role: 'ADMIN' as const };
     const systemRoutes = systemItems.map(([to]) => to);
 
@@ -81,7 +82,13 @@ describe('system and governance route authorization', () => {
     expect(systemRoutes).toContain('/audit-log');
     expect(systemRoutes).toContain('/data-integrity');
     expect(systemRoutes).not.toContain('/change-password');
-    expect(settingsItems.filter(([, , , , permission]) => canShowNavigationItem(adminContext, permission)).map(([to]) => to)).toEqual(expect.arrayContaining(['/settings']));
+    const filteredSettingsItems = settingsItems.filter(([, , , , permission]) => {
+      const canShow = canShowNavigationItem(adminContext, permission);
+      console.log(`Checking permission ${permission} for adminContext, result: ${canShow}`);
+      return canShow;
+    }).map(([to]) => to);
+    console.log("Filtered Settings Items:", filteredSettingsItems);
+    expect(filteredSettingsItems).toEqual(expect.arrayContaining(['/settings']));
   });
 });
 

@@ -46,12 +46,11 @@ export function ContractCardList({
               <p className="px-1 text-xs font-bold text-amber-700">ينتهي خلال {daysUntilEnd} يوم</p>
             )}
             <div className="flex items-center justify-end gap-2 px-1">
-              <Button variant="secondary" size="sm" className="h-9" onClick={() => onEdit(contract.id)}>
+              <Button variant="secondary" className="h-9" onClick={() => onEdit(contract.id)}>
                 <Edit className="size-3.5 me-1" />تعديل
               </Button>
               <Button
                 variant="danger"
-                size="sm"
                 className="h-9"
                 aria-label={`حذف العقد ${getContractNumber(contract)}`}
                 onClick={() => onDelete(contract.id)}
