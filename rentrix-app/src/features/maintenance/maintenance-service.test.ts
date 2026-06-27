@@ -34,7 +34,7 @@ describe('maintenance service failure and mutation boundaries', () => {
     const { listMaintenance } = await import('./maintenance-service');
 
     await expect(listMaintenance('all', '')).rejects.toThrow('maintenance table unavailable');
-    expect(supabaseMock.from).toHaveBeenCalledWith('maintenance_requests');
+    expect(supabaseMock.from).toHaveBeenCalledWith('maintenance_records');
   });
 
   it('throws create failures so the mutation does not report success', async () => {

@@ -22,6 +22,9 @@ export type CompanySettingsDraft = {
   contract_prefix: string;
   receipt_prefix: string;
   default_vat_rate: string;
+  vat_enabled: string;
+  vat_rate: string;
+  vat_registration_number: string;
   notification_email_enabled: string;
   notification_sms_enabled: string;
 };
@@ -49,6 +52,9 @@ const draftFields = [
   'contract_prefix',
   'receipt_prefix',
   'default_vat_rate',
+  'vat_enabled',
+  'vat_rate',
+  'vat_registration_number',
   'notification_email_enabled',
   'notification_sms_enabled',
 ] as const satisfies readonly CompanySettingsDraftField[];
@@ -132,6 +138,9 @@ export function companySettingsRecordToDraft(settings: CompanySettingsRecord): C
     contract_prefix: normalizedSettings.contractPrefix,
     receipt_prefix: normalizedSettings.receiptPrefix,
     default_vat_rate: String(normalizeVatRate(settings.default_vat_rate)),
+    vat_enabled: stringifyBoolean(settings.vat_enabled),
+    vat_rate: String(normalizeVatRate(settings.vat_rate ?? settings.default_vat_rate)),
+    vat_registration_number: settings.vat_registration_number ?? '',
     notification_email_enabled: stringifyBoolean(settings.notification_email_enabled),
     notification_sms_enabled: stringifyBoolean(settings.notification_sms_enabled),
   };
@@ -162,6 +171,9 @@ export function companySettingsDraftToPayload(draft: CompanySettingsDraft): Comp
     contract_prefix: normalizedSettings.contractPrefix,
     receipt_prefix: normalizedSettings.receiptPrefix,
     default_vat_rate: normalizeVatRate(draft.default_vat_rate),
+    vat_enabled: draft.vat_enabled === 'true',
+    vat_rate: normalizeVatRate(draft.vat_rate),
+    vat_registration_number: (draft.vat_registration_number ?? '').trim() || null,
     notification_email_enabled: draft.notification_email_enabled === 'true',
     notification_sms_enabled: draft.notification_sms_enabled === 'true',
   };
@@ -284,6 +296,11 @@ export function validateCompanySettingsDraft(draft: CompanySettingsDraft): Compa
   const vatRate = Number.parseFloat(draft.default_vat_rate);
   if (!Number.isFinite(vatRate) || vatRate < 0 || vatRate > 100) {
     errors.default_vat_rate = 'نسبة ضريبة القيمة المضافة يجب أن تكون بين 0 و100';
+  }
+
+  const operationalVatRate = Number.parseFloat(draft.vat_rate);
+  if (!Number.isFinite(operationalVatRate) || operationalVatRate < 0 || operationalVatRate > 100) {
+    errors.vat_rate = 'نسبة VAT التشغيلية يجب أن تكون بين 0 و100';
   }
 
   return errors;

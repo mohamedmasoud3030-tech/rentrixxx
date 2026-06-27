@@ -100,6 +100,7 @@ describe('invoiceService financial reconciliation', () => {
 
     expect(summarizeInvoices(invoiceRows)).toEqual({
       totalAmount: 3050.5,
+      totalTax: 0,
       totalPaid: 1800.5,
       totalRemaining: 1300,
       count: 4,

@@ -4,14 +4,22 @@ import { KpiCard } from '@/components/ui/kpi-card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { formatMoney, formatShortId } from '@/features/financials/components/financials-formatters';
 import type { DailyCollectionReportRow } from '@/features/financials/reports/financialReportsService';
-import { useAgedReceivablesReport, useExpenseBreakdownReport, useFinancialPeriodSummaryReport } from '@/features/financials/reports/useFinancialReports';
+import {
+  useAgedReceivablesReport,
+  useCashFlowStatementReport,
+  useExpenseBreakdownReport,
+  useFinancialPeriodSummaryReport,
+  useVatReturnReport,
+} from '@/features/financials/reports/useFinancialReports';
 import { createReceiptPrintHref } from '../reports-page.helpers';
 
-export function StatementsSection({ agedReport, receiptRows, financialSummary, expenseBreakdown, dailyRows, isLoading }: Readonly<{
+export function StatementsSection({ agedReport, receiptRows, financialSummary, expenseBreakdown, cashFlowStatement, vatReturn, dailyRows, isLoading }: Readonly<{
   agedReport: NonNullable<ReturnType<typeof useAgedReceivablesReport>['data']> | undefined;
   receiptRows: Array<{ id: string; receipt_number: string; payment_date: string; amount: number; tenant_name: string | null }>;
   financialSummary: NonNullable<ReturnType<typeof useFinancialPeriodSummaryReport>['data']> | undefined;
   expenseBreakdown: NonNullable<ReturnType<typeof useExpenseBreakdownReport>['data']> | undefined;
+  cashFlowStatement: NonNullable<ReturnType<typeof useCashFlowStatementReport>['data']> | undefined;
+  vatReturn: NonNullable<ReturnType<typeof useVatReturnReport>['data']> | undefined;
   dailyRows: DailyCollectionReportRow[];
   isLoading: boolean;
 }>) {
@@ -114,6 +122,44 @@ export function StatementsSection({ agedReport, receiptRows, financialSummary, e
             <KpiCard label="تحصيلات الفترة" value={formatMoney(totalCollections)} icon={WalletCards} accent="emerald" sub={`${totalPayments} مدفوعات`} compact />
             <KpiCard label="مصروفات الفترة" value={formatMoney(totalExpenses)} icon={WalletCards} accent="rose" sub={`${totalExpensesCount} مصروفات`} compact />
             <KpiCard label="رصيد مستحق (قراءة فقط)" value={formatMoney(totalOutstanding)} icon={WalletCards} accent="amber" sub={`${totalReceiptsCount} إيصالات متاحة للطباعة`} compact />
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="grid gap-4 lg:grid-cols-2">
+        <Card className="border-border/60">
+          <CardHeader className="border-b border-border/60 bg-muted/20 px-4 py-3 sm:px-5">
+            <CardTitle className="text-sm font-black">Cash Flow RPC</CardTitle>
+            <CardDescription>قراءة مباشرة من `rpt_cash_flow` للفترة المختارة، بدون دفتر أستاذ عام.</CardDescription>
+          </CardHeader>
+          <CardContent className="grid gap-2 p-4 sm:p-5">
+            {isLoading ? (
+              <Skeleton className="h-32" />
+            ) : (
+              <>
+                <KpiCard label="مقبوضات تشغيلية" value={formatMoney(cashFlowStatement?.operating.receipts ?? 0)} icon={WalletCards} accent="emerald" compact />
+                <KpiCard label="مصروفات تشغيلية" value={formatMoney(cashFlowStatement?.operating.expenses ?? 0)} icon={WalletCards} accent="rose" compact />
+                <KpiCard label="صافي التغير" value={formatMoney(cashFlowStatement?.netChange ?? 0)} icon={WalletCards} accent="sky" compact />
+              </>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card className="border-border/60">
+          <CardHeader className="border-b border-border/60 bg-muted/20 px-4 py-3 sm:px-5">
+            <CardTitle className="text-sm font-black">VAT Return RPC</CardTitle>
+            <CardDescription>ملخص ضريبة القيمة المضافة من `rpt_vat_return` للفترة المختارة.</CardDescription>
+          </CardHeader>
+          <CardContent className="grid gap-2 p-4 sm:p-5">
+            {isLoading ? (
+              <Skeleton className="h-32" />
+            ) : (
+              <>
+                <KpiCard label="إجمالي المبيعات الخاضعة" value={formatMoney(vatReturn?.totalSalesAmount ?? 0)} icon={WalletCards} accent="sky" compact />
+                <KpiCard label="إجمالي VAT" value={formatMoney(vatReturn?.totalTaxAmount ?? 0)} icon={WalletCards} accent="amber" compact />
+                <KpiCard label="عدد الفواتير" value={(vatReturn?.invoiceCount ?? 0).toLocaleString('ar')} icon={WalletCards} accent="primary" compact />
+              </>
+            )}
           </CardContent>
         </Card>
       </div>

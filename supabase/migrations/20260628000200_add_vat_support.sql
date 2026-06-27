@@ -28,7 +28,6 @@ END $$;
 
 -- 3. Create a function to calculate VAT return (P1-D requirement)
 CREATE OR REPLACE FUNCTION rpt_vat_return(
-  p_org_id uuid,
   p_from_date date,
   p_to_date date
 ) RETURNS jsonb
@@ -43,10 +42,12 @@ BEGIN
     'invoice_count', COUNT(*)
   ) INTO v_result
   FROM public.invoices
-  WHERE org_id = p_org_id
-    AND invoice_date BETWEEN p_from_date AND p_to_date
+  WHERE issue_date BETWEEN p_from_date AND p_to_date
     AND deleted_at IS NULL;
     
   RETURN v_result;
 END;
 $$;
+
+REVOKE ALL ON FUNCTION public.rpt_vat_return(date, date) FROM public, anon;
+GRANT EXECUTE ON FUNCTION public.rpt_vat_return(date, date) TO authenticated;

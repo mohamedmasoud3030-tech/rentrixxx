@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { KpiCard } from '@/components/ui/kpi-card';
 import { useProperties } from '@/features/properties/use-properties';
+import { useCostCenters } from '@/features/settings/useCostCenters';
 import { defaultCompanyLocalSettings } from '@/lib/companySettings';
 import { formatCompanyMoney, getCompanyLocale } from '@/lib/companyFormatters';
 import { ExpensesSection, type ExpenseFormValues } from '../components/expenses-section';
@@ -19,6 +20,7 @@ import { useCreateExpense, useExpenses } from './useExpenses';
 const expenseSchema = z.object({
   property_id: z.string().uuid('اختر العقار'),
   category: z.enum(OPERATIONAL_EXPENSE_CATEGORIES, { message: 'اختر التصنيف' }),
+  cost_center_id: z.string().optional(),
   amount: z.coerce.number().positive('المبلغ يجب أن يكون أكبر من صفر'),
   expense_date: z.string().min(1, 'اختر التاريخ'),
   description: z.string().optional(),
@@ -32,8 +34,9 @@ export function toLocalDateInputValue(date: Date = new Date()) {
 }
 
 export function ExpensesPage() {
-  const [filters, setFilters] = useState<OperationalExpenseFilterValues>({ propertyId: '', category: '', from: '', to: '' });
+  const [filters, setFilters] = useState<OperationalExpenseFilterValues>({ propertyId: '', category: '', costCenterId: '', from: '', to: '' });
   const propertiesQuery = useProperties({ page: 1, pageSize: 500, search: '', status: 'all' });
+  const costCentersQuery = useCostCenters();
   const expensesQuery = useExpenses(filters);
   const createExpense = useCreateExpense();
   const propertyRows = propertiesQuery.data?.rows ?? [];
@@ -43,7 +46,7 @@ export function ExpensesPage() {
 
   const expenseForm = useForm<ExpenseFormValues>({
     resolver: zodResolver(expenseSchema),
-    defaultValues: { property_id: '', category: 'صيانة', amount: 0, expense_date: toLocalDateInputValue(), description: '', attachment_url: null },
+    defaultValues: { property_id: '', category: 'صيانة', cost_center_id: '', amount: 0, expense_date: toLocalDateInputValue(), description: '', attachment_url: null },
   });
 
   const onCreateExpense = (values: ExpenseFormValues) => {
@@ -53,10 +56,11 @@ export function ExpensesPage() {
         category: values.category,
         amount: values.amount,
         expense_date: values.expense_date,
+        cost_center_id: values.cost_center_id?.trim() || null,
         description: values.description?.trim() ? values.description.trim() : null,
         attachment_url: values.attachment_url ?? null,
       },
-      { onSuccess: () => expenseForm.reset({ property_id: '', category: 'صيانة', amount: 0, expense_date: toLocalDateInputValue(), description: '', attachment_url: null }) },
+      { onSuccess: () => expenseForm.reset({ property_id: '', category: 'صيانة', cost_center_id: '', amount: 0, expense_date: toLocalDateInputValue(), description: '', attachment_url: null }) },
     );
   };
 
@@ -87,6 +91,7 @@ export function ExpensesPage() {
       <ExpensesSection
         expenses={expenses}
         propertyRows={propertyRows}
+        costCenterRows={costCentersQuery.data ?? []}
         filters={filters}
         onFiltersChange={setFilters}
         expenseForm={expenseForm}

@@ -17,13 +17,20 @@ vi.mock('@tanstack/react-router', () => ({
   useNavigate: () => vi.fn(),
 }));
 
+vi.mock('./contract-form-modal', () => ({
+  ContractFormModal: () => null,
+}));
+
 const contractsMocks = vi.hoisted(() => ({
   contractsQuery: { data: { rows: [] as unknown[], count: 0 }, error: null as Error | null, isError: false, isLoading: false, refetch: vi.fn() },
   deleteMutation: { isPending: false, mutate: vi.fn() },
 }));
 
 vi.mock('./useContracts', () => ({
+  useContract: () => ({ data: null, error: null, isError: false, isLoading: false }),
   useContracts: () => contractsMocks.contractsQuery,
+  useCreateContract: () => ({ isPending: false, mutateAsync: vi.fn() }),
+  useUpdateContract: () => ({ isPending: false, mutateAsync: vi.fn() }),
   useSoftDeleteContract: () => contractsMocks.deleteMutation,
 }));
 

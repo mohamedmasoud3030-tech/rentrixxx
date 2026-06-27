@@ -9,6 +9,7 @@ function makeExpense(overrides: Partial<Expense> = {}): Expense {
     category: 'صيانة',
     amount: 100,
     expense_date: '2026-05-18',
+    cost_center_id: null,
     description: null,
     attachment_url: null,
     created_at: '2026-05-18T00:00:00.000Z',

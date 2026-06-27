@@ -77,7 +77,7 @@ describe('MaintenancePage recovery states', () => {
     const html = renderToStaticMarkup(<MaintenancePage />);
 
     expect(html).toContain('تعذر تحميل طلبات الصيانة');
-    expect(html).toContain('تعذر تحميل صيانة الاختبار');
+    expect(html).toContain('حدث خطأ أثناء تحميل البيانات.');
     expect(html).toContain('إعادة المحاولة');
   });
 });

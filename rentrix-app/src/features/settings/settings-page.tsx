@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type ChangeEvent, type FormEvent } from 'react';
 import { Link } from '@tanstack/react-router';
-import { Building2, FileSignature, KeyRound, Lock, RefreshCcw, Save, ShieldCheck, Sparkles, Cog, Bell, User } from 'lucide-react';
+import { Building2, FileSignature, FolderTree, KeyRound, Lock, RefreshCcw, Save, ShieldCheck, Sparkles, Cog, Bell, User, CalendarClock } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -23,6 +23,8 @@ import { supportedCurrencies } from '@/lib/formatters';
 import { getAppLanguageState } from '@/lib/i18n';
 import { useUiStore } from '@/store/ui-store';
 import { useCompanySettings, useUpdateCompanySettings } from './useCompanySettings';
+import { CostCentersSettingsSection } from './cost-centers-settings-section';
+import { PaymentTermsSettingsSection } from './payment-terms-settings-section';
 import {
   areCompanySettingsDraftsEqual,
   companySettingsDraftToLocalSettings,
@@ -122,10 +124,12 @@ function PreviewField({ label, value, muted = false }: PreviewFieldProps) {
 // These drive both the in-page section nav and the actual content cards. Each
 // section card is anchored by its id and renders only the persisted,
 // editable fields. Non-persisted preferences stay informational.
-const settingsSections = [
+export const settingsSections = [
   { id: 'office',      label: 'بيانات المكتب',        icon: Building2      },
   { id: 'identity',    label: 'الهوية والطباعة',      icon: FileSignature  },
   { id: 'documents',   label: 'العقود والفواتير',     icon: FileSignature  },
+  { id: 'cost-centers', label: 'مراكز التكلفة',       icon: FolderTree     },
+  { id: 'payment-terms', label: 'شروط السداد',        icon: CalendarClock  },
   { id: 'notifications', label: 'الإشعارات والتنبيهات', icon: Bell          },
   { id: 'security',    label: 'الأمان والحساب',       icon: ShieldCheck    },
   { id: 'system',      label: 'النظام والبيانات',     icon: Cog           },
@@ -478,7 +482,26 @@ export function SettingsPage() {
             <FormField label="بادئة العقود" field="contract_prefix" draft={draft} errors={errors} disabled={isSaving} onChange={handleDraftChange} />
             <FormField label="بادئة الإيصالات" field="receipt_prefix" draft={draft} errors={errors} disabled={isSaving} onChange={handleDraftChange} />
             <FormField label="ضريبة القيمة المضافة الافتراضية %" field="default_vat_rate" draft={draft} errors={errors} disabled={isSaving} type="number" onChange={handleDraftChange} />
+            <FormField label="نسبة VAT التشغيلية %" field="vat_rate" draft={draft} errors={errors} disabled={isSaving} type="number" onChange={handleDraftChange} />
+            <FormField label="رقم تسجيل VAT" field="vat_registration_number" draft={draft} errors={errors} disabled={isSaving} onChange={handleDraftChange} />
+            <label className="flex items-center gap-2 rounded-xl border bg-background/70 p-3 text-sm font-medium md:col-span-2">
+              <input
+                type="checkbox"
+                checked={draft.vat_enabled === 'true'}
+                disabled={isSaving}
+                onChange={(event) => handleDraftChange('vat_enabled', String(event.target.checked))}
+              />
+              <span>تفعيل VAT في إعدادات المكتب والتقارير</span>
+            </label>
           </div>
+        </SectionCard>
+
+        <SectionCard id="cost-centers" activeId={activeSection} title="مراكز التكلفة" subtitle="تصنيف تشغيلي للمصروفات والتقارير حسب العقار أو النشاط بدون دفتر أستاذ عام.">
+          <CostCentersSettingsSection />
+        </SectionCard>
+
+        <SectionCard id="payment-terms" activeId={activeSection} title="شروط السداد" subtitle="قوالب تشغيلية لاختيار جدول السداد في العقد بدون إنشاء دفتر أستاذ أو جدولة تلقائية موسعة.">
+          <PaymentTermsSettingsSection />
         </SectionCard>
 
         <SectionCard id="notifications" activeId={activeSection} title="الإشعارات والمتابعة" subtitle="تفضيلات الإشعارات المسجلة حالياً. تُحفظ في سجل إعدادات المكتب.">

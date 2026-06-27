@@ -2,7 +2,7 @@ import { Download } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import type { Payment } from '@/types/domain';
-import type { InvoiceDetail } from '../invoices/invoiceService';
+import { getInvoiceGrossAmount, type InvoiceDetail } from '../invoices/invoiceService';
 import { formatDate, formatMoney, getErrorMessage } from './financials-formatters';
 import { QuickPaymentForm } from './quick-payment-form';
 
@@ -49,6 +49,8 @@ export function InvoiceDetailSection({
   onPostPayment,
   onExportPdf,
 }: InvoiceDetailSectionProps) {
+  const grossAmount = invoiceDetail ? getInvoiceGrossAmount(invoiceDetail) : 0;
+
   return (
     <Card>
       <CardHeader>
@@ -69,7 +71,7 @@ export function InvoiceDetailSection({
             </Button>
           </div>
 
-          <div className="grid gap-3 md:grid-cols-5">
+          <div className="grid gap-3 md:grid-cols-6">
             <div className="rounded-2xl border bg-muted/30 p-4">
               <p className="text-sm text-muted-foreground">رقم الفاتورة</p>
               <p className="mt-2 font-black">#{invoiceDetail.id.slice(0, 8)}</p>
@@ -79,8 +81,12 @@ export function InvoiceDetailSection({
               <p className="mt-2 font-black">{formatDate(invoiceDetail.due_date)}</p>
             </div>
             <div className="rounded-2xl border bg-muted/30 p-4">
-              <p className="text-sm text-muted-foreground">الإجمالي</p>
-              <p className="mt-2 font-black">{formatMoney(invoiceDetail.amount)}</p>
+              <p className="text-sm text-muted-foreground">الإجمالي شامل VAT</p>
+              <p className="mt-2 font-black">{formatMoney(grossAmount)}</p>
+            </div>
+            <div className="rounded-2xl border bg-muted/30 p-4">
+              <p className="text-sm text-muted-foreground">VAT</p>
+              <p className="mt-2 font-black">{formatMoney(invoiceDetail.tax_amount)}</p>
             </div>
             <div className="rounded-2xl border bg-muted/30 p-4">
               <p className="text-sm text-muted-foreground">المدفوع</p>

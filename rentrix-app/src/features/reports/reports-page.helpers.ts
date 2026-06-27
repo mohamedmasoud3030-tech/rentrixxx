@@ -9,7 +9,7 @@ import { buildCsv, withUtf8Bom, type CsvRow } from '@/lib/csvExport';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 
-export type FilterState = Readonly<{ from: string; to: string; asOf: string }>;
+export type FilterState = Readonly<{ from: string; to: string; asOf: string; costCenterId: string }>;
 
 export type AgingBucketChartRow = { bucket: string; total: number; invoiceCount: number };
 export type OccupancyChartRow = {
@@ -91,6 +91,7 @@ export function getCurrentMonthFilters(): FilterState {
     from: toDateInputValue(firstDay),
     to: todayValue,
     asOf: todayValue,
+    costCenterId: '',
   };
 }
 

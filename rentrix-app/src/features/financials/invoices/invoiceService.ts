@@ -6,7 +6,7 @@ export type InvoiceStatusFilter = 'unpaid' | 'partial' | 'paid' | 'overdue' | 'a
 export type InvoiceListItem = Invoice & { contracts: { id: string; property_id: string; tenant_id: string } | null };
 export type InvoiceDetail = InvoiceListItem & { payments: Payment[] };
 export type InvoiceListParams = { status: InvoiceStatusFilter; search?: string };
-export type InvoiceSummary = { totalAmount: number; totalPaid: number; totalRemaining: number; count: number };
+export type InvoiceSummary = { totalAmount: number; totalTax: number; totalPaid: number; totalRemaining: number; count: number };
 
 const invoiceSelect = '*, contracts:contract_id(id,property_id,tenant_id)';
 
@@ -18,16 +18,22 @@ function applyStatusFilter(query: ReturnType<typeof supabase.from>, status: Invo
   return query;
 }
 
-export function summarizeInvoices(invoices: Pick<Invoice, 'amount' | 'paid_amount'>[]): InvoiceSummary {
+export function getInvoiceGrossAmount(invoice: Pick<Invoice, 'amount'> & Partial<Pick<Invoice, 'tax_amount'>>): number {
+  return toFinancialNumber(invoice.amount) + toFinancialNumber(invoice.tax_amount);
+}
+
+export function summarizeInvoices(invoices: Array<Pick<Invoice, 'amount' | 'paid_amount'> & Partial<Pick<Invoice, 'tax_amount'>>>): InvoiceSummary {
   return invoices.reduce(
     (summary, invoice) => {
-      summary.totalAmount += toFinancialNumber(invoice.amount);
+      const grossAmount = getInvoiceGrossAmount(invoice);
+      summary.totalAmount += grossAmount;
+      summary.totalTax += toFinancialNumber(invoice.tax_amount);
       summary.totalPaid += toFinancialNumber(invoice.paid_amount);
-      summary.totalRemaining += getSafeRemainingAmount(invoice.amount, invoice.paid_amount);
+      summary.totalRemaining += getSafeRemainingAmount(grossAmount, invoice.paid_amount);
       summary.count += 1;
       return summary;
     },
-    { totalAmount: 0, totalPaid: 0, totalRemaining: 0, count: 0 },
+    { totalAmount: 0, totalTax: 0, totalPaid: 0, totalRemaining: 0, count: 0 },
   );
 }
 

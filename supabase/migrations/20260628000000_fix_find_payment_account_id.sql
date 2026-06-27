@@ -2,31 +2,34 @@
 -- Description: Corrects the find_payment_account_id() function to maintain text-based account resolution
 -- and eliminate UUID casting errors.
 
-CREATE OR REPLACE FUNCTION find_payment_account_id(
-  p_org_id uuid,
-  p_role text
-) RETURNS uuid
+CREATE OR REPLACE FUNCTION public.find_payment_account_id(account_role text)
+RETURNS text
 LANGUAGE plpgsql SECURITY DEFINER AS $$
 DECLARE
-  v_id uuid;
+  v_target_no text;
+  v_account_id text;
 BEGIN
-  SELECT id INTO v_id
-  FROM accounts
-  WHERE org_id = p_org_id
-    AND role = p_role
-    AND deleted_at IS NULL
+  CASE account_role
+    WHEN 'cash' THEN v_target_no := '1111';
+    WHEN 'receivable' THEN v_target_no := '1201';
+    ELSE RETURN NULL;
+  END CASE;
+
+  SELECT id INTO v_account_id
+  FROM public.accounts
+  WHERE no = v_target_no
   LIMIT 1;
-  
-  IF v_id IS NULL THEN
-    RAISE EXCEPTION 'Account not found for role: %', p_role;
+
+  IF v_account_id IS NULL THEN
+    RAISE EXCEPTION 'Account not found for role: %', account_role;
   END IF;
-  
-  RETURN v_id;
+
+  RETURN v_account_id;
 END;
 $$;
 
 -- Revoke from public/authenticated, grant to postgres/service_role
-REVOKE ALL ON FUNCTION find_payment_account_id(uuid, text) FROM public;
-REVOKE ALL ON FUNCTION find_payment_account_id(uuid, text) FROM authenticated;
-GRANT EXECUTE ON FUNCTION find_payment_account_id(uuid, text) TO postgres;
-GRANT EXECUTE ON FUNCTION find_payment_account_id(uuid, text) TO service_role;
+REVOKE ALL ON FUNCTION public.find_payment_account_id(text) FROM public;
+REVOKE ALL ON FUNCTION public.find_payment_account_id(text) FROM authenticated;
+GRANT EXECUTE ON FUNCTION public.find_payment_account_id(text) TO postgres;
+GRANT EXECUTE ON FUNCTION public.find_payment_account_id(text) TO service_role;

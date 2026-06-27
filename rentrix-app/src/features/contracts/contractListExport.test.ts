@@ -11,6 +11,7 @@ const baseContract: ContractListItem = {
   end_date: '2026-12-31',
   rent_amount: 1250.5,
   payment_cycle: 'monthly',
+  payment_terms_id: null,
   status: 'active',
   notes: null,
   renewed_from_id: null,

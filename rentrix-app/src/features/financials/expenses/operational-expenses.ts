@@ -7,6 +7,7 @@ export type OperationalExpenseCategory = (typeof OPERATIONAL_EXPENSE_CATEGORIES)
 export type OperationalExpenseFilterValues = {
   propertyId: string;
   category: string;
+  costCenterId: string;
   from: string;
   to: string;
 };
