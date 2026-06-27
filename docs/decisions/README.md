@@ -32,6 +32,10 @@ Lands, leads, commissions, and internal communication are approved Rentrix modul
 
 Use `docs/FIRST_CLIENT_DELIVERY_PLAN.md` for current first-client sequencing. The historical v0.4 scope ADR was removed from active docs and remains available through git history.
 
+### ADR-008 — Unified Table and Entity Card System
+
+All list pages use `EntityTable` (replacing manual `Table` primitive usage and the unused `DataTable`). All person/owner display uses `EntityCard` (replacing `PersonCard` and `OwnerCard` over time). All list pages use `ListPage` scaffold. Full spec in `docs/decisions/ADR-008-unified-ui-components.md` and usage guide in `docs/ai/UI_COMPONENT_GUIDE.md`.
+
 ## Open product decisions required
 
 The following decisions still require explicit approval before implementation:
