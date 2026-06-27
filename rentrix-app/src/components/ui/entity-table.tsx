@@ -58,7 +58,8 @@ export interface EntityTableProps<T> {
 
   // ─── States ──────────────────────────────────────────────
   isLoading?: boolean;
-  error?: Error | unknown | null;
+  /** Pass queryResult.error when isError is true, or null otherwise */
+  error?: unknown;
 
   // ─── Empty state ─────────────────────────────────────────
   emptyTitle?: string;
@@ -95,7 +96,7 @@ export interface EntityTableProps<T> {
   skeletonRows?: number;
 }
 
-// ─── Sort header button ───────────────────────────────────────────────────────
+// ─── Sort icon ────────────────────────────────────────────────────────────────
 
 function SortIcon({ field, sort }: { field: string; sort?: SortState }) {
   if (!sort || sort.field !== field) return <ChevronsUpDown className="ms-1 inline size-3.5 opacity-40" />;
@@ -186,7 +187,7 @@ export function EntityTable<T>({
   columns,
   keyOf,
   isLoading = false,
-  error = null,
+  error,
   emptyTitle = 'لا توجد سجلات',
   emptyDescription = 'لم يتم العثور على أي نتائج.',
   emptyAction,
@@ -215,7 +216,7 @@ export function EntityTable<T>({
   }
 
   // ── Error ────────────────────────────────────────────────
-  if (error) {
+  if (error != null) {
     return (
       <EmptyState
         title={errorTitle}
@@ -232,7 +233,7 @@ export function EntityTable<T>({
   }
 
   // ── Empty ────────────────────────────────────────────────
-  if (!rows.length) {
+  if (rows.length === 0) {
     return (
       <EmptyState
         title={emptyTitle}
@@ -243,22 +244,22 @@ export function EntityTable<T>({
   }
 
   // ── Sort handler ─────────────────────────────────────────
-  const handleSort = (field: string) => {
+  function handleSort(field: string) {
     if (!onSort) return;
     const nextDirection: SortDirection =
       sort?.field === field && sort.direction === 'asc' ? 'desc' : 'asc';
     onSort(field, nextDirection);
-  };
+  }
 
   // ── Render ───────────────────────────────────────────────
-  const hasExpansion = Boolean(renderRowExpansion);
+  const hasExpansion = renderRowExpansion !== undefined;
   const colSpan = columns.length + (hasExpansion ? 1 : 0);
 
   return (
     <div className={cn('space-y-4', className)}>
 
       {/* Mobile card view */}
-      {renderMobileCard && (
+      {renderMobileCard !== undefined && (
         <div className="grid gap-3 sm:grid-cols-2 md:hidden" role="list" aria-label={ariaLabel}>
           {rows.map((row) => (
             <div key={keyOf(row)} role="listitem">
@@ -269,36 +270,37 @@ export function EntityTable<T>({
       )}
 
       {/* Desktop table */}
-      <Card className={cn('overflow-hidden', renderMobileCard ? 'hidden md:block' : '')}>
+      <Card className={cn('overflow-hidden', renderMobileCard !== undefined ? 'hidden md:block' : '')}>
         <div className="overflow-x-auto">
           <Table aria-label={ariaLabel}>
             <TableHeader>
               <TableRow>
                 {hasExpansion && <TableHead className="w-12" />}
-                {columns.map((col) => (
-                  <TableHead
-                    key={col.key}
-                    className={col.className}
-                  >
-                    {col.sortable && onSort ? (
-                      <button
-                        type="button"
-                        className="inline-flex cursor-pointer items-center font-black hover:text-foreground"
-                        onClick={() => handleSort(col.key)}
-                        aria-sort={
-                          sort?.field === col.key
-                            ? sort.direction === 'asc' ? 'ascending' : 'descending'
-                            : 'none'
-                        }
-                      >
-                        {col.header}
-                        <SortIcon field={col.key} sort={sort} />
-                      </button>
-                    ) : (
-                      col.header
-                    )}
-                  </TableHead>
-                ))}
+                {columns.map((col) => {
+                  const sortDir = col.sortable && sort?.field === col.key
+                    ? (sort.direction === 'asc' ? 'ascending' : 'descending') as 'ascending' | 'descending'
+                    : undefined;
+                  return (
+                    <TableHead
+                      key={col.key}
+                      className={col.className}
+                      aria-sort={sortDir}
+                    >
+                      {col.sortable === true && onSort !== undefined ? (
+                        <button
+                          type="button"
+                          className="inline-flex cursor-pointer items-center font-black hover:text-foreground"
+                          onClick={() => handleSort(col.key)}
+                        >
+                          {col.header}
+                          <SortIcon field={col.key} sort={sort} />
+                        </button>
+                      ) : (
+                        col.header
+                      )}
+                    </TableHead>
+                  );
+                })}
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -308,11 +310,11 @@ export function EntityTable<T>({
                 return (
                   <Fragment key={rowKey}>
                     <TableRow
-                      onClick={onRowClick ? () => onRowClick(row) : undefined}
-                      className={cn(onRowClick && 'cursor-pointer')}
-                      tabIndex={onRowClick ? 0 : undefined}
+                      onClick={onRowClick !== undefined ? () => onRowClick(row) : undefined}
+                      className={cn(onRowClick !== undefined && 'cursor-pointer')}
+                      tabIndex={onRowClick !== undefined ? 0 : undefined}
                       onKeyDown={
-                        onRowClick
+                        onRowClick !== undefined
                           ? (e) => {
                               if (e.key === 'Enter' || e.key === ' ') {
                                 e.preventDefault();
@@ -324,7 +326,7 @@ export function EntityTable<T>({
                       aria-expanded={hasExpansion ? isExpanded : undefined}
                     >
                       {hasExpansion && (
-                        <TableCell onClick={(e) => e.stopPropagation()}>
+                        <TableCell onClick={(e) => { e.stopPropagation(); }}>
                           <span className="text-xs text-muted-foreground">{isExpanded ? '▲' : '▼'}</span>
                         </TableCell>
                       )}
@@ -335,7 +337,7 @@ export function EntityTable<T>({
                       ))}
                     </TableRow>
 
-                    {hasExpansion && isExpanded && renderRowExpansion && (
+                    {hasExpansion && isExpanded && renderRowExpansion !== undefined && (
                       <TableRow>
                         <TableCell colSpan={colSpan} className="bg-muted/30 p-4">
                           {renderRowExpansion(row)}
@@ -351,7 +353,7 @@ export function EntityTable<T>({
       </Card>
 
       {/* Pagination */}
-      {pagination && <PaginationBar pagination={pagination} />}
+      {pagination !== undefined && <PaginationBar pagination={pagination} />}
     </div>
   );
 }
