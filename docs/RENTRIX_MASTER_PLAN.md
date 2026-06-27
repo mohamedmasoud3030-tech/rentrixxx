@@ -132,6 +132,7 @@ Classify every non-complete item with exactly one of these statuses:
 
 | Item | Status | Current note |
 | --- | --- | --- |
+| UI Consistency Phase (ADR-008) | `READY` | Build `EntityTable` + `EntityCard`, migrate all list pages. See `docs/decisions/ADR-008-unified-ui-components.md`. |
 | Authenticated ADMIN browser QA | `FINAL DELIVERY GATE — BLOCKED` | Final handover must verify login, protected routes, invoice -> payment -> receipt behavior, reports refresh, RTL/LTR, mobile, print, and operator-critical workflows. Evidence is tracked in `docs/ai/FINAL_DELIVERY_GATE_QA_EVIDENCE.md`. |
 | Production GO/NO-GO | `BLOCKED` | Pending B-1/B-2/B-3/B-4 live handover evidence; full production readiness must not be claimed before this closes. |
 | Mobile/physical-device print QA | `FINAL DELIVERY GATE — BLOCKED` | Repository supports print styles/browser print, but device evidence is still required. |

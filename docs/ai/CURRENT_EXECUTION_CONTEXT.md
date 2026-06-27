@@ -262,9 +262,13 @@ Do not claim production readiness until the final delivery gates close with fres
 ## Current Next PR Order
 
 1. Keep live final-delivery QA parked as BLOCKED until a human operator supplies B-1/B-2/B-3/B-4 evidence.
-2. Continue v0.5 commercial hardening as repo-only planning/runbook work: operator onboarding checklist, QA scripts, runbooks.
-3. **Mobile UX Phase 2 remaining:** ReportsPage (4 financial tables — complex layout, deferred until UI polish pass).
-4. If final delivery QA later reveals bugs, open narrow fix PRs per bug, no bundled changes.
+2. **UI Consistency Phase — ADR-008 (READY):** Build `EntityTable` + `EntityCard` unified components and migrate all list pages. Three sub-phases — see `docs/decisions/ADR-008-unified-ui-components.md` and `docs/ai/UI_COMPONENT_GUIDE.md`.
+   - Phase A: Build `EntityTable`, delete dead `DataTable`, migrate `people-list-page` + `maintenance-page` + `receipts-page`
+   - Phase B: Build `EntityCard` (avatar + inline actions), replace `PersonCard`/`OwnerCard` in `PeopleListPage` + `OwnersPage`
+   - Phase C: Migrate remaining pages (`units-list`, `properties-list`, `audit-log`, `lands`, `leads`, `commissions`, `reports/*`) + enforce `ListPage` scaffold everywhere
+3. Continue v0.5 commercial hardening as repo-only planning/runbook work: operator onboarding checklist, QA scripts, runbooks.
+4. **Mobile UX Phase 2 remaining:** ReportsPage responsive dual-view (part of UI Consistency Phase C).
+5. If final delivery QA later reveals bugs, open narrow fix PRs per bug, no bundled changes.
 
 Do not open new DB/migration PRs without a confirmed repo or QA bug — the DB layer is treated as stable from current repository evidence.
 
