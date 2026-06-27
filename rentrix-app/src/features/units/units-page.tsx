@@ -1,7 +1,6 @@
 import { Link } from '@tanstack/react-router';
 import { Building2, DoorOpen, Home } from 'lucide-react';
 import { useDeferredValue, useMemo, useState } from 'react';
-import { EmptyState } from '@/components/empty-state';
 import { PageHeader } from '@/components/layout/page-header';
 import { RouteLoadingState } from '@/components/loading-state';
 import { Button } from '@/components/ui/button';

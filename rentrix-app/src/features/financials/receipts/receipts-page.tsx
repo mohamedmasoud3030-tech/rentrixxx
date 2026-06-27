@@ -274,7 +274,7 @@ function ReceiptsHistoryContent() {
                         )}
                       </div>
                     )},
-                  ] as ColumnDef<typeof filteredReceipts[number]>[]}
+                  ] as ColumnDef<ReceiptRecord>[]}
                   keyOf={(r) => r.id}
                   emptyTitle="لا توجد إيصالات"
                   emptyDescription="لا توجد إيصالات تطابق معايير البحث الحالية."

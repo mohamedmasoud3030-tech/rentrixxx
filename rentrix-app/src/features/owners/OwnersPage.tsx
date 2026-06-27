@@ -151,9 +151,7 @@ function OwnershipSummary({ row }: Readonly<{ row: OwnerWorkspaceRow }>) {
   return <div className="space-y-1 text-xs text-muted-foreground">{row.properties.map((p) => <div key={`${row.owner.id}-${p.id}-ownership`}>{getOwnerPropertyOwnershipLabel(p)}</div>)}</div>;
 }
 
-type OwnerWorkspaceRowProps = Readonly<{ row: OwnerWorkspaceRow; selectedOwnerId: string | null; onEditOwner: (owner: Owner) => void; onSelectOwner: (ownerId: string) => void }>;
-
-// OwnerWorkspaceRowView removed — logic inlined into EntityTable columns below
+// OwnerWorkspaceRowView inlined into EntityTable columns (see OwnerWorkspaceTable)
 
 type OwnerWorkspaceTableProps = Readonly<{
   rows: OwnerWorkspaceRow[];

@@ -334,7 +334,7 @@ export function EntityTable<T>({
                     </TableRow>
 
                     {hasExpansion && isExpanded && renderRowExpansion !== undefined && (
-                      <TableRow>
+                      <TableRow key={`${rowKey}-expansion`}>
                         <TableCell colSpan={colSpan} className="bg-muted/30 p-4">
                           {renderRowExpansion(row)}
                         </TableCell>
