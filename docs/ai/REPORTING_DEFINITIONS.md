@@ -4,11 +4,11 @@ This file records current repository evidence for reporting and balance metrics.
 
 ## Current Sources
 
-- Primary service: `artifacts/rentrix/src/features/financials/reports/financialReportsService.ts`.
-- Reports page composition and CSV export: `artifacts/rentrix/src/features/reports/reports-page.tsx`.
-- Dashboard projection: `artifacts/rentrix/src/app/dashboardSnapshot.ts`.
-- Receipt projection: `artifacts/rentrix/src/features/financials/receipts/receiptService.ts`.
-- Financial math helpers: `artifacts/rentrix/src/features/financials/financialMath.ts`.
+- Primary service: `rentrix-app/src/features/financials/reports/financialReportsService.ts`.
+- Reports page composition and CSV export: `rentrix-app/src/features/reports/reports-page.tsx`.
+- Dashboard projection: `rentrix-app/src/app/dashboardSnapshot.ts`.
+- Receipt projection: `rentrix-app/src/features/financials/receipts/receiptService.ts`.
+- Financial math helpers: `rentrix-app/src/features/financials/financialMath.ts`.
 
 ## Shared Rules
 
@@ -49,7 +49,7 @@ This is the formula used by current TypeScript report helpers. Do not introduce 
 Current evidence is mixed:
 
 - Active TypeScript `Invoice` report rows select and summarize `amount` and `paid_amount`; they do not select `tax_amount`.
-- The generated frontend database type search used for this review did not show `tax_amount` in `artifacts/rentrix/src/types/database.ts`.
+- The generated frontend database type search used for this review did not show `tax_amount` in `rentrix-app/src/types/database.ts`.
 - Local migrations still reference `tax_amount` in older receipt posting and report SQL.
 - The latest `record_invoice_payment_atomic` migration uses `to_jsonb(i)->>'tax_amount'`, which is tolerant when the column is absent from the row JSON.
 
