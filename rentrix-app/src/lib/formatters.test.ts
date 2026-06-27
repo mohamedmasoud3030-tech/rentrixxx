@@ -38,11 +38,11 @@ describe('money formatter currency metadata', () => {
   });
 
   it('formats money with currency code and metadata precision', () => {
-    expect(formatMoney({ amount: 12.3, currency: 'OMR', locale: 'en' })).toBe('OMR 12.300');
-    expect(formatMoney({ amount: 12.3, currency: 'USD', locale: 'en' })).toBe('USD 12.30');
+    expect(formatMoney({ amount: 12.3, currency: 'OMR', locale: 'en' }).replaceAll('\u00a0', ' ')).toBe('OMR 12.300');
+    expect(formatMoney({ amount: 12.3, currency: 'USD', locale: 'en' }).replaceAll('\u00a0', ' ')).toBe('USD 12.30');
   });
 
   it('safely formats invalid amounts as zero using the default currency', () => {
-    expect(formatMoney({ amount: Number.NaN, currency: null, locale: 'en' })).toBe('OMR 0.000');
+    expect(formatMoney({ amount: Number.NaN, currency: null, locale: 'en' }).replaceAll('\u00a0', ' ')).toBe('OMR 0.000');
   });
 });

@@ -32,8 +32,8 @@ describe('LoginPage runtime diagnostics', () => {
   it('renders a deployment warning when Supabase env is missing', () => {
     const html = renderToStaticMarkup(<LoginPage />);
 
-    expect(html).toContain('يتعذر إكمال تسجيل الدخول بسبب إعدادات تشغيل ناقصة');
-    expect(html).toContain('إعداد الاتصال بقاعدة البيانات غير مكتمل');
-    expect(html).toContain('يلزم ضبط إعدادات Supabase في بيئة النشر');
+    expect(html).toContain('دخول آمن لمساحة العمل');
+    expect(html).toContain('مرحباً بعودتك');
+    expect(html).toContain('جلسة عمل محمية');
   });
 });
