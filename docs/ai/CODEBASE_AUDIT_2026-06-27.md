@@ -271,13 +271,25 @@ features/maintenance/maintenance-schema.ts
 | `docs/ai/engineering-policy.md` | ✅ سليمة |
 | `docs/ai/PRINT_AND_EXPORT_READINESS.md` | ✅ سليمة |
 
-### 6.2 وثائق تحتاج تحديث 🔴
+### 6.2 وثائق تم تحديثها ✅ (2026-06-28)
 
-| الوثيقة | المشكلة |
+| الوثيقة | المشكلة | الحالة |
+|---|---|---|
+| `docs/ai/FINAL_DELIVERY_GATE_QA_EVIDENCE.md` | كانت تقول "25 test files" — الواقع 62 ملف | ✅ تم التصحيح |
+| `docs/ai/V05_COMMERCIAL_HARDENING_PREP.md` | لا تذكر UI Consistency Phase | ✅ تم الإضافة |
+| `docs/FIRST_CLIENT_DELIVERY_PLAN.md` | لا تذكر UI Consistency Phase | ✅ تم الإضافة |
+| `docs/ROADMAP.md` | تذكر `artifacts/rentrix/` بدلاً من `rentrix-app/` | ✅ تم التصحيح |
+| `docs/RENTRIX_MASTER_PLAN.md` | تذكر `artifacts/rentrix/` في جميع المسارات | ✅ تم التصحيح |
+| `docs/ai/ONBOARDING.md` | تذكر `artifacts/rentrix/` في جميع المسارات | ✅ تم التصحيح |
+| `docs/ai/CURRENT_EXECUTION_CONTEXT.md` | تذكر `artifacts/rentrix/` في المسارات | ✅ تم التصحيح |
+| `docs/ai/REPORTING_DEFINITIONS.md` | تذكر `artifacts/rentrix/src/` في مسارات الملفات | ✅ تم التصحيح |
+| `QUICK_STATUS.md` | مسار خاطئ + عدد اختبارات قديم + لا يذكر ADR-008 | ✅ تم التصحيح |
+
+### 6.3 وثائق جديدة أُضيفت ✅ (2026-06-28)
+
+| الوثيقة | المحتوى |
 |---|---|
-| `docs/ai/FINAL_DELIVERY_GATE_QA_EVIDENCE.md` | تقول "25 test files" — الواقع 62 ملف |
-| `docs/ai/V05_COMMERCIAL_HARDENING_PREP.md` | لا تذكر UI Consistency Phase |
-| `docs/FIRST_CLIENT_DELIVERY_PLAN.md` | لا تذكر UI Consistency Phase |
+| `docs/ERPNEXT_MIGRATION_PLAN.md` | خطة نقل المحركات من ERPNext — P0/P1/P2 مع مواصفات التنفيذ |
 
 ### 6.3 وثائق قابلة للحذف 🗑️
 
