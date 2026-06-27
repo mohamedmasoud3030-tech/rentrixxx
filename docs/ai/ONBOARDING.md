@@ -33,7 +33,7 @@ Keep the stabilization scope bounded:
 The shipped product boundary is:
 
 ```text
-artifacts/rentrix/   # active React application
+rentrix-app/   # active React application
 lib/                # shared workspace libraries
 supabase/           # canonical migrations and backend assets
 ```
@@ -56,7 +56,7 @@ Do not import agent-tooling files, generated analysis artifacts, or historical r
 
 ## 3. Current constrained-beta application snapshot
 
-The active application is under `artifacts/rentrix/`. The visible desktop navigation currently exposes the verified operational flow only.
+The active application is under `rentrix-app/`. The visible desktop navigation currently exposes the verified operational flow only.
 
 ### Visible desktop navigation
 
@@ -184,7 +184,7 @@ Then load only the task-specific references needed for the requested change.
 Before editing:
 
 1. inspect the repository root;
-2. inspect `artifacts/rentrix/`;
+2. inspect `rentrix-app/`;
 3. identify the active roadmap release and first ready item;
 4. confirm the active route, service, schema, migration, and test paths from code;
 5. classify legacy, backup, archive, generated, and vendor files before using them;
@@ -218,9 +218,9 @@ pnpm install --frozen-lockfile
 pnpm typecheck
 pnpm lint
 pnpm build
-pnpm --filter ./artifacts/rentrix run typecheck:test
-pnpm --filter ./artifacts/rentrix test
-pnpm --filter ./artifacts/rentrix run test:financials
+pnpm --filter ./rentrix-app run typecheck:test
+pnpm --filter ./rentrix-app test
+pnpm --filter ./rentrix-app run test:financials
 ```
 
 Use targeted tests during implementation, then run the relevant full gate before handoff. For schema or RLS changes, also run the repository-approved Supabase validation flow when the required local or preview environment is available.
