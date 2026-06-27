@@ -1,1 +1,1 @@
-export { AppShell as ProtectedRouteComponent } from '@/layouts/app-shell';
+export { AppShell as ProtectedRouteComponent } from '@/components/layout/app-shell';
