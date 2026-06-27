@@ -19,3 +19,6 @@ export { StatCard } from "./stat-card";
 export { FilterTabs } from "./filter-tabs";
 export { KpiCard } from "./kpi-card";
 export { InlineStatCard } from "./inline-stat-card";
+
+// ADR-008 Phase A — unified entity table
+export { EntityTable, type ColumnDef, type SortState, type SortDirection, type PaginationState, type EntityTableProps } from "./entity-table";
