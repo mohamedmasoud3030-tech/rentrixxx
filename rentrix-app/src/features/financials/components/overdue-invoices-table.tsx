@@ -1,5 +1,5 @@
+import { EntityTable, type ColumnDef } from '@/components/ui/entity-table';
 import { Button } from '@/components/ui/button';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { cn } from '@/lib/utils';
 import type { OverdueInvoiceReportRow } from '../reports/financialReportsService';
 import { ARABIC_LOCALE, EMPTY_FIELD_VALUE, getArrearsBucketLabel, getOverdueRowBucketKey } from './arrears-workflow-helpers';
@@ -19,118 +19,71 @@ function getContextLabel(row: OverdueInvoiceReportRow) {
 }
 
 export function OverdueInvoicesTable({ rows, selectedInvoiceId, onSelectInvoice }: OverdueInvoicesTableProps) {
-  return (
-    <div>
-      {/* Mobile cards — hidden on md+ */}
-      <div className="grid gap-3 md:hidden">
-        {rows.map((row) => {
-          const isSelected = selectedInvoiceId === row.invoiceId;
-          const bucket = getOverdueRowBucketKey(row);
-          return (
-            <div
-              key={row.invoiceId}
-              className={cn(
-                'rounded-2xl border bg-background p-4 space-y-3',
-                isSelected ? 'ring-2 ring-primary/40 bg-primary/5' : '',
-              )}
-            >
-              <div className="flex items-start justify-between gap-2">
-                <button
-                  type="button"
-                  className="font-black text-primary underline-offset-4 hover:underline text-base"
-                  onClick={() => onSelectInvoice(row.invoiceId)}
-                >
-                  #{row.shortInvoiceId || row.invoiceId.slice(0, 8)}
-                </button>
-                <span className="rounded-full bg-destructive/10 px-2.5 py-0.5 text-xs font-bold text-destructive">
-                  {getArrearsBucketLabel(bucket)}
-                </span>
-              </div>
-              <div className="grid grid-cols-2 gap-2 text-sm">
-                <div>
-                  <p className="text-xs text-muted-foreground">المستأجر</p>
-                  <p className="font-medium">{row.tenantName ?? EMPTY_FIELD_VALUE}</p>
-                </div>
-                <div>
-                  <p className="text-xs text-muted-foreground">الموقع</p>
-                  <p className="font-medium">{getContextLabel(row)}</p>
-                </div>
-                <div>
-                  <p className="text-xs text-muted-foreground">الاستحقاق</p>
-                  <p className="font-medium">{formatDate(row.dueDate)}</p>
-                </div>
-                <div>
-                  <p className="text-xs text-muted-foreground">أيام التأخير</p>
-                  <p className="font-bold text-destructive">{row.daysOverdue.toLocaleString(ARABIC_LOCALE)}</p>
-                </div>
-                <div>
-                  <p className="text-xs text-muted-foreground">المتبقي</p>
-                  <p className="font-black text-destructive">{formatMoney(row.remainingAmount)}</p>
-                </div>
-                <div>
-                  <p className="text-xs text-muted-foreground">الحالة</p>
-                  <span className="inline-flex rounded-full bg-secondary px-2 py-0.5 text-xs font-bold text-secondary-foreground">
-                    {formatInvoiceStatusLabel(row.status)}
-                  </span>
-                </div>
-              </div>
-            </div>
-          );
-        })}
-      </div>
+  const columns: ColumnDef<OverdueInvoiceReportRow>[] = [
+    {
+      key: 'invoice_id',
+      header: 'الفاتورة',
+      render: (row) => (
+        <button type="button" className="font-black text-primary underline-offset-4 hover:underline" onClick={() => onSelectInvoice(row.invoiceId)}>
+          #{row.shortInvoiceId || row.invoiceId.slice(0, 8)}
+        </button>
+      ),
+    },
+    { key: 'tenant', header: 'المستأجر', render: (row) => row.tenantName ?? EMPTY_FIELD_VALUE },
+    { key: 'context', header: 'العقار / الوحدة', render: (row) => getContextLabel(row) },
+    { key: 'contract_id', header: 'العقد', render: (row) => formatShortId(row.contractId) },
+    { key: 'due_date', header: 'الاستحقاق', render: (row) => formatDate(row.dueDate) },
+    { key: 'days_overdue', header: 'أيام التأخير', render: (row) => row.daysOverdue.toLocaleString(ARABIC_LOCALE) },
+    { key: 'amount', header: 'الإجمالي', render: (row) => formatMoney(row.amount) },
+    { key: 'paid', header: 'المدفوع', render: (row) => formatMoney(row.paidAmount) },
+    { key: 'remaining', header: 'المتبقي', render: (row) => <span className="font-black text-destructive">{formatMoney(row.remainingAmount)}</span> },
+    {
+      key: 'status',
+      header: 'الحالة',
+      render: (row) => (
+        <span className="inline-flex rounded-full bg-secondary px-2.5 py-1 text-xs font-bold text-secondary-foreground">
+          {formatInvoiceStatusLabel(row.status)}
+        </span>
+      ),
+    },
+    {
+      key: 'bucket',
+      header: 'العمر',
+      render: (row) => getArrearsBucketLabel(getOverdueRowBucketKey(row)),
+    },
+  ];
 
-      {/* Desktop table — hidden on mobile */}
-      <div className="hidden overflow-hidden rounded-3xl border bg-background md:block">
-        <div className="overflow-x-auto">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>الفاتورة</TableHead>
-                <TableHead>المستأجر</TableHead>
-                <TableHead>العقار / الوحدة</TableHead>
-                <TableHead>العقد</TableHead>
-                <TableHead>الاستحقاق</TableHead>
-                <TableHead>أيام التأخير</TableHead>
-                <TableHead>الإجمالي</TableHead>
-                <TableHead>المدفوع</TableHead>
-                <TableHead>المتبقي</TableHead>
-                <TableHead>الحالة</TableHead>
-                <TableHead>العمر</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {rows.map((row) => {
-                const isSelected = selectedInvoiceId === row.invoiceId;
-                const bucket = getOverdueRowBucketKey(row);
-                return (
-                  <TableRow key={row.invoiceId} className={cn(isSelected ? 'bg-primary/5 ring-1 ring-inset ring-primary/20' : undefined)}>
-                    <TableCell>
-                      <button type="button" className="font-black text-primary underline-offset-4 hover:underline" onClick={() => onSelectInvoice(row.invoiceId)}>
-                        #{row.shortInvoiceId || row.invoiceId.slice(0, 8)}
-                      </button>
-                    </TableCell>
-                    <TableCell>{row.tenantName ?? EMPTY_FIELD_VALUE}</TableCell>
-                    <TableCell>{getContextLabel(row)}</TableCell>
-                    <TableCell>{formatShortId(row.contractId)}</TableCell>
-                    <TableCell>{formatDate(row.dueDate)}</TableCell>
-                    <TableCell>{row.daysOverdue.toLocaleString(ARABIC_LOCALE)}</TableCell>
-                    <TableCell>{formatMoney(row.amount)}</TableCell>
-                    <TableCell>{formatMoney(row.paidAmount)}</TableCell>
-                    <TableCell className="font-black text-destructive">{formatMoney(row.remainingAmount)}</TableCell>
-                    <TableCell>
-                      <span className="inline-flex rounded-full bg-secondary px-2.5 py-1 text-xs font-bold text-secondary-foreground">
-                        {formatInvoiceStatusLabel(row.status)}
-                      </span>
-                    </TableCell>
-                    <TableCell>{getArrearsBucketLabel(bucket)}</TableCell>
-                  </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
-        </div>
-      </div>
-    </div>
+  return (
+    <EntityTable
+      aria-label="جدول الفواتير المتأخرة"
+      rows={rows}
+      columns={columns}
+      keyOf={(row) => row.invoiceId}
+      emptyTitle="لا توجد فواتير متأخرة"
+      emptyDescription="لا توجد فواتير متأخرة حسب تاريخ as-of."
+      renderMobileCard={(row) => {
+        const isSelected = selectedInvoiceId === row.invoiceId;
+        const bucket = getOverdueRowBucketKey(row);
+        return (
+          <div className={cn('rounded-2xl border bg-background p-4 space-y-3', isSelected ? 'ring-2 ring-primary/40 bg-primary/5' : '')}>
+            <div className="flex items-start justify-between gap-2">
+              <button type="button" className="font-black text-primary underline-offset-4 hover:underline text-base" onClick={() => onSelectInvoice(row.invoiceId)}>
+                #{row.shortInvoiceId || row.invoiceId.slice(0, 8)}
+              </button>
+              <span className="rounded-full bg-destructive/10 px-2.5 py-0.5 text-xs font-bold text-destructive">{getArrearsBucketLabel(bucket)}</span>
+            </div>
+            <div className="grid grid-cols-2 gap-2 text-sm">
+              <div><p className="text-xs text-muted-foreground">المستأجر</p><p className="font-medium">{row.tenantName ?? EMPTY_FIELD_VALUE}</p></div>
+              <div><p className="text-xs text-muted-foreground">الموقع</p><p className="font-medium">{getContextLabel(row)}</p></div>
+              <div><p className="text-xs text-muted-foreground">الاستحقاق</p><p className="font-medium">{formatDate(row.dueDate)}</p></div>
+              <div><p className="text-xs text-muted-foreground">أيام التأخير</p><p className="font-bold text-destructive">{row.daysOverdue.toLocaleString(ARABIC_LOCALE)}</p></div>
+              <div><p className="text-xs text-muted-foreground">المتبقي</p><p className="font-black text-destructive">{formatMoney(row.remainingAmount)}</p></div>
+              <div><p className="text-xs text-muted-foreground">الحالة</p><span className="inline-flex rounded-full bg-secondary px-2 py-0.5 text-xs font-bold text-secondary-foreground">{formatInvoiceStatusLabel(row.status)}</span></div>
+            </div>
+          </div>
+        );
+      }}
+    />
   );
 }
 
@@ -159,22 +112,10 @@ export function SelectedOverdueInvoiceCard({ row, onShowInvoice }: SelectedOverd
         <span className="rounded-full bg-destructive/10 px-3 py-1 text-xs font-bold text-destructive">{getArrearsBucketLabel(bucket)}</span>
       </div>
       <dl className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <div>
-          <dt className="text-xs text-muted-foreground">المستأجر</dt>
-          <dd className="font-bold">{row.tenantName ?? EMPTY_FIELD_VALUE}</dd>
-        </div>
-        <div>
-          <dt className="text-xs text-muted-foreground">السياق</dt>
-          <dd className="font-bold">{getContextLabel(row)}</dd>
-        </div>
-        <div>
-          <dt className="text-xs text-muted-foreground">تاريخ الاستحقاق</dt>
-          <dd className="font-bold">{formatDate(row.dueDate)}</dd>
-        </div>
-        <div>
-          <dt className="text-xs text-muted-foreground">المتبقي</dt>
-          <dd className="font-black text-destructive">{formatMoney(row.remainingAmount)}</dd>
-        </div>
+        <div><dt className="text-xs text-muted-foreground">المستأجر</dt><dd className="font-bold">{row.tenantName ?? EMPTY_FIELD_VALUE}</dd></div>
+        <div><dt className="text-xs text-muted-foreground">السياق</dt><dd className="font-bold">{getContextLabel(row)}</dd></div>
+        <div><dt className="text-xs text-muted-foreground">تاريخ الاستحقاق</dt><dd className="font-bold">{formatDate(row.dueDate)}</dd></div>
+        <div><dt className="text-xs text-muted-foreground">المتبقي</dt><dd className="font-black text-destructive">{formatMoney(row.remainingAmount)}</dd></div>
       </dl>
       <div className="mt-4 flex flex-wrap items-center gap-2">
         <Button variant="secondary" onClick={() => onShowInvoice(row.invoiceId)}>عرض الفاتورة في قسم الفواتير</Button>

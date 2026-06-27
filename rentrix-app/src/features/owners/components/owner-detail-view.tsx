@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { AsyncContentState } from '@/components/async-content-state';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { EmptyState } from '@/components/empty-state';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { EntityTable } from '@/components/ui/entity-table';
 import { formatMoney } from '@/features/financials/components/financials-formatters';
 import { getOwnerDisplayName } from '../ownerService';
 import type { OwnerDetailState } from '../types';
@@ -65,24 +65,24 @@ export function OwnerDetailView({ state }: Readonly<{ state: OwnerDetailState }>
       <Card>
         <CardHeader><CardTitle>العقارات المرتبطة</CardTitle><CardDescription>تظهر فقط العلاقات النشطة الموجودة في `property_owners` مع عدد الوحدات والعقود لكل عقار.</CardDescription></CardHeader>
         <CardContent>
-          {properties.length === 0 ? <EmptyState title="لا توجد عقارات مرتبطة" description="لا توجد علاقة ملكية نشطة موثقة لهذا المالك." /> : (
-            <Table><TableHeader><TableRow><TableHead>العقار</TableHead><TableHead>العنوان</TableHead><TableHead>نسبة الملكية</TableHead><TableHead>الوحدات</TableHead><TableHead>العقود النشطة</TableHead><TableHead>الحالة</TableHead></TableRow></TableHeader><TableBody>{properties.map((property) => {
-              const ownershipPercentage = property.property_owners.find((link) => link.owner_id === owner.id && !link.ends_on)?.ownership_percentage ?? 100;
-              const propertyUnitsCount = units.filter((unit) => unit.property_id === property.id).length;
-              const propertyActiveContractsCount = contracts.filter((contract) => contract.property_id === property.id && contract.status === 'active').length;
-
-              return (
-                <TableRow key={property.id}>
-                  <TableCell className="font-black">{property.title}</TableCell>
-                  <TableCell>{property.address}</TableCell>
-                  <TableCell>{ownershipPercentage.toLocaleString('ar')}%</TableCell>
-                  <TableCell>{propertyUnitsCount.toLocaleString('ar')}</TableCell>
-                  <TableCell>{propertyActiveContractsCount.toLocaleString('ar')}</TableCell>
-                  <TableCell>{property.status}</TableCell>
-                </TableRow>
-              );
-            })}</TableBody></Table>
-          )}
+          <EntityTable
+            aria-label="جدول عقارات المالك"
+            rows={properties}
+            columns={[
+              { key: 'title', header: 'العقار', render: (property) => <span className="font-black">{property.title}</span> },
+              { key: 'address', header: 'العنوان', render: (property) => property.address },
+              { key: 'ownership', header: 'نسبة الملكية', render: (property) => {
+                const pct = property.property_owners.find((link) => link.owner_id === owner.id && !link.ends_on)?.ownership_percentage ?? 100;
+                return `${pct.toLocaleString('ar')}%`;
+              }},
+              { key: 'units', header: 'الوحدات', render: (property) => units.filter((u) => u.property_id === property.id).length.toLocaleString('ar') },
+              { key: 'active_contracts', header: 'العقود النشطة', render: (property) => contracts.filter((c) => c.property_id === property.id && c.status === 'active').length.toLocaleString('ar') },
+              { key: 'status', header: 'الحالة', render: (property) => property.status },
+            ]}
+            keyOf={(property) => property.id}
+            emptyTitle="لا توجد عقارات مرتبطة"
+            emptyDescription="لا توجد علاقة ملكية نشطة موثقة لهذا المالك."
+          />
         </CardContent>
       </Card>
     </section>
