@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { FormSection } from '@/components/ui/form-section';
 import { Input } from '@/components/ui/input';
+import { useAgreementCoverage } from '@/features/owners/useOwnerAgreements';
 import { Select } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { RouteLoadingState } from '@/components/loading-state';
@@ -33,10 +34,13 @@ export function ContractFormPage() {
     defaultValues: { property_id: '', unit_id: '', tenant_id: '', start_date: '', end_date: '', rent_amount: 0, payment_cycle: 'monthly', payment_terms_id: '', status: 'draft', cancellation_reason: '', notes: '' },
   });
   const propertyId = useWatch({ control: form.control, name: 'property_id' });
+  const startDate = useWatch({ control: form.control, name: 'start_date' });
+  const endDate = useWatch({ control: form.control, name: 'end_date' });
   const propertiesQuery = useQuery({ queryKey: ['contracts', 'properties-options'], queryFn: () => listProperties({ search: '', status: 'all', page: 1, pageSize: 200 }) });
   const peopleQuery = useQuery({ queryKey: ['contracts', 'tenant-options'], queryFn: () => listPeople({ search: '', type: 'tenant', page: 1, pageSize: 200 }) });
   const paymentTermsQuery = usePaymentTerms();
   const unitsQuery = useQuery({ queryKey: ['contracts', 'unit-options', propertyId], queryFn: () => listUnitsByProperty(propertyId || ''), enabled: Boolean(propertyId) });
+  const agreementCoverageQuery = useAgreementCoverage(propertyId, startDate, endDate);
   const selectedProperty = propertiesQuery.data?.rows.find((property) => property.id === propertyId);
   const currentLinkedUnitId = isEdit ? contractQuery.data?.unit_id ?? null : null;
 
