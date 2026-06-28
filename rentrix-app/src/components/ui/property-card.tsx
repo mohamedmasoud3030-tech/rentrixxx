@@ -10,7 +10,7 @@ interface PropertyCardProps {
    * Total number of units attached to the property.
    * - `undefined` (not provided by the caller) means the list view does not
    *   have a safe source for this count, so we render a neutral label
-   *   instead of a misleading "0/0".
+   *   instead of a misleading "0/0" or developer-speak.
    * - `0` is an honest "we have data, the property has no units".
    */
   unitCount?: number;
@@ -35,7 +35,7 @@ export function formatPropertyUnitSummary(unitCount: number | undefined, occupie
   hasCount: boolean;
 } {
   if (unitCount === undefined) {
-    return { text: 'الوحدات غير محسوبة هنا', hasCount: false };
+    return { text: 'تفاصيل الوحدات', hasCount: false };
   }
   if (unitCount === 0) {
     return { text: '0 وحدة', hasCount: true };
@@ -113,7 +113,7 @@ export function PropertyCard({
         {monthlyRent != null && formatMoney && (
           <div className="flex items-center gap-1 text-xs">
             <TrendingUp className="size-3 text-emerald-500" />
-            <span className="font-bold text-emerald-600 dark:text-emerald-400">{formatMoney(monthlyRent)}</span>
+            <span className="font-bold text-emerald-600">{formatMoney(monthlyRent)}</span>
           </div>
         )}
       </div>

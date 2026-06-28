@@ -47,6 +47,9 @@ const dashboardRoute = createRoute({ getParentRoute: () => protectedRoute, path:
 const propertiesRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/properties', component: lazyRouteComponent(() => import('@/routes/_protected.properties'), 'PropertiesRouteComponent'), staticData: { title: 'العقارات' } });
 const propertyNewRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/properties/new', component: lazyRouteComponent(() => import('@/routes/_protected.properties.new'), 'PropertyNewRouteComponent'), staticData: { title: 'إضافة عقار' } });
 const propertyDetailRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/properties/$propertyId', component: lazyRouteComponent(() => import('@/routes/_protected.properties.$propertyId'), 'PropertyDetailRouteComponent'), staticData: { title: 'تفاصيل العقار' } });
+const propertyIndexRoute = createRoute({ getParentRoute: () => propertyDetailRoute, path: '/', component: lazyRouteComponent(() => import('@/routes/_protected.properties.$propertyId.index'), 'PropertyOverviewRouteComponent'), staticData: { title: 'نظرة عامة على العقار' } });
+const propertyUnitsRoute = createRoute({ getParentRoute: () => propertyDetailRoute, path: '/units', component: lazyRouteComponent(() => import('@/routes/_protected.properties.$propertyId.units'), 'PropertyUnitsRouteComponent'), staticData: { title: 'وحدات العقار' } });
+const propertyUnitDetailRoute = createRoute({ getParentRoute: () => propertyDetailRoute, path: '/units/$unitId', component: lazyRouteComponent(() => import('@/routes/_protected.properties.$propertyId.units.$unitId'), 'PropertyUnitDetailRouteComponent'), staticData: { title: 'تفاصيل الوحدة بالعقار' } });
 const propertyEditRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/properties/$propertyId/edit', component: lazyRouteComponent(() => import('@/routes/_protected.properties.$propertyId.edit'), 'PropertyEditRouteComponent'), staticData: { title: 'تعديل عقار' } });
 const unitsRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/units', component: lazyRouteComponent(() => import('@/routes/_protected.units'), 'UnitsRouteComponent'), staticData: { title: 'الوحدات' } });
 const peopleRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/people', component: lazyRouteComponent(() => import('@/routes/_protected.people'), 'PeopleRouteComponent'), staticData: { title: 'الأشخاص' } });
@@ -119,7 +122,11 @@ export const routeTree = rootRoute.addChildren([
     dashboardRoute,
     propertiesRoute,
     propertyNewRoute,
-    propertyDetailRoute,
+    propertyDetailRoute.addChildren([
+      propertyIndexRoute,
+      propertyUnitsRoute,
+      propertyUnitDetailRoute,
+    ]),
     propertyEditRoute,
     unitsRoute,
     peopleRoute,

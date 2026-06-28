@@ -1,6 +1,7 @@
 import { Archive, DoorOpen, Edit, Plus } from 'lucide-react';
 import { useState } from 'react';
 import type { UseQueryResult } from '@tanstack/react-query';
+import { useNavigate } from '@tanstack/react-router';
 import { Button } from '@/components/ui/button';
 import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
@@ -27,6 +28,7 @@ export function UnitsList({ propertyId, unitsQuery }: Readonly<{ propertyId: str
   const [editingUnit, setEditingUnit] = useState<Unit | null>(null);
   const [archiveCandidate, setArchiveCandidate] = useState<Unit | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
+  const navigate = useNavigate();
 
   const openForCreate = () => { setEditingUnit(null); setModalOpen(true); };
   const openForEdit = (unit: Unit) => { setEditingUnit(unit); setModalOpen(true); };
@@ -107,6 +109,10 @@ export function UnitsList({ propertyId, unitsQuery }: Readonly<{ propertyId: str
           emptyTitle="لا توجد وحدات"
           emptyDescription="أضف الوحدات التابعة لهذا العقار من هنا."
           emptyAction={<Button onClick={openForCreate}>إضافة وحدة</Button>}
+          onRowClick={(unit) => navigate({
+            to: '/properties/$propertyId/units/$unitId',
+            params: { propertyId, unitId: unit.id }
+          })}
           renderMobileCard={(unit) => (
             <div className="space-y-1.5">
               <UnitCard
@@ -116,7 +122,10 @@ export function UnitsList({ propertyId, unitsQuery }: Readonly<{ propertyId: str
                 status={unit.status}
                 rentAmount={unit.rent_amount}
                 notes={unit.notes}
-                onClick={() => openForEdit(unit)}
+                onClick={() => navigate({
+                  to: '/properties/$propertyId/units/$unitId',
+                  params: { propertyId, unitId: unit.id }
+                })}
                 formatMoney={(value) => formatCompanyMoney(defaultCompanyLocalSettings, value)}
               />
               <div className="flex gap-2 px-1">
