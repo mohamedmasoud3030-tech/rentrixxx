@@ -56,7 +56,21 @@ export async function createPropertyWithAgreement(
   });
 
   if (error) throw new Error(formatAgreementError(error.message));
-  return data as CreatePropertyWithAgreementResult;
+  if (!isCreatePropertyWithAgreementResult(data)) {
+    throw new Error('تعذر التحقق من استجابة إنشاء العقار والاتفاقية.');
+  }
+  return data;
+}
+
+function isCreatePropertyWithAgreementResult(value: unknown): value is CreatePropertyWithAgreementResult {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    'property_id' in value &&
+    'agreement_id' in value &&
+    typeof value.property_id === 'string' &&
+    typeof value.agreement_id === 'string'
+  );
 }
 
 export async function listOwnerAgreementsForProperty(propertyId: string): Promise<OwnerAgreement[]> {
