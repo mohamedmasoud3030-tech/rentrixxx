@@ -61,7 +61,7 @@ export const DOMAIN_VALIDATION_AR = {
 
   // Agreements
   agreement_overlap: 'توجد اتفاقية تشغيل أخرى متداخلة في التواريخ لنفس العقار.',
-  agreement_not_found: 'اتفاقية التشغيل المغطية غير موجودة.',
+  agreement_not_found: 'اتفاقية التشغيل المغطية غير موجودة أو معرّفها غير مطابق.',
   agreement_not_active: 'اتفاقية التشغيل المغطية ليست نشطة.',
 
   // Contracts
@@ -74,9 +74,9 @@ export const DOMAIN_VALIDATION_AR = {
   cannot_archive_active_agreement: 'لا يمكن أرشفة اتفاقية تشغيل نشطة حالياً.',
   immutable_history_error: 'لا يمكن تعديل أو أرشفة هذا الكيان التاريخي أو المالي الحساس للمحافظة على نزاهة السجلات والتدقيق المالي.',
   
-  // Block Archive when Related Records Exist
-  cannot_archive_owner_with_active_relations: 'لا يمكن أرشفة هذا المالك لارتباطه باتفاقيات تشغيل نشطة حالياً في النظام.',
-  cannot_archive_property_with_active_relations: 'لا يمكن أرشفة هذا العقار لارتباطه باتفاقيات تشغيل نشطة حالياً في النظام.',
-  cannot_archive_unit_with_active_relations: 'لا يمكن أرشفة هذه الوحدة لارتباطها بعقود إيجار نشطة حالياً في النظام.',
-  cannot_archive_tenant_with_active_relations: 'لا يمكن أرشفة هذا المستأجر لارتباطه بعقود إيجار نشطة حالياً في النظام.'
+  // Block Archive when Related Records Exist (Active/Draft)
+  cannot_archive_owner_with_active_relations: 'لا يمكن أرشفة هذا المالك لارتباطه باتفاقيات تشغيل نشطة أو مسودة حالياً في النظام.',
+  cannot_archive_property_with_active_relations: 'لا يمكن أرشفة هذا العقار لارتباطه باتفاقيات تشغيل نشطة أو مسودة حالياً في النظام.',
+  cannot_archive_unit_with_active_relations: 'لا يمكن أرشفة هذه الوحدة لارتباطها بعقود إيجار نشطة أو مسودة حالياً في النظام.',
+  cannot_archive_tenant_with_active_relations: 'لا يمكن أرشفة هذا المستأجر لارتباطه بعقود إيجار نشطة أو مسودة حالياً في النظام.'
 };

@@ -17,7 +17,7 @@ import {
 import { DOMAIN_VALIDATION_AR } from './i18n';
 import type { Owner, Property, Unit, Tenant, OwnerAgreement, LeaseContract } from './types';
 
-describe('Phase 1 Domain Foundation Validation Rules (Fully Corrected)', () => {
+describe('Phase 1 Domain Foundation Validation Rules (Final Corrections)', () => {
   
   describe('Rule 1: Real Calendar ISO Date Validation', () => {
     test('isValidISODateString accepts true real calendar dates', () => {
@@ -154,6 +154,7 @@ describe('Phase 1 Domain Foundation Validation Rules (Fully Corrected)', () => {
 
   describe('Rule 4: Contract fits inside active covering owner agreement', () => {
     const agreement = {
+      id: 'agreement-100',
       propertyId: 'prop-A',
       startDate: '2026-01-01',
       endDate: '2026-12-31',
@@ -161,8 +162,9 @@ describe('Phase 1 Domain Foundation Validation Rules (Fully Corrected)', () => {
       isArchived: false,
     };
 
-    test('passes when contract fits perfectly', () => {
+    test('passes when contract fits perfectly and agreementId matches', () => {
       const contract = {
+        agreementId: 'agreement-100',
         propertyId: 'prop-A',
         startDate: '2026-03-01',
         endDate: '2026-09-30',
@@ -170,8 +172,21 @@ describe('Phase 1 Domain Foundation Validation Rules (Fully Corrected)', () => {
       expect(validateContractFitsAgreement(contract, agreement).isValid).toBe(true);
     });
 
+    test('fails when agreementId does not match agreement.id', () => {
+      const contract = {
+        agreementId: 'agreement-DIFFERENT',
+        propertyId: 'prop-A',
+        startDate: '2026-03-01',
+        endDate: '2026-09-30',
+      };
+      const result = validateContractFitsAgreement(contract, agreement);
+      expect(result.isValid).toBe(false);
+      expect(result.message).toBe(DOMAIN_VALIDATION_AR.agreement_not_found);
+    });
+
     test('fails when contract starts too early or ends too late', () => {
       const contractEarly = {
+        agreementId: 'agreement-100',
         propertyId: 'prop-A',
         startDate: '2025-12-01',
         endDate: '2026-09-30',
@@ -179,11 +194,41 @@ describe('Phase 1 Domain Foundation Validation Rules (Fully Corrected)', () => {
       expect(validateContractFitsAgreement(contractEarly, agreement).isValid).toBe(false);
 
       const contractLate = {
+        agreementId: 'agreement-100',
         propertyId: 'prop-A',
         startDate: '2026-03-01',
         endDate: '2027-01-01',
       };
       expect(validateContractFitsAgreement(contractLate, agreement).isValid).toBe(false);
+    });
+
+    test('supports explicit open-ended agreement (endDate is null or undefined)', () => {
+      const openEndedAgreement = {
+        id: 'agreement-open',
+        propertyId: 'prop-A',
+        startDate: '2026-01-01',
+        endDate: null, // open-ended!
+        status: 'active' as const,
+        isArchived: false,
+      };
+
+      // Contract that starts after agreement start date (fits!)
+      const contractGood = {
+        agreementId: 'agreement-open',
+        propertyId: 'prop-A',
+        startDate: '2026-06-01',
+        endDate: '2030-12-31', // Any far end date is valid
+      };
+      expect(validateContractFitsAgreement(contractGood, openEndedAgreement).isValid).toBe(true);
+
+      // Contract that starts too early (should fail)
+      const contractBadStart = {
+        agreementId: 'agreement-open',
+        propertyId: 'prop-A',
+        startDate: '2025-12-31',
+        endDate: '2026-06-30',
+      };
+      expect(validateContractFitsAgreement(contractBadStart, openEndedAgreement).isValid).toBe(false);
     });
   });
 
@@ -241,7 +286,7 @@ describe('Phase 1 Domain Foundation Validation Rules (Fully Corrected)', () => {
       createdAt: '2026-06-28',
     };
 
-    test('archives owner if no active agreements are linked', () => {
+    test('archives owner if no active/draft agreements are linked', () => {
       const agreements = [
         {
           ownerId: 'owner-1',
@@ -254,20 +299,31 @@ describe('Phase 1 Domain Foundation Validation Rules (Fully Corrected)', () => {
       expect(result.entity?.isArchived).toBe(true);
     });
 
-    test('fails to archive owner if active agreement is linked', () => {
-      const agreements = [
+    test('fails to archive owner if active OR draft agreement is linked', () => {
+      const activeAgreements = [
         {
           ownerId: 'owner-1',
           status: 'active' as const,
           isArchived: false,
         },
       ];
-      const result = archiveOwner(owner, agreements);
-      expect(result.isValid).toBe(false);
-      expect(result.message).toBe(DOMAIN_VALIDATION_AR.cannot_archive_owner_with_active_relations);
+      const activeResult = archiveOwner(owner, activeAgreements);
+      expect(activeResult.isValid).toBe(false);
+      expect(activeResult.message).toBe(DOMAIN_VALIDATION_AR.cannot_archive_owner_with_active_relations);
+
+      const draftAgreements = [
+        {
+          ownerId: 'owner-1',
+          status: 'draft' as const,
+          isArchived: false,
+        },
+      ];
+      const draftResult = archiveOwner(owner, draftAgreements);
+      expect(draftResult.isValid).toBe(false);
+      expect(draftResult.message).toBe(DOMAIN_VALIDATION_AR.cannot_archive_owner_with_active_relations);
     });
 
-    test('archives property if no active agreements are linked', () => {
+    test('archives property if no active/draft agreements are linked', () => {
       const agreements = [
         {
           propertyId: 'prop-1',
@@ -280,20 +336,31 @@ describe('Phase 1 Domain Foundation Validation Rules (Fully Corrected)', () => {
       expect(result.entity?.isArchived).toBe(true);
     });
 
-    test('fails to archive property if active agreement is linked', () => {
-      const agreements = [
+    test('fails to archive property if active OR draft agreement is linked', () => {
+      const activeAgreements = [
         {
           propertyId: 'prop-1',
           status: 'active' as const,
           isArchived: false,
         },
       ];
-      const result = archiveProperty(property, agreements);
-      expect(result.isValid).toBe(false);
-      expect(result.message).toBe(DOMAIN_VALIDATION_AR.cannot_archive_property_with_active_relations);
+      const activeResult = archiveProperty(property, activeAgreements);
+      expect(activeResult.isValid).toBe(false);
+      expect(activeResult.message).toBe(DOMAIN_VALIDATION_AR.cannot_archive_property_with_active_relations);
+
+      const draftAgreements = [
+        {
+          propertyId: 'prop-1',
+          status: 'draft' as const,
+          isArchived: false,
+        },
+      ];
+      const draftResult = archiveProperty(property, draftAgreements);
+      expect(draftResult.isValid).toBe(false);
+      expect(draftResult.message).toBe(DOMAIN_VALIDATION_AR.cannot_archive_property_with_active_relations);
     });
 
-    test('archives unit if no active contracts are linked', () => {
+    test('archives unit if no active/draft contracts are linked', () => {
       const contracts = [
         {
           unitId: 'unit-1',
@@ -305,19 +372,29 @@ describe('Phase 1 Domain Foundation Validation Rules (Fully Corrected)', () => {
       expect(result.entity?.isArchived).toBe(true);
     });
 
-    test('fails to archive unit if active contract is linked', () => {
-      const contracts = [
+    test('fails to archive unit if active OR draft contract is linked', () => {
+      const activeContracts = [
         {
           unitId: 'unit-1',
           status: 'active' as const,
         },
       ];
-      const result = archiveUnit(unit, contracts);
-      expect(result.isValid).toBe(false);
-      expect(result.message).toBe(DOMAIN_VALIDATION_AR.cannot_archive_unit_with_active_relations);
+      const activeResult = archiveUnit(unit, activeContracts);
+      expect(activeResult.isValid).toBe(false);
+      expect(activeResult.message).toBe(DOMAIN_VALIDATION_AR.cannot_archive_unit_with_active_relations);
+
+      const draftContracts = [
+        {
+          unitId: 'unit-1',
+          status: 'draft' as const,
+        },
+      ];
+      const draftResult = archiveUnit(unit, draftContracts);
+      expect(draftResult.isValid).toBe(false);
+      expect(draftResult.message).toBe(DOMAIN_VALIDATION_AR.cannot_archive_unit_with_active_relations);
     });
 
-    test('archives tenant if no active contracts are linked', () => {
+    test('archives tenant if no active/draft contracts are linked', () => {
       const contracts = [
         {
           tenantId: 'tenant-1',
@@ -329,33 +406,32 @@ describe('Phase 1 Domain Foundation Validation Rules (Fully Corrected)', () => {
       expect(result.entity?.isArchived).toBe(true);
     });
 
-    test('fails to archive tenant if active contract is linked', () => {
-      const contracts = [
+    test('fails to archive tenant if active OR draft contract is linked', () => {
+      const activeContracts = [
         {
           tenantId: 'tenant-1',
           status: 'active' as const,
         },
       ];
-      const result = archiveTenant(tenant, contracts);
+      const activeResult = archiveTenant(tenant, activeContracts);
+      expect(activeResult.isValid).toBe(false);
+      expect(activeResult.message).toBe(DOMAIN_VALIDATION_AR.cannot_archive_tenant_with_active_relations);
+
+      const draftContracts = [
+        {
+          tenantId: 'tenant-1',
+          status: 'draft' as const,
+        },
+      ];
+      const draftResult = archiveTenant(tenant, draftContracts);
+      expect(draftResult.isValid).toBe(false);
+      expect(draftResult.message).toBe(DOMAIN_VALIDATION_AR.cannot_archive_tenant_with_active_relations);
+    });
+
+    test('fails completely to archive immutable operational or financial history entities', () => {
+      const result = archiveImmutableHistoryRecord();
       expect(result.isValid).toBe(false);
-      expect(result.message).toBe(DOMAIN_VALIDATION_AR.cannot_archive_tenant_with_active_relations);
+      expect(result.message).toBe(DOMAIN_VALIDATION_AR.immutable_history_error);
     });
-
-    test('fails completely for immutable financial/historical records', () => {
-      expect(archiveImmutableEntity('contract').isValid).toBe(false);
-      expect(archiveImmutableEntity('invoice').isValid).toBe(false);
-      expect(archiveImmutableEntity('payment_receipt').isValid).toBe(false);
-      expect(archiveImmutableEntity('settlement').isValid).toBe(false);
-      expect(archiveEventResult().isValid).toBe(false);
-    });
-
-    function archiveImmutableEntity(type: any) {
-      // Contracts, Invoices, Payments, Settlements, Audit Events must be strictly blocked from archival
-      return archiveImmutableHistoryRecord();
-    }
-
-    function archiveEventResult() {
-      return archiveImmutableHistoryRecord();
-    }
   });
 });

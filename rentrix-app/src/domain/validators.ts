@@ -5,7 +5,7 @@ import type { Owner, Property, Unit, Tenant, OwnerAgreement, LeaseContract } fro
  * Strict validation for real ISO calendar dates.
  * Rejects malformed patterns, impossible dates (e.g., 2026-02-30), and leap-year violations.
  */
-export function isValidISODateString(dateStr: string): boolean {
+export function isValidISODateString(dateStr: string | null | undefined): boolean {
   if (!dateStr || typeof dateStr !== 'string') return false;
   
   // Format check: exact YYYY-MM-DD
@@ -127,11 +127,15 @@ export function validateAgreementOverlap(
     // Block only active/draft states. Expired/Terminated do not cause overlaps.
     if (agreement.status !== 'active' && agreement.status !== 'draft') return false;
 
+    // Support open-ended existing agreements for overlaps
+    const agreementEnd = agreement.endDate || '9999-12-31';
+    const newAgreementEnd = newAgreement.endDate || '9999-12-31';
+
     return areDatesOverlapping(
       newAgreement.startDate,
-      newAgreement.endDate,
+      newAgreementEnd,
       agreement.startDate,
-      agreement.endDate
+      agreementEnd
     );
   });
 
@@ -183,12 +187,21 @@ export function validateContractOverlap(
 
 /**
  * Validates that a lease contract fits entirely inside an active covering owner agreement's dates.
+ * Includes verification of agreement ID and supports explicit open-ended agreements (where agreement.endDate is null/undefined).
  */
 export function validateContractFitsAgreement(
-  contract: Pick<LeaseContract, 'startDate' | 'endDate' | 'propertyId'>,
-  agreement: Pick<OwnerAgreement, 'startDate' | 'endDate' | 'propertyId' | 'status' | 'isArchived'>
+  contract: Pick<LeaseContract, 'startDate' | 'endDate' | 'propertyId' | 'agreementId'>,
+  agreement: Pick<OwnerAgreement, 'id' | 'startDate' | 'endDate' | 'propertyId' | 'status' | 'isArchived'>
 ): { isValid: boolean; message?: string } {
-  // 1. Must be the same property
+  // 1. Verify and enforce matching agreement IDs
+  if (contract.agreementId !== agreement.id) {
+    return {
+      isValid: false,
+      message: DOMAIN_VALIDATION_AR.agreement_not_found,
+    };
+  }
+
+  // 2. Verify property matching
   if (contract.propertyId !== agreement.propertyId) {
     return {
       isValid: false,
@@ -196,7 +209,23 @@ export function validateContractFitsAgreement(
     };
   }
 
-  // 2. Agreement must be active and not archived
+  // 3. Strict ISO Calendar Date validation before doing any date range checks
+  if (!isValidISODateString(contract.startDate) || !isValidISODateString(contract.endDate) ||
+      !isValidISODateString(agreement.startDate)) {
+    return {
+      isValid: false,
+      message: DOMAIN_VALIDATION_AR.date_format_invalid,
+    };
+  }
+
+  if (agreement.endDate && !isValidISODateString(agreement.endDate)) {
+    return {
+      isValid: false,
+      message: DOMAIN_VALIDATION_AR.date_format_invalid,
+    };
+  }
+
+  // 4. Agreement must be active and not archived
   if (agreement.status !== 'active' || agreement.isArchived) {
     return {
       isValid: false,
@@ -204,9 +233,11 @@ export function validateContractFitsAgreement(
     };
   }
 
-  // 3. Contract start and end dates must fit fully within agreement start and end dates
+  // 5. Check if contract fits agreement's temporal bounds
   const fitsStart = contract.startDate >= agreement.startDate;
-  const fitsEnd = contract.endDate <= agreement.endDate;
+  
+  // If agreement.endDate is null/undefined, it is open-ended, meaning any end date on/after start date fits.
+  const fitsEnd = !agreement.endDate || contract.endDate <= agreement.endDate;
 
   if (!fitsStart || !fitsEnd) {
     return {
@@ -220,17 +251,20 @@ export function validateContractFitsAgreement(
 
 /**
  * Entity-Specific Deactivation/Archival Rule: Owner
- * Fails if the owner has active related agreements.
+ * Fails if the owner has active OR draft agreements.
  */
 export function archiveOwner(
   owner: Owner,
   ownerAgreements: Array<Pick<OwnerAgreement, 'ownerId' | 'status' | 'isArchived'>>
 ): { isValid: boolean; entity?: Owner; message?: string } {
-  const hasActiveAgreements = ownerAgreements.some(
-    (agreement) => agreement.ownerId === owner.id && agreement.status === 'active' && !agreement.isArchived
+  const hasRelations = ownerAgreements.some(
+    (agreement) =>
+      agreement.ownerId === owner.id &&
+      (agreement.status === 'active' || agreement.status === 'draft') &&
+      !agreement.isArchived
   );
 
-  if (hasActiveAgreements) {
+  if (hasRelations) {
     return {
       isValid: false,
       message: DOMAIN_VALIDATION_AR.cannot_archive_owner_with_active_relations,
@@ -248,17 +282,20 @@ export function archiveOwner(
 
 /**
  * Entity-Specific Deactivation/Archival Rule: Property
- * Fails if the property is linked to active agreements.
+ * Fails if the property is linked to active OR draft agreements.
  */
 export function archiveProperty(
   property: Property,
   agreements: Array<Pick<OwnerAgreement, 'propertyId' | 'status' | 'isArchived'>>
 ): { isValid: boolean; entity?: Property; message?: string } {
-  const hasActiveAgreements = agreements.some(
-    (agreement) => agreement.propertyId === property.id && agreement.status === 'active' && !agreement.isArchived
+  const hasRelations = agreements.some(
+    (agreement) =>
+      agreement.propertyId === property.id &&
+      (agreement.status === 'active' || agreement.status === 'draft') &&
+      !agreement.isArchived
   );
 
-  if (hasActiveAgreements) {
+  if (hasRelations) {
     return {
       isValid: false,
       message: DOMAIN_VALIDATION_AR.cannot_archive_property_with_active_relations,
@@ -276,17 +313,19 @@ export function archiveProperty(
 
 /**
  * Entity-Specific Deactivation/Archival Rule: Unit
- * Fails if the unit has active covering lease contracts.
+ * Fails if the unit has active OR draft lease contracts.
  */
 export function archiveUnit(
   unit: Unit,
   contracts: Array<Pick<LeaseContract, 'unitId' | 'status'>>
 ): { isValid: boolean; entity?: Unit; message?: string } {
-  const hasActiveContracts = contracts.some(
-    (contract) => contract.unitId === unit.id && contract.status === 'active'
+  const hasRelations = contracts.some(
+    (contract) =>
+      contract.unitId === unit.id &&
+      (contract.status === 'active' || contract.status === 'draft')
   );
 
-  if (hasActiveContracts) {
+  if (hasRelations) {
     return {
       isValid: false,
       message: DOMAIN_VALIDATION_AR.cannot_archive_unit_with_active_relations,
@@ -304,17 +343,19 @@ export function archiveUnit(
 
 /**
  * Entity-Specific Deactivation/Archival Rule: Tenant
- * Fails if the tenant has active lease contracts.
+ * Fails if the tenant has active OR draft lease contracts.
  */
 export function archiveTenant(
   tenant: Tenant,
   contracts: Array<Pick<LeaseContract, 'tenantId' | 'status'>>
 ): { isValid: boolean; entity?: Tenant; message?: string } {
-  const hasActiveContracts = contracts.some(
-    (contract) => contract.tenantId === tenant.id && contract.status === 'active'
+  const hasRelations = contracts.some(
+    (contract) =>
+      contract.tenantId === tenant.id &&
+      (contract.status === 'active' || contract.status === 'draft')
   );
 
-  if (hasActiveContracts) {
+  if (hasRelations) {
     return {
       isValid: false,
       message: DOMAIN_VALIDATION_AR.cannot_archive_tenant_with_active_relations,

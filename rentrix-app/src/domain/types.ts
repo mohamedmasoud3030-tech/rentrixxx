@@ -22,7 +22,7 @@ export interface OwnerAgreement {
   propertyId: string;
   agreementType: AgreementType;
   startDate: string; // YYYY-MM-DD
-  endDate: string; // YYYY-MM-DD
+  endDate?: string | null; // YYYY-MM-DD or null/undefined for open-ended agreement
   status: AgreementStatus;
   commissionRate?: number; // Represented as a percentage (e.g., 10 for 10%), positive finite number
   fixedFee?: number; // Represented as fixed amount, positive finite number
