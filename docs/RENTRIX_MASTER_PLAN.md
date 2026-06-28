@@ -243,10 +243,32 @@ Documentation-only work must not modify:
 
 ---
 
-## 8. Relationship to Other Documents
+## 8. Final Delivery and Production-Readiness Truth
+
+Production readiness is not established by Phase 1 documentation work.
+
+Final delivery evidence remains tracked in `docs/ai/FINAL_DELIVERY_GATE_QA_EVIDENCE.md`.
+
+Do not claim Production GO until the following evidence is verified:
+
+- B-1: authenticated ADMIN browser QA;
+- B-2: live invoice -> payment -> receipt -> invoice/report refresh;
+- B-3: mobile or physical-device print QA, or an explicit `UNVERIFIED` record;
+- B-4: allowed live writes and RLS/permission behavior.
+
+Phase 1 does not close, replace, or infer completion of these gates.
+
+---
+
+## 9. Relationship to Other Documents
 
 - `docs/FINAL_PRODUCT_BLUEPRINT.md` defines the target product.
 - `docs/RUNTIME_TRUTH_AND_GAPS.md` defines observed runtime truth and known gaps.
 - `docs/ai/CURRENT_EXECUTION_CONTEXT.md` tracks the exact current branch/base/phase state.
+- `docs/ai/FINAL_DELIVERY_GATE_QA_EVIDENCE.md` tracks final delivery evidence and current production-readiness status.
+- `docs/ai/ONBOARDING.md` remains the active application snapshot and reading sequence.
+- `docs/ai/REPORTING_DEFINITIONS.md` remains the reporting-definition reference.
+- `docs/ai/GIT_TOOLING_POLICY.md` remains the git/branch/PR workflow reference.
+- `docs/ai/domain-rules.md`, `docs/ai/engineering-policy.md`, `docs/ai/security-policy.md`, `docs/ai/release-policy.md`, and `docs/ai/testing-guide.md` remain active policy references.
 
 If uncertainty remains after reading those documents, report the contradiction rather than guessing.

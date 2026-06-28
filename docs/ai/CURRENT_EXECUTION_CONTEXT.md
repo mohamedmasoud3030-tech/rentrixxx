@@ -82,3 +82,33 @@ Do not modify:
 ## Handoff rule
 
 If future work uncovers a contradiction, record it in the runtime-truth path and assign it to the owning phase instead of guessing a silent resolution.
+
+
+## Final delivery and production-readiness truth
+
+Production readiness is not established by Phase 1 documentation work.
+
+Final delivery evidence remains tracked in `docs/ai/FINAL_DELIVERY_GATE_QA_EVIDENCE.md`.
+
+Do not claim Production GO until the following evidence is verified:
+
+- B-1: authenticated ADMIN browser QA;
+- B-2: live invoice -> payment -> receipt -> invoice/report refresh;
+- B-3: mobile or physical-device print QA, or an explicit `UNVERIFIED` record;
+- B-4: allowed live writes and RLS/permission behavior.
+
+Phase 1 does not close, replace, or infer completion of these gates.
+
+## Still-relevant active guidance
+
+Continue to use these active references alongside the Phase 1 source-of-truth set:
+
+- `docs/ai/FINAL_DELIVERY_GATE_QA_EVIDENCE.md`
+- `docs/ai/ONBOARDING.md`
+- `docs/ai/REPORTING_DEFINITIONS.md`
+- `docs/ai/GIT_TOOLING_POLICY.md`
+- `docs/ai/domain-rules.md`
+- `docs/ai/engineering-policy.md`
+- `docs/ai/security-policy.md`
+- `docs/ai/release-policy.md`
+- `docs/ai/testing-guide.md`

@@ -50,6 +50,11 @@ If sources conflict, do not invent a resolution. Record the contradiction and de
 - `docs/ai/V05_COMMERCIAL_HARDENING_PREP.md`
 - `docs/ai/REPORTING_DEFINITIONS.md`
 - `docs/ai/GIT_TOOLING_POLICY.md`
+- `docs/ai/domain-rules.md`
+- `docs/ai/engineering-policy.md`
+- `docs/ai/security-policy.md`
+- `docs/ai/release-policy.md`
+- `docs/ai/testing-guide.md`
 
 Historical material remains useful, but it is lower authority than verified runtime truth, current `main`, and the generated database contract. Where older documentation said owner settlement, payout, or office profitability were permanently out of scope or awaiting a product decision, those statements are now superseded by the Phase 1 product decision: settlement and profitability are part of the target product, though not yet fully implemented.
 
