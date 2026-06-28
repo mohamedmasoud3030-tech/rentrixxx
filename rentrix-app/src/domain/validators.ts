@@ -112,11 +112,27 @@ export function areDatesOverlapping(
 /**
  * Validates that a new owner agreement does not overlap with existing agreements for the same property.
  * Blocks only relevant active/draft lifecycle states; historical expired/terminated agreements do not prevent new ones.
+ * Returns explicit date validation errors if any incoming range or date is malformed or reversed.
  */
 export function validateAgreementOverlap(
   newAgreement: Pick<OwnerAgreement, 'propertyId' | 'startDate' | 'endDate' | 'id'>,
   existingAgreements: Array<Pick<OwnerAgreement, 'propertyId' | 'startDate' | 'endDate' | 'id' | 'status'>>
 ): { isValid: boolean; message?: string } {
+  // Validate the incoming agreement dates first
+  if (newAgreement.endDate) {
+    const rangeCheck = validateDateRange(newAgreement.startDate, newAgreement.endDate);
+    if (!rangeCheck.isValid) {
+      return rangeCheck;
+    }
+  } else {
+    if (!isValidISODateString(newAgreement.startDate)) {
+      return {
+        isValid: false,
+        message: DOMAIN_VALIDATION_AR.date_format_invalid,
+      };
+    }
+  }
+
   const overlapping = existingAgreements.find((agreement) => {
     // Skip checking self when editing an existing agreement
     if (agreement.id === newAgreement.id) return false;
@@ -152,11 +168,18 @@ export function validateAgreementOverlap(
 /**
  * Validates that a new lease contract does not overlap with existing contracts for the same unit.
  * Blocks only relevant active/draft lifecycle states; historical expired/terminated contracts do not prevent new ones.
+ * Returns explicit date validation errors if the incoming contract range or dates are malformed or reversed.
  */
 export function validateContractOverlap(
   newContract: Pick<LeaseContract, 'unitId' | 'startDate' | 'endDate' | 'id'>,
   existingContracts: Array<Pick<LeaseContract, 'unitId' | 'startDate' | 'endDate' | 'id' | 'status'>>
 ): { isValid: boolean; message?: string } {
+  // Validate incoming contract dates first
+  const rangeCheck = validateDateRange(newContract.startDate, newContract.endDate);
+  if (!rangeCheck.isValid) {
+    return rangeCheck;
+  }
+
   const overlapping = existingContracts.find((contract) => {
     // Skip self
     if (contract.id === newContract.id) return false;
@@ -187,7 +210,8 @@ export function validateContractOverlap(
 
 /**
  * Validates that a lease contract fits entirely inside an active covering owner agreement's dates.
- * Includes verification of agreement ID and supports explicit open-ended agreements (where agreement.endDate is null/undefined).
+ * Includes verification of agreement ID and supports explicit open-ended agreements.
+ * Assures strict range checks (start <= end) by reusing validateDateRange, returning explicit errors.
  */
 export function validateContractFitsAgreement(
   contract: Pick<LeaseContract, 'startDate' | 'endDate' | 'propertyId' | 'agreementId'>,
@@ -209,20 +233,25 @@ export function validateContractFitsAgreement(
     };
   }
 
-  // 3. Strict ISO Calendar Date validation before doing any date range checks
-  if (!isValidISODateString(contract.startDate) || !isValidISODateString(contract.endDate) ||
-      !isValidISODateString(agreement.startDate)) {
-    return {
-      isValid: false,
-      message: DOMAIN_VALIDATION_AR.date_format_invalid,
-    };
+  // 3. Strict ISO Calendar Date validation and range checking by reusing validateDateRange
+  const contractDateCheck = validateDateRange(contract.startDate, contract.endDate);
+  if (!contractDateCheck.isValid) {
+    return contractDateCheck;
   }
 
-  if (agreement.endDate && !isValidISODateString(agreement.endDate)) {
-    return {
-      isValid: false,
-      message: DOMAIN_VALIDATION_AR.date_format_invalid,
-    };
+  if (agreement.endDate) {
+    const agreementDateCheck = validateDateRange(agreement.startDate, agreement.endDate);
+    if (!agreementDateCheck.isValid) {
+      return agreementDateCheck;
+    }
+  } else {
+    // Ensure open-ended agreement start date is technically valid
+    if (!isValidISODateString(agreement.startDate)) {
+      return {
+        isValid: false,
+        message: DOMAIN_VALIDATION_AR.date_format_invalid,
+      };
+    }
   }
 
   // 4. Agreement must be active and not archived
