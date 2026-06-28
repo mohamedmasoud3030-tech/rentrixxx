@@ -3,13 +3,13 @@
 ## Current base reference
 
 - Remote base branch: `origin/main`
-- Current remote `main` SHA for this Phase 1 branch base: `96473287d7c89ffaf89aa95fed3a20a8fcef1ded`
+- Current remote `main` SHA for this Phase 2 branch base: `7a8a7dc157fbfcdb69c3d90ad482042e7ec9ea30`
 
 ## Current program state
 
 - Phase 0 — Runtime truth audit and contradiction discovery: **complete**
-- Phase 1 — Documentation, decisions, and sources of truth: **in progress**
-- Phase 2 — Reconcile live schema, migrations, generated types, and code contract: **next major implementation phase**
+- Phase 1 — Documentation, decisions, and sources of truth: **complete** through merged PR #1010
+- Phase 2 — Reconcile live schema, migrations, generated types, and code contract: **current**
 
 ## Pre-Phase-1 technical repair note
 
@@ -31,15 +31,15 @@ Use the documented source-of-truth hierarchy:
 3. generated TypeScript database contract;
 4. older product documents, previous audits, and agent reports.
 
-## Phase 1 objective
+## Phase 1 objective status
 
-Make repository documentation internally coherent before schema and implementation work resumes.
+Phase 1 is complete. Its completed objective was to make repository documentation internally coherent before schema and implementation work resumed.
 
-This means:
+Completed Phase 1 outcomes:
 
-- current product decisions must be documented clearly;
-- conflicting historical statements must be corrected or marked superseded;
-- runtime truth and known contradictions must be recorded without pretending they are already reconciled.
+- current product decisions were documented clearly;
+- conflicting historical statements were corrected or marked superseded;
+- runtime truth and known contradictions were recorded without pretending they were already reconciled.
 
 ## Required next-phase reconciliation focus
 
@@ -63,11 +63,9 @@ Approved product decisions now include:
 
 These are approved target decisions, not a claim of complete implementation.
 
-## Constraint for this phase
+## Phase 1 constraint record
 
-Phase 1 is documentation-only.
-
-Do not modify:
+Phase 1 was documentation-only. It did not modify:
 
 - application code,
 - generated TypeScript types,

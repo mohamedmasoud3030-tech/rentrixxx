@@ -23,9 +23,9 @@ When sources conflict, do not invent a resolution. Record the contradiction and 
 
 Phase 0 — Runtime truth audit and contradiction discovery: **completed**.
 
-Phase 1 — Documentation, decisions, and sources of truth: **current**.
+Phase 1 — Documentation, decisions, and sources of truth: **completed** through merged PR #1010.
 
-Phase 2 — Reconcile live schema, migrations, generated types, and code contract.
+Phase 2 — Reconcile live schema, migrations, generated types, and code contract: **current**.
 
 Phase 3 — Restore and verify a fully green `main`.
 
@@ -68,14 +68,16 @@ Evidence now belongs in:
 - `docs/RUNTIME_TRUTH_AND_GAPS.md`
 - `docs/ai/CURRENT_EXECUTION_CONTEXT.md`
 
-### Phase 1 — current
+### Phase 1 — completed
 
-Objective:
+Completed outcome:
 
-- make repository documentation internally coherent;
-- document current product decisions;
-- document the source-of-truth hierarchy;
-- mark historical contradictions as superseded instead of silently erasing them.
+- repository documentation was made internally coherent for the approved Phase 1 scope;
+- current product decisions were documented;
+- the source-of-truth hierarchy was documented;
+- conflicting historical statements were marked as superseded rather than silently erased.
+
+Completed through merged PR #1010.
 
 Artifacts:
 
@@ -85,7 +87,7 @@ Artifacts:
 - `docs/RUNTIME_TRUTH_AND_GAPS.md`
 - `docs/ai/CURRENT_EXECUTION_CONTEXT.md`
 
-### Phase 2
+### Phase 2 — current
 
 Objective:
 
@@ -97,13 +99,13 @@ Known examples owned by Phase 2:
 - RPC return typing drift, including live RPC contract mismatches;
 - remaining live/repository/generated-type contract contradictions.
 
-### Phase 3
+### Phase 3 — future
 
 Objective:
 
 - restore and verify a fully green `main` after contract reconciliation.
 
-### Phase 4
+### Phase 4 — future
 
 Objective:
 
@@ -116,7 +118,7 @@ Includes:
 - create/update/renew/terminate lifecycle consistency;
 - permission enforcement for lifecycle-sensitive actions.
 
-### Phase 5
+### Phase 5 — future
 
 Objective:
 
@@ -128,7 +130,7 @@ Includes:
 - settlement cadence and statement logic;
 - verifiable owner-versus-office calculations.
 
-### Phase 6
+### Phase 6 — future
 
 Objective:
 
@@ -141,7 +143,7 @@ Includes:
 - reversal/cancellation paths instead of silent overwrite;
 - manager approvals for sensitive actions.
 
-### Phase 7
+### Phase 7 — future
 
 Objective:
 
@@ -163,7 +165,7 @@ Includes target outputs such as:
 - maintenance/vendor follow-up;
 - employee operational follow-up.
 
-### Phase 8
+### Phase 8 — future
 
 Objective:
 
