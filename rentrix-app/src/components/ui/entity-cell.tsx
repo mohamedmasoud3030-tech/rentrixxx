@@ -20,7 +20,7 @@ const toneStyles: Record<NonNullable<EntityCellProps['tone']>, string> = {
  * Avatar-led "who/what is this row" cell used as the leading column in
  * every entity table (owners, people/tenants, units, properties,
  * contracts). Mirrors the icon-box header already used in the matching
- * mobile card components (OwnerCard, PersonCard, UnitCard, PropertyCard,
+ * mobile card components (EntityCard, UnitCard, PropertyCard,
  * ContractCard) so a record looks the same whether the screen renders it
  * as a card (mobile) or a table row (desktop).
  */

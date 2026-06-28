@@ -7,7 +7,7 @@ import { EntityTable } from '@/components/ui/entity-table';
 import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
 import { KpiCard } from '@/components/ui/kpi-card';
-import { OwnerCard } from '@/components/ui/owner-card';
+import { EntityCard, entityCardContactMeta } from '@/components/ui/entity-card';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { useMockAgreements, useMockContracts, useMockOwners, useMockProperties, useMockUnits } from '@/hooks/use-mock-repositories';
 import type { MockDatabaseState } from '@/store/mock-db-store';
@@ -474,13 +474,30 @@ export function Phase3OwnerHubPage() {
             emptyTitle="لا يوجد ملاك"
             emptyDescription="بيانات Phase 3 المحلية لا تحتوي على ملاك حالياً."
             renderMobileCard={(row) => (
-              <OwnerCard
+              <EntityCard
                 id={row.owner.id}
-                displayName={row.owner.name}
-                phone={row.owner.phone}
-                email={row.owner.email}
-                propertyCount={row.properties.length}
-                activeContractCount={row.activeContractCount}
+                name={row.owner.name}
+                subtitle={row.owner.email ?? row.owner.phone}
+                supportingText={<span dir="ltr">معرّف السجل: #{row.owner.id.slice(0, 8)}</span>}
+                type="owner"
+                avatarIcon={Users}
+                meta={[
+                  ...(row.owner.phone ? [entityCardContactMeta.phone(row.owner.phone)] : []),
+                  ...(row.owner.email ? [entityCardContactMeta.email(row.owner.email)] : []),
+                ]}
+                stats={(
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-1.5">
+                      <Building2 className="size-3.5" />
+                      <span>{formatArabicNumber(row.properties.length)} عقار</span>
+                    </div>
+                    {row.activeContractCount > 0 ? (
+                      <div className="flex items-center gap-1.5 font-bold text-primary">
+                        <span>{formatArabicNumber(row.activeContractCount)} عقد نشط</span>
+                      </div>
+                    ) : null}
+                  </div>
+                )}
               />
             )}
             columns={[

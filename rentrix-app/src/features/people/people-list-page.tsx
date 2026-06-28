@@ -1,4 +1,4 @@
-import { Edit, Plus, Trash2 } from 'lucide-react';
+import { Edit, IdCard, Plus, Trash2 } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { PersonFormModal } from './person-form-modal';
@@ -7,7 +7,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { EntityCell } from '@/components/ui/entity-cell';
 import { EntityTable, type ColumnDef } from '@/components/ui/entity-table';
-import { PersonCard, personTypeMap } from '@/components/ui/person-card';
+import { EntityCard, entityCardContactMeta, entityCardTypeMap } from '@/components/ui/entity-card';
 import { SearchInput } from '@/components/ui/search-input';
 import { Select } from '@/components/ui/select';
 import { useDebounce } from '@/hooks/useDebounce';
@@ -58,7 +58,7 @@ export function PeopleListPage() {
       header: 'الاسم',
       render: (person) => (
         <EntityCell
-          icon={personTypeMap[person.type]?.icon ?? personTypeMap['contact']!.icon}
+          icon={entityCardTypeMap[person.type]?.icon ?? entityCardTypeMap['contact']!.icon}
           tone={person.type === 'owner' ? 'emerald' : person.type === 'contact' ? 'slate' : 'primary'}
           title={person.full_name}
           subtitle={person.address}
@@ -70,8 +70,8 @@ export function PeopleListPage() {
       header: 'النوع',
       render: (person) => (
         <span className={cn('inline-flex rounded-full px-2.5 py-0.5 text-[11px] font-bold',
-          (personTypeMap[person.type] ?? personTypeMap['contact']!).bg,
-          (personTypeMap[person.type] ?? personTypeMap['contact']!).text,
+          (entityCardTypeMap[person.type] ?? entityCardTypeMap['contact']!).bg,
+          (entityCardTypeMap[person.type] ?? entityCardTypeMap['contact']!).text,
         )}>
           {personTypeLabels[person.type]}
         </span>
@@ -150,31 +150,22 @@ export function PeopleListPage() {
             onPageChange: setPage,
           }}
           renderMobileCard={(person) => (
-            <div className="space-y-1.5">
-              <PersonCard
-                id={person.id}
-                fullName={person.full_name}
-                type={person.type}
-                phone={person.phone}
-                email={person.email}
-                nationalId={person.national_id}
-                address={person.address}
-                onClick={() => openEdit(person.id)}
-              />
-              <div className="flex items-center justify-end gap-2 px-1">
-                <Button variant="secondary" className="min-h-11 rounded-xl px-3 text-xs gap-1.5" onClick={() => openEdit(person.id)}>
-                  <Edit className="size-3.5" />تعديل
-                </Button>
-                <Button
-                  variant="danger"
-                  className="min-h-11 rounded-xl px-3 text-xs gap-1.5"
-                  aria-label={`أرشفة ${person.full_name}`}
-                  onClick={() => setDeleteId(person.id)}
-                >
-                  <Trash2 className="size-3.5" />أرشفة
-                </Button>
-              </div>
-            </div>
+            <EntityCard
+              id={person.id}
+              name={person.full_name}
+              subtitle={person.address}
+              type={person.type}
+              meta={[
+                ...(person.phone ? [entityCardContactMeta.phone(person.phone)] : []),
+                ...(person.email ? [entityCardContactMeta.email(person.email)] : []),
+                ...(person.national_id ? [{ icon: IdCard, value: person.national_id, dir: 'ltr' as const }] : []),
+              ]}
+              actions={[
+                { label: 'تعديل', icon: Edit, onClick: () => openEdit(person.id) },
+                { label: 'أرشفة', icon: Trash2, variant: 'danger', ariaLabel: `أرشفة ${person.full_name}`, onClick: () => setDeleteId(person.id) },
+              ]}
+              onClick={() => openEdit(person.id)}
+            />
           )}
         />
       </div>
