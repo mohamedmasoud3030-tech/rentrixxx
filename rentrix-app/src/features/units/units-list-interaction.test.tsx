@@ -1,6 +1,5 @@
 // @vitest-environment happy-dom
 import type { UseQueryResult } from '@tanstack/react-query';
-import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
 import { createRoot } from 'react-dom/client';
 import { act } from 'react';
@@ -105,7 +104,7 @@ describe('UnitsList Real Rendered User-Interaction Tests', () => {
     });
   });
 
-  it('proves clicking secondary actions does not trigger row click navigation', async () => {
+  it('proves clicking Edit secondary action does not trigger row click navigation but preserves behavior', async () => {
     const unitsQuery = makeUnitsQuery({
       data: [{ id: 'unit-101', unit_number: '101', status: 'available', rent_amount: 1500, floor: '1' } as Unit],
     });
@@ -114,13 +113,37 @@ describe('UnitsList Real Rendered User-Interaction Tests', () => {
       root.render(<UnitsList propertyId="property-123" unitsQuery={unitsQuery} />);
     });
 
-    // Locate the desktop edit button in the actions cell
-    const editButton = container?.querySelector('tbody td button') as HTMLButtonElement;
-    expect(editButton).not.toBeNull();
+    // Locate the Edit button in the actions td cell
+    const buttons = container?.querySelectorAll('tbody td button') as NodeListOf<HTMLButtonElement>;
+    expect(buttons.length).toBeGreaterThanOrEqual(1);
+    const editButton = buttons[0]; // First button is Edit
 
     // Trigger a click on the secondary Edit button
     await act(async () => {
       editButton.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    });
+
+    // Verify row navigation was NOT triggered due to stopPropagation!
+    expect(mockNavigate).not.toHaveBeenCalled();
+  });
+
+  it('proves clicking Archive secondary action does not trigger row click navigation but preserves behavior', async () => {
+    const unitsQuery = makeUnitsQuery({
+      data: [{ id: 'unit-101', unit_number: '101', status: 'available', rent_amount: 1500, floor: '1' } as Unit],
+    });
+
+    await act(async () => {
+      root.render(<UnitsList propertyId="property-123" unitsQuery={unitsQuery} />);
+    });
+
+    // Locate the Archive button in the actions td cell
+    const buttons = container?.querySelectorAll('tbody td button') as NodeListOf<HTMLButtonElement>;
+    expect(buttons.length).toBeGreaterThanOrEqual(2);
+    const archiveButton = buttons[1]; // Second button is Archive
+
+    // Trigger a click on the secondary Archive button
+    await act(async () => {
+      archiveButton.dispatchEvent(new MouseEvent('click', { bubbles: true }));
     });
 
     // Verify row navigation was NOT triggered due to stopPropagation!

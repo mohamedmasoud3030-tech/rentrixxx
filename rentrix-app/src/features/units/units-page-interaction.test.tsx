@@ -15,6 +15,9 @@ vi.mock('@tanstack/react-router', () => ({
         data-testid="mock-link" 
         onClick={(e) => {
           if (props.onClick) props.onClick(e);
+          if (!e.defaultPrevented) {
+            mockNavigate({ to: props.to, params: props.params });
+          }
         }}
         href={props.to}
       >
@@ -80,7 +83,7 @@ describe('Global UnitsPage Real Rendered User-Interaction Tests', () => {
     const row = container?.querySelector('tbody tr') as HTMLElement;
     expect(row).not.toBeNull();
 
-    // Click the row
+    // Click the row (not on the anchor)
     await act(async () => {
       row.dispatchEvent(new MouseEvent('click', { bubbles: true }));
     });
@@ -113,7 +116,7 @@ describe('Global UnitsPage Real Rendered User-Interaction Tests', () => {
     });
   });
 
-  it('proves that clicking the embedded property link does not bubble and trigger row navigation', async () => {
+  it('proves that clicking the embedded property link does not bubble and routes only to property detail', async () => {
     await act(async () => {
       root.render(<UnitsPage />);
     });
@@ -127,10 +130,16 @@ describe('Global UnitsPage Real Rendered User-Interaction Tests', () => {
       propertyLink.dispatchEvent(new MouseEvent('click', { bubbles: true }));
     });
 
-    // Verify it does NOT trigger the parent row's unit detail navigation!
+    // 1. Verify it navigates to the property details route with the correct propertyId
+    expect(mockNavigate).toHaveBeenCalledWith({
+      to: '/properties/$propertyId',
+      params: { propertyId: 'prop-1' },
+    });
+
+    // 2. Verify it did NOT trigger the parent row's unit detail navigation!
     expect(mockNavigate).not.toHaveBeenCalledWith({
       to: '/properties/$propertyId/units/$unitId',
-      params: expect.any(Object),
+      params: { propertyId: 'prop-1', unitId: 'unit-1' },
     });
   });
 });
