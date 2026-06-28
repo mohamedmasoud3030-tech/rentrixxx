@@ -23,18 +23,16 @@ if [[ -z "${SUPABASE_ACCESS_TOKEN:-}" ]]; then
   cat >&2 <<'EOF'
 Supabase management authentication is not available in this workspace.
 
-Use one of these local-only methods, then rerun this script:
+Use a local-only authentication method, then rerun this script:
 
 1. Interactive CLI login:
    npx supabase@latest login
    Complete the browser or token prompt shown by the CLI.
 
 2. Local credential file:
-   cp supabase/.arena.env.example supabase/.arena.env
-   Fill SUPABASE_ACCESS_TOKEN in supabase/.arena.env.
-   Add SUPABASE_DB_PASSWORD as well before applying migrations.
+   Create supabase/.arena.env in this workspace only and supply the CLI
+   credentials there. The file must never be committed, logged, or pasted into chat.
 
-Do not commit supabase/.arena.env, print its contents, or paste credentials into issues or chat.
 EOF
   exit 2
 fi
