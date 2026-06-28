@@ -10,46 +10,47 @@ It defines the approved phase order, release gates, and contradiction-handling r
 
 Use this hierarchy explicitly:
 
-1. Verified live Supabase metadata, timestamped and treated as runtime truth.
-2. Current remote `main` code and migration history.
-3. Generated TypeScript database contract.
-4. Older product documents, previous audits, and agent reports.
+1. Verified live Supabase metadata, timestamped and treated as runtime truth for the database.
+2. Pure TypeScript Domain Contracts & Mock Models (authoritative **only for frontend behavior** during Phases 1-7).
+3. Current remote `main` code.
+4. Generated TypeScript database contract.
+5. Older product documents, previous audits, and agent reports.
 
 When sources conflict, do not invent a resolution. Record the contradiction and assign its resolution to the owning future phase.
 
 ---
 
-## 2. Official Roadmap
+## 2. Official Roadmap (Revised for Postponed Supabase Integration)
 
-Phase 0 — Runtime truth audit and contradiction discovery: **completed**.
+The owner has decided to postpone all Supabase database integration, migrations, schema updates, RPCs, RLS, auth, and generated types to **Phase 8**. This allows rapid and pure frontend domain prototyping, calculation verification, and complete RTL/mobile UX polish in Phases 1-7 using a robust local/mock data layer. 
 
-Phase 1 — Documentation, decisions, and sources of truth: **completed** through merged PR #1010.
+Repository abstractions implemented in Phases 1-7 should **reduce, not eliminate**, Phase 8 integration changes.
 
-Phase 2 — Reconcile live schema, migrations, generated types, and code contract: **current**.
+### Revised Phase Order:
 
-Phase 3 — Restore and verify a fully green `main`.
-
-Phase 4 — Complete safe owner -> agreement -> property -> unit -> tenant -> contract lifecycle.
-
-Phase 5 — Financial engine: agreement terms, expense responsibility, settlements, profitability.
-
-Phase 6 — Governance: sensitive permissions, audit, reversal/cancellation controls.
-
-Phase 7 — Reports, statements, print, export.
-
-Phase 8 — Harden secondary modules: maintenance, documents, alerts, lands, leads, commissions, communication.
+- **Phase 0** — Runtime truth audit and contradiction discovery: **completed**.
+- **Phase 1** — Domain Foundation: **current**.
+- **Phase 2** — Mock/Local Data Layer.
+- **Phase 3** — Owner, Agreement, Property, and Unit Workflows.
+- **Phase 4** — Tenant and Contract Lifecycle.
+- **Phase 5** — Financial Workflows.
+- **Phase 6** — Roles and Audit Behavior.
+- **Phase 7** — Reports, Print/Export, Tests, and CI (Extending existing CI).
+- **Phase 8** — Supabase Integration (Schema, Migrations, RPCs, RLS, Auth, Generated Types, Live Data).
+- **Phase 9 / Backlog** — Secondary Module Hardening (Maintenance, lands, leads, commissions, communication).
 
 ---
 
 ## 3. Gates
 
-- **Gate 0:** source-of-truth and contradictions documented.
-- **Gate 1:** `main` green.
-- **Gate 2:** owner-to-contract lifecycle safe.
-- **Gate 3:** financial model verifiable.
-- **Gate 4:** permissions and audit controls.
-- **Gate 5:** reports and statements.
-- **Gate 6:** documentation and QA readiness.
+- **Gate 1:** Domain contracts and schemas frozen locally (Phase 1).
+- **Gate 2:** Mock data layer with local storage/in-memory state complete and reactive (Phase 2).
+- **Gate 3:** Onboarding workflows (Owner → Property → Owner Agreement → Unit) functional (Phase 3).
+- **Gate 4:** Tenant and contract lifecycle with validation and overlap-prevention complete (Phase 4).
+- **Gate 5:** Financial calculations, invoicing, expensing, and owner settlements verified (Phase 5).
+- **Gate 6:** Role-based access control and local audit logging active (Phase 6).
+- **Gate 7:** Complete list/detail export, physical/mobile printing, and unit/integration test coverage green in extended CI (Phase 7).
+- **Gate 8:** Production-ready live data sync with Supabase and secure RLS policies (Phase 8).
 
 A later phase must not claim completion if its predecessor gate is still unresolved.
 
@@ -60,151 +61,100 @@ A later phase must not claim completion if its predecessor gate is still unresol
 ### Phase 0 — completed
 
 Delivered outcome:
-
-- runtime truth was inspected and contradictions were surfaced.
+- Runtime truth was inspected and contradictions were surfaced.
 
 Evidence now belongs in:
-
 - `docs/RUNTIME_TRUTH_AND_GAPS.md`
 - `docs/ai/CURRENT_EXECUTION_CONTEXT.md`
 
-### Phase 1 — completed
-
-Completed outcome:
-
-- repository documentation was made internally coherent for the approved Phase 1 scope;
-- current product decisions were documented;
-- the source-of-truth hierarchy was documented;
-- conflicting historical statements were marked as superseded rather than silently erased.
-
-Completed through merged PR #1010.
-
-Artifacts:
-
-- `README.md`
-- `docs/FINAL_PRODUCT_BLUEPRINT.md`
-- `docs/RENTRIX_MASTER_PLAN.md`
-- `docs/RUNTIME_TRUTH_AND_GAPS.md`
-- `docs/ai/CURRENT_EXECUTION_CONTEXT.md`
-
-### Phase 2 — current
+### Phase 1 — Domain Foundation (Current)
 
 Objective:
+- Establish clean, strict TypeScript types, validation rules, and domain entities representing the core operational flow.
+- Ensure proper Arabic-first semantics are embedded into domain model dictionaries and metadata, without forcing Arabic-only input fields.
+- Prevent dependency on database schemas by modeling the pure business rules.
 
-- reconcile live schema, migrations, generated TypeScript types, and code contract.
+Details in `docs/PHASE_1_7_EXECUTION_PLAN.md`.
 
-Known examples owned by Phase 2:
-
-- `properties.owner_id` drift and ownership modeling contradictions;
-- RPC return typing drift, including live RPC contract mismatches;
-- remaining live/repository/generated-type contract contradictions.
-
-### Phase 3 — future
+### Phase 2 — Mock/Local Data Layer (Future)
 
 Objective:
+- Build a robust, in-memory/localStorage-backed mock repository and services layer.
+- Ensure realistic state management, reference entity deactivation, relational checks, and network latency/error simulation.
+- Expose React hooks and context-based services that abstract database operations to reduce Phase 8 integration changes.
 
-- restore and verify a fully green `main` after contract reconciliation.
+Details in `docs/PHASE_1_7_EXECUTION_PLAN.md`.
 
-### Phase 4 — future
-
-Objective:
-
-- complete the safe owner -> agreement -> property -> unit -> tenant -> contract lifecycle.
-
-Includes:
-
-- agreement coverage enforcement;
-- date and overlap safety;
-- create/update/renew/terminate lifecycle consistency;
-- permission enforcement for lifecycle-sensitive actions.
-
-### Phase 5 — future
+### Phase 3 — Owner, Agreement, Property, and Unit Workflows (Future)
 
 Objective:
+- Build the full Arabized, mobile-first user interfaces and workflows in the valid sequence: Owner → Property → Owner Agreement → Unit.
+- Support both operating models: `property_management` and `master_lease`.
+- Prevent agreements from existing before properties; support consolidated onboarding wizards.
 
-- implement the financial engine for agreement terms, expense responsibility, owner settlements, and office profitability.
+Details in `docs/PHASE_1_7_EXECUTION_PLAN.md`.
 
-Includes:
-
-- support for richer agreement terms;
-- settlement cadence and statement logic;
-- verifiable owner-versus-office calculations.
-
-### Phase 6 — future
+### Phase 4 — Tenant and Contract Lifecycle (Future)
 
 Objective:
+- Create tenant onboarding workflows and the full lease contract lifecycle (create, update, renew, terminate).
+- Enforce business invariants locally: dates within agreement boundaries, zero-overlap on units for active/draft contracts, unit vacancy checks, and role approvals. Expired or terminated contracts do not block new ones.
 
-- implement governance controls.
+Details in `docs/PHASE_1_7_EXECUTION_PLAN.md`.
 
-Includes:
-
-- sensitive permission rules;
-- auditability of money and obligation changes;
-- reversal/cancellation paths instead of silent overwrite;
-- manager approvals for sensitive actions.
-
-### Phase 7 — future
+### Phase 5 — Financial Workflows (Future)
 
 Objective:
+- Build the core rent and service financial calculations engine.
+- Generate contract invoices; record payments and generate detailed receipts.
+- Track unit/property expenses and assign expense responsibility (office vs owner).
+- Implement owner settlements engine (`property_management` vs `master_lease` models) and calculate office-level profitability. All automatic invoicing or calculations are marked as future owner decisions or configurable policies.
 
-- complete reports, statements, print, and export surfaces.
+Details in `docs/PHASE_1_7_EXECUTION_PLAN.md`.
 
-Includes target outputs such as:
-
-- collections;
-- arrears;
-- invoices;
-- expenses;
-- occupancy;
-- contract lifecycle;
-- property statement;
-- owner statement;
-- owner settlement statement;
-- office profitability;
-- cash flow;
-- maintenance/vendor follow-up;
-- employee operational follow-up.
-
-### Phase 8 — future
+### Phase 6 — Roles and Audit Behavior (Future)
 
 Objective:
+- Apply client-side role permissions (`ADMIN`, `MANAGER`, `USER`) dynamically on UI elements.
+- Log local operational mutations to an in-memory/localStorage audit log database.
+- Enforce MANAGER/ADMIN approval workflows for sensitive actions (reversals, contract terminations, settlement releases). All approval limits or thresholds are marked as future owner decisions or configurable policies.
 
-- harden secondary modules after the core lifecycle and financial model are safe.
+Details in `docs/PHASE_1_7_EXECUTION_PLAN.md`.
 
-Includes:
+### Phase 7 — Reports, Print/Export, Tests, and CI (Future)
 
-- maintenance;
-- documents;
-- alerts;
-- lands;
-- leads;
-- commissions;
-- communication.
+Objective:
+- Implement collections, arrears, occupancy, statements, and profitability reports.
+- Create print-optimized templates for physical/mobile devices and file exporters (CSV, PDF).
+- Deliver 100% green test coverage on calculations and workflows; extend existing CI pipeline validation.
+
+Details in `docs/PHASE_1_7_EXECUTION_PLAN.md`.
+
+### Phase 8 — Supabase Integration (Future)
+
+Objective:
+- Migrate the local/mock-backed repository to live Supabase backend.
+- Set up real database schema, migrations, security RLS, RPCs, Auth, and automatic TypeScript type-generation.
+- Verify production-readiness criteria.
 
 ---
 
 ## 5. Product Boundaries for Execution
 
 The roadmap assumes these product decisions are already approved:
-
 - Rentrix remains single-office, Arabic-first, mobile-first.
 - Owner settlement and office profitability are in target product scope.
 - Rentrix is not a legal-title registry, marketplace, multi-tenant SaaS platform, valuation system, or general ledger.
 - The current live role enum remains `ADMIN`, `MANAGER`, `USER` until an implemented change says otherwise.
 
 What remains out of scope unless separately approved:
-
-- legal-title registry behavior;
-- marketplace behavior;
-- sale/purchase valuation systems;
-- shared-database SaaS multi-tenancy;
-- broad general-ledger accounting;
-- tax-finality or statutory-accounting claims;
-- external communication sending.
-
-### Historical supersession note
-
-Older roadmap statements that described owner settlement, owner payout, or profitability as `OUT OF SCOPE`, `DEFERRED` due to permanent exclusion, or `NEEDS OWNER DECISION` are superseded by the current approved product decision. The correct current framing is: **in scope as target capability, not yet fully implemented**.
+- Legal-title registry behavior.
+- Marketplace behavior.
+- Sale/purchase valuation systems.
+- Shared-database SaaS multi-tenancy.
+- Broad general-ledger accounting.
+- Tax-finality or statutory-accounting claims.
+- External communication sending.
 
 ---
 
@@ -212,18 +162,10 @@ Older roadmap statements that described owner settlement, owner payout, or profi
 
 When a document, code path, generated type, migration, or live metadata conflicts with another source:
 
-1. identify the higher-authority source;
-2. record the contradiction clearly;
-3. do not pretend the conflict is already resolved;
-4. assign the fix to the owning phase.
-
-Typical ownership:
-
-- schema/type/code drift -> Phase 2;
-- lifecycle safety gaps -> Phase 4;
-- settlement/profitability engine gaps -> Phase 5;
-- sensitive permissions/audit/reversal gaps -> Phase 6;
-- statements/reports/print/export gaps -> Phase 7.
+1. Identify the higher-authority source (Verified live Supabase metadata remains the database truth).
+2. Record the contradiction clearly.
+3. Do not pretend the conflict is already resolved.
+4. Assign the fix to the owning phase (Phase 8 for database/Supabase-specific contradictions; Phase 1-7 for domain/UX contradictions).
 
 ---
 
@@ -232,33 +174,29 @@ Typical ownership:
 Future implementation PRs should follow the roadmap order unless a narrow technical repair is required to unblock the current phase.
 
 Documentation-only work must not modify:
-
-- application code,
-- generated TypeScript types,
-- migrations,
-- Supabase SQL/functions/RLS/grants/live data,
-- tests,
-- CI workflows,
-- dependencies,
-- configuration,
-- product behavior.
+- Application code.
+- Generated TypeScript types.
+- Migrations.
+- Supabase SQL/functions/RLS/grants/live data.
+- Tests.
+- CI workflows.
+- Dependencies.
+- Configuration.
+- Product behavior.
 
 ---
 
 ## 8. Final Delivery and Production-Readiness Truth
 
-Production readiness is not established by Phase 1 documentation work.
+Production readiness is established at the end of Phase 8 once the live Supabase database sync is verified.
 
 Final delivery evidence remains tracked in `docs/ai/FINAL_DELIVERY_GATE_QA_EVIDENCE.md`.
 
 Do not claim Production GO until the following evidence is verified:
-
-- B-1: authenticated ADMIN browser QA;
-- B-2: live invoice -> payment -> receipt -> invoice/report refresh;
-- B-3: mobile or physical-device print QA, or an explicit `UNVERIFIED` record;
-- B-4: allowed live writes and RLS/permission behavior.
-
-Phase 1 does not close, replace, or infer completion of these gates.
+- B-1: Authenticated ADMIN browser QA.
+- B-2: Live invoice -> payment -> receipt -> invoice/report refresh.
+- B-3: Mobile or physical-device print QA, or an explicit `UNVERIFIED` record.
+- B-4: Allowed live writes and RLS/permission behavior.
 
 ---
 
@@ -266,11 +204,10 @@ Phase 1 does not close, replace, or infer completion of these gates.
 
 - `docs/FINAL_PRODUCT_BLUEPRINT.md` defines the target product.
 - `docs/RUNTIME_TRUTH_AND_GAPS.md` defines observed runtime truth and known gaps.
+- `docs/PHASE_1_7_EXECUTION_PLAN.md` provides the detailed development specifications and TODO list for the local-first phases.
 - `docs/ai/CURRENT_EXECUTION_CONTEXT.md` tracks the exact current branch/base/phase state.
-- `docs/ai/FINAL_DELIVERY_GATE_QA_EVIDENCE.md` tracks final delivery evidence and current production-readiness status.
+- `docs/ai/FINAL_DELIVERY_GATE_QA_EVIDENCE.md` tracks final delivery evidence.
 - `docs/ai/ONBOARDING.md` remains the active application snapshot and reading sequence.
 - `docs/ai/REPORTING_DEFINITIONS.md` remains the reporting-definition reference.
 - `docs/ai/GIT_TOOLING_POLICY.md` remains the git/branch/PR workflow reference.
 - `docs/ai/domain-rules.md`, `docs/ai/engineering-policy.md`, `docs/ai/security-policy.md`, `docs/ai/release-policy.md`, and `docs/ai/testing-guide.md` remain active policy references.
-
-If uncertainty remains after reading those documents, report the contradiction rather than guessing.
