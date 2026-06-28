@@ -85,7 +85,7 @@ describe('Global UnitsPage Interactions', () => {
     renderToStaticMarkup(<UnitsPage />);
 
     // Render the mobile card to capture props passed to UnitCard
-    renderToStaticMarkup(lastEntityTableProps.renderMobileCard({ id: 'unit-1', property_id: 'prop-1', unit_number: '101' }));
+    renderToStaticMarkup(lastEntityTableProps.renderMobileCard({ id: 'unit-1', property_id: 'prop-1', unit_number: '101', status: 'available' }));
 
     expect(lastUnitCardProps).not.toBeNull();
 
@@ -107,7 +107,7 @@ describe('Global UnitsPage Interactions', () => {
     expect(propertyCol).toBeDefined();
 
     // Render the property column cell
-    const cellMarkup = propertyCol.render({ id: 'unit-1', property_id: 'prop-1' });
+    const cellMarkup = propertyCol.render({ id: 'unit-1', property_id: 'prop-1', status: 'available' });
     
     // We spy on stopPropagation
     const stopPropagationSpy = vi.fn();
