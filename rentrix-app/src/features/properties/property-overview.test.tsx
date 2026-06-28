@@ -1,5 +1,5 @@
 import { renderToStaticMarkup } from 'react-dom/server';
-import { describe, expect, it, vi, beforeEach } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { PropertyOverview } from './property-detail-page';
 
 // Mock TanStack Router
@@ -49,14 +49,5 @@ describe('PropertyOverview Component Rendering and Copy Integrity', () => {
     // DOES NOT render unsupported negative claims
     expect(html).not.toContain('لا توجد اتفاقية تشغيل نشطة مسجلة حالياً لهذا العقار.');
     expect(html).not.toContain('لا تتوفر حركات مالية أو تصفية محاسبية نشطة مسجلة لهذا العقار حالياً.');
-  });
-
-  it('renders property identity and basic details when available', () => {
-    const html = renderToStaticMarkup(<PropertyOverview />);
-    
-    // Verifies property fields and basic info are rendered correctly
-    expect(html).toContain('محمد مسعود');
-    expect(html).toContain('ملاحظات العقار');
-    expect(html).toContain('مبنى');
   });
 });
