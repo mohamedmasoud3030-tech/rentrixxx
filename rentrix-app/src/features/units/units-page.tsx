@@ -140,7 +140,16 @@ export function UnitsPage() {
               { key: 'unit_number', header: 'الوحدة', render: (unit) => <span className="font-black">{unit.unit_number}</span> },
               { key: 'property', header: 'العقار', render: (unit) => {
                 const property = propertyById.get(unit.property_id);
-                return property ? <Link className="font-bold text-primary hover:underline" to="/properties/$propertyId" params={{ propertyId: property.id }}>{property.title}</Link> : '—';
+                return property ? (
+                  <Link 
+                    className="font-bold text-primary hover:underline" 
+                    to="/properties/$propertyId" 
+                    params={{ propertyId: property.id }}
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    {property.title}
+                  </Link>
+                ) : '—';
               }},
               { key: 'floor', header: 'الدور', render: (unit) => unit.floor ?? '—' },
               { key: 'status', header: 'الحالة', render: (unit) => {
@@ -151,7 +160,13 @@ export function UnitsPage() {
               { key: 'notes', header: 'ملاحظات', render: (unit) => unit.notes ?? '—' },
               { key: 'action', header: 'إجراء', render: (unit) => {
                 const property = propertyById.get(unit.property_id);
-                return property ? <Button variant="secondary" asChild><Link to="/properties/$propertyId/units/$unitId" params={{ propertyId: property.id, unitId: unit.id }}>فتح التفاصيل</Link></Button> : '—';
+                return property ? (
+                  <Button variant="secondary" asChild onClick={(e) => e.stopPropagation()}>
+                    <Link to="/properties/$propertyId/units/$unitId" params={{ propertyId: property.id, unitId: unit.id }}>
+                      فتح التفاصيل
+                    </Link>
+                  </Button>
+                ) : '—';
               }},
             ]}
             onRowClick={(unit) => navigate({
@@ -177,7 +192,7 @@ export function UnitsPage() {
                   />
                   {property && (
                     <div className="px-2 pb-2 flex justify-between items-center text-xs text-muted-foreground border-b border-border/20">
-                      <span>العقار: <Link className="font-bold text-primary hover:underline" to="/properties/$propertyId" params={{ propertyId: property.id }}>{property.title}</Link></span>
+                      <span>العقار: <Link className="font-bold text-primary hover:underline" to="/properties/$propertyId" params={{ propertyId: property.id }} onClick={(e) => e.stopPropagation()}>{property.title}</Link></span>
                     </div>
                   )}
                 </div>
