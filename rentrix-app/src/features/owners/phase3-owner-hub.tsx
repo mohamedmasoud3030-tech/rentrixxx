@@ -12,6 +12,7 @@ import { StatusBadge } from '@/components/ui/status-badge';
 import { useMockAgreements, useMockContracts, useMockOwners, useMockProperties, useMockUnits } from '@/hooks/use-mock-repositories';
 import type { MockDatabaseState } from '@/store/mock-db-store';
 import type { AgreementType, Owner, Property } from '@/domain/types';
+import { isValidISODateString, validatePositiveAmount } from '@/domain/validators';
 
 type Phase3OwnerFormValues = Readonly<{ name: string; phone: string; email: string }>;
 type Phase3AgreementFormValues = Readonly<{
@@ -58,16 +59,23 @@ function parseOptionalPositiveNumber(value: string): number | undefined {
   return Number(value);
 }
 
+function isOptionalPositiveAmount(value: number | undefined): boolean {
+  return value === undefined || validatePositiveAmount(value).isValid;
+}
+
 export function validatePhase3AgreementForm(values: Phase3AgreementFormValues): string | null {
   if (!values.ownerId) return 'اختيار المالك مطلوب قبل إنشاء الاتفاقية.';
   if (!values.propertyId) return 'اختيار العقار مطلوب قبل إنشاء الاتفاقية.';
   if (!values.startDate) return 'تاريخ بداية الاتفاقية مطلوب.';
+  if (!isValidISODateString(values.startDate) || (values.endDate && !isValidISODateString(values.endDate))) {
+    return 'تواريخ اتفاقية التشغيل غير صالحة.';
+  }
   if (values.endDate && values.startDate > values.endDate) return 'تاريخ بداية الاتفاقية يجب أن يسبق تاريخ النهاية.';
 
   const commissionRate = parseOptionalPositiveNumber(values.commissionRate);
   const fixedFee = parseOptionalPositiveNumber(values.fixedFee);
-  if (commissionRate !== undefined && (!Number.isFinite(commissionRate) || commissionRate <= 0)) return 'نسبة العمولة يجب أن تكون رقماً موجباً.';
-  if (fixedFee !== undefined && (!Number.isFinite(fixedFee) || fixedFee <= 0)) return 'المبلغ الثابت يجب أن يكون رقماً موجباً.';
+  if (!isOptionalPositiveAmount(commissionRate)) return 'نسبة العمولة يجب أن تكون رقماً موجباً.';
+  if (!isOptionalPositiveAmount(fixedFee)) return 'المبلغ الثابت يجب أن يكون رقماً موجباً.';
   if (values.agreementType === 'property_management' && commissionRate === undefined && fixedFee === undefined) {
     return 'اتفاقية إدارة الأملاك تحتاج نسبة عمولة أو رسماً ثابتاً.';
   }
@@ -150,12 +158,21 @@ export function Phase3OwnerHubPage() {
     setOwnerFormSuccess(null);
   };
 
-  const updateAgreementFormField = (field: keyof Phase3AgreementFormValues, value: string) => {
+  const updateAgreementFormField = (field: keyof Omit<Phase3AgreementFormValues, 'agreementType'>, value: string) => {
     setAgreementFormValues((current) => ({
       ...current,
       [field]: value,
       ...(field === 'ownerId' ? { propertyId: '' } : null),
-      ...(field === 'agreementType' && value === 'master_lease' ? { commissionRate: '' } : null),
+    }));
+    setAgreementFormError(null);
+    setAgreementFormSuccess(null);
+  };
+
+  const updateAgreementType = (agreementType: AgreementType) => {
+    setAgreementFormValues((current) => ({
+      ...current,
+      agreementType,
+      ...(agreementType === 'master_lease' ? { commissionRate: '' } : null),
     }));
     setAgreementFormError(null);
     setAgreementFormSuccess(null);
@@ -303,7 +320,7 @@ export function Phase3OwnerHubPage() {
               </Select>
             </Field>
             <Field label="نموذج التشغيل *">
-              <Select value={agreementFormValues.agreementType} onChange={(event) => updateAgreementFormField('agreementType', event.target.value)}>
+              <Select value={agreementFormValues.agreementType} onChange={(event) => updateAgreementType(event.target.value as AgreementType)}>
                 <option value="property_management">إدارة أملاك</option>
                 <option value="master_lease">استئجار رئيسي</option>
               </Select>
@@ -315,10 +332,10 @@ export function Phase3OwnerHubPage() {
               <Input dir="ltr" type="date" value={agreementFormValues.endDate} onChange={(event) => updateAgreementFormField('endDate', event.target.value)} />
             </Field>
             <Field label="نسبة العمولة %">
-              <Input dir="ltr" type="number" min="0" step="0.01" value={agreementFormValues.commissionRate} onChange={(event) => updateAgreementFormField('commissionRate', event.target.value)} disabled={agreementFormValues.agreementType === 'master_lease'} placeholder="8" />
+              <Input dir="ltr" type="number" min="0.01" step="0.01" value={agreementFormValues.commissionRate} onChange={(event) => updateAgreementFormField('commissionRate', event.target.value)} disabled={agreementFormValues.agreementType === 'master_lease'} placeholder="8" />
             </Field>
             <Field label={agreementFormValues.agreementType === 'master_lease' ? 'التزام المالك الثابت *' : 'رسم ثابت اختياري'}>
-              <Input dir="ltr" type="number" min="0" step="0.01" value={agreementFormValues.fixedFee} onChange={(event) => updateAgreementFormField('fixedFee', event.target.value)} placeholder="1500" />
+              <Input dir="ltr" type="number" min="0.01" step="0.01" value={agreementFormValues.fixedFee} onChange={(event) => updateAgreementFormField('fixedFee', event.target.value)} placeholder="1500" />
             </Field>
             <div className="flex items-end">
               <Button type="submit" className="min-h-11 w-full gap-2" disabled={agreementFormSaving}>
