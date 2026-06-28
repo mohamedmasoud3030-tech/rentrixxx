@@ -22,3 +22,6 @@ export { InlineStatCard } from "./inline-stat-card";
 
 // ADR-008 Phase A — unified entity table
 export { EntityTable, type ColumnDef, type SortState, type SortDirection, type PaginationState, type EntityTableProps } from "./entity-table";
+
+// ADR-008 Phase B — unified entity card
+export { EntityCard, entityCardTypeMap, entityCardContactMeta, type EntityCardProps, type EntityCardMetaItem, type EntityCardAction } from "./entity-card";
