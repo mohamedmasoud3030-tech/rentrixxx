@@ -3,18 +3,18 @@ import { SearchInput } from '@/components/ui/search-input';
 import { cn } from '@/lib/utils';
 
 interface ListFilterBarProps {
-  search?: {
-    value: string;
-    onChange: (value: string) => void;
-    placeholder?: string;
-    className?: string;
+  readonly search?: {
+    readonly value: string;
+    readonly onChange: (value: string) => void;
+    readonly placeholder?: string;
+    readonly className?: string;
   };
-  filters?: ReactNode;
-  actions?: ReactNode;
-  className?: string;
+  readonly filters?: ReactNode;
+  readonly actions?: ReactNode;
+  readonly className?: string;
 }
 
-export function ListFilterBar({ search, filters, actions, className }: ListFilterBarProps) {
+export function ListFilterBar({ search, filters, actions, className }: Readonly<ListFilterBarProps>) {
   return (
     <div className={cn('flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between', className)}>
       <div className="flex flex-1 flex-col gap-3 sm:flex-row sm:items-center">
