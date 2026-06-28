@@ -1,45 +1,62 @@
 # Rentrix
 
-Rentrix is an Arabic-first, single-office property operations system for managing the verified property workflow: properties, units, people, tenants, owners, contracts, invoices, payments, receipts, arrears, expenses, and reports.
+Rentrix is an Arabic-first, mobile-first, single-office property operations system for managing the operational property lifecycle: office, owners, owner agreements, properties, units, tenants, lease contracts, invoices, payments/receipts, expenses, owner settlements, and operational reporting.
 
-The active application is intentionally focused. SaaS multi-tenancy and accounting-grade ledger work are outside the current stabilization scope. Approved recovered modules such as lands, leads, commissions, and communication are live visible modules with permission guards.
+Rentrix is not a legal-title registry, property marketplace, multi-tenant SaaS product, sale/purchase valuation system, or a general ledger.
 
 ## Start here
 
-**Authoritative sources:**
+**Canonical documents:**
 
-1. **What is Rentrix v1.0?** → `docs/FINAL_PRODUCT_BLUEPRINT.md`
-2. **What's the execution roadmap?** → `docs/RENTRIX_MASTER_PLAN.md`
-3. **What do I work on next?** → `docs/ai/CURRENT_EXECUTION_CONTEXT.md`
+1. `docs/FINAL_PRODUCT_BLUEPRINT.md` — canonical product and business blueprint
+2. `docs/RENTRIX_MASTER_PLAN.md` — official execution roadmap and phase gates
+3. `docs/RUNTIME_TRUTH_AND_GAPS.md` — source-of-truth hierarchy, verified runtime snapshot, and known contradictions
+4. `docs/ai/CURRENT_EXECUTION_CONTEXT.md` — current execution state and next phase context
 
 **Then read in this order:**
 
-1. `AGENTS.md` (agent rules)
-2. `README.md` (repo structure)
-3. `docs/ai/ONBOARDING.md` (current app snapshot)
-4. `docs/ai/AGENT_OPERATING_PROTOCOL.md` or `docs/ai/CLAUDE_AGENT_GUIDE.md` (your agent type)
+1. `AGENTS.md`
+2. `README.md`
+3. `docs/ai/ONBOARDING.md`
+4. `docs/ai/AGENT_OPERATING_PROTOCOL.md` or `docs/ai/CLAUDE_AGENT_GUIDE.md`
 
-`docs/ai/CURRENT_EXECUTION_CONTEXT.md` is the single current execution source of truth for scope, blockers, contradictions, next PR order, and future-agent rules. `docs/ai/FINAL_DELIVERY_GATE_QA_EVIDENCE.md` records the currently BLOCKED live handover evidence gates. `docs/ai/V05_COMMERCIAL_HARDENING_PREP.md` defines repo-only v0.5 preparation without claiming Production GO. `docs/ai/ONBOARDING.md` contains the current application snapshot and the full reading sequence. `docs/RENTRIX_MASTER_PLAN.md` defines the final product shape, current release, ordered releases, and next ready item. `docs/ai/AGENT_CAPABILITIES.md` maps tasks to skills and project additions. `docs/ai/GIT_TOOLING_POLICY.md` defines how branch, diff, PR, CI, and merge tools must be used.
+## Documentation authority
+
+Use this hierarchy when documents, code, generated types, and prior audits disagree:
+
+1. Verified live Supabase metadata, timestamped and treated as runtime truth.
+2. Current remote `main` code and migration history.
+3. Generated TypeScript database contract.
+4. Older product documents, previous audits, and agent reports.
+
+If sources conflict, do not invent a resolution. Record the contradiction and defer its fix to the owning phase in `docs/RUNTIME_TRUTH_AND_GAPS.md` and `docs/RENTRIX_MASTER_PLAN.md`.
 
 ## Docs map
 
-**Authoritative sources (read first):**
+**Authoritative sources:**
 
-- `docs/FINAL_PRODUCT_BLUEPRINT.md` — what Rentrix v1.0 is supposed to become
-- `docs/RENTRIX_MASTER_PLAN.md` — how to release and current baseline
-- `docs/ai/CURRENT_EXECUTION_CONTEXT.md` — what to work on right now
+- `docs/FINAL_PRODUCT_BLUEPRINT.md`
+- `docs/RENTRIX_MASTER_PLAN.md`
+- `docs/RUNTIME_TRUTH_AND_GAPS.md`
+- `docs/ai/CURRENT_EXECUTION_CONTEXT.md`
 
 **Navigation & reference:**
 
-- `QUICK_STATUS.md` — quick summary for new agents (points to above)
-- `docs/ROADMAP.md` — phase navigation aid (points to above)
-- `docs/INDEX.md` — which docs to read when (points to above)
+- `docs/INDEX.md`
+- `docs/ROADMAP.md`
+- `docs/ROOT_LAYOUT.md`
+- `docs/ai/ONBOARDING.md`
+- `docs/ai/FINAL_DELIVERY_GATE_QA_EVIDENCE.md`
+- `docs/ai/V05_COMMERCIAL_HARDENING_PREP.md`
+- `docs/ai/REPORTING_DEFINITIONS.md`
+- `docs/ai/GIT_TOOLING_POLICY.md`
+- `docs/ai/domain-rules.md`
+- `docs/ai/engineering-policy.md`
+- `docs/ai/security-policy.md`
+- `docs/ai/release-policy.md`
+- `docs/ai/testing-guide.md`
 
-Active policy docs: `docs/ai/domain-rules.md`, `docs/ai/engineering-policy.md`, `docs/ai/security-policy.md`, `docs/ai/release-policy.md`, `docs/ai/testing-guide.md`, and `docs/decisions/README.md`.
-
-Technical references: `docs/ai/FINAL_DELIVERY_GATE_QA_EVIDENCE.md`, `docs/ai/V05_COMMERCIAL_HARDENING_PREP.md`, `docs/ai/PRINT_AND_EXPORT_READINESS.md`, `docs/ai/REPORTING_DEFINITIONS.md`, `docs/ai/SECURE_OPERATOR_RUNBOOK.md`, `docs/ROOT_LAYOUT.md`, `docs/ai/AGENT_CAPABILITIES.md`, and `docs/ai/GIT_TOOLING_POLICY.md`.
-
-Old reports, audits, evidence packs, superseded indexes, and release-thread notes were removed from active repository docs to keep the docs map small. Use git history when historical material is needed, and do not copy old status forward without verifying it against active code, migrations, and current source-of-truth docs.
+Historical material remains useful, but it is lower authority than verified runtime truth, current `main`, and the generated database contract. Where older documentation said owner settlement, payout, or office profitability were permanently out of scope or awaiting a product decision, those statements are now superseded by the Phase 1 product decision: settlement and profitability are part of the target product, though not yet fully implemented.
 
 ## Canonical runtime
 
@@ -69,28 +86,24 @@ rentrixxx/
 
 See `docs/ROOT_LAYOUT.md` for retention rules, dependency direction, and root-folder ownership.
 
-`archive/recovery-reference/` and `understand-anything/` are not present in the current repository checkout. Treat any references to those paths as removed historical references unless a future reviewed cleanup or tooling PR recreates them deliberately.
+## Product boundary summary
 
-## Optional support artifacts
+Approved target lifecycle:
 
 ```text
-artifacts/rentrix-promo/
+Office + Owner + Property Operating Agreement -> Property -> Unit -> Tenant -> Lease Contract -> Invoice -> Payment/Receipt -> Expense -> Owner Settlement -> Reports / Office Profitability
 ```
 
-The promo project is retained but is not part of the production runtime.
+Current product decisions include:
 
-## Current constrained-beta boundary
+- one operational owner per property at a time;
+- time-bound owner agreements with historical retention;
+- two operating models: `property_management` and `master_lease`;
+- future financial support for fixed fee, rate, or combined terms; invoiced-versus-collected basis; expense responsibility; settlement cadence; amendments, renewal, and audit history;
+- manager approval for sensitive actions;
+- current live role enum remains `ADMIN`, `MANAGER`, `USER`.
 
-Visible navigation includes the verified operational flow plus approved, permission-guarded operations modules. `/lands`, `/leads`, `/commissions`, and `/communication` are live visible approved modules in the active app, not pending or hidden deferred routes. `/accounting` redirects to `/financials` and must not be expanded into a general ledger during stabilization.
-
-Use `docs/ai/ONBOARDING.md` as the current source for the exact route snapshot and incomplete/planned/deferred classifications.
-
-## Root configuration
-
-- `package.json` and `pnpm-workspace.yaml` define the workspace boundary.
-- `rentrix-app/vercel.json` is the authoritative deployment configuration for the Vercel project rooted at `rentrix-app`.
-- `sonar-project.properties` limits static analysis to shipped sources.
-- `.replit` is a local launcher only and must not define product architecture.
+These are approved product decisions. They are not all fully implemented yet.
 
 ## Local setup
 
@@ -127,15 +140,13 @@ For schema or RLS changes, also run the repository-approved Supabase validation 
 - Keep Rentrix single-office.
 - Preserve Arabic RTL and English LTR behavior.
 - Do not restore legacy `react-router-dom`, `AppContext`, `useApp`, `dataService`, or local database flows into the active app.
-- Do not wire a general accounting ledger during stabilization.
+- Do not turn `/accounting` into a general ledger.
 - Reuse historical code only after deliberate adaptation to the active TanStack Router, React Query, and Supabase architecture.
 
-## Incomplete / Planned / Deferred Work
+## Current documentation note
 
-The Custom Access Token Hook is `DONE` by owner confirmation and is not a current repo-stabilization blocker. Authenticated ADMIN browser QA, mobile/physical-device print QA, and the final production GO/NO-GO are currently `BLOCKED` by missing live/operator evidence and tracked in `docs/ai/FINAL_DELIVERY_GATE_QA_EVIDENCE.md`. Full production readiness must not be claimed before that final QA closes.
-
-Commercial hardening v0.5 is now repo-only preparation in `docs/ai/V05_COMMERCIAL_HARDENING_PREP.md`; it does not imply Production GO. v1.0 commercial release remains `PLANNED`. External communication sending, a general accounting ledger, accounting-grade tax finality, SaaS multi-tenancy, and blind legacy restoration are `OUT OF SCOPE` unless a later reviewed product decision changes the boundary. Owner settlement/payout workflow is `NEEDS OWNER DECISION`. Dedicated generated receipt PDF remains `PLANNED`; current receipts use browser print.
+This Phase 1 task is documentation-only. It does not change application behavior, migrations, generated types, Supabase SQL/RLS/functions, tests, CI, dependencies, or runtime product behavior.
 
 ## Historical references
 
-`archive/recovery-reference/` and `understand-anything/` are not present in the current repository checkout. Old reports were removed from active repository docs and remain available through git history. `.migration-backup/` and `artifacts/rentrix/legacy-src/` were removed in PR #805.
+Old reports, audits, and previous agent notes remain available through git history. Do not silently copy their conclusions forward when they conflict with verified runtime truth or current product decisions.

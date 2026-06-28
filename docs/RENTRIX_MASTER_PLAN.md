@@ -1,247 +1,274 @@
 # Rentrix Master Execution Plan
 
-This is the single authoritative roadmap for Rentrix development. It defines the current repository baseline, final delivery gate, next repo-only phase, planned/deferred work, out-of-scope boundaries, and continuation protocol for coding agents.
+This is the official execution roadmap for Rentrix.
 
-Use together with:
+It defines the approved phase order, release gates, and contradiction-handling rules. It must stay aligned with the canonical product blueprint in `docs/FINAL_PRODUCT_BLUEPRINT.md` and the runtime snapshot in `docs/RUNTIME_TRUTH_AND_GAPS.md`.
 
-```text
-AGENTS.md
-README.md
-docs/ai/CURRENT_EXECUTION_CONTEXT.md
-docs/ai/FINAL_DELIVERY_GATE_QA_EVIDENCE.md
-docs/ai/V05_COMMERCIAL_HARDENING_PREP.md
-docs/ai/ONBOARDING.md
-docs/FIRST_CLIENT_DELIVERY_PLAN.md
-docs/ai/AGENT_CAPABILITIES.md
-docs/ai/GIT_TOOLING_POLICY.md
-docs/ROOT_LAYOUT.md
-```
+---
 
-The active codebase remains the source of truth. If docs conflict with code, inspect the active app under `rentrix-app/`, shared libraries under `lib/`, and canonical migrations under `supabase/migrations/`, then update docs to match current repo reality.
+## 1. Source-of-Truth Discipline
 
-## 1. Final Product Shape
+Use this hierarchy explicitly:
 
-Rentrix is an Arabic-first, single-office property operations system for a real-estate office. English/LTR support remains functional. The product is not a shared-database SaaS platform and does not use organization-scoped multi-tenancy.
+1. Verified live Supabase metadata, timestamped and treated as runtime truth.
+2. Current remote `main` code and migration history.
+3. Generated TypeScript database contract.
+4. Older product documents, previous audits, and agent reports.
 
-The commercial target is a focused operational system with one canonical business chain:
+When sources conflict, do not invent a resolution. Record the contradiction and assign its resolution to the owning future phase.
 
-```text
-Property -> Unit -> Contract -> Invoice -> Posted Payment -> Receipt
-             \-> Tenant
-Owner -> Property or Owner Agreement
-Property -> Expense
-Property -> Maintenance Record
-```
+---
 
-The current approved product includes:
+## 2. Official Roadmap
 
-```text
-Dashboard
-Properties
-Units
-People
-Tenants
-Owners
-Owners Hub
-Lands
-Leads
-Contracts
-Financials / Payments
-Invoices
-Receipts
-Expenses
-Arrears
-Commissions
-Reports
-Maintenance
-Communication
-Authorized Audit Visibility
-Authorized Data-Integrity Visibility
-Authorized System Governance
-Settings
-Change Password
-```
+Phase 0 — Runtime truth audit and contradiction discovery: **completed**.
 
-`/accounting` remains a redirect to `/financials`. It is not authorization to build a general ledger.
+Phase 1 — Documentation, decisions, and sources of truth: **current**.
 
-## 2. Current Repository Baseline
+Phase 2 — Reconcile live schema, migrations, generated types, and code contract.
 
-Current baseline at this refresh:
+Phase 3 — Restore and verify a fully green `main`.
 
-| Area | Current state |
-| --- | --- |
-| Active app | `rentrix-app/` |
-| Workspace | `pnpm-workspace.yaml` and root `package.json` define a pnpm workspace |
-| Canonical migrations | `supabase/migrations/` |
-| Root-level SQL files | None found in the repository root |
-| Removed historical paths | `archive/recovery-reference/` and `understand-anything/` are not present in this checkout |
-| Custom Access Token Hook | `DONE` by owner confirmation |
-| Authenticated ADMIN browser QA | `FINAL DELIVERY GATE — BLOCKED`; evidence file: `docs/ai/FINAL_DELIVERY_GATE_QA_EVIDENCE.md` |
-| Production GO/NO-GO | `BLOCKED`, pending B-1/B-2/B-3/B-4 live evidence |
-| Repo/docs stabilization | `DONE` through PR #924; current production status remains BLOCKED by live/operator evidence |
+Phase 4 — Complete safe owner -> agreement -> property -> unit -> tenant -> contract lifecycle.
 
-The latest local audit used current code, route registration, navigation, docs, and repository inventory. It did not use Supabase Cloud, Supabase MCP/API, Dashboard, live SQL, linked CLI, Preview branches, or Vercel.
+Phase 5 — Financial engine: agreement terms, expense responsibility, settlements, profitability.
 
-## 3. Navigation and Module Status
+Phase 6 — Governance: sensitive permissions, audit, reversal/cancellation controls.
 
-Current route/navigation truth comes from `rentrix-app/src/layouts/app-nav-items.ts`, `rentrix-app/src/routeTree.ts`, and route files under `rentrix-app/src/routes/`.
+Phase 7 — Reports, statements, print, export.
 
-Desktop navigation currently exposes:
+Phase 8 — Harden secondary modules: maintenance, documents, alerts, lands, leads, commissions, communication.
 
-```text
-Dashboard
-Properties
-Units
-People
-Tenants
-Owners
-Lands
-Leads
-Contracts
-Financials
-Invoices
-Receipts
-Expenses
-Arrears
-Commissions
-Reports
-Maintenance
-Communication
-Audit Log
-Data Integrity
-System
-Change Password
-Settings
-```
+---
 
-Mobile bottom navigation remains intentionally narrower:
+## 3. Gates
 
-```text
-Dashboard
-Properties
-Contracts
-Financials
-Arrears
-```
+- **Gate 0:** source-of-truth and contradictions documented.
+- **Gate 1:** `main` green.
+- **Gate 2:** owner-to-contract lifecycle safe.
+- **Gate 3:** financial model verifiable.
+- **Gate 4:** permissions and audit controls.
+- **Gate 5:** reports and statements.
+- **Gate 6:** documentation and QA readiness.
 
-The active app registers `/lands`, `/leads`, `/commissions`, and `/communication` as protected TanStack routes with `requirePermission(...)` guards and visible desktop navigation entries. Document them as live visible approved modules, not pending/deferred/hidden routes. `/communication` is an internal log only and does not authorize WhatsApp/SMS/email sending.
+A later phase must not claim completion if its predecessor gate is still unresolved.
 
-## 4. Incomplete / Planned / Deferred Work
+---
 
-Classify every non-complete item with exactly one of these statuses:
+## 4. Phase Ownership Summary
 
-| Item | Status | Current note |
-| --- | --- | --- |
-| UI Consistency Phase (ADR-008) | `READY` | Build `EntityTable` + `EntityCard`, migrate all list pages. See `docs/decisions/ADR-008-unified-ui-components.md`. |
-| Authenticated ADMIN browser QA | `FINAL DELIVERY GATE — BLOCKED` | Final handover must verify login, protected routes, invoice -> payment -> receipt behavior, reports refresh, RTL/LTR, mobile, print, and operator-critical workflows. Evidence is tracked in `docs/ai/FINAL_DELIVERY_GATE_QA_EVIDENCE.md`. |
-| Production GO/NO-GO | `BLOCKED` | Pending B-1/B-2/B-3/B-4 live handover evidence; full production readiness must not be claimed before this closes. |
-| Mobile/physical-device print QA | `FINAL DELIVERY GATE — BLOCKED` | Repository supports print styles/browser print, but device evidence is still required. |
-| Commercial hardening v0.5 | `PLANNED / REPO-ONLY PREP` | Preparation is tracked in `docs/ai/V05_COMMERCIAL_HARDENING_PREP.md`; this does not imply Production GO. |
-| v1.0 commercial release | `PLANNED` | Depends on final delivery QA and commercial hardening. |
-| Dedicated generated receipt PDF file | `PLANNED` | Current receipt output is browser print from the payment-backed receipt detail page. |
-| Reports PDF export | `DEFERRED` | Current reports export CSV. |
-| Owner statements/settlement documents | `DEFERRED` | Depends on owner settlement/payout decision. |
-| External communication sending | `OUT OF SCOPE` | `/communication` is an internal log only unless a provider boundary is approved later. |
-| General accounting ledger | `OUT OF SCOPE` | No balance sheet, accounting-grade P&L, broad ledger UI, or journal-entry UI expansion during stabilization. |
-| Tax finality/accounting-grade tax treatment | `OUT OF SCOPE` | Requires approved accounting requirements before product claims. |
-| SaaS multi-tenancy | `OUT OF SCOPE` | No organizations, memberships, invitations, subscriptions, or organization-scoped runtime behavior. |
-| Owner settlement/payout workflow | `NEEDS OWNER DECISION` | Future owner decision; do not infer payout workflows from owner or commission modules. |
+### Phase 0 — completed
 
-Completed items that should not be reopened as missing: Custom Access Token Hook registration, Reports CSV date filenames/BOM, invoice PDF export, contract PDF export, expense PDF export, receipt browser print, active lands/leads/commissions/communication routes, and current pnpm workspace/migration layout.
+Delivered outcome:
 
-## 5. Final Delivery Gate
+- runtime truth was inspected and contradictions were surfaced.
 
-The final delivery gate is not a repo-stabilization blocker, but it is required before production GO. The current live gate status is **BLOCKED** and recorded in `docs/ai/FINAL_DELIVERY_GATE_QA_EVIDENCE.md`.
+Evidence now belongs in:
 
-Required B gates:
+- `docs/RUNTIME_TRUTH_AND_GAPS.md`
+- `docs/ai/CURRENT_EXECUTION_CONTEXT.md`
 
-1. B-1: run authenticated ADMIN browser QA with a real operator session.
-2. B-2: verify invoice -> payment -> receipt -> invoice status -> reports refresh in the live target.
-3. B-3: verify receipt browser print and mobile/physical-device print evidence, or explicitly record physical print as UNVERIFIED if it cannot be tested.
-4. B-4: verify allowed live writes and RLS behavior.
-5. Record explicit GO/NO-GO/BLOCKED in current source-of-truth docs.
+### Phase 1 — current
 
-If QA passes, close the final handover with GO evidence. If QA reveals bugs, open narrow fix PRs per bug and do not bundle unrelated roadmap work. If live/operator evidence is unavailable, keep the status BLOCKED.
+Objective:
 
-## 6. Current Repo-Only Phase
+- make repository documentation internally coherent;
+- document current product decisions;
+- document the source-of-truth hierarchy;
+- mark historical contradictions as superseded instead of silently erasing them.
 
-The current safe repo-only phase is v0.5 commercial hardening preparation:
+Artifacts:
 
-1. Keep the blocked final-delivery evidence current in `docs/ai/FINAL_DELIVERY_GATE_QA_EVIDENCE.md`.
-2. Keep v0.5 commercial hardening limited to repo-only planning/runbook preparation in `docs/ai/V05_COMMERCIAL_HARDENING_PREP.md`.
-3. Do not change migrations, schema, Supabase Cloud, Vercel, live SQL, or app code as part of docs preparation.
-4. Wait for final delivery QA evidence before claiming production readiness.
+- `README.md`
+- `docs/FINAL_PRODUCT_BLUEPRINT.md`
+- `docs/RENTRIX_MASTER_PLAN.md`
+- `docs/RUNTIME_TRUTH_AND_GAPS.md`
+- `docs/ai/CURRENT_EXECUTION_CONTEXT.md`
 
-## 7. Release Status Model
+### Phase 2
 
-Each roadmap item uses one status:
+Objective:
 
-| Status | Meaning |
-| --- | --- |
-| `DONE` | Merged, verified, or owner-confirmed where applicable. |
-| `READY` | Can be executed now without a new product decision or live-mutation approval. |
-| `BLOCKED` | Requires access, approval, environment capability, or a product decision. |
-| `DEFERRED` | Intentionally belongs to a later release. |
-| `PLANNED` | Expected future work after its prerequisite gate. |
-| `OUT OF SCOPE` | Not part of the current roadmap unless a later reviewed decision changes the boundary. |
-| `NEEDS OWNER DECISION` | Requires explicit owner/product direction before implementation. |
-| `FINAL DELIVERY GATE` | Required for final handover/production GO, not a current repo-stabilization blocker. |
+- reconcile live schema, migrations, generated TypeScript types, and code contract.
 
-Agents must update evidence when a roadmap item changes status through a reviewed PR or completed verification task.
+Known examples owned by Phase 2:
 
-## 8. Continuation Protocol
+- `properties.owner_id` drift and ownership modeling contradictions;
+- RPC return typing drift, including live RPC contract mismatches;
+- remaining live/repository/generated-type contract contradictions.
 
-When the user asks to continue, resume, proceed, finish the next step, or similar:
+### Phase 3
 
-1. read `AGENTS.md`, `docs/ai/CURRENT_EXECUTION_CONTEXT.md`, `docs/ai/ONBOARDING.md`, this master plan, `docs/ai/AGENT_CAPABILITIES.md`, and `.ai/workflows/README.md`;
-2. inspect current `main`, branch state, current docs, active route/nav code, and latest verification evidence;
-3. find the earliest current item that is not `DONE`;
-4. select the first `READY` repo-only item, or report the exact `FINAL DELIVERY GATE`, `BLOCKED`, `OUT OF SCOPE`, or `NEEDS OWNER DECISION` status;
-5. load only the task-relevant skills;
-6. implement one narrow, reviewable PR slice;
-7. run fresh verification appropriate to the slice;
-8. review the final diff for unrelated changes;
-9. update source-of-truth docs if the work changes status.
+Objective:
 
-Do not ask the user to restate the roadmap. Ask only when a real stop condition exists.
+- restore and verify a fully green `main` after contract reconciliation.
 
-## 9. Stop Conditions
+### Phase 4
 
-Stop and report the exact blocker when any of these apply:
+Objective:
 
-- a product decision is required;
-- a production or live-environment mutation requires explicit approval;
-- authentication, permission, connector safety, or network access blocks the documented operation;
-- verification fails and the cause is not safely isolated;
-- a migration, RLS, RPC, or data repair would exceed the approved narrow slice;
-- a requested action would violate the single-office or non-ledger boundary.
+- complete the safe owner -> agreement -> property -> unit -> tenant -> contract lifecycle.
 
-## 10. Verification Gate
+Includes:
 
-For runtime pull requests, use the current GitHub Actions gate from `.github/workflows/ci.yml`:
+- agreement coverage enforcement;
+- date and overlap safety;
+- create/update/renew/terminate lifecycle consistency;
+- permission enforcement for lifecycle-sensitive actions.
 
-```bash
-pnpm install --frozen-lockfile
-pnpm typecheck
-pnpm lint
-pnpm build
-pnpm --filter ./rentrix-app run typecheck:test
-pnpm --filter ./rentrix-app test
-pnpm --filter ./rentrix-app run test:financials
-```
+### Phase 5
 
-For docs-only reconciliation, run local repository checks that are available and relevant, including whitespace validation, current package scripts, and consistency searches. Do not use live Supabase, Vercel, preview branches, linked CLI, Dashboard, MCP/API, or live SQL for this docs-only work.
+Objective:
 
-## 11. Pull Request Discipline
+- implement the financial engine for agreement terms, expense responsibility, owner settlements, and office profitability.
 
-Every roadmap PR must:
+Includes:
 
-- map to exactly one roadmap item or one tightly coupled safe slice;
-- remain narrow and reversible;
-- state exact files changed;
-- state behavior changed;
-- state what was intentionally not changed;
-- state migration, RLS, RPC, Supabase, and Vercel impact;
-- run fresh verification appropriate to scope;
-- report blockers honestly;
-- update roadmap evidence when merged.
+- support for richer agreement terms;
+- settlement cadence and statement logic;
+- verifiable owner-versus-office calculations.
+
+### Phase 6
+
+Objective:
+
+- implement governance controls.
+
+Includes:
+
+- sensitive permission rules;
+- auditability of money and obligation changes;
+- reversal/cancellation paths instead of silent overwrite;
+- manager approvals for sensitive actions.
+
+### Phase 7
+
+Objective:
+
+- complete reports, statements, print, and export surfaces.
+
+Includes target outputs such as:
+
+- collections;
+- arrears;
+- invoices;
+- expenses;
+- occupancy;
+- contract lifecycle;
+- property statement;
+- owner statement;
+- owner settlement statement;
+- office profitability;
+- cash flow;
+- maintenance/vendor follow-up;
+- employee operational follow-up.
+
+### Phase 8
+
+Objective:
+
+- harden secondary modules after the core lifecycle and financial model are safe.
+
+Includes:
+
+- maintenance;
+- documents;
+- alerts;
+- lands;
+- leads;
+- commissions;
+- communication.
+
+---
+
+## 5. Product Boundaries for Execution
+
+The roadmap assumes these product decisions are already approved:
+
+- Rentrix remains single-office, Arabic-first, mobile-first.
+- Owner settlement and office profitability are in target product scope.
+- Rentrix is not a legal-title registry, marketplace, multi-tenant SaaS platform, valuation system, or general ledger.
+- The current live role enum remains `ADMIN`, `MANAGER`, `USER` until an implemented change says otherwise.
+
+What remains out of scope unless separately approved:
+
+- legal-title registry behavior;
+- marketplace behavior;
+- sale/purchase valuation systems;
+- shared-database SaaS multi-tenancy;
+- broad general-ledger accounting;
+- tax-finality or statutory-accounting claims;
+- external communication sending.
+
+### Historical supersession note
+
+Older roadmap statements that described owner settlement, owner payout, or profitability as `OUT OF SCOPE`, `DEFERRED` due to permanent exclusion, or `NEEDS OWNER DECISION` are superseded by the current approved product decision. The correct current framing is: **in scope as target capability, not yet fully implemented**.
+
+---
+
+## 6. Working Rule When Contradictions Appear
+
+When a document, code path, generated type, migration, or live metadata conflicts with another source:
+
+1. identify the higher-authority source;
+2. record the contradiction clearly;
+3. do not pretend the conflict is already resolved;
+4. assign the fix to the owning phase.
+
+Typical ownership:
+
+- schema/type/code drift -> Phase 2;
+- lifecycle safety gaps -> Phase 4;
+- settlement/profitability engine gaps -> Phase 5;
+- sensitive permissions/audit/reversal gaps -> Phase 6;
+- statements/reports/print/export gaps -> Phase 7.
+
+---
+
+## 7. Execution Rule for Future PRs
+
+Future implementation PRs should follow the roadmap order unless a narrow technical repair is required to unblock the current phase.
+
+Documentation-only work must not modify:
+
+- application code,
+- generated TypeScript types,
+- migrations,
+- Supabase SQL/functions/RLS/grants/live data,
+- tests,
+- CI workflows,
+- dependencies,
+- configuration,
+- product behavior.
+
+---
+
+## 8. Final Delivery and Production-Readiness Truth
+
+Production readiness is not established by Phase 1 documentation work.
+
+Final delivery evidence remains tracked in `docs/ai/FINAL_DELIVERY_GATE_QA_EVIDENCE.md`.
+
+Do not claim Production GO until the following evidence is verified:
+
+- B-1: authenticated ADMIN browser QA;
+- B-2: live invoice -> payment -> receipt -> invoice/report refresh;
+- B-3: mobile or physical-device print QA, or an explicit `UNVERIFIED` record;
+- B-4: allowed live writes and RLS/permission behavior.
+
+Phase 1 does not close, replace, or infer completion of these gates.
+
+---
+
+## 9. Relationship to Other Documents
+
+- `docs/FINAL_PRODUCT_BLUEPRINT.md` defines the target product.
+- `docs/RUNTIME_TRUTH_AND_GAPS.md` defines observed runtime truth and known gaps.
+- `docs/ai/CURRENT_EXECUTION_CONTEXT.md` tracks the exact current branch/base/phase state.
+- `docs/ai/FINAL_DELIVERY_GATE_QA_EVIDENCE.md` tracks final delivery evidence and current production-readiness status.
+- `docs/ai/ONBOARDING.md` remains the active application snapshot and reading sequence.
+- `docs/ai/REPORTING_DEFINITIONS.md` remains the reporting-definition reference.
+- `docs/ai/GIT_TOOLING_POLICY.md` remains the git/branch/PR workflow reference.
+- `docs/ai/domain-rules.md`, `docs/ai/engineering-policy.md`, `docs/ai/security-policy.md`, `docs/ai/release-policy.md`, and `docs/ai/testing-guide.md` remain active policy references.
+
+If uncertainty remains after reading those documents, report the contradiction rather than guessing.
