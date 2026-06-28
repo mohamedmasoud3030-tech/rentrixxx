@@ -9,43 +9,65 @@
 - **Arabic-first** property operations system for single real-estate offices
 - **Core flow:** Property → Unit → Contract → Tenant → Invoice → Payment → Receipt
 - **Single office only** — no SaaS, no multi-tenancy, no shared databases
-- **Status:** Mobile UX Phase 2 complete; UI Consistency Phase (ADR-008) in progress; production BLOCKED on live QA
+- **Status:** Phase 3 complete (Owner Hub + EntityCard); Phase 4 next; production BLOCKED on live QA
 
 ---
 
-## Current State (2026-06-28)
+## Current State (2026-06-29)
 
 **For authoritative status, see `docs/ai/CURRENT_EXECUTION_CONTEXT.md`.**
 
 | Item | Status |
 |------|--------|
-| **Mobile UX Phase 2** | ✅ Complete (PRs #852–#856, #927) |
-| **UI/UX Phase 3** | ✅ Complete (PR #936) |
-| **UI Consistency Phase (ADR-008)** | 🔄 In progress — EntityTable + EntityCard + ListPage enforcement |
-| **Documentation authority** | ✅ Unified (PR #932) |
-| **Production Ready?** | ❌ BLOCKED — live QA evidence (B-1/B-2/B-3/B-4) not yet collected |
-| **Latest merged** | PR #936 (docs: sidebar-dashboard-reports-settings restructure) |
-| **Repo baseline** | typecheck ✅ · 200+ tests (62 files) ✅ · build ✅ (2026-06-18) |
+| **Phase 1 — Domain Foundation** | ✅ Complete (PR #1013) |
+| **Phase 2 — Local Data Layer** | ✅ Complete (PR #1021) |
+| **Phase 3 — Owner Hub** | ✅ Complete (PRs #1022–#1024) |
+| **Phase 3.5 — EntityCard (ADR-008 Phase B)** | ✅ Complete (PR #1025) |
+| **Phase 4 — Tenant & Contract Lifecycle** | 🔜 Next |
+| **Phases 5–7** | 📋 Planned |
+| **Phase 8 — Supabase Integration** | ⏸️ Deferred — owner decision |
+| **Production Ready?** | ❌ BLOCKED — live QA evidence (B-1/B-2/B-3/B-4) not collected |
+| **Latest merged** | PR #1025 (EntityCard unified + PersonCard/OwnerCard removed) |
+| **Repo baseline** | typecheck ✅ · 70 test files ✅ · build ✅ (2026-06-29) |
 | **Database** | Supabase `nnggcnpcuomwfuupupwg` (ap-southeast-1) — stable |
 | **Active branch** | `main` |
 
 ---
 
+## Architecture: Two Data Layers
+
+```
+[Mock Layer — Phases 1–7]            [Supabase Layer — Phase 8+]
+domain/types.ts                       types/domain.ts (Supabase-mapped)
+store/mock-db-store.ts (Zustand)      hooks/use-auth.tsx
+services/mock-repos/                  features/*/xxxService.ts
+hooks/use-mock-repositories.ts        → Only in existing features
+features/owners/phase3-owner-hub.tsx
+```
+
+**Important:** Most existing features still use Supabase directly. Only `phase3-owner-hub.tsx` uses the full mock path. Phase 4 should follow the mock pattern.
+
+---
+
 ## What's Done
 
-### Mobile UX Phase 2
-- ✅ ContractsListPage (PR #852)
-- ✅ PeopleListPage (PR #853)
-- ✅ UnitsList (PR #854)
-- ✅ ReceiptsPage (PR #855)
-- ✅ OwnersPage (PR #856)
-- ✅ Mobile auth drawer polish (PR #927)
+### Phase 3 (Owner Hub — PRs #1022–#1025)
+- ✅ Arabic Owner Hub with tab layout
+- ✅ Owner Agreement Form (add/edit)
+- ✅ Property Onboarding Form
+- ✅ Mock repos expanded (agreement, invoice, receipt, expense, tenant repos)
+- ✅ EntityCard unified component (PR #1025)
+- ✅ PersonCard + OwnerCard deleted and replaced by EntityCard
 
-### UI/UX Phase 3
-- ✅ Sidebar restructure — 7 navigation groups renamed (PR #936)
-- ✅ Dashboard KPI descriptive labels (PR #936)
-- ✅ Settings icon semantics (PR #936)
-- ✅ Reports KPI section foundation (PR #936)
+### Phase 2 (Local Data — PR #1021)
+- ✅ `store/mock-db-store.ts` — Zustand + localStorage persist + seed data
+- ✅ `services/mock-repos/` — base repo + owner/property/unit/tenant/contract repos
+- ✅ `hooks/use-mock-repositories.ts` — useQuery-like hooks
+
+### Phase 1 (Domain Foundation — PR #1013)
+- ✅ `domain/types.ts` — Pure TS interfaces
+- ✅ `domain/validators.ts` — Zod schemas
+- ✅ `domain/i18n.ts` — Arabic keys
 
 ---
 
@@ -53,7 +75,7 @@
 
 See `docs/ai/CURRENT_EXECUTION_CONTEXT.md` for current next PR order.
 
-1. **UI Consistency Phase (ADR-008)** — EntityTable + EntityCard + ListPage (repo-only)
+1. **Phase 4** — Tenant CRUD + Contract lifecycle (mock repos)
 2. **Live QA** — B-1/B-2/B-3/B-4 evidence (requires human operator)
 3. **v0.5 hardening** — operator runbooks, QA scripts, onboarding docs
 
@@ -69,65 +91,48 @@ See `docs/ai/CURRENT_EXECUTION_CONTEXT.md` for current next PR order.
 | **Code structure** | `docs/ROOT_LAYOUT.md` |
 | **Agent rules** | `AGENTS.md` |
 | **Current snapshot** | `docs/ai/ONBOARDING.md` |
-| **Client delivery** | `docs/FIRST_CLIENT_DELIVERY_PLAN.md` |
+| **Codebase audit** | `docs/ai/CODEBASE_AUDIT_2026-06-29.md` |
+| **UI component guide** | `docs/ai/UI_COMPONENT_GUIDE.md` |
 | **Git policy** | `docs/ai/GIT_TOOLING_POLICY.md` |
 | **Decisions** | `docs/decisions/README.md` |
-| **Codebase audit** | `docs/ai/CODEBASE_AUDIT_2026-06-27.md` |
-| **UI component guide** | `docs/ai/UI_COMPONENT_GUIDE.md` |
+| **Archived docs** | `docs/archive/` |
 
 ---
 
 ## Key Constraints
 
-- ✅ **DO:** Follow mobile-first design, use responsive classes (`md:hidden`, `hidden md:block`)
-- ✅ **DO:** Keep RTL correct (Arabic text flows right)
-- ✅ **DO:** Preserve single-office boundary (no orgs, no subscriptions)
-- ✅ **DO:** Use `rentrix-app/` as the active application path
-- ❌ **DON'T:** Reference `artifacts/rentrix/` — this path does not exist
-- ❌ **DON'T:** Add general ledger (accounting-grade)
-- ❌ **DON'T:** Add multi-tenancy or SaaS features
-- ❌ **DON'T:** Change Supabase, migrations, or RLS without plan
-- ❌ **DON'T:** Touch Vercel config or deployment settings
+- ✅ **DO:** Use `domain/types.ts` for mock layer; use `types/domain.ts` for Supabase features
+- ✅ **DO:** Follow mobile-first, RTL, Arabic-first
+- ✅ **DO:** Use mock repos pattern for Phase 4+ features
+- ✅ **DO:** Use `EntityCard` for people/owner/tenant cards (not custom cards)
+- ✅ **DO:** Use `EntityTable` for data tables
+- ❌ **DON'T:** Mix `domain/types.ts` (pure) with `types/domain.ts` (Supabase)
+- ❌ **DON'T:** Add Supabase calls in Phases 1–7
+- ❌ **DON'T:** Store real sensitive data in localStorage mock store
+- ❌ **DON'T:** Add general ledger or multi-tenancy
+- ❌ **DON'T:** Reference `artifacts/rentrix/` — path does not exist
 
 ---
 
 ## Getting Started
 
 1. Read `AGENTS.md` (agent rules)
-2. Read `docs/FINAL_PRODUCT_BLUEPRINT.md` (what Rentrix is)
-3. Read `docs/RENTRIX_MASTER_PLAN.md` (execution roadmap)
-4. Read `docs/ai/CURRENT_EXECUTION_CONTEXT.md` (what to work on)
-5. Read `docs/ai/ONBOARDING.md` (current app state)
-6. Start work from `main` branch
+2. Read `docs/ai/CURRENT_EXECUTION_CONTEXT.md` (what phase + what to do)
+3. Read `docs/RENTRIX_MASTER_PLAN.md` (roadmap)
+4. Read `docs/ai/ONBOARDING.md` (app state snapshot)
+5. Start work from `main` branch
 
 ---
 
 ## Quick Commands
 
 ```bash
-# Install dependencies
 pnpm install --frozen-lockfile
-
-# Typecheck
 pnpm run typecheck
-
-# Build
 pnpm run build
-
-# Run Rentrix app locally
 pnpm --filter ./rentrix-app run dev
-
-# Run tests
 pnpm --filter ./rentrix-app test
-
-# Run financial tests
 pnpm --filter ./rentrix-app run test:financials
-
-# Git policy
-# Branch: feat/..., fix/..., docs/...
-# Commit: concise, reference PR/issue
-# Push: always to feature branch, open PR
-# Merge: squash-merge to main via GitHub UI
 ```
 
 ---
@@ -144,15 +149,4 @@ See `docs/ai/FINAL_DELIVERY_GATE_QA_EVIDENCE.md` for details.
 
 ---
 
-## Questions?
-
-- **Architecture questions?** → `docs/RENTRIX_MASTER_PLAN.md` (sections 1–4)
-- **Code questions?** → `docs/ROOT_LAYOUT.md`
-- **What can I do?** → `docs/ai/AGENT_CAPABILITIES.md`
-- **Git questions?** → `docs/ai/GIT_TOOLING_POLICY.md`
-- **UI components?** → `docs/ai/UI_COMPONENT_GUIDE.md`
-- **Not answered?** → Check git history or ask in context window
-
----
-
-**Last updated:** 2026-06-28 | **Status:** UI Consistency Phase (ADR-008) in progress; production BLOCKED
+**Last updated:** 2026-06-29 | **Status:** Phase 3 complete; Phase 4 next; production BLOCKED

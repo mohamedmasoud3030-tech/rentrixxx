@@ -1,97 +1,145 @@
 # Current Execution Context
 
-## Current base reference
+**آخر تحديث:** 2026-06-29 — تدقيق شامل مطابقة كود/وثائق  
+**حالة التحقق:** مطابق للكود الفعلي في `main` (SHA: 857d3b6)
 
-- Remote base branch: `origin/main`
-- Current remote `main` SHA for this Phase 1 branch base: `7a8a7dc157fbfcdb69c3d90ad482042e7ec9ea30`
+---
 
-## Current program state
+## الحالة الفعلية للمراحل
 
-- Phase 0 — Runtime truth audit and contradiction discovery: **complete**
-- Phase 1 — Domain Foundation: **current** (reorganized for the Postponed Supabase plan)
-- Phase 2 — Mock/Local Data Layer: **planned**
-- Phase 3 — Owner, Agreement, Property, and Unit Workflows: **planned**
-- Phase 4 — Tenant and Contract Lifecycle: **planned**
-- Phase 5 — Financial Workflows: **planned**
-- Phase 6 — Roles and Audit Behavior: **planned**
-- Phase 7 — Reports, Print/Export, Tests, and CI: **planned** (Extending existing CI)
-- Phase 8 — Supabase Integration: **postponed**
-- Phase 9 / Backlog — Secondary Module Hardening: **backlog**
+| المرحلة | الوصف | الحالة |
+|---|---|---|
+| Phase 0 | Runtime truth audit | ✅ مكتملة |
+| Phase 1 | Domain Foundation — TypeScript types + i18n keys | ✅ مكتملة (PR #1013) |
+| Phase 2 | Local Data Foundation — mock repos + Zustand store | ✅ مكتملة (PR #1021) |
+| Phase 3 | Owner Hub — Owner onboarding + Agreement forms | ✅ مكتملة (PRs #1022، #1023، #1024) |
+| Phase 3.5 | EntityCard — unified entity card (ADR-008 Phase B) | ✅ مكتملة (PR #1025) |
+| Phase 4 | Tenant and Contract Lifecycle | 🔜 التالية |
+| Phase 5 | Financial Workflows | 📋 مخططة |
+| Phase 6 | Roles and Audit Behavior | 📋 مخططة |
+| Phase 7 | Reports, Print/Export, Tests, CI | 📋 مخططة |
+| Phase 8 | Supabase Integration (live) | ⏸️ مؤجلة — قرار مالك |
+| Phase 9 | Secondary Module Hardening | 📋 Backlog |
 
-## Postponed Supabase Strategy
+---
 
-By owner decision, Supabase and database-specific assets are completely postponed to Phase 8.
-- Codebase development in Phases 1-7 will rely purely on a clean domain-driven model and local in-memory/localStorage mock repository layer.
-- Components will interact with high-level services and hooks rather than direct client-side Supabase queries. Repository abstractions should reduce, not eliminate, Phase 8 integration changes.
+## ما أُنجز حديثاً (Phase 3 — PRs #1021–#1025)
 
-## Current authority set
+### Phase 2 (PR #1021): Local Data Foundation
+- `services/mock-repos/` — مستودعات محلية كاملة: owner, property, unit, tenant, contract, invoice, receipt, expense, agreement
+- `store/mock-db-store.ts` — Zustand store مع persist (localStorage) وبيانات seed
+- `hooks/use-mock-repositories.ts` — hooks موحدة للتفاعل مع المستودعات
+- نمط `useMockOwners()`, `useMockProperties()`, `useMockContracts()` إلخ
 
-Read together:
+### Phase 3 (PRs #1022–#1024): Owner Hub
+- `features/owners/phase3-owner-hub.tsx` — Arabic Owner Hub كامل
+- نماذج إضافة عقد مالك (owner agreement form)
+- نموذج إدارة عقارات المالك (property onboarding)
+- Route: `routes/_protected.owners.tsx` — Owner Hub كـ tab مدمج
+- اختبارات: `phase3-owner-hub.test.tsx`
 
-1. `docs/FINAL_PRODUCT_BLUEPRINT.md`
-2. `docs/RENTRIX_MASTER_PLAN.md` (Updated: Supabase postponed to Phase 8, Secondary modules in Phase 9/Backlog)
-3. `docs/PHASE_1_7_EXECUTION_PLAN.md` (Detailed Phase 1-7 Roadmap & TODO List)
-4. `docs/RUNTIME_TRUTH_AND_GAPS.md`
-5. `docs/ai/CURRENT_EXECUTION_CONTEXT.md`
+### Phase 3.5 (PR #1025): EntityCard Unified
+- `components/ui/entity-card.tsx` — EntityCard موحد مع:
+  - دعم أنواع: `tenant | owner | contact | string`
+  - avatar دائري بأول حرفين عربي
+  - `entityCardTypeMap` للألوان والأيقونات
+  - `entityCardContactMeta` helper للـ phone/email
+- استُبدل `OwnerCard` و`PersonCard` بـ `EntityCard` في:
+  - `features/owners/OwnersPage.tsx`
+  - `features/owners/phase3-owner-hub.tsx`
+  - `features/people/people-list-page.tsx`
+- تحديث `components/ui/index.ts` — EntityCard مصدَّر رسمياً
 
-Use the documented source-of-truth hierarchy:
+---
 
-1. Verified live Supabase metadata (treated as runtime truth for the database);
-2. Pure TypeScript Domain Contracts & Mock Models (authoritative **only for frontend behavior** during Phases 1-7);
-3. Current remote `main` code;
-4. Generated TypeScript database contract;
-5. Older product documents, previous audits, and agent reports.
+## الحالة البنيوية الحالية
 
-## Phase 1 objective status
+### نمط البيانات المعتمد (Phases 1–7)
 
-Phase 1 (Domain Foundation) is current. Its objective is to freeze TypeScript domain schemas, types, validation invariants, and Arabic dictionary keys, decoupling the core application logic from the underlying storage.
+```
+domain/types.ts          ← Pure TS domain entities (Owner, Property, Unit, ...)
+store/mock-db-store.ts   ← Zustand store (localStorage persist)
+services/mock-repos/     ← CRUD repositories (base pattern + per-entity)
+hooks/use-mock-repositories.ts ← useQuery-like hooks للـ UI
+features/*/              ← Pages تستهلك mock hooks
+```
 
-## Required next-phase reconciliation focus
+**مهم:** في Phases 1–7 الكود يعمل بـ mock data كاملة. لا يوجد Supabase في الـ flow الرئيسي حالياً إلا في الـ auth فقط.
 
-Phase 2 will implement the complete mock/local data layer backend, providing in-memory and localStorage persistence to simulate full relational reads/writes and transaction lifecycles locally.
+### مكونات UI الموحدة (ADR-008)
 
-## Product decision baseline
+| المكون | الموقع | الحالة |
+|---|---|---|
+| `EntityTable` | `components/ui/entity-table.tsx` | ✅ موجود ومصدَّر |
+| `EntityCard` | `components/ui/entity-card.tsx` | ✅ موجود ومصدَّر (PR #1025) |
+| `ListPage` | `components/layout/list-page.tsx` | ✅ موجود — معتمد جزئياً |
+| `DataTable` | — | ✅ محذوف (لم يعد موجوداً) |
+| `layouts/` shims | — | ✅ محذوف (لم يعد موجوداً) |
 
-Approved product decisions include:
-- Single-office, Arabic-first, mobile-first scope;
-- Owner settlement and office profitability as target product capabilities;
-- One operational owner per property at a time;
-- Time-bound owner agreements with history retention;
-- Two operating models: `property_management` and `master_lease`;
-- Manager approval for sensitive actions;
-- Current live role enum remains `ADMIN`, `MANAGER`, `USER`.
+### ملفات domain الجديدة
 
-These are approved target decisions, implemented locally in Phases 1-7 and synced live in Phase 8.
+```
+rentrix-app/src/domain/
+├── types.ts         ← Pure TS interfaces (Owner, Property, Unit, Tenant, LeaseContract, ...)
+├── validators.ts    ← Zod schemas للـ domain types
+└── i18n.ts          ← Arabic translation keys
+```
 
-## Phase 1 constraint record
+**تنبه:** `types/domain.ts` (Supabase-generated) لا يزال موجوداً للـ features التي تستخدم Supabase مباشرة. لا تخلط بين `domain/types.ts` (pure frontend) و `types/domain.ts` (Supabase types).
 
-Phase 1 is a planning and documentation task. No application code, database schema, migrations, or local variables are edited. No direct Supabase resources are modified.
+---
 
-## Handoff rule
+## الأولويات التالية (Phase 4)
 
-If future work uncovers a contradiction, record it in the runtime-truth path and assign it to the owning phase instead of guessing a silent resolution.
+**المهمة:** Tenant and Contract Lifecycle — بناء على pattern المستودعات الموجودة
 
-## Final delivery and production-readiness truth
+### Phase 4 — المطلوب
 
-Production readiness is established at the end of Phase 8 once live Supabase database sync is verified.
+1. **Tenant CRUD mock** — نماذج إضافة/تعديل/أرشفة مستأجر عبر mock repos
+2. **Contract create flow** — نموذج عقد جديد (unit + tenant + agreement + dates + amount)
+3. **Contract lifecycle** — تنشيط / إنهاء / انتهاء مدة العقد
+4. **ContractsListPage** — تحديث لاستخدام `useMockContracts()` + `EntityTable` + `EntityCard`
+5. **TenantsPage** — تحديث لاستخدام mock repos + EntityCard
 
-Final delivery evidence remains tracked in `docs/ai/FINAL_DELIVERY_GATE_QA_EVIDENCE.md`.
+### Phase 4 — القيود
 
-Do not claim Production GO until the following evidence is verified:
-- B-1: Authenticated ADMIN browser QA;
-- B-2: Live invoice -> payment -> receipt -> invoice/report refresh;
-- B-3: Mobile or physical-device print QA, or an explicit `UNVERIFIED` record;
-- B-4: Allowed live writes and RLS/permission behavior.
+- لا تضف Supabase calls جديدة — كل شيء عبر mock repos
+- لا تكسر `contractSchema.ts` الموجودة (Zod)
+- الـ domain invariants من `AGENTS.md` §Domain invariants ملزمة
+- العقد يرتبط بـ unit واحد + tenant واحد فقط، لا تداخل زمني
 
-## Still-relevant active guidance
+---
 
-Continue to use these active references alongside the source-of-truth set:
-- `docs/ai/FINAL_DELIVERY_GATE_QA_EVIDENCE.md`
-- `docs/ai/ONBOARDING.md`
-- `docs/ai/REPORTING_DEFINITIONS.md`
-- `docs/ai/GIT_TOOLING_POLICY.md`
-- `docs/ai/domain-rules.md`
-- `docs/ai/engineering-policy.md`
-- `docs/ai/security-policy.md`
-- `docs/ai/release-policy.md`
-- `docs/ai/testing-guide.md`
+## مصادر الحقيقة المعتمدة
+
+بهذا الترتيب:
+
+1. الكود الفعلي في `main` + migrations
+2. `docs/ai/CURRENT_EXECUTION_CONTEXT.md` (هذا الملف)
+3. `domain/types.ts` — عقود الـ domain
+4. `types/database.ts` — عقود Supabase
+5. الوثائق الأخرى (تُراجع عند التعارض مع الكود)
+
+---
+
+## قواعد التنفيذ
+
+- اقرأ `AGENTS.md` أولاً دائماً
+- تحقق من `main` الفعلي قبل الفرع
+- لا تُرجع `useApp`, `AppContext`, `dataService`, `react-router-dom`
+- لا تستخدم `types/domain.ts` (Supabase) في الـ mock layer — استخدم `domain/types.ts`
+- لا تنشئ Supabase calls جديدة في Phases 1–7
+- حافظ على RTL + Arabic-first في كل component جديد
+
+---
+
+## بوابة التسليم النهائية
+
+**Production GO لم يُعلَن بعد.** ينتظر:
+
+- B-1: Browser QA مع ADMIN مصادق (RTL، mobile، receipt print)
+- B-2: Invoice → Payment → Receipt → Refresh فعلي live
+- B-3: Mobile/physical-device print
+- B-4: RLS write confirmation live
+
+راجع `docs/ai/FINAL_DELIVERY_GATE_QA_EVIDENCE.md` للتفاصيل.
