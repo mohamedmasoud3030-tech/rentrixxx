@@ -1,10 +1,11 @@
 import { Link } from '@tanstack/react-router';
 import { FileText, Mail, Phone, ReceiptText, ShieldCheck, TriangleAlert, Users } from 'lucide-react';
 import { useMemo, useState } from 'react';
-import { AsyncContentState } from '@/components/async-content-state';
+import { ListFilterBar } from '../../components/layout/list-filter-bar';
+import { ListStateBody } from '../../components/layout/list-state-body';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { SearchInput } from '@/components/ui/search-input';
+import { EntityActions } from '../../components/ui/entity-actions';
 import type { TenantWorkspaceRow } from './tenantWorkspaceService';
 import { useTenantWorkspace } from './useTenantWorkspace';
 
@@ -48,15 +49,29 @@ function TenantSafeLinks({ tenant }: Readonly<{ tenant: TenantWorkspaceRow }>) {
   const hasLinks = tenant.primaryContractId !== null || tenant.hasInvoices || tenant.hasArrears;
   if (!hasLinks) return <p className="text-sm text-muted-foreground">لا توجد روابط متاحة حتى الآن</p>;
   return (
-    <div className="flex flex-wrap gap-2">
+    <EntityActions className="flex flex-wrap gap-2">
       {tenant.primaryContractId !== null && (
         <Button variant="secondary" className="min-h-11 px-3" asChild>
-          <Link to="/contracts/$contractId" params={{ contractId: tenant.primaryContractId }}><FileText className="ml-1 size-4" />العقد</Link>
+          <Link to="/contracts/$contractId" params={{ contractId: tenant.primaryContractId }}>
+            <FileText className="ml-1 size-4" />العقد
+          </Link>
         </Button>
       )}
-      {tenant.hasInvoices && <Button variant="secondary" className="min-h-11 px-3" asChild><Link to="/invoices"><ReceiptText className="ml-1 size-4" />الفواتير</Link></Button>}
-      {tenant.hasArrears && <Button variant="secondary" className="min-h-11 px-3 text-amber-700" asChild><Link to="/arrears"><TriangleAlert className="ml-1 size-4" />المتأخرات</Link></Button>}
-    </div>
+      {tenant.hasInvoices && (
+        <Button variant="secondary" className="min-h-11 px-3" asChild>
+          <Link to="/invoices">
+            <ReceiptText className="ml-1 size-4" />الفواتير
+          </Link>
+        </Button>
+      )}
+      {tenant.hasArrears && (
+        <Button variant="secondary" className="min-h-11 px-3 text-amber-700" asChild>
+          <Link to="/arrears">
+            <TriangleAlert className="ml-1 size-4" />المتأخرات
+          </Link>
+        </Button>
+      )}
+    </EntityActions>
   );
 }
 
@@ -90,16 +105,15 @@ function TenantCard({ tenant }: Readonly<{ tenant: TenantWorkspaceRow }>) {
 
 function TenantWorkspaceContent({ isError, isLoading, onRetry, rows }: Readonly<{ isError: boolean; isLoading: boolean; onRetry: () => void; rows: TenantWorkspaceRow[] }>) {
   return (
-    <AsyncContentState
+    <ListStateBody
       status={isLoading ? 'loading' : isError ? 'error' : rows.length === 0 ? 'empty' : 'ready'}
       errorTitle="تعذر تحميل المستأجرين"
-      errorFallbackMessage="حدث خطأ أثناء تحميل بيانات المستأجرين. إعادة المحاولة آمنة ولا تغير البيانات."
-      errorAction={<Button onClick={onRetry}>إعادة المحاولة</Button>}
       emptyTitle="لا توجد سجلات مستأجرين"
       emptyDescription="سيظهر هنا أي شخص مصنف كمستأجر من نموذج الأشخاص الحالي."
+      errorAction={<Button onClick={onRetry}>إعادة المحاولة</Button>}
     >
       <div className="grid gap-4">{rows.map((tenant) => <TenantCard key={tenant.person.id} tenant={tenant} />)}</div>
-    </AsyncContentState>
+    </ListStateBody>
   );
 }
 
@@ -130,10 +144,12 @@ export function TenantsPage() {
 
       <Card>
         <CardContent className="pt-6">
-          <SearchInput
-            value={search}
-            onChange={(value) => { setSearch(value); setPage(1); }}
-            placeholder="بحث باسم المستأجر أو الهاتف أو الإيميل أو رقم الهوية"
+          <ListFilterBar
+            search={{
+              value: search,
+              onChange: (value: string) => { setSearch(value); setPage(1); },
+              placeholder: "بحث باسم المستأجر أو الهاتف أو الإيميل أو رقم الهوية"
+            }}
           />
         </CardContent>
       </Card>
@@ -150,3 +166,4 @@ export function TenantsPage() {
     </div>
   );
 }
+export default TenantsPage;
