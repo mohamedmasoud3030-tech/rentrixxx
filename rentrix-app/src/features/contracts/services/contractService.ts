@@ -22,7 +22,6 @@ export type PaginatedContracts = {
   rows: ContractListItem[];
   count: number;
 };
-type ContractInsert = Database['public']['Tables']['contracts']['Insert'];
 type ContractUpdate = Database['public']['Tables']['contracts']['Update'];
 export type RenewalResult = { status: 'renewed'; old_contract_id: string; new_contract_id: string };
 
@@ -53,14 +52,23 @@ export async function getContract(contractId: string): Promise<ContractDetail> {
 }
 
 export async function createContract(payload: ContractPayload): Promise<Contract> {
-  const insertPayload: ContractInsert = {
-    ...payload,
-    unit_id: payload.unit_id ?? null,
-    agreement_id: payload.agreement_id ?? null,
-  };
-  const { data, error } = await supabase.from('contracts').insert(insertPayload).select('*').single().returns<Contract>();
+  const { data, error } = await supabase.rpc('create_contract_atomic', {
+    p_property_id: payload.property_id,
+    p_unit_id: payload.unit_id ?? null,
+    p_tenant_id: payload.tenant_id,
+    p_agreement_id: payload.agreement_id ?? null,
+    p_start_date: payload.start_date,
+    p_end_date: payload.end_date,
+    p_rent_amount: payload.rent_amount,
+    p_payment_cycle: payload.payment_cycle,
+    p_payment_terms_id: payload.payment_terms_id ?? null,
+    p_status: payload.status,
+    p_cancellation_reason: payload.cancellation_reason ?? null,
+    p_notes: payload.notes ?? null,
+    p_attachment_url: payload.attachment_url ?? null,
+  });
   if (error) throw error;
-  return data;
+  return data as Contract;
 }
 
 export async function updateContract(contractId: string, payload: ContractPayload): Promise<Contract> {
