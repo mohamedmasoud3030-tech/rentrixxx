@@ -38,6 +38,32 @@ describe('Phase 3 owner hub', () => {
   });
 
 
+  it('validates property ownership and active agreement overlap before local creation', () => {
+    expect(validatePhase3AgreementForm(
+      { ownerId: 'owner-1', propertyId: 'property-2', agreementType: 'property_management', startDate: '2026-01-01', endDate: '', commissionRate: '8', fixedFee: '' },
+      { properties: [{ id: 'property-2', ownerId: 'owner-2', name: 'عقار آخر', address: 'الرياض', isArchived: false, createdAt: '2026-06-28T08:00:00.000Z' }] },
+    )).toBe('العقار المحدد يجب أن يكون مرتبطاً بالمالك المختار.');
+
+    expect(validatePhase3AgreementForm(
+      { ownerId: 'owner-1', propertyId: 'property-1', agreementType: 'property_management', startDate: '2026-06-01', endDate: '2026-06-30', commissionRate: '8', fixedFee: '' },
+      {
+        agreements: [{
+          id: 'agreement-existing',
+          ownerId: 'owner-1',
+          propertyId: 'property-1',
+          agreementType: 'property_management',
+          startDate: '2026-01-01',
+          endDate: '2026-12-31',
+          status: 'active',
+          commissionRate: 8,
+          isArchived: false,
+          createdAt: '2026-06-28T08:00:00.000Z',
+        }],
+      },
+    )).toBe('توجد اتفاقية تشغيل أخرى متداخلة في التواريخ لنفس العقار.');
+  });
+
+
   it('uses the Phase 3 owner hub on the active owners route', () => {
     expect(OwnersRouteComponent).toBe(Phase3OwnerHubPage);
   });

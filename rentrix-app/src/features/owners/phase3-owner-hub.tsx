@@ -12,7 +12,7 @@ import { StatusBadge } from '@/components/ui/status-badge';
 import { useMockAgreements, useMockContracts, useMockOwners, useMockProperties, useMockUnits } from '@/hooks/use-mock-repositories';
 import type { MockDatabaseState } from '@/store/mock-db-store';
 import type { AgreementType, Owner, Property } from '@/domain/types';
-import { isValidISODateString, validatePositiveAmount } from '@/domain/validators';
+import { isValidISODateString, validateAgreementOverlap, validatePositiveAmount } from '@/domain/validators';
 
 type Phase3OwnerFormValues = Readonly<{ name: string; phone: string; email: string }>;
 type Phase3AgreementFormValues = Readonly<{
@@ -23,6 +23,11 @@ type Phase3AgreementFormValues = Readonly<{
   endDate: string;
   commissionRate: string;
   fixedFee: string;
+}>;
+
+type Phase3AgreementValidationContext = Readonly<{
+  properties?: readonly Property[];
+  agreements?: MockDatabaseState['agreements'];
 }>;
 
 type OwnerHubRow = Readonly<{
@@ -63,9 +68,14 @@ function isOptionalPositiveAmount(value: number | undefined): boolean {
   return value === undefined || validatePositiveAmount(value).isValid;
 }
 
-export function validatePhase3AgreementForm(values: Phase3AgreementFormValues): string | null {
+export function validatePhase3AgreementForm(values: Phase3AgreementFormValues, context: Phase3AgreementValidationContext = {}): string | null {
   if (!values.ownerId) return 'اختيار المالك مطلوب قبل إنشاء الاتفاقية.';
   if (!values.propertyId) return 'اختيار العقار مطلوب قبل إنشاء الاتفاقية.';
+
+  const selectedProperty = context.properties?.find((property) => property.id === values.propertyId);
+  if (selectedProperty && selectedProperty.ownerId !== values.ownerId) {
+    return 'العقار المحدد يجب أن يكون مرتبطاً بالمالك المختار.';
+  }
   if (!values.startDate) return 'تاريخ بداية الاتفاقية مطلوب.';
   if (!isValidISODateString(values.startDate) || (values.endDate && !isValidISODateString(values.endDate))) {
     return 'تواريخ اتفاقية التشغيل غير صالحة.';
@@ -80,6 +90,20 @@ export function validatePhase3AgreementForm(values: Phase3AgreementFormValues): 
     return 'اتفاقية إدارة الأملاك تحتاج نسبة عمولة أو رسماً ثابتاً.';
   }
   if (values.agreementType === 'master_lease' && fixedFee === undefined) return 'اتفاقية الاستئجار الرئيسي تحتاج التزاماً ثابتاً.';
+
+  if (context.agreements) {
+    const overlapCheck = validateAgreementOverlap(
+      {
+        id: 'phase3-owner-hub-draft-agreement',
+        propertyId: values.propertyId,
+        startDate: values.startDate,
+        endDate: values.endDate || null,
+      },
+      Array.from(context.agreements),
+    );
+    if (!overlapCheck.isValid) return overlapCheck.message ?? 'توجد اتفاقية تشغيل متداخلة لنفس العقار.';
+  }
+
   return null;
 }
 
@@ -206,7 +230,10 @@ export function Phase3OwnerHubPage() {
 
   const handleAgreementFormSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    const validationError = validatePhase3AgreementForm(agreementFormValues);
+    const validationError = validatePhase3AgreementForm(agreementFormValues, {
+      properties: propertiesQuery.data,
+      agreements: agreementsQuery.data,
+    });
     if (validationError) {
       setAgreementFormError(validationError);
       return;
