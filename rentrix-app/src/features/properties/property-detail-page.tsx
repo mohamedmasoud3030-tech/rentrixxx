@@ -180,21 +180,21 @@ export function PropertyOverview() {
 
           {/* Concise empty states for unavailable agreement or finance information as per rules */}
           <div className="grid gap-6 md:grid-cols-2">
-            <Card className="rounded-2xl border-dashed border-2">
-              <CardHeader>
-                <CardTitle className="text-sm font-bold">اتفاقية تشغيل المالك</CardTitle>
+            <Card className="rounded-2xl border-dashed border-2 bg-card">
+              <CardHeader className="p-4 pb-2">
+                <CardTitle className="text-xs font-bold text-muted-foreground">اتفاقية تشغيل المالك</CardTitle>
               </CardHeader>
-              <CardContent className="text-center py-6 text-sm text-muted-foreground">
-                لا توجد اتفاقية تشغيل نشطة مسجلة حالياً لهذا العقار.
+              <CardContent className="px-4 pb-4 text-sm text-muted-foreground leading-relaxed">
+                ستظهر اتفاقية التشغيل هنا عند توفر بياناتها.
               </CardContent>
             </Card>
 
-            <Card className="rounded-2xl border-dashed border-2">
-              <CardHeader>
-                <CardTitle className="text-sm font-bold">الحسابات والوضع المالي</CardTitle>
+            <Card className="rounded-2xl border-dashed border-2 bg-card">
+              <CardHeader className="p-4 pb-2">
+                <CardTitle className="text-xs font-bold text-muted-foreground">الحسابات والوضع المالي</CardTitle>
               </CardHeader>
-              <CardContent className="text-center py-6 text-sm text-muted-foreground">
-                لا تتوفر حركات مالية أو تصفية محاسبية نشطة مسجلة لهذا العقار حالياً.
+              <CardContent className="px-4 pb-4 text-sm text-muted-foreground leading-relaxed">
+                سيظهر الملخص المالي هنا عند توفر بيانات مالية مرتبطة بالعقار.
               </CardContent>
             </Card>
           </div>

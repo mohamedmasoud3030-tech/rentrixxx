@@ -181,12 +181,37 @@ function OwnerWorkspaceTable({ rows, search, selectedOwner, onCreateOwner, onEdi
         placeholder="بحث باسم المالك أو الهاتف أو الإيميل أو العقار"
       />
       {rows.length > 0 ? (
-        <>
-          {/* Mobile cards */}
-          <div className="grid gap-3 sm:grid-cols-2 md:hidden">
-            {rows.map((row) => (
+        <EntityTable
+          aria-label="جدول الملاك"
+          rows={rows}
+          onRowClick={(row) => onSelectOwner(row.owner.id)}
+          columns={[
+            { key: 'name', header: 'اسم المالك', render: (row) => (
+              <EntityCell
+                icon={Users}
+                title={<button type="button" className="hover:text-primary text-start font-bold" onClick={() => onSelectOwner(row.owner.id)}>{getOwnerDisplayLabel(row.owner)}</button>}
+                subtitle={row.owner.display_name ? row.owner.full_name : null}
+                meta={<span dir="ltr">معرّف السجل: #{row.owner.id.slice(0, 8)}</span>}
+              />
+            )},
+            { key: 'contact', header: 'الهاتف والإيميل', render: (row) => <OwnerContact owner={row.owner} /> },
+            { key: 'property_count', header: 'عدد العقارات', render: (row) => row.propertyCount.toLocaleString('ar') },
+            { key: 'property_links', header: 'أسماء العقارات', render: (row) => <OwnerPropertyLinks row={row} /> },
+            { key: 'ownership', header: 'نسبة الملكية/الدور', render: (row) => <OwnershipSummary row={row} /> },
+            { key: 'contracts', header: 'العقود النشطة', render: (row) => row.activeContractCount > 0 ? row.activeContractCount.toLocaleString('ar') : '—' },
+            { key: 'actions', header: 'روابط آمنة', render: (row) => (
+              <div className="flex flex-wrap gap-2" onClick={(e) => e.stopPropagation()}>
+                <Button type="button" variant="secondary" className="min-h-9 px-3 text-xs gap-1" onClick={() => onSelectOwner(row.owner.id)}><Eye className="size-4" />العلاقات</Button>
+                <Button type="button" variant="secondary" className="min-h-9 px-3 text-xs gap-1" onClick={() => onEditOwner(row.owner)}><Pencil className="size-4" />تعديل</Button>
+              </div>
+            )},
+          ]}
+          keyOf={(row) => row.owner.id}
+          emptyTitle="لا يوجد ملاك"
+          emptyDescription="أضف أول مالك لبدء ربطه بالعقارات."
+          renderMobileCard={(row) => (
+            <div className="space-y-2">
               <OwnerCard
-                key={row.owner.id}
                 id={row.owner.id}
                 displayName={getOwnerDisplayLabel(row.owner)}
                 fullName={row.owner.full_name}
@@ -196,40 +221,17 @@ function OwnerWorkspaceTable({ rows, search, selectedOwner, onCreateOwner, onEdi
                 activeContractCount={row.activeContractCount}
                 onClick={() => onSelectOwner(row.owner.id)}
               />
-            ))}
-          </div>
-          {/* Desktop table */}
-          <div className="hidden md:block">
-            <EntityTable
-              aria-label="جدول الملاك"
-              rows={rows}
-              columns={[
-                { key: 'name', header: 'اسم المالك', render: (row) => (
-                  <EntityCell
-                    icon={Users}
-                    title={<button type="button" className="hover:text-primary" onClick={() => onSelectOwner(row.owner.id)}>{getOwnerDisplayLabel(row.owner)}</button>}
-                    subtitle={row.owner.display_name ? row.owner.full_name : null}
-                    meta={<span dir="ltr">معرّف السجل: #{row.owner.id.slice(0, 8)}</span>}
-                  />
-                )},
-                { key: 'contact', header: 'الهاتف والإيميل', render: (row) => <OwnerContact owner={row.owner} /> },
-                { key: 'property_count', header: 'عدد العقارات', render: (row) => row.propertyCount.toLocaleString('ar') },
-                { key: 'property_links', header: 'أسماء العقارات', render: (row) => <OwnerPropertyLinks row={row} /> },
-                { key: 'ownership', header: 'نسبة الملكية/الدور', render: (row) => <OwnershipSummary row={row} /> },
-                { key: 'contracts', header: 'العقود النشطة', render: (row) => row.activeContractCount > 0 ? row.activeContractCount.toLocaleString('ar') : '—' },
-                { key: 'actions', header: 'روابط آمنة', render: (row) => (
-                  <div className="flex flex-wrap gap-2" onClick={(e) => e.stopPropagation()}>
-                    <Button type="button" variant="secondary" className="min-h-9 px-3" onClick={() => onSelectOwner(row.owner.id)}><Eye className="me-1 size-4" />العلاقات</Button>
-                    <Button type="button" variant="secondary" className="min-h-9 px-3" onClick={() => onEditOwner(row.owner)}><Pencil className="me-1 size-4" />تعديل</Button>
-                  </div>
-                )},
-              ]}
-              keyOf={(row) => row.owner.id}
-              emptyTitle="لا يوجد ملاك"
-              emptyDescription="أضف أول مالك لبدء ربطه بالعقارات."
-            />
-          </div>
-        </>
+              <div className="grid grid-cols-2 gap-2 px-1">
+                <Button type="button" variant="secondary" className="min-h-9 text-xs gap-1" onClick={() => onSelectOwner(row.owner.id)}>
+                  <Eye className="size-3.5" />العلاقات
+                </Button>
+                <Button type="button" variant="secondary" className="min-h-9 text-xs gap-1" onClick={() => onEditOwner(row.owner)}>
+                  <Pencil className="size-3.5" />تعديل
+                </Button>
+              </div>
+            </div>
+          )}
+        />
       ) : emptyState}
     </div>
   );
