@@ -48,7 +48,7 @@ Observed snapshot only:
 | `contracts.agreement_id` is nullable live even though target product requires covering agreement logic | Treat current runtime as partial implementation, not target-state compliance | Phase 2 then Phase 4 |
 | Contract create has stronger agreement validation than contract update/renewal | Current lifecycle enforcement is inconsistent | Phase 4 |
 | Legacy `owner_settlements` exists live but is insufficient for approved settlement model | Settlement scope is approved, implementation is incomplete | Phase 5 |
-| Older documentation says owner settlement/payout/profitability are out of scope or pending decision | Those statements are superseded by current product decisions | Phase 1 documentation cleanup complete; implementation remains Phase 5 |
+| Older documentation says owner settlement/payout/profitability are out of scope or pending decision | Those statements are superseded by current product decisions | Phase 1 documentation reconciliation is in progress until PR #1010 is merged; implementation remains Phase 5 |
 
 ---
 
