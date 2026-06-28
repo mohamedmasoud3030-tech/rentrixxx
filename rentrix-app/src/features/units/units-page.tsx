@@ -1,4 +1,4 @@
-import { Link } from '@tanstack/react-router';
+import { Link, useNavigate } from '@tanstack/react-router';
 import { Building2, DoorOpen, Home } from 'lucide-react';
 import { useDeferredValue, useMemo, useState } from 'react';
 import { PageHeader } from '@/components/layout/page-header';
@@ -10,6 +10,7 @@ import { SearchInput } from '@/components/ui/search-input';
 import { Select } from '@/components/ui/select';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { EntityTable } from '@/components/ui/entity-table';
+import { UnitCard } from '@/components/ui/unit-card';
 import { useProperties } from '@/features/properties/use-properties';
 import { defaultCompanyLocalSettings } from '@/lib/companySettings';
 import { formatCompanyMoney, getCompanyLocale } from '@/lib/companyFormatters';
@@ -54,6 +55,7 @@ export function UnitsPage() {
   const [status, setStatus] = useState<'all' | UnitStatus>('all');
   const [occupancy, setOccupancy] = useState<OccupancyFilter>('all');
   const deferredSearch = useDeferredValue(search.trim().toLowerCase());
+  const navigate = useNavigate();
 
   const units = unitsQuery.data ?? [];
   const properties = propertiesQuery.data?.rows ?? [];
@@ -149,9 +151,38 @@ export function UnitsPage() {
               { key: 'notes', header: 'ملاحظات', render: (unit) => unit.notes ?? '—' },
               { key: 'action', header: 'إجراء', render: (unit) => {
                 const property = propertyById.get(unit.property_id);
-                return property ? <Button variant="secondary" asChild><Link to="/properties/$propertyId" params={{ propertyId: property.id }}>فتح العقار</Link></Button> : '—';
+                return property ? <Button variant="secondary" asChild><Link to="/properties/$propertyId/units/$unitId" params={{ propertyId: property.id, unitId: unit.id }}>فتح التفاصيل</Link></Button> : '—';
               }},
             ]}
+            onRowClick={(unit) => navigate({
+              to: '/properties/$propertyId/units/$unitId',
+              params: { propertyId: unit.property_id, unitId: unit.id },
+            })}
+            renderMobileCard={(unit) => {
+              const property = propertyById.get(unit.property_id);
+              return (
+                <div className="space-y-1">
+                  <UnitCard
+                    id={unit.id}
+                    unitNumber={unit.unit_number}
+                    floor={unit.floor}
+                    status={getUnitPageStatus(unit)}
+                    rentAmount={unit.rent_amount}
+                    notes={unit.notes}
+                    formatMoney={(value) => formatCompanyMoney(defaultCompanyLocalSettings, value)}
+                    onClick={() => navigate({
+                      to: '/properties/$propertyId/units/$unitId',
+                      params: { propertyId: unit.property_id, unitId: unit.id },
+                    })}
+                  />
+                  {property && (
+                    <div className="px-2 pb-2 flex justify-between items-center text-xs text-muted-foreground border-b border-border/20">
+                      <span>العقار: <Link className="font-bold text-primary hover:underline" to="/properties/$propertyId" params={{ propertyId: property.id }}>{property.title}</Link></span>
+                    </div>
+                  )}
+                </div>
+              );
+            }}
             keyOf={(unit) => unit.id}
             isLoading={unitsQuery.isLoading || propertiesQuery.isLoading}
             error={(unitsQuery.isError || propertiesQuery.isError) ? new Error('تعذر تحميل الوحدات') : null}

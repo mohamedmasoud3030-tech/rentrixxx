@@ -1,5 +1,5 @@
 import { Link, useNavigate } from '@tanstack/react-router';
-import { Building2, Edit, Eye, Grid3x3, List, Plus, Trash2 } from 'lucide-react';
+import { Building2, Edit, Plus, Trash2 } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { PropertyFormModal } from './property-form-modal';
 import { AsyncContentState } from '@/components/async-content-state';
@@ -32,9 +32,6 @@ export function PropertiesListPage() {
   const [page, setPage] = useState(1);
   const [modalOpen, setModalOpen] = useState(false);
   const [editPropertyId, setEditPropertyId] = useState<string | undefined>();
-  const [viewMode, setViewMode] = useState<'cards' | 'table'>(() =>
-    window.innerWidth < 768 ? 'cards' : 'table',
-  );
   const [archiveTarget, setArchiveTarget] = useState<{ id: string; title: string } | null>(null);
   const params = useMemo(() => ({ search, status, page, pageSize }), [page, search, status]);
   const propertiesQuery = useProperties(params);
@@ -53,19 +50,19 @@ export function PropertiesListPage() {
 
   return (
     <>
-    <div className="space-y-5">
+    <div className="space-y-5" dir="rtl">
       {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h2 className="text-xl font-black">العقارات</h2>
-          <p className="text-sm text-muted-foreground">إدارة العقارات والوحدات المرتبطة</p>
+          <p className="text-sm text-muted-foreground">إدارة المحفظة العقارية والتشغيلية</p>
         </div>
         <Button className="rounded-2xl gap-2" onClick={() => { setEditPropertyId(undefined); setModalOpen(true); }}>
           <Plus className="size-4" />إضافة عقار
         </Button>
       </div>
 
-      {/* Filters + View Toggle */}
+      {/* Filters */}
       <Card className="rounded-2xl">
         <CardContent className="pt-4 pb-4">
           <div className="flex gap-2">
@@ -84,23 +81,6 @@ export function PropertiesListPage() {
               <option value="all">كل الحالات</option>
               {propertyStatusValues.map((s) => <option key={s} value={s}>{propertyStatusLabels[s]}</option>)}
             </Select>
-            {/* View mode toggle — hidden on small screens (always cards) */}
-            <div className="hidden md:flex items-center gap-1 rounded-xl border border-border p-1">
-              <button
-                type="button"
-                onClick={() => setViewMode('cards')}
-                className={`rounded-lg p-1.5 transition-colors ${viewMode === 'cards' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'}`}
-              >
-                <Grid3x3 className="size-4" />
-              </button>
-              <button
-                type="button"
-                onClick={() => setViewMode('table')}
-                className={`rounded-lg p-1.5 transition-colors ${viewMode === 'table' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'}`}
-              >
-                <List className="size-4" />
-              </button>
-            </div>
           </div>
         </CardContent>
       </Card>
@@ -124,90 +104,52 @@ export function PropertiesListPage() {
         ) : undefined}
       >
 
-      {/* Cards view (mobile default + optional on desktop) */}
-      {(viewMode === 'cards') && (
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {properties.map((p) => (
-            <div key={p.id} className="relative group">
-              <PropertyCard
-                id={p.id}
-                title={p.title ?? 'عقار'}
-                address={p.address}
-                status={p.status}
-                formatMoney={(v) => money(v)}
-                onClick={() => navigate({ to: '/properties/$propertyId', params: { propertyId: p.id } })}
-              />
-              {/* Actions overlay */}
-              <div className="absolute top-3 left-3 hidden gap-1.5 md:group-hover:flex">
-                <Link to="/properties/$propertyId" params={{ propertyId: p.id }}>
-                  <button type="button" className="grid size-7 place-items-center rounded-xl bg-background/90 shadow-sm border border-border text-muted-foreground hover:text-foreground transition-colors">
-                    <Eye className="size-3.5" />
-                  </button>
-                </Link>
-                <button
-                  type="button"
-                  className="grid size-7 place-items-center rounded-xl bg-background/90 shadow-sm border border-border text-muted-foreground hover:text-foreground transition-colors"
-                  onClick={() => { setEditPropertyId(p.id); setModalOpen(true); }}
-                >
-                  <Edit className="size-3.5" />
-                </button>
-                <button
-                  type="button"
-                  className="grid size-7 place-items-center rounded-xl bg-background/90 shadow-sm border border-border text-muted-foreground hover:text-rose-600 transition-colors"
-                  onClick={() => setArchiveTarget({ id: p.id, title: p.title ?? 'عقار' })}
-                >
-                  <Trash2 className="size-3.5" />
-                </button>
-              </div>
-              <div className="mt-2 grid grid-cols-3 gap-2 md:hidden">
-                <Button asChild variant="secondary" className="min-h-11 rounded-xl px-2 text-xs">
-                  <Link to="/properties/$propertyId" params={{ propertyId: p.id }}><Eye className="size-3.5" />عرض</Link>
-                </Button>
-                <Button variant="secondary" className="min-h-11 rounded-xl px-2 text-xs" onClick={() => { setEditPropertyId(p.id); setModalOpen(true); }}>
-                  <Edit className="size-3.5" />تعديل
-                </Button>
-                <Button variant="danger" className="min-h-11 rounded-xl px-2 text-xs" onClick={() => setArchiveTarget({ id: p.id, title: p.title ?? 'عقار' })}>
-                  <Trash2 className="size-3.5" />أرشفة
-                </Button>
-              </div>
+      {/* Pure responsive table utilizing EntityTable's built-in renderMobileCard */}
+      <EntityTable
+        aria-label="جدول العقارات"
+        rows={properties}
+        keyOf={(p) => p.id}
+        onRowClick={(p) => navigate({ to: '/properties/$propertyId', params: { propertyId: p.id } })}
+        columns={[
+          { key: 'title', header: 'العقار', render: (p) => <EntityCell icon={Building2} title={p.title ?? '—'} /> },
+          { key: 'status', header: 'الحالة', render: (p) => (
+            <StatusBadge tone={propertyStatusTone[p.status as keyof typeof propertyStatusTone] ?? 'gray'}>
+              {propertyStatusLabels[p.status as keyof typeof propertyStatusLabels] ?? p.status}
+            </StatusBadge>
+          )},
+          { key: 'address', header: 'العنوان', render: (p) => <span className="text-muted-foreground text-sm">{p.address ?? '—'}</span> },
+          { key: 'actions', header: 'إجراءات', render: (p) => (
+            <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
+              <Button variant="secondary" className="min-h-11 rounded-xl px-3 text-xs gap-1" onClick={() => { setEditPropertyId(p.id); setModalOpen(true); }}>
+                <Edit className="size-3" />تعديل
+              </Button>
+              <Button variant="danger" className="min-h-11 rounded-xl px-3 text-xs gap-1" onClick={() => setArchiveTarget({ id: p.id, title: p.title ?? 'عقار' })}>
+                <Trash2 className="size-3" />أرشفة
+              </Button>
             </div>
-          ))}
-        </div>
-      )}
-
-      {/* Table view (desktop optional) */}
-      {viewMode === 'table' && (
-        <EntityTable
-          aria-label="جدول العقارات"
-          rows={properties}
-          columns={[
-            { key: 'title', header: 'العقار', render: (p) => <EntityCell icon={Building2} title={p.title ?? '—'} /> },
-            { key: 'status', header: 'الحالة', render: (p) => (
-              <StatusBadge tone={propertyStatusTone[p.status as keyof typeof propertyStatusTone] ?? 'gray'}>
-                {propertyStatusLabels[p.status as keyof typeof propertyStatusLabels] ?? p.status}
-              </StatusBadge>
-            )},
-            { key: 'address', header: 'العنوان', render: (p) => <span className="text-muted-foreground text-sm">{p.address ?? '—'}</span> },
-            { key: 'actions', header: 'إجراء', render: (p) => (
-              <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
-                <Button asChild variant="secondary" className="min-h-11 rounded-xl px-3 text-xs gap-1">
-                  <Link to="/properties/$propertyId" params={{ propertyId: p.id }}><Eye className="size-3" />عرض</Link>
-                </Button>
-                <Button variant="secondary" className="min-h-11 rounded-xl px-3 text-xs gap-1" onClick={() => { setEditPropertyId(p.id); setModalOpen(true); }}>
-                  <Edit className="size-3" />تعديل
-                </Button>
-                <button type="button" className="min-h-11 rounded-xl px-2 text-xs border border-border text-muted-foreground hover:text-rose-600 hover:border-rose-300 transition-colors"
-                  onClick={() => setArchiveTarget({ id: p.id, title: p.title ?? 'عقار' })}>
-                  <Trash2 className="size-3" />
-                </button>
-              </div>
-            )},
-          ]}
-          keyOf={(p) => p.id}
-          emptyTitle="لا توجد عقارات"
-          emptyDescription="لا توجد عقارات تطابق معايير البحث الحالية."
-        />
-      )}
+          )},
+        ]}
+        renderMobileCard={(p) => (
+          <div className="space-y-2">
+            <PropertyCard
+              id={p.id}
+              title={p.title ?? 'عقار'}
+              address={p.address}
+              status={p.status}
+              formatMoney={(v) => money(v)}
+              onClick={() => navigate({ to: '/properties/$propertyId', params: { propertyId: p.id } })}
+            />
+            <div className="grid grid-cols-2 gap-2">
+              <Button variant="secondary" className="min-h-11 rounded-xl text-xs gap-1" onClick={() => { setEditPropertyId(p.id); setModalOpen(true); }}>
+                <Edit className="size-3.5" />تعديل
+              </Button>
+              <Button variant="danger" className="min-h-11 rounded-xl text-xs gap-1" onClick={() => setArchiveTarget({ id: p.id, title: p.title ?? 'عقار' })}>
+                <Trash2 className="size-3.5" />أرشفة
+              </Button>
+            </div>
+          </div>
+        )}
+      />
 
       </AsyncContentState>
 
