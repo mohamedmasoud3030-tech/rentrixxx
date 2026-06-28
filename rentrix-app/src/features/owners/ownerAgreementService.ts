@@ -56,8 +56,30 @@ export async function createPropertyWithAgreement(
   });
 
   if (error) throw new Error(formatAgreementError(error.message));
-  return data as CreatePropertyWithAgreementResult;
+  return parseCreatePropertyWithAgreementResult(data);
 }
+
+function parseCreatePropertyWithAgreementResult(data: unknown): CreatePropertyWithAgreementResult {
+  if (!isRecord(data)) {
+    throw new Error('استجابة غير صالحة من خدمة حفظ العقار والاتفاقية. حاول مرة أخرى.');
+  }
+
+  const { property_id, agreement_id } = data;
+  if (!isNonEmptyString(property_id) || !isNonEmptyString(agreement_id)) {
+    throw new Error('استجابة غير صالحة من خدمة حفظ العقار والاتفاقية. حاول مرة أخرى.');
+  }
+
+  return { property_id, agreement_id };
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+function isNonEmptyString(value: unknown): value is string {
+  return typeof value === 'string' && value.trim().length > 0;
+}
+
 
 export async function listOwnerAgreementsForProperty(propertyId: string): Promise<OwnerAgreement[]> {
   const { data, error } = await supabase

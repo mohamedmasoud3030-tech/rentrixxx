@@ -119,7 +119,7 @@ function contractContextForDocument(contract: ContractListItem) {
     ? { ...contract.units, name: null, property_id: contract.property_id, notes: null, created_at: nowIso(), updated_at: nowIso(), deleted_at: null }
     : null;
   const property: Property | null = contract.properties
-    ? { ...contract.properties, type: 'residential', owner_name: null, purchase_value: null, current_value: null, status: 'active', notes: null, created_at: nowIso(), updated_at: nowIso(), deleted_at: null }
+    ? { ...contract.properties, type: 'residential', owner_name: null, owner_id: null, purchase_value: null, current_value: null, status: 'active', notes: null, created_at: nowIso(), updated_at: nowIso(), deleted_at: null }
     : null;
 
   return {

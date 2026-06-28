@@ -1,6 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useEffect, useState } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, type Resolver } from 'react-hook-form';
 import { z } from 'zod';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -115,8 +115,8 @@ function PropertyCreateModal({ open, onClose }: { open: boolean; onClose: () => 
   const createMutation = useCreatePropertyWithAgreement();
   const [submitError, setSubmitError] = useState<string | null>(null);
 
-  const form = useForm<PropertyWithAgreementFormValues>({
-    resolver: zodResolver(propertyWithAgreementSchema),
+  const form = useForm<PropertyWithAgreementFormValues, unknown, PropertyWithAgreementPayload>({
+    resolver: zodResolver(propertyWithAgreementSchema) as Resolver<PropertyWithAgreementFormValues, unknown, PropertyWithAgreementPayload>,
     defaultValues: {
       title: '',
       type: '',
@@ -213,7 +213,7 @@ function PropertyCreateModal({ open, onClose }: { open: boolean; onClose: () => 
             <option value="">اختر المالك</option>
             {(ownersQuery.data ?? []).map((owner) => (
               <option key={owner.id} value={owner.id}>
-                {owner.display_name ?? owner.full_name ?? owner.name ?? '—'}
+                {owner.display_name ?? owner.full_name ?? '—'}
               </option>
             ))}
           </Select>

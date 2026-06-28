@@ -214,6 +214,7 @@ export type Database = {
           type: string;
           address: string;
           owner_name: string | null;
+          owner_id: string | null;
           purchase_value: number | null;
           current_value: number | null;
           status: 'active' | 'inactive' | 'maintenance' | 'sold';
@@ -510,6 +511,25 @@ export type Database = {
     };
     Views: Record<string, never>;
     Functions: {
+      create_property_with_agreement: {
+        Args: {
+          p_title: string;
+          p_type: string;
+          p_address: string;
+          p_owner_id: string;
+          p_agreement_type: string;
+          p_commission_type: string;
+          p_commission_value: number;
+          p_agreement_starts_on: string;
+          p_agreement_ends_on?: string | null;
+          p_owner_name?: string | null;
+          p_purchase_value?: number | null;
+          p_current_value?: number | null;
+          p_status?: string;
+          p_notes?: string | null;
+        };
+        Returns: Json;
+      };
       create_contract_atomic: {
         Args: {
           p_property_id: string;

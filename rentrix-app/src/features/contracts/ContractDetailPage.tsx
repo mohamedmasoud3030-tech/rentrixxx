@@ -34,7 +34,7 @@ const getRenewalDefaults = (contract: ContractDetail): RenewalPayload => { const
 
 const toPdfTenant = (person: ContractDetail['people']): Person | null => person ? { ...person, type: 'tenant', address: null, notes: null, created_at: new Date().toISOString(), updated_at: new Date().toISOString(), deleted_at: null } : null;
 const toPdfUnit = (unit: ContractDetail['units'], propertyId: string): Unit | null => unit ? { ...unit, name: null, property_id: propertyId, notes: null, created_at: new Date().toISOString(), updated_at: new Date().toISOString(), deleted_at: null } : null;
-const toPdfProperty = (property: ContractDetail['properties']): Property | null => property ? { ...property, type: 'residential', owner_name: null, purchase_value: null, current_value: null, status: 'active', notes: null, created_at: new Date().toISOString(), updated_at: new Date().toISOString(), deleted_at: null } : null;
+const toPdfProperty = (property: ContractDetail['properties']): Property | null => property ? { ...property, type: 'residential', owner_name: null, owner_id: null, purchase_value: null, current_value: null, status: 'active', notes: null, created_at: new Date().toISOString(), updated_at: new Date().toISOString(), deleted_at: null } : null;
 
 function getExpiryDescription(settings: CompanySettingsContract, contract: ContractDetail): string {
   if (contract.status === 'terminated') return 'تم إنهاء العقد ولا توجد مدة متبقية معروضة.';
