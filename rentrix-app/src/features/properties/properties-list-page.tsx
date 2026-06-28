@@ -3,6 +3,7 @@ import { Building2, Edit, Plus, Trash2 } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { PropertyFormModal } from './property-form-modal';
 import { AsyncContentState } from '@/components/async-content-state';
+import { PageHeader } from '@/components/layout/page-header';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
@@ -52,15 +53,15 @@ export function PropertiesListPage() {
     <>
     <div className="space-y-5" dir="rtl">
       {/* Header */}
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h2 className="text-xl font-black">العقارات</h2>
-          <p className="text-sm text-muted-foreground">إدارة المحفظة العقارية والتشغيلية</p>
-        </div>
-        <Button className="rounded-2xl gap-2" onClick={() => { setEditPropertyId(undefined); setModalOpen(true); }}>
-          <Plus className="size-4" />إضافة عقار
-        </Button>
-      </div>
+      <PageHeader
+        title="العقارات"
+        description="إدارة المحفظة العقارية والتشغيلية"
+        action={
+          <Button className="rounded-2xl gap-2" onClick={() => { setEditPropertyId(undefined); setModalOpen(true); }}>
+            <Plus className="size-4" />إضافة عقار
+          </Button>
+        }
+      />
 
       {/* Filters */}
       <Card className="rounded-2xl">
