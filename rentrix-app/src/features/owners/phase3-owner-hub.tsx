@@ -5,14 +5,30 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { EntityCell } from '@/components/ui/entity-cell';
 import { EntityTable } from '@/components/ui/entity-table';
 import { Input } from '@/components/ui/input';
+import { Select } from '@/components/ui/select';
 import { KpiCard } from '@/components/ui/kpi-card';
 import { OwnerCard } from '@/components/ui/owner-card';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { useMockAgreements, useMockContracts, useMockOwners, useMockProperties, useMockUnits } from '@/hooks/use-mock-repositories';
 import type { MockDatabaseState } from '@/store/mock-db-store';
-import type { Owner, Property } from '@/domain/types';
+import type { AgreementType, Owner, Property } from '@/domain/types';
+import { isValidISODateString, validateAgreementOverlap, validatePositiveAmount } from '@/domain/validators';
 
 type Phase3OwnerFormValues = Readonly<{ name: string; phone: string; email: string }>;
+type Phase3AgreementFormValues = Readonly<{
+  ownerId: string;
+  propertyId: string;
+  agreementType: AgreementType;
+  startDate: string;
+  endDate: string;
+  commissionRate: string;
+  fixedFee: string;
+}>;
+
+type Phase3AgreementValidationContext = Readonly<{
+  properties?: readonly Property[];
+  agreements?: MockDatabaseState['agreements'];
+}>;
 
 type OwnerHubRow = Readonly<{
   owner: Owner;
@@ -27,10 +43,67 @@ function formatArabicNumber(value: number): string {
 }
 
 const emptyOwnerFormValues: Phase3OwnerFormValues = { name: '', phone: '', email: '' };
+const emptyAgreementFormValues: Phase3AgreementFormValues = {
+  ownerId: '',
+  propertyId: '',
+  agreementType: 'property_management',
+  startDate: '',
+  endDate: '',
+  commissionRate: '',
+  fixedFee: '',
+};
 
 export function validatePhase3OwnerForm(values: Phase3OwnerFormValues): string | null {
   if (!values.name.trim()) return 'اسم المالك مطلوب.';
   if (!values.phone.trim()) return 'رقم الهاتف مطلوب.';
+  return null;
+}
+
+function parseOptionalPositiveNumber(value: string): number | undefined {
+  if (!value.trim()) return undefined;
+  return Number(value);
+}
+
+function isOptionalPositiveAmount(value: number | undefined): boolean {
+  return value === undefined || validatePositiveAmount(value).isValid;
+}
+
+export function validatePhase3AgreementForm(values: Phase3AgreementFormValues, context: Phase3AgreementValidationContext = {}): string | null {
+  if (!values.ownerId) return 'اختيار المالك مطلوب قبل إنشاء الاتفاقية.';
+  if (!values.propertyId) return 'اختيار العقار مطلوب قبل إنشاء الاتفاقية.';
+
+  const selectedProperty = context.properties?.find((property) => property.id === values.propertyId);
+  if (selectedProperty && selectedProperty.ownerId !== values.ownerId) {
+    return 'العقار المحدد يجب أن يكون مرتبطاً بالمالك المختار.';
+  }
+  if (!values.startDate) return 'تاريخ بداية الاتفاقية مطلوب.';
+  if (!isValidISODateString(values.startDate) || (values.endDate && !isValidISODateString(values.endDate))) {
+    return 'تواريخ اتفاقية التشغيل غير صالحة.';
+  }
+  if (values.endDate && values.startDate > values.endDate) return 'تاريخ بداية الاتفاقية يجب أن يسبق تاريخ النهاية.';
+
+  const commissionRate = parseOptionalPositiveNumber(values.commissionRate);
+  const fixedFee = parseOptionalPositiveNumber(values.fixedFee);
+  if (!isOptionalPositiveAmount(commissionRate)) return 'نسبة العمولة يجب أن تكون رقماً موجباً.';
+  if (!isOptionalPositiveAmount(fixedFee)) return 'المبلغ الثابت يجب أن يكون رقماً موجباً.';
+  if (values.agreementType === 'property_management' && commissionRate === undefined && fixedFee === undefined) {
+    return 'اتفاقية إدارة الأملاك تحتاج نسبة عمولة أو رسماً ثابتاً.';
+  }
+  if (values.agreementType === 'master_lease' && fixedFee === undefined) return 'اتفاقية الاستئجار الرئيسي تحتاج التزاماً ثابتاً.';
+
+  if (context.agreements) {
+    const overlapCheck = validateAgreementOverlap(
+      {
+        id: 'phase3-owner-hub-draft-agreement',
+        propertyId: values.propertyId,
+        startDate: values.startDate,
+        endDate: values.endDate || null,
+      },
+      Array.from(context.agreements),
+    );
+    if (!overlapCheck.isValid) return overlapCheck.message ?? 'توجد اتفاقية تشغيل متداخلة لنفس العقار.';
+  }
+
   return null;
 }
 
@@ -86,6 +159,10 @@ export function Phase3OwnerHubPage() {
   const [ownerFormError, setOwnerFormError] = useState<string | null>(null);
   const [ownerFormSuccess, setOwnerFormSuccess] = useState<string | null>(null);
   const [ownerFormSaving, setOwnerFormSaving] = useState(false);
+  const [agreementFormValues, setAgreementFormValues] = useState<Phase3AgreementFormValues>(emptyAgreementFormValues);
+  const [agreementFormError, setAgreementFormError] = useState<string | null>(null);
+  const [agreementFormSuccess, setAgreementFormSuccess] = useState<string | null>(null);
+  const [agreementFormSaving, setAgreementFormSaving] = useState(false);
 
   const rows = buildOwnerHubRows(
     ownersQuery.data,
@@ -97,11 +174,32 @@ export function Phase3OwnerHubPage() {
   const totalProperties = propertiesQuery.data.length;
   const totalUnits = unitsQuery.data.length;
   const activeAgreementCount = agreementsQuery.data.filter((agreement) => agreement.status === 'active').length;
+  const agreementOwnerProperties = propertiesQuery.data.filter((property) => property.ownerId === agreementFormValues.ownerId);
 
   const updateOwnerFormField = (field: keyof Phase3OwnerFormValues, value: string) => {
     setOwnerFormValues((current) => ({ ...current, [field]: value }));
     setOwnerFormError(null);
     setOwnerFormSuccess(null);
+  };
+
+  const updateAgreementFormField = (field: keyof Omit<Phase3AgreementFormValues, 'agreementType'>, value: string) => {
+    setAgreementFormValues((current) => ({
+      ...current,
+      [field]: value,
+      ...(field === 'ownerId' ? { propertyId: '' } : null),
+    }));
+    setAgreementFormError(null);
+    setAgreementFormSuccess(null);
+  };
+
+  const updateAgreementType = (agreementType: AgreementType) => {
+    setAgreementFormValues((current) => ({
+      ...current,
+      agreementType,
+      ...(agreementType === 'master_lease' ? { commissionRate: '' } : null),
+    }));
+    setAgreementFormError(null);
+    setAgreementFormSuccess(null);
   };
 
   const handleOwnerFormSubmit = async (event: FormEvent<HTMLFormElement>) => {
@@ -127,6 +225,39 @@ export function Phase3OwnerHubPage() {
       setOwnerFormError(error instanceof Error ? error.message : 'تعذر تسجيل المالك محلياً.');
     } finally {
       setOwnerFormSaving(false);
+    }
+  };
+
+  const handleAgreementFormSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const validationError = validatePhase3AgreementForm(agreementFormValues, {
+      properties: propertiesQuery.data,
+      agreements: agreementsQuery.data,
+    });
+    if (validationError) {
+      setAgreementFormError(validationError);
+      return;
+    }
+
+    setAgreementFormSaving(true);
+    setAgreementFormError(null);
+    setAgreementFormSuccess(null);
+    try {
+      await agreementsQuery.execute({
+        ownerId: agreementFormValues.ownerId,
+        propertyId: agreementFormValues.propertyId,
+        agreementType: agreementFormValues.agreementType,
+        startDate: agreementFormValues.startDate,
+        endDate: agreementFormValues.endDate || null,
+        commissionRate: parseOptionalPositiveNumber(agreementFormValues.commissionRate),
+        fixedFee: parseOptionalPositiveNumber(agreementFormValues.fixedFee),
+      });
+      setAgreementFormValues(emptyAgreementFormValues);
+      setAgreementFormSuccess('تم إنشاء اتفاقية التشغيل محلياً بنجاح.');
+    } catch (error) {
+      setAgreementFormError(error instanceof Error ? error.message : 'تعذر إنشاء اتفاقية التشغيل محلياً.');
+    } finally {
+      setAgreementFormSaving(false);
     }
   };
 
@@ -192,6 +323,55 @@ export function Phase3OwnerHubPage() {
           </form>
           {ownerFormError ? <p className="mt-3 rounded-2xl border border-destructive/20 bg-destructive/10 p-3 text-sm font-bold text-destructive">{ownerFormError}</p> : null}
           {ownerFormSuccess ? <p className="mt-3 rounded-2xl border border-emerald-200 bg-emerald-50 p-3 text-sm font-bold text-emerald-700">{ownerFormSuccess}</p> : null}
+        </CardContent>
+      </Card>
+
+
+      <Card>
+        <CardHeader>
+          <CardTitle>إنشاء اتفاقية تشغيل</CardTitle>
+          <CardDescription>يدعم نموذج Phase 3 نمطي إدارة الأملاك والاستئجار الرئيسي، ولا يسمح بإنشاء اتفاقية قبل اختيار مالك وعقار مرتبط به.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form className="grid gap-4 xl:grid-cols-4" onSubmit={handleAgreementFormSubmit}>
+            <Field label="المالك *">
+              <Select value={agreementFormValues.ownerId} onChange={(event) => updateAgreementFormField('ownerId', event.target.value)}>
+                <option value="">اختر المالك</option>
+                {ownersQuery.data.map((owner) => <option key={owner.id} value={owner.id}>{owner.name}</option>)}
+              </Select>
+            </Field>
+            <Field label="العقار *">
+              <Select value={agreementFormValues.propertyId} onChange={(event) => updateAgreementFormField('propertyId', event.target.value)} disabled={!agreementFormValues.ownerId}>
+                <option value="">اختر العقار المرتبط</option>
+                {agreementOwnerProperties.map((property) => <option key={property.id} value={property.id}>{property.name}</option>)}
+              </Select>
+            </Field>
+            <Field label="نموذج التشغيل *">
+              <Select value={agreementFormValues.agreementType} onChange={(event) => updateAgreementType(event.target.value as AgreementType)}>
+                <option value="property_management">إدارة أملاك</option>
+                <option value="master_lease">استئجار رئيسي</option>
+              </Select>
+            </Field>
+            <Field label="تاريخ البداية *">
+              <Input dir="ltr" type="date" value={agreementFormValues.startDate} onChange={(event) => updateAgreementFormField('startDate', event.target.value)} />
+            </Field>
+            <Field label="تاريخ النهاية">
+              <Input dir="ltr" type="date" value={agreementFormValues.endDate} onChange={(event) => updateAgreementFormField('endDate', event.target.value)} />
+            </Field>
+            <Field label="نسبة العمولة %">
+              <Input dir="ltr" type="number" min="0.01" step="0.01" value={agreementFormValues.commissionRate} onChange={(event) => updateAgreementFormField('commissionRate', event.target.value)} disabled={agreementFormValues.agreementType === 'master_lease'} placeholder="8" />
+            </Field>
+            <Field label={agreementFormValues.agreementType === 'master_lease' ? 'التزام المالك الثابت *' : 'رسم ثابت اختياري'}>
+              <Input dir="ltr" type="number" min="0.01" step="0.01" value={agreementFormValues.fixedFee} onChange={(event) => updateAgreementFormField('fixedFee', event.target.value)} placeholder="1500" />
+            </Field>
+            <div className="flex items-end">
+              <Button type="submit" className="min-h-11 w-full gap-2" disabled={agreementFormSaving}>
+                <FileText className="size-4" /> إنشاء اتفاقية
+              </Button>
+            </div>
+          </form>
+          {agreementFormError ? <p className="mt-3 rounded-2xl border border-destructive/20 bg-destructive/10 p-3 text-sm font-bold text-destructive">{agreementFormError}</p> : null}
+          {agreementFormSuccess ? <p className="mt-3 rounded-2xl border border-emerald-200 bg-emerald-50 p-3 text-sm font-bold text-emerald-700">{agreementFormSuccess}</p> : null}
         </CardContent>
       </Card>
 
