@@ -144,23 +144,24 @@ function PropertyCreateModal({ open, onClose }: { open: boolean; onClose: () => 
   const commissionType = form.watch('commission_type');
   const isSubmitting = createMutation.isPending;
 
-  const handleSubmit = form.handleSubmit(async (values: PropertyWithAgreementPayload) => {
+  const handleSubmit = form.handleSubmit(async (values) => {
+    const payload: PropertyWithAgreementPayload = propertyWithAgreementSchema.parse(values);
     setSubmitError(null);
     try {
       await createMutation.mutateAsync({
-        title: values.title,
-        type: values.type,
-        address: values.address,
-        owner_id: values.owner_id,
-        agreement_type: values.agreement_type,
-        commission_type: values.commission_type,
-        commission_value: values.commission_value,
-        agreement_starts_on: values.agreement_starts_on,
-        agreement_ends_on: values.agreement_ends_on,
-        purchase_value: values.purchase_value,
-        current_value: values.current_value,
-        status: values.status,
-        notes: values.notes,
+        title: payload.title,
+        type: payload.type,
+        address: payload.address,
+        owner_id: payload.owner_id,
+        agreement_type: payload.agreement_type,
+        commission_type: payload.commission_type,
+        commission_value: payload.commission_value,
+        agreement_starts_on: payload.agreement_starts_on,
+        agreement_ends_on: payload.agreement_ends_on,
+        purchase_value: payload.purchase_value,
+        current_value: payload.current_value,
+        status: payload.status,
+        notes: payload.notes,
       });
       onClose();
     } catch (error) {
@@ -213,7 +214,7 @@ function PropertyCreateModal({ open, onClose }: { open: boolean; onClose: () => 
             <option value="">اختر المالك</option>
             {(ownersQuery.data ?? []).map((owner) => (
               <option key={owner.id} value={owner.id}>
-                {owner.display_name ?? owner.full_name ?? owner.name ?? '—'}
+                {owner.display_name ?? owner.full_name ?? '—'}
               </option>
             ))}
           </Select>

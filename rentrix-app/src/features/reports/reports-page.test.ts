@@ -26,6 +26,7 @@ function createContract(overrides: Partial<ContractListItem>): ContractListItem 
     units: { id: 'unit_a', unit_number: '101', floor: '1', status: 'occupied', rent_amount: 1200 },
     people: { id: 'tenant_a', full_name: 'أحمد علي', phone: null, email: null, national_id: null },
     ...overrides,
+    agreement_id: overrides.agreement_id ?? null,
   };
 }
 
