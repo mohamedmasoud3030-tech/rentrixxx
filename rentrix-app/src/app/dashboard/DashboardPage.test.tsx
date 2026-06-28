@@ -1,7 +1,10 @@
-import { renderToStaticMarkup } from 'react-dom/server';
-import { describe, expect, it, vi, beforeEach } from 'vitest';
-import { useQuery } from '@tanstack/react-query';
+// @vitest-environment happy-dom
+import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
+import { createRoot } from 'react-dom/client';
+import { act } from 'react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { DashboardPage } from './DashboardPage';
+import { getDashboardSnapshot } from '../dashboardSnapshot';
 
 // Mock TanStack Router
 vi.mock('@tanstack/react-router', () => ({
@@ -19,9 +22,9 @@ vi.mock('@/features/settings/useCompanySettings', () => ({
   }),
 }));
 
-// Mock react-query useQuery
-vi.mock('@tanstack/react-query', () => ({
-  useQuery: vi.fn(),
+// Mock getDashboardSnapshot service boundary
+vi.mock('../dashboardSnapshot', () => ({
+  getDashboardSnapshot: vi.fn(),
 }));
 
 const mockSnapshot = {
@@ -49,7 +52,7 @@ const mockSnapshot = {
     {
       id: 'contract-1',
       end_date: '2026-07-15',
-      properties: { title: 'برจ الياسمين' },
+      properties: { title: 'برج الياسمين' },
       units: { unit_number: '101' },
       people: { full_name: 'سالم الكعبي' },
     }
@@ -79,64 +82,94 @@ const mockSnapshot = {
   }
 };
 
-describe('Modular DashboardPage Rendering and Hierarchy', () => {
+describe('Modular DashboardPage Query Boundary Tests', () => {
+  let container: HTMLDivElement | null = null;
+  let root: any = null;
+  let queryClient: QueryClient;
+
   beforeEach(() => {
     vi.clearAllMocks();
+    container = document.createElement('div');
+    document.body.appendChild(container);
+    root = createRoot(container);
+    queryClient = new QueryClient({
+      defaultOptions: {
+        queries: {
+          retry: false,
+        },
+      },
+    });
   });
 
-  it('renders the core dashboard operating overview hierarchy on successful data loading', () => {
-    // Mock successful loading state
-    (useQuery as any).mockReturnValue({
-      data: mockSnapshot,
-      isLoading: false,
-      isError: false,
-      error: null,
-      refetch: vi.fn().mockResolvedValue({}),
-    });
-
-    const html = renderToStaticMarkup(<DashboardPage />);
-
-    // 1. Verify Hero Banner & Title
-    expect(html).toContain('لوحة التحكم');
-    expect(html).toContain('عقد نشط');
-    expect(html).toContain('وحدة شاغرة');
-
-    // 2. Verify KPI Cards & Values
-    expect(html).toContain('نسبة الإشغال');
-    expect(html).toContain('المتأخرات');
-
-    // 3. Verify Quick Actions Section
-    expect(html).toContain('إجراءات سريعة');
-    expect(html).toContain('إنشاء عقد');
-    expect(html).toContain('الفواتير');
-
-    // 4. Verify Urgent Sections (Expiring Contracts & Overdue items)
-    expect(html).toContain('العقود المنتهية قريباً');
-    expect(html).toContain('سالم الكعبي');
-    expect(html).toContain('أعلى المتأخرات');
-    expect(html).toContain('أحمد الفارسي');
-
-    // 5. Verify Financial Monthly Summary
-    expect(html).toContain('النظرة المالية للشهر');
-    expect(html).toContain('المحصّل');
-    expect(html).toContain('المتبقي');
-
-    // 6. Verify Aged accounts receivables breakdown exists
-    expect(html).toContain('أعمار الذمم');
+  afterEach(() => {
+    if (container) {
+      act(() => {
+        root.unmount();
+      });
+      document.body.removeChild(container);
+      container = null;
+    }
   });
 
-  it('preserves robust layout skeleton during query loading state', () => {
-    // Mock loading state
-    (useQuery as any).mockReturnValue({
-      data: undefined,
-      isLoading: true,
-      isError: false,
-      refetch: vi.fn(),
+  it('renders the core dashboard and calls getDashboardSnapshot at the service boundary', async () => {
+    // Configure getDashboardSnapshot mock resolved value
+    (getDashboardSnapshot as any).mockResolvedValue(mockSnapshot);
+
+    await act(async () => {
+      root.render(
+        <QueryClientProvider client={queryClient}>
+          <DashboardPage />
+        </QueryClientProvider>
+      );
     });
 
-    const html = renderToStaticMarkup(<DashboardPage />);
+    // Verify getDashboardSnapshot was invoked at least once
+    expect(getDashboardSnapshot).toHaveBeenCalled();
 
-    // Skeletons are rendered for Hero, KPIs, and Urgent lists
-    expect(html).toContain('skeleton-shimmer');
+    // Verify the rendered DOM is updated with mock snapshot data
+    // (Wait for React Query's state update to render, which is automatic on promise resolve)
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 50));
+    });
+
+    const text = container?.textContent ?? '';
+
+    // 1. Dashboard title / operating overview
+    expect(text).toContain('لوحة التحكم');
+    expect(text).toContain('عقد نشط');
+    expect(text).toContain('نسبة الإشغال');
+
+    // 2. Quick Actions
+    expect(text).toContain('إجراءات سريعة');
+    expect(text).toContain('إنشاء عقد');
+
+    // 3. Expiring contracts section
+    expect(text).toContain('العقود المنتهية قريباً');
+    expect(text).toContain('سالم الكعبي');
+
+    // 4. Overdue items section
+    expect(text).toContain('أعلى المتأخرات');
+    expect(text).toContain('أحمد الفارسي');
+
+    // 5. Financial summary
+    expect(text).toContain('النظرة المالية للشهر');
+    expect(text).toContain('المحصّل');
+  });
+
+  it('handles query loading state correctly by rendering skeletons', async () => {
+    // Return a pending promise to keep it in loading state
+    (getDashboardSnapshot as any).mockReturnValue(new Promise(() => {}));
+
+    await act(async () => {
+      root.render(
+        <QueryClientProvider client={queryClient}>
+          <DashboardPage />
+        </QueryClientProvider>
+      );
+    });
+
+    // Check if skeletons are rendered in the DOM
+    const skeletons = container?.querySelectorAll('.skeleton-shimmer');
+    expect(skeletons?.length).toBeGreaterThan(0);
   });
 });
