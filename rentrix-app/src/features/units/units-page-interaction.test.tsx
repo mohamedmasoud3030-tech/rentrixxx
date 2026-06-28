@@ -1,17 +1,26 @@
-import { renderToStaticMarkup } from 'react-dom/server';
-import { describe, expect, it, vi, beforeEach } from 'vitest';
+// @vitest-environment happy-dom
+import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
+import { createRoot } from 'react-dom/client';
+import { act } from 'react';
 import { UnitsPage } from './units-page';
 
-// Global mocks to store props passed to children
+// Global navigation spy
 const mockNavigate = vi.fn();
-let lastEntityTableProps: any = null;
-let lastUnitCardProps: any = null;
 
 vi.mock('@tanstack/react-router', () => ({
   useNavigate: () => mockNavigate,
   Link: (props: any) => {
-    // If our mock Link has an onClick, let's trigger it in our tests to verify propagation
-    return <a data-testid="mock-link" onClick={props.onClick}>{props.children}</a>;
+    return (
+      <a 
+        data-testid="mock-link" 
+        onClick={(e) => {
+          if (props.onClick) props.onClick(e);
+        }}
+        href={props.to}
+      >
+        {props.children}
+      </a>
+    );
   },
 }));
 
@@ -41,82 +50,87 @@ vi.mock('@/features/properties/use-properties', () => ({
   }),
 }));
 
-vi.mock('@/components/ui/entity-table', () => {
-  return {
-    EntityTable: (props: any) => {
-      lastEntityTableProps = props;
-      return <div data-testid="entity-table" />;
-    },
-  };
-});
+describe('Global UnitsPage Real Rendered User-Interaction Tests', () => {
+  let container: HTMLDivElement | null = null;
+  let root: any = null;
 
-vi.mock('@/components/ui/unit-card', () => {
-  return {
-    UnitCard: (props: any) => {
-      lastUnitCardProps = props;
-      return <div data-testid="unit-card" />;
-    },
-  };
-});
-
-describe('Global UnitsPage Interactions', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    lastEntityTableProps = null;
-    lastUnitCardProps = null;
+    container = document.createElement('div');
+    document.body.appendChild(container);
+    root = createRoot(container);
   });
 
-  it('proves desktop row click on UnitsPage navigates to unit detail', () => {
-    renderToStaticMarkup(<UnitsPage />);
+  afterEach(() => {
+    if (container) {
+      act(() => {
+        root.unmount();
+      });
+      document.body.removeChild(container);
+      container = null;
+    }
+  });
 
-    expect(lastEntityTableProps).not.toBeNull();
+  it('proves clicking a desktop row in UnitsPage navigates to nested unit detail URL', async () => {
+    await act(async () => {
+      root.render(<UnitsPage />);
+    });
 
-    // Simulate desktop row click on the table
-    lastEntityTableProps.onRowClick({ id: 'unit-1', property_id: 'prop-1' });
+    // Locate desktop row in table body
+    const row = container?.querySelector('tbody tr') as HTMLElement;
+    expect(row).not.toBeNull();
 
-    // Verify row click correctly navigates to the nested unit detail route
+    // Click the row
+    await act(async () => {
+      row.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    });
+
+    // Verify row click correctly navigates to nested unit detail
     expect(mockNavigate).toHaveBeenCalledWith({
       to: '/properties/$propertyId/units/$unitId',
       params: { propertyId: 'prop-1', unitId: 'unit-1' },
     });
   });
 
-  it('proves mobile card click on UnitsPage navigates to unit detail', () => {
-    renderToStaticMarkup(<UnitsPage />);
+  it('proves clicking a mobile card in UnitsPage navigates to nested unit detail URL', async () => {
+    await act(async () => {
+      root.render(<UnitsPage />);
+    });
 
-    // Render the mobile card to capture props passed to UnitCard
-    renderToStaticMarkup(lastEntityTableProps.renderMobileCard({ id: 'unit-1', property_id: 'prop-1', unit_number: '101', status: 'available' }));
+    // Locate the first mobile card button
+    const cardButton = container?.querySelector('[role="listitem"] button') as HTMLButtonElement;
+    expect(cardButton).not.toBeNull();
 
-    expect(lastUnitCardProps).not.toBeNull();
+    // Click the mobile card
+    await act(async () => {
+      cardButton.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    });
 
-    // Simulate clicking on the mobile card
-    lastUnitCardProps.onClick();
-
-    // Verify it navigates exactly to the nested unit detail route
+    // Verify card click correctly navigates to nested unit detail
     expect(mockNavigate).toHaveBeenCalledWith({
       to: '/properties/$propertyId/units/$unitId',
       params: { propertyId: 'prop-1', unitId: 'unit-1' },
     });
   });
 
-  it('proves that property link click prevents parent row click bubbling via stopPropagation', () => {
-    renderToStaticMarkup(<UnitsPage />);
+  it('proves that clicking the embedded property link does not bubble and trigger row navigation', async () => {
+    await act(async () => {
+      root.render(<UnitsPage />);
+    });
 
-    // Retrieve the property column renderer
-    const propertyCol = lastEntityTableProps.columns.find((col: any) => col.key === 'property');
-    expect(propertyCol).toBeDefined();
+    // Locate the embedded property link in the desktop table (under td)
+    const propertyLink = container?.querySelector('tbody tr td a[href="/properties/$propertyId"]') as HTMLAnchorElement;
+    expect(propertyLink).not.toBeNull();
 
-    // Render the property column cell
-    const cellMarkup = propertyCol.render({ id: 'unit-1', property_id: 'prop-1', status: 'available' });
-    
-    // We spy on stopPropagation
-    const stopPropagationSpy = vi.fn();
-    const mockEvent = { stopPropagation: stopPropagationSpy };
+    // Click the property link
+    await act(async () => {
+      propertyLink.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    });
 
-    // Simulate click on the link directly
-    cellMarkup.props.onClick(mockEvent);
-
-    // Verify stopPropagation was explicitly called, preventing parent table row-click bubble!
-    expect(stopPropagationSpy).toHaveBeenCalled();
+    // Verify it does NOT trigger the parent row's unit detail navigation!
+    expect(mockNavigate).not.toHaveBeenCalledWith({
+      to: '/properties/$propertyId/units/$unitId',
+      params: expect.any(Object),
+    });
   });
 });
