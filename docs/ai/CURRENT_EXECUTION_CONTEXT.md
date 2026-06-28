@@ -14,36 +14,37 @@
 - Phase 4 — Tenant and Contract Lifecycle: **planned**
 - Phase 5 — Financial Workflows: **planned**
 - Phase 6 — Roles and Audit Behavior: **planned**
-- Phase 7 — Reports, Print/Export, Tests, and CI: **planned**
-- Phase 8 — Supabase Integration (Schema, Migrations, RPCs, RLS, Auth, Generated Types): **postponed**
+- Phase 7 — Reports, Print/Export, Tests, and CI: **planned** (Extending existing CI)
+- Phase 8 — Supabase Integration: **postponed**
+- Phase 9 / Backlog — Secondary Module Hardening: **backlog**
 
 ## Postponed Supabase Strategy
 
 By owner decision, Supabase and database-specific assets are completely postponed to Phase 8.
 - Codebase development in Phases 1-7 will rely purely on a clean domain-driven model and local in-memory/localStorage mock repository layer.
-- Components will interact with high-level services and hooks rather than direct client-side Supabase queries, facilitating an easy schema/live binding in Phase 8.
+- Components will interact with high-level services and hooks rather than direct client-side Supabase queries. Repository abstractions should reduce, not eliminate, Phase 8 integration changes.
 
 ## Current authority set
 
 Read together:
 
 1. `docs/FINAL_PRODUCT_BLUEPRINT.md`
-2. `docs/RENTRIX_MASTER_PLAN.md` (Updated: Supabase postponed to Phase 8)
+2. `docs/RENTRIX_MASTER_PLAN.md` (Updated: Supabase postponed to Phase 8, Secondary modules in Phase 9/Backlog)
 3. `docs/PHASE_1_7_EXECUTION_PLAN.md` (Detailed Phase 1-7 Roadmap & TODO List)
 4. `docs/RUNTIME_TRUTH_AND_GAPS.md`
 5. `docs/ai/CURRENT_EXECUTION_CONTEXT.md`
 
 Use the documented source-of-truth hierarchy:
 
-1. Pure TypeScript Domain Contracts & Mock Models (for Phases 1-7);
-2. Verified live Supabase metadata (for Phase 8 reference);
+1. Verified live Supabase metadata (treated as runtime truth for the database);
+2. Pure TypeScript Domain Contracts & Mock Models (authoritative **only for frontend behavior** during Phases 1-7);
 3. Current remote `main` code;
 4. Generated TypeScript database contract;
 5. Older product documents, previous audits, and agent reports.
 
 ## Phase 1 objective status
 
-Phase 1 (Domain Foundation) is current. Its objective is to freeze typescript domain schemas, types, validation invariants, and Arabic dictionary keys, decoupling the core application logic from the underlying storage.
+Phase 1 (Domain Foundation) is current. Its objective is to freeze TypeScript domain schemas, types, validation invariants, and Arabic dictionary keys, decoupling the core application logic from the underlying storage.
 
 ## Required next-phase reconciliation focus
 

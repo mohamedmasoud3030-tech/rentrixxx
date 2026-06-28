@@ -10,13 +10,13 @@ It is an observation record, not a permanent guarantee and not a migration plan.
 
 ## 1. Source-of-Truth Hierarchy
 
-1. Pure TypeScript Domain Contracts & Mock Models (for Phases 1-7).
-2. Verified live Supabase metadata, timestamped and treated as runtime truth (postponed for live sync until Phase 8).
+1. Verified live Supabase metadata, timestamped and treated as runtime truth for the database.
+2. Pure TypeScript Domain Contracts & Mock Models (authoritative **only for frontend behavior** during Phases 1-7).
 3. Current remote `main` code.
 4. Generated TypeScript database contract.
 5. Older product documents, previous audits, and agent reports.
 
-When these sources conflict, do not invent a resolution. Record the contradiction and assign it to the owning future phase.
+When these sources conflict, do not invent a resolution. Record the contradiction and assign its resolution to the owning future phase.
 
 ---
 
@@ -41,7 +41,7 @@ Observed snapshot only:
 
 | Contradiction | Current higher-authority reading | Owning phase |
 | --- | --- | --- |
-| `properties.owner_id` exists live while ownership is also modeled through agreements/history and older docs/repo assumptions may conflict | Treat live metadata as runtime truth for database; resolve UI and local flow via owner agreements, sync with DB in Phase 8 | Phase 3 (UI) & Phase 8 (DB) |
+| `properties.owner_id` exists live while ownership is also modeled through agreements/history and older docs/repo assumptions may conflict | Treat live metadata as runtime truth for database; resolve UI and local flow via Owner → Property → Owner Agreement sequence, sync with DB in Phase 8 | Phase 3 (UI) & Phase 8 (DB) |
 | Live RPC contract includes `create_property_with_agreement` returning `jsonb`, while repository/generated typing may drift | Reconcile repository/type contract when live Supabase integration is performed | Phase 8 |
 | `contracts.agreement_id` is nullable live even though target product requires covering agreement logic | Enforce covering agreement validation strictly in frontend mock layer; reconcile nullable field in DB in Phase 8 | Phase 4 (UI) & Phase 8 (DB) |
 | Contract create has stronger agreement validation than contract update/renewal | Enforce consistent contract lifecycle validations in the domain/mock layer | Phase 4 |
@@ -55,7 +55,7 @@ Observed snapshot only:
 | Gap | Note | Owning phase |
 | --- | --- | --- |
 | Live schema vs migrations vs generated types vs code contract drift | Postponed; full reconciliation and type mapping to live Supabase database | Phase 8 |
-| `properties.owner_id` and related ownership modeling drift | Map database-level field to local multi-owner/history model | Phase 8 |
+| `properties.owner_id` and related ownership modeling drift | Map database-level field to local sequence: Owner → Property → Owner Agreement | Phase 8 |
 | RPC return typing drift | Reconcile live/repository custom database RPC types | Phase 8 |
 | Safe contract lifecycle enforcement | Create/update/renew/terminate must enforce agreement/property/unit/date/overlap/permission rules consistently locally | Phase 4 |
 | Rich agreement terms | Fixed + rate combinations, calculation basis, expense responsibility, cadence, amendments, audit history locally | Phase 5 |
@@ -63,7 +63,7 @@ Observed snapshot only:
 | Office profitability model | Approved target capability, calculated locally | Phase 5 |
 | Sensitive approvals, auditability, reversal/cancellation paths | Implement user-role gates and local state history audit log | Phase 6 |
 | Statements/reports/print/export completeness | Includes owner and settlement statements plus profitability reporting on mock data | Phase 7 |
-| Secondary module hardening | Maintenance, documents, alerts, lands, leads, commissions, communication | Phase 8 |
+| Secondary module hardening | Maintenance, documents, alerts, lands, leads, commissions, communication | Phase 9 / Backlog |
 
 ---
 
