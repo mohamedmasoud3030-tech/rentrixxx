@@ -10,8 +10,8 @@ It defines the approved phase order, release gates, and contradiction-handling r
 
 Use this hierarchy explicitly:
 
-1. Local Domain Contract & Mock State (for Phases 1 to 7).
-2. Verified live Supabase metadata, timestamped and treated as runtime truth (postponed for live integration until Phase 8).
+1. Verified live Supabase metadata, timestamped and treated as runtime truth for the database.
+2. Pure TypeScript Domain Contracts & Mock Models (authoritative **only for frontend behavior** during Phases 1-7).
 3. Current remote `main` code.
 4. Generated TypeScript database contract.
 5. Older product documents, previous audits, and agent reports.
@@ -22,7 +22,9 @@ When sources conflict, do not invent a resolution. Record the contradiction and 
 
 ## 2. Official Roadmap (Revised for Postponed Supabase Integration)
 
-The owner has decided to postpone all Supabase database integration, migrations, schema updates, RPCs, RLS, auth, and generated types to **Phase 8**. This allows rapid and pure frontend domain prototyping, calculation verification, and complete RTL/mobile UX polish in Phases 1-7 using a robust local/mock data layer.
+The owner has decided to postpone all Supabase database integration, migrations, schema updates, RPCs, RLS, auth, and generated types to **Phase 8**. This allows rapid and pure frontend domain prototyping, calculation verification, and complete RTL/mobile UX polish in Phases 1-7 using a robust local/mock data layer. 
+
+Repository abstractions implemented in Phases 1-7 should **reduce, not eliminate**, Phase 8 integration changes.
 
 ### Revised Phase Order:
 
@@ -31,10 +33,11 @@ The owner has decided to postpone all Supabase database integration, migrations,
 - **Phase 2** — Mock/Local Data Layer.
 - **Phase 3** — Owner, Agreement, Property, and Unit Workflows.
 - **Phase 4** — Tenant and Contract Lifecycle.
-- **Phase 5** — Financial Workflows (Invoices, Receipts, Expenses, Settlements, Profitability).
+- **Phase 5** — Financial Workflows.
 - **Phase 6** — Roles and Audit Behavior.
-- **Phase 7** — Reports, Print/Export, Tests, and CI.
+- **Phase 7** — Reports, Print/Export, Tests, and CI (Extending existing CI).
 - **Phase 8** — Supabase Integration (Schema, Migrations, RPCs, RLS, Auth, Generated Types, Live Data).
+- **Phase 9 / Backlog** — Secondary Module Hardening (Maintenance, lands, leads, commissions, communication).
 
 ---
 
@@ -42,11 +45,11 @@ The owner has decided to postpone all Supabase database integration, migrations,
 
 - **Gate 1:** Domain contracts and schemas frozen locally (Phase 1).
 - **Gate 2:** Mock data layer with local storage/in-memory state complete and reactive (Phase 2).
-- **Gate 3:** Owner to unit onboarding workflows functional (Phase 3).
+- **Gate 3:** Onboarding workflows (Owner → Property → Owner Agreement → Unit) functional (Phase 3).
 - **Gate 4:** Tenant and contract lifecycle with validation and overlap-prevention complete (Phase 4).
 - **Gate 5:** Financial calculations, invoicing, expensing, and owner settlements verified (Phase 5).
 - **Gate 6:** Role-based access control and local audit logging active (Phase 6).
-- **Gate 7:** Complete list/detail export, physical/mobile printing, and unit/integration test coverage green (Phase 7).
+- **Gate 7:** Complete list/detail export, physical/mobile printing, and unit/integration test coverage green in extended CI (Phase 7).
 - **Gate 8:** Production-ready live data sync with Supabase and secure RLS policies (Phase 8).
 
 A later phase must not claim completion if its predecessor gate is still unresolved.
@@ -68,8 +71,8 @@ Evidence now belongs in:
 
 Objective:
 - Establish clean, strict TypeScript types, validation rules, and domain entities representing the core operational flow.
-- Ensure proper Arabic-first semantics are embedded into domain model dictionaries and metadata.
-- Prevent dependancy on database schemas by modeling the pure business rules (contracts, agreements, properties, invoices).
+- Ensure proper Arabic-first semantics are embedded into domain model dictionaries and metadata, without forcing Arabic-only input fields.
+- Prevent dependency on database schemas by modeling the pure business rules.
 
 Details in `docs/PHASE_1_7_EXECUTION_PLAN.md`.
 
@@ -77,17 +80,17 @@ Details in `docs/PHASE_1_7_EXECUTION_PLAN.md`.
 
 Objective:
 - Build a robust, in-memory/localStorage-backed mock repository and services layer.
-- Ensure realistic state management, cascade delete simulation, relational integrity checks, and network latency/error simulation.
-- Expose React hooks and context-based services that abstract database operations, making the future transition to Supabase seamless.
+- Ensure realistic state management, reference entity deactivation, relational checks, and network latency/error simulation.
+- Expose React hooks and context-based services that abstract database operations to reduce Phase 8 integration changes.
 
 Details in `docs/PHASE_1_7_EXECUTION_PLAN.md`.
 
 ### Phase 3 — Owner, Agreement, Property, and Unit Workflows (Future)
 
 Objective:
-- Build the full Arabized, mobile-first user interfaces and workflows for registration of owners and active agreements.
+- Build the full Arabized, mobile-first user interfaces and workflows in the valid sequence: Owner → Property → Owner Agreement → Unit.
 - Support both operating models: `property_management` and `master_lease`.
-- Build property and unit onboarding, linking units and properties dynamically to active covering agreements.
+- Prevent agreements from existing before properties; support consolidated onboarding wizards.
 
 Details in `docs/PHASE_1_7_EXECUTION_PLAN.md`.
 
@@ -95,7 +98,7 @@ Details in `docs/PHASE_1_7_EXECUTION_PLAN.md`.
 
 Objective:
 - Create tenant onboarding workflows and the full lease contract lifecycle (create, update, renew, terminate).
-- Enforce business invariants locally: dates within agreement boundaries, zero-overlap on units, unit vacancy checks, and role approvals.
+- Enforce business invariants locally: dates within agreement boundaries, zero-overlap on units for active/draft contracts, unit vacancy checks, and role approvals. Expired or terminated contracts do not block new ones.
 
 Details in `docs/PHASE_1_7_EXECUTION_PLAN.md`.
 
@@ -103,27 +106,27 @@ Details in `docs/PHASE_1_7_EXECUTION_PLAN.md`.
 
 Objective:
 - Build the core rent and service financial calculations engine.
-- Generate contract invoices dynamically; record payments and generate detailed receipts.
+- Generate contract invoices; record payments and generate detailed receipts.
 - Track unit/property expenses and assign expense responsibility (office vs owner).
-- Implement owner settlements engine (`property_management` vs `master_lease` models) and calculate office-level profitability.
+- Implement owner settlements engine (`property_management` vs `master_lease` models) and calculate office-level profitability. All automatic invoicing or calculations are marked as future owner decisions or configurable policies.
 
 Details in `docs/PHASE_1_7_EXECUTION_PLAN.md`.
 
 ### Phase 6 — Roles and Audit Behavior (Future)
 
 Objective:
-- Apply client role permissions (`ADMIN`, `MANAGER`, `USER`) dynamically on UI elements.
+- Apply client-side role permissions (`ADMIN`, `MANAGER`, `USER`) dynamically on UI elements.
 - Log local operational mutations to an in-memory/localStorage audit log database.
-- Enforce MANAGER/ADMIN approval workflows for sensitive actions (reversals, contract terminations, settlement releases).
+- Enforce MANAGER/ADMIN approval workflows for sensitive actions (reversals, contract terminations, settlement releases). All approval limits or thresholds are marked as future owner decisions or configurable policies.
 
 Details in `docs/PHASE_1_7_EXECUTION_PLAN.md`.
 
 ### Phase 7 — Reports, Print/Export, Tests, and CI (Future)
 
 Objective:
-- Implement comprehensive collections, arrears, occupancy, statements, and profitability reports.
+- Implement collections, arrears, occupancy, statements, and profitability reports.
 - Create print-optimized templates for physical/mobile devices and file exporters (CSV, PDF).
-- Deliver 100% green test coverage on calculations and workflows; establish CI pipeline validation.
+- Deliver 100% green test coverage on calculations and workflows; extend existing CI pipeline validation.
 
 Details in `docs/PHASE_1_7_EXECUTION_PLAN.md`.
 
@@ -159,7 +162,7 @@ What remains out of scope unless separately approved:
 
 When a document, code path, generated type, migration, or live metadata conflicts with another source:
 
-1. Identify the higher-authority source (Domain/Mock layer takes precedence during Phases 1-7).
+1. Identify the higher-authority source (Verified live Supabase metadata remains the database truth).
 2. Record the contradiction clearly.
 3. Do not pretend the conflict is already resolved.
 4. Assign the fix to the owning phase (Phase 8 for database/Supabase-specific contradictions; Phase 1-7 for domain/UX contradictions).
