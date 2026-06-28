@@ -53,7 +53,11 @@ export async function getContract(contractId: string): Promise<ContractDetail> {
 }
 
 export async function createContract(payload: ContractPayload): Promise<Contract> {
-  const insertPayload: ContractInsert = { ...payload, unit_id: payload.unit_id ?? null };
+  const insertPayload: ContractInsert = {
+    ...payload,
+    unit_id: payload.unit_id ?? null,
+    agreement_id: payload.agreement_id ?? null,
+  };
   const { data, error } = await supabase.from('contracts').insert(insertPayload).select('*').single().returns<Contract>();
   if (error) throw error;
   return data;
