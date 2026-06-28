@@ -86,7 +86,8 @@ export function ContractFormPage() {
               <label className="grid gap-2 text-sm font-bold">شرط السداد<Select {...form.register('payment_terms_id')}><option value="">بدون قالب شروط</option>{(paymentTermsQuery.data ?? []).filter((term) => term.is_active !== false).map((term) => <option key={term.id} value={term.id}>{term.name}</option>)}</Select>{fieldError(form.formState.errors.payment_terms_id?.message)}</label>
               <label className="grid gap-2 text-sm font-bold md:col-span-2">سبب الإلغاء<Textarea {...form.register('cancellation_reason')} placeholder="يظهر عند إلغاء العقد" /></label>
               <label className="grid gap-2 text-sm font-bold md:col-span-2">ملاحظات<Textarea {...form.register('notes')} placeholder="ملاحظات العقد" /></label>
-              {form.formState.errors.root <div className="flex justify-end gap-3 md:col-span-2"><div className="flex justify-end gap-3 md:col-span-2"> <div className="md:col-span-2 rounded-md bg-destructive/10 px-4 py-2 text-sm font-bold text-destructive">{form.formState.errors.root.message}</div>}<div className="flex justify-end gap-3 md:col-span-2"><Button variant="secondary" asChild><Link to="/contracts">إلغاء</Link></Button><Button type="submit" disabled={submitting}>{submitting ? 'جار الحفظ...' : 'حفظ العقد'}</Button></div>
+              {form.formState.errors.root && <div className="md:col-span-2 rounded-md bg-destructive/10 px-4 py-2 text-sm font-bold text-destructive">{form.formState.errors.root.message}</div>}
+              <div className="flex justify-end gap-3 md:col-span-2"><Button variant="secondary" asChild><Link to="/contracts">إلغاء</Link></Button><Button type="submit" disabled={submitting}>{submitting ? 'جار الحفظ...' : 'حفظ العقد'}</Button></div>
             </form>
           </FormSection>
         </CardContent>
