@@ -15,6 +15,12 @@ import type { AgreementType, Owner, Property } from '@/domain/types';
 import { isValidISODateString, validateAgreementOverlap, validatePositiveAmount } from '@/domain/validators';
 
 type Phase3OwnerFormValues = Readonly<{ name: string; phone: string; email: string }>;
+type Phase3PropertyFormValues = Readonly<{
+  ownerId: string;
+  name: string;
+  address: string;
+}>;
+
 type Phase3AgreementFormValues = Readonly<{
   ownerId: string;
   propertyId: string;
@@ -43,6 +49,7 @@ function formatArabicNumber(value: number): string {
 }
 
 const emptyOwnerFormValues: Phase3OwnerFormValues = { name: '', phone: '', email: '' };
+const emptyPropertyFormValues: Phase3PropertyFormValues = { ownerId: '', name: '', address: '' };
 const emptyAgreementFormValues: Phase3AgreementFormValues = {
   ownerId: '',
   propertyId: '',
@@ -56,6 +63,13 @@ const emptyAgreementFormValues: Phase3AgreementFormValues = {
 export function validatePhase3OwnerForm(values: Phase3OwnerFormValues): string | null {
   if (!values.name.trim()) return 'اسم المالك مطلوب.';
   if (!values.phone.trim()) return 'رقم الهاتف مطلوب.';
+  return null;
+}
+
+export function validatePhase3PropertyForm(values: Phase3PropertyFormValues): string | null {
+  if (!values.ownerId) return 'اختيار المالك مطلوب قبل تسجيل العقار.';
+  if (!values.name.trim()) return 'اسم العقار مطلوب.';
+  if (!values.address.trim()) return 'عنوان العقار مطلوب.';
   return null;
 }
 
@@ -159,6 +173,10 @@ export function Phase3OwnerHubPage() {
   const [ownerFormError, setOwnerFormError] = useState<string | null>(null);
   const [ownerFormSuccess, setOwnerFormSuccess] = useState<string | null>(null);
   const [ownerFormSaving, setOwnerFormSaving] = useState(false);
+  const [propertyFormValues, setPropertyFormValues] = useState<Phase3PropertyFormValues>(emptyPropertyFormValues);
+  const [propertyFormError, setPropertyFormError] = useState<string | null>(null);
+  const [propertyFormSuccess, setPropertyFormSuccess] = useState<string | null>(null);
+  const [propertyFormSaving, setPropertyFormSaving] = useState(false);
   const [agreementFormValues, setAgreementFormValues] = useState<Phase3AgreementFormValues>(emptyAgreementFormValues);
   const [agreementFormError, setAgreementFormError] = useState<string | null>(null);
   const [agreementFormSuccess, setAgreementFormSuccess] = useState<string | null>(null);
@@ -180,6 +198,12 @@ export function Phase3OwnerHubPage() {
     setOwnerFormValues((current) => ({ ...current, [field]: value }));
     setOwnerFormError(null);
     setOwnerFormSuccess(null);
+  };
+
+  const updatePropertyFormField = (field: keyof Phase3PropertyFormValues, value: string) => {
+    setPropertyFormValues((current) => ({ ...current, [field]: value }));
+    setPropertyFormError(null);
+    setPropertyFormSuccess(null);
   };
 
   const updateAgreementFormField = (field: keyof Omit<Phase3AgreementFormValues, 'agreementType'>, value: string) => {
@@ -225,6 +249,32 @@ export function Phase3OwnerHubPage() {
       setOwnerFormError(error instanceof Error ? error.message : 'تعذر تسجيل المالك محلياً.');
     } finally {
       setOwnerFormSaving(false);
+    }
+  };
+
+  const handlePropertyFormSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const validationError = validatePhase3PropertyForm(propertyFormValues);
+    if (validationError) {
+      setPropertyFormError(validationError);
+      return;
+    }
+
+    setPropertyFormSaving(true);
+    setPropertyFormError(null);
+    setPropertyFormSuccess(null);
+    try {
+      await propertiesQuery.execute({
+        ownerId: propertyFormValues.ownerId,
+        name: propertyFormValues.name.trim(),
+        address: propertyFormValues.address.trim(),
+      });
+      setPropertyFormValues(emptyPropertyFormValues);
+      setPropertyFormSuccess('تم تسجيل العقار وربطه بالمالك محلياً بنجاح.');
+    } catch (error) {
+      setPropertyFormError(error instanceof Error ? error.message : 'تعذر تسجيل العقار محلياً.');
+    } finally {
+      setPropertyFormSaving(false);
     }
   };
 
@@ -326,6 +376,42 @@ export function Phase3OwnerHubPage() {
         </CardContent>
       </Card>
 
+
+      <Card>
+        <CardHeader>
+          <CardTitle>تسجيل عقار وربطه بمالك</CardTitle>
+          <CardDescription>خطوة Phase 3 الثانية في تسلسل Owner → Property → Owner Agreement، وتمنع إنشاء عقار بدون مالك نشط في الطبقة المحلية.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form className="grid gap-4 lg:grid-cols-[1fr_1fr_1fr_auto] lg:items-end" onSubmit={handlePropertyFormSubmit}>
+            <Field label="المالك التشغيلي *">
+              <Select value={propertyFormValues.ownerId} onChange={(event) => updatePropertyFormField('ownerId', event.target.value)}>
+                <option value="">اختر المالك أولاً</option>
+                {ownersQuery.data.map((owner) => <option key={owner.id} value={owner.id}>{owner.name}</option>)}
+              </Select>
+            </Field>
+            <Field label="اسم العقار *">
+              <Input
+                value={propertyFormValues.name}
+                onChange={(event) => updatePropertyFormField('name', event.target.value)}
+                placeholder="مثال: برج الندى"
+              />
+            </Field>
+            <Field label="العنوان *">
+              <Input
+                value={propertyFormValues.address}
+                onChange={(event) => updatePropertyFormField('address', event.target.value)}
+                placeholder="المدينة، الحي، الشارع"
+              />
+            </Field>
+            <Button type="submit" className="min-h-11 gap-2" disabled={propertyFormSaving}>
+              <Building2 className="size-4" /> إضافة عقار
+            </Button>
+          </form>
+          {propertyFormError ? <p className="mt-3 rounded-2xl border border-destructive/20 bg-destructive/10 p-3 text-sm font-bold text-destructive">{propertyFormError}</p> : null}
+          {propertyFormSuccess ? <p className="mt-3 rounded-2xl border border-emerald-200 bg-emerald-50 p-3 text-sm font-bold text-emerald-700">{propertyFormSuccess}</p> : null}
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader>
