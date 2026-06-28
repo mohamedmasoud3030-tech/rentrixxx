@@ -54,8 +54,9 @@ export const DOMAIN_LABELS_AR = {
 export const DOMAIN_VALIDATION_AR = {
   // General
   invalid_id: 'المعرف الموفر غير صالح.',
-  positive_amount_required: 'يجب أن تكون القيمة المالية أكبر من صفر.',
+  positive_amount_required: 'يجب أن تكون القيمة المالية قيمة حقيقية منتهية وموجبة تفوق الصفر.',
   date_range_invalid: 'تاريخ البدء يجب أن يكون مساوياً أو سابقاً لتاريخ الانتهاء.',
+  date_format_invalid: 'تنسيق التاريخ غير صالح. يرجى استخدام تنسيق ISO الصحيح (YYYY-MM-DD) وتواريخ تقويم حقيقية صالحة.',
   field_required: 'هذا الحقل مطلوب.',
 
   // Agreements
@@ -68,9 +69,14 @@ export const DOMAIN_VALIDATION_AR = {
   contract_out_of_agreement_bounds: 'تاريخ عقد الإيجار يجب أن يقع بالكامل ضمن النطاق الزمني لاتفاقية تشغيل المالك النشطة والمغطية.',
   contract_rent_exceeds_bounds: 'قيمة إيجار العقد غير متوافقة مع القواعد المحددة.',
 
-  // Cascade Deletion Prevention
-  delete_not_allowed: 'لا يمكن حذف الكيانات التاريخية نهائياً لمنع فقدان البيانات المحاسبية وسجلات التدقيق. يرجى استخدام خاصية الأرشفة أو إلغاء التفعيل بدلاً من ذلك.',
+  // Block Archive and Immutability
   cannot_archive_active_contract: 'لا يمكن أرشفة عقد إيجار نشط حالياً.',
   cannot_archive_active_agreement: 'لا يمكن أرشفة اتفاقية تشغيل نشطة حالياً.',
-  immutable_history_error: 'لا يمكن تعديل أو أرشفة هذا الكيان التاريخي أو المالي الحساس للمحافظة على نزاهة السجلات والتدقيق المالي.'
+  immutable_history_error: 'لا يمكن تعديل أو أرشفة هذا الكيان التاريخي أو المالي الحساس للمحافظة على نزاهة السجلات والتدقيق المالي.',
+  
+  // Block Archive when Related Records Exist
+  cannot_archive_owner_with_active_relations: 'لا يمكن أرشفة هذا المالك لارتباطه باتفاقيات تشغيل نشطة حالياً في النظام.',
+  cannot_archive_property_with_active_relations: 'لا يمكن أرشفة هذا العقار لارتباطه باتفاقيات تشغيل نشطة حالياً في النظام.',
+  cannot_archive_unit_with_active_relations: 'لا يمكن أرشفة هذه الوحدة لارتباطها بعقود إيجار نشطة حالياً في النظام.',
+  cannot_archive_tenant_with_active_relations: 'لا يمكن أرشفة هذا المستأجر لارتباطه بعقود إيجار نشطة حالياً في النظام.'
 };

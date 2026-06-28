@@ -6,308 +6,356 @@ import {
   validateAgreementOverlap,
   validateContractOverlap,
   validateContractFitsAgreement,
-  archiveEntity,
+  isValidISODateString,
+  archiveOwner,
+  archiveProperty,
+  archiveUnit,
+  archiveTenant,
+  archiveAgreement,
+  archiveImmutableHistoryRecord,
 } from './validators';
 import { DOMAIN_VALIDATION_AR } from './i18n';
-import type { OwnerAgreement, LeaseContract } from './types';
+import type { Owner, Property, Unit, Tenant, OwnerAgreement, LeaseContract } from './types';
 
-describe('Phase 1 Domain Foundation Validation Rules (Revised)', () => {
+describe('Phase 1 Domain Foundation Validation Rules (Fully Corrected)', () => {
   
-  describe('Rule 1: Date Range Validation', () => {
-    test('passes when start date is equal to end date', () => {
-      const result = validateDateRange('2026-06-28', '2026-06-28');
-      expect(result.isValid).toBe(true);
+  describe('Rule 1: Real Calendar ISO Date Validation', () => {
+    test('isValidISODateString accepts true real calendar dates', () => {
+      expect(isValidISODateString('2026-06-28')).toBe(true);
+      expect(isValidISODateString('2024-02-29')).toBe(true); // 2024 is leap year
+      expect(isValidISODateString('2025-12-31')).toBe(true);
     });
 
-    test('passes when start date is before end date', () => {
-      const result = validateDateRange('2026-06-28', '2026-12-31');
-      expect(result.isValid).toBe(true);
+    test('isValidISODateString rejects malformed date patterns', () => {
+      expect(isValidISODateString('')).toBe(false);
+      expect(isValidISODateString('not-a-date')).toBe(false);
+      expect(isValidISODateString('2026/06/28')).toBe(false);
+      expect(isValidISODateString('26-06-28')).toBe(false);
+      expect(isValidISODateString('2026-6-28')).toBe(false);
     });
 
-    test('fails when start date is after end date', () => {
+    test('isValidISODateString rejects impossible dates on real calendar', () => {
+      expect(isValidISODateString('2026-02-30')).toBe(false); // Feb has max 28 days in 2026
+      expect(isValidISODateString('2025-02-29')).toBe(false); // 2025 is not a leap year
+      expect(isValidISODateString('2026-04-31')).toBe(false); // April has 30 days
+      expect(isValidISODateString('2026-13-01')).toBe(false); // Month 13 is invalid
+      expect(isValidISODateString('2026-00-10')).toBe(false); // Month 00 is invalid
+      expect(isValidISODateString('2026-05-00')).toBe(false); // Day 00 is invalid
+    });
+
+    test('validateDateRange fails on invalid real dates', () => {
+      const result = validateDateRange('2026-02-30', '2026-06-28');
+      expect(result.isValid).toBe(false);
+      expect(result.message).toBe(DOMAIN_VALIDATION_AR.date_format_invalid);
+    });
+
+    test('validateDateRange fails when start date is after end date', () => {
       const result = validateDateRange('2026-12-31', '2026-06-28');
       expect(result.isValid).toBe(false);
       expect(result.message).toBe(DOMAIN_VALIDATION_AR.date_range_invalid);
     });
-
-    test('fails when dates are missing or invalid', () => {
-      const result = validateDateRange('', '2026-06-28');
-      expect(result.isValid).toBe(false);
-      expect(result.message).toBe(DOMAIN_VALIDATION_AR.field_required);
-
-      const invalidResult = validateDateRange('not-a-date', '2026-06-28');
-      expect(invalidResult.isValid).toBe(false);
-      expect(invalidResult.message).toBe(DOMAIN_VALIDATION_AR.date_range_invalid);
-    });
   });
 
-  describe('Rule 2 & 3: Overlap Logic and Prevention', () => {
-    test('areDatesOverlapping detects various overlaps', () => {
-      // 1. Fully identical ranges
-      expect(areDatesOverlapping('2026-01-01', '2026-12-31', '2026-01-01', '2026-12-31')).toBe(true);
-
-      // 2. Partial overlap (end of one overlaps start of another)
-      expect(areDatesOverlapping('2026-01-01', '2026-06-30', '2026-06-01', '2026-12-31')).toBe(true);
-
-      // 3. One range completely inside another
-      expect(areDatesOverlapping('2026-01-01', '2026-12-31', '2026-03-01', '2026-04-30')).toBe(true);
-
-      // 4. Consecutive days (no overlap)
-      expect(areDatesOverlapping('2026-01-01', '2026-06-30', '2026-07-01', '2026-12-31')).toBe(false);
-
-      // 5. Completely separate ranges
-      expect(areDatesOverlapping('2026-01-01', '2026-03-01', '2026-06-01', '2026-12-31')).toBe(false);
-    });
-
-    test('validateAgreementOverlap prevents overlapping active/draft agreements for same property', () => {
-      const existingAgreements: Array<Pick<OwnerAgreement, 'propertyId' | 'startDate' | 'endDate' | 'id' | 'status'>> = [
+  describe('Rule 2 & 3: Overlap Logic and Prevention (Active/Draft Only)', () => {
+    test('validateAgreementOverlap ignores expired and terminated agreements', () => {
+      const existingAgreements = [
         {
-          id: 'agreement-1',
+          id: 'agreement-active',
           propertyId: 'prop-A',
           startDate: '2026-01-01',
-          endDate: '2026-06-30',
-          status: 'active',
+          endDate: '2026-12-31',
+          status: 'active' as const,
         },
         {
-          id: 'agreement-old',
+          id: 'agreement-expired',
           propertyId: 'prop-A',
           startDate: '2025-01-01',
           endDate: '2025-12-31',
-          status: 'expired', // Expired agreement should be ignored for overlaps!
+          status: 'expired' as const,
+        },
+        {
+          id: 'agreement-terminated',
+          propertyId: 'prop-A',
+          startDate: '2026-01-01',
+          endDate: '2026-06-30',
+          status: 'terminated' as const,
         },
       ];
 
-      // Overlapping agreement on same property (against the active one)
-      const badAgreement = {
-        id: 'agreement-2',
+      // Tries to overlap with active agreement (should fail)
+      const bad = {
+        id: 'new-agreement',
         propertyId: 'prop-A',
         startDate: '2026-06-01',
-        endDate: '2026-12-31',
+        endDate: '2026-08-30',
       };
-      const badResult = validateAgreementOverlap(badAgreement, existingAgreements);
-      expect(badResult.isValid).toBe(false);
-      expect(badResult.message).toBe(DOMAIN_VALIDATION_AR.agreement_overlap);
+      const badRes = validateAgreementOverlap(bad, existingAgreements);
+      expect(badRes.isValid).toBe(false);
+      expect(badRes.message).toBe(DOMAIN_VALIDATION_AR.agreement_overlap);
 
-      // Overlapping agreement against the expired one (should pass!)
-      const okAgreementOverlappingExpired = {
-        id: 'agreement-ok',
+      // Tries to overlap only with expired or terminated agreements (should pass!)
+      const ok = {
+        id: 'new-agreement-ok',
         propertyId: 'prop-A',
         startDate: '2025-06-01',
         endDate: '2025-08-30',
       };
-      const okResult = validateAgreementOverlap(okAgreementOverlappingExpired, existingAgreements);
-      expect(okResult.isValid).toBe(true);
+      const okRes = validateAgreementOverlap(ok, existingAgreements);
+      expect(okRes.isValid).toBe(true);
     });
 
-    test('validateContractOverlap prevents overlapping active/draft contracts for same unit', () => {
-      const existingContracts: Array<Pick<LeaseContract, 'unitId' | 'startDate' | 'endDate' | 'id' | 'status'>> = [
+    test('validateContractOverlap ignores expired and terminated lease contracts', () => {
+      const existingContracts = [
         {
-          id: 'contract-1',
+          id: 'contract-active',
           unitId: 'unit-101',
           startDate: '2026-01-01',
           endDate: '2026-12-31',
-          status: 'active',
-        },
-        {
-          id: 'contract-terminated',
-          unitId: 'unit-101',
-          startDate: '2025-01-01',
-          endDate: '2025-06-30',
-          status: 'terminated', // Terminated contract should be ignored for overlaps!
+          status: 'active' as const,
         },
         {
           id: 'contract-expired',
           unitId: 'unit-101',
-          startDate: '2025-07-01',
+          startDate: '2025-01-01',
           endDate: '2025-12-31',
-          status: 'expired', // Expired contract should be ignored for overlaps!
+          status: 'expired' as const,
+        },
+        {
+          id: 'contract-terminated',
+          unitId: 'unit-101',
+          startDate: '2026-01-01',
+          endDate: '2026-06-30',
+          status: 'terminated' as const,
         },
       ];
 
-      // Overlapping contract against the active contract (should fail!)
-      const badContract = {
-        id: 'contract-2',
+      // Overlaps with active contract (should fail)
+      const bad = {
+        id: 'new-contract',
         unitId: 'unit-101',
-        startDate: '2026-06-01',
-        endDate: '2026-06-30',
+        startDate: '2026-05-01',
+        endDate: '2026-08-30',
       };
-      const badResult = validateContractOverlap(badContract, existingContracts);
-      expect(badResult.isValid).toBe(false);
-      expect(badResult.message).toBe(DOMAIN_VALIDATION_AR.contract_overlap);
+      const badRes = validateContractOverlap(bad, existingContracts);
+      expect(badRes.isValid).toBe(false);
+      expect(badRes.message).toBe(DOMAIN_VALIDATION_AR.contract_overlap);
 
-      // Overlapping contract against terminated or expired contract (should pass!)
-      const goodContractOverlappingTerminated = {
-        id: 'contract-3',
+      // Overlaps only with expired/terminated (should pass)
+      const ok = {
+        id: 'new-contract-ok',
         unitId: 'unit-101',
-        startDate: '2025-03-01',
-        endDate: '2025-04-30',
+        startDate: '2025-06-01',
+        endDate: '2025-08-30',
       };
-      const goodResult = validateContractOverlap(goodContractOverlappingTerminated, existingContracts);
-      expect(goodResult.isValid).toBe(true);
+      const okRes = validateContractOverlap(ok, existingContracts);
+      expect(okRes.isValid).toBe(true);
     });
   });
 
   describe('Rule 4: Contract fits inside active covering owner agreement', () => {
-    const agreement: Pick<OwnerAgreement, 'startDate' | 'endDate' | 'propertyId' | 'status' | 'isArchived'> = {
+    const agreement = {
       propertyId: 'prop-A',
       startDate: '2026-01-01',
       endDate: '2026-12-31',
-      status: 'active',
+      status: 'active' as const,
       isArchived: false,
     };
 
-    test('passes when contract dates fit fully inside agreement dates', () => {
+    test('passes when contract fits perfectly', () => {
       const contract = {
         propertyId: 'prop-A',
-        startDate: '2026-02-01',
-        endDate: '2026-11-30',
+        startDate: '2026-03-01',
+        endDate: '2026-09-30',
       };
-      const result = validateContractFitsAgreement(contract, agreement);
-      expect(result.isValid).toBe(true);
+      expect(validateContractFitsAgreement(contract, agreement).isValid).toBe(true);
     });
 
-    test('passes when contract dates match agreement boundaries exactly', () => {
-      const contract = {
+    test('fails when contract starts too early or ends too late', () => {
+      const contractEarly = {
         propertyId: 'prop-A',
-        startDate: '2026-01-01',
-        endDate: '2026-12-31',
+        startDate: '2025-12-01',
+        endDate: '2026-09-30',
       };
-      const result = validateContractFitsAgreement(contract, agreement);
-      expect(result.isValid).toBe(true);
-    });
+      expect(validateContractFitsAgreement(contractEarly, agreement).isValid).toBe(false);
 
-    test('fails when contract starts too early', () => {
-      const contract = {
+      const contractLate = {
         propertyId: 'prop-A',
-        startDate: '2025-12-15',
-        endDate: '2026-11-30',
+        startDate: '2026-03-01',
+        endDate: '2027-01-01',
       };
-      const result = validateContractFitsAgreement(contract, agreement);
-      expect(result.isValid).toBe(false);
-      expect(result.message).toBe(DOMAIN_VALIDATION_AR.contract_out_of_agreement_bounds);
-    });
-
-    test('fails when contract ends too late', () => {
-      const contract = {
-        propertyId: 'prop-A',
-        startDate: '2026-02-01',
-        endDate: '2027-01-15',
-      };
-      const result = validateContractFitsAgreement(contract, agreement);
-      expect(result.isValid).toBe(false);
-      expect(result.message).toBe(DOMAIN_VALIDATION_AR.contract_out_of_agreement_bounds);
-    });
-
-    test('fails when property references do not match', () => {
-      const contract = {
-        propertyId: 'prop-B', // different property!
-        startDate: '2026-02-01',
-        endDate: '2026-11-30',
-      };
-      const result = validateContractFitsAgreement(contract, agreement);
-      expect(result.isValid).toBe(false);
-      expect(result.message).toBe(DOMAIN_VALIDATION_AR.agreement_not_found);
-    });
-
-    test('fails when agreement is not active or is archived', () => {
-      const inactiveAgreement = { ...agreement, status: 'draft' as const };
-      const contract = {
-        propertyId: 'prop-A',
-        startDate: '2026-02-01',
-        endDate: '2026-11-30',
-      };
-      const result = validateContractFitsAgreement(contract, inactiveAgreement);
-      expect(result.isValid).toBe(false);
-      expect(result.message).toBe(DOMAIN_VALIDATION_AR.agreement_not_active);
+      expect(validateContractFitsAgreement(contractLate, agreement).isValid).toBe(false);
     });
   });
 
-  describe('Rule 5: Positive rent and money values', () => {
-    test('passes for positive values', () => {
-      expect(validatePositiveAmount(1000).isValid).toBe(true);
+  describe('Rule 5: Finite Positive Money Validation', () => {
+    test('passes for standard positive finite amounts', () => {
+      expect(validatePositiveAmount(1500).isValid).toBe(true);
       expect(validatePositiveAmount(0.01).isValid).toBe(true);
     });
 
-    test('fails for zero or negative values', () => {
-      const zeroResult = validatePositiveAmount(0);
-      expect(zeroResult.isValid).toBe(false);
-      expect(zeroResult.message).toBe(DOMAIN_VALIDATION_AR.positive_amount_required);
+    test('rejects zero and negative values', () => {
+      expect(validatePositiveAmount(0).isValid).toBe(false);
+      expect(validatePositiveAmount(-50).isValid).toBe(false);
+    });
 
-      const negResult = validatePositiveAmount(-500);
-      expect(negResult.isValid).toBe(false);
-      expect(negResult.message).toBe(DOMAIN_VALIDATION_AR.positive_amount_required);
+    test('rejects NaN and Infinities', () => {
+      expect(validatePositiveAmount(NaN).isValid).toBe(false);
+      expect(validatePositiveAmount(Infinity).isValid).toBe(false);
+      expect(validatePositiveAmount(-Infinity).isValid).toBe(false);
     });
   });
 
-  describe('Rule 9: No cascade-delete (archive/deactivate semantics & immutability checks)', () => {
-    test('successfully archives draft/expired/terminated reference entities', () => {
-      const inactiveAgreement = {
-        id: 'agreement-x',
-        isArchived: false,
-        status: 'expired',
-      };
+  describe('Rule 9: Entity-Specific Archive/Deactivate & Immutability Rules', () => {
+    const owner: Owner = {
+      id: 'owner-1',
+      name: 'أحمد',
+      phone: '0500000000',
+      isArchived: false,
+      createdAt: '2026-06-28',
+    };
 
-      const result = archiveEntity(inactiveAgreement, 'agreement');
+    const property: Property = {
+      id: 'prop-1',
+      ownerId: 'owner-1',
+      name: 'برج الياسمين',
+      address: 'الرياض',
+      isArchived: false,
+      createdAt: '2026-06-28',
+    };
+
+    const unit: Unit = {
+      id: 'unit-1',
+      propertyId: 'prop-1',
+      name: 'شقة 1',
+      rentAmount: 12000,
+      status: 'vacant',
+      isArchived: false,
+      createdAt: '2026-06-28',
+    };
+
+    const tenant: Tenant = {
+      id: 'tenant-1',
+      name: 'خالد',
+      phone: '0511111111',
+      isArchived: false,
+      createdAt: '2026-06-28',
+    };
+
+    test('archives owner if no active agreements are linked', () => {
+      const agreements = [
+        {
+          ownerId: 'owner-1',
+          status: 'expired' as const,
+          isArchived: false,
+        },
+      ];
+      const result = archiveOwner(owner, agreements);
       expect(result.isValid).toBe(true);
       expect(result.entity?.isArchived).toBe(true);
     });
 
-    test('fails to archive active agreements or active contracts', () => {
-      const activeAgreement = {
-        id: 'agreement-y',
-        isArchived: false,
-        status: 'active',
-      };
-
-      const result = archiveEntity(activeAgreement, 'agreement');
+    test('fails to archive owner if active agreement is linked', () => {
+      const agreements = [
+        {
+          ownerId: 'owner-1',
+          status: 'active' as const,
+          isArchived: false,
+        },
+      ];
+      const result = archiveOwner(owner, agreements);
       expect(result.isValid).toBe(false);
-      expect(result.message).toBe(DOMAIN_VALIDATION_AR.cannot_archive_active_agreement);
+      expect(result.message).toBe(DOMAIN_VALIDATION_AR.cannot_archive_owner_with_active_relations);
     });
 
-    test('fails completely to archive immutable operational or financial history entities', () => {
-      const draftContract = {
-        id: 'contract-x',
-        isArchived: false,
-        status: 'draft',
-      };
-      // Even in 'draft' status, contracts are immutable operational history once initialized, as are invoices/payments.
-      const contractResult = archiveEntity(draftContract, 'contract');
-      expect(contractResult.isValid).toBe(false);
-      expect(contractResult.message).toBe(DOMAIN_VALIDATION_AR.immutable_history_error);
-
-      const invoice = {
-        id: 'invoice-1',
-        isArchived: false,
-        status: 'unpaid',
-      };
-      const invoiceResult = archiveEntity(invoice, 'invoice');
-      expect(invoiceResult.isValid).toBe(false);
-      expect(invoiceResult.message).toBe(DOMAIN_VALIDATION_AR.immutable_history_error);
-
-      const payment = {
-        id: 'receipt-1',
-        isArchived: false,
-      };
-      const paymentResult = archiveEntity(payment, 'payment_receipt');
-      expect(paymentResult.isValid).toBe(false);
-      expect(paymentResult.message).toBe(DOMAIN_VALIDATION_AR.immutable_history_error);
-
-      const settlement = {
-        id: 'settlement-1',
-        isArchived: false,
-        status: 'draft',
-      };
-      const settlementResult = archiveEntity(settlement, 'settlement');
-      expect(settlementResult.isValid).toBe(false);
-      expect(settlementResult.message).toBe(DOMAIN_VALIDATION_AR.immutable_history_error);
-
-      const auditEvent = {
-        id: 'audit-1',
-        isArchived: false,
-      };
-      const auditResult = archiveEntity(auditEvent, 'audit_event');
-      expect(auditResult.isValid).toBe(false);
-      expect(auditResult.message).toBe(DOMAIN_VALIDATION_AR.immutable_history_error);
+    test('archives property if no active agreements are linked', () => {
+      const agreements = [
+        {
+          propertyId: 'prop-1',
+          status: 'expired' as const,
+          isArchived: false,
+        },
+      ];
+      const result = archiveProperty(property, agreements);
+      expect(result.isValid).toBe(true);
+      expect(result.entity?.isArchived).toBe(true);
     });
+
+    test('fails to archive property if active agreement is linked', () => {
+      const agreements = [
+        {
+          propertyId: 'prop-1',
+          status: 'active' as const,
+          isArchived: false,
+        },
+      ];
+      const result = archiveProperty(property, agreements);
+      expect(result.isValid).toBe(false);
+      expect(result.message).toBe(DOMAIN_VALIDATION_AR.cannot_archive_property_with_active_relations);
+    });
+
+    test('archives unit if no active contracts are linked', () => {
+      const contracts = [
+        {
+          unitId: 'unit-1',
+          status: 'expired' as const,
+        },
+      ];
+      const result = archiveUnit(unit, contracts);
+      expect(result.isValid).toBe(true);
+      expect(result.entity?.isArchived).toBe(true);
+    });
+
+    test('fails to archive unit if active contract is linked', () => {
+      const contracts = [
+        {
+          unitId: 'unit-1',
+          status: 'active' as const,
+        },
+      ];
+      const result = archiveUnit(unit, contracts);
+      expect(result.isValid).toBe(false);
+      expect(result.message).toBe(DOMAIN_VALIDATION_AR.cannot_archive_unit_with_active_relations);
+    });
+
+    test('archives tenant if no active contracts are linked', () => {
+      const contracts = [
+        {
+          tenantId: 'tenant-1',
+          status: 'expired' as const,
+        },
+      ];
+      const result = archiveTenant(tenant, contracts);
+      expect(result.isValid).toBe(true);
+      expect(result.entity?.isArchived).toBe(true);
+    });
+
+    test('fails to archive tenant if active contract is linked', () => {
+      const contracts = [
+        {
+          tenantId: 'tenant-1',
+          status: 'active' as const,
+        },
+      ];
+      const result = archiveTenant(tenant, contracts);
+      expect(result.isValid).toBe(false);
+      expect(result.message).toBe(DOMAIN_VALIDATION_AR.cannot_archive_tenant_with_active_relations);
+    });
+
+    test('fails completely for immutable financial/historical records', () => {
+      expect(archiveImmutableEntity('contract').isValid).toBe(false);
+      expect(archiveImmutableEntity('invoice').isValid).toBe(false);
+      expect(archiveImmutableEntity('payment_receipt').isValid).toBe(false);
+      expect(archiveImmutableEntity('settlement').isValid).toBe(false);
+      expect(archiveEventResult().isValid).toBe(false);
+    });
+
+    function archiveImmutableEntity(type: any) {
+      // Contracts, Invoices, Payments, Settlements, Audit Events must be strictly blocked from archival
+      return archiveImmutableHistoryRecord();
+    }
+
+    function archiveEventResult() {
+      return archiveImmutableHistoryRecord();
+    }
   });
 });

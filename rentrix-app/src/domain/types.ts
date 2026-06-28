@@ -24,8 +24,8 @@ export interface OwnerAgreement {
   startDate: string; // YYYY-MM-DD
   endDate: string; // YYYY-MM-DD
   status: AgreementStatus;
-  commissionRate?: number; // Represented as a percentage (e.g., 10 for 10%) or rate, positive
-  fixedFee?: number; // Represented as fixed amount, positive
+  commissionRate?: number; // Represented as a percentage (e.g., 10 for 10%), positive finite number
+  fixedFee?: number; // Represented as fixed amount, positive finite number
   isArchived: boolean;
   createdAt: string;
 }
@@ -45,7 +45,7 @@ export interface Unit {
   id: string;
   propertyId: string;
   name: string;
-  rentAmount: number; // positive
+  rentAmount: number; // positive finite number
   status: UnitStatus;
   isArchived: boolean;
   createdAt: string;
@@ -73,9 +73,8 @@ export interface LeaseContract {
   startDate: string; // YYYY-MM-DD
   endDate: string; // YYYY-MM-DD
   status: ContractStatus;
-  rentAmount: number; // positive
+  rentAmount: number; // positive finite number
   paymentFrequency: PaymentFrequency;
-  isArchived: boolean;
   createdAt: string;
 }
 
@@ -84,10 +83,9 @@ export type InvoiceStatus = 'unpaid' | 'partially_paid' | 'paid' | 'overdue' | '
 export interface Invoice {
   id: string;
   contractId: string;
-  amount: number; // positive
+  amount: number; // positive finite number
   dueDate: string; // YYYY-MM-DD
   status: InvoiceStatus;
-  isArchived: boolean;
   createdAt: string;
 }
 
@@ -96,11 +94,10 @@ export type PaymentMethod = 'cash' | 'bank_transfer' | 'check';
 export interface PaymentReceipt {
   id: string;
   invoiceId: string;
-  amount: number; // positive
+  amount: number; // positive finite number
   paymentDate: string; // YYYY-MM-DD
   paymentMethod: PaymentMethod;
   referenceNumber?: string;
-  isArchived: boolean;
   createdAt: string;
 }
 
@@ -110,11 +107,11 @@ export interface Expense {
   id: string;
   propertyId: string;
   unitId?: string; // Optional unit level expense
-  amount: number; // positive
+  amount: number; // positive finite number
   expenseDate: string; // YYYY-MM-DD
   description: string;
   responsibility: ExpenseResponsibility;
-  isArchived: boolean;
+  isArchived: boolean; // Expenses can support deactivation/cancellation
   createdAt: string;
 }
 
@@ -130,7 +127,6 @@ export interface OwnerSettlement {
   feesDeducted: number;
   netPayout: number;
   status: SettlementStatus;
-  isArchived: boolean;
   createdAt: string;
 }
 
