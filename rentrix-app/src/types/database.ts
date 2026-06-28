@@ -57,6 +57,47 @@ export type Database = {
         Update: Partial<Database['public']['Tables']['owners']['Row']>;
         Relationships: [];
       };
+      owner_agreements: {
+        Row: {
+          id: string;
+          owner_id: string;
+          property_id: string;
+          agreement_type: 'property_management' | 'master_lease';
+          commission_type: 'FIXED_MONTHLY' | 'RATE';
+          commission_value: number;
+          starts_on: string;
+          ends_on: string | null;
+          notes: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          owner_id: string;
+          property_id: string;
+          agreement_type: 'property_management' | 'master_lease';
+          commission_type: 'FIXED_MONTHLY' | 'RATE';
+          commission_value: number;
+          starts_on: string;
+          ends_on?: string | null;
+          notes?: string | null;
+        };
+        Update: Partial<Database['public']['Tables']['owner_agreements']['Insert']>;
+        Relationships: [
+          {
+            foreignKeyName: 'owner_agreements_owner_id_fkey';
+            columns: ['owner_id'];
+            referencedRelation: 'owners';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'owner_agreements_property_id_fkey';
+            columns: ['property_id'];
+            referencedRelation: 'properties';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       property_owners: {
         Row: {
           id: string;
@@ -240,6 +281,7 @@ export type Database = {
           updated_at: string;
           deleted_at: string | null;
           attachment_url: string | null;
+          agreement_id: string | null;
         };
         Insert: Partial<Database['public']['Tables']['contracts']['Row']> & Pick<Database['public']['Tables']['contracts']['Row'], 'property_id' | 'tenant_id' | 'start_date' | 'end_date' | 'rent_amount'>;
         Update: Partial<Database['public']['Tables']['contracts']['Row']>;

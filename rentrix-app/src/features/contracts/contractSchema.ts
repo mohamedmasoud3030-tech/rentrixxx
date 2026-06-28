@@ -43,6 +43,7 @@ export const contractSchema = z.object({
   property_id: z.string().uuid('اختر العقار'),
   unit_id: z.string().uuid('اختر الوحدة'),
   tenant_id: z.string().uuid('اختر المستأجر'),
+  agreement_id: z.string().uuid('لا توجد اتفاقية مالك تغطي فترة العقد').optional().nullable(),
   start_date: isoDate,
   end_date: isoDate,
   rent_amount: money,
