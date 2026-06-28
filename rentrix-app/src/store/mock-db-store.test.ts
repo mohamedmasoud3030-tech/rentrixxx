@@ -1,6 +1,6 @@
 import { describe, expect, it, beforeEach } from 'vitest';
 import { mockDatabaseSeed, useMockDatabaseStore } from './mock-db-store';
-import { contractRepo, ownerRepo, propertyRepo, MockRepositoryError } from '@/services/mock-repos';
+import { agreementRepo, contractRepo, expenseRepo, invoiceRepo, ownerRepo, propertyRepo, receiptRepo, tenantRepo, unitRepo, MockRepositoryError } from '@/services/mock-repos';
 
 describe('mock local database foundation', () => {
   beforeEach(() => {
@@ -50,4 +50,90 @@ describe('mock local database foundation', () => {
   it('blocks properties that point to archived or missing owners', async () => {
     await expect(propertyRepo.create({ name: 'عقار غير صالح', address: 'عنوان تجريبي', ownerId: 'owner-missing' })).rejects.toThrow(MockRepositoryError);
   });
+
+  it('creates active owner agreements only for connected active owners and properties', async () => {
+    await expect(agreementRepo.create({
+      ownerId: 'owner-al-sharif',
+      propertyId: 'property-al-nakheel',
+      agreementType: 'property_management',
+      startDate: '2026-04-01',
+      endDate: '2026-12-31',
+      commissionRate: 7,
+      fixedFee: 1000,
+    })).resolves.toMatchObject({ data: { ownerId: 'owner-al-sharif', propertyId: 'property-al-nakheel', status: 'active' } });
+  });
+
+  it('creates units only under active properties with finite positive rent', async () => {
+    await expect(unitRepo.create({
+      propertyId: 'property-al-nakheel',
+      name: 'مكتب 301',
+      rentAmount: 48000,
+      status: 'vacant',
+    })).resolves.toMatchObject({ data: { propertyId: 'property-al-nakheel', status: 'vacant' } });
+
+    await expect(unitRepo.create({
+      propertyId: 'property-missing',
+      name: 'وحدة غير صالحة',
+      rentAmount: 1000,
+      status: 'vacant',
+    })).rejects.toThrow(MockRepositoryError);
+  });
+
+  it('creates tenants and blocks archiving tenants with active contracts', async () => {
+    const created = await tenantRepo.create({ name: 'سارة القحطاني', phone: '+966544444444', email: 'sarah@example.com' });
+
+    expect(useMockDatabaseStore.getState().tenants).toContainEqual(created.data);
+    await expect(tenantRepo.archive('tenant-faisal')).rejects.toThrow(MockRepositoryError);
+  });
+
+  it('creates invoices only for existing contracts with valid due dates and positive amounts', async () => {
+    await expect(invoiceRepo.create({
+      contractId: 'contract-yasmin-101-faisal',
+      amount: 3000,
+      dueDate: '2026-04-05',
+      status: 'unpaid',
+    })).resolves.toMatchObject({ data: { contractId: 'contract-yasmin-101-faisal', status: 'unpaid' } });
+
+    await expect(invoiceRepo.create({
+      contractId: 'contract-missing',
+      amount: 3000,
+      dueDate: '2026-04-05',
+      status: 'unpaid',
+    })).rejects.toThrow(MockRepositoryError);
+  });
+
+  it('creates payment receipts from unpaid invoices and updates invoice payment status', async () => {
+    const receipt = await receiptRepo.create({
+      invoiceId: 'invoice-yasmin-mar',
+      amount: 1500,
+      paymentDate: '2026-03-10',
+      paymentMethod: 'bank_transfer',
+      referenceNumber: 'TRX-1500',
+    });
+
+    expect(receipt.data.invoiceId).toBe('invoice-yasmin-mar');
+    expect(useMockDatabaseStore.getState().receipts).toContainEqual(receipt.data);
+    expect(useMockDatabaseStore.getState().invoices.find((invoice) => invoice.id === 'invoice-yasmin-mar')?.status).toBe('partially_paid');
+  });
+
+  it('creates property expenses only for connected active property and optional unit links', async () => {
+    await expect(expenseRepo.create({
+      propertyId: 'property-al-yasmin',
+      unitId: 'unit-yasmin-101',
+      amount: 750,
+      expenseDate: '2026-03-15',
+      description: 'صيانة تكييف',
+      responsibility: 'owner',
+    })).resolves.toMatchObject({ data: { propertyId: 'property-al-yasmin', unitId: 'unit-yasmin-101', isArchived: false } });
+
+    await expect(expenseRepo.create({
+      propertyId: 'property-al-yasmin',
+      unitId: 'unit-waha-a1',
+      amount: 750,
+      expenseDate: '2026-03-15',
+      description: 'ربط وحدة غير صحيح',
+      responsibility: 'office',
+    })).rejects.toThrow(MockRepositoryError);
+  });
+
 });
