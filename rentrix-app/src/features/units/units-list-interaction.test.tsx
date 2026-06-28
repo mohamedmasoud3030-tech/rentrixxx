@@ -6,20 +6,52 @@ import { act } from 'react';
 import type { Unit } from '@/types/domain';
 import { UnitsList } from './units-list';
 
-// Global navigation spy
+// Global navigation & mutation spies
 const mockNavigate = vi.fn();
+const mockSoftDeleteMutate = vi.fn();
 
 vi.mock('@tanstack/react-router', () => ({
   useNavigate: () => mockNavigate,
   Link: ({ children }: any) => children,
 }));
 
+// Mock UnitFormModal to capture edit open state and values in rendered DOM
 vi.mock('./unit-form-modal', () => ({
-  UnitFormModal: () => null,
+  UnitFormModal: (props: any) => {
+    if (props.open) {
+      return (
+        <div data-testid="edit-modal-open">
+          فتح معالج التعديل للوحدة: {props.unit?.unit_number}
+        </div>
+      );
+    }
+    return null;
+  },
 }));
 
+// Mock useSoftDeleteUnit query hook
 vi.mock('./use-units', () => ({
-  useSoftDeleteUnit: () => ({ isPending: false, mutate: vi.fn() }),
+  useSoftDeleteUnit: () => ({
+    isPending: false,
+    mutate: mockSoftDeleteMutate,
+  }),
+}));
+
+// Mock ConfirmDialog to capture confirmation flow and allow real rendered click
+vi.mock('@/components/ui/confirm-dialog', () => ({
+  ConfirmDialog: (props: any) => {
+    if (props.open) {
+      return (
+        <div data-testid="archive-confirm-dialog">
+          <p>{props.title}</p>
+          <button data-testid="confirm-archive-btn" onClick={props.onConfirm}>
+            تأكيد الأرشفة
+          </button>
+        </div>
+      );
+    }
+    return null;
+  },
 }));
 
 function makeUnitsQuery(overrides: Partial<UseQueryResult<Unit[]>>): UseQueryResult<Unit[]> {
@@ -123,11 +155,16 @@ describe('UnitsList Real Rendered User-Interaction Tests', () => {
       editButton.dispatchEvent(new MouseEvent('click', { bubbles: true }));
     });
 
-    // Verify row navigation was NOT triggered due to stopPropagation!
+    // 1. Verify row navigation was NOT triggered due to stopPropagation!
     expect(mockNavigate).not.toHaveBeenCalled();
+
+    // 2. Verify that the edit behavior occurred and modal is rendered as open with selected unit!
+    const modalMarker = container?.querySelector('[data-testid="edit-modal-open"]');
+    expect(modalMarker).not.toBeNull();
+    expect(modalMarker?.textContent).toContain('وحدة: 101');
   });
 
-  it('proves clicking Archive secondary action does not trigger row click navigation but preserves behavior', async () => {
+  it('proves clicking Archive secondary action does not trigger row click navigation but triggers confirmation flow', async () => {
     const unitsQuery = makeUnitsQuery({
       data: [{ id: 'unit-101', unit_number: '101', status: 'available', rent_amount: 1500, floor: '1' } as Unit],
     });
@@ -146,7 +183,22 @@ describe('UnitsList Real Rendered User-Interaction Tests', () => {
       archiveButton.dispatchEvent(new MouseEvent('click', { bubbles: true }));
     });
 
-    // Verify row navigation was NOT triggered due to stopPropagation!
+    // 1. Verify row navigation was NOT triggered due to stopPropagation!
     expect(mockNavigate).not.toHaveBeenCalled();
+
+    // 2. Verify that the confirmation flow opens (dialog renders)
+    const dialog = container?.querySelector('[data-testid="archive-confirm-dialog"]');
+    expect(dialog).not.toBeNull();
+    expect(dialog?.textContent).toContain('أرشفة الوحدة 101؟');
+
+    // 3. Click the confirm button in the rendered dialog
+    const confirmBtn = container?.querySelector('[data-testid="confirm-archive-btn"]') as HTMLButtonElement;
+    expect(confirmBtn).not.toBeNull();
+    await act(async () => {
+      confirmBtn.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    });
+
+    // 4. Verify that soft delete mutation was successfully invoked with the correct unit id!
+    expect(mockSoftDeleteMutate).toHaveBeenCalledWith('unit-101', expect.any(Object));
   });
 });
