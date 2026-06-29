@@ -14,7 +14,7 @@ export interface PendingActionRecord {
 
 const KEY = 'rentrix_pending_actions';
 
-function getPendingActions(): PendingActionRecord[] {
+export function getPendingActions(): PendingActionRecord[] {
   if (typeof window === 'undefined') return [];
   try {
     return JSON.parse(localStorage.getItem(KEY) || '[]');
