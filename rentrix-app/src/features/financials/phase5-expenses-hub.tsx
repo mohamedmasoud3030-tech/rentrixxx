@@ -155,7 +155,7 @@ export function Phase5ExpensesHubPage() {
         <div>
           <div className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-xs font-black text-primary">
             <DollarSign className="size-4" />
-            المرحلة 5: تسجيل المصروفات التشغيلية
+            المصروفات التشغيلية
           </div>
           <h1 className="mt-2 text-3xl font-black">مركز المصروفات</h1>
           <p className="text-sm text-muted-foreground">إدارة المصروفات التشغيلية وتحديد المسؤوليات المالية بين الملاك والمكتب.</p>

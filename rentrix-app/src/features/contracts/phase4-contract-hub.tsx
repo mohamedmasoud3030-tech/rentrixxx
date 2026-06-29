@@ -319,11 +319,11 @@ export function Phase4ContractHubPage() {
         <div>
           <div className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-xs font-black text-primary">
             <FileText className="size-4" />
-            المرحلة 4: إدارة عقود الإيجار
+            إدارة عقود الإيجار
           </div>
           <h1 className="mt-2 text-3xl font-black">مركز العقود</h1>
           <p className="text-sm text-muted-foreground">
-            إنشاء وتجديد وفسخ عقود الإيجار مع التحقق الصارم من الشواغر وتواريخ اتفاقيات التشغيل.
+            إنشاء وتجديد وفسخ عقود الإيجار مع التحقق من توفر الوحدات وصحة اتفاقيات التشغيل.
           </p>
         </div>
         {activeView === 'list' ? (

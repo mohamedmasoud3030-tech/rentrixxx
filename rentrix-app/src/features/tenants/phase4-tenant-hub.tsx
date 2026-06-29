@@ -163,11 +163,11 @@ export function Phase4TenantHubPage() {
         <div>
           <div className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-xs font-black text-primary">
             <Users className="size-4" />
-            المرحلة 4: إدارة المستأجرين
+            إدارة المستأجرين
           </div>
           <h1 className="mt-2 text-3xl font-black">مركز المستأجرين</h1>
           <p className="text-sm text-muted-foreground">
-            إدارة دورة حياة المستأجرين عبر مستودعات البيانات المحلية (محاكاة قاعدة البيانات).
+            إضافة المستأجرين وتعديل بياناتهم وأرشفتهم مع التحقق من ارتباطهم بالعقود النشطة.
           </p>
         </div>
         <Button onClick={startCreate} className="gap-2">

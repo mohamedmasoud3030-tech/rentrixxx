@@ -122,10 +122,10 @@ export function Phase5InvoicesHubPage() {
         <div>
           <div className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-xs font-black text-primary">
             <ReceiptText className="size-4" />
-            المرحلة 5: فواتير المطالبات المالية
+            إدارة الفواتير والمطالبات الإيجارية
           </div>
           <h1 className="mt-2 text-3xl font-black">مركز الفواتير</h1>
-          <p className="text-sm text-muted-foreground">إنشاء وعرض فواتير المطالبات الإيجارية عبر المستودعات المحلية.</p>
+          <p className="text-sm text-muted-foreground">إنشاء وعرض فواتير المطالبات الإيجارية وتتبع حالة السداد.</p>
         </div>
         {activeView === 'list' ? (
           <Button onClick={() => { setActiveView('create'); setFormValues(emptyInvoiceForm); setFormError(null); setFormSuccess(null); }} className="gap-2">

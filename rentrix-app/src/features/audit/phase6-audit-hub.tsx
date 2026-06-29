@@ -94,10 +94,10 @@ export function Phase6AuditHubPage() {
       <div>
         <div className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-xs font-black text-primary">
           <ShieldCheck className="size-4" />
-          المرحلة 6: محاكاة الصلاحيات، موافقات المديرين وسجل التدقيق
+          الحوكمة والصلاحيات وسجل التدقيق
         </div>
-        <h1 className="mt-2 text-3xl font-black">مركز الحوكمة وسجل التدقيق (Phase 6 Governance Hub)</h1>
-        <p className="text-sm text-muted-foreground">تطبيق صلاحيات الموظفين (RBAC)، إدارة طابور موافقات المديرين وتدقيق كافة العمليات التشغيلية.</p>
+        <h1 className="mt-2 text-3xl font-black">مركز الحوكمة وسجل التدقيق</h1>
+        <p className="text-sm text-muted-foreground">إدارة صلاحيات الموظفين، طابور موافقات المديرين وسجل العمليات التشغيلية.</p>
       </div>
 
       <Card>

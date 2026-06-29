@@ -140,10 +140,10 @@ export function Phase7ReportsHubPage() {
         <div>
           <div className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-xs font-black text-primary">
             <BarChart3 className="size-4" />
-            المرحلة 7: لوحات مؤشرات الأداء، التصدير العالمي وقوالب الطباعة
+            التقارير التشغيلية والتصدير
           </div>
-          <h1 className="mt-2 text-3xl font-black">مركز التقارير التشغيلية المتقدمة (Phase 7 Reports Hub)</h1>
-          <p className="text-sm text-muted-foreground">عرض معدلات الإشغال والتحصيل، تصدير الجداول لـ CSV وتجهيز قوالب الطباعة لكشوف الحسابات.</p>
+          <h1 className="mt-2 text-3xl font-black">مركز التقارير والتحليلات</h1>
+          <p className="text-sm text-muted-foreground">عرض معدلات الإشغال والتحصيل وتصدير التقارير لـ CSV وطباعة كشوف الحساب.</p>
         </div>
         <div className="flex flex-wrap gap-2">
           <Button onClick={exportArrearsCsv} className="gap-2 bg-emerald-600 hover:bg-emerald-700 text-white">

@@ -1,4 +1,4 @@
-import { Building2, FileText, Home, Plus, Users } from 'lucide-react';
+import { Building2, FileText, Home, Plus, UserRoundCog, Users } from 'lucide-react';
 import { useState, type FormEvent, type ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -8,7 +8,6 @@ import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
 import { KpiCard } from '@/components/ui/kpi-card';
 import { EntityCard, entityCardContactMeta } from '@/components/ui/entity-card';
-import { StatusBadge } from '@/components/ui/status-badge';
 import { useMockAgreements, useMockContracts, useMockOwners, useMockProperties, useMockUnits } from '@/hooks/use-mock-repositories';
 import type { MockDatabaseState } from '@/store/mock-db-store';
 import type { AgreementType, Owner, Property } from '@/domain/types';
@@ -315,11 +314,14 @@ export function Phase3OwnerHubPage() {
     <div className="space-y-6" dir="rtl">
       <div className="flex flex-col gap-4 rounded-3xl border border-border bg-card p-5 shadow-sm sm:flex-row sm:items-start sm:justify-between">
         <div className="space-y-2">
-          <StatusBadge tone="blue">Phase 3 · شبكة البطاقات</StatusBadge>
+          <div className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-xs font-black text-primary">
+            <UserRoundCog className="size-4" />
+            إدارة الملاك والاتفاقيات
+          </div>
           <div>
-            <h1 className="text-2xl font-black tracking-tight">مركز الملاك</h1>
+            <h1 className="mt-2 text-3xl font-black">مركز الملاك</h1>
             <p className="mt-1 max-w-3xl text-sm leading-6 text-muted-foreground">
-              أول واجهة محلية من Phase 3 لعرض الملاك وربطهم بالعقارات والاتفاقيات والوحدات من طبقة البيانات التجريبية بدون Supabase.
+              إدارة ملفات الملاك وربطهم بالعقارات والاتفاقيات ومتابعة الوحدات والعقود النشطة.
             </p>
           </div>
         </div>

@@ -84,7 +84,7 @@ export function Phase5FinancialsHubPage() {
       <div>
         <div className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-xs font-black text-primary">
           <TrendingUp className="size-4" />
-          المرحلة 5: التدفقات المالية، أرباح المكتب وتسويات الملاك
+          المالية الشاملة — أرباح المكتب وتسويات الملاك
         </div>
         <h1 className="mt-2 text-3xl font-black">مركز الإدارة المالية الشاملة</h1>
         <p className="text-sm text-muted-foreground">حساب أرباح المكتب التشغيلية وتسويات الملاك آلياً وفق اتفاقيات إدارة الأملاك والاستئجار الرئيسي.</p>
