@@ -8,3 +8,4 @@ export { unitRepo } from './unit-repo';
 export { expenseRepo } from './expense-repo';
 export { invoiceRepo } from './invoice-repo';
 export { receiptRepo } from './receipt-repo';
+export { auditRepo } from './audit-repo';

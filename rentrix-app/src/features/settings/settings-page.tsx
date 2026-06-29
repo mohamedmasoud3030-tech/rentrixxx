@@ -25,6 +25,7 @@ import { useUiStore } from '@/store/ui-store';
 import { useCompanySettings, useUpdateCompanySettings } from './useCompanySettings';
 import { CostCentersSettingsSection } from './cost-centers-settings-section';
 import { PaymentTermsSettingsSection } from './payment-terms-settings-section';
+import { RoleSimulatorSection } from './role-simulator-section';
 import {
   areCompanySettingsDraftsEqual,
   companySettingsDraftToLocalSettings,
@@ -132,6 +133,7 @@ export const settingsSections = [
   { id: 'payment-terms', label: 'شروط السداد',        icon: CalendarClock  },
   { id: 'notifications', label: 'الإشعارات والتنبيهات', icon: Bell          },
   { id: 'security',    label: 'الأمان والحساب',       icon: ShieldCheck    },
+  { id: 'role-simulator', label: 'محاكي الصلاحيات (Phase 6)', icon: Cog     },
   { id: 'system',      label: 'النظام والبيانات',     icon: Cog           },
 ] as const;
 
@@ -558,6 +560,10 @@ export function SettingsPage() {
               </Link>
             </Button>
           </div>
+        </SectionCard>
+
+        <SectionCard id="role-simulator" activeId={activeSection} title="محاكي الصلاحيات وأدوار الموظفين" subtitle="تبديل الدور الفعلي لاختبار سلوك الصلاحيات في النظام.">
+          <RoleSimulatorSection />
         </SectionCard>
 
         <SectionCard id="system" activeId={activeSection} title="النظام والبيانات" subtitle="تفضيلات التطبيق المحلية (السمة، لغة الواجهة). المعاينة أدناه توضح أثر الإعدادات على العرض.">

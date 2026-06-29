@@ -1,2 +1,1 @@
-export { AuditLogPage as AuditLogRouteComponent } from '@/features/audit/audit-log-page';
-
+export { Phase6AuditHubPage as AuditLogRouteComponent } from '@/features/audit/phase6-audit-hub';
