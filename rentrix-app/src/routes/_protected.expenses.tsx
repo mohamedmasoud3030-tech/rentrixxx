@@ -1,1 +1,1 @@
-export { ExpensesPage as ExpensesRouteComponent } from '@/features/financials/expenses/expenses-page';
+export { Phase5ExpensesHubPage as ExpensesRouteComponent } from '@/features/financials/phase5-expenses-hub';
