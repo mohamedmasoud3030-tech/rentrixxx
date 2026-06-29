@@ -11,6 +11,8 @@ import { EntityCard } from '@/components/ui/entity-card';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { useMockAgreements, useMockContracts, useMockProperties, useMockTenants, useMockUnits } from '@/hooks/use-mock-repositories';
 import { contractRepo } from '@/services/mock-repos';
+import { useSimulatedRole } from '@/services/mock-role-simulator';
+import { requestApproval } from '@/services/mock-approvals';
 import type { ContractStatus, LeaseContract, PaymentFrequency } from '@/domain/types';
 
 export type Phase4ContractFormValues = Readonly<{
@@ -66,6 +68,7 @@ const frequencyLabels: Record<PaymentFrequency, string> = {
 };
 
 export function Phase4ContractHubPage() {
+  const currentRole = useSimulatedRole();
   const contractsQuery = useMockContracts();
   const tenantsQuery = useMockTenants();
   const unitsQuery = useMockUnits();
@@ -228,8 +231,19 @@ export function Phase4ContractHubPage() {
     setFormSaving(true);
     setFormError(null);
     try {
-      await contractRepo.terminate(selectedContractId, terminationDate, terminationReason);
-      setFormSuccess('تم فسخ العقد وتحرير الوحدة بنجاح.');
+      if (currentRole === 'USER') {
+        requestApproval({
+          title: `طلب فسخ عقد ${selectedContractId}`,
+          entityType: 'contract',
+          entityId: selectedContractId,
+          action: 'terminate',
+          reason: terminationReason || 'فسخ مبكر',
+        });
+        setFormSuccess('تم إرسال طلب الفسخ لطابور موافقات المديرين لأن دورك الحالي محاكٍ كـ USER.');
+      } else {
+        await contractRepo.terminate(selectedContractId, terminationDate, terminationReason);
+        setFormSuccess('تم فسخ العقد وتحرير الوحدة بنجاح.');
+      }
       setTimeout(() => setActiveView('list'), 1200);
     } catch (err) {
       setFormError(err instanceof Error ? err.message : 'تعذر فسخ العقد محلياً.');

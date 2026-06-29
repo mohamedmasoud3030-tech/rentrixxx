@@ -71,3 +71,9 @@ export function useMockExpenses(): MockQueryLikeResult<MockDatabaseState['expens
   const execute = useCallback((...args: Parameters<typeof expenseRepo.create>) => expenseRepo.create(...args), []);
   return { data, isLoading: false, error: null, execute };
 }
+
+export function useMockAuditEvents(): MockQueryLikeResult<MockDatabaseState['auditEvents'], readonly []> {
+  const data = useMockDatabaseSelector((state) => state.auditEvents);
+  const execute = useCallback(async () => {}, []);
+  return { data, isLoading: false, error: null, execute };
+}

@@ -1,6 +1,6 @@
 # Current Execution Context
 
-**آخر تحديث:** 2026-06-29 — إتمام المرحلة 5 (Financial Workflows & Settlements Engine)  
+**آخر تحديث:** 2026-06-29 — إتمام المرحلة 6 (Roles and Audit Behavior)  
 **حالة التحقق:** مطابق للكود الفعلي في `main`
 
 ---
@@ -15,63 +15,36 @@
 | Phase 3 | Owner Hub — Owner onboarding + Agreement forms | ✅ مكتملة (PRs #1022، #1023، #1024) |
 | Phase 3.5 | EntityCard — unified entity card (ADR-008 Phase B) | ✅ مكتملة (PR #1025) |
 | Phase 4 | Tenant and Contract Lifecycle | ✅ مكتملة (PR #1027) |
-| Phase 5 | Financial Workflows | ✅ مكتملة |
-| Phase 6 | Roles and Audit Behavior | 🔜 التالية |
-| Phase 7 | Reports, Print/Export, Tests, CI | 📋 مخططة |
+| Phase 5 | Financial Workflows | ✅ مكتملة (PR #1028) |
+| Phase 6 | Roles and Audit Behavior | ✅ مكتملة |
+| Phase 7 | Reports, Print/Export, Tests, CI | 🔜 التالية |
 | Phase 8 | Supabase Integration (live) | ⏸️ مؤجلة — قرار مالك |
 | Phase 9 | Secondary Module Hardening | 📋 Backlog |
 
 ---
 
-## ما أُنجز حديثاً (Phase 5 — Financial Workflows)
+## ما أُنجز حديثاً (Phase 6 — Roles and Audit Behavior)
 
-### Phase 5: Financial Workflows & Settlements Engine
-- `features/financials/phase5-invoices-hub.tsx` — مركز إصدار وعرض المطالبات المالية الإيجارية المرتبطة بالعقود السارية محلياً عبر `invoiceRepo`.
-- `features/financials/phase5-receipts-hub.tsx` — مركز تسجيل عمليات القبض وتخصيص الدفعات للفواتير غير المدفوعة أو المدفوعة جزئياً مع تحديث حالة الفاتورة آلياً في `receiptRepo`.
-- **سند القبض العربي للطباعة (Mobile-First RTL Receipt Print View):** تصميم سند قبض مالي رسمي بـ Tailwind `@media print` مع تفاصيل المرجع، الفاتورة، وختم المكتب والمستأجر.
-- `features/financials/phase5-expenses-hub.tsx` — مركز تسجيل المصروفات التشغيلية للعقارات والوحدات وتحديد المسؤولية المالية (`owner | office | shared`) عبر `expenseRepo`.
-- `domain/financial-settlements.ts` — محرك حساب تسويات الملاك (Owner Settlement Engine) وفق نموذج إدارة الأملاك أو الاستئجار الرئيسي، ومحرك حساب أرباح المكتب التشغيلية.
-- تحديث المسارات المالية في `routes/_protected.invoices.tsx`, `receipts.tsx`, `expenses.tsx`, `financials.tsx`.
+### Phase 6: Roles and Audit Behavior
+- `services/mock-role-simulator.ts` & `features/settings/role-simulator-section.tsx` — محاكي الصلاحيات وأدوار الموظفين (`ADMIN | MANAGER | USER`) مدمج في صفحة الإعدادات ومركز الحوكمة.
+- `features/audit/phase6-audit-hub.tsx` — مركز الحوكمة وسجل التدقيق المحلي، يتضمن شاشة تقييد الصلاحيات للموظف (`USER`)، وطابور موافقات المديرين (`Pending Manager Approvals`)، وسجل العمليات غير القابل للمسح (`auditRepo`).
+- تحويل العمليات الحساسة كفسخ العقود في `phase4-contract-hub.tsx` إلى طابور الموافقات عند العمل بصلاحية `USER`.
 
-### Phase 4 (PR #1027): Tenant and Contract Lifecycle
-- `features/tenants/phase4-tenant-hub.tsx` و `features/contracts/phase4-contract-hub.tsx`.
+### Phase 5 (PR #1028): Financial Workflows
+- الفواتير، التحصيلات وسند القبض للطباعة، المصروفات وتسويات الملاك.
 
 ---
 
-## الحالة البنيوية الحالية
+## الأولويات التالية (Phase 7)
 
-### نمط البيانات المعتمد (Phases 1–7)
+**المهمة:** Reports, Print/Export, Tests, CI
 
-```
-domain/types.ts          ← Pure TS domain entities
-store/mock-db-store.ts   ← Zustand store (localStorage persist)
-services/mock-repos/     ← CRUD repositories
-hooks/use-mock-repositories.ts ← UI hooks
-features/*/              ← Pages
-```
+### Phase 7 — المطلوب
 
-**مهم:** في Phases 1–7 الكود يعمل بـ mock data كاملة.
-
----
-
-## الأولويات التالية (Phase 6)
-
-**المهمة:** Roles and Audit Behavior — محاكاة الصلاحيات وسلوك التدقيق
-
-### Phase 6 — المطلوب
-
-1. **Settings Role Simulator** — محاكي صلاحيات مدمج للتبديل بين أدوار `ADMIN`, `MANAGER`, `USER`.
-2. **UI RBAC Rules** — تطبيق قيود الصلاحيات على الأزرار والإجراءات الحساسة.
-3. **Manager Approval Workflow** — طابور موافقات للمديرين للعمليات الحساسة كفسخ العقود.
-4. **Frontend Audit Logger** — تسجيل حركات المستخدمين في `audit_logs`.
-
----
-
-## قواعد التنفيذ
-
-- اقرأ `AGENTS.md` أولاً دائماً
-- تحقق من `main` الفعلي قبل الفرع
-- حافظ على RTL + Arabic-first في كل component جديد
+1. **Operational Reports Dashboard** — لوحة مؤشرات التقارير التشغيلية (نسبة التحصيل، المتأخرات، الإشغال، الأرباح).
+2. **Universal CSV and PDF Exporters** — أدوات تصدير موحدة لأي جدول في المتصفح.
+3. **Print-Preview for Financial Statements** — قوالب طباعة لكشوف حساب الملاك والمستأجرين.
+4. **Core Calculation Tests** — توسيع اختبارات Vitest لتغطية كافة قواعد التداخل والحسابات.
 
 ---
 
