@@ -39,13 +39,13 @@ export function requestApproval(record: Omit<PendingActionRecord, 'id' | 'reques
   auditRepo.log('طلب موافقة مدير', record.entityType, record.entityId, `طلب إجراء ${record.action}: ${record.reason}`);
 }
 
-export function approveAction(id: string) {
+export async function approveAction(id: string) {
   const actions = getPendingActions();
   const target = actions.find((a) => a.id === id);
   if (!target) return;
 
   if (target.entityType === 'contract' && target.action === 'terminate') {
-    contractRepo.terminate(target.entityId, new Date().toISOString().split('T')[0] ?? '', target.reason);
+    await contractRepo.terminate(target.entityId, new Date().toISOString().split('T')[0] ?? '', target.reason);
   }
 
   savePendingActions(actions.filter((a) => a.id !== id));
