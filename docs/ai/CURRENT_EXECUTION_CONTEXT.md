@@ -1,6 +1,6 @@
 # Current Execution Context
 
-**آخر تحديث:** 2026-06-29 — إتمام المرحلة 4 (Tenant and Contract Lifecycle)  
+**آخر تحديث:** 2026-06-29 — إتمام المرحلة 5 (Financial Workflows & Settlements Engine)  
 **حالة التحقق:** مطابق للكود الفعلي في `main`
 
 ---
@@ -14,31 +14,27 @@
 | Phase 2 | Local Data Foundation — mock repos + Zustand store | ✅ مكتملة (PR #1021) |
 | Phase 3 | Owner Hub — Owner onboarding + Agreement forms | ✅ مكتملة (PRs #1022، #1023، #1024) |
 | Phase 3.5 | EntityCard — unified entity card (ADR-008 Phase B) | ✅ مكتملة (PR #1025) |
-| Phase 4 | Tenant and Contract Lifecycle | ✅ مكتملة |
-| Phase 5 | Financial Workflows | 🔜 التالية |
-| Phase 6 | Roles and Audit Behavior | 📋 مخططة |
+| Phase 4 | Tenant and Contract Lifecycle | ✅ مكتملة (PR #1027) |
+| Phase 5 | Financial Workflows | ✅ مكتملة |
+| Phase 6 | Roles and Audit Behavior | 🔜 التالية |
 | Phase 7 | Reports, Print/Export, Tests, CI | 📋 مخططة |
 | Phase 8 | Supabase Integration (live) | ⏸️ مؤجلة — قرار مالك |
 | Phase 9 | Secondary Module Hardening | 📋 Backlog |
 
 ---
 
-## ما أُنجز حديثاً (Phase 4 — Tenant & Contract Lifecycle)
+## ما أُنجز حديثاً (Phase 5 — Financial Workflows)
 
-### Phase 4: Tenant and Contract Lifecycle
-- `features/tenants/phase4-tenant-hub.tsx` — مركز إدارة المستأجرين محلياً مع التعديل والأرشفة المشروطة بعدم وجود عقود نشطة.
-- `features/contracts/phase4-contract-hub.tsx` — مركز إدارة العقود محلياً مع معالج إنشاء عقد جديد وحجز الوحدة، وتجديد العقد وأرشفة القديم، وفسخ العقد وتحرير الوحدة.
-- تحديث `tenantRepo` بإضافة `update` وتحديث `contractRepo` بإضافة `renew` و `terminate`.
-- تحديث المسارات `routes/_protected.tenants.tsx` و `routes/_protected.contracts.tsx` لاعتماد المكونات المحلية الموحدة (`EntityCard` و `EntityTable`).
+### Phase 5: Financial Workflows & Settlements Engine
+- `features/financials/phase5-invoices-hub.tsx` — مركز إصدار وعرض المطالبات المالية الإيجارية المرتبطة بالعقود السارية محلياً عبر `invoiceRepo`.
+- `features/financials/phase5-receipts-hub.tsx` — مركز تسجيل عمليات القبض وتخصيص الدفعات للفواتير غير المدفوعة أو المدفوعة جزئياً مع تحديث حالة الفاتورة آلياً في `receiptRepo`.
+- **سند القبض العربي للطباعة (Mobile-First RTL Receipt Print View):** تصميم سند قبض مالي رسمي بـ Tailwind `@media print` مع تفاصيل المرجع، الفاتورة، وختم المكتب والمستأجر.
+- `features/financials/phase5-expenses-hub.tsx` — مركز تسجيل المصروفات التشغيلية للعقارات والوحدات وتحديد المسؤولية المالية (`owner | office | shared`) عبر `expenseRepo`.
+- `domain/financial-settlements.ts` — محرك حساب تسويات الملاك (Owner Settlement Engine) وفق نموذج إدارة الأملاك أو الاستئجار الرئيسي، ومحرك حساب أرباح المكتب التشغيلية.
+- تحديث المسارات المالية في `routes/_protected.invoices.tsx`, `receipts.tsx`, `expenses.tsx`, `financials.tsx`.
 
-### Phase 3 (PRs #1022–#1024): Owner Hub
-- `features/owners/phase3-owner-hub.tsx` — Arabic Owner Hub كامل
-- نماذج إضافة عقد مالك (owner agreement form)
-- نموذج إدارة عقارات المالك (property onboarding)
-- Route: `routes/_protected.owners.tsx` — Owner Hub كـ tab مدمج
-
-### Phase 3.5 (PR #1025): EntityCard Unified
-- `components/ui/entity-card.tsx` — EntityCard موحد مصدَّر ومستخدم في كافة الصفحات.
+### Phase 4 (PR #1027): Tenant and Contract Lifecycle
+- `features/tenants/phase4-tenant-hub.tsx` و `features/contracts/phase4-contract-hub.tsx`.
 
 ---
 
@@ -47,52 +43,27 @@
 ### نمط البيانات المعتمد (Phases 1–7)
 
 ```
-domain/types.ts          ← Pure TS domain entities (Owner, Property, Unit, ...)
+domain/types.ts          ← Pure TS domain entities
 store/mock-db-store.ts   ← Zustand store (localStorage persist)
-services/mock-repos/     ← CRUD repositories (base pattern + per-entity)
-hooks/use-mock-repositories.ts ← useQuery-like hooks للـ UI
-features/*/              ← Pages تستهلك mock hooks
+services/mock-repos/     ← CRUD repositories
+hooks/use-mock-repositories.ts ← UI hooks
+features/*/              ← Pages
 ```
 
-**مهم:** في Phases 1–7 الكود يعمل بـ mock data كاملة. لا يوجد Supabase في الـ flow الرئيسي حالياً إلا في الـ auth فقط.
-
-### مكونات UI الموحدة (ADR-008)
-
-| المكون | الموقع | الحالة |
-|---|---|---|
-| `EntityTable` | `components/ui/entity-table.tsx` | ✅ موجود ومصدَّر |
-| `EntityCard` | `components/ui/entity-card.tsx` | ✅ موجود ومصدَّر |
-| `ListPage` | `components/layout/list-page.tsx` | ✅ موجود — معتمد جزئياً |
+**مهم:** في Phases 1–7 الكود يعمل بـ mock data كاملة.
 
 ---
 
-## الأولويات التالية (Phase 5)
+## الأولويات التالية (Phase 6)
 
-**المهمة:** Financial Workflows — بناء على pattern المستودعات الموجودة
+**المهمة:** Roles and Audit Behavior — محاكاة الصلاحيات وسلوك التدقيق
 
-### Phase 5 — المطلوب
+### Phase 6 — المطلوب
 
-1. **Invoices Interface** — إنشاء وعرض المطالبات المالية محلياً في `invoiceRepo`.
-2. **Record Payment & Allocation** — تسجيل السداد وتخصيص الدفعات للفواتير غير المدفوعة في `receiptRepo`.
-3. **Mobile-First Receipt (RTL)** — تصميم سند القبض للطباعة والمشاركة بصيغة PDF.
-4. **Expense Logger** — تسجيل المصروفات التشغيلية للعقارات والوحدات في `expenseRepo`.
-5. **Owner Settlement Calculator** — حساب التسويات المالية للملاك بناءً على نموذج الاتفاقية (`property_management` أو `master_lease`).
-
-### Phase 5 — القيود
-
-- لا تضف Supabase calls جديدة — كل شيء عبر mock repos
-- الـ domain invariants من `AGENTS.md` ملزمة (السند يُنشأ فقط من دفعة مسجلة، الدفعات غير قابلة للتعديل بل تُعكس وتستبدل).
-
----
-
-## مصادر الحقيقة المعتمدة
-
-بهذا الترتيب:
-
-1. الكود الفعلي في `main` + migrations
-2. `docs/ai/CURRENT_EXECUTION_CONTEXT.md` (هذا الملف)
-3. `domain/types.ts` — عقود الـ domain
-4. `types/database.ts` — عقود Supabase
+1. **Settings Role Simulator** — محاكي صلاحيات مدمج للتبديل بين أدوار `ADMIN`, `MANAGER`, `USER`.
+2. **UI RBAC Rules** — تطبيق قيود الصلاحيات على الأزرار والإجراءات الحساسة.
+3. **Manager Approval Workflow** — طابور موافقات للمديرين للعمليات الحساسة كفسخ العقود.
+4. **Frontend Audit Logger** — تسجيل حركات المستخدمين في `audit_logs`.
 
 ---
 
@@ -100,18 +71,10 @@ features/*/              ← Pages تستهلك mock hooks
 
 - اقرأ `AGENTS.md` أولاً دائماً
 - تحقق من `main` الفعلي قبل الفرع
-- لا تُرجع `useApp`, `AppContext`, `dataService`, `react-router-dom`
 - حافظ على RTL + Arabic-first في كل component جديد
 
 ---
 
 ## بوابة التسليم النهائية
 
-**Production GO لم يُعلَن بعد.** ينتظر:
-
-- B-1: Browser QA مع ADMIN مصادق (RTL، mobile، receipt print)
-- B-2: Invoice → Payment → Receipt → Refresh فعلي live
-- B-3: Mobile/physical-device print
-- B-4: RLS write confirmation live
-
-راجع `docs/ai/FINAL_DELIVERY_GATE_QA_EVIDENCE.md` للتفاصيل.
+**Production GO لم يُعلَن بعد.** ينتظر اختبارات القبول المباشرة (B-1 إلى B-4).

@@ -9,7 +9,7 @@
 - **Arabic-first** property operations system for single real-estate offices
 - **Core flow:** Property → Unit → Contract → Tenant → Invoice → Payment → Receipt
 - **Single office only** — no SaaS, no multi-tenancy, no shared databases
-- **Status:** Phase 4 complete (Tenant & Contract Lifecycle); Phase 5 next; production BLOCKED on live QA
+- **Status:** Phase 5 complete (Financial Workflows & Settlements Engine); Phase 6 next; production BLOCKED on live QA
 
 ---
 
@@ -23,13 +23,14 @@
 | **Phase 2 — Local Data Layer** | ✅ Complete (PR #1021) |
 | **Phase 3 — Owner Hub** | ✅ Complete (PRs #1022–#1024) |
 | **Phase 3.5 — EntityCard (ADR-008 Phase B)** | ✅ Complete (PR #1025) |
-| **Phase 4 — Tenant & Contract Lifecycle** | ✅ Complete |
-| **Phase 5 — Financial Workflows** | 🔜 Next |
-| **Phases 6–7** | 📋 Planned |
+| **Phase 4 — Tenant & Contract Lifecycle** | ✅ Complete (PR #1027) |
+| **Phase 5 — Financial Workflows** | ✅ Complete |
+| **Phase 6 — Roles and Audit Behavior** | 🔜 Next |
+| **Phase 7 — Reports, Tests, CI** | 📋 Planned |
 | **Phase 8 — Supabase Integration** | ⏸️ Deferred — owner decision |
 | **Production Ready?** | ❌ BLOCKED — live QA evidence (B-1/B-2/B-3/B-4) not collected |
-| **Latest merged** | Phase 4 completion (Tenant & Contract Lifecycle) |
-| **Repo baseline** | typecheck ✅ · 53 test files ✅ · build ✅ (2026-06-29) |
+| **Latest merged** | Phase 5 completion (Financial Workflows) |
+| **Repo baseline** | typecheck ✅ · 54 test files ✅ · build ✅ (2026-06-29) |
 | **Database** | Supabase `nnggcnpcuomwfuupupwg` (ap-southeast-1) — stable |
 | **Active branch** | `main` |
 
@@ -46,15 +47,26 @@ hooks/use-mock-repositories.ts        → Only in existing features
 features/owners/phase3-owner-hub.tsx
 features/tenants/phase4-tenant-hub.tsx
 features/contracts/phase4-contract-hub.tsx
+features/financials/phase5-invoices-hub.tsx
+features/financials/phase5-receipts-hub.tsx
+features/financials/phase5-expenses-hub.tsx
+features/financials/phase5-financials-hub.tsx
 ```
 
-**Important:** Most existing features still use Supabase directly. `phase3-owner-hub.tsx`, `phase4-tenant-hub.tsx`, and `phase4-contract-hub.tsx` use the full mock path. Phase 5 should follow the mock pattern.
+**Important:** Most existing features still use Supabase directly. Phases 3, 4, and 5 use the full mock path. Phase 6 should follow the mock pattern.
 
 ---
 
 ## What's Done
 
-### Phase 4 (Tenant & Contract Lifecycle)
+### Phase 5 (Financial Workflows & Settlements Engine)
+- ✅ Invoices Hub (`phase5-invoices-hub.tsx`) recording lease billing
+- ✅ Receipts & Collections Hub (`phase5-receipts-hub.tsx`) with payment recording and allocation
+- ✅ Mobile-First RTL Receipt Print Modal (`@media print` Tailwind utilities)
+- ✅ Expense Logger (`phase5-expenses-hub.tsx`) with owner/office/shared responsibility
+- ✅ Owner Settlement Engine & Office Profitability Engine (`domain/financial-settlements.ts`)
+
+### Phase 4 (Tenant & Contract Lifecycle — PR #1027)
 - ✅ Tenant Hub (`phase4-tenant-hub.tsx`) with CRUD & archival check
 - ✅ Contract Hub (`phase4-contract-hub.tsx`) with creation wizard, unit vacancy reservation, agreement coverage check
 - ✅ Contract renewal & termination workflows in `contract-repo.ts`
@@ -63,19 +75,14 @@ features/contracts/phase4-contract-hub.tsx
 - ✅ Arabic Owner Hub with tab layout
 - ✅ Owner Agreement Form (add/edit)
 - ✅ Property Onboarding Form
-- ✅ Mock repos expanded (agreement, invoice, receipt, expense, tenant repos)
 - ✅ EntityCard unified component (PR #1025)
-- ✅ PersonCard + OwnerCard deleted and replaced by EntityCard
 
 ### Phase 2 (Local Data — PR #1021)
 - ✅ `store/mock-db-store.ts` — Zustand + localStorage persist + seed data
-- ✅ `services/mock-repos/` — base repo + owner/property/unit/tenant/contract repos
-- ✅ `hooks/use-mock-repositories.ts` — useQuery-like hooks
+- ✅ `services/mock-repos/` — CRUD repos
 
 ### Phase 1 (Domain Foundation — PR #1013)
-- ✅ `domain/types.ts` — Pure TS interfaces
-- ✅ `domain/validators.ts` — Zod schemas
-- ✅ `domain/i18n.ts` — Arabic keys
+- ✅ `domain/types.ts` & `validators.ts`
 
 ---
 
@@ -83,7 +90,7 @@ features/contracts/phase4-contract-hub.tsx
 
 See `docs/ai/CURRENT_EXECUTION_CONTEXT.md` for current next PR order.
 
-1. **Phase 5** — Financial Workflows (Invoices, Payments, Receipts mock repos)
+1. **Phase 6** — Roles and Audit Behavior (simulated RBAC + audit logger)
 2. **Live QA** — B-1/B-2/B-3/B-4 evidence (requires human operator)
 3. **v0.5 hardening** — operator runbooks, QA scripts, onboarding docs
 
@@ -118,7 +125,6 @@ See `docs/ai/CURRENT_EXECUTION_CONTEXT.md` for current next PR order.
 - ❌ **DON'T:** Add Supabase calls in Phases 1–7
 - ❌ **DON'T:** Store real sensitive data in localStorage mock store
 - ❌ **DON'T:** Add general ledger or multi-tenancy
-- ❌ **DON'T:** Reference `artifacts/rentrix/` — path does not exist
 
 ---
 
@@ -140,21 +146,14 @@ pnpm run typecheck
 pnpm run build
 pnpm --filter ./rentrix-app run dev
 pnpm --filter ./rentrix-app test
-pnpm --filter ./rentrix-app run test:financials
 ```
 
 ---
 
 ## Production Status
 
-🔴 **BLOCKED** — Awaiting:
-- B-1: Browser QA evidence (RTL, mobile, receipt print)
-- B-2: Payment → receipt E2E live
-- B-3: PWA install/offline/update
-- B-4: Manual acceptance by ops team
-
-See `docs/ai/FINAL_DELIVERY_GATE_QA_EVIDENCE.md` for details.
+🔴 **BLOCKED** — Awaiting live QA evidence (B-1/B-2/B-3/B-4).
 
 ---
 
-**Last updated:** 2026-06-29 | **Status:** Phase 4 complete; Phase 5 next; production BLOCKED
+**Last updated:** 2026-06-29 | **Status:** Phase 5 complete; Phase 6 next; production BLOCKED

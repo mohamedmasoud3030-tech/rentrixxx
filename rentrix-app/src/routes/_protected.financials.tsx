@@ -1,1 +1,1 @@
-export { FinancialsPage as FinancialsRouteComponent } from '@/features/financials/financials-page';
+export { Phase5FinancialsHubPage as FinancialsRouteComponent } from '@/features/financials/phase5-financials-hub';
