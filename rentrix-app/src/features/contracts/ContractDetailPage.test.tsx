@@ -144,6 +144,6 @@ describe('ContractDetailPage load and money states', () => {
 
     const html = renderToStaticMarkup(<ContractDetailPage />);
 
-    expectMarkupToContain(html, ['تعذر تحميل العقد', 'حدث خطأ أثناء تحميل البيانات.', 'إعادة المحاولة']);
+    expectMarkupToContain(html, ['تعذر تحميل العقد', 'إعداد الاتصال بقاعدة البيانات غير مكتمل.', 'إعادة المحاولة']);
   });
 });

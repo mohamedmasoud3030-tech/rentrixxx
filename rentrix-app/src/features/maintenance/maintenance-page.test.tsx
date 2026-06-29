@@ -77,7 +77,8 @@ describe('MaintenancePage recovery states', () => {
     const html = renderToStaticMarkup(<MaintenancePage />);
 
     expect(html).toContain('تعذر تحميل طلبات الصيانة');
-    expect(html).toContain('حدث خطأ أثناء تحميل البيانات.');
+    // In test environment VITE_SUPABASE_URL is absent → getEnvDiagnostics() takes priority
+    expect(html).toContain('إعداد الاتصال بقاعدة البيانات غير مكتمل.');
     expect(html).toContain('إعادة المحاولة');
   });
 });
