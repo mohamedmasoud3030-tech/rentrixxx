@@ -25,7 +25,7 @@ const formatDocumentValue = (value: unknown): string => {
   if (value == null) return '\u2014';
   if (typeof value === 'string') return value;
   if (typeof value === 'number' || typeof value === 'boolean' || typeof value === 'bigint') return String(value);
-  if (value instanceof Date) return Number.isNaN(value.getTime()) ? '\u2014' : value.toISOString();
+  if (value instanceof Date) return Number.isNaN(value.getTime()) ? '\u2014' : value.toLocaleDateString('en-GB');
   if (Array.isArray(value) || typeof value === 'object') {
     try {
       return JSON.stringify(value);
