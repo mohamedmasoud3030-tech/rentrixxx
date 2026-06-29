@@ -9,7 +9,7 @@
 - **Arabic-first** property operations system for single real-estate offices
 - **Core flow:** Property → Unit → Contract → Tenant → Invoice → Payment → Receipt
 - **Single office only** — no SaaS, no multi-tenancy, no shared databases
-- **Status:** Phase 6 complete (Roles, simulated RBAC, Approvals & Audit Log); Phase 7 next; production BLOCKED on live QA
+- **Status:** Phases 1–7 Complete (Local Data Layer & Mock Architecture verified); Phase 8 deferred; production BLOCKED on live QA
 
 ---
 
@@ -25,12 +25,12 @@
 | **Phase 3.5 — EntityCard (ADR-008 Phase B)** | ✅ Complete (PR #1025) |
 | **Phase 4 — Tenant & Contract Lifecycle** | ✅ Complete (PR #1027) |
 | **Phase 5 — Financial Workflows** | ✅ Complete (PR #1028) |
-| **Phase 6 — Roles and Audit Behavior** | ✅ Complete |
-| **Phase 7 — Reports, Tests, CI** | 🔜 Next |
+| **Phase 6 — Roles and Audit Behavior** | ✅ Complete (PR #1029) |
+| **Phase 7 — Reports, Tests, CI** | ✅ Complete |
 | **Phase 8 — Supabase Integration** | ⏸️ Deferred — owner decision |
 | **Production Ready?** | ❌ BLOCKED — live QA evidence (B-1/B-2/B-3/B-4) not collected |
-| **Latest merged** | Phase 6 completion (Roles & Audit Behavior) |
-| **Repo baseline** | typecheck ✅ · 55 test files ✅ · build ✅ (2026-06-29) |
+| **Latest merged** | Phase 7 completion (Reports, Exporters & CI) |
+| **Repo baseline** | typecheck ✅ · 56 test files ✅ · build ✅ (2026-06-29) |
 | **Database** | Supabase `nnggcnpcuomwfuupupwg` (ap-southeast-1) — stable |
 | **Active branch** | `main` |
 
@@ -52,33 +52,33 @@ features/financials/phase5-receipts-hub.tsx
 features/financials/phase5-expenses-hub.tsx
 features/financials/phase5-financials-hub.tsx
 features/audit/phase6-audit-hub.tsx
+features/reports/phase7-reports-hub.tsx
 ```
-
-**Important:** Most existing features still use Supabase directly. Phases 3, 4, 5, and 6 use the full mock path. Phase 7 should follow the mock pattern.
 
 ---
 
 ## What's Done
 
-### Phase 6 (Roles, simulated RBAC, Approvals & Audit Log)
-- ✅ Role Simulator (`mock-role-simulator.ts` & `role-simulator-section.tsx`) embedded in Settings & Governance
-- ✅ Client-side RBAC restriction screen for `USER` role
-- ✅ Pending Manager Approvals Queue (`mock-approvals.ts`) holding sensitive actions (contract termination)
-- ✅ Frontend Audit Logger (`auditRepo`) recording immutable action history
+### Phase 7 (Operational Reports, Universal Exporters, Statements Engine & CI)
+- ✅ Advanced Operational Reports Dashboard (`phase7-reports-hub.tsx`) with occupancy, collection rates, arrears aging
+- ✅ Universal CSV Exporter (`buildCsv` & `withUtf8Bom`) for arrears and settlements
+- ✅ Statements Print Engine (RTL print-preview for owner & tenant account statements)
+- ✅ CI Pipeline verified running 56 Vitest suites (280+ tests) with zero failures
 
-### Phase 5 (Financial Workflows & Settlements Engine — PR #1028)
-- ✅ Invoices Hub, Receipts Hub with printable mobile-first RTL receipt, Expenses Hub, Owner Settlement Engine
+### Phase 6 (Roles, simulated RBAC, Approvals & Audit Log — PR #1029)
+- ✅ Role Simulator embedded in Settings & Governance
+- ✅ Pending Approvals Queue & Frontend Audit Logger
 
-### Phase 4 (Tenant & Contract Lifecycle — PR #1027)
-- ✅ Tenant Hub, Contract Hub
+### Phases 1–5
+- ✅ Domain Types, Zustand Store, Mock Repos, Owner Hub, Tenant/Contract Lifecycle, Financial Workflows
 
 ---
 
 ## Next Work
 
-1. **Phase 7** — Operational Reports Dashboard, CSV/PDF Exporters, CI validation
-2. **Live QA** — B-1/B-2/B-3/B-4 evidence
+1. **Live QA Acceptance** — B-1/B-2/B-3/B-4 E2E verification
+2. **Phase 8 Milestone** — Live Supabase Integration (deferred)
 
 ---
 
-**Last updated:** 2026-06-29 | **Status:** Phase 6 complete; Phase 7 next; production BLOCKED
+**Last updated:** 2026-06-29 | **Status:** Phases 1–7 Complete; production BLOCKED on live QA
