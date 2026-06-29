@@ -18,6 +18,20 @@ export const tenantRepo = {
 
     return { nextState: { ...state, tenants: [...state.tenants, tenant] }, data: tenant };
   }),
+  update: (tenantId: string, input: TenantCreateInput) => writeMockDatabase((state) => {
+    const existing = state.tenants.find((tenant) => tenant.id === tenantId);
+    if (!existing) throw new MockRepositoryError('المستأجر غير موجود.');
+
+    const updatedTenant: Tenant = {
+      ...existing,
+      name: input.name,
+      phone: input.phone,
+      email: input.email,
+    };
+
+    const tenants = state.tenants.map((tenant) => tenant.id === tenantId ? updatedTenant : tenant);
+    return { nextState: { ...state, tenants }, data: updatedTenant };
+  }),
   archive: (tenantId: string) => writeMockDatabase((state) => {
     const hasActiveContract = state.contracts.some((contract) => contract.tenantId === tenantId && (contract.status === 'active' || contract.status === 'draft'));
     if (hasActiveContract) throw new MockRepositoryError('لا يمكن أرشفة مستأجر مرتبط بعقود نشطة أو مسودات.');
