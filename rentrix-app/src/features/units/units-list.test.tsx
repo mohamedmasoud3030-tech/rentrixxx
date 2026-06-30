@@ -25,6 +25,8 @@ function makeUnitsQuery(overrides: Partial<UseQueryResult<Unit[]>>): UseQueryRes
 
 describe('UnitsList load states', () => {
   it('surfaces property unit loading failures instead of rendering an empty workflow', () => {
+    vi.stubEnv('VITE_SUPABASE_URL', '');
+    vi.stubEnv('VITE_SUPABASE_ANON_KEY', '');
     const unitsQuery = makeUnitsQuery({
       data: undefined,
       error: new Error('permission denied for table units'),

@@ -71,6 +71,8 @@ describe('MaintenancePage recovery states', () => {
   });
 
   it('renders a retryable load error state', () => {
+    vi.stubEnv('VITE_SUPABASE_URL', '');
+    vi.stubEnv('VITE_SUPABASE_ANON_KEY', '');
     maintenanceMocks.maintenanceQuery.error = new Error('تعذر تحميل صيانة الاختبار');
     maintenanceMocks.maintenanceQuery.isError = true;
 
