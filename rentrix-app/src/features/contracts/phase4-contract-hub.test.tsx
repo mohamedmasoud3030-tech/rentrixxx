@@ -1,6 +1,7 @@
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
 import { Phase4ContractHubPage, validatePhase4ContractForm } from './phase4-contract-hub';
+import { ContractsListPage } from './ContractsListPage';
 import { ContractsRouteComponent } from '@/routes/_protected.contracts';
 
 describe('Phase 4 contract hub', () => {
@@ -24,7 +25,7 @@ describe('Phase 4 contract hub', () => {
     expect(validatePhase4ContractForm({ propertyId: 'p-1', unitId: 'u-1', tenantId: 't-1', agreementId: 'a-1', startDate: '2026-01-01', endDate: '2026-12-31', rentAmount: '12000', paymentFrequency: 'monthly' })).toBeNull();
   });
 
-  it('uses the Phase 4 contract hub on the active contracts route', () => {
-    expect(ContractsRouteComponent).toBe(Phase4ContractHubPage);
+  it('uses the Supabase-backed contracts list on the active contracts route', () => {
+    expect(ContractsRouteComponent).toBe(ContractsListPage);
   });
 });

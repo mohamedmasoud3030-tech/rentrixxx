@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { documentEngine } from './DocumentEngine';
-import { collectDocumentTextChunks } from './DocumentRenderer';
+import { collectDocumentTextChunks, escapeDocumentHtml } from './DocumentRenderer';
 import type { UnifiedDocumentModel } from './types';
 
 const baseModel: UnifiedDocumentModel = {
@@ -13,6 +13,12 @@ const baseModel: UnifiedDocumentModel = {
 };
 
 describe('collectDocumentTextChunks', () => {
+  it('escapes user-controlled document text before embedding it in print HTML', () => {
+    expect(escapeDocumentHtml(`<img src=x onerror="alert('xss')"> & "quote"`)).toBe(
+      '&lt;img src=x onerror=&quot;alert(&#39;xss&#39;)&quot;&gt; &amp; &quot;quote&quot;',
+    );
+  });
+
   it('does not inject default signature labels into Arabic detection chunks', () => {
     const chunks = collectDocumentTextChunks(baseModel);
     expect(chunks.join(' ')).not.toContain('\u062a\u0648\u0642\u064a\u0639');

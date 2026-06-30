@@ -138,6 +138,8 @@ describe('ContractDetailPage load and money states', () => {
   });
 
   it('renders a retryable error state when contract detail loading fails', () => {
+    vi.stubEnv('VITE_SUPABASE_URL', '');
+    vi.stubEnv('VITE_SUPABASE_ANON_KEY', '');
     contractsMocks.contractQuery.data = null;
     contractsMocks.contractQuery.error = new Error('تعذر تحميل عقد الاختبار');
     contractsMocks.contractQuery.isError = true;

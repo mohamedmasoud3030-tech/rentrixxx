@@ -4,6 +4,10 @@ import { Phase5FinancialsHubPage } from './phase5-financials-hub';
 import { Phase5InvoicesHubPage, validatePhase5InvoiceForm } from './phase5-invoices-hub';
 import { Phase5ReceiptsHubPage, validatePhase5PaymentForm } from './phase5-receipts-hub';
 import { Phase5ExpensesHubPage, validatePhase5ExpenseForm } from './phase5-expenses-hub';
+import { InvoicesPage } from './invoices/invoices-page';
+import { ReceiptsPage } from './receipts/receipts-page';
+import { ExpensesPage } from './expenses/expenses-page';
+import { FinancialsPage } from './financials-page';
 import { calculateOfficeProfitability, calculateOwnerSettlement } from '@/domain/financial-settlements';
 import { FinancialsRouteComponent } from '@/routes/_protected.financials';
 import { InvoicesRouteComponent } from '@/routes/_protected.invoices';
@@ -85,10 +89,10 @@ describe('Phase 5 financial workflows and settlements engine', () => {
     expect(htmlExp).toContain('مركز المصروفات');
   });
 
-  it('wires Phase 5 hubs into protected financial routes', () => {
-    expect(FinancialsRouteComponent).toBe(Phase5FinancialsHubPage);
-    expect(InvoicesRouteComponent).toBe(Phase5InvoicesHubPage);
-    expect(ReceiptsRouteComponent).toBe(Phase5ReceiptsHubPage);
-    expect(ExpensesRouteComponent).toBe(Phase5ExpensesHubPage);
+  it('wires protected financial routes to Supabase-backed pages', () => {
+    expect(FinancialsRouteComponent).toBe(FinancialsPage);
+    expect(InvoicesRouteComponent).toBe(InvoicesPage);
+    expect(ReceiptsRouteComponent).toBe(ReceiptsPage);
+    expect(ExpensesRouteComponent).toBe(ExpensesPage);
   });
 });
