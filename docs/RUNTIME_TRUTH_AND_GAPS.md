@@ -47,6 +47,7 @@ Observed snapshot only:
 | Contract create has stronger agreement validation than contract update/renewal | Enforce consistent contract lifecycle validations in the domain/mock layer | Phase 4 |
 | Legacy `owner_settlements` exists live but is insufficient for approved settlement model | Implement full Arabic-first settlement calculations locally first, then sync DB schemas | Phase 5 (Mock) & Phase 8 (DB) |
 | Older documentation says owner settlement/payout/profitability are out of scope or pending decision | Those statements are superseded by current product decisions | Phase 1 (completed); implementation is Phase 5 |
+| PR #1031 routes Contracts, Financials, Invoices, Receipts, and Expenses to existing Supabase-backed pages while the roadmap postpones Supabase integration | Current `main` is the behavior truth. The resulting mixed route state is documented, but it neither authorizes Phase 8 nor proves live-data, RLS, or production readiness. Resolve with an explicit owner data-layer decision before a Phase 8 claim. | Owner decision & Phase 8 |
 
 ---
 
@@ -57,6 +58,7 @@ Observed snapshot only:
 | Live schema vs migrations vs generated types vs code contract drift | Postponed; full reconciliation and type mapping to live Supabase database | Phase 8 |
 | `properties.owner_id` and related ownership modeling drift | Map database-level field to local sequence: Owner → Property → Owner Agreement | Phase 8 |
 | RPC return typing drift | Reconcile live/repository custom database RPC types | Phase 8 |
+| Active protected-route data-layer decision | PR #1031 leaves five protected routes on existing Supabase-backed pages while the local-first roadmap remains in force. Choose restoration of mock hubs or a formal limited Phase 8 scope. | Owner decision & Phase 8 |
 | Safe contract lifecycle enforcement | Create/update/renew/terminate must enforce agreement/property/unit/date/overlap/permission rules consistently locally | Phase 4 |
 | Rich agreement terms | Fixed + rate combinations, calculation basis, expense responsibility, cadence, amendments, audit history locally | Phase 5 |
 | Owner settlement engine | Build core calculations and UI reporting locally without database dependency | Phase 5 |
@@ -71,4 +73,6 @@ Observed snapshot only:
 
 Use this document to understand what is true now, what is contradictory, and which future phase owns the resolution.
 
-Do not use it as a substitute for schema design, migration planning, or implementation specs.
+See `docs/ai/PR_1031_ROUTE_TRANSITION_RECORD.md` for the specific route-transition decision that must be resolved before treating the selected Supabase-backed routes as a Phase 8 implementation.
+
+Do not use this document as a substitute for schema design, migration planning, or implementation specs.
