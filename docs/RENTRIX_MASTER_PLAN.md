@@ -20,24 +20,24 @@ When sources conflict, do not invent a resolution. Record the contradiction and 
 
 ---
 
-## 2. Official Roadmap (Revised for Postponed Supabase Integration)
+## 2. Official Roadmap (Postponed Supabase Integration)
 
-The owner has decided to postpone all Supabase database integration, migrations, schema updates, RPCs, RLS, auth, and generated types to **Phase 8**. This allows rapid and pure frontend domain prototyping, calculation verification, and complete RTL/mobile UX polish in Phases 1-7 using a robust local/mock data layer. 
+The owner has postponed all planned Supabase database integration, migrations, schema updates, RPCs, RLS, auth, and generated types to **Phase 8**. This allows rapid and pure frontend domain prototyping, calculation verification, and complete RTL/mobile UX polish in Phases 1-7 using a robust local/mock data layer.
 
-Repository abstractions implemented in Phases 1-7 should **reduce, not eliminate**, Phase 8 integration changes.
+Phases 1–7 are complete in the local-first model. Repository abstractions from those phases should **reduce, not eliminate**, the eventual Phase 8 integration changes.
 
-### Revised Phase Order:
+### Revised Phase Order and Status
 
 - **Phase 0** — Runtime truth audit and contradiction discovery: **completed**.
-- **Phase 1** — Domain Foundation: **current**.
-- **Phase 2** — Mock/Local Data Layer.
-- **Phase 3** — Owner, Agreement, Property, and Unit Workflows.
-- **Phase 4** — Tenant and Contract Lifecycle.
-- **Phase 5** — Financial Workflows.
-- **Phase 6** — Roles and Audit Behavior.
-- **Phase 7** — Reports, Print/Export, Tests, and CI (Extending existing CI).
-- **Phase 8** — Supabase Integration (Schema, Migrations, RPCs, RLS, Auth, Generated Types, Live Data).
-- **Phase 9 / Backlog** — Secondary Module Hardening (Maintenance, lands, leads, commissions, communication).
+- **Phase 1** — Domain Foundation: **completed**.
+- **Phase 2** — Mock/Local Data Layer: **completed**.
+- **Phase 3** — Owner, Agreement, Property, and Unit Workflows: **completed**.
+- **Phase 4** — Tenant and Contract Lifecycle: **completed**.
+- **Phase 5** — Financial Workflows: **completed**.
+- **Phase 6** — Roles and Audit Behavior: **completed**.
+- **Phase 7** — Reports, Print/Export, Tests, and CI: **completed**.
+- **Phase 8** — Supabase Integration (Schema, Migrations, RPCs, RLS, Auth, Generated Types, Live Data): **deferred pending explicit owner approval**.
+- **Phase 9 / Backlog** — Secondary Module Hardening (Maintenance, lands, leads, commissions, communication): **backlog**.
 
 ---
 
@@ -67,7 +67,7 @@ Evidence now belongs in:
 - `docs/RUNTIME_TRUTH_AND_GAPS.md`
 - `docs/ai/CURRENT_EXECUTION_CONTEXT.md`
 
-### Phase 1 — Domain Foundation (Current)
+### Phase 1 — Domain Foundation (Completed)
 
 Objective:
 - Establish clean, strict TypeScript types, validation rules, and domain entities representing the core operational flow.
@@ -76,7 +76,7 @@ Objective:
 
 Details in `docs/PHASE_1_7_EXECUTION_PLAN.md`.
 
-### Phase 2 — Mock/Local Data Layer (Future)
+### Phase 2 — Mock/Local Data Layer (Completed)
 
 Objective:
 - Build a robust, in-memory/localStorage-backed mock repository and services layer.
@@ -85,7 +85,7 @@ Objective:
 
 Details in `docs/PHASE_1_7_EXECUTION_PLAN.md`.
 
-### Phase 3 — Owner, Agreement, Property, and Unit Workflows (Future)
+### Phase 3 — Owner, Agreement, Property, and Unit Workflows (Completed)
 
 Objective:
 - Build the full Arabized, mobile-first user interfaces and workflows in the valid sequence: Owner → Property → Owner Agreement → Unit.
@@ -94,7 +94,7 @@ Objective:
 
 Details in `docs/PHASE_1_7_EXECUTION_PLAN.md`.
 
-### Phase 4 — Tenant and Contract Lifecycle (Future)
+### Phase 4 — Tenant and Contract Lifecycle (Completed)
 
 Objective:
 - Create tenant onboarding workflows and the full lease contract lifecycle (create, update, renew, terminate).
@@ -102,7 +102,7 @@ Objective:
 
 Details in `docs/PHASE_1_7_EXECUTION_PLAN.md`.
 
-### Phase 5 — Financial Workflows (Future)
+### Phase 5 — Financial Workflows (Completed)
 
 Objective:
 - Build the core rent and service financial calculations engine.
@@ -112,7 +112,7 @@ Objective:
 
 Details in `docs/PHASE_1_7_EXECUTION_PLAN.md`.
 
-### Phase 6 — Roles and Audit Behavior (Future)
+### Phase 6 — Roles and Audit Behavior (Completed)
 
 Objective:
 - Apply client-side role permissions (`ADMIN`, `MANAGER`, `USER`) dynamically on UI elements.
@@ -121,21 +121,23 @@ Objective:
 
 Details in `docs/PHASE_1_7_EXECUTION_PLAN.md`.
 
-### Phase 7 — Reports, Print/Export, Tests, and CI (Future)
+### Phase 7 — Reports, Print/Export, Tests, and CI (Completed)
 
 Objective:
 - Implement collections, arrears, occupancy, statements, and profitability reports.
 - Create print-optimized templates for physical/mobile devices and file exporters (CSV, PDF).
-- Deliver 100% green test coverage on calculations and workflows; extend existing CI pipeline validation.
+- Deliver green test coverage on calculations and workflows; extend existing CI pipeline validation.
 
 Details in `docs/PHASE_1_7_EXECUTION_PLAN.md`.
 
-### Phase 8 — Supabase Integration (Future)
+### Phase 8 — Supabase Integration (Deferred)
 
-Objective:
+Objective when approved:
 - Migrate the local/mock-backed repository to live Supabase backend.
 - Set up real database schema, migrations, security RLS, RPCs, Auth, and automatic TypeScript type-generation.
 - Verify production-readiness criteria.
+
+PR #1031 introduced a documented mixed route state by wiring selected protected routes to existing Supabase-backed pages. This does not approve Phase 8. Before Phase 8 can begin or be claimed, the owner must choose either to restore the local hubs as active routes or to approve a limited, explicit Phase 8 transition scope. See `docs/ai/PR_1031_ROUTE_TRANSITION_RECORD.md`.
 
 ---
 
@@ -188,7 +190,7 @@ Documentation-only work must not modify:
 
 ## 8. Final Delivery and Production-Readiness Truth
 
-Production readiness is established at the end of Phase 8 once the live Supabase database sync is verified.
+Production readiness is established only when Phase 8 is explicitly approved and the live Supabase database sync is verified.
 
 Final delivery evidence remains tracked in `docs/ai/FINAL_DELIVERY_GATE_QA_EVIDENCE.md`.
 
@@ -206,6 +208,7 @@ Do not claim Production GO until the following evidence is verified:
 - `docs/RUNTIME_TRUTH_AND_GAPS.md` defines observed runtime truth and known gaps.
 - `docs/PHASE_1_7_EXECUTION_PLAN.md` provides the detailed development specifications and TODO list for the local-first phases.
 - `docs/ai/CURRENT_EXECUTION_CONTEXT.md` tracks the exact current branch/base/phase state.
+- `docs/ai/PR_1031_ROUTE_TRANSITION_RECORD.md` records the unresolved active-route data-layer transition.
 - `docs/ai/FINAL_DELIVERY_GATE_QA_EVIDENCE.md` tracks final delivery evidence.
 - `docs/ai/ONBOARDING.md` remains the active application snapshot and reading sequence.
 - `docs/ai/REPORTING_DEFINITIONS.md` remains the reporting-definition reference.
